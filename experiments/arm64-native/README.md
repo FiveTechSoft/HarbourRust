@@ -294,3 +294,43 @@ move to this positive scope, leaving 9 old negatives. Previous scalar 35x3 and
 21 negatives, trace/source-origin/frame checks and production rejection remain.
 All measurements use instruction emulation/syscall models and current x86
 output, not a fresh Harbour VM oracle or actual Apple platform result.
+
+## Numeric result boundary, still no runtime arithmetic AST
+
+A separate raw-fixture boundary now connects the own numeric pair kernels to
+validated output and the existing uncaught-zero trace runtime. This does NOT
+admit Expr::Bin in the source harness. `numeric-result.rs` consumes payload,
+format, status and display mode. Status 0 validates metadata before any write;
+status 1 routes to the existing stdout division-by-zero diagnostic, linked
+trace and exit 1. Other statuses (including invalid metadata and decimal-limit
+statuses) fail with experiment-only exit 75, not a caught Harbour exception.
+The display mode is 0 ordinary or 1 mixed-local. Only integer formats 0/1,
+finite F64, width 10/20 and at most 16 decimals are accepted at this boundary.
+Nonfinite results and larger decimal counts fail closed, even where the
+isolated arithmetic kernel itself can represent them.
+
+Computed-integer format 0 now has its own isolated print helper, with width
+10 if signed decimal length is at most 10 and 20 otherwise. Literal/copy
+format 1 still uses the different existing literal helper. This new result
+entry is not wired into source mixed-local print or arithmetic admission.
+Ordinary and mixed-integral F64 retain their separate existing display modes.
+Normal fixture returns restore incoming FPCR/FPSR. Process-exiting errors do
+not promise a return or FP restoration; output failure still exits 74.
+
+A key type distinction remains: the current x86 fixed-I64 expression path
+wraps overflow, whereas the NumLocal path promotes overflow to F64. Assigning
+a fixed-I64 result into a mixed destination does not change the expression's
+contract. The raw value kernel models the latter promoting arithmetic, so
+its overflow cases are compared only against sources with an actual mixed
+operand. Fixed-I64 overflow is not silently reinterpreted or admitted here.
+
+Fresh raw-boundary cohort: 149 fixture images, each in three syscall/FP modes.
+It includes 122 arithmetic controls against executed current x86 programs,
+18 computed/literal integer-width controls (also checked against executed
+x86), and 9 invalid status/metadata/mode/nonfinite controls. Output-producing
+cases also test zero/oversize/failing writes with exit 74 and no committed
+stdout. Arithmetic controls include current uncaught zero output/exit/trace,
+fixed versus mixed-local display, integer extrema, mixed overflow promotion,
+signed zero and decimal provenance. All images pass structural/page-hash
+checks. These are raw kernel/result contracts, not 149 supported source
+programs, a fresh Harbour oracle, real-Mac execution or TRY/unwind support.
