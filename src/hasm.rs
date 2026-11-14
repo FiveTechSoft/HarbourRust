@@ -1419,6 +1419,74 @@ impl Asm {
         Ok((bytes, offs))
     }
 
+    // Lower bounds independent of every label address and alignment choice.
+    // A numeric-only non-jump instruction has the same encoding length in
+    // every layout; other instructions conservatively contribute one byte.
+    // Alignment contributes zero. Unknown/jump instructions contribute one byte.
+    fn minimum_text_prefix(&self) -> Result<Option<Vec<u64>>, String> {
+        // If a non-branch length can depend on text addresses, retain the
+        // original algorithm globally. This also makes the skip proof cover
+        // the original trial's transient growth of other near branches:
+        // fixed instruction lengths + monotone alignment cannot make a
+        // vector with additional near branches smaller after this branch
+        // has necessarily grown back to near.
+        fn constant(e:&Expr, p:&Parser)->bool {e.0.iter().all(|(_,t)|match t {Term::Num(_)=>true,Term::Sym(n)=>p.consts.contains_key(n),_=>false})}
+        fn fixed(o:&Op,p:&Parser)->bool {match o {
+            Op::Imm(e)=>constant(e,p),
+            Op::Mem{disp,riplab,..}=>riplab.is_some() || disp.as_ref().map_or(true,|e|constant(e,p)),
+            Op::Star(o)=>fixed(o,p),
+            _=>true,
+        }}
+        for item in &self.text {
+            if let TItem::Ins{mnem,ops,..}=item {
+                let direct_branch=(is_jump(mnem)||mnem=="call") && matches!(ops.as_slice(),[Op::Imm(_)]);
+                if !direct_branch && !ops.iter().all(|o|fixed(o,&self.p)){return Ok(None);}
+            }
+        }
+        fn numeric(e: &Expr) -> bool { e.0.iter().all(|(_,t)| matches!(t,Term::Num(_))) }
+        fn stable(o: &Op) -> bool { match o {
+            Op::Imm(e) => numeric(e),
+            Op::Mem {disp,riplab,..} => riplab.is_none() && disp.as_ref().map_or(true,numeric),
+            Op::Star(o) => stable(o),
+            _ => true,
+        }}
+        let no_symbols = |e: &Expr| -> Result<i64,String> {
+            let mut v=0i64;
+            for (neg,t) in &e.0 { if let Term::Num(n)=t { v=if *neg {v.wrapping_sub(*n)}else{v.wrapping_add(*n)}; }else{return Err("nonconstant lower-bound expression".into());} }
+            Ok(v)
+        };
+        let enc=Enc{resolve:&no_symbols};
+        let mut prefix=Vec::with_capacity(self.text.len()+1);prefix.push(0u64);
+        for item in &self.text {
+            let n=match item {
+                TItem::Ins {mnem,..} if is_jump(mnem) => 1,
+                TItem::Ins {mnem,ops,lock} if ops.iter().all(stable) => encode_ins(&enc,mnem,ops,*lock,0,false)?.len() as u64,
+                TItem::Ins {..} => 1,
+                TItem::Raw(DItem::Bytes(b)) => b.len() as u64,
+                TItem::Raw(DItem::Patch4(_)) => 4,
+                TItem::Raw(DItem::Patch8(_)) => 8,
+                _ => 0,
+            };
+            prefix.push(prefix.last().unwrap().checked_add(n).ok_or("text lower-bound overflow")?);
+        }
+        Ok(Some(prefix))
+    }
+
+    // Only exact, single-term same-text labels are proved. Every expression,
+    // cross-section target and unknown form follows the original search.
+    fn cannot_shorten(&self, i: usize, minimum: &[u64]) -> bool {
+        let e=match &self.text[i] {TItem::Ins {mnem,ops,..} if is_jump(mnem) => match ops.first(){Some(Op::Imm(e))=>e,_=>return false},_=>return false};
+        let loc=match e.0.as_slice() {
+            [(false,Term::Sym(n))] if !self.p.consts.contains_key(n) => self.p.labels.get(n).copied(),
+            [(false,Term::Fwd(n,seq))] => self.resolve_num(*n,true,*seq).ok(),
+            [(false,Term::Back(n,seq))] => self.resolve_num(*n,false,*seq).ok(),
+            _=>None,
+        };
+        let t=match loc {Some(Loc{sec:Sec::Text,idx}) if idx<=self.text.len()=>idx,_=>return false};
+        if t>i { minimum[t]-minimum[i+1]>127 }
+        else { minimum[i]-minimum[t]+2>128 }
+    }
+
     fn finish(self, pe: bool) -> Result<Vec<u8>, String> {
         // PE64: los imports se escanean antes de la relajación (el resolver
         // los necesita ya en las pasadas provisionales; a VA 0, los call
@@ -1467,11 +1535,12 @@ impl Asm {
             }
         };
         let mut best_size = relax(&mut near, &mut final_offs)?;
+        let minimum=self.minimum_text_prefix()?;
         let mut guard = 0;
         'busqueda: loop {
             guard += 1;
             if guard > 64 { break; }
-            let cands: Vec<usize> = (0..near.len()).filter(|&i| near[i]).collect();
+            let cands: Vec<usize> = (0..near.len()).filter(|&i| near[i] && !minimum.as_ref().map_or(false,|m|self.cannot_shorten(i,m))).collect();
             for j in cands {
                 let mut cand = near.clone();
                 cand[j] = false;
@@ -2031,4 +2100,20 @@ pub fn assemble(src: &str) -> Result<Vec<u8>, String> {
 
 pub fn assemble_pe(src: &str) -> Result<Vec<u8>, String> {
     assemble_target(src, true)
+}
+
+#[cfg(test)]
+mod safe_shorten_tests {
+    use super::*;
+    fn asm(src:&str)->Asm {
+        let mut a=Asm{p:Parser{consts:HashMap::new(),labels:HashMap::new(),numlabels:HashMap::new(),seq:Cell::new(0)},text:vec![],rodata:vec![],data:vec![],bss:vec![],note:vec![],has_gnu_stack:false,cur:Sec::Text,secstack:vec![],text_align:1,rod_align:1,dat_align:1,bss_align:1};
+        for l in expand_rept(src).unwrap().lines(){a.parse_line(l).unwrap();}a
+    }
+    #[test]fn forward_rel8_boundary(){for n in [0,1,126,127,128,129,4096]{let a=asm(&format!("jmp target\n.rept {}\nnop\n.endr\ntarget:\nret",n));assert_eq!(a.cannot_shorten(0,&a.minimum_text_prefix().unwrap().unwrap()),n>127);}}
+    #[test]fn backward_rel8_boundary(){for n in [0,1,125,126,127,128,4096]{let a=asm(&format!("target:\n.rept {}\nnop\n.endr\njmp target",n));assert_eq!(a.cannot_shorten(n,&a.minimum_text_prefix().unwrap().unwrap()),n+2>128);}}
+    #[test]fn alignment_is_zero_lower_bound(){let a=asm("jmp target\n.p2align 12\ntarget:\nret");assert!(!a.cannot_shorten(0,&a.minimum_text_prefix().unwrap().unwrap()));}
+    #[test]fn fallback_expressions_aliases_and_sections(){for s in ["jmp $target+0\n.rept 200\nnop\n.endr\ntarget:\nret",".set target, 0x401000\njmp target\n.rept 200\nnop\n.endr","jmp target\n.data\ntarget:\n.quad 0"]{let a=asm(s);assert!(!a.cannot_shorten(0,&a.minimum_text_prefix().unwrap().unwrap()));}}
+    #[test]fn numeric_labels_are_exact_targets(){let a=asm("jmp 1f\n.rept 128\nnop\n.endr\n1:\njmp 1b");let m=a.minimum_text_prefix().unwrap().unwrap();assert!(a.cannot_shorten(0,&m));assert!(!a.cannot_shorten(129,&m));}
+    #[test]fn layout_dependent_nonbranch_uses_original_search(){let a=asm("jmp target\nmov $target, %rax\n.rept 200\nnop\n.endr\ntarget:\nret");assert!(a.minimum_text_prefix().unwrap().is_none());}
+    #[test]fn numeric_instruction_lengths_strengthen_bound(){let a=asm("jmp target\n.rept 20\nmovabs $0x123456789abcdef0, %rax\n.endr\ntarget:\nret");assert!(a.cannot_shorten(0,&a.minimum_text_prefix().unwrap().unwrap()));}
 }
