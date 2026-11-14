@@ -14,6 +14,9 @@
   acceptance and named negative messages without assembling, linking,
   executing or requiring MinGW, Rust, bash or Wine.
 
+Each runner snapshots the manifest to `GEN_DIR/manifest.snapshot` and
+records its SHA at start, so concurrent edits cannot corrupt a run.
+
 Text expectations are stored with LF (`.gitattributes`).
 `t1041_longstr_linux.out`, `t1041_longstr_windows.out` and
 `t1576_text_cr.prg` intentionally contain CR bytes and are marked `-text`.

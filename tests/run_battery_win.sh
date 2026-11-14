@@ -25,6 +25,11 @@
 cd "$(dirname "$0")/.." || exit 2
 GENDIR=${GEN_DIR:-gen}
 MANIFEST_FILE=${MANIFEST_FILE:-tests/manifest.txt}
+MANIFEST_SHA=$(sha256sum "$MANIFEST_FILE" | awk '{print $1}')
+MANIFEST_SNAPSHOT="$GENDIR/manifest.snapshot"
+cp "$MANIFEST_FILE" "$MANIFEST_SNAPSHOT"
+MANIFEST_FILE="$MANIFEST_SNAPSHOT"
+echo "manifest_sha=$MANIFEST_SHA snapshot=$MANIFEST_SNAPSHOT"
 mkdir -p "$GENDIR"
 fail=0
 n=0
