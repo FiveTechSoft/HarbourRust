@@ -125,7 +125,7 @@ No tracing GC does not mean no memory management: native allocation/free helpers
 
 ## Use the release without Rust or a C compiler
 
-Download the prebuilt `hbc` (Linux x86-64) or `hbc.exe` (Windows x86-64) from [v0.1.1](https://github.com/FiveTechSoft/HarbourRust/releases/tag/v0.1.1). **Neither Rust nor a C compiler is needed to use these binaries or to build the supported native-only examples.** The ordinary path is Harbour source -> `hbc` -> assembly -> GNU `as` -> GNU `ld` -> native executable. Linux needs GNU binutils; Windows needs MinGW-w64 binutils and its KERNEL32 import library, with the tool names required by `build.bat` on `PATH`.
+Download the prebuilt `hbc` (Linux x86-64) or `hbc.exe` (Windows x86-64) from [v0.1.1](https://github.com/FiveTechSoft/HarbourRust/releases/tag/v0.1.1). **Neither Rust nor a C compiler is needed to use these binaries or to build the supported native-only examples.** Current-source `hbc` writes the native executable itself: Harbour source -> `hbc` -> native ELF (Linux x86-64) or PE32+ (Windows x86-64), with no external assembler or linker. The v0.1.1 binaries above predate that writer and still follow the older assembly -> GNU `as` -> GNU `ld` path, which current-source `hbc` keeps behind `--external-as`. The internal PE writer emits a console image with entry `_start`, fixed ImageBase `0x140000000` and imports limited to a measured kernel32 whitelist (`ExitProcess`, `GetEnvironmentVariableA`, `GetLocalTime`, `GetProcessHeap`, `GetStdHandle`, `HeapAlloc`, `HeapFree`, `WriteFile`); no CRT, SEH, TLS or base relocations are supported.
 
 The release also includes `hello.exe`, `arrays_hashes.exe` and `dates.exe`: run these Windows samples directly without a compiler, assembler or linker. They were tested under Wine 11.0, not on real Windows. The compiler binaries have OS/library requirements listed in the release notes. Building `hbc` itself from source requires Rust; building and linking C extensions with the bounded C bridge requires a C toolchain, which is outside the native-only path. The bridge is in current source, not in the older v0.1.1 compiler binaries.
 
@@ -151,15 +151,16 @@ See [recorded results and corrections](bench/RESULTS.md), [artifact sizes](bench
 
 ## Build and run on Linux
 
-Requires Rust and GNU binutils on Linux x86-64. From the repository root:
+Requires Rust on Linux x86-64 to build the compiler. From the repository root:
 
 ```sh
 rustc --edition=2021 -O src/hbc.rs -o hbc
-./hbc tests/samples/hello.prg hello.s --target=linux
-as -o hello.o hello.s
-ld -o hello hello.o
+./hbc tests/samples/hello.prg hello --target=linux
 ./hello
 ```
+
+`hbc` emits the ELF executable directly; GNU binutils are only needed for the
+`--external-as` fallback (`as` + `ld -s`).
 
 The compiler build uses Rust's standard library; no Cargo dependencies are
 needed. [Build instructions](BUILDING.md) cover Windows cross-compilation,
@@ -170,23 +171,23 @@ rather than assuming the older prebuilt binaries match HEAD.
 
 Use a Windows `hbc.exe` built from current source following
 [BUILDING.md](BUILDING.md#4-build-the-compiler-itself-as-a-windows-exe-hbcexe).
-Install MinGW-w64 binutils and the KERNEL32 import library; put
-`x86_64-w64-mingw32-as` and `x86_64-w64-mingw32-ld` on `PATH`.
+No assembler or linker is required: `hbc.exe` writes the PE32+ image itself.
 From Windows Command Prompt at the repository root, with `hbc.exe` there:
 
 ```bat
 set "HBC=%CD%\hbc.exe"
-dist\build.bat tests\samples\hello.prg hello
+"%HBC%" tests\samples\hello.prg hello.exe --target=windows
 hello.exe
 ```
 
-The script chains `hbc.exe` -> assembler -> linker and stops on failure.
-`HBC` overrides its default older `dist\2-hbc.exe`; see the build instructions
-for prebuilt-binary provenance. The v0.1.1 compiler, this batch script and real Windows binutils were tested
-end to end under Wine 11.0 with the greeting, array/hash and date samples.
-Their stdout, stderr and exit status match the Linux/Harbour checks. This is
-a release smoke test, not real-Windows verification. The later source-level
-Linux + Wine battery result and its inherited failures are recorded above.
+`--external-as` keeps the older MinGW-w64 `x86_64-w64-mingw32-as`/`-ld` path;
+that toolchain is also used by the test runner. `dist\build.bat` chains the
+legacy path and defaults to the older `dist\2-hbc.exe`; set `HBC` to override.
+The internal writer was checked on Windows 11 x86-64 for representative
+programs (greeting, hashes, dates, nested arrays, loops and error exits) with
+matching output; the full native Windows battery is not claimed here. The
+v0.1.1 compiler and batch script were tested under Wine 11.0 as a release
+smoke test.
 
 ## Documentation and samples
 

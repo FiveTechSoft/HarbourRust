@@ -18,17 +18,32 @@ statically linked Linux x86-64 binary.
 ## 2. Compile a Harbour program to a Linux binary
 
 ```
-./hbc tests/samples/hello.prg hello.s --target=linux
-as -o hello.o hello.s
-ld -o hello hello.o
+./hbc tests/samples/hello.prg hello --target=linux
 ./hello
 ```
 
-`as` and `ld` are the standard GNU binutils of the host.
+`hbc` writes the ELF executable directly (internal mini-assembler and ELF
+writer, layout equivalent to `ld -s`). `--external-as` keeps the older
+`as` + `ld -s` fallback; those are the standard GNU binutils of the host.
 
-## 3. Compile a Harbour program to a Windows .exe (from Linux)
+## 3. Compile a Harbour program to a Windows .exe (from Linux or Windows)
 
-You need MinGW-w64 binutils (`x86_64-w64-mingw32-as` and
+`hbc` writes the PE32+ image directly; no assembler, linker or import library
+is needed:
+
+```
+./hbc tests/samples/hello.prg hello.exe --target=windows
+```
+
+The internal writer emits a console image with entry `_start`, fixed ImageBase
+`0x140000000` and imports limited to a measured kernel32 whitelist
+(`ExitProcess`, `GetEnvironmentVariableA`, `GetLocalTime`, `GetProcessHeap`,
+`GetStdHandle`, `HeapAlloc`, `HeapFree`, `WriteFile`). No CRT, SEH, TLS or
+base relocations are supported.
+
+`--external-as` keeps the older MinGW-w64 path below, which is also what
+`tests/run_battery.sh` and `tests/run_battery_win.sh` use. For that fallback
+you need MinGW-w64 binutils (`x86_64-w64-mingw32-as` and
 `x86_64-w64-mingw32-ld`) and the MinGW-w64 import libraries
 (`libkernel32.a`, from the `mingw-w64-x86-64-dev` package). On Debian/Ubuntu
 without sudo you can extract the packages into a local directory:
@@ -124,7 +139,8 @@ the current source (sections 1-4) for binaries matching HEAD.
 ## 7. Run the test battery
 
 With the compiler built (section 1), MinGW-w64 extracted (section 3) and
-Wine 10.20 unpacked (section 5):
+Wine 10.20 unpacked (section 5). The runners emit `.s` and call the external
+`as`/`ld` path, so the internal writer is not exercised by them:
 
 ```
 M=tools/mingw/usr/bin \
