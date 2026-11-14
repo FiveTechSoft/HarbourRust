@@ -41,6 +41,8 @@ The internal writer emits a console image with entry `_start`, fixed ImageBase
 `GetStdHandle`, `HeapAlloc`, `HeapFree`, `WriteFile`). No CRT, SEH, TLS or
 base relocations are supported.
 
+VAS-eligible programs add `GetSystemInfo`, `VirtualAlloc` and `VirtualFree` to this whitelist (11 entries); ineligible programs retain the original eight-entry whitelist.
+
 `--external-as` keeps the older MinGW-w64 path below, which is also what
 `tests/run_battery.sh` and `tests/run_battery_win.sh` use. For that fallback
 you need MinGW-w64 binutils (`x86_64-w64-mingw32-as` and
