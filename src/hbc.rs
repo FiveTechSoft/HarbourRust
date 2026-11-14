@@ -3158,12 +3158,12 @@ fn parse(src: &str) -> Result<Prog, String> {
     if funcs.is_empty() {
         return Err("no functions found".to_string());
     }
-    // REQUEST honored only when genuinely inert: the symbol is a
-    // function defined in this same file (validated post-parse so the
-    // definition may appear after the REQUEST line). Anything else
-    // would silently skip Harbour's link/module-init effect.
+    // REQUEST is otherwise inert only for a local function. DBFCDX is
+    // the one explicit incorporated-driver declaration: own read-only
+    // helpers are selected by dbUseArea, never external module linkage.
+    // Other module/init requests remain named rejections.
     for (ln, sym) in &requests {
-        if !funcs.iter().any(|f| f.name.eq_ignore_ascii_case(sym)) {
+        if !sym.eq_ignore_ascii_case("dbfcdx") && !funcs.iter().any(|f| f.name.eq_ignore_ascii_case(sym)) {
             return Err(format!("line {}: REQUEST `{}` cannot be honored: the subset has no module linking; only functions defined in this file may be requested", ln, sym));
         }
     }
@@ -4652,9 +4652,9 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 if !CURDIR_LINUX_NATIVE.with(|v|v.get()) {return Err(format!("line {}: DBF file adapter is Linux x86-64 only in this increment",n));}
                 DBF_USED.with(|v|v.set(true));
                 if id=="dbusearea" {
-                    if args.len()!=6 {return Err(format!("line {}: dbUseArea requires six explicit arguments: new, DBFNTX, filename, alias, shared=.F., readonly=.T.",n));}
-                    if !matches!(&args[0],Expr::Log(_)) || !matches!(&args[1],Expr::Str(v) if v.eq_ignore_ascii_case("DBFNTX")) || !matches!(&args[3],Expr::Str(v) if !v.is_empty()) || !matches!(&args[4],Expr::Log(false)) || !matches!(&args[5],Expr::Log(true)) {
-                        return Err(format!("line {}: DBF supports one alias, literal DBFNTX, shared=.F. and readonly=.T.; writes, shared access and other drivers are not supported",n));
+                    if args.len()!=6 {return Err(format!("line {}: dbUseArea requires six explicit arguments: new, DBFNTX/DBFCDX, filename, alias, shared=.F., readonly=.T.",n));}
+                    if !matches!(&args[0],Expr::Log(_)) || !matches!(&args[1],Expr::Str(v) if v.eq_ignore_ascii_case("DBFNTX")||v.eq_ignore_ascii_case("DBFCDX")) || !matches!(&args[3],Expr::Str(v) if !v.is_empty()) || !matches!(&args[4],Expr::Log(false)) || !matches!(&args[5],Expr::Log(true)) {
+                        return Err(format!("line {}: DBF supports one alias, literal DBFNTX/DBFCDX, shared=.F. and readonly=.T.; writes, shared access and other drivers are not supported",n));
                     }
                     if !matches!(type_expr(&args[2],env,sigs,n)?,Ty::Str|Ty::StrOwn){return Err(format!("line {}: DBF filename must be a string",n));}
                 } else if id=="ordlistadd" || id=="dbseek" {
@@ -8872,6 +8872,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                     cg_value(&args[2],env,sigs,strs,out,target);
                     out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rax, %rdi\n    mov %rdx, %rsi\n");
                     out.push_str(if matches!(args[0],Expr::Log(true)){"    mov $1, %edx\n"}else{"    xor %edx, %edx\n"});
+                    out.push_str(if matches!(&args[1],Expr::Str(v) if v.eq_ignore_ascii_case("DBFCDX")){"    mov $1, %ecx\n"}else{"    xor %ecx, %ecx\n"});
                     out.push_str("    call hrdbf_app_open\n");
                     if expr_ty(&args[2],env,sigs)==Ty::StrOwn && !matches!(&args[2],Expr::Var(_)) {out.push_str("    mov (%rsp), %rdi\n    call hbc_freestr\n");}
                     out.push_str("    add $16, %rsp\n    mov $1, %eax\n    xor %edx, %edx\n");

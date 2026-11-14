@@ -18,7 +18,8 @@ on Linux and Windows x64 (Windows verified under Wine 11.0, not on real
 Windows). [v0.4.0](https://github.com/FiveTechSoft/HarbourRust/releases/tag/v0.4.0)
 also adds bounded read-only dBASE III DBF support on Linux x86-64.
 [v0.5.0](https://github.com/FiveTechSoft/HarbourRust/releases/tag/v0.5.0) adds
-read-only NTX character-field indexes on the same backend.
+read-only NTX character-field indexes on the same backend. Main also includes
+the bounded single-tag read-only CDX increment described below.
 Against the pinned Harbour source:
 
 - **31/268** originals under `tests/` compile, or **31/1041** across the full inventory.
@@ -47,14 +48,15 @@ known failures and the history of published increments.
 
 ## Active development
 
-The first DBF and NTX increments are published; broader RDD support and classes remain
+The first DBF and NTX increments are released; single-tag CDX is in main.
+Broader RDD support and classes remain
 work in progress. No unmeasured speed or capability claims are made.
 
 - **DBF support.** Read-only dBASE III tables are in main and v0.4.0: one
   workarea, C/N/L/D fields, `dbUseArea`, `FieldGet`, `dbGoTop`, `dbSkip`,
   `RecNo`/`LastRec`, `BOF`/`EOF`, `Deleted` and `dbCloseArea`, on Linux x86-64.
   This is an own MIT implementation, checked byte-for-byte against real Harbour.
-  It is not standard RDD compatibility: no CDX, memo, writes/shared locking,
+  It is not standard RDD compatibility: no memo, writes/shared locking,
   Windows DBF, general static-Date/Dyn conversion or decimal arithmetic/comparison.
   Unsupported consumers fail explicitly.
 - **NTX support.** Read-only NTX is in main and v0.5.0: one ascending,
@@ -63,7 +65,15 @@ work in progress. No unmeasured speed or capability claims are made.
   behavior checked against real Harbour. Six same-source programs pass in
   both modes (**12/12** paired executions). Eager snapshot validation; no
   writes, calculated/noncharacter keys, multiple orders, Windows or LLVM.
-  See [scope and tests](docs/NTX-READONLY.md). CDX is next.
+  See [scope and tests](docs/NTX-READONLY.md).
+- **CDX support.** Linux read-only, explicitly opened nonstructural compound
+  CDX with exactly one ascending, nonunique, unconditional tag over a direct
+  C field of at most 240 bytes. Same navigation/seek surface as NTX; no autoopen
+  or implicit tag selection. Seven same-source programs pass in both modes
+  (**14/14** paired executions), including C240 and a 20,000-record tree.
+  CDX uses 512-byte pages, NTX 1024; empty-seek BOF differs by driver.
+  Multi-tag/structural indexes and wider fields are explicitly rejected.
+  See [scope, behavior and tests](docs/CDX-READONLY.md).
 - **Classes and objects.** An own high-performance design - flat-table method
   dispatch and fixed-offset DATA access - is in a verified spike. Not yet in
   main.

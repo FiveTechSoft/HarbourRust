@@ -4,7 +4,7 @@
 #define HRNTX_H
 #include "hrdbf.h"
 #define HRNTX_MAX_BYTES (64u*1024u*1024u)
-typedef enum {HRNTX_OK,HRNTX_FORMAT,HRNTX_SUBSET,HRNTX_SPACE,HRNTX_MISMATCH} hrntx_error;
+typedef enum {HRNTX_OK,HRNTX_FORMAT,HRNTX_SUBSET,HRNTX_SPACE,HRNTX_MISMATCH,HRNTX_KEYWIDTH} hrntx_error;
 typedef struct {uint32_t recno,key_offset;} hrntx_entry;
 typedef struct {
  const unsigned char *bytes;size_t size;
