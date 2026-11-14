@@ -40,7 +40,7 @@ Date storage are not supported. Windows smoke tests cover `CToD`, blank dates an
 `ValType` under Wine 11.0. The full Linux + Wine regression runner has now
 been run against main and the bridge increment: both report 1643 passes and
 27 failures, with no new failure cases and all five extra harnesses passing.
-This is not real-Windows verification or a green Windows battery.
+These Linux + Wine figures are not a general native-Windows compatibility claim; the isolated native-Windows manifest run is recorded in the Windows build section.
 See the [Date port record](docs/DATE-PORT-2026-11-13.md) for the exact scope.
 
 See the [current baseline](docs/BASELINE-2026-11-13.md) for evidence, caveats,
@@ -139,6 +139,8 @@ No tracing GC does not mean no memory management: native allocation/free helpers
 Download the prebuilt `hbc` (Linux x86-64) or `hbc.exe` (Windows x86-64) from [v0.1.1](https://github.com/FiveTechSoft/HarbourRust/releases/tag/v0.1.1). **Neither Rust nor a C compiler is needed to use these binaries or to build the supported native-only examples.** Current-source `hbc` writes the native executable itself: Harbour source -> `hbc` -> native ELF (Linux x86-64) or PE32+ (Windows x86-64), with no external assembler or linker. The v0.1.1 binaries above predate that writer and still follow the older assembly -> GNU `as` -> GNU `ld` path, which current-source `hbc` keeps behind `--external-as`. The internal PE writer emits a console image with entry `_start`, fixed ImageBase `0x140000000` and imports limited to a measured kernel32 whitelist (`ExitProcess`, `GetEnvironmentVariableA`, `GetLocalTime`, `GetProcessHeap`, `GetStdHandle`, `HeapAlloc`, `HeapFree`, `WriteFile`); no CRT, SEH, TLS or base relocations are supported.
 
 VAS-eligible programs add `GetSystemInfo`, `VirtualAlloc` and `VirtualFree` to this whitelist (11 entries); ineligible programs retain the original eight-entry whitelist.
+
+The later tags (v0.2.0 through v0.8.0) are source-only: they publish no binary assets, so build from current source for those features.
 
 The release also includes `hello.exe`, `arrays_hashes.exe` and `dates.exe`: run these Windows samples directly without a compiler, assembler or linker. They were tested under Wine 11.0, not on real Windows. The compiler binaries have OS/library requirements listed in the release notes. Building `hbc` itself from source requires Rust; building and linking C extensions with the bounded C bridge requires a C toolchain, which is outside the native-only path. The bridge is in current source, not in the older v0.1.1 compiler binaries.
 
