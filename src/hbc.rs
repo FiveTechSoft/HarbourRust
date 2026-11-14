@@ -555,7 +555,7 @@ fn proc_metadata_needed(funcs: &[Func], externs: bool) -> bool {
             Expr::Call(id,args) => {
                 if ["procname", "procline", "eval"].iter().any(|n|is_builtin(id,n)) { return true; }
                 let direct = funcs.iter().any(|f| f.name == *id);
-                let safe_builtin = ["str", "len", "hb_ntos", "chr", "asc", "replicate", "empty", "round", "min", "max", "qout", "qqout", "outstd", "outerr"].iter().any(|n|is_builtin(id,n));
+                let safe_builtin = ["str", "len", "hb_ntos", "chr", "asc", "replicate", "space", "empty", "round", "min", "max", "qout", "qqout", "outstd", "outerr"].iter().any(|n|is_builtin(id,n));
                 (!direct && !safe_builtin) || args.iter().any(|a|expr(a,funcs))
             }
             _ => true,
@@ -1616,7 +1616,7 @@ const ASM_RESERVED: &[&str] = &[
     // Not backend keywords (there is no textual backend anymore), but labels
     // hbc itself emits; a user function with one of these names would
     // collide with a helper symbol.
-    "substr", "date", "ctod", "date_pack", "date_render", "date_today", "curdir", "qout", "qqout", "outstd", "outerr", "empty", "procname", "min", "max", "str", "padr", "hb_ntos", "replicate", "aeval", "hb_isnumeric", "hb_isarray", "hb_isstring", "dfree", "upper", "lower", "left", "right", "at", "int", "abs", "hb_bitand", "hb_bitor", "hb_bitxor", "hb_bitnot", "hb_bittest", "hb_bitset", "hb_bitreset", "eprint_str", "eprint_sep", "eprint_i64", "eprint_i64c", "eprint_dyn", "eprint_dynlit", "print_dynlit", "eprint_f64", "hb_eol", "procline", "asc", "trim", "ltrim", "rtrim", "alltrim", "chr", "trace_top", "print_trace", "panic_exit", "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_range_error", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
+    "space", "substr", "date", "ctod", "date_pack", "date_render", "date_today", "curdir", "qout", "qqout", "outstd", "outerr", "empty", "procname", "min", "max", "str", "padr", "hb_ntos", "replicate", "aeval", "hb_isnumeric", "hb_isarray", "hb_isstring", "dfree", "upper", "lower", "left", "right", "at", "int", "abs", "hb_bitand", "hb_bitor", "hb_bitxor", "hb_bitnot", "hb_bittest", "hb_bitset", "hb_bitreset", "eprint_str", "eprint_sep", "eprint_i64", "eprint_i64c", "eprint_dyn", "eprint_dynlit", "print_dynlit", "eprint_f64", "hb_eol", "procline", "asc", "trim", "ltrim", "rtrim", "alltrim", "chr", "trace_top", "print_trace", "panic_exit", "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_range_error", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
 ];
 
 fn dbf_result(id: &str) -> Option<Ty> {
@@ -4103,6 +4103,10 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
                     if args.len() > 1 { for a in &args[1..] { pin_vars(f,a,Ty::I64,pin,n)?; walk(f,a,sigs,lit,pin,printed,n)?; } }
                     return Ok(());
                 }
+                if is_builtin(id,"space") {
+                    for a in args { pin_vars(f,a,Ty::I64,pin,n)?; walk(f,a,sigs,lit,pin,printed,n)?; }
+                    return Ok(());
+                }
                 if is_builtin(id, "chr") {
                     for a in args { pin_vars(f, a, Ty::I64, pin, n)?; walk(f, a, sigs, lit, pin, printed, n)?; }
                     return Ok(());
@@ -5948,6 +5952,13 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                     return Err(format!("line {}: `asc` expects a string (Harbour raises 1107; statically typed here)", n));
                 }
                 return Ok(Ty::I64);
+            }
+            if is_builtin(id,"space") {
+                if args.len()!=1 { return Err(format!("line {}: `Space` takes one argument in this increment",n)); }
+                if type_expr(&args[0],env,sigs,n)? != Ty::I64 {
+                    return Err(format!("line {}: `Space` expects an I64 count in this increment (Harbour numeric truncation and Dyn dispatch are not covered)",n));
+                }
+                return Ok(Ty::StrOwn);
             }
             if is_builtin(id, "chr") {
                 if args.len() != 1 { return Err(format!("line {}: `chr` takes one argument", n)); }
@@ -9680,6 +9691,10 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
                 apply_moves(&args[0], env, sigs, false);
                 return;
             }
+            if is_builtin(id,"space") {
+                apply_moves(&args[0],env,sigs,false);
+                return;
+            }
             if is_builtin(id, "chr") {
                 apply_moves(&args[0], env, sigs, false);
                 return;
@@ -12656,6 +12671,10 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             }
             out.push_str("    add $16, %rsp\n");
         }
+        Expr::Call(id,args) if is_builtin(id,"space") => {
+            cg_expr(&args[0],env,sigs,strs,out,target);
+            out.push_str("    mov %rax, %rdi\n    call hbc_space\n");
+        }
         Expr::Call(id, args) if is_builtin(id, "chr") => {
             cg_expr(&args[0], env, sigs, strs, out, target);
             out.push_str("    mov %rax, %rdi\n    call hbc_chr\n");
@@ -14985,6 +15004,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             if is_builtin(id, "valtype") || is_builtin(id, "hb_eol") || is_builtin(id, "procname") { return Ty::Str; } // hk88-hk92
             if ["ltrim", "rtrim", "alltrim", "trim"].iter().any(|b| is_builtin(id,b)) { return Ty::StrOwn; }
             if is_builtin(id,"substr") { return Ty::StrOwn; }
+            if is_builtin(id,"space") { return Ty::StrOwn; }
             // ERP string batch (issue #1): mirror the checker's types.
             if ["upper", "lower"].iter().any(|b| is_builtin(id,b)) { return Ty::StrOwn; }
             if ["left", "right"].iter().any(|b| is_builtin(id,b)) { return Ty::StrOwn; }
@@ -21376,6 +21396,31 @@ hbc_str_int_field:
     add $40, %rsp
     pop %r13
     pop %r12
+    pop %rbx
+    pop %rbp
+    ret
+
+# hbc_space: rdi=signed count -> owned space bytes in rax/rdx.
+# Nonpositive counts return an independently owned empty string.
+hbc_space:
+    test %rdi, %rdi
+    jg 1f
+    xor %esi, %esi
+    jmp hbc_stralloc
+1:  push %rbp
+    mov %rsp, %rbp
+    push %rbx
+    sub $8, %rsp
+    mov %rdi, %rsi
+    call hbc_stralloc
+    mov %rax, %rbx
+    mov %rax, %rdi
+    mov %rdx, %rcx
+    movabs $0x2020202020202020, %rax
+    call hbc_strfill
+    mov -8(%rbx), %rdx
+    mov %rbx, %rax
+    add $8, %rsp
     pop %rbx
     pop %rbp
     ret
