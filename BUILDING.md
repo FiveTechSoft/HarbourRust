@@ -56,7 +56,7 @@ VAS-eligible programs add `GetSystemInfo`, `VirtualAlloc` and `VirtualFree` to t
 On Windows 11 x86-64, an isolated run of `tests/run_battery_win.sh` with
 `HBC_INTERNAL_PE=1` over the previous 1661-entry manifest reported 1638/1638
 executed cases (21 newline-normalized) and 23 Linux-only skips; a full rerun
-on the current 1720-entry manifest is pending. It is a manifest-scoped
+on the current 1726-entry manifest is pending. It is a manifest-scoped
 result, not a full compatibility claim.
 
 `--external-as` keeps the older MinGW-w64 path below, which is also what
@@ -87,6 +87,30 @@ The emitted code only calls `kernel32.dll` (`GetStdHandle`, `WriteFile`,
 `ExitProcess`), so no CRT import library is needed for the generated programs.
 
 ## 4. Build the compiler itself as a Windows .exe (hbc.exe)
+
+A current precompiled Windows x86-64 compiler is tracked at `bin/hbc.exe`.
+From the repository root on Windows, no Rust installation is needed to use it:
+
+```bat
+bin\hbc.exe tests\samples\hello.prg hello.exe
+hello.exe
+```
+
+This binary was cross-built from compiler source at
+`e17223ffacb35e8c15f0368626ceee0e0ff23699` (the `src/` tree is identical
+at `ecdd2d457e5b2f4e8d360b0bdcdaa58440898a7f`). SHA256:
+`5e1b1e010e609b39a2e05d4d4c3ff47aa079463840ea27633f8f1e6d51a0af0c`.
+Refresh `bin/hbc.exe` and this source pin/hash when the compiler changes;
+it is a versioned snapshot, not automatically rebuilt by `git pull`.
+
+Fresh verification used Wine 11.0: this exact compiler, without a target flag,
+compiled `hello.prg` and the four positive `tests/try-catch/` programs to PE32+;
+all five generated programs ran with expected output, empty stderr and exit 0.
+The two TRY negatives rejected with E0025. No native Windows execution or
+full-manifest run was performed for this binary. The earlier Windows 11
+1638-case result above is a different recorded run, not this verification.
+
+To rebuild it yourself:
 
 Cross-compiled from Linux with the `x86_64-pc-windows-gnu` Rust target,
 `rust-lld`, and the MinGW-w64 v14 CRT (the version that ships with Debian

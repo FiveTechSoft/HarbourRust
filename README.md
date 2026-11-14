@@ -238,7 +238,7 @@ The internal writer was exercised on Windows 11 x86-64 with an isolated
 native-manifest battery over the previous 1661-entry manifest: 1638/1638
 executed cases matched (1617 exact, 21 recorded as newline-normalized), with
 23 Linux-only cases skipped and no failures; a full rerun on the current
-1720-entry manifest is pending. This is a bounded manifest result, not a
+1726-entry manifest is pending. This is a bounded manifest result, not a
 general compatibility claim. The v0.1.1 compiler and batch script were tested under Wine 11.0 as a
 release smoke test.
 
