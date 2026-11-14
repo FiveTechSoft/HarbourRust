@@ -38,7 +38,7 @@ thread_local! {
 mod pp;
 
 #[derive(Clone, Copy, PartialEq, Debug)]
-enum Ty { NumLocal, F64, I64, Str, Bool, Date, Arr(usize), Block(usize, BRet), DArr, DArrU, DArr2, DArr3, DArr4, DArrS, StrOwn, Dyn, Hash, DArrRef, DArrRef2, RefI64, RefDyn, RefStrOwn, DArrDyn, AView }
+enum Ty { NumLocal, F64, I64, Str, Bool, Date, Arr(usize), Block(usize, BRet), DArr, DArrU, DArr2, DArr3, DArr4, DArrS, StrOwn, Dyn, Hash, DArrRef, DArrRef2, RefI64, RefDyn, RefStrOwn, DArrDyn, AView, Obj(u32) }
 
 // What a codeblock body's LAST expression returns (original t1.prg piece):
 // Int = an i64 in %rax; Nil = a payload-free Dyn NIL pair (%rax=1, %rdx=0,
@@ -3324,6 +3324,147 @@ struct Local {
 }
 
 // ---------------------------------------------------------------------------
+// Classes (spike-validated flat model; objects are Dyn tag 13). Compile-time
+// class table: parent's DATA casillas first, own DATA appended; method slots
+// are hierarchy-wide constants (the parent's slot table is cloned and
+// overrides patched in place) so a send is 2 loads + an indirect call.
+struct ClassInfo {
+    name: String,                    // original case, for diagnostics
+    parent: Option<u32>,
+    own_start: u32,                  // flat offset of this class's first own DATA
+    ndatas: u32,                     // total flat DATA count, inherited included
+    datas: Vec<(String, u32)>,       // own DATA: lowercase name -> flat offset
+    slots: Vec<(String, String)>,    // (lowercase method name, mangled fn) - slot = index
+    ctor: Option<String>,            // mangled constructor fn (explicit New only)
+}
+thread_local! {
+    static CLASSES: std::cell::RefCell<Vec<ClassInfo>> = std::cell::RefCell::new(Vec::new());
+    static METHOD_CLASS: std::cell::RefCell<std::collections::HashMap<String, u32>> = std::cell::RefCell::new(std::collections::HashMap::new());
+    static CUR_METHOD_CLASS: std::cell::Cell<i64> = std::cell::Cell::new(-1);
+}
+fn class_find(name: &str) -> Option<u32> {
+    let key = name.to_lowercase();
+    CLASSES.with(|c| c.borrow().iter().position(|x| x.name.to_lowercase() == key).map(|i| i as u32))
+}
+fn class_name(ci: u32) -> String {
+    CLASSES.with(|c| c.borrow()[ci as usize].name.clone())
+}
+fn method_lookup(ci: u32, lname: &str) -> Option<(u32, String)> {
+    CLASSES.with(|c| c.borrow()[ci as usize].slots.iter().enumerate().find(|(_, (n, _))| n == lname).map(|(i, (_, f))| (i as u32, f.clone())))
+}
+fn data_lookup(ci: u32, lname: &str) -> Option<u32> {
+    CLASSES.with(|c| {
+        let t = c.borrow();
+        let mut cur = Some(ci);
+        while let Some(k) = cur {
+            if let Some((_, off)) = t[k as usize].datas.iter().find(|(n, _)| n == lname) {
+                return Some(*off);
+            }
+            cur = t[k as usize].parent;
+        }
+        None
+    })
+}
+fn class_is_a(d: u32, b: u32) -> bool {
+    CLASSES.with(|c| {
+        let t = c.borrow();
+        let mut cur = Some(d);
+        while let Some(k) = cur {
+            if k == b { return true; }
+            cur = t[k as usize].parent;
+        }
+        false
+    })
+}
+// DATA INIT expressions: scalar shapes only in this increment (literals,
+// arithmetic on them, plain function calls like nextid()). No arrays,
+// hashes, codeblocks, object/message expressions or inline assignment.
+fn class_init_scalar_ok(e: &Expr) -> bool {
+    match e {
+        Expr::Int(_) | Expr::Float(..) | Expr::FloatV(..) | Expr::Str(_) | Expr::Log(_) | Expr::Nil => true,
+        Expr::Bin(_, a, b) | Expr::Cmp(_, a, b) | Expr::LAnd(a, b) | Expr::LOr(a, b) => class_init_scalar_ok(a) && class_init_scalar_ok(b),
+        Expr::LNot(a) => class_init_scalar_ok(a),
+        Expr::Seq(es) => es.iter().all(class_init_scalar_ok),
+        Expr::Call(_, args) => args.iter().all(class_init_scalar_ok),
+        _ => false,
+    }
+}
+// A DATA value must be a Dyn-representable scalar in this increment (DATA
+// casillas are tagged Dyn slots). Objects/arrays/hashes/codeblocks are
+// named rejections (reference-cycle management pending).
+fn check_data_value(n: usize, name: &str, t: Ty) -> Result<(), String> {
+    match t {
+        Ty::I64 | Ty::F64 | Ty::Bool | Ty::Str | Ty::StrOwn | Ty::Date | Ty::Dyn => Ok(()),
+        Ty::Obj(_) => Err(format!("line {}: DATA `{}` holding an object is not in this increment (reference-cycle management pending)", n, name)),
+        _ => Err(format!("line {}: DATA `{}` holding {} is not in this increment (scalars only)", n, name, ty_name(t))),
+    }
+}
+// Build the flat class table. Named, fatal errors: duplicate class/DATA,
+// unknown parent (parents must precede children), declared-but-undefined
+// method, defined-but-undeclared method, non-scalar INIT.
+fn build_class_table(decls: &[ClassDecl], methods: &[MethodDef]) -> Result<Vec<ClassInfo>, String> {
+    let mut table: Vec<ClassInfo> = Vec::new();
+    for d in decls {
+        let key = d.name.to_lowercase();
+        if table.iter().any(|c| c.name.to_lowercase() == key) {
+            return Err(format!("duplicate class `{}`", d.name));
+        }
+        let (parent, own_start) = match &d.parent {
+            None => (None, 0u32),
+            Some(pn) => {
+                let pl = pn.to_lowercase();
+                match table.iter().position(|c| c.name.to_lowercase() == pl) {
+                    Some(pi) => (Some(pi as u32), table[pi].ndatas),
+                    None => return Err(format!("class `{}` inherits from unknown class `{}` (declare the parent before the child in this increment)", d.name, pn)),
+                }
+            }
+        };
+        let mut datas: Vec<(String, u32)> = Vec::new();
+        let mut slots: Vec<(String, String)> = match parent {
+            Some(pi) => table[pi as usize].slots.clone(),
+            None => Vec::new(),
+        };
+        let mut ctor = match parent { Some(pi) => table[pi as usize].ctor.clone(), None => None };
+        for (dn, init) in &d.datas {
+            let dl = dn.to_lowercase();
+            if datas.iter().any(|(x, _)| *x == dl) {
+                return Err(format!("class `{}`: duplicate DATA `{}`", d.name, dn));
+            }
+            // A DATA may share a method's name (cl10: the method wins on
+            // reads). Declaration allowed, like Harbour.
+            if let Some(e) = init {
+                if !class_init_scalar_ok(e) {
+                    return Err(format!("class `{}`: DATA `{}` INIT is scalar-only in this increment (no arrays, hashes, codeblocks or message sends)", d.name, dn));
+                }
+            }
+            datas.push((dl, own_start + datas.len() as u32));
+        }
+        for (mn, _params, is_ctor) in &d.methods {
+            let ml = mn.to_lowercase();
+            let fname = format!("{}__{}", d.name, mn);
+            if !methods.iter().any(|m| m.class_name.eq_ignore_ascii_case(&d.name) && m.f.name.eq_ignore_ascii_case(&fname)) {
+                return Err(format!("class `{}`: METHOD `{}` declared but never defined", d.name, mn));
+            }
+            if let Some(pos) = slots.iter().position(|(x, _)| *x == ml) {
+                slots[pos].1 = fname.clone(); // virtual override (cl13): patch in place, slot unchanged
+            } else {
+                slots.push((ml, fname.clone()));
+            }
+            if *is_ctor { ctor = Some(fname); }
+        }
+        for m in methods.iter().filter(|m| m.class_name.eq_ignore_ascii_case(&d.name)) {
+            let ml = m.f.name.splitn(2, "__").nth(1).unwrap_or("").to_lowercase();
+            if !d.methods.iter().any(|(mn, _, _)| mn.to_lowercase() == ml) {
+                return Err(format!("class `{}`: METHOD `{}` defined but never declared in the class", d.name, ml));
+            }
+        }
+        let ndatas = own_start + datas.len() as u32;
+        table.push(ClassInfo { name: d.name.clone(), parent, own_start, ndatas, datas, slots, ctor });
+    }
+    Ok(table)
+}
+
+// ---------------------------------------------------------------------------
 // Parameter type pinning (pre-pass, syntactic). Harbour parameters are
 // untyped; this PoC is statically typed, so a parameter's type is pinned by
 // how the body uses it: under arithmetic it is an integer, compared against
@@ -3343,6 +3484,11 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
     // Root-reference parameters keep tagged storage regardless of how their
     // current value is used. Their full body still passes ordinary checking.
     for(i,p)in f.params.iter().enumerate(){if root_param(&f.name,p){pin[i]=Some(Ty::Dyn);}}
+    // Method functions: the implicit leading `Self` parameter is pinned
+    // to the defining class (no body evidence needed).
+    if let Some(ci) = METHOD_CLASS.with(|m| m.borrow().get(&f.name).copied()) {
+        pin[0] = Some(Ty::Obj(ci));
+    }
     // ains piece 1b (spec v3): a parameter the call-site fixpoint already
     // flipped to an array view keeps that pin across rounds. Its body uses
     // are validated under the read-only view rules by the body check, so
@@ -5491,7 +5637,18 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                     }
                     return Ok(Ty::Dyn);
                 }
-                None => return Err(format!("line {}: unknown function `{}` (must be defined before use; a C extension function is declared with EXTERNAL and its object linked - docs/EXTEND-BRIDGE.md)", n, id)),
+                None => {
+                    // Class instantiation: `Animal()` creates a tag-13
+                    // object. The constructor never runs implicitly
+                    // (registered semantics; explicit `:New()` only).
+                    if let Some(ci) = class_find(id) {
+                        if !args.is_empty() {
+                            return Err(format!("line {}: `{}(...)` with arguments is not in this increment (call `:New(...)` on the instance)", n, id));
+                        }
+                        return Ok(Ty::Obj(ci));
+                    }
+                    return Err(format!("line {}: unknown function `{}` (must be defined before use; a C extension function is declared with EXTERNAL and its object linked - docs/EXTEND-BRIDGE.md)", n, id));
+                }
             };
             let sig_string_copy = sigs[si].string_iter_copy.clone();
             let (sig_params, sig_borrowed, sig_arr_moved, sig_aview, sig_ret, sig_inferred) = {
@@ -5847,6 +6004,8 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                     || (ta == Ty::I64 && sig_params[i] == Ty::Dyn) // tagged at the call
                     || ((ta == Ty::Str || ta == Ty::StrOwn) && sig_params[i] == Ty::Dyn) // cloned to an owned tag-4 payload at the boundary (hk259)
                     || (ta == Ty::Bool && sig_params[i] == Ty::Dyn) // tagged 3 at the call (hk264)
+                    || (matches!(ta, Ty::Obj(_)) && sig_params[i] == Ty::Dyn) // object tags 13 in place (sharing, hk-registered)
+                    || matches!((ta, sig_params[i]), (Ty::Obj(d), Ty::Obj(b)) if class_is_a(d, b)) // is-a: a descendant object fills a base slot
                     || (ta == Ty::Str && sig_params[i] == Ty::StrOwn); // rodata: copied at the call boundary
                 if !ok {
                     // Two codeblocks of different arity: name both arities so
@@ -6427,8 +6586,54 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
             IN_BLOCK.with(|c| c.set(prev_block));
             r
         }
-        Expr::SelfObj | Expr::SelfGet(_) | Expr::Send(_, _, _) => {
-            Err(format!("line {}: classes are not in this increment yet (parser landed; runtime representation pending)", n))
+        Expr::SelfObj => match CUR_METHOD_CLASS.with(|c| c.get()) {
+            ci if ci >= 0 => Ok(Ty::Obj(ci as u32)),
+            _ => Err(format!("line {}: `Self` outside a method", n)),
+        },
+        Expr::Send(recv, name, args) => {
+            let rt = type_expr(recv, env, sigs, n)?;
+            let ci = match rt {
+                Ty::Obj(ci) => ci,
+                Ty::Dyn => return Err(format!("line {}: `:{}` on a Dyn value (its class is not known at compile time) is not in this increment", n, name)),
+                _ => return Err(format!("line {}: `:{}` on a non-object value ({})", n, name, ty_name(rt))),
+            };
+            let lname = name.to_lowercase();
+            if let Some((_, fname)) = method_lookup(ci, &lname) {
+                if args.iter().any(|a| matches!(a, Expr::ByRef(_))) {
+                    return Err(format!("line {}: by-reference `@` message arguments are not in this increment", n));
+                }
+                // Method-first (cl10: a method wins over a same-name DATA).
+                // The receiver crosses as an explicit leading argument
+                // bound to the method's implicit `Self` parameter, so
+                // arity/NIL-padding/borrow machinery works unchanged.
+                let mut cargs = Vec::with_capacity(args.len() + 1);
+                cargs.push((**recv).clone());
+                cargs.extend(args.iter().cloned());
+                let rt2 = type_expr(&Expr::Call(fname.clone(), cargs), env, sigs, n)?;
+                // A constructor returns the instance it ran on: typed at
+                // the RECEIVER's class even when the method is inherited
+                // (the `local d := Dog():New()` idiom).
+                let is_ctor = CLASSES.with(|c| c.borrow()[ci as usize].ctor.as_deref() == Some(fname.as_str()));
+                return Ok(if is_ctor { Ty::Obj(ci) } else { rt2 });
+            }
+            if data_lookup(ci, &lname).is_some() {
+                return Ok(Ty::Dyn); // DATA casilla read (tag-13 object)
+            }
+            Err(format!("line {}: class `{}` has no member `{}`", n, class_name(ci), name))
+        }
+        Expr::SelfGet(name) => {
+            let ci = match CUR_METHOD_CLASS.with(|c| c.get()) {
+                ci if ci >= 0 => ci as u32,
+                _ => return Err(format!("line {}: `Self:{}` outside a method", n, name)),
+            };
+            let lname = name.to_lowercase();
+            if method_lookup(ci, &lname).is_some() {
+                return Err(format!("line {}: `Self:{}` names a method - call it with `Self:{}(...)`", n, name, name));
+            }
+            if data_lookup(ci, &lname).is_some() {
+                return Ok(Ty::Dyn);
+            }
+            Err(format!("line {}: class `{}` has no member `{}`", n, class_name(ci), name))
         }
         Expr::DArrNew => Ok(Ty::DArrU),
         // Hash literal (probes h1/h2/h8/h9): string keys, tagged-scalar
@@ -6506,6 +6711,7 @@ fn ty_name(t: Ty) -> &'static str {
         Ty::DArrRef2 => "a borrowed array",
         Ty::Dyn => "a dynamic value",
         Ty::Hash => "a hash",
+        Ty::Obj(_) => "an object",
     }
 }
 
@@ -6992,8 +7198,41 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
     let mut falls = true;
     for (si, s) in stmts.iter().enumerate() {
         match s {
-            Stmt::SelfSet(n, _, _) | Stmt::SendSet(n, _, _, _) | Stmt::SendStmt(n, _) => {
-                return Err(format!("line {}: classes are not in this increment yet (parser landed; runtime representation pending)", n));
+            Stmt::SendStmt(n, e) => {
+                // Method call for effect (or an inert DATA read).
+                type_expr(e, env, sigs, *n)?;
+            }
+            Stmt::SelfSet(n, name, e) => {
+                let ci = match CUR_METHOD_CLASS.with(|c| c.get()) {
+                    ci if ci >= 0 => ci as u32,
+                    _ => return Err(format!("line {}: `Self:{} :=` outside a method", n, name)),
+                };
+                let lname = name.to_lowercase();
+                if method_lookup(ci, &lname).is_some() {
+                    return Err(format!("line {}: cannot assign to METHOD `{}` of class `{}` (methods are not assignable)", n, name, class_name(ci)));
+                }
+                if data_lookup(ci, &lname).is_none() {
+                    return Err(format!("line {}: class `{}` has no DATA `{}`", n, class_name(ci), name));
+                }
+                check_data_value(*n, name, type_expr(e, env, sigs, *n)?)?;
+                apply_moves(e, env, sigs, true);
+            }
+            Stmt::SendSet(n, recv, name, e) => {
+                let rt = type_expr(recv, env, sigs, *n)?;
+                let ci = match rt {
+                    Ty::Obj(ci) => ci,
+                    Ty::Dyn => return Err(format!("line {}: `:{} :=` on a Dyn value (its class is not known at compile time) is not in this increment", n, name)),
+                    _ => return Err(format!("line {}: `:{} :=` on a non-object value ({})", n, name, ty_name(rt))),
+                };
+                let lname = name.to_lowercase();
+                if method_lookup(ci, &lname).is_some() {
+                    return Err(format!("line {}: cannot assign to METHOD `{}` of class `{}` (methods are not assignable)", n, name, class_name(ci)));
+                }
+                if data_lookup(ci, &lname).is_none() {
+                    return Err(format!("line {}: class `{}` has no DATA `{}`", n, class_name(ci), name));
+                }
+                check_data_value(*n, name, type_expr(e, env, sigs, *n)?)?;
+                apply_moves(e, env, sigs, true);
             }
             Stmt::CallStmt(n, e) => {
                 if matches!(e, Expr::Var(_)) {
@@ -8373,6 +8612,15 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                     if oa != na {
                         return Err(format!("line {}: type mismatch in assignment to `{}`", n, id));
                     }
+                } else if let (Ty::Obj(b), Ty::Obj(d)) = (env[idx].ty, t) {
+                    // Object assignment SHARES (registered semantics); the
+                    // value's class must be the slot's class or a
+                    // descendant (single inheritance).
+                    if !class_is_a(d, b) {
+                        return Err(format!("line {}: type mismatch in assignment to `{}` (a `{}` is not a `{}`)", n, id, class_name(d), class_name(b)));
+                    }
+                } else if env[idx].ty == Ty::Dyn && matches!(t, Ty::Obj(_)) {
+                    // Dyn slot: an object tags in as 13 (sharing).
                 } else if env[idx].ty != t {
                     return Err(format!("line {}: type mismatch in assignment to `{}`", n, id));
                 }
@@ -8578,6 +8826,12 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
                         for a in args { apply_moves(a, env, sigs, false); }
                         return;
                     }
+                    // Class instantiation `Animal()`: creates a tag-13
+                    // object; nothing moves.
+                    if class_find(id).is_some() {
+                        for a in args { apply_moves(a, env, sigs, false); }
+                        return;
+                    }
                     panic!("checked");
                 }
             };
@@ -8641,7 +8895,7 @@ fn fold_int(e: &Expr) -> Option<i64> {
     }
 }
 fn size_of(t: Ty) -> usize {
-    match t { Ty::NumLocal | Ty::F64 | Ty::I64 => 16, Ty::Str | Ty::StrOwn => 16, Ty::Arr(n) => 8 * n, Ty::Block(..) => 8, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::Dyn | Ty::Hash | Ty::DArrRef | Ty::DArrRef2 | Ty::DArrDyn => 16, Ty::Bool | Ty::Date => 8, Ty::RefI64 | Ty::RefDyn | Ty::RefStrOwn | Ty::AView => 8 }
+    match t { Ty::NumLocal | Ty::F64 | Ty::I64 => 16, Ty::Str | Ty::StrOwn => 16, Ty::Arr(n) => 8 * n, Ty::Block(..) => 8, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::Dyn | Ty::Hash | Ty::DArrRef | Ty::DArrRef2 | Ty::DArrDyn => 16, Ty::Bool | Ty::Date => 8, Ty::RefI64 | Ty::RefDyn | Ty::RefStrOwn | Ty::AView | Ty::Obj(_) => 8 }
 }
 
 #[derive(Clone)]
@@ -8864,6 +9118,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                 // post-pass, so the second word never matters.
                 Ty::DArrRef | Ty::DArrRef2 => out.push_str(&format!("    mov -{}(%rbp), %rax\n    xor %edx, %edx\n", v.off)),
                 Ty::Arr(_) => unreachable!("whole-array values are emitted via cg_array_value"),
+                Ty::Obj(_) => unreachable!("class codegen pending (stage B)"),
             }
         }
         Expr::Call(id,args) if dbf_result(id).is_some() => {
@@ -12054,6 +12309,7 @@ fn cg_print_items(es: &[Expr], inline: bool, raw: bool, stderr: bool, env: &[CgL
                     match t {
                         Ty::RefI64 | Ty::RefDyn | Ty::RefStrOwn => unreachable!("expr_ty maps by-reference params to their pointee"),
                         Ty::AView => unreachable!("whole-array-view printing rejected in analysis"),
+                        Ty::Obj(_) => unreachable!("class codegen pending (stage B)"),
                         Ty::NumLocal | Ty::F64 => unreachable!("handled above"),
                         // Literal (or compile-time foldable, hk326) keeps
                         // literal provenance; a runtime-computed integer
@@ -16852,6 +17108,10 @@ fn finalize_tag_kind_accessors(out: String, dbf: bool) -> String {
 }
 
 fn emit_asm(funcs: &[Func], sigs: &[Sig], externs: &[String], target: Target, instrument: bool) -> String {
+    if CLASSES.with(|c| !c.borrow().is_empty()) {
+        eprintln!("error: classes: the checker landed (stage A); code generation is stage B (pending)");
+        process::exit(1);
+    }
     let mut out = String::new();
     out.push_str("# generated by hbc (PoC: Harbour syntax -> x86-64 assembly)\n");
     out.push_str(CONSOLE_NUL_HELPER);
@@ -21044,14 +21304,31 @@ fn main() {
         if let Err(msg)=validate(&f.stmts,&statics) {eprintln!("error: {}",msg);process::exit(1);}
     }
     if !prog.classes.is_empty() || !prog.methods.is_empty() {
-        eprintln!("error: classes are not in this increment yet (the parser landed; the runtime representation is pending the user's decision)");
-        process::exit(1);
+        // Classes (tag-13 objects, spike-validated flat model): build the
+        // compile-time class table, then METHOD functions join `funcs`
+        // below with an implicit leading `Self` parameter.
+        let table = match build_class_table(&prog.classes, &prog.methods) {
+            Ok(t) => t,
+            Err(m) => { eprintln!("error: {}", m); process::exit(1); }
+        };
+        CLASSES.with(|c| *c.borrow_mut() = table);
+        let mut mmap: std::collections::HashMap<String, u32> = std::collections::HashMap::new();
+        for m in &prog.methods {
+            let ci = class_find(&m.class_name).unwrap_or(0);
+            mmap.insert(m.f.name.clone(), ci);
+        }
+        METHOD_CLASS.with(|c| *c.borrow_mut() = mmap);
     }
     if llvm && prog.funcs.iter().any(|f| f.init) {
         eprintln!("error: LLVM scalar: INIT startup procedures are not in this increment");
         process::exit(1);
     }
     let mut funcs = prog.funcs;
+    for m in prog.methods {
+        let mut f = m.f;
+        f.params.insert(0, "Self".to_string());
+        funcs.push(f);
+    }
 
     // `@x` prescan (hk216 family), syntactic over the whole program: which
     // parameter positions each function receives by reference (call sites
@@ -21236,13 +21513,20 @@ fn main() {
             // round, the round converges, and the converged round reports
             // the pin error by name. (The body-first contract still holds:
             // the pin error is reported only when the body checks clean.)
-            let (mut ptys, inferred, pin_err) = match pin_params(f, &view) {
+            let (mut ptys, mut inferred, pin_err) = match pin_params(f, &view) {
                 Ok((pin, e)) => {
                     let inf: Vec<bool> = pin.iter().map(|x| x.is_some()).collect();
                     (pin.into_iter().map(|x| x.unwrap_or(Ty::I64)).collect(), inf, e)
                 }
                 Err(m) => (view[fi].params.clone(), view[fi].inferred.clone(), Some(m)),
             };
+            // Method functions: the implicit leading `Self` parameter is
+            // pinned to the defining class and always final.
+            let mci = METHOD_CLASS.with(|m| m.borrow().get(&f.name).copied());
+            if let Some(ci) = mci {
+                ptys[0] = Ty::Obj(ci);
+                inferred[0] = true;
+            }
             for i in 0..ptys.len() {
                 if root_param(&f.name,&f.params[i]) {ptys[i]=Ty::Dyn;view[fi].aview[i]=false;continue;}
                 let evidence = aview_array_evidence(&f.stmts,&f.params[i]);
@@ -21295,6 +21579,7 @@ fn main() {
             let mut ret = None;
             let mut top_ctxs: Vec<ChkCtx> = Vec::new();
             CUR_FN.with(|c| *c.borrow_mut() = f.name.clone());
+            CUR_METHOD_CLASS.with(|c| c.set(match mci { Some(ci) => ci as i64, None => -1 }));
             let mut res = check_stmts(&f.stmts, &mut env, &mut view, &mut ret, &mut top_ctxs, &dyn_names, &byref_names);
             if let Err(m) = &res {
                 let self_deadlock = m.contains("never returns a value")
