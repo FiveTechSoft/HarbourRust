@@ -146,3 +146,44 @@ v1-v3 (release paths). neg1-neg13 still fire their named errors
 
 Deferred to slice 2: method dispatch (named error today), object params'
 member access inside callees (receiver class pinning), :New() runtime.
+
+## Slice 3 (rebase sobre NTX main 9a6f3b4 + New por defecto + pinning de receptor)
+
+Rebase: 6 commits re-aplicados sobre 9a6f3b4 (v0.5.0 NTX + README).
+Conflictos reales: tests/manifest.txt (main renombro .hb->.prg; se toma
+la forma de main y se conserva el mensaje aprobado de t290) y dos
+bloques de src/hbc.rs donde el commit DBF 9f578a3 introdujo los
+marcadores @HBC_TAG_KIND@/@HBC_TAG_END@ (finalize_tag_kind_accessors
+estrecha las comparaciones de tag a byte bajo en modo DBF). Resolucion:
+toda comparacion de tag en mis caminos de clases va envuelta en los
+marcadores (free Dyn, epilogo kind 7, retain de return Dyn, descarte
+SendStmt). Hallazgo post-rebase: el commit DBF tambien marco el cmp $8
+del blob de print, lo que dejaba MI replace() del brazo tag-13 como
+no-op silencioso; patron actualizado a la forma marcada + debug_assert
+para que un replace sin efecto sea ruidoso. Verificacion post-rebase:
+1007/1007 positivas byte-identicas, 567/567 negativas, suite de clases
+25/28 (p03/p07 '=' del subset, p21 MI: limitaciones aprobadas).
+t290_neg_class_gate ahora compila y corre byte-identico al Harbour real
+(create class + constructor + metodos): la entrada neg del manifest se
+convierte en pos con la salida del oraculo.
+
+New() por defecto (p16, plan aprobado): build_class_table anade el slot
+("new", ClassName__new) cuando ni la clase ni sus ancestros lo tienen;
+main() materializa el Func sintetizado (`return Self`) y lo registra en
+METHOD_CLASS antes del loop de inferencia. Un CONSTRUCTOR explicito bajo
+otro nombre sigue siendo el constructor de tipado. p16 byte-identico
+(INIT lazy child-first verificado: "INIT C" antes que "INIT P").
+
+Pinning de receptor por parametro (p12, diseno aprobado): un send sobre
+un PARAMETRO lo pinea a la RAIZ de la unica jerarquia que posee el
+miembro (offsets de DATA y slots de metodos son planos por jerarquia,
+asi que cualquier instancia de la jerarquia encaja). Harbour resuelve el
+miembro en runtime; nosotros acotamos en compilacion - NO es late
+binding general. Miembro poseido por dos jerarquias: error nombrado de
+ambiguedad (neg14), que adelanta al error generico del checker. Hooks:
+walk(Expr::Send) y walk_stmts(Stmt::SendSet) en pin_params. p12 y p24
+(dispatch virtual a traves de parametro pineado) byte-identicos.
+
+Sondas nuevas: neg14_ambig_member (error nombrado), p24_param_virtual
+(byte-identico al oraculo). Suite: 25/28 PASS + 13 negativas con rechazo
+nombrado limpio.

@@ -3483,10 +3483,51 @@ fn build_class_table(decls: &[ClassDecl], methods: &[MethodDef]) -> Result<Vec<C
                 return Err(format!("class `{}`: METHOD `{}` defined but never declared in the class", d.name, ml));
             }
         }
+        // Default constructor (Harbour: every class answers New even
+        // without a declared one): when neither this class nor its
+        // ancestors carry a `new` slot, add one bound to a synthesized
+        // `ClassName__new` whose body is `return Self`; main() materializes
+        // the Func. An explicit CONSTRUCTOR under another name stays the
+        // typing constructor.
+        if !slots.iter().any(|(x, _)| x == "new") {
+            let fname = format!("{}__new", d.name);
+            slots.push(("new".to_string(), fname.clone()));
+            if ctor.is_none() { ctor = Some(fname); }
+        }
         let ndatas = own_start + datas.len() as u32;
         table.push(ClassInfo { name: d.name.clone(), parent, own_start, ndatas, datas, slots, ctor, inits });
     }
     Ok(table)
+}
+
+// Receiver-class pinning (bounded subset, p12): a message send on a
+// parameter pins it to the ROOT of the single class hierarchy owning the
+// member. Harbour resolves the member at runtime; this PoC bounds it at
+// compile time - flat DATA offsets and method slots are hierarchy-wide,
+// so every instance of the hierarchy fits the pin. A member owned by
+// classes of two different hierarchies is ambiguous: named error.
+fn receiver_pin_class(member: &str) -> Result<Option<u32>, String> {
+    let lm = member.to_lowercase();
+    CLASSES.with(|c| {
+        let table = c.borrow();
+        let mut root: Option<u32> = None;
+        for ci in 0..table.len() as u32 {
+            if method_lookup(ci, &lm).is_none() && data_lookup(ci, &lm).is_none() { continue; }
+            let mut r = ci;
+            while let Some(p) = table[r as usize].parent { r = p; }
+            match root {
+                None => root = Some(r),
+                Some(x) if x == r => {}
+                Some(x) => {
+                    return Err(format!(
+                        "`:{}` is ambiguous in this increment: the hierarchies rooted at `{}` and `{}` both own it (Harbour resolves the member at runtime; pin the receiver to one hierarchy first)",
+                        member, table[x as usize].name, table[r as usize].name
+                    ));
+                }
+            }
+        }
+        Ok(root)
+    })
 }
 
 // ---------------------------------------------------------------------------
@@ -3978,7 +4019,18 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
             }
             Expr::DArrNew => Ok(()),
             Expr::SelfObj | Expr::SelfGet(_) => Ok(()),
-            Expr::Send(o, _, args) => {
+            Expr::Send(o, name, args) => {
+                // A send on a parameter pins it to the member's unique
+                // hierarchy root (receiver_pin_class); ambiguity is a
+                // named error, the no-owner case keeps the Dyn pin for
+                // the checker's named rejection.
+                if let Expr::Var(v) = o.as_ref() {
+                    if let Some(i) = is_param(f, v) {
+                        if let Some(root) = receiver_pin_class(name).map_err(|m| format!("line {}: {}", n, m))? {
+                            setpin(pin, i, Ty::Obj(root), n)?;
+                        }
+                    }
+                }
                 walk(f, o, sigs, lit, pin, printed, n)?;
                 for a in args { walk(f, a, sigs, lit, pin, printed, n)?; }
                 Ok(())
@@ -4213,7 +4265,14 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
                 Stmt::SelfSet(n, _, e) | Stmt::SendStmt(n, e) | Stmt::CallStmt(n, e) => {
                     walk(f, e, sigs, lit, pin, printed, *n)?;
                 }
-                Stmt::SendSet(n, o, _, e) => {
+                Stmt::SendSet(n, o, name, e) => {
+                    if let Expr::Var(v) = o {
+                        if let Some(i) = is_param(f, v) {
+                            if let Some(root) = receiver_pin_class(name).map_err(|m| format!("line {}: {}", n, m))? {
+                                setpin(pin, i, Ty::Obj(root), *n)?;
+                            }
+                        }
+                    }
                     walk(f, o, sigs, lit, pin, printed, *n)?;
                     walk(f, e, sigs, lit, pin, printed, *n)?;
                 }
@@ -6645,7 +6704,14 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
             let ci = match rt {
                 Ty::Obj(ci) => ci,
                 Ty::Dyn => return Err(format!("line {}: `:{}` on a Dyn value (its class is not known at compile time) is not in this increment", n, name)),
-                _ => return Err(format!("line {}: `:{}` on a non-object value ({})", n, name, ty_name(rt))),
+                _ => {
+                    if let Expr::Var(_) = recv.as_ref() {
+                        if let Err(m) = receiver_pin_class(name) {
+                            return Err(format!("line {}: {}", n, m));
+                        }
+                    }
+                    return Err(format!("line {}: `:{}` on a non-object value ({})", n, name, ty_name(rt)));
+                }
             };
             let lname = name.to_lowercase();
             if let Some((_, fname)) = method_lookup(ci, &lname) {
@@ -7275,7 +7341,16 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 let ci = match rt {
                     Ty::Obj(ci) => ci,
                     Ty::Dyn => return Err(format!("line {}: `:{} :=` on a Dyn value (its class is not known at compile time) is not in this increment", n, name)),
-                    _ => return Err(format!("line {}: `:{} :=` on a non-object value ({})", n, name, ty_name(rt))),
+                    _ => {
+                        // A member two hierarchies own names the real
+                        // problem; the pin pass could not pick a class.
+                        if let Expr::Var(_) = recv {
+                            if let Err(m) = receiver_pin_class(name) {
+                                return Err(format!("line {}: {}", n, m));
+                            }
+                        }
+                        return Err(format!("line {}: `:{} :=` on a non-object value ({})", n, name, ty_name(rt)));
+                    }
                 };
                 let lname = name.to_lowercase();
                 if method_lookup(ci, &lname).is_some() {
@@ -21673,6 +21748,7 @@ fn main() {
         }
         if let Err(msg)=validate(&f.stmts,&statics) {eprintln!("error: {}",msg);process::exit(1);}
     }
+    let mut synth_new_funcs: Vec<Func> = Vec::new();
     if !prog.classes.is_empty() || !prog.methods.is_empty() {
         // Classes (tag-13 objects, spike-validated flat model): build the
         // compile-time class table, then METHOD functions join `funcs`
@@ -21687,6 +21763,27 @@ fn main() {
             let ci = class_find(&m.class_name).unwrap_or(0);
             mmap.insert(m.f.name.clone(), ci);
         }
+        // Materialize the default-New bodies build_class_table wired
+        // into the slots: `return Self`, typed by the ordinary method
+        // machinery through METHOD_CLASS (p16: INITs already ran lazily).
+        CLASSES.with(|c| {
+            for (ci, info) in c.borrow().iter().enumerate() {
+                let fname = format!("{}__new", info.name);
+                if info.slots.iter().any(|(x, f)| x == "new" && *f == fname)
+                    && !prog.methods.iter().any(|m| m.f.name.eq_ignore_ascii_case(&fname))
+                {
+                    mmap.insert(fname.clone(), ci as u32);
+                    synth_new_funcs.push(Func {
+                        init: false,
+                        name: fname,
+                        params: vec!["Self".to_string()],
+                        ret: None,
+                        stmts: vec![Stmt::Ret(0, Some(Expr::SelfObj))],
+                        dyn_names: std::collections::HashSet::new(),
+                    });
+                }
+            }
+        });
         METHOD_CLASS.with(|c| *c.borrow_mut() = mmap);
     }
     if llvm && prog.funcs.iter().any(|f| f.init) {
@@ -21699,6 +21796,7 @@ fn main() {
         f.params.insert(0, "Self".to_string());
         funcs.push(f);
     }
+    funcs.extend(synth_new_funcs);
 
     // `@x` prescan (hk216 family), syntactic over the whole program: which
     // parameter positions each function receives by reference (call sites
