@@ -18,9 +18,9 @@
     "-Werror",
     "-Wno-misleading-indentation"
   ],
-  "source_sha256": "1d65cdc99d995337c7e92e1427bab7acb9b5732dbe0da9d7b8dbaad0ad8a0b57",
-  "asm_sha256": "b7bd523923f6ef15c9e5b2fe985c353c1c036a5e547db630e1aa0e18881a9475",
-  "labels": 271,
+  "source_sha256": "9acf76a4958f99d18ec78503cf5e0eac859a73c67a51c2df4784fac75a641edd",
+  "asm_sha256": "7a416dadf7644242c4d488031ca6abf46a361b78c25189ee67b8a5062c57413c",
+  "labels": 417,
   "undefined_symbols": [],
   "local_label_namespace": ".Lhrdbf_",
   "notes": "Experimental compiler integration; separate non-DBF byte-identity evidence required. CWD-independent output: .file stripped."
