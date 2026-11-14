@@ -170,9 +170,15 @@ Requires Rust on Linux x86-64 to build the compiler. From the repository root:
 
 ```sh
 rustc --edition=2021 -O src/hbc.rs -o hbc
-./hbc tests/samples/hello.prg hello --target=linux
+./hbc tests/samples/hello.prg hello
 ./hello
 ```
+
+The target defaults to the compiler host: ELF on Linux, PE32+ on Windows.
+Use `--target=linux` or `--target=windows` to force a target, including cross-compilation.
+The output filename does not select the target; `.s` selects assembly output.
+This default is in current source; rebuild older compiler binaries to get it.
+See the [host-target check and limits](docs/HOST-TARGET-DEFAULT.md).
 
 `hbc` emits the ELF executable directly; GNU binutils are only needed for the
 `--external-as` fallback (`as` + `ld -s`).
@@ -191,7 +197,7 @@ From Windows Command Prompt at the repository root, with `hbc.exe` there:
 
 ```bat
 set "HBC=%CD%\hbc.exe"
-"%HBC%" tests\samples\hello.prg hello.exe --target=windows
+"%HBC%" tests\samples\hello.prg hello.exe
 hello.exe
 ```
 

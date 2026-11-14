@@ -26,6 +26,12 @@ statically linked Linux x86-64 binary.
 writer, layout equivalent to `ld -s`). `--external-as` keeps the older
 `as` + `ld -s` fallback; those are the standard GNU binutils of the host.
 
+The target defaults to the compiler host: Linux compilers emit ELF and Windows
+compilers emit PE32+. `--target=linux|windows` overrides the default for
+cross-compilation. A `.exe` suffix does not select Windows; only `.s` changes
+the output kind to assembly. Rebuild older compiler binaries for this default.
+See [host-target checks and limits](docs/HOST-TARGET-DEFAULT.md).
+
 ## 3. Compile a Harbour program to a Windows .exe (from Linux or Windows)
 
 `hbc` writes the PE32+ image directly; no assembler, linker or import library

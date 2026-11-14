@@ -47,3 +47,5 @@ reorganization. Relative links in the moved README are adjusted for its new loca
 - [C Extend bridge](EXTEND-BRIDGE.md); [H2 binding](EXTEND-BRIDGE-H2-BINDING.md); [H2 callbacks](EXTEND-BRIDGE-H2-CALLBACKS.md).
 - [Differential method](DIFFERENTIAL.md); [preprocessor F0](PP-F0.md); [string concat benchmark](BENCH-strcat.md).
 - [Goose memory impact](GOOSE-MEMORY-IMPACT-2026-11-13.md); [Goose hybrid design](harbourrust-goose-hybrid-design.md).
+
+- [Host target default and limits](HOST-TARGET-DEFAULT.md)

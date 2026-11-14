@@ -8,7 +8,9 @@
 // binary. rustc is used to build hbc itself (the compiler's implementation
 // language), never to compile Harbour programs.
 //
-// Targets: linux (default) emits freestanding ELF assembly (raw syscalls);
+// Targets: the compiler host is the default (Linux -> ELF, Windows -> PE32+).
+// Explicit --target=linux|windows overrides it for cross-compilation.
+// linux emits freestanding ELF assembly (raw syscalls);
 // windows emits Win64 assembly that calls kernel32 (GetStdHandle /
 // WriteFile / ExitProcess) and is assembled/linked with mingw-w64
 // binutils. The analysis passes and the internal value convention
@@ -25156,7 +25158,7 @@ fn validate_persistent(f:&Func)->Result<(),String> {
 fn main() {
     let args: Vec<String> = env::args().collect();
     let mut pos: Vec<&String> = Vec::new();
-    let mut target = Target::Linux;
+    let mut target = if cfg!(windows) { Target::Windows } else { Target::Linux };
     let mut incdirs: Vec<String> = Vec::new();
     let mut instrument = false;
     let mut llvm = false;
@@ -25181,7 +25183,8 @@ fn main() {
             "-I" => { ai += 1; incdirs.push(args.get(ai).expect("-I needs a directory").clone()); }
             _ if a.starts_with("-I") => incdirs.push(a[2..].to_string()),
             _ if a.starts_with("--") => { eprintln!("usage: hbc <input.prg> <output> [--target=linux|windows] [-I dir]...
-  output ending in .s writes assembly; any other name writes the native executable directly (ELF on Linux, PE32+ on Windows)
+  target defaults to the compiler host (Linux: ELF, Windows: PE32+); --target overrides it
+  output ending in .s writes assembly; any other name writes the selected target executable directly
   flag --external-as keeps the external as/ld path; --instrument, --no-arena, --no-escape-analysis, --experimental-llvm[-no-trace]"); process::exit(2); }
             _ => pos.push(a),
         }
@@ -25189,7 +25192,8 @@ fn main() {
     }
     if pos.len() != 2 {
         eprintln!("usage: hbc <input.prg> <output> [--target=linux|windows] [-I dir]...
-  output ending in .s writes assembly; any other name writes the native executable directly (ELF on Linux, PE32+ on Windows)
+  target defaults to the compiler host (Linux: ELF, Windows: PE32+); --target overrides it
+  output ending in .s writes assembly; any other name writes the selected target executable directly
   flag --external-as keeps the external as/ld path; --instrument, --no-arena, --no-escape-analysis, --experimental-llvm[-no-trace]");
         process::exit(2);
     }
