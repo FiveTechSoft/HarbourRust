@@ -24940,13 +24940,17 @@ fn main() {
             "--experimental-llvm-no-trace" => {llvm = true; llvm_trace = false;},
             "-I" => { ai += 1; incdirs.push(args.get(ai).expect("-I needs a directory").clone()); }
             _ if a.starts_with("-I") => incdirs.push(a[2..].to_string()),
-            _ if a.starts_with("--") => { eprintln!("usage: hbc <input.prg> <output.s> [--target=linux|windows] [-I dir]..."); process::exit(2); }
+            _ if a.starts_with("--") => { eprintln!("usage: hbc <input.prg> <output> [--target=linux|windows] [-I dir]...
+  output ending in .s writes assembly; any other name writes the native executable directly (ELF on Linux, PE32+ on Windows)
+  flag --external-as keeps the external as/ld path; --instrument, --no-arena, --no-escape-analysis, --experimental-llvm[-no-trace]"); process::exit(2); }
             _ => pos.push(a),
         }
         ai += 1;
     }
     if pos.len() != 2 {
-        eprintln!("usage: hbc <input.prg> <output.s> [--target=linux|windows] [-I dir]...");
+        eprintln!("usage: hbc <input.prg> <output> [--target=linux|windows] [-I dir]...
+  output ending in .s writes assembly; any other name writes the native executable directly (ELF on Linux, PE32+ on Windows)
+  flag --external-as keeps the external as/ld path; --instrument, --no-arena, --no-escape-analysis, --experimental-llvm[-no-trace]");
         process::exit(2);
     }
     CURDIR_LINUX_NATIVE.with(|v| v.set(!llvm && matches!(target, Target::Linux)));
