@@ -187,6 +187,16 @@ Use `bin/hbc.exe` for the tracked Windows snapshot described in section 4.
 The `dist/` files below are historical and do not describe its version or
 native-writer requirements:
 
+Historical GitHub releases are separate again: as checked on 14 November
+2026, [v0.1.1](https://github.com/FiveTechSoft/HarbourRust/releases/tag/v0.1.1)
+has 7 uploaded assets and
+[v0.2.0](https://github.com/FiveTechSoft/HarbourRust/releases/tag/v0.2.0) has 8
+(including `SHA256SUMS.txt`). Releases v0.3.0 through v0.8.0 have no uploaded
+assets. The older v0.1.1/v0.2.0 compiler downloads use an assembler/linker
+pipeline; follow their own release notes, not the current native-writer
+requirements. Their Windows verification was under Wine 11.0, not real
+Windows. Asset counts exclude GitHub-generated source archives.
+
 
 | File          | Platform            | Description                               |
 | ------------- | ------------------- | ----------------------------------------- |

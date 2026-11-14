@@ -173,7 +173,7 @@ The internal PE writer emits a console image with entry `_start`, fixed ImageBas
 
 ### Historical release binaries
 
-[v0.1.1](https://github.com/FiveTechSoft/HarbourRust/releases/tag/v0.1.1) contains older Linux/Windows compilers that predate the native writer and the C Extend bridge. They still need the old assembler/linker pipeline and are not the current tracked compiler. Its `hello.exe`, `arrays_hashes.exe` and `dates.exe` samples run without a compiler, assembler or linker; their recorded smoke was Wine 11.0, not real Windows. See that release's notes for OS/library requirements. Tags v0.2.0 through v0.8.0 have no binary release assets; do not confuse them with the separately tracked `bin/hbc.exe` snapshot.
+[v0.1.1](https://github.com/FiveTechSoft/HarbourRust/releases/tag/v0.1.1) contains older Linux/Windows compilers that predate the native writer and the C Extend bridge. They still need the old assembler/linker pipeline and are not the current tracked compiler. Its `hello.exe`, `arrays_hashes.exe` and `dates.exe` samples run without a compiler, assembler or linker; their recorded smoke was Wine 11.0, not real Windows. See that release's notes for OS/library requirements. As checked on 14 November 2026, v0.1.1 has 7 uploaded release assets and [v0.2.0](https://github.com/FiveTechSoft/HarbourRust/releases/tag/v0.2.0) has 8, including its checksum file. Releases v0.3.0 through v0.8.0 have no uploaded assets. The v0.2.0 downloads also use the historical assembler/linker pipeline; see that release for its own bridge scope and limits. These historical downloads are separate from the tracked `bin/hbc.exe` snapshot.
 
 ## Harbour standard-function compatibility
 
