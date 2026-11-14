@@ -284,7 +284,7 @@ pos tests/t285_array3d.prg \n         2\n         2\n         3\n         7\n   
 pos tests/t287_array3d_zero.prg \n         0\n         2\n         0\n         0\n         2\n         3\n         0\n         0\n         0
 pos tests/t288_array3d_order.prg \ndim-1\ndim-2\ndim-3\n         2\n         3\n         1\n         0\n         0
 posx tests/t289_posx_array3d_negdim.prg 1 ASize: negative size\nCallstack:\n  at main (tests/t289_posx_array3d_negdim.prg:5)
-neg tests/t290_neg_class_gate.prg classes are not in this increment yet
+neg tests/t290_neg_class_gate.prg code generation is stage B (pending)
 neg tests/t291_neg_class_multi.prg multiple inheritance is not in this increment
 neg tests/t292_neg_class_scope.prg class scopes
 pos tests/t293_neg_eqeq.prg \n         1
