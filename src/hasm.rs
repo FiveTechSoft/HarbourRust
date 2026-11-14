@@ -1496,7 +1496,7 @@ impl Asm {
     // Símbolos referenciados y no definidos: candidatos a import kernel32.
     // Validados contra la lista blanca medida y devueltos ordenados.
     fn scan_imports(&self) -> Result<Vec<String>, String> {
-        const WHITELIST: [&str; 8] = ["ExitProcess", "GetEnvironmentVariableA", "GetLocalTime", "GetProcessHeap",
+        const WHITELIST: [&str; 11] = ["VirtualAlloc", "VirtualFree", "GetSystemInfo", "ExitProcess", "GetEnvironmentVariableA", "GetLocalTime", "GetProcessHeap",
             "GetStdHandle", "HeapAlloc", "HeapFree", "WriteFile"];
         fn scan_expr(p: &Parser, e: &Expr, names: &mut Vec<String>) {
             for (_, t) in &e.0 {

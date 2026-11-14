@@ -49,6 +49,7 @@ thread_local! {
 mod pp;
 mod hasm;
 mod hpe;
+mod vas;
 
 #[derive(Clone, Copy, PartialEq, Debug)]
 enum Ty { NumLocal, F64, I64, Str, Bool, Date, Arr(usize), Block(usize, BRet), DArr, DArrU, DArr2, DArr3, DArr4, DArrS, StrOwn, Dyn, Hash, DArrRef, DArrRef2, RefI64, RefDyn, RefStrOwn, DArrDyn, AView, Obj(u32) }
@@ -9233,6 +9234,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 env[idx].moved = false;
             }
         }
+        vas::observe(env);
     }
     Ok(falls)
 }
@@ -13297,7 +13299,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                     out.push_str("    call hbc_dyn_to_i64\n");
                 }
                 out.push_str("    sub $16, %rsp\n    movq $0, (%rsp)\n    movq $0, 8(%rsp)\n");
-                out.push_str("    mov %rax, %rsi\n    mov %rsp, %rdi\n    mov $16, %edx\n    xor %ecx, %ecx\n    call hbc_asize\n");
+                vas::emit_flat(out, "    mov %rax, %rsi\n    mov %rsp, %rdi\n    mov $16, %edx\n    xor %ecx, %ecx\n    call hbc_asize\n");
                 out.push_str("    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    add $16, %rsp\n");
             } else if args.len() == 2 {
                 cg_expr(&args[0], env, sigs, strs, out, target);
@@ -13461,7 +13463,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             // ASize growth (null, 0) - Harbour types {} as ARRAY and the
             // grown casillas as NIL (oracles e4, n1, n2). len({}) == 0
             // either way.
-            out.push_str("    mov $8, %rdi\n    call hbc_alloc\n    movq $0, (%rax)\n    add $8, %rax\n    xor %edx, %edx\n");
+            vas::emit_flat(out, "    mov $8, %rdi\n    call hbc_alloc\n    movq $0, (%rax)\n    add $8, %rax\n    xor %edx, %edx\n");
         }
         Expr::HashLit(_) => unreachable!("hash literals are emitted in statement position (local/assign initializers)"),
         Expr::BlockLit(id, _, _) => {
@@ -13654,7 +13656,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                     if let Expr::Var(src) = a {
                         let sv = env.iter().rev().find(|x| x.name == *src).expect("checked").clone();
                         out.push_str("    sub $16, %rsp\n");
-                        out.push_str(&format!("    mov ${}, %rdi\n    call hbc_alloc\n", 8 + k * 16));
+                        vas::emit_flat(out, &format!("    mov ${}, %rdi\n    call hbc_alloc\n", 8 + k * 16));
                         out.push_str(&format!("    movq ${}, (%rax)\n    add $8, %rax\n    mov %rax, (%rsp)\n", k));
                         for p in 0..k {
                             out.push_str(&format!("    mov -{}(%rbp), %r10\n", sv.off - 8 * p));
@@ -14303,7 +14305,7 @@ fn cg_value(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out
 // tag 3 = logical), the same shape as an AAdd-grown array (hk201).
 fn cg_darr1_literal(es: &[Expr], out: &mut String) {
     let m = es.len();
-    out.push_str(&format!("    mov ${}, %rdi\n    call hbc_alloc\n", 8 + m * 16));
+    vas::emit_flat(out, &format!("    mov ${}, %rdi\n    call hbc_alloc\n", 8 + m * 16));
     out.push_str(&format!("    movq ${}, (%rax)\n    add $8, %rax\n", m));
     out.push_str("    mov %rax, %r11\n");
     for (i, e) in es.iter().enumerate() {
@@ -15847,7 +15849,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                     Ty::StrOwn => out.push_str("    mov %rax, %rdi
     call hbc_freestr
 "),
-                    Ty::DArr => out.push_str("    mov %rax, %rdi
+                    Ty::DArr => vas::emit_flat(out, "    mov %rax, %rdi
     mov $16, %esi
     call hbc_free
 "),
@@ -16031,7 +16033,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                                     let k8 = fresh_lbl();
                                     out.push_str(&format!("    @HBC_TAG_KIND@cmpq $4, -{}(%rbp)@HBC_TAG_END@\n    jne .Ll8a{}\n    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 85f\n    call hbc_freestr\n    jmp 85f\n.Ll8a{}:\n    @HBC_TAG_KIND@cmpq $8, -{}(%rbp)@HBC_TAG_END@\n    jne 85f\n    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 85f\n    mov -8(%rdi), %rsi\n    call hbc_dfree\n85:\n", off, k8, off - 8, k8, off, off - 8));
                                 } else {
-                                    out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 85f\n    mov $16, %esi\n    call hbc_free\n85:\n", off));
+                                    vas::emit_flat(out, &format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 85f\n    mov $16, %esi\n    call hbc_free\n85:\n", off));
                                 }
                                 out.push_str(&format!("    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    add $16, %rsp\n    mov %rax, -{}(%rbp)\n    mov %rdx, -{}(%rbp)\n", off, off - 8));
                             }
@@ -16055,7 +16057,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                     if let Expr::Var(src) = e {
                         let sv = env.iter().rev().find(|x| x.name == *src).expect("checked").clone();
                         out.push_str("    sub $16, %rsp\n");
-                        out.push_str(&format!("    mov ${}, %rdi\n    call hbc_alloc\n", 8 + k * 16));
+                        vas::emit_flat(out, &format!("    mov ${}, %rdi\n    call hbc_alloc\n", 8 + k * 16));
                         out.push_str(&format!("    movq ${}, (%rax)\n    add $8, %rax\n    mov %rax, (%rsp)\n", k));
                         for p in 0..k {
                             out.push_str(&format!("    mov -{}(%rbp), %r10\n", sv.off - 8 * p));
@@ -16411,7 +16413,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
 .Lfetf{}:
     movq $0, -{}(%rbp)
 ", coll_off, fl, coll_off - 8, fl, coll_off)),
-                        _ => out.push_str(&format!("    mov -{}(%rbp), %rdi
+                        _ => vas::emit_flat(out, &format!("    mov -{}(%rbp), %rdi
     test %rdi, %rdi
     je .Lfetf{}
     mov $16, %esi
@@ -17010,7 +17012,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                                 } else if cur_ty == Some(Ty::Hash) {
                                     out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 86f\n    mov -{}(%rbp), %rsi\n    call hbc_hfree\n86:\n", off, off - 8));
                                 } else {
-                                    out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 86f\n    mov $16, %esi\n    call hbc_free\n86:\n", off));
+                                    vas::emit_flat(out, &format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 86f\n    mov $16, %esi\n    call hbc_free\n86:\n", off));
                                 }
                                 out.push_str(&format!("    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    add $16, %rsp\n    mov %rax, -{}(%rbp)\n    mov %rdx, -{}(%rbp)\n", off, off - 8));
                                 // Replicate the checker's pinning of `{}`.
@@ -17112,7 +17114,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                         out.push_str("    mov %rax, %rdx\n    mov $3, %eax\n");
                     }
                     out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
-                    out.push_str(&format!("    mov %rsp, %rdx\n    mov $16, %esi\n    {}\n    call hbc_aadd\n    add $16, %rsp\n", aptr));
+                    vas::emit_flat(out, &format!("    mov %rsp, %rdx\n    mov $16, %esi\n    {}\n    call hbc_aadd\n    add $16, %rsp\n", aptr));
                 }
                 // Replicate the checker's pinning of `{}`.
                 if let Some(x) = env.iter_mut().find(|x| x.name == *id) {
@@ -17553,7 +17555,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 // DArrRef: address of the owner's cell, like AAdd (hk87).
                 let aptr = if v.ty == Ty::DArrRef || v.ty == Ty::DArrRef2 { format!("mov -{}(%rbp), %rdi", v.off) } else { format!("lea -{}(%rbp), %rdi", v.off) };
                 cg_expr(e, env, sigs, strs, out, target);
-                out.push_str(&format!("    mov %rax, %rsi\n    mov $16, %edx\n    mov ${}, %ecx\n    {}\n    call hbc_asize\n",
+                vas::emit_flat(out, &format!("    mov %rax, %rsi\n    mov $16, %edx\n    mov ${}, %ecx\n    {}\n    call hbc_asize\n",
                     kind, aptr));
             }
             Stmt::AAddSub(_, id, ie, e) => {
@@ -18588,7 +18590,7 @@ fn cg_func(f: &Func, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, tar
                 // instance into its class freelist).
                 out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 91{}f\n    call hrobj_release\n91{}:\n", off, i, i));            }
             _ => {
-                out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 91{}f\n    mov $16, %esi\n    call hbc_free\n91{}:\n", off, i, i));
+                vas::emit_flat(out, &format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 91{}f\n    mov $16, %esi\n    call hbc_free\n91{}:\n", off, i, i));
             }
         }
     }
@@ -24920,6 +24922,7 @@ fn main() {
     let mut llvm = false;
     let mut no_escape = false;
     let mut no_arena = false;
+    let mut no_vas = false;
     let mut external_as = false;
     let mut llvm_trace = true;
     let mut ai = 1;
@@ -24932,6 +24935,7 @@ fn main() {
             "--instrument" => instrument = true,
             "--no-escape-analysis" => no_escape = true,
             "--no-arena" => no_arena = true,
+            "--no-vas-arrays" => no_vas = true,
             "--experimental-llvm" => llvm = true,
             "--experimental-llvm-no-trace" => {llvm = true; llvm_trace = false;},
             "-I" => { ai += 1; incdirs.push(args.get(ai).expect("-I needs a directory").clone()); }
@@ -25442,6 +25446,11 @@ fn main() {
         ARENA_MAP.with(|m| *m.borrow_mut() = arena);
     }
 
+    // I3 is independent of I1 opt-outs. This recheck collects branch-local
+    // types before check_stmts discards their scoped environments.
+    vas::classify(&funcs, &sigs, &byref_params, &byref_locals,
+        !no_vas && !llvm, !prog.externs.is_empty());
+
     // Pass 2: generate x86-64 assembly from the validated AST only.
     if llvm {
         match llvm_scalar::emit(&funcs, &sigs, target, llvm_trace) {
@@ -25475,7 +25484,7 @@ fn main() {
     });
     let arena_active = !no_arena && !THREADS.with(|c| c.get()) && ARENA_MAP.with(|m| m.borrow().values().any(|a| a.any()));
     ARENA_ACTIVE.with(|a| a.set(arena_active));
-    let out = emit_asm(&funcs, &sigs, &externs, target, instrument);
+    let out = vas::finish(emit_asm(&funcs, &sigs, &externs, target, instrument), target, instrument);
 
     if pos[1].ends_with(".s") {
         fs::write(pos[1], out)
