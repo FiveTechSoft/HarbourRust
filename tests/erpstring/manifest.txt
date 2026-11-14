@@ -1,0 +1,8 @@
+pos tests/erpstring/erp_left_byref.prg
+pos tests/erpstring/erp_right_byref.prg
+pos tests/erpstring/erp_at_order.prg
+pos tests/erpstring/erp_int_abs_float.prg
+pos tests/erpstring/erp_bounds.prg
+pos tests/erpstring/erp_at_semantics.prg
+pos tests/erpstring/erp_int_abs_semantics.prg
+neg tests/erpstring/erp_int_numlocal_neg.prg mixed numeric LOCAL cannot cross a function or unsupported builtin ABI
