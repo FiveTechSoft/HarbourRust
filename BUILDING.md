@@ -194,3 +194,73 @@ Intermediate assembly, objects and binaries are written under `gen/`;
 that directory is kept in the repository (with the `gen/arith.prg`
 fixture the manifest references) so a fresh clone runs the battery
 as-is. A full pass prints `ALL GREEN` as its last line.
+
+
+## macOS Intel and ARM64 status
+
+This is a first Intel Mach-O candidate, not a measured real-Mac release.
+The compiler can be built with stable Rust using the macOS command-line
+developer tools required by Rust's native linker. Install those first if
+`rustc` reports a missing linker or SDK (`xcode-select --install`).
+
+### Intel: build and make the first hardware check
+
+1. Clone this repository and enter its root. Install a stable Rust toolchain.
+2. Build the compiler and portable native runner:
+
+   ```sh
+   sh scripts/build_macos.sh
+   ```
+
+   The compiler command is `rustc --edition=2021 -O src/hbc.rs -o hbc`.
+   No Cargo dependencies or GNU assembler are required for the internal writer.
+3. Build and run the existing hello source, with no target flag:
+
+   ```sh
+   ./hbc tests/samples/hello.prg hello
+   file hello
+   ./hello
+   ```
+
+   `file` should identify Mach-O 64-bit x86_64, not ELF. Record stdout,
+   stderr and status from this actual machine before calling it a Mac pass.
+4. Run the focused first-test manifest, with real allocation instrumentation:
+
+   ```sh
+   ./run_native_manifest --manifest tests/macos-smoke.txt --output gen/mac-intel-smoke
+   ```
+
+   Every output directory must be new. Raw compile/run channels and results.tsv
+   are retained. The runner is written in Rust so it needs no GNU timeout,
+   sha256sum, Wine or Python. It uses `shasum -a 256` when available and records
+   explicitly when a compiler hash could not be obtained.
+5. For a wider diagnostic run, not a green-Mac claim:
+
+   ```sh
+   ./run_native_manifest --manifest tests/manifest.txt --output gen/mac-intel-full
+   ```
+
+   Unsupported OS paths reject and count as failures, not skips or compatibility.
+   Each program has a 15-second limit; compiler invocations have 30 seconds.
+   Existing pos/posx expectations preserve their historical final-LF handling;
+   streams/pos2 compare exact bytes. pos2 uses the existing Linux/Unix file,
+   not an independent native Harbour/Darwin oracle.
+
+`--target=macho` explicitly selects experimental Intel Mach-O on any compiler
+host. `--target=linux` and `--target=windows` still force x86-64 ELF/PE.
+The `.s` form is the internal GNU-style assembly representation; it is not
+claimed to assemble with Apple's external assembler. `--external-as` and
+LLVM reject for this Mach-O increment. See [limits and evidence](docs/MACHO-INTEL.md).
+
+### ARM64: compiler build preparation, backend not delivered yet
+
+1. The same stable-Rust source build is intended for a native Apple Silicon
+   compiler binary, but no Apple Silicon hardware build is verified here.
+2. The default recognizes macOS ARM64 and reports the missing ARM64 backend
+   instead of silently writing an Intel binary with an ARM header.
+3. `--target=macho-arm64` likewise rejects until the native instruction backend
+   and required loader/signing path are implemented and separately reviewed.
+   Intel-via-Rosetta would not be native ARM64 support and is not claimed.
+
+The first requested delivery is Intel for the owner's Mac test. ARM64 remains
+an open following phase, not merely an untested claim of an implemented port.

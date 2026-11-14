@@ -33,7 +33,7 @@ stays short.
 
 - [Compiler source](../src/).
 - [Examples](../tests/samples/).
-- [Regression manifest](../tests/manifest.txt), [runner](../tests/run_battery.sh) and [test-suite map](../tests/README.md).
+- [Regression manifest](../tests/manifest.txt) and [runner](../tests/run_battery.sh).
 
 No source, historical text or test expectation is removed by this documentation
 reorganization. Relative links in the moved README are adjusted for its new location.
@@ -49,3 +49,5 @@ reorganization. Relative links in the moved README are adjusted for its new loca
 - [Goose memory impact](GOOSE-MEMORY-IMPACT-2026-11-13.md); [Goose hybrid design](harbourrust-goose-hybrid-design.md).
 
 - [Host target default and limits](HOST-TARGET-DEFAULT.md)
+
+- [Experimental Intel Mach-O and native ARM64 limits](MACHO-INTEL.md)

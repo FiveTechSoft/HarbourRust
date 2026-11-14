@@ -23,7 +23,7 @@ the bounded single-tag read-only CDX increment described below.
 Against the pinned Harbour source:
 
 - **32/268** originals under `tests/` compile, or **32/1041** across the full inventory.
-- **30/32** fresh executions match stdout, stderr and exit status exactly.
+- **30/32** fresh Linux instrumented executions match stdout, stderr and exit status exactly.
   The other two open error dialogues and time out; they are not passes.
 - Linux regression manifest: **1720/1720** instrumented at the hash-ownership marker (normal 1719/1720 with one base-identical mode gap); the older 1661-case slice keeps its inherited `t110`.
   The hash-default and nested-array shrink fixes resolve `t592`, `t385` and `t419`.
@@ -194,7 +194,9 @@ rustc --edition=2021 -O src/hbc.rs -o hbc
 ./hello
 ```
 
-The target defaults to the compiler host: ELF on Linux, PE32+ on Windows.
+The target defaults to the compiler host: ELF on Linux, PE32+ on Windows,
+and experimental Intel Mach-O on macOS Intel. Native ARM64 emission is pending
+and rejects explicitly; an ARM64 Mach-O header alone would not make x86 code native.
 Use `--target=linux` or `--target=windows` to force a target, including cross-compilation.
 The output filename does not select the target; `.s` selects assembly output.
 This default is in current source; rebuild older compiler binaries to get it.
@@ -207,6 +209,14 @@ The compiler build uses Rust's standard library; no Cargo dependencies are
 needed. [Build instructions](BUILDING.md) cover Windows cross-compilation,
 Wine, prebuilt-binary caveats and the test runner. Rebuild from current source
 rather than assuming the older prebuilt binaries match HEAD.
+
+## Build and run on macOS Intel (experimental)
+
+Build from current source with stable Rust and the macOS command-line developer
+tools. Follow the [numbered Mac build and test steps](BUILDING.md#macos-intel-and-arm64-status).
+The Intel writer and Darwin runtime have structural checks here, not a real-Mac
+execution result. The first hardware run remains pending. No native ARM64
+backend is claimed; see [scope and evidence](docs/MACHO-INTEL.md).
 
 ## Build and run on Windows
 

@@ -8,7 +8,8 @@
 // binary. rustc is used to build hbc itself (the compiler's implementation
 // language), never to compile Harbour programs.
 //
-// Targets: the compiler host is the default (Linux -> ELF, Windows -> PE32+).
+// Targets: compiler host by default: Linux ELF, Windows PE32+, macOS Mach-O.
+// macOS Intel is experimental; native ARM64 code generation still rejects.
 // Explicit --target=linux|windows overrides it for cross-compilation.
 // linux emits freestanding ELF assembly (raw syscalls);
 // windows emits Win64 assembly that calls kernel32 (GetStdHandle /
@@ -51,6 +52,7 @@ thread_local! {
 mod pp;
 mod hasm;
 mod hpe;
+mod hmacho;
 mod vas;
 
 #[derive(Clone, Copy, PartialEq, Debug)]
@@ -25159,6 +25161,8 @@ fn main() {
     let args: Vec<String> = env::args().collect();
     let mut pos: Vec<&String> = Vec::new();
     let mut target = if cfg!(windows) { Target::Windows } else { Target::Linux };
+    let mut macho = cfg!(target_os = "macos");
+    let mut macho_arm64 = cfg!(all(target_os = "macos", target_arch = "aarch64"));
     let mut incdirs: Vec<String> = Vec::new();
     let mut instrument = false;
     let mut llvm = false;
@@ -25171,8 +25175,10 @@ fn main() {
     while ai < args.len() {
         let a = &args[ai];
         match a.as_str() {
-            "--target=linux" => target = Target::Linux,
-            "--target=windows" => target = Target::Windows,
+            "--target=linux" => { target = Target::Linux; macho = false; macho_arm64 = false; },
+            "--target=windows" => { target = Target::Windows; macho = false; macho_arm64 = false; },
+            "--target=macho" => { target = Target::Linux; macho = true; macho_arm64 = false; },
+            "--target=macho-arm64" => { target = Target::Linux; macho = true; macho_arm64 = true; },
             "--external-as" => external_as = true,
             "--instrument" => instrument = true,
             "--no-escape-analysis" => no_escape = true,
@@ -25182,8 +25188,9 @@ fn main() {
             "--experimental-llvm-no-trace" => {llvm = true; llvm_trace = false;},
             "-I" => { ai += 1; incdirs.push(args.get(ai).expect("-I needs a directory").clone()); }
             _ if a.starts_with("-I") => incdirs.push(a[2..].to_string()),
-            _ if a.starts_with("--") => { eprintln!("usage: hbc <input.prg> <output> [--target=linux|windows] [-I dir]...
-  target defaults to the compiler host (Linux: ELF, Windows: PE32+); --target overrides it
+            _ if a.starts_with("--") => { eprintln!("usage: hbc <input.prg> <output> [--target=linux|windows|macho|macho-arm64] [-I dir]...
+  target defaults to the compiler host (Linux: ELF, Windows: PE32+, Mac Intel: Mach-O)
+  --target overrides it; macho-arm64 currently rejects (native ARM64 backend pending)
   output ending in .s writes assembly; any other name writes the selected target executable directly
   flag --external-as keeps the external as/ld path; --instrument, --no-arena, --no-escape-analysis, --experimental-llvm[-no-trace]"); process::exit(2); }
             _ => pos.push(a),
@@ -25191,13 +25198,16 @@ fn main() {
         ai += 1;
     }
     if pos.len() != 2 {
-        eprintln!("usage: hbc <input.prg> <output> [--target=linux|windows] [-I dir]...
-  target defaults to the compiler host (Linux: ELF, Windows: PE32+); --target overrides it
+        eprintln!("usage: hbc <input.prg> <output> [--target=linux|windows|macho|macho-arm64] [-I dir]...
+  target defaults to the compiler host (Linux: ELF, Windows: PE32+, Mac Intel: Mach-O)
+  --target overrides it; macho-arm64 currently rejects (native ARM64 backend pending)
   output ending in .s writes assembly; any other name writes the selected target executable directly
   flag --external-as keeps the external as/ld path; --instrument, --no-arena, --no-escape-analysis, --experimental-llvm[-no-trace]");
         process::exit(2);
     }
-    CURDIR_LINUX_NATIVE.with(|v| v.set(!llvm && matches!(target, Target::Linux)));
+    if macho_arm64 { eprintln!("error: Mach-O ARM64 code generation is not implemented yet; --target=macho selects Intel x86-64, not native ARM64"); process::exit(1); }
+    if macho && (llvm || external_as) { eprintln!("error: Mach-O Intel currently requires the internal native backend; LLVM and --external-as are not ported"); process::exit(1); }
+    CURDIR_LINUX_NATIVE.with(|v| v.set(!macho && !llvm && matches!(target, Target::Linux)));
     if llvm && instrument { eprintln!("error: LLVM scalar: --instrument is not supported; registry checks must not be silently omitted"); process::exit(1); }
     // Preprocessing runs automatically on every compile. Errors cite the
     // line in the ORIGINAL file for the main input; lines injected by an
@@ -25697,7 +25707,7 @@ fn main() {
     // I3 is independent of I1 opt-outs. This recheck collects branch-local
     // types before check_stmts discards their scoped environments.
     vas::classify(&funcs, &sigs, &byref_params, &byref_locals,
-        !no_vas && !llvm, !prog.externs.is_empty());
+        !no_vas && !llvm && !macho, !prog.externs.is_empty());
 
     let procmeta = proc_metadata_needed(&funcs, !externs.is_empty());
     PROC_METADATA_LINES.with(|v|v.set(procmeta));
@@ -25734,14 +25744,24 @@ fn main() {
             }
         }
     });
-    let arena_active = !no_arena && !THREADS.with(|c| c.get()) && ARENA_MAP.with(|m| m.borrow().values().any(|a| a.any()));
+    let arena_active = !macho && !no_arena && !THREADS.with(|c| c.get()) && ARENA_MAP.with(|m| m.borrow().values().any(|a| a.any()));
     ARENA_ACTIVE.with(|a| a.set(arena_active));
+    if macho && (DBF_USED.with(|v|v.get()) || THREADS.with(|v|v.get()) || !externs.is_empty() || CLASSES.with(|v|!v.borrow().is_empty())) { eprintln!("error: Mach-O Intel: DBF, threads, EXTERNAL and classes are not ported in this increment"); process::exit(1); }
     let out = vas::finish(emit_asm(&funcs, &sigs, &externs, target, instrument), target, instrument);
+    let out = if macho { hmacho::darwin_asm(&out).unwrap_or_else(|e| {eprintln!("error: {}",e);process::exit(1);}) } else {out};
 
     if pos[1].ends_with(".s") {
         fs::write(pos[1], out)
             .unwrap_or_else(|e| { eprintln!("cannot write {}: {}", args[2], e); process::exit(2); });
         println!("{} -> {} ({} functions)", args[1], args[2], funcs.len());
+        return;
+    }
+
+    if macho {
+        let bytes = hasm::assemble(&out).and_then(|elf| hmacho::from_elf(&elf)).unwrap_or_else(|e| {eprintln!("error: Mach-O Intel: {}",e);process::exit(1);});
+        fs::write(pos[1],bytes).unwrap_or_else(|e| {eprintln!("cannot write {}: {}",pos[1],e);process::exit(2);});
+        #[cfg(unix)] {use std::os::unix::fs::PermissionsExt; let _=fs::set_permissions(pos[1],fs::Permissions::from_mode(0o755));}
+        println!("{} -> {} ({} functions, experimental Mach-O Intel)",pos[0],pos[1],funcs.len());
         return;
     }
 

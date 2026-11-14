@@ -1,0 +1,39 @@
+# First real-Mac smoke. Existing expectations, not a native Harbour/Darwin oracle.
+streams tests/hash-ownership/edge-condition-owned.prg tests/hash-ownership/edge-condition-owned.stdout tests/hash-ownership/edge-condition-owned.stderr
+streams tests/hash-ownership/edge-getdef-hit-borrow.prg tests/hash-ownership/edge-getdef-hit-borrow.stdout tests/hash-ownership/edge-getdef-hit-borrow.stderr
+streams tests/hash-ownership/edge-getdef-hit-owned.prg tests/hash-ownership/edge-getdef-hit-owned.stdout tests/hash-ownership/edge-getdef-hit-owned.stderr
+streams tests/hash-ownership/edge-getdef-miss-borrow.prg tests/hash-ownership/edge-getdef-miss-borrow.stdout tests/hash-ownership/edge-getdef-miss-borrow.stderr
+streams tests/hash-ownership/edge-getdef-miss-owned.prg tests/hash-ownership/edge-getdef-miss-owned.stdout tests/hash-ownership/edge-getdef-miss-owned.stderr
+streams tests/hash-ownership/edge-getdef-owned-unused.prg tests/hash-ownership/edge-getdef-owned-unused.stdout tests/hash-ownership/edge-getdef-owned-unused.stderr
+streams tests/hash-ownership/edge-hash-init-owned.prg tests/hash-ownership/edge-hash-init-owned.stdout tests/hash-ownership/edge-hash-init-owned.stderr
+streams tests/hash-ownership/edge-hash-set-owned.prg tests/hash-ownership/edge-hash-set-owned.stdout tests/hash-ownership/edge-hash-set-owned.stderr
+streams tests/hash-ownership/edge-param-owned.prg tests/hash-ownership/edge-param-owned.stdout tests/hash-ownership/edge-param-owned.stderr
+streams tests/hash-ownership/edge-return-owned.prg tests/hash-ownership/edge-return-owned.stdout tests/hash-ownership/edge-return-owned.stderr
+streams tests/hash-ownership/edge-setdef-hit-owned.prg tests/hash-ownership/edge-setdef-hit-owned.stdout tests/hash-ownership/edge-setdef-hit-owned.stderr
+streams tests/hash-ownership/edge-setdef-miss-owned.prg tests/hash-ownership/edge-setdef-miss-owned.stdout tests/hash-ownership/edge-setdef-miss-owned.stderr
+streams tests/hash-ownership/edge-store-assign.prg tests/hash-ownership/edge-store-assign.stdout tests/hash-ownership/edge-store-assign.stderr
+streams tests/hash-ownership/get-print.prg tests/hash-ownership/get-print.stdout tests/hash-ownership/get-print.stderr
+streams tests/hash-ownership/get-store.prg tests/hash-ownership/get-store.stdout tests/hash-ownership/get-store.stderr
+streams tests/hash-ownership/get-switch.prg tests/hash-ownership/get-switch.stdout tests/hash-ownership/get-switch.stderr
+streams tests/hash-ownership/getdef-print.prg tests/hash-ownership/getdef-print.stdout tests/hash-ownership/getdef-print.stderr
+streams tests/hash-ownership/getdef-store.prg tests/hash-ownership/getdef-store.stdout tests/hash-ownership/getdef-store.stderr
+streams tests/hash-ownership/getdef-switch.prg tests/hash-ownership/getdef-switch.stdout tests/hash-ownership/getdef-switch.stderr
+streams tests/hash-ownership/index-print.prg tests/hash-ownership/index-print.stdout tests/hash-ownership/index-print.stderr
+streams tests/hash-ownership/index-store.prg tests/hash-ownership/index-store.stdout tests/hash-ownership/index-store.stderr
+streams tests/hash-ownership/index-switch.prg tests/hash-ownership/index-switch.stdout tests/hash-ownership/index-switch.stderr
+streams tests/hash-ownership/setdef-print.prg tests/hash-ownership/setdef-print.stdout tests/hash-ownership/setdef-print.stderr
+streams tests/hash-ownership/setdef-store.prg tests/hash-ownership/setdef-store.stdout tests/hash-ownership/setdef-store.stderr
+streams tests/hash-ownership/setdef-switch.prg tests/hash-ownership/setdef-switch.stdout tests/hash-ownership/setdef-switch.stderr
+streams tests/hash-ownership/valueat-print.prg tests/hash-ownership/valueat-print.stdout tests/hash-ownership/valueat-print.stderr
+streams tests/hash-ownership/valueat-store.prg tests/hash-ownership/valueat-store.stdout tests/hash-ownership/valueat-store.stderr
+streams tests/hash-ownership/valueat-switch.prg tests/hash-ownership/valueat-switch.stdout tests/hash-ownership/valueat-switch.stderr
+pos tests/samples/hello.prg \nresultado de z:\n        32\nhola desde una funcion
+neg tests/samples/broken_borrow.prg line 5: use of moved value
+pos tests/t07_unicode_string.prg \nolá, año 🦀
+pos tests/t10_int_copy.prg \n         5\n         5\n        -5
+pos tests/t11_print_borrows.prg \nhola\nhola\n         7
+pos tests/t12_call_in_expr.prg \nen valor\n        41\nen valor\n        41\nen valor\n        80
+pos tests/t13_if_else.prg \nbig\nexactly seven\neq\nne\nne2 ok\nlt\n        42
+pos tests/t20_assign.prg \n         1\n         5\nhola\nadios\nde nuevo
+pos tests/t23_while_count.prg \n         1\n         2\ndos\n         3\nfin\ncero viajes
+posx tests/t133_arr_runtime_oob.prg 1 \n        10Bound error: array access\nCallstack:\n  at main (tests/t133_arr_runtime_oob.prg:6)
