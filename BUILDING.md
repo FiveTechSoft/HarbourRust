@@ -1,8 +1,12 @@
 # Building hbc
 
-`hbc` is a single-file Rust program with no dependencies beyond the Rust
-standard library. Everything below was tested with the versions noted; newer
-versions will usually work, but these are the verified ones.
+`hbc` is a Rust program with no dependencies beyond the standard library.
+The entry point is `src/hbc.rs`; `rustc` resolves its modules (`pp.rs`,
+`hasm.rs`, `hpe.rs`, `vas.rs`, `llvm_scalar.rs`) and the runtime blobs
+included with `include_str!` (`hrobj_blob.s`, `hrobj_blob_mt.s`,
+`generated/hrdbf_linux.s` and the VAS `.s` variants under `src/`).
+Everything below was tested with the versions noted; newer versions will
+usually work, but these are the verified ones.
 
 ## 1. Build the compiler on Linux
 
