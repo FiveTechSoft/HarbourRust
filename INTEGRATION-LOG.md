@@ -108,3 +108,41 @@ holding object/array; multiple inheritance.
   ptr; strcpy rdi=src rsi=len -> rax owned). NOT yet wired into
   emit_asm. Windows blob pending: compile hrobj_core.c with mingw at
   integration time (Wine verification coordinated by parent).
+
+## Stage B slice 1 (commit pendiente) - instantiation + DATA + ownership
+
+Checker:
+- Dyn local narrows to Obj on first object assignment (`local o; o := TClass()`);
+  OBJ_NARROW thread_local hands the final class to both layout passes (lockstep).
+- Obj slot: only same-class-or-descendant objects, or NIL (`o := NIL` releases).
+  Reassigning to a scalar is a named rejection.
+- INIT expressions type-checked post-checker (scalar-only, subset calls allowed).
+
+Codegen:
+- emit_class_runtime: per-class init fns + 10-quad descriptors + hrobj blob;
+  `.text` restored after the blob (its tail sections are .note markers).
+- Obj locals: 8-byte kind-9 slots, zero-init, epilogue hrobj_release.
+- Obj := Obj shares: retain new THEN release old (fresh hrobj_new skips retain).
+- Obj -> Dyn marshal tag 13 (retain); Obj -> Obj param retain; Obj -> Dyn param tag 13.
+- DATA reads CLONE owned strings (Harbour value semantics; first version borrowed
+  and `? o:s` double-freed the object's casilla - caught by v1-v3 probes).
+- `? o`: live object prints empty but HOLDS its separator position; NIL slot
+  prints NIL (oracle p_sep: "x  y" / "x NIL y").
+- print blob + Dyn free paths emit their tag-13 arms ONLY when the program has
+  classes (no-contamination: 1092/1092 positives byte-identical again, 568
+  negatives identical except the manifest-tracked t290, now "method dispatch
+  lands in stage B slice 2").
+- parser accepts bare `CLASS Name [FROM|INHERIT Base]` too (CREATE CLASS stays).
+- pp skips `#include "hbclass.ch"` (native classes; same .prg feeds hbc and
+  real Harbour, which needs the header).
+
+Probes (all byte-identical vs real Harbour @694428e1, /tmp/hrcls):
+t1 (DATA rw + string overwrite + NIL release), t1b (sharing + identity ==),
+t2 (INIT once/lazy/child-first via side-effect fn, inherited DATA rw),
+t3 (all scalar types + NIL default), t4 (is-a reassignment),
+p_sep (object print separators), neg4 (graduated to positive),
+v1-v3 (release paths). neg1-neg13 still fire their named errors
+(neg4 excepted, now positive).
+
+Deferred to slice 2: method dispatch (named error today), object params'
+member access inside callees (receiver class pinning), :New() runtime.

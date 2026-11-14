@@ -2981,16 +2981,24 @@ fn parse(src: &str) -> Result<Prog, String> {
             &toks[..]
         };
         // CREATE CLASS Name [INHERIT Base] ... ENDCLASS
-        if toks[0] == Tok::KwCreate {
+        if toks[0] == Tok::KwCreate || toks[0] == Tok::KwClass {
+            // Both surface forms, one grammar: `CREATE CLASS Name [INHERIT
+            // Base]` (what hbclass.ch translates) and the standard
+            // `CLASS Name [FROM|INHERIT Base]`.
             let (cname, parent) = match toks {
-                [Tok::KwCreate, Tok::KwClass, Tok::Ident(c)] => { check_ident(c, n)?; (c.clone(), None) }
-                [Tok::KwCreate, Tok::KwClass, Tok::Ident(c), Tok::KwInherit, Tok::Ident(b)] => {
+                [Tok::KwCreate, Tok::KwClass, Tok::Ident(c)] | [Tok::KwClass, Tok::Ident(c)] => { check_ident(c, n)?; (c.clone(), None) }
+                [Tok::KwCreate, Tok::KwClass, Tok::Ident(c), Tok::KwInherit, Tok::Ident(b)]
+                | [Tok::KwClass, Tok::Ident(c), Tok::KwInherit, Tok::Ident(b)] => {
                     check_ident(c, n)?; check_ident(b, n)?; (c.clone(), Some(b.clone()))
                 }
-                [Tok::KwCreate, Tok::KwClass, Tok::Ident(_), Tok::KwInherit, Tok::Ident(_), Tok::Comma, ..] => {
+                [Tok::KwClass, Tok::Ident(c), Tok::Ident(f), Tok::Ident(b)] if f.eq_ignore_ascii_case("from") => {
+                    check_ident(c, n)?; check_ident(b, n)?; (c.clone(), Some(b.clone()))
+                }
+                [Tok::KwCreate, Tok::KwClass, Tok::Ident(_), Tok::KwInherit, Tok::Ident(_), Tok::Comma, ..]
+                | [Tok::KwClass, Tok::Ident(_), Tok::KwInherit, Tok::Ident(_), Tok::Comma, ..] => {
                     return Err(format!("line {}: multiple inheritance is not in this increment (oracle cl21: Harbour accepts it)", n));
                 }
-                _ => return Err(format!("line {}: expected `CREATE CLASS Name [INHERIT Base]`", n)),
+                _ => return Err(format!("line {}: expected `CLASS Name [FROM Base]` (or `CREATE CLASS Name [INHERIT Base]`)", n)),
             };
             if classes.iter().any(|c| c.name == cname) {
                 return Err(format!("line {}: duplicate class `{}`", n, cname));
@@ -3328,6 +3336,7 @@ struct Local {
 // class table: parent's DATA casillas first, own DATA appended; method slots
 // are hierarchy-wide constants (the parent's slot table is cloned and
 // overrides patched in place) so a send is 2 loads + an indirect call.
+#[derive(Clone)]
 struct ClassInfo {
     name: String,                    // original case, for diagnostics
     parent: Option<u32>,
@@ -3336,11 +3345,17 @@ struct ClassInfo {
     datas: Vec<(String, u32)>,       // own DATA: lowercase name -> flat offset
     slots: Vec<(String, String)>,    // (lowercase method name, mangled fn) - slot = index
     ctor: Option<String>,            // mangled constructor fn (explicit New only)
+    inits: Vec<(u32, Expr)>,         // own DATA INIT: (flat offset, scalar expr)
 }
 thread_local! {
     static CLASSES: std::cell::RefCell<Vec<ClassInfo>> = std::cell::RefCell::new(Vec::new());
     static METHOD_CLASS: std::cell::RefCell<std::collections::HashMap<String, u32>> = std::cell::RefCell::new(std::collections::HashMap::new());
     static CUR_METHOD_CLASS: std::cell::Cell<i64> = std::cell::Cell::new(-1);
+    // Checker -> codegen handoff: (function, local) pairs the checker
+    // NARROWED from Dyn to an object slot (`local o; o := TClass()`).
+    // Both layout passes consult it so the slot is 8-byte kind-9 from
+    // declaration, in lockstep with the checker's final types.
+    static OBJ_NARROW: std::cell::RefCell<std::collections::HashMap<(String, String), u32>> = std::cell::RefCell::new(std::collections::HashMap::new());
 }
 fn class_find(name: &str) -> Option<u32> {
     let key = name.to_lowercase();
@@ -3420,6 +3435,7 @@ fn build_class_table(decls: &[ClassDecl], methods: &[MethodDef]) -> Result<Vec<C
             }
         };
         let mut datas: Vec<(String, u32)> = Vec::new();
+        let mut inits: Vec<(u32, Expr)> = Vec::new();
         let mut slots: Vec<(String, String)> = match parent {
             Some(pi) => table[pi as usize].slots.clone(),
             None => Vec::new(),
@@ -3436,6 +3452,9 @@ fn build_class_table(decls: &[ClassDecl], methods: &[MethodDef]) -> Result<Vec<C
                 if !class_init_scalar_ok(e) {
                     return Err(format!("class `{}`: DATA `{}` INIT is scalar-only in this increment (no arrays, hashes, codeblocks or message sends)", d.name, dn));
                 }
+            }
+            if let Some(e) = init {
+                inits.push((own_start + datas.len() as u32, e.clone()));
             }
             datas.push((dl, own_start + datas.len() as u32));
         }
@@ -3459,7 +3478,7 @@ fn build_class_table(decls: &[ClassDecl], methods: &[MethodDef]) -> Result<Vec<C
             }
         }
         let ndatas = own_start + datas.len() as u32;
-        table.push(ClassInfo { name: d.name.clone(), parent, own_start, ndatas, datas, slots, ctor });
+        table.push(ClassInfo { name: d.name.clone(), parent, own_start, ndatas, datas, slots, ctor, inits });
     }
     Ok(table)
 }
@@ -6642,6 +6661,9 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 return Ok(if is_ctor { Ty::Obj(ci) } else { rt2 });
             }
             if data_lookup(ci, &lname).is_some() {
+                if !args.is_empty() {
+                    return Err(format!("line {}: `{}` is a DATA of class `{}`, not a method (codeblock DATA is not in this increment)", n, name, class_name(ci)));
+                }
                 return Ok(Ty::Dyn); // DATA casilla read (tag-13 object)
             }
             Err(format!("line {}: class `{}` has no member `{}`", n, class_name(ci), name))
@@ -8645,7 +8667,15 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                         return Err(format!("line {}: type mismatch in assignment to `{}` (a `{}` is not a `{}`)", n, id, class_name(d), class_name(b)));
                     }
                 } else if env[idx].ty == Ty::Dyn && matches!(t, Ty::Obj(_)) {
-                    // Dyn slot: an object tags in as 13 (sharing).
+                    // Harbour idiom `local o; o := TClass()`: the Dyn
+                    // local NARROWS to an object slot (8-byte casilla).
+                    // From here on it takes only that class (or NIL).
+                    env[idx].ty = t;
+                } else if matches!(env[idx].ty, Ty::Obj(_)) && matches!(e, Expr::Nil) {
+                    // `o := NIL` releases the reference; the slot stays
+                    // object-typed (codegen stores a null pointer).
+                } else if matches!(env[idx].ty, Ty::Obj(_)) {
+                    return Err(format!("line {}: `{}` is object-typed; reassigning it to a non-object value is not in this increment (declare a separate local, or `o := NIL` to release)", n, id));
                 } else if env[idx].ty != t {
                     return Err(format!("line {}: type mismatch in assignment to `{}`", n, id));
                 }
@@ -9032,6 +9062,66 @@ fn cg_i64_f64_format(out: &mut String) {
 
 // rax integer value, rdx scalar format -> rax Dyn tag, rdx payload.
 // Format is 0 runtime / 1 literal; clobbers r11 only.
+const HROBJ_BLOB: &str = include_str!("hrobj_blob.s");
+
+// Evaluate a scalar value for a DATA casilla (write or INIT): leaves the
+// tagged Dyn pair in rax (tag) / rdx (payload). Strings become fresh OWNED
+// tag-4 copies (the template/slot never aliases rodata or a borrower).
+// Objects/arrays/hashes/blocks never reach here (stage-A rejection).
+fn cg_data_value(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target) {
+    match expr_ty(e, env, sigs) {
+        Ty::I64 => { cg_value(e, env, sigs, strs, out, target); cg_i64_tagged(out); }
+        Ty::F64 => {
+            cg_f64_load(e, env, sigs, strs, out, target);
+            out.push_str("    movq %xmm0, %rax\n    mov %rdi, %r10\n    and $0xffff, %r10\n    shl $8, %r10\n    or $5, %r10\n    mov %rax, %rdx\n    mov %r10, %rax\n");
+        }
+        Ty::Str | Ty::StrOwn => {
+            cg_value(e, env, sigs, strs, out, target);
+            out.push_str("    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_strcpy\n    mov %rax, %rdx\n    mov $4, %eax\n");
+        }
+        Ty::Bool => { cg_value(e, env, sigs, strs, out, target); out.push_str("    mov %rax, %rdx\n    mov $3, %eax\n"); }
+        Ty::Date => { cg_value(e, env, sigs, strs, out, target); out.push_str("    mov %rax, %rdx\n    mov $11, %eax\n"); }
+        Ty::Dyn => { cg_expr(e, env, sigs, strs, out, target); cg_dyn_clone_if_str(out); }
+        _ => unreachable!("checked: scalar DATA only"),
+    }
+}
+
+// Class runtime: per-class INIT-own functions, descriptors (.data),
+// method tables and name strings (.rodata), then the spike-validated
+// object runtime blob (freelist, lazy child-first INIT template, chunked
+// arena). Descriptor layout is pinned by the blob's HRClass offsets:
+// 0 name, 8 parent, 16 own_start, 20 ndatas, 24 nslots, 32 mtable,
+// 40 init_own, 48 tpl, 56 freelist, 64 chunk_left, 72 chunk.
+fn emit_class_runtime(sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target) {
+    let classes = CLASSES.with(|c| c.borrow().clone());
+    for (i, c) in classes.iter().enumerate() {
+        if c.inits.is_empty() { continue; }
+        out.push_str(&format!("hrobj_init_{}:\n    push %rbp\n    mov %rsp, %rbp\n    push %rbx\n    mov %rdi, %rbx\n", i));
+        for (off, e) in &c.inits {
+            cg_data_value(e, &[], sigs, strs, out, target);
+            out.push_str(&format!("    mov %rax, {}(%rbx)\n    mov %rdx, {}(%rbx)\n", 16 * *off, 16 * *off + 8));
+        }
+        out.push_str("    pop %rbx\n    pop %rbp\n    ret\n");
+    }
+    for (i, c) in classes.iter().enumerate() {
+        out.push_str(&format!("    .section .rodata\n.Lclsname{}: .asciz \"{}\"\n", i, c.name));
+        if !c.slots.is_empty() {
+            out.push_str(&format!("    .align 8\n.Lclsmt{}:\n", i));
+            for (_, f) in &c.slots {
+                out.push_str(&format!("    .quad hbc_fn_{}\n", f));
+            }
+        }
+        let parent = c.parent.map(|p| format!("hrobj_desc_{}", p)).unwrap_or_else(|| "0".to_string());
+        let mt = if c.slots.is_empty() { "0".to_string() } else { format!(".Lclsmt{}", i) };
+        let init = if c.inits.is_empty() { "0".to_string() } else { format!("hrobj_init_{}", i) };
+        out.push_str(&format!("    .data\n    .align 8\nhrobj_desc_{}:\n    .quad .Lclsname{}\n    .quad {}\n    .long {}, {}\n    .long {}, 0\n    .quad {}\n    .quad {}\n    .quad 0\n    .quad 0\n    .quad 0\n    .quad 0\n    .text\n", i, i, parent, c.own_start, c.ndatas, c.slots.len(), mt, init));
+    }
+    out.push_str(HROBJ_BLOB);
+    // The blob ends in its `.note` marker sections; re-enter .text for
+    // whatever the caller emits next.
+    out.push_str("\n    .text\n");
+}
+
 fn cg_i64_tagged(out: &mut String) {
     out.push_str("    mov %rax, %r11\n    imul $9, %rdx, %rax\n    mov %r11, %rdx\n");
 }
@@ -9085,7 +9175,31 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                 if lty==Ty::I64 {out.push_str(&format!("    mov %rdx, -{}(%rbp)\n",off-8));}
             }
         }
-        Expr::SelfObj | Expr::SelfGet(_) | Expr::Send(_, _, _) => unreachable!("rejected before codegen"),
+        Expr::SelfObj => {
+            let sv = env.iter().rev().find(|x| x.name == "Self").expect("method env has Self");
+            out.push_str(&format!("    mov -{}(%rbp), %rax\n", sv.off));
+        }
+        Expr::SelfGet(name) => {
+            // ::name DATA read: compile-time flat offset off Self.
+            let ci = CUR_METHOD_CLASS.with(|c| c.get());
+            let ci = if ci >= 0 { ci as u32 } else { unreachable!("checked") };
+            let off = data_lookup(ci, &name.to_lowercase()).expect("checked");
+            let sv = env.iter().rev().find(|x| x.name == "Self").expect("method env has Self");
+            out.push_str(&format!("    mov -{}(%rbp), %rax\n    mov {}(%rax), %rdx\n    mov {}(%rax), %rax\n\n    cmp $4, %rax\n    jne 83f\n    mov %rdx, %rdi\n    mov -8(%rdx), %rsi\n    call hbc_strcpy\n    mov %rax, %rdx\n    mov $4, %eax\n83:\n", sv.off, 16 + off * 16 + 8, 16 + off * 16));
+        }
+        Expr::Send(recv, name, args) => {
+            let ci = match expr_ty(recv, env, sigs) { Ty::Obj(ci) => ci, _ => unreachable!("checked") };
+            let lname = name.to_lowercase();
+            if method_lookup(ci, &lname).is_some() {
+                eprintln!("error: classes: method dispatch lands in stage B slice 2 (pending)");
+                process::exit(1);
+            }
+            if !args.is_empty() { unreachable!("checked") }
+            // DATA casilla read: compile-time offset, borrowed Dyn pair.
+            let off = data_lookup(ci, &lname).expect("checked");
+            cg_value(recv, env, sigs, strs, out, target);
+            out.push_str(&format!("    mov {}(%rax), %rdx\n    mov {}(%rax), %rax\n\n    cmp $4, %rax\n    jne 83f\n    mov %rdx, %rdi\n    mov -8(%rdx), %rsi\n    call hbc_strcpy\n    mov %rax, %rdx\n    mov $4, %eax\n83:\n", 16 + off * 16 + 8, 16 + off * 16));
+        }
         Expr::ByRef(_) => unreachable!("`@` arguments are emitted at the call site"),
         Expr::Int(v) => {
             out.push_str(&format!("    mov ${}, %rax\n", v));
@@ -9143,7 +9257,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                 // post-pass, so the second word never matters.
                 Ty::DArrRef | Ty::DArrRef2 => out.push_str(&format!("    mov -{}(%rbp), %rax\n    xor %edx, %edx\n", v.off)),
                 Ty::Arr(_) => unreachable!("whole-array values are emitted via cg_array_value"),
-                Ty::Obj(_) => unreachable!("class codegen pending (stage B)"),
+                Ty::Obj(_) => out.push_str(&format!("    mov -{}(%rbp), %rax\n", v.off)),
             }
         }
         Expr::Call(id,args) if dbf_result(id).is_some() => {
@@ -10337,6 +10451,12 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             // the bridge instead of the internal calling convention.
             if cg_ext_call(id, args, env, sigs, strs, out, target) {
             } else {
+            if let Some(ci) = class_find(id) {
+                // Class instantiation: lazy child-first INIT template copy +
+                // owned-string clones (oracles p10/p10b/p16/p16b). Fresh
+                // reference, refc 1: stores MOVE it in (no retain).
+                out.push_str(&format!("    lea hrobj_desc_{}(%rip), %rdi\n    call hrobj_new\n    xor %edx, %edx\n", ci));
+            } else {
             let _ = sigs;
             // Arguments are evaluated and pushed LEFT TO RIGHT (Harbour
             // order; it matters if an argument expression fails, e.g. an
@@ -10490,6 +10610,20 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                     out.push_str("    sub $16, %rsp\n    movq $4, (%rsp)\n    mov %rax, 8(%rsp)\n");
                     continue;
                 }
+                if matches!(ta, Ty::Obj(_)) && pty == Some(Ty::Dyn) {
+                    // Object to a Dyn parameter: tag 13; the callee owns
+                    // its slot, so the boundary retains for it.
+                    out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rax, %rdi\n    call hrobj_retain\n    mov (%rsp), %rax\n    add $16, %rsp\n");
+                    out.push_str("    sub $16, %rsp\n    movq $13, (%rsp)\n    mov %rax, 8(%rsp)\n");
+                    continue;
+                }
+                if matches!(ta, Ty::Obj(_)) && matches!(pty, Some(Ty::Obj(_))) {
+                    // Object to an object parameter (Self included): the
+                    // callee's slot owns a reference - retain for it.
+                    out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rax, %rdi\n    call hrobj_retain\n    mov (%rsp), %rax\n    add $16, %rsp\n");
+                    out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    movq $0, 8(%rsp)\n");
+                    continue;
+                }
                 if ta == Ty::Dyn {
                     // The callee OWNS its Dyn parameter (freed at its
                     // epilogue like any owned param): a string payload is
@@ -10548,6 +10682,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             out.push_str(&format!("    call hbc_fn_{}\n", call_lbl));
             if total > 0 {
                 out.push_str(&format!("    add ${}, %rsp\n", 16 * total));
+            }
             }
             }
         }
@@ -11153,7 +11288,26 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             }
         }
         Expr::Nil => Ty::Dyn,
-        Expr::SelfObj | Expr::SelfGet(_) | Expr::Send(_, _, _) => Ty::Dyn, // unreachable: the checker rejects them first
+        Expr::SelfObj => match CUR_METHOD_CLASS.with(|c| c.get()) {
+            ci if ci >= 0 => Ty::Obj(ci as u32),
+            _ => Ty::Dyn,
+        },
+        Expr::SelfGet(_) => Ty::Dyn, // DATA casilla
+        Expr::Send(recv, name, _) => {
+            if let Ty::Obj(ci) = expr_ty(recv, env, sigs) {
+                let lname = name.to_lowercase();
+                if let Some((_, fname)) = method_lookup(ci, &lname) {
+                    // Constructor: the value is the receiver's instance.
+                    if CLASSES.with(|c| c.borrow()[ci as usize].ctor.clone()) .as_deref() == Some(fname.as_str()) {
+                        return Ty::Obj(ci);
+                    }
+                    if let Some(s) = sigs.iter().find(|s| s.name == fname) {
+                        if let Some(r) = s.ret { return r; }
+                    }
+                }
+            }
+            Ty::Dyn // DATA casilla
+        }
         Expr::Str(_) => Ty::Str,
         Expr::Var(id) => match env.iter().find(|v| v.name == *id).expect("checked").ty {
             // A by-reference parameter reads as its pointee type (hk216).
@@ -11203,6 +11357,9 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
                 let tb = expr_ty(&args[2], env, sigs);
                 return if ta == Ty::F64 || tb == Ty::F64 { Ty::F64 }
                     else if matches!(ta, Ty::StrOwn) || matches!(tb, Ty::StrOwn) { Ty::StrOwn } else { ta };
+            }
+            if let Some(ci) = class_find(id) {
+                return Ty::Obj(ci); // instantiation `TClass()`
             }
             match sigs.iter().find(|v| v.name == *id) {
                 Some(s) => s.ret.expect("checked"),
@@ -11350,8 +11507,12 @@ fn cg_dyn_free_old(out: &mut String, off: usize) {
     // (borrowed) and scalar tags own nothing. .L labels only: a numeric
     // local label could hijack an enclosing snippet's reference.
     let k = fresh_lbl();
-    out.push_str(&format!("    @HBC_TAG_KIND@cmpq $4, -{}(%rbp)@HBC_TAG_END@\n    jne .Ld8a{}\n    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je .Ld8z{}\n    call hbc_freestr\n    jmp .Ld8z{}\n.Ld8a{}:\n    @HBC_TAG_KIND@cmpq $8, -{}(%rbp)@HBC_TAG_END@\n    jne .Ld8z{}\n    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je .Ld8z{}\n    mov -8(%rdi), %rsi\n    call hbc_dfree\n.Ld8z{}:\n", off, k, off - 8, k, k, k, off, k, off - 8, k, k));
-}
+    if CLASSES.with(|c| !c.borrow().is_empty()) {
+        out.push_str(&format!("    @HBC_TAG_KIND@cmpq $4, -{}(%rbp)@HBC_TAG_END@\n    jne .Ld8a{}\n    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je .Ld8z{}\n    call hbc_freestr\n    jmp .Ld8z{}\n.Ld8a{}:\n    @HBC_TAG_KIND@cmpq $8, -{}(%rbp)@HBC_TAG_END@\n    jne .Ld8b{}\n    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je .Ld8z{}\n    mov -8(%rdi), %rsi\n    call hbc_dfree\n    jmp .Ld8z{}\n.Ld8b{}:\n    @HBC_TAG_KIND@cmpq $13, -{}(%rbp)@HBC_TAG_END@\n    jne .Ld8z{}\n    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je .Ld8z{}\n    call hrobj_release\n.Ld8z{}:\n", off, k, off - 8, k, k, k, off, k, off - 8, k, k, k, off, k, off - 8, k, k));
+    } else {
+        // No classes: tag 13 is impossible, keep the pristine shape.
+        out.push_str(&format!("    @HBC_TAG_KIND@cmpq $4, -{}(%rbp)@HBC_TAG_END@\n    jne .Ld8a{}\n    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je .Ld8z{}\n    call hbc_freestr\n    jmp .Ld8z{}\n.Ld8a{}:\n    @HBC_TAG_KIND@cmpq $8, -{}(%rbp)@HBC_TAG_END@\n    jne .Ld8z{}\n    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je .Ld8z{}\n    mov -8(%rdi), %rsi\n    call hbc_dfree\n.Ld8z{}:\n", off, k, off - 8, k, k, k, off, k, off - 8, k, k));
+    }}
 
 // Extend-System C boundary (docs/EXTEND-BRIDGE.md). Returns true when
 // the call was emitted through the bridge. Each argument is marshaled
@@ -11466,10 +11627,13 @@ fn layout_locals(stmts: &[Stmt], env: &mut Vec<CgLocal>, sigs: &[Sig], frame: &m
                 // declaration, in lockstep with the checker through the
                 // one shared predicate.
                 if t == Ty::Dyn && matches!(e, Expr::Nil) && !byref_names.contains(id) && bare_local_is_for_counter(stmts, si, id) { t = Ty::I64; }
+                // Object narrowing handoff (see OBJ_NARROW): the slot is
+                // the 8-byte object casilla the checker settled on.
+                if let Some(ci) = OBJ_NARROW.with(|m| m.borrow().get(&(CUR_FN.with(|c| c.borrow().clone()), id.clone())).copied()) { t = Ty::Obj(ci); }
                 *frame += size_of(t);
                 env.push(CgLocal { name: id.clone(), ty: t, off: *frame });
-                if matches!(t, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::StrOwn | Ty::Hash | Ty::Dyn | Ty::DArrDyn) {
-                    darr_slots.push((*frame, if t == Ty::Dyn { 7 } else if t == Ty::Hash { 2 } else if t == Ty::DArr3 { 3 } else if t == Ty::DArr4 { 6 } else if t == Ty::DArrS { 4 } else if t == Ty::StrOwn { 5 } else if t == Ty::DArrDyn { 8 } else { (t == Ty::DArr2) as u8 }));
+                if matches!(t, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::StrOwn | Ty::Hash | Ty::Dyn | Ty::DArrDyn | Ty::Obj(_)) {
+                    darr_slots.push((*frame, if t == Ty::Dyn { 7 } else if t == Ty::Hash { 2 } else if t == Ty::DArr3 { 3 } else if t == Ty::DArr4 { 6 } else if t == Ty::DArrS { 4 } else if t == Ty::StrOwn { 5 } else if t == Ty::DArrDyn { 8 } else if matches!(t, Ty::Obj(_)) { 9 } else { (t == Ty::DArr2) as u8 }));
                 }
             }
             Stmt::AAdd(_, id, e) => {
@@ -12169,6 +12333,13 @@ fn cg_print_items(es: &[Expr], inline: bool, raw: bool, stderr: bool, env: &[CgL
                         out.push_str("    xor %eax, %eax\n    push %rax\n    push %rax\n");
                         continue;
                     }
+                    if matches!(expr_ty(e, env, sigs), Ty::Obj(_)) {
+                        // Object item: the pointer rides the tag slot; the
+                        // consumer prints NIL for null, nothing otherwise.
+                        cg_value(e, env, sigs, strs, out, target);
+                        out.push_str("    push $0\n    push %rax\n");
+                        continue;
+                    }
                     cg_value(e, env, sigs, strs, out, target);
                     out.push_str("    push %rdx\n    push %rax\n");
                 }
@@ -12235,6 +12406,15 @@ fn cg_print_items(es: &[Expr], inline: bool, raw: bool, stderr: bool, env: &[CgL
                         else { out.push_str("    call hbc_print_sep\n"); }
                     }
                     if renders_empty(e) { continue; }
+                    if matches!(t, Ty::Obj(_)) {
+                        // Live object: prints nothing (oracle p23/p_sep,
+                        // the separator stays held). Null slot: NIL.
+                        let id = print_lbl();
+                        out.push_str(&format!("    mov {}(%rsp), %rax\n    test %rax, %rax\n    je .Lpn{}\n    jmp .Lpo{}\n.Lpn{}:\n", off, id, id, id));
+                        if !stderr && !raw { out.push_str("    call hbc_pflush\n"); }
+                        out.push_str(&format!("    mov $1, %eax\n    xor %edx, %edx\n    call hbc_print_dyn\n.Lpo{}:\n", id));
+                        continue;
+                    }
                     let is_last = !raw && last_vis == Some(i);
                     let hold_string = !stderr && !raw;
                     if cg_iif_out_rawdyn(e, env, sigs).is_some() {
@@ -12464,7 +12644,33 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
     for (si, s) in stmts.iter().enumerate() {
         trace_location(fname.split("__br").next().unwrap_or(fname), stmt_line(s), strs, out);
         match s {
-            Stmt::SelfSet(..) | Stmt::SendSet(..) | Stmt::SendStmt(..) => unreachable!("rejected before codegen"),
+            Stmt::SendStmt(_, e) => {
+                // Inert DATA read today; method sends exit in cg_expr (slice 2).
+                cg_value(e, env, sigs, strs, out, target);
+            }
+            Stmt::SelfSet(_, name, e) => {
+                let ci = CUR_METHOD_CLASS.with(|c| c.get());
+                let ci = if ci >= 0 { ci as u32 } else { unreachable!("checked") };
+                let off = data_lookup(ci, &name.to_lowercase()).expect("checked");
+                let sv = env.iter().rev().find(|x| x.name == "Self").expect("method env has Self").off;
+                cg_data_value(e, env, sigs, strs, out, target);
+                out.push_str("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+                out.push_str(&format!("    mov -{}(%rbp), %rax\n    mov %rax, 16(%rsp)\n", sv));
+                // Release the old casilla value (tag 4 owned string only;
+                // tag 13 impossible in this increment).
+                out.push_str(&format!("    cmpq $4, {}(%rax)\n    jne 84f\n    mov {}(%rax), %rdi\n    test %rdi, %rdi\n    je 84f\n    call hbc_freestr\n84:\n", 16 + off * 16, 16 + off * 16 + 8));
+                out.push_str(&format!("    mov 16(%rsp), %rax\n    mov (%rsp), %rcx\n    mov %rcx, {}(%rax)\n    mov 8(%rsp), %rcx\n    mov %rcx, {}(%rax)\n    add $32, %rsp\n", 16 + off * 16, 16 + off * 16 + 8));
+            }
+            Stmt::SendSet(_, recv, name, e) => {
+                let ci = match expr_ty(recv, env, sigs) { Ty::Obj(ci) => ci, _ => unreachable!("checked") };
+                let off = data_lookup(ci, &name.to_lowercase()).expect("checked");
+                cg_value(recv, env, sigs, strs, out, target);
+                out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n");
+                cg_data_value(e, env, sigs, strs, out, target);
+                out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+                out.push_str(&format!("    mov 16(%rsp), %rax\n    cmpq $4, {}(%rax)\n    jne 84f\n    mov {}(%rax), %rdi\n    test %rdi, %rdi\n    je 84f\n    call hbc_freestr\n84:\n", 16 + off * 16, 16 + off * 16 + 8));
+                out.push_str(&format!("    mov 16(%rsp), %rax\n    mov (%rsp), %rcx\n    mov %rcx, {}(%rax)\n    mov 8(%rsp), %rcx\n    mov %rcx, {}(%rax)\n    add $32, %rsp\n", 16 + off * 16, 16 + off * 16 + 8));
+            }
             Stmt::CallStmt(_, e) => {
                 if matches!(e, Expr::Var(_)) { continue; } // no owned result
                 if expr_ty(e, env, sigs) == Ty::F64 {
@@ -12527,6 +12733,8 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 // and the FOR writes it.
                 let bare_cnt = t == Ty::Dyn && matches!(e, Expr::Nil) && !byref_names.contains(id) && bare_local_is_for_counter(stmts, si, id);
                 if bare_cnt { t = Ty::I64; }
+                // Same object-narrowing handoff as layout_locals.
+                if let Some(ci) = OBJ_NARROW.with(|m| m.borrow().get(&(CUR_FN.with(|c| c.borrow().clone()), id.clone())).copied()) { t = Ty::Obj(ci); }
                 *frame += size_of(t);
                 let off = *frame;
                 if bare_cnt {
@@ -12574,6 +12782,22 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                         out.push_str(&format!("    movsd %xmm0, -{}(%rbp)\n    mov %rdi, -{}(%rbp)\n", off, off - 8));
                     }
                     Ty::Arr(_) => cg_array_value(e, off, env, sigs, strs, out, target),
+                    Ty::Obj(_) => {
+                        if matches!(e, Expr::Nil) {
+                            // Bare local (possibly checker-narrowed): the
+                            // slot starts as a null pointer.
+                            out.push_str(&format!("    movq $0, -{}(%rbp)\n", off));
+                        } else {
+                            // 8-byte slot. A fresh reference (instantiation)
+                            // moves in; any other source is shared -> retain
+                            // (registered sharing semantics).
+                            cg_value(e, env, sigs, strs, out, target);
+                            if !matches!(e, Expr::Call(id, _) if class_find(id).is_some()) {
+                                out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rax, %rdi\n    call hrobj_retain\n    mov (%rsp), %rax\n    add $16, %rsp\n");
+                            }
+                            out.push_str(&format!("    mov %rax, -{}(%rbp)\n", off));
+                        }
+                    }
                     _ => {
                         cg_value(e, env, sigs, strs, out, target);
                         if i64_init {
@@ -13317,6 +13541,39 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                     out.push_str(&format!("    mov -{}(%rbp), %r11\n", off));
                     out.push_str("    mov (%r11), %rdi\n    test %rdi, %rdi\n    je 86f\n    call hbc_freestr\n86:\n");
                     out.push_str(&format!("    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    add $16, %rsp\n    mov -{}(%rbp), %r11\n    mov %rax, (%r11)\n    mov %rdx, 8(%r11)\n", off));
+                    continue;
+                }
+                if matches!(lty, Ty::Obj(_)) && matches!(e, Expr::Nil) {
+                    // `o := NIL`: release the reference, store null.
+                    out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 86f\n    call hrobj_release\n86:\n", off));
+                    out.push_str(&format!("    movq $0, -{}(%rbp)\n", off));
+                    continue;
+                }
+                if matches!(lty, Ty::Obj(_)) && matches!(t, Ty::Obj(_)) {
+                    // Sharing assignment: retain the NEW reference first,
+                    // then release the old one (`o := o` survives).
+                    cg_value(e, env, sigs, strs, out, target);
+                    if matches!(e, Expr::Call(cid, _) if class_find(cid).is_some()) {
+                        out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n");
+                    } else {
+                        out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rax, %rdi\n    call hrobj_retain\n");
+                    }
+                    out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 86f\n    call hrobj_release\n86:\n", off));
+                    out.push_str(&format!("    mov (%rsp), %rax\n    add $16, %rsp\n    mov %rax, -{}(%rbp)\n", off));
+                    continue;
+                }
+                if lty == Ty::Dyn && matches!(t, Ty::Obj(_)) {
+                    // Object into a Dyn slot: tag 13, retain (the slot
+                    // becomes an owner), then release the old slot value.
+                    cg_value(e, env, sigs, strs, out, target);
+                    if matches!(e, Expr::Call(cid, _) if class_find(cid).is_some()) {
+                        out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n");
+                    } else {
+                        out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rax, %rdi\n    call hrobj_retain\n");
+                    }
+                    out.push_str("    mov (%rsp), %rdx\n    movq $13, (%rsp)\n");
+                    cg_dyn_free_old(out, off);
+                    out.push_str(&format!("    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    add $16, %rsp\n    mov %rax, -{}(%rbp)\n    mov %rdx, -{}(%rbp)\n", off, off - 8));
                     continue;
                 }
                 if t == Ty::Hash {
@@ -14922,6 +15179,11 @@ fn cg_func(f: &Func, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, tar
             // string payload (tag 4), so the epilogue frees it once.
             darr_slots.push((v.off, 7));
         }
+        if matches!(v.ty, Ty::Obj(_)) {
+            // Object params own a reference: the boundary retained for
+            // this slot; the epilogue releases it.
+            darr_slots.push((v.off, 9));
+        }
     }
 
     let trace_off = frame + 32;
@@ -14934,14 +15196,20 @@ fn cg_func(f: &Func, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, tar
     out.push_str(&format!("    sub $.Lavframe{}, %rsp\n",avframe));
     PROC_NAME.with(|v| *v.borrow_mut() = f.name.split("__br").next().unwrap_or(&f.name).to_ascii_uppercase());
     CUR_FN.with(|c| *c.borrow_mut() = f.name.clone());
+    CUR_METHOD_CLASS.with(|c| c.set(match METHOD_CLASS.with(|m| m.borrow().get(&f.name).copied()) { Some(ci) => ci as i64, None => -1 }));
     trace_link(trace_off, out);
     trace_location(&f.name, f.stmts.first().map(stmt_line).unwrap_or(0), strs, out);
     // Zero-init every dynamic-array slot (parameters included): the
     // epilogue and reassignment free any non-null slot, so every slot must
     // start in the known-empty state even when its declaring branch never
     // runs. Argument copy-in below overwrites the parameter slots.
-    for (off, _) in &darr_slots {
-        out.push_str(&format!("    movq $0, -{}(%rbp)\n    movq $0, -{}(%rbp)\n", off, off - 8));
+    for (off, cls) in &darr_slots {
+        if *cls == 9 {
+            // 8-byte object slot: zero its single word only.
+            out.push_str(&format!("    movq $0, -{}(%rbp)\n", off));
+        } else {
+            out.push_str(&format!("    movq $0, -{}(%rbp)\n    movq $0, -{}(%rbp)\n", off, off - 8));
+        }
     }
     // Copy incoming arguments from the caller's stack into the parameter
     // slots: arguments were pushed left to right, so arg k sits at
@@ -15022,8 +15290,17 @@ fn cg_func(f: &Func, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, tar
                 // tag-2 views (FOR EACH over hash keys) and scalar tags
                 // (0/1/3) own nothing.
                 let k7 = fresh_lbl();
-                out.push_str(&format!("    @HBC_TAG_KIND@cmpq $4, -{}(%rbp)@HBC_TAG_END@\n    jne .Le8a{}\n    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 91{}f\n    call hbc_freestr\n    jmp 91{}f\n.Le8a{}:\n    @HBC_TAG_KIND@cmpq $8, -{}(%rbp)@HBC_TAG_END@\n    jne 91{}f\n    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 91{}f\n    mov -8(%rdi), %rsi\n    call hbc_dfree\n91{}:\n", off, k7, off - 8, i, i, k7, off, i, off - 8, i, i));
+                if CLASSES.with(|c| !c.borrow().is_empty()) {
+                    out.push_str(&format!("    @HBC_TAG_KIND@cmpq $4, -{}(%rbp)@HBC_TAG_END@\n    jne .Le8a{}\n    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 91{}f\n    call hbc_freestr\n    jmp 91{}f\n.Le8a{}:\n    @HBC_TAG_KIND@cmpq $8, -{}(%rbp)@HBC_TAG_END@\n    jne .Le8b{}\n    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 91{}f\n    mov -8(%rdi), %rsi\n    call hbc_dfree\n    jmp 91{}f\n.Le8b{}:\n    @HBC_TAG_KIND@cmpq $13, -{}(%rbp)@HBC_TAG_END@\n    jne 91{}f\n    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 91{}f\n    call hrobj_release\n91{}:\n", off, k7, off - 8, i, i, k7, off, k7, off - 8, i, i, k7, off, i, off - 8, i, i));
+                } else {
+                    // No classes: tag 13 is impossible, keep the pristine shape.
+                    out.push_str(&format!("    @HBC_TAG_KIND@cmpq $4, -{}(%rbp)@HBC_TAG_END@\n    jne .Le8a{}\n    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 91{}f\n    call hbc_freestr\n    jmp 91{}f\n.Le8a{}:\n    @HBC_TAG_KIND@cmpq $8, -{}(%rbp)@HBC_TAG_END@\n    jne 91{}f\n    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 91{}f\n    mov -8(%rdi), %rsi\n    call hbc_dfree\n91{}:\n", off, k7, off - 8, i, i, k7, off, i, off - 8, i, i));
+                }
             }
+            9 => {
+                // Object slot: release the reference (refc 0 recycles the
+                // instance into its class freelist).
+                out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 91{}f\n    call hrobj_release\n91{}:\n", off, i, i));            }
             _ => {
                 out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 91{}f\n    mov $16, %esi\n    call hbc_free\n91{}:\n", off, i, i));
             }
@@ -17133,8 +17410,9 @@ fn finalize_tag_kind_accessors(out: String, dbf: bool) -> String {
 }
 
 fn emit_asm(funcs: &[Func], sigs: &[Sig], externs: &[String], target: Target, instrument: bool) -> String {
-    if CLASSES.with(|c| !c.borrow().is_empty()) {
-        eprintln!("error: classes: the checker landed (stage A); code generation is stage B (pending)");
+    let nclasses = CLASSES.with(|c| c.borrow().len());
+    if nclasses > 0 && !matches!(target, Target::Linux) {
+        eprintln!("error: classes are Linux-only in this increment (the Windows runtime blob is pending)");
         process::exit(1);
     }
     let mut out = String::new();
@@ -17195,6 +17473,9 @@ fn emit_asm(funcs: &[Func], sigs: &[Sig], externs: &[String], target: Target, in
     // before this change (they carry their own copy) and keeps working
     // against new hbhbr.o, whose HB_FUNC still registers its section
     // entry. Nothing here is emitted for a program without EXTERNAL.
+    if nclasses > 0 {
+        emit_class_runtime(sigs, &mut strs, &mut out, target);
+    }
     if !externs.is_empty() {
         for name in externs.iter() {
             // The thunk reads its own hbc-convention frame (argc at
@@ -17373,7 +17654,10 @@ hbc_dbf_eprint:
         }
         Target::Linux => {}
     }
-    out.push_str(r#"
+    {
+        // The tag-13 (object) branch exists only when the program has
+        // classes: class-free programs keep byte-identical runtime asm.
+        let blob = r#"
 # hbc_print_str: %rax = ptr, %rdx = len. Writes the raw bytes, no newline:
 # Harbour `?` emits the newline BEFORE the items (probes b51-b57).
 hbc_write_bytes:
@@ -18032,7 +18316,13 @@ hbc_dynxeq_dd:
     jmp hbc_dynxeq_error
 8:  xor %eax, %eax
     ret
-"#);
+"#;;
+        if CLASSES.with(|c| !c.borrow().is_empty()) {
+            out.push_str(&blob.replace("    cmp $8, %rax\n    je 13f\n    mov %rax, %r10", "    cmp $8, %rax\n    je 13f\n    cmp $13, %rax\n    je 13f\n    mov %rax, %r10"));
+        } else {
+            out.push_str(blob);
+        }
+    }
 
     out.push_str(r#"
 # hbc_bound_error: array index outside 1..=n at runtime (noreturn). Prints
@@ -21624,6 +21914,7 @@ fn main() {
                         res = res2;
                         ret = ret2;
                         top_ctxs = top_ctxs2;
+                        env = env2;
                     } else {
                         view[fi].ret = saved;
                         res = Err(first.0);
@@ -21632,6 +21923,14 @@ fn main() {
                 }
             }
             f.dyn_names = dyn_names;
+            if res.is_ok() {
+                OBJ_NARROW.with(|m| {
+                    let mut m = m.borrow_mut();
+                    for v in &env {
+                        if let Ty::Obj(ci) = v.ty { m.insert((f.name.clone(), v.name.clone()), ci); }
+                    }
+                });
+            }
             if let Err(m) = res {
                 if first_err.is_none() { first_err = Some(m); }
             }
@@ -21747,6 +22046,24 @@ fn main() {
             Err(e) => {eprintln!("error: {}",e);process::exit(1);}
         }
     }
+    // DATA INIT expressions get their type check here (the class table
+    // carried them as syntax; scalar/Dyn-representable only).
+    CLASSES.with(|c| {
+        for ci in c.borrow().iter() {
+            for (_, e) in &ci.inits {
+                let mut ienv: Vec<Local> = Vec::new();
+                match type_expr(e, &mut ienv, &mut sigs, 0) {
+                    Ok(t) => {
+                        if let Err(m) = check_data_value(0, "INIT", t) {
+                            eprintln!("error: class `{}`: {}", ci.name, m);
+                            process::exit(1);
+                        }
+                    }
+                    Err(m) => { eprintln!("error: class `{}`: {}", ci.name, m); process::exit(1); }
+                }
+            }
+        }
+    });
     let out = emit_asm(&funcs, &sigs, &externs, target, instrument);
 
     fs::write(pos[1], out)

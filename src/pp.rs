@@ -2051,14 +2051,27 @@ pub fn process(path: &str, pp: &mut Pp, out: &mut String, depth: usize) -> Resul
                     } else {
                         arg.trim_matches(|c| c == '"' || c == '\'').to_string()
                     };
+                    // hbclass.ch declares Harbour's OWN class syntax for
+                    // the preprocessor. Classes are NATIVE in this
+                    // compiler, so the header is a no-op here (never read,
+                    // never needed on the -I paths): the same .prg compiles
+                    // against real Harbour (which needs it) and hbc.
+                    // hbclass.ch declares Harbour's OWN class syntax for
+                    // the preprocessor. Classes are NATIVE in this
+                    // compiler, so the header is a no-op here (never read,
+                    // never needed on the -I paths): the same .prg compiles
+                    // against real Harbour (which needs it) and hbc.
+                    let skip = name.rsplit('/').next().unwrap_or(&name).eq_ignore_ascii_case("hbclass.ch");
                     let parent_dir = std::path::Path::new(path).parent().map(|p| p.to_path_buf()).filter(|p| !p.as_os_str().is_empty()).unwrap_or_else(|| std::path::PathBuf::from("."));
                     let mut cands: Vec<String> = Vec::new();
                     if !angle { cands.push(format!("{}/{}", parent_dir.display(), name)); }
                     for d in &pp.incdirs { cands.push(format!("{}/{}", d, name)); }
                     let mut full = None;
                     for c in cands { if fs::metadata(&c).is_ok() { full = Some(c); break; } }
-                    let f = full.ok_or_else(|| format!("line {}: cannot find include {}", line, name))?;
-                    process(&f, pp, out, depth + 1)?;
+                    if !skip {
+                        let f = full.ok_or_else(|| format!("line {}: cannot find include {}", line, name))?;
+                        process(&f, pp, out, depth + 1)?;
+                    }
                 }
             }
             "ERROR" => {
