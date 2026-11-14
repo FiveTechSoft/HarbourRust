@@ -568,6 +568,9 @@ fn proc_metadata_needed(funcs: &[Func], externs: bool) -> bool {
             Stmt::If(_,e,a,b) => expr(e,funcs)||stmts(a,funcs)||stmts(b,funcs),
             Stmt::While(_,e,b) => expr(e,funcs)||stmts(b,funcs),
             Stmt::For(_,_,a,b,_,ss) => expr(a,funcs)||expr(b,funcs)||stmts(ss,funcs),
+            Stmt::Try(_,b,c,f) => stmts(b,funcs)||c.as_ref().map_or(false,|(_,cb)|stmts(cb,funcs))||f.as_ref().map_or(false,|fb|stmts(fb,funcs)),
+            Stmt::CatchBind(..) => false,
+            Stmt::Break(_,e) => expr(e,funcs),
             Stmt::Exit(_)|Stmt::Loop(_) => false,
             _ => true,
         })
@@ -591,6 +594,7 @@ fn stmt_line(s: &Stmt) -> usize {
         Stmt::AAddSub3(n,..) | Stmt::ASizeSub3(n,..) | Stmt::ASize(n,..) |
         Stmt::AIns(n,..) | Stmt::ADel(n,..) | Stmt::AFill(n,..) |
         Stmt::Exit(n) | Stmt::Loop(n) | Stmt::For(n,..) | Stmt::ForEach(n,..) | Stmt::Switch(n,..) => *n,
+        Stmt::Try(n,..) | Stmt::CatchBind(n,..) | Stmt::Break(n,..) => *n,
     }
 }
 
@@ -943,6 +947,9 @@ enum Stmt {
     For(usize, String, Expr, Expr, i64, Vec<Stmt>), // line, var, start, end, step (non-zero literal), body
     ForEach(usize, String, Expr, Vec<Stmt>), // line, var, collection (borrowed), body
     Switch(usize, Expr, Vec<(usize, CaseLit, Vec<Stmt>)>, Option<(usize, Vec<Stmt>)>), // line, selector, case arms, otherwise
+    Try(usize, Vec<Stmt>, Option<(Option<String>, Vec<Stmt>)>, Option<Vec<Stmt>>), // TRY body, CATCH (var, body), FINALLY body (Harbour BEGIN SEQUENCE semantics)
+    CatchBind(usize, String), // first statement of a CATCH body: bind the pending exception value into the catch variable (a Dyn slot)
+    Break(usize, Expr),       // Break( value ): unwind to the nearest active TRY handler (Harbour Break())
 }
 
 struct Func {
@@ -2209,13 +2216,72 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                     return Err(format!("line {}: expected `do while` or `do name [WITH args]`", n));
                 }
             }
+            Tok::Ident(id) if id.eq_ignore_ascii_case("break") && toks.len() >= 4 && toks[1] == Tok::LParen && toks[toks.len() - 1] == Tok::RParen => {
+                // Break( value ): unwind to the nearest active TRY (Harbour
+                // Break(); statement form only in this increment).
+                let e = parse_expr_tokens(toks[2..toks.len() - 1].to_vec(), n)?;
+                out.push(Stmt::Break(n, e));
+                *i += 1;
+            }
+            Tok::Ident(id) if id.eq_ignore_ascii_case("try") && toks.len() == 1 => {
+                // TRY ... [CATCH [var]] ... [FINALLY] ... END - Harbour's
+                // hbcompat.ch shape (TRY/CATCH/FINALLY over BEGIN SEQUENCE /
+                // RECOVER / ALWAYS), measured against the oracle pin:
+                // CATCH receives the error value, FINALLY always runs, an
+                // uncaught error keeps unwinding after FINALLY, nesting and
+                // cross-function unwinding work, RETURN/EXIT from within the
+                // TRY body are Harbour compile errors (E0025 parity, checked
+                // in check_stmts). At least one of CATCH/FINALLY is required.
+                *i += 1;
+                let mut body = Vec::new();
+                parse_stmts(lines, i, &mut body, depth + 1)?;
+                let mut catch: Option<(Option<String>, Vec<Stmt>)> = None;
+                let mut finally: Option<Vec<Stmt>> = None;
+                if *i < lines.len() {
+                    if let Tok::Ident(cid) = &lines[*i].1[0] {
+                        if cid.eq_ignore_ascii_case("catch") && (lines[*i].1.len() == 1 || (lines[*i].1.len() == 2 && matches!(&lines[*i].1[1], Tok::Ident(_)))) {
+                            let cn = lines[*i].0;
+                            let var = match lines[*i].1.get(1) {
+                                Some(Tok::Ident(v)) => { check_ident(v, cn)?; Some(v.clone()) }
+                                _ => None,
+                            };
+                            *i += 1;
+                            let mut cbody = Vec::new();
+                            parse_stmts(lines, i, &mut cbody, depth + 1)?;
+                            if let Some(v) = &var {
+                                cbody.insert(0, Stmt::CatchBind(cn, v.clone()));
+                            }
+                            catch = Some((var, cbody));
+                        }
+                    }
+                }
+                if *i < lines.len() {
+                    if let Tok::Ident(fid) = &lines[*i].1[0] {
+                        if fid.eq_ignore_ascii_case("finally") && lines[*i].1.len() == 1 {
+                            *i += 1;
+                            let mut fbody = Vec::new();
+                            parse_stmts(lines, i, &mut fbody, depth + 1)?;
+                            finally = Some(fbody);
+                        }
+                    }
+                }
+                if catch.is_none() && finally.is_none() {
+                    return Err(format!("line {}: `try` needs a `catch` or a `finally` block (xHarbour rule, Harbour hbcompat.ch mapping)", n));
+                }
+                if *i >= lines.len() || !matches!(&lines[*i].1[0], Tok::Ident(eid) if eid.eq_ignore_ascii_case("end")) || lines[*i].1.len() != 1 {
+                    return Err(format!("line {}: `try` without `end`", n));
+                }
+                *i += 1;
+                out.push(Stmt::Try(n, body, catch, finally));
+            }
             Tok::Ident(id) => {
                 // DO CASE body terminators (oracles hk374-hk376): inside a
                 // nested body these hand control back to the enclosing
                 // `do case` loop. A same-named variable being ASSIGNED
                 // stays a statement (the NOTE precedent, oracle hk249).
                 if depth > 0
-                    && (id.eq_ignore_ascii_case("case") || id.eq_ignore_ascii_case("otherwise") || id.eq_ignore_ascii_case("endcase") || id.eq_ignore_ascii_case("end"))
+                    && (id.eq_ignore_ascii_case("case") || id.eq_ignore_ascii_case("otherwise") || id.eq_ignore_ascii_case("endcase") || id.eq_ignore_ascii_case("end")
+                        || ((id.eq_ignore_ascii_case("catch") || id.eq_ignore_ascii_case("finally")) && (toks.len() == 1 || (toks.len() == 2 && matches!(&toks[1], Tok::Ident(_))))))
                     && !matches!(toks.get(1), Some(Tok::Assign) | Some(Tok::Eq))
                 {
                     return Ok(());
@@ -4170,6 +4236,13 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
                     walk(f, e, sigs, lit, pin, printed, *n)?;
                 }
                 Stmt::Ret(_, None) => {}
+                Stmt::Try(_, tb, tc, tf) => {
+                    walk_stmts(f, tb, sigs, lit, pin, printed, nil_ret)?;
+                    if let Some((_, cb)) = tc { walk_stmts(f, cb, sigs, lit, pin, printed, nil_ret)?; }
+                    if let Some(fb) = tf { walk_stmts(f, fb, sigs, lit, pin, printed, nil_ret)?; }
+                }
+                Stmt::CatchBind(..) => {}
+                Stmt::Break(n, e) => { walk(f, e, sigs, lit, pin, printed, *n)?; }
                 Stmt::If(n, c, a, b) => {
                     walk(f, c, sigs, lit, pin, printed, *n)?;
                     walk_stmts(f, a, sigs, lit, pin, printed, nil_ret)?;
@@ -7727,6 +7800,13 @@ fn stmt_mentions(s: &Stmt, name: &str) -> bool {
         Stmt::Print(_, items, _) => items.iter().any(|e| expr_mentions(e, name)),
         Stmt::Ret(_, Some(e)) => expr_mentions(e, name),
         Stmt::Ret(_, None) | Stmt::Exit(_) | Stmt::Loop(_) => false,
+        Stmt::Try(_, b, c, f) => {
+            stmts_mention(b, name)
+                || c.as_ref().map_or(false, |(v, cb)| v.as_deref() == Some(name) || stmts_mention(cb, name))
+                || f.as_ref().map_or(false, |fb| stmts_mention(fb, name))
+        }
+        Stmt::CatchBind(_, v) => v == name,
+        Stmt::Break(_, e) => expr_mentions(e, name),
         Stmt::If(_, c, a, b) => {
             expr_mentions(c, name) || stmts_mention(a, name) || stmts_mention(b, name)
         }
@@ -7817,7 +7897,7 @@ fn stmt_mentions(s: &Stmt, name: &str) -> bool {
 // One enclosing breakable construct for the moved-value checker: a loop
 // (EXIT/LOOP bind it) or a switch (EXIT binds it, LOOP passes through to
 // the innermost loop - oracle sw-loop-in-for).
-struct ChkCtx { is_loop: bool, pre: Vec<bool>, exits: Vec<Vec<bool>> }
+struct ChkCtx { is_loop: bool, is_try: bool, is_fin: bool, pre: Vec<bool>, exits: Vec<Vec<bool>> }
 
 fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &mut Option<Ty>, ctxs: &mut Vec<ChkCtx>, dyn_names: &std::collections::HashSet<String>, byref_names: &std::collections::HashSet<String>) -> Result<bool, String> {
     let mut falls = true;
@@ -8012,6 +8092,12 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 }
             }
             Stmt::Ret(n, Some(e)) => {
+                if ctxs.iter().any(|c| c.is_try) {
+                    return Err(format!("line {}: `return` from within a TRY body is a Harbour compile error (E0025: invalid RETURN from within of SEQUENCE code)", n));
+                }
+                if ctxs.iter().any(|c| c.is_fin) {
+                    return Err(format!("line {}: `return` from within a FINALLY block is not in this increment (Harbour defers it through the unwind; CATCH bodies take a normal `return`)", n));
+                }
                 let t = type_expr(e, env, sigs, *n)?;
                 if t==Ty::NumLocal {return Err(format!("line {}: mixed numeric LOCAL return ABI is not in this increment",n));}
                 if t == Ty::F64 {
@@ -8057,6 +8143,12 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 }
             }
             Stmt::Ret(n, None) => {
+                if ctxs.iter().any(|c| c.is_try) {
+                    return Err(format!("line {}: `return` from within a TRY body is a Harbour compile error (E0025: invalid RETURN from within of SEQUENCE code)", n));
+                }
+                if ctxs.iter().any(|c| c.is_fin) {
+                    return Err(format!("line {}: `return` from within a FINALLY block is not in this increment (Harbour defers it through the unwind; CATCH bodies take a normal `return`)", n));
+                }
                 // `return` / `return nil` return NIL (probe n1c): the Dyn
                 // value {tag=1}. Mixed `return 5` / `return nil` unifies to
                 // a Dyn return (probe n2) - Harbour behaviour, not a
@@ -8089,7 +8181,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 let outer = env.len();
                 let pre: Vec<bool> = env.iter().map(|v| v.moved).collect();
                 let mut env_body = env.clone();
-                ctxs.push(ChkCtx { is_loop: true, pre, exits: Vec::new() });
+                ctxs.push(ChkCtx { is_loop: true, is_try: false, is_fin: false, pre, exits: Vec::new() });
                 let fb = check_stmts(body, &mut env_body, sigs, ret, ctxs, dyn_names, byref_names)?;
                 let wctx = ctxs.pop().expect("frame pushed above");
                 let pre = wctx.pre;
@@ -8142,7 +8234,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 let outer = env.len();
                 let pre: Vec<bool> = env.iter().map(|v| v.moved).collect();
                 let mut env_body = env.clone();
-                ctxs.push(ChkCtx { is_loop: true, pre, exits: Vec::new() });
+                ctxs.push(ChkCtx { is_loop: true, is_try: false, is_fin: false, pre, exits: Vec::new() });
                 let fb = check_stmts(body, &mut env_body, sigs, ret, ctxs, dyn_names, byref_names)?;
                 let fctx = ctxs.pop().expect("frame pushed above");
                 let pre = fctx.pre;
@@ -8314,7 +8406,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 let outer = env.len();
                 let pre: Vec<bool> = env.iter().map(|v| v.moved).collect();
                 let mut env_body = env.clone();
-                ctxs.push(ChkCtx { is_loop: true, pre, exits: Vec::new() });
+                ctxs.push(ChkCtx { is_loop: true, is_try: false, is_fin: false, pre, exits: Vec::new() });
                 let fb = check_stmts(body, &mut env_body, sigs, ret, ctxs, dyn_names, byref_names)?;
                 let fctx = ctxs.pop().expect("frame pushed above");
                 let pre = fctx.pre;
@@ -8377,7 +8469,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 let outer = env.len();
                 let pre: Vec<bool> = env.iter().map(|v| v.moved).collect();
                 let mut env_chain = env.clone();
-                ctxs.push(ChkCtx { is_loop: false, pre, exits: Vec::new() });
+                ctxs.push(ChkCtx { is_loop: false, is_try: false, is_fin: false, pre, exits: Vec::new() });
                 let mut any_fall = otherwise.is_none();
                 for (_, _, body) in arms {
                     let fb = check_stmts(body, &mut env_chain, sigs, ret, ctxs, dyn_names, byref_names)?;
@@ -8398,7 +8490,67 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 }
                 falls = any_fall;
             }
+            Stmt::Try(n, body, catch, finally) => {
+                // TRY body runs under a sequence context (E0025 guards);
+                // CATCH and FINALLY bodies are ordinary scopes (oracle:
+                // `return` inside CATCH returns normally).
+                ctxs.push(ChkCtx { is_loop: false, is_try: true, is_fin: false, pre: env.iter().map(|v| v.moved).collect(), exits: Vec::new() });
+                check_stmts(body, env, sigs, ret, ctxs, dyn_names, byref_names)?;
+                ctxs.pop().expect("frame pushed above");
+                if let Some((var, cbody)) = catch {
+                    let mark = env.len();
+                    if let Some(v) = var {
+                        if let Some(l) = env.iter().rev().find(|l| l.name == *v) {
+                            if l.ty != Ty::Dyn {
+                                return Err(format!("line {}: the CATCH variable `{}` must be dynamic in this increment (declare it without initializer): a Harbour error value does not fit a typed slot", n, v));
+                            }
+                            if l.ro {
+                                return Err(format!("line {}: the CATCH variable `{}` is a `for` counter (read-only)", n, v));
+                            }
+                        } else {
+                            // Auto-declared, scoped to the CATCH body (the
+                            // hbcompat `<-oErr->` declaration, branch-scoped
+                            // like every local declared inside a block).
+                            env.push(Local { name: v.clone(), ty: Ty::Dyn, moved: false, ro: false, byref: false });
+                        }
+                    }
+                    check_stmts(cbody, env, sigs, ret, ctxs, dyn_names, byref_names)?;
+                    env.truncate(mark);
+                }
+                if let Some(fbody) = finally {
+                    let mark = env.len();
+                    ctxs.push(ChkCtx { is_loop: false, is_try: false, is_fin: true, pre: env.iter().map(|v| v.moved).collect(), exits: Vec::new() });
+                    check_stmts(fbody, env, sigs, ret, ctxs, dyn_names, byref_names)?;
+                    ctxs.pop().expect("frame pushed above");
+                    env.truncate(mark);
+                }
+                // The body may be interrupted at any point: moves inside it
+                // cannot be relied on after the TRY, and the CATCH/FINALLY
+                // paths always reach the next statement.
+                falls = true;
+            }
+            Stmt::CatchBind(n, var) => {
+                match env.iter().rev().find(|l| l.name == *var) {
+                    Some(l) if l.ty == Ty::Dyn && !l.ro => {}
+                    _ => return Err(format!("line {}: internal: CATCH variable `{}` is not a writable dynamic slot", n, var)),
+                }
+            }
+            Stmt::Break(n, e) => {
+                let t = type_expr(e, env, sigs, *n)?;
+                match t {
+                    Ty::Dyn | Ty::I64 | Ty::Str | Ty::StrOwn => {}
+                    other => return Err(format!("line {}: Break() takes an integer, string or dynamic value in this increment ({} landed)", n, ty_name(other))),
+                }
+                apply_moves(e, env, sigs, true);
+                falls = false;
+            }
             Stmt::Exit(n) => {
+                if ctxs.last().map(|c| c.is_try).unwrap_or(false) {
+                    return Err(format!("line {}: `exit` from within a TRY body is a Harbour compile error (E0025: invalid EXIT from within of SEQUENCE code)", n));
+                }
+                if ctxs.last().map(|c| c.is_fin).unwrap_or(false) {
+                    return Err(format!("line {}: `exit` from within a FINALLY block is not in this increment", n));
+                }
                 match ctxs.last_mut() {
                     None => return Err(format!("line {}: `exit` outside a `while` loop, `for` loop or `switch`", n)),
                     Some(c) => {
@@ -8409,6 +8561,15 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 falls = false;
             }
             Stmt::Loop(n) => {
+                for c in ctxs.iter().rev() {
+                    if c.is_loop { break; }
+                    if c.is_try {
+                        return Err(format!("line {}: `loop` from within a TRY body is a Harbour compile error (E0025 parity with EXIT: invalid LOOP from within of SEQUENCE code)", n));
+                    }
+                    if c.is_fin {
+                        return Err(format!("line {}: `loop` from within a FINALLY block is not in this increment", n));
+                    }
+                }
                 let lpre = match ctxs.iter().rev().find(|c| c.is_loop) {
                     None => return Err(format!("line {}: `loop` outside a `while` loop or `for` loop", n)),
                     Some(c) => &c.pre,
@@ -9760,6 +9921,21 @@ impl<'a> EscPass<'a> {
     fn walk(&mut self, stmts: &[Stmt], depth: usize, in_loop: bool) {
         for s in stmts {
             match s {
+                Stmt::Try(_, b, c, f) => {
+                    // Bodies are ordinary branches for escape purposes; the
+                    // pending exception binds a Dyn the runtime produced.
+                    self.walk(b, depth, in_loop);
+                    if let Some((v, cb)) = c {
+                        if let Some(id) = v {
+                            self.note(id);
+                            self.decl.entry(id.clone()).or_insert((depth, in_loop));
+                        }
+                        self.walk(cb, depth, in_loop);
+                    }
+                    if let Some(fb) = f { self.walk(fb, depth, in_loop); }
+                }
+                Stmt::CatchBind(..) => {}
+                Stmt::Break(_, e) => { self.process_expr(e, &EscCtx::Transfer("break".to_string()), true, depth); }
                 Stmt::Local(_, id, e) => {
                     self.note(id);
                     self.decl.insert(id.clone(), (depth, in_loop));
@@ -10188,6 +10364,16 @@ impl<'a> EligW<'a> {
         for s in stmts {
             let line = stmt_line(s);
             match s {
+                Stmt::Try(_, b, c, f) => {
+                    self.walk(b, loop_stack);
+                    if let Some((v, cb)) = c {
+                        if let Some(id) = v { self.declare(id, loop_stack.last().copied()); }
+                        self.walk(cb, loop_stack);
+                    }
+                    if let Some(fb) = f { self.walk(fb, loop_stack); }
+                }
+                Stmt::CatchBind(..) => {}
+                Stmt::Break(_, e) => { self.note_expr(e, line); }
                 Stmt::Local(_, id, e) => {
                     self.declare(id, loop_stack.last().copied());
                     if self.producer_bad(id, e) { self.bad_producer.insert(id.clone()); }
@@ -14938,7 +15124,33 @@ fn layout_locals(stmts: &[Stmt], env: &mut Vec<CgLocal>, sigs: &[Sig], frame: &m
                 }
                 env.truncate(mark);
             }
-            Stmt::ForEach(_, var, coll, body) => {
+            Stmt::Try(_, body, catch, finally) => {
+                // In lockstep with cg_stmts: the FINALLY body is compiled
+                // once as a local subroutine; the auto-declared CATCH
+                // variable is a fresh 16-byte Dyn slot visible only while
+                // the CATCH body is laid out.
+                let mark = env.len();
+                layout_locals(body, env, sigs, frame, darr_slots, dyn_names, byref_names, slot_names);
+                env.truncate(mark);
+                if let Some((var, cbody)) = catch {
+                    let mark = env.len();
+                    if let Some(v) = var {
+                        if !env.iter().any(|x| x.name == *v) {
+                            *frame += 16;
+                            env.push(CgLocal { name: v.clone(), ty: Ty::Dyn, off: *frame });
+                        }
+                    }
+                    layout_locals(cbody, env, sigs, frame, darr_slots, dyn_names, byref_names, slot_names);
+                    env.truncate(mark);
+                }
+                if let Some(fbody) = finally {
+                    let mark = env.len();
+                    layout_locals(fbody, env, sigs, frame, darr_slots, dyn_names, byref_names, slot_names);
+                    env.truncate(mark);
+                }
+            }
+            Stmt::CatchBind(..) | Stmt::Break(..) => {}
+            Stmt::ForEach(n, var, coll, body) => {
                 // No shadow push: several codegen lookups take the FIRST
                 // name match, so the existing local is RETYPED to Dyn and
                 // pointed at the hidden element slot for the body, then
@@ -16768,6 +16980,126 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 out.push_str(&format!(".Lfee_{}_{}:
 ", fname, id));
             }
+            Stmt::Try(_, body, catch, finally) => {
+                // TRY/CATCH/FINALLY on a runtime sequence stack (Harbour
+                // BEGIN SEQUENCE semantics, oracle-measured): hbc_seq_push
+                // saves the frame context and the handler address; a runtime
+                // error (the throwable helpers) or Break() unwinds to the
+                // innermost handler, running intermediate FINALLY code. The
+                // FINALLY body is emitted ONCE as a local subroutine: the
+                // normal path and the handler path both `call` it (Harbour
+                // ALWAYS). A TRY without CATCH re-enters the unwind after
+                // its FINALLY (the exception stays on the exception stack).
+                let id = *label;
+                *label += 1;
+                let handler = format!(".Ltryh_{}_{}", fname, id);
+                let fin = format!(".Ltryf_{}_{}", fname, id);
+                let end = format!(".Ltrye_{}_{}", fname, id);
+                if let Some(fbody) = finally {
+                    out.push_str(&format!("    jmp .Ltrym_{}_{}
+{}:
+", fname, id, fin));
+                    let mark = env.len();
+                    cg_stmts(fbody, env, frame, sigs, strs, out, target, fname, label, flow, slots, dyn_names, byref_names);
+                    env.truncate(mark);
+                    out.push_str("    ret
+");
+                    out.push_str(&format!(".Ltrym_{}_{}:
+", fname, id));
+                }
+                out.push_str(&format!("    lea {}(%rip), %rdi
+    call hbc_seq_push
+", handler));
+                let mark = env.len();
+                cg_stmts(body, env, frame, sigs, strs, out, target, fname, label, flow, slots, dyn_names, byref_names);
+                env.truncate(mark);
+                out.push_str("    call hbc_seq_pop
+");
+                if finally.is_some() {
+                    out.push_str(&format!("    call {}
+", fin));
+                }
+                out.push_str(&format!("    jmp {}
+", end));
+                out.push_str(&format!("{}:
+", handler));
+                if let Some((var, cbody)) = catch {
+                    let mark = env.len();
+                    if let Some(v) = var {
+                        // Auto-declared catch variable, in lockstep with
+                        // layout_locals: a fresh Dyn slot the prologue
+                        // zeroed; CatchBind stores the pending exception.
+                        if !env.iter().any(|x| x.name == *v) {
+                            *frame += 16;
+                            env.push(CgLocal { name: v.clone(), ty: Ty::Dyn, off: *frame });
+                        }
+                    }
+                    cg_stmts(cbody, env, frame, sigs, strs, out, target, fname, label, flow, slots, dyn_names, byref_names);
+                    env.truncate(mark);
+                    if finally.is_some() {
+                        out.push_str(&format!("    call {}
+", fin));
+                    }
+                    out.push_str(&format!("    jmp {}
+", end));
+                } else {
+                    if finally.is_some() {
+                        out.push_str(&format!("    call {}
+", fin));
+                    }
+                    out.push_str("    jmp hbc_seq_unwind
+");
+                }
+                out.push_str(&format!("{}:
+", end));
+            }
+            Stmt::CatchBind(_, var) => {
+                let off = env.iter().rev().find(|v| v.name == *var).expect("checked").off;
+                out.push_str("    call hbc_seq_exc_take
+");
+                out.push_str(&format!("    mov %rax, -{}(%rbp)
+    mov %rdx, -{}(%rbp)
+", off, off - 8));
+            }
+            Stmt::Break(_, e) => {
+                match expr_ty(e, env, sigs) {
+                    Ty::Dyn => {
+                        cg_value(e, env, sigs, strs, out, target);
+                    }
+                    Ty::I64 => {
+                        cg_value(e, env, sigs, strs, out, target);
+                        cg_i64_tagged(out);
+                    }
+                    Ty::Str | Ty::StrOwn => {
+                        // The value crosses as an OWNED string (tag 4): a
+                        // literal is copied; an owned variable is handed
+                        // over and its slot nulled (move, like a return).
+                        let src_var = if let Expr::Var(src) = e {
+                            env.iter().rev().find(|x| x.name == *src && x.ty == Ty::StrOwn).map(|x| x.off)
+                        } else { None };
+                        cg_value(e, env, sigs, strs, out, target);
+                        if src_var.is_none() {
+                            out.push_str("    mov %rax, %rdi
+    mov %rdx, %rsi
+    call hbc_strcpy
+");
+                        }
+                        if let Some(off) = src_var {
+                            out.push_str(&format!("    movq $0, -{}(%rbp)
+    movq $0, -{}(%rbp)
+", off, off - 8));
+                        }
+                        out.push_str("    mov %rax, %rdx
+    mov $4, %eax
+");
+                    }
+                    _ => unreachable!("checked"),
+                }
+                out.push_str("    mov %rax, %rdi
+    mov %rdx, %rsi
+    call hbc_seq_break
+");
+            }
             Stmt::Exit(_) => {
                 match flow.last() {
                     Some(CgFrame::Loop(_, e, al)) => {
@@ -18353,6 +18685,13 @@ fn collect_blocks_expr(e: &Expr, out: &mut Vec<(usize, Vec<String>, Vec<Expr>)>)
 fn collect_blocks_stmts(stmts: &[Stmt], out: &mut Vec<(usize, Vec<String>, Vec<Expr>)>) {
     for s in stmts {
         match s {
+            Stmt::Try(_, b, c, f) => {
+                collect_blocks_stmts(b, out);
+                if let Some((_, cb)) = c { collect_blocks_stmts(cb, out); }
+                if let Some(fb) = f { collect_blocks_stmts(fb, out); }
+            }
+            Stmt::CatchBind(..) => {}
+            Stmt::Break(_, e) => collect_blocks_expr(e, out),
             Stmt::Local(_, _, e) | Stmt::Static(_, _, e) | Stmt::Assign(_, _, e) => collect_blocks_expr(e, out),
             Stmt::HDel(_, _, e) => { collect_blocks_expr(e, out); }
             Stmt::HDelAt(_, _, e) => { collect_blocks_expr(e, out); }
@@ -21793,6 +22132,8 @@ hbc_dynxeq_dd:
 # error dialog here (probes a1/a2 hang even with stdin at EOF): a clean
 # exit is the registered failure-mode difference, same error condition.
 hbc_bound_error:
+    cmpq $0, hbc_seq_depth(%rip)
+    jne .Lseqt_bound
     lea .Lboundmsg(%rip), %rsi
     mov $26, %edx
     mov $1, %eax
@@ -21807,6 +22148,8 @@ hbc_bound_error:
 # nothing and the stale slot prints (probe hk294), so a clean exit 1 is the
 # registered failure-mode difference, same error condition.
 hbc_div0_error:
+    cmpq $0, hbc_seq_depth(%rip)
+    jne .Lseqt_div0
     lea .Ldiv0msg(%rip), %rsi
     mov $24, %edx
     mov $1, %eax
@@ -21931,6 +22274,8 @@ hbc_round:
 # hbc_round_range_error: runtime dec beyond +/-15 (Harbour switches to
 # pow(10,d) there - parked, registered limit). Clean named exit 1.
 hbc_round_range_error:
+    cmpq $0, hbc_seq_depth(%rip)
+    jne .Lseqt_round
     lea .Lroundmsg(%rip), %rsi
     mov $30, %edx
     mov $1, %eax
@@ -21945,6 +22290,8 @@ hbc_round_range_error:
 # cannot capture it, so this PoC prints and exits 1 (registered failure
 # mode, same error condition).
 hbc_type_error:
+    cmpq $0, hbc_seq_depth(%rip)
+    jne .Lseqt_type
     lea .Ltypemsg(%rip), %rsi
     mov $33, %edx
     mov $1, %eax
@@ -22014,6 +22361,8 @@ hbc_oom:
 
 # hbc_asize_neg: ASize with a negative size (noreturn)
 hbc_asize_neg:
+    cmpq $0, hbc_seq_depth(%rip)
+    jne .Lseqt_asize
     lea .Lasizenegmsg(%rip), %rsi
     mov $21, %edx
     mov $1, %eax
@@ -22609,6 +22958,163 @@ hbc_asize:
 hbc_mem_allocs: .quad 0
 hbc_mem_frees:  .quad 0
 hbc_str_cache: .zero 64
+
+    .text
+# --- TRY/CATCH sequence stack -------------------------------------------
+# TRY ... CATCH ... END compiles to a landing pad on the sequence stack:
+# hbc_seq_push saves the callee-saved registers, rsp/rbp and the handler
+# address; the throwable runtime-error helpers and Break() push the value
+# on the exception stack and unwind to the innermost pad. FINALLY bodies
+# are local subroutines the normal path and the handler both call; a TRY
+# without CATCH re-enters hbc_seq_unwind afterwards. 256 pads of 64 bytes,
+# 256 pending exceptions of 16 bytes. Registered limits: the stacks are
+# process-global (TRY inside hb_threadStart code is out of this
+# increment), and an unwound frame's owned temporaries leak (error paths).
+hbc_seq_push:
+    mov hbc_seq_depth(%rip), %eax
+    cmp $256, %eax
+    jae hbc_seq_overflow
+    shl $6, %rax
+    lea hbc_seq_pads(%rip), %r11
+    add %rax, %r11
+    mov %rbx, 0(%r11)
+    mov %rbp, 8(%r11)
+    mov %r12, 16(%r11)
+    mov %r13, 24(%r11)
+    mov %r14, 32(%r11)
+    mov %r15, 40(%r11)
+    lea 8(%rsp), %rax
+    mov %rax, 48(%r11)
+    mov %rdi, 56(%r11)
+    incq hbc_seq_depth(%rip)
+    ret
+
+hbc_seq_pop:
+    decq hbc_seq_depth(%rip)
+    ret
+
+# hbc_seq_exc_take: -> rax = tag, rdx = payload of the innermost pending
+# exception; pops it. Called first thing by a CATCH handler (CatchBind).
+hbc_seq_exc_take:
+    mov hbc_seq_exc_depth(%rip), %eax
+    dec %eax
+    mov %eax, hbc_seq_exc_depth(%rip)
+    shl $4, %eax
+    lea hbc_seq_exc(%rip), %r11
+    add %rax, %r11
+    mov 0(%r11), %rax
+    mov 8(%r11), %rdx
+    ret
+
+# hbc_seq_throw_error: rsi = description as a borrowed Dyn string pointer
+# (tag 2, length at -8). The caught value IS the description string in
+# this increment (the ERROR object lands with the class/tag domain).
+hbc_seq_throw_error:
+    mov $2, %edi
+    jmp hbc_seq_throw_common
+
+# hbc_seq_break: rdi = tag, rsi = payload of the Break() value.
+hbc_seq_break:
+    jmp hbc_seq_throw_common
+
+hbc_seq_throw_common:
+    mov hbc_seq_exc_depth(%rip), %eax
+    cmp $256, %eax
+    jae hbc_seq_overflow
+    shl $4, %eax
+    lea hbc_seq_exc(%rip), %r11
+    add %rax, %r11
+    mov %rdi, 0(%r11)
+    mov %rsi, 8(%r11)
+    incq hbc_seq_exc_depth(%rip)
+hbc_seq_unwind:
+    mov hbc_seq_depth(%rip), %eax
+    test %eax, %eax
+    jz hbc_seq_uncaught
+    dec %eax
+    mov %eax, hbc_seq_depth(%rip)
+    shl $6, %rax
+    lea hbc_seq_pads(%rip), %r11
+    add %rax, %r11
+    mov 0(%r11), %rbx
+    mov 8(%r11), %rbp
+    mov 16(%r11), %r12
+    mov 24(%r11), %r13
+    mov 32(%r11), %r14
+    mov 40(%r11), %r15
+    mov 48(%r11), %rsp
+    mov 56(%r11), %r11
+    jmp *%r11
+
+# Per-site entries from the throwable helpers.
+.Lseqt_bound:
+    lea .LseqD_bound(%rip), %rsi
+    jmp hbc_seq_throw_error
+.Lseqt_div0:
+    lea .LseqD_div0(%rip), %rsi
+    jmp hbc_seq_throw_error
+.Lseqt_type:
+    lea .LseqD_type(%rip), %rsi
+    jmp hbc_seq_throw_error
+.Lseqt_round:
+    lea .LseqD_round(%rip), %rsi
+    jmp hbc_seq_throw_error
+.Lseqt_asize:
+    lea .LseqD_asize(%rip), %rsi
+    jmp hbc_seq_throw_error
+
+hbc_seq_uncaught:
+    mov hbc_seq_exc_depth(%rip), %eax
+    test %eax, %eax
+    jz .Lseq_unc_generic
+    dec %eax
+    mov %eax, hbc_seq_exc_depth(%rip)
+    shl $4, %eax
+    lea hbc_seq_exc(%rip), %r11
+    add %rax, %r11
+    mov 0(%r11), %rax
+    mov 8(%r11), %rsi
+    @HBC_TAG_KIND@cmp $2, %rax@HBC_TAG_END@
+    jne .Lseq_unc_generic
+    mov -8(%rsi), %rdx
+    mov $1, %eax
+    mov $1, %edi
+    syscall
+    lea .Lnl(%rip), %rsi
+    mov $1, %edx
+    mov $1, %eax
+    mov $1, %edi
+    syscall
+    mov $60, %eax
+    mov $1, %edi
+    syscall
+.Lseq_unc_generic:
+    lea .Lsequncmsg(%rip), %rsi
+    mov $25, %edx
+    mov $1, %eax
+    mov $1, %edi
+    syscall
+    mov $60, %eax
+    mov $1, %edi
+    syscall
+
+hbc_seq_overflow:
+    lea .Lseqovfmsg(%rip), %rsi
+    mov $28, %edx
+    mov $1, %eax
+    mov $1, %edi
+    syscall
+    mov $60, %eax
+    mov $1, %edi
+    syscall
+
+    .bss
+    .align 8
+hbc_seq_depth: .skip 8
+hbc_seq_exc_depth: .skip 8
+hbc_seq_pads: .skip 16384
+hbc_seq_exc: .skip 4096
+    .data
 @REG_DATA@    .text
 "#);
     out.push_str(CTOR_HELPERS);
@@ -22979,6 +23485,15 @@ fn emit_strings(out: &mut String, strs: &[String]) {
     out.push_str(".Ltypemsg:\n    .byte 84,121,112,101,32,101,114,114,111,114,58,32,78,73,76,32,117,115,101,100,32,97,115,32,97,32,110,117,109,98,101,114,10\n");
     out.push_str(".Llogmsg:\n    .byte 84,121,112,101,32,101,114,114,111,114,58,32,99,111,110,100,105,116,105,111,110,32,105,115,32,110,111,116,32,97,32,108,111,103,105,99,97,108,10\n");
     out.push_str(".Lasizenegmsg:\n    .byte 65,83,105,122,101,58,32,110,101,103,97,116,105,118,101,32,115,105,122,101,10\n");
+    // TRY/CATCH caught-value descriptions: borrowed Dyn strings (tag 8),
+    // the byte count in a .quad right before the bytes (read at -8).
+    out.push_str(".quad 25\n.LseqD_bound:\n    .byte 66,111,117,110,100,32,101,114,114,111,114,58,32,97,114,114,97,121,32,97,99,99,101,115,115\n");
+    out.push_str(".quad 23\n.LseqD_div0:\n    .byte 69,114,114,111,114,58,32,100,105,118,105,115,105,111,110,32,98,121,32,122,101,114,111\n");
+    out.push_str(".quad 32\n.LseqD_type:\n    .byte 84,121,112,101,32,101,114,114,111,114,58,32,78,73,76,32,117,115,101,100,32,97,115,32,97,32,110,117,109,98,101,114\n");
+    out.push_str(".quad 29\n.LseqD_round:\n    .byte 69,114,114,111,114,58,32,114,111,117,110,100,32,100,101,99,32,111,117,116,32,111,102,32,114,97,110,103,101\n");
+    out.push_str(".quad 20\n.LseqD_asize:\n    .byte 65,83,105,122,101,58,32,110,101,103,97,116,105,118,101,32,115,105,122,101\n");
+    out.push_str(".Lsequncmsg:\n    .byte 85,110,99,97,117,103,104,116,32,98,114,101,97,107,32,101,120,99,101,112,116,105,111,110,10\n");
+    out.push_str(".Lseqovfmsg:\n    .byte 69,114,114,111,114,58,32,84,82,89,32,110,101,115,116,105,110,103,32,111,118,101,114,102,108,111,119,10\n");
     // "Argument error: LEN\n" (20 bytes; Harbour BASE/1111 hangs headless - registered failure mode)
     out.push_str(".Llenerrmsg:\n    .byte 65,114,103,117,109,101,110,116,32,101,114,114,111,114,58,32,76,69,78,10\n");
     // "Argument error: AADD\n" (21 bytes; Harbour BASE/1123 hangs headless, oracle n6)
@@ -24220,6 +24735,8 @@ hbc_dynxeq_dd:
 # hbc_type_error: NIL used as a number at runtime. Reached via a JUMP from
 # hbc_dyn_to_i64, so force 16-byte alignment before calling out (noreturn).
 hbc_type_error:
+    cmpq $0, hbc_seq_depth(%rip)
+    jne .Lseqt_type
     push %rbp
     mov %rsp, %rbp
     and $-16, %rsp
@@ -24233,6 +24750,8 @@ hbc_type_error:
 # hbc_bound_error: array index outside 1..=n at runtime (noreturn). Same
 # wording as the linux helper; exit code 1 via ExitProcess.
 hbc_bound_error:
+    cmpq $0, hbc_seq_depth(%rip)
+    jne .Lseqt_bound
     push %rbp
     mov %rsp, %rbp
     sub $48, %rsp
@@ -24245,6 +24764,8 @@ hbc_bound_error:
 # hbc_div0_error: division by zero at runtime (noreturn). Same wording as
 # the linux helper; exit code 1 via ExitProcess.
 hbc_div0_error:
+    cmpq $0, hbc_seq_depth(%rip)
+    jne .Lseqt_div0
     push %rbp
     mov %rsp, %rbp
     sub $48, %rsp
@@ -24366,6 +24887,8 @@ hbc_round:
 
 # hbc_round_range_error: same wording as the linux helper; exit code 1.
 hbc_round_range_error:
+    cmpq $0, hbc_seq_depth(%rip)
+    jne .Lseqt_round
     push %rbp
     mov %rsp, %rbp
     sub $48, %rsp
@@ -24440,6 +24963,8 @@ hbc_oom:
     call ExitProcess
 
 hbc_asize_neg:
+    cmpq $0, hbc_seq_depth(%rip)
+    jne .Lseqt_asize
     push %rbp
     mov %rsp, %rbp
     and $-16, %rsp
@@ -25048,6 +25573,158 @@ hbc_asize:
 hbc_mem_allocs: .quad 0
 hbc_mem_frees:  .quad 0
 hbc_str_cache: .zero 64
+
+    .text
+# --- TRY/CATCH sequence stack -------------------------------------------
+# TRY ... CATCH ... END compiles to a landing pad on the sequence stack:
+# hbc_seq_push saves the callee-saved registers, rsp/rbp and the handler
+# address; the throwable runtime-error helpers and Break() push the value
+# on the exception stack and unwind to the innermost pad. FINALLY bodies
+# are local subroutines the normal path and the handler both call; a TRY
+# without CATCH re-enters hbc_seq_unwind afterwards. 256 pads of 64 bytes,
+# 256 pending exceptions of 16 bytes. Registered limits: the stacks are
+# process-global (TRY inside hb_threadStart code is out of this
+# increment), and an unwound frame's owned temporaries leak (error paths).
+hbc_seq_push:
+    mov hbc_seq_depth(%rip), %eax
+    cmp $256, %eax
+    jae hbc_seq_overflow
+    shl $6, %rax
+    lea hbc_seq_pads(%rip), %r11
+    add %rax, %r11
+    mov %rbx, 0(%r11)
+    mov %rbp, 8(%r11)
+    mov %r12, 16(%r11)
+    mov %r13, 24(%r11)
+    mov %r14, 32(%r11)
+    mov %r15, 40(%r11)
+    lea 8(%rsp), %rax
+    mov %rax, 48(%r11)
+    mov %rdi, 56(%r11)
+    incq hbc_seq_depth(%rip)
+    ret
+
+hbc_seq_pop:
+    decq hbc_seq_depth(%rip)
+    ret
+
+# hbc_seq_exc_take: -> rax = tag, rdx = payload of the innermost pending
+# exception; pops it. Called first thing by a CATCH handler (CatchBind).
+hbc_seq_exc_take:
+    mov hbc_seq_exc_depth(%rip), %eax
+    dec %eax
+    mov %eax, hbc_seq_exc_depth(%rip)
+    shl $4, %eax
+    lea hbc_seq_exc(%rip), %r11
+    add %rax, %r11
+    mov 0(%r11), %rax
+    mov 8(%r11), %rdx
+    ret
+
+# hbc_seq_throw_error: rsi = description as a borrowed Dyn string pointer
+# (tag 2, length at -8). The caught value IS the description string in
+# this increment (the ERROR object lands with the class/tag domain).
+hbc_seq_throw_error:
+    mov $2, %edi
+    jmp hbc_seq_throw_common
+
+# hbc_seq_break: rdi = tag, rsi = payload of the Break() value.
+hbc_seq_break:
+    jmp hbc_seq_throw_common
+
+hbc_seq_throw_common:
+    mov hbc_seq_exc_depth(%rip), %eax
+    cmp $256, %eax
+    jae hbc_seq_overflow
+    shl $4, %eax
+    lea hbc_seq_exc(%rip), %r11
+    add %rax, %r11
+    mov %rdi, 0(%r11)
+    mov %rsi, 8(%r11)
+    incq hbc_seq_exc_depth(%rip)
+hbc_seq_unwind:
+    mov hbc_seq_depth(%rip), %eax
+    test %eax, %eax
+    jz hbc_seq_uncaught
+    dec %eax
+    mov %eax, hbc_seq_depth(%rip)
+    shl $6, %rax
+    lea hbc_seq_pads(%rip), %r11
+    add %rax, %r11
+    mov 0(%r11), %rbx
+    mov 8(%r11), %rbp
+    mov 16(%r11), %r12
+    mov 24(%r11), %r13
+    mov 32(%r11), %r14
+    mov 40(%r11), %r15
+    mov 48(%r11), %rsp
+    mov 56(%r11), %r11
+    jmp *%r11
+
+# Per-site entries from the throwable helpers.
+.Lseqt_bound:
+    lea .LseqD_bound(%rip), %rsi
+    jmp hbc_seq_throw_error
+.Lseqt_div0:
+    lea .LseqD_div0(%rip), %rsi
+    jmp hbc_seq_throw_error
+.Lseqt_type:
+    lea .LseqD_type(%rip), %rsi
+    jmp hbc_seq_throw_error
+.Lseqt_round:
+    lea .LseqD_round(%rip), %rsi
+    jmp hbc_seq_throw_error
+.Lseqt_asize:
+    lea .LseqD_asize(%rip), %rsi
+    jmp hbc_seq_throw_error
+
+hbc_seq_uncaught:
+    push %rbp
+    mov %rsp, %rbp
+    and $-16, %rsp
+    sub $48, %rsp
+    mov hbc_seq_exc_depth(%rip), %eax
+    test %eax, %eax
+    jz .Lseq_unc_generic
+    dec %eax
+    mov %eax, hbc_seq_exc_depth(%rip)
+    shl $4, %eax
+    lea hbc_seq_exc(%rip), %r11
+    add %rax, %r11
+    mov 0(%r11), %rax
+    mov 8(%r11), %r10
+    cmp $2, %rax
+    jne .Lseq_unc_generic
+    mov %r10, %rax
+    mov -8(%r10), %rdx
+    call hbc_print_str
+    mov $1, %ecx
+    call ExitProcess
+.Lseq_unc_generic:
+    lea .Lsequncmsg(%rip), %rax
+    mov $25, %edx
+    call hbc_print_str
+    mov $1, %ecx
+    call ExitProcess
+
+hbc_seq_overflow:
+    push %rbp
+    mov %rsp, %rbp
+    and $-16, %rsp
+    sub $48, %rsp
+    lea .Lseqovfmsg(%rip), %rax
+    mov $28, %edx
+    call hbc_print_str
+    mov $1, %ecx
+    call ExitProcess
+
+    .bss
+    .align 8
+hbc_seq_depth: .skip 8
+hbc_seq_exc_depth: .skip 8
+hbc_seq_pads: .skip 16384
+hbc_seq_exc: .skip 4096
+    .data
 @REG_DATA@    .text
 "#;
 
