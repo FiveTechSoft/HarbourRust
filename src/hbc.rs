@@ -6153,6 +6153,31 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 }
                 return Err(format!("line {}: containment `$` is measured for string-in-string only (oracle hk341); array membership is not in this increment", n));
             }
+            // Objects (cl7/cl19): `==` is pointer identity. `!=`/`#` is a
+            // named rejection (Harbour raises the BASE/1072 dialog,
+            // registered acceptance from spike 1); `=` and orderings are
+            // unmeasured on objects and rejected by name. Object-vs-scalar
+            // (NIL included) is likewise a named rejection in this
+            // increment. type_expr side effects are monotone, so the
+            // double evaluation on the fall-through path is harmless.
+            {
+                let ta = type_expr(a, env, sigs, n);
+                let tb = type_expr(b, env, sigs, n);
+                if let (Ok(ta), Ok(tb)) = (ta, tb) {
+                    let aobj = matches!(ta, Ty::Obj(_));
+                    let bobj = matches!(tb, Ty::Obj(_));
+                    if aobj && bobj {
+                        return match op {
+                            CmpOp::EqEq => Ok(Ty::Bool),
+                            CmpOp::Ne => Err(format!("line {}: `!=`/`#` on objects is not in this increment (Harbour raises BASE/1072)", n)),
+                            _ => Err(format!("line {}: this comparison is not measured for objects in this increment (`==` identity only)", n)),
+                        };
+                    }
+                    if aobj != bobj {
+                        return Err(format!("line {}: comparing an object with {} is not in this increment", n, ty_name(if aobj { tb } else { ta })));
+                    }
+                }
+            }
             // A grown casilla of an array of arrays compares against NIL
             // with `=` / `#` (oracle n4): the borrow reads the child
             // pointer, it never extracts the subarray. A real empty child
