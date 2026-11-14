@@ -8021,6 +8021,17 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 // owned-capable slot from the start: the callee frees and
                 // re-stores through the pointer (hk218).
                 let t = if t == Ty::Str && byref_names.contains(id) { Ty::StrOwn } else { t };
+                // The empty-literal accumulator (`local c := ""` followed
+                // by owned concatenations) is the string-accumulator
+                // idiom real Harbour code lives on (FiveTechSoft/
+                // HarbourRust#1 blocker: `d := c + "x"` against a
+                // borrowed-empty slot). The slot initializes owned with a
+                // fresh copy of the empty buffer - the same shape the
+                // `"" + "abc"` init (t648) already produces - so owned
+                // and literal reassignments both land. Non-empty literal
+                // initializers keep the borrowed slot and its
+                // byte-identical assembly.
+                let t = if t == Ty::Str && matches!(e, Expr::Str(s) if s.is_empty()) { Ty::StrOwn } else { t };
                 // Bare-local FOR counter (oracle hk336): the slot types
                 // i64 from declaration via the one shared predicate;
                 // every other shape keeps Dyn and the named `for`
