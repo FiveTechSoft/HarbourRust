@@ -29,6 +29,9 @@ pub struct PeImage {
 // Hints de libkernel32.a (medidos del oráculo; estables por DLL).
 fn hint_of(name: &str) -> u16 {
     match name {
+        "VirtualAlloc" => 1486,
+        "VirtualFree" => 1489,
+        "GetSystemInfo" => 763,
         "ExitProcess" => 366,
         "GetEnvironmentVariableA" => 588,
         "GetLocalTime" => 632,
