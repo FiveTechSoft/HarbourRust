@@ -12510,11 +12510,18 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
         }
         Expr::Call(id,args) if is_builtin(id,"padr") => {
             let temp=expr_ty(&args[0],env,sigs)==Ty::StrOwn && !matches!(&args[0],Expr::Var(_));
+            // An owned temporary already stays live through the count call.
+            // Borrowed values need retention when later evaluation can mutate
+            // their owner. Pure scalar counts preserve the existing fast path.
+            let snapshot=!temp && expr_has_call(&args[1]);
             cg_value(&args[0],env,sigs,strs,out,target);
             out.push_str("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+            if snapshot {
+                out.push_str("    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_strcpy\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+            }
             cg_expr(&args[1],env,sigs,strs,out,target);
             out.push_str("    mov %rax, %rdx\n    mov (%rsp), %rdi\n    mov 8(%rsp), %rsi\n    call hbc_padr\n");
-            if temp {
+            if temp || snapshot {
                 out.push_str("    mov %rax, 8(%rsp)\n    mov %rdx, 16(%rsp)\n    mov (%rsp), %rdi\n    call hbc_freestr\n    mov 8(%rsp), %rax\n    mov 16(%rsp), %rdx\n");
             }
             out.push_str("    add $32, %rsp\n");
@@ -12534,11 +12541,18 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
         }
         Expr::Call(id,args) if is_builtin(id,"replicate") => {
             let temp=expr_ty(&args[0],env,sigs)==Ty::StrOwn && !matches!(&args[0],Expr::Var(_));
+            // An owned temporary already stays live through the count call.
+            // Borrowed values need retention when later evaluation can mutate
+            // their owner. Pure scalar counts preserve the existing fast path.
+            let snapshot=!temp && expr_has_call(&args[1]);
             cg_value(&args[0],env,sigs,strs,out,target);
             out.push_str("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+            if snapshot {
+                out.push_str("    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_strcpy\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+            }
             cg_expr(&args[1],env,sigs,strs,out,target);
             out.push_str("    mov %rax, %rdx\n    mov (%rsp), %rdi\n    mov 8(%rsp), %rsi\n    call hbc_replicate\n");
-            if temp {
+            if temp || snapshot {
                 out.push_str("    mov %rax, 8(%rsp)\n    mov %rdx, 16(%rsp)\n    mov (%rsp), %rdi\n    call hbc_freestr\n    mov 8(%rsp), %rax\n    mov 16(%rsp), %rdx\n");
             }
             out.push_str("    add $32, %rsp\n");
