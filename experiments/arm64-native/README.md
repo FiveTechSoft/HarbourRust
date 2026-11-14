@@ -358,3 +358,39 @@ callee locals and returned copies. This injection is raw ABI fixture data,
 not a claim that source arithmetic produced those values. Existing scalar,
 F64, mixed-local, source-origin and frame-limit cohorts still pass; register
 word overflow, arithmetic AST and unsupported escapes still reject.
+
+## Fixed-I64 runtime source arithmetic, still bounded
+
+The research source harness now accepts runtime `+`, `-` and `*` ONLY when
+both generated operands are fixed I64. These emit wrapping integer ADD/SUB/
+MUL, matching the current fixed-I64 x86 path, not the overflow-promoting
+NumLocal kernel. Results carry computed format 0 through local copies,
+assignments, nested calls, parameters and returns. Integer and mixed-local
+output now uses the validated result entry, preserving computed versus
+literal/copy field widths. A fixed-I64 expression can be stored in mixed
+storage without changing that expression's wrapping arithmetic semantics.
+
+The frontend already lowers standalone `n++`/`--n` and integer `+=`, `-=`,
+`*=` statements to those same assignments. Their bounded fixed-I64 forms
+are therefore covered and explicitly tested, not silently kept in the old
+negative count. Expression prefix/postfix increments still reject. Runtime
+`/`, `%`, `^`, F64 arithmetic and arithmetic with any mixed-local operand
+remain rejected, including unused functions and dead branches. Literal
+constant folding is the pre-existing frontend behavior, not this runtime gate.
+
+Fresh cohort: 21 source programs in three syscall/FP modes, exact against
+current executed x86 output. It covers wrap boundaries and integer extrema,
+nested operations, width/provenance, detached copies, branch/loop updates,
+call/return/reassignment, left-to-right operand effects, computed values
+stored in mixed destinations, desugared updates and unused/dead admitted
+integer expressions. Nine negative programs preserve absent-output and
+existing-output canaries for unsupported operators/kinds, expression
+increment, dead division and unused-function division. Four former scalar
+negatives move honestly to the new positive scope, leaving 35x3 old scalar
+controls and 17 old negative controls. Other F64/mixed/trace cohorts remain.
+
+No runtime division means this increment adds no new source zero-divisor
+or caught-error path. Mixed/F64 arithmetic, overflow promotion, coercion,
+TRY/caught-value transport, cleanup/unwinding, production ARM and actual
+Mac execution remain separate work. Every source result here stays I64;
+no new computed F64 decimal/finite frontier is implied.

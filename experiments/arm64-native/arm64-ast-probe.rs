@@ -14,6 +14,8 @@ mod decimal;
 mod mixedformat;
 #[path = "pair-print.rs"]
 mod pair_print;
+#[path = "numeric-result.rs"]
+mod numeric_result;
 #[path = "arm64-runtime.rs"]
 mod runtime;
 #[path = "arm64-trace.rs"]
@@ -135,6 +137,26 @@ impl E<'_> {
                         | (*dec as u64),
                 )?;
                 Ok(K::Float)
+            }
+            Expr::Bin(op, a, b) => {
+                if !matches!(op, '+' | '-' | '*') {
+                    return Err("I64 source arithmetic operator outside +,-,*".into());
+                }
+                if self.expr(a)? != K::Int {
+                    return Err("I64 source arithmetic requires fixed I64 operands".into());
+                }
+                self.push()?;
+                if self.expr(b)? != K::Int {
+                    return Err("I64 source arithmetic requires fixed I64 operands".into());
+                }
+                self.pop9()?;
+                match op {
+                    '+' | '-' => self.c.addsub(0, 9, 0, *op == '-', false)?,
+                    '*' => self.c.mul(0, 9, 0, false)?,
+                    _ => unreachable!(),
+                }
+                self.c.mov(1, 0)?; // computed I64 provenance, wrapping fixed-type path
+                Ok(K::Int)
             }
             Expr::Log(v) => {
                 self.c.mov(0, *v as u64)?;
@@ -362,17 +384,23 @@ impl E<'_> {
                         let o = (16 * (es.len() - 1 - i)) as u16;
                         self.c.ldst(0, 31, o, true)?;
                         self.c.ldst(1, 31, o + 8, true)?;
-                        self.c.b(
-                            match k {
-                                K::Int => "rt_i64",
-                                K::Float => "pair_print_f64",
-                                K::Mixed => "pair_print_mixed",
-                                K::Bool => "rt_bool",
-                                K::Text => "rt_write",
-                                K::Void => unreachable!(),
+                        let print_label = match k {
+                            K::Int => {
+                                self.c.mov(2, 0)?;
+                                self.c.mov(3, 0)?;
+                                "result_print"
                             },
-                            true,
-                        );
+                            K::Float => "pair_print_f64",
+                            K::Mixed => {
+                                self.c.mov(2, 0)?;
+                                self.c.mov(3, 1)?;
+                                "result_print"
+                            },
+                            K::Bool => "rt_bool",
+                            K::Text => "rt_write",
+                            K::Void => unreachable!(),
+                        };
+                        self.c.b(print_label, true);
                     }
                     if !es.is_empty() {
                         self.c.imm(31, 31, (16 * es.len()) as u16, false, false)?;
@@ -557,6 +585,7 @@ pub fn emit(funcs: &[Func], sigs: &[Sig]) -> Result<Vec<u8>, String> {
         e.c.epilogue()?;
     }
     pair_print::emit(&mut e.c)?;
+    numeric_result::emit(&mut e.c)?;
     runtime::emit(&mut e.c)?;
     trace::emit(&mut e.c)?;
     let (code, data) = e.c.finish()?;
