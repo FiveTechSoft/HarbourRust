@@ -1,0 +1,4 @@
+escape bump: 1 esc, 0 noesc
+  param n I64 -> ESC (by-reference parameter (`@`-received))
+escape main: 1 esc, 0 noesc
+  local k I64 -> ESC (passed by reference (`@`))

@@ -1,0 +1,6 @@
+escape make: 1 esc, 0 noesc
+  local o Obj(0) -> ESC (shared object (conservative))
+escape main: 1 esc, 0 noesc
+  local returned Obj(0) -> ESC (shared object (conservative))
+escape box__new: 1 esc, 0 noesc
+  param Self Obj(0) -> ESC (shared object (conservative))

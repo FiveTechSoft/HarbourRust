@@ -1,0 +1,4 @@
+escape main: 0 esc, 3 noesc
+  local a DArrU -> NOESC
+  local i I64 -> NOESC
+  local t StrOwn -> NOESC [crosses-scope] [loop-local]
