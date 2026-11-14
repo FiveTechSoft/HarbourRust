@@ -25,7 +25,7 @@ Against the pinned Harbour source:
 - **32/268** originals under `tests/` compile, or **32/1041** across the full inventory.
 - **30/32** fresh executions match stdout, stderr and exit status exactly.
   The other two open error dialogues and time out; they are not passes.
-- Linux regression manifest: **1660/1661**, with only inherited `t110` remaining.
+- Linux regression manifest: **1720/1720** instrumented at the hash-ownership marker (normal 1719/1720 with one base-identical mode gap); the older 1661-case slice keeps its inherited `t110`.
   The hash-default and nested-array shrink fixes resolve `t592`, `t385` and `t419`.
 - DBF hito 1: **8/8** same-source programs match real Harbour stdout, stderr
   and exit status byte-for-byte. A separate C bridge probe verifies copied
