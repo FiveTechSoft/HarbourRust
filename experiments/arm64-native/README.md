@@ -497,3 +497,45 @@ increment, non-variable/byref lvalues, caught overflow and the unchanged
 mixed-destination frontend restriction. One old expression-inc negative
 moves to positive scope: the previous fixed-I64 arithmetic cohort keeps
 21 positives x3 and now has 5 negatives. Other source cohorts stay intact.
+
+## Bounded fixed-F64 source +, -, *
+
+Fixed-F64 operand pairs now lower runtime addition, subtraction and
+multiplication from the checked AST. Both evaluated payload/format pairs
+survive right-side calls. Decimal metadata is max(left,right) for + and -,
+sum for *, with asymmetric result width 10/20 as in current x86. This does
+not admit mixed I64/F64 operand pairs or runtime NumLocal arithmetic. Existing
+fixed-I64 paths and F64 call/return pair limits are unchanged.
+
+The finite/16-decimal formatter boundary is enforced BEFORE a computed
+result can escape into a local, return, argument or output: decimals above16
+or a nonfinite result exit75 without printing that result. This is a
+research-only unsupported-result exit, NOT x86 equivalence outside the
+subset, a Harbour exception, caught error, stars rendering or promotion.
+Prior side effects are not rolled back. Entry FP normalization and normal
+return restoration remain; process exits do not promise restoration.
+
+New evidence: 28 positive sources x3 syscall/FP modes exact against current
+executed x86, covering decimal provenance, width thresholds, calls and
+right-side nested calls, parameters, loop/comparison effects, lazy booleans,
+signed zero, large finite values and underflow. All28 check three write-fault
+modes (84 controls, exit74). Four source limits x3 explicitly expect research
+exit75, including decimal17/32, independent finite-input overflow and right
+side-effect suppression; these12 are NOT differential x86 successes.
+Thirteen negative sources retain absent-output and existing-file canaries for
+mixed kinds, F64 division, unsupported operators, byref, TRY, precision17,
+and the unchanged Date/CurDir/classes boundary.
+
+Six old negatives migrate into this scope: pair-source retains23x3 plus5
+negatives, I64 arithmetic21x3 plus4, I64 division25x3 plus6, and numeric
+comparison39x3 plus5. Their other contracts remain. All390 expected images
+(including the four research-limit images) pass independent structural,
+pagehash and macholib checks. These are not Harbour compatibility counts.
+
+Both source-hash guards were deliberately rebased from d1042495 to
+cefcf7093471f87b7a656d3222e26b39853d66bc45e6aa776c5a392b814a71ff
+(main d6ef46b). The intervening frontend diff adds Mach-O Intel Date/CurDir
+routing and adjusts its admission; numeric lowering is unchanged. CurDir,
+Date and classes still reject in the isolated ARM emitter, with original
+production ARM rejection preserved. No production source, writer, executable
+or tag changes. No actual Mac loading, kernel, hardware or Apple verdict.

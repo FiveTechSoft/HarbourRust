@@ -22,11 +22,8 @@ for i,v in enumerate(values):
 for i,(a,b)in enumerate([(x,y)for x,y in [('0.0','-0.0'),('1.25','2.5'),('2.5','1.25'),('-1.25','-1.25'),('10000000000.0','9999999999.0')]]):
  pos['loaded-comparison-'+str(i)]=f'LOCAL a:={a}\nLOCAL b:={b}\n? '+','.join('a'+op+'b'for op in ['=','==','<>','<','<=','>','>='])
 neg={
-'runtime-add':'LOCAL x:=1.25\n? x+1.0',
 'runtime-zero-div':'LOCAL x:=1.25\n? x/0.0',
 'dec17':'? 0.12345678901234567',
-'dead-arithmetic':'IF .F.\nLOCAL x:=1.25\n? x+2.0\nENDIF',
-'unused-arithmetic':'RETURN\nFUNCTION Never()\nLOCAL x:=1.25\nRETURN x+1.0',
 'float-try':'TRY\n? 1.25\nCATCH\n? 2.50\nEND',
 }
 # Current source accepts scalar signatures but the pair convention cannot pack

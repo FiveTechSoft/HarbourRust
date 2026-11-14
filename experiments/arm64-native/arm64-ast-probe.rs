@@ -1,5 +1,5 @@
 // Isolated AST-to-ARM64 experiment. NOT integrated or advertised by hbc.
-// Finite F64 literal/copy/call/compare only; numeric arithmetic still rejects.
+// Bounded fixed numeric source operations; see README for fail-closed limits.
 // Compiled only by make-compiler-probe.py against a copy of the checked frontend.
 // Keeps a named, deliberately narrow boundary; all functions and dead code
 // are visited. The real --target=macho-arm64 continues to reject unchanged.
@@ -145,14 +145,35 @@ impl E<'_> {
                 if !matches!(op, '+' | '-' | '*' | '/') {
                     return Err("I64 source arithmetic operator outside +,-,*,/".into());
                 }
-                if self.expr(a)? != K::Int {
-                    return Err("I64 source arithmetic requires fixed I64 operands".into());
-                }
+                let ka = self.expr(a)?;
                 self.push()?;
-                if self.expr(b)? != K::Int {
-                    return Err("I64 source arithmetic requires fixed I64 operands".into());
-                }
+                let kb = self.expr(b)?;
+                self.c.ldst(10, 31, 8, true)?;
                 self.pop9()?;
+                if ka == K::Float && kb == K::Float && matches!(op, '+' | '-' | '*') {
+                    // Only fixed-F64 operands. Both complete payload+format pairs
+                    // survive right-side calls; this is not NumLocal promotion.
+                    self.c.bits(2, 1, 0, 16)?;
+                    self.c.bits(1, 10, 0, 16)?;
+                    if *op == '*' {
+                        self.c.addsub(1, 1, 2, false, false)?;
+                    } else {
+                        let done = self.label();
+                        self.c.addsub(31, 1, 2, true, true)?;
+                        self.c.bc(&done, 2)?;
+                        self.c.copy(1, 2)?;
+                        self.c.label(&done)?;
+                    }
+                    self.c.fp_bits(0, 1, false)?;
+                    self.c.fp_bits(9, 0, false)?;
+                    self.c.fp64(0, 0, 1, *op)?;
+                    self.c.fp_bits(0, 0, true)?;
+                    self.c.b("source_f64_metadata", true);
+                    return Ok(K::Float);
+                }
+                if ka != K::Int || kb != K::Int {
+                    return Err("source arithmetic requires fixed I64 operands or fixed F64 +,-,*".into());
+                }
                 if *op == '/' {
                     // Both operands are fixed I64. Division always produces F64;
                     // the closed input range is finite and has decimal metadata2.
@@ -645,6 +666,30 @@ pub fn emit(funcs: &[Func], sigs: &[Sig]) -> Result<Vec<u8>, String> {
     numeric_result::emit(&mut e.c)?;
     e.c.label("source_i64_div")?;
     values::emit(&mut e.c, '/')?;
+    // Bounded research result: decimal >16 or nonfinite exits75 BEFORE
+    // a result can escape into local/call/print. Not a Harbour exception.
+    e.c.label("source_f64_metadata")?;
+    e.c.imm(31, 1, 16, true, true)?;
+    e.c.bc("result_bad", 8)?;
+    e.c.bits(9, 0, 52, 11)?;
+    e.c.imm(31, 9, 2047, true, true)?;
+    e.c.bc("result_bad", 0)?;
+    e.c.mov(10, 10 << 16)?;
+    e.c.fp_bits(0, 0, false)?;
+    e.c.mov(9, 9999999999.0f64.to_bits())?;
+    e.c.fp_bits(9, 1, false)?;
+    e.c.fcmp(0, 1)?;
+    e.c.bc("source_f64_wide", 12)?;
+    e.c.mov(9, (-999999999.0f64).to_bits())?;
+    e.c.fp_bits(9, 1, false)?;
+    e.c.fcmp(0, 1)?;
+    e.c.bc("source_f64_width_done", 10)?;
+    e.c.label("source_f64_wide")?;
+    e.c.mov(10, 20 << 16)?;
+    e.c.label("source_f64_width_done")?;
+    e.c.addsub(1, 1, 10, false, false)?;
+    e.c.mov(2, 0)?;
+    e.c.ret();
     runtime::emit(&mut e.c)?;
     trace::emit(&mut e.c)?;
     let (code, data) = e.c.finish()?;

@@ -26,7 +26,6 @@ neg={
 'string':'LOCAL x:=1\n? x="1"',
 'contains':'LOCAL x:=1\n? x$2',
 'mixed-arith':'LOCAL x:=1\nx:=1.25\n? x+1<2',
-'float-arith':'LOCAL x:=1.25\n? x+1.0<3',
 'mixed-argument':'LOCAL x:=1\nx:=1.25\n? F(x)\nRETURN\nFUNCTION F(n)\nRETURN n<2',
 }
 def src(body):

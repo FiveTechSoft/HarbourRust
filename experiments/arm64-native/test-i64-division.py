@@ -23,7 +23,6 @@ neg={
 'float-div':'LOCAL x:=1.25\n? x/1',
 'mixed-div':'LOCAL x:=1\nx:=1.25\n? x/1',
 'nested-result-div':'LOCAL x:=3\n? (x/2)/2',
-'float-add-result':'LOCAL x:=3\n? x/2+1.0',
 'zero-try':'LOCAL x:=0\nTRY\n? 1/x\nCATCH\n? "caught"\nEND',
 'dead-try':'LOCAL x:=0\nIF .F.\nTRY\n? 1/x\nCATCH\n? "caught"\nEND\nENDIF',
 'precision':'LOCAL x:=1\n? 0.12345678901234567/x',

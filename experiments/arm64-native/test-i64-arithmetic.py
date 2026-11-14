@@ -20,7 +20,6 @@ pos={
 for i,n in enumerate(['0','1','-1','9999999999','10000000000','-999999999','-1000000000','9223372036854775807','(-9223372036854775807-1)']):
  pos[f'bound-{i}']=f'LOCAL x:={n}\nLOCAL y:=1\n? x,x+y,x-y,x*y\ny:=2\n? x+y,x-y,x*y'
 neg={
-'float-add':'LOCAL x:=1.25\n? x+1.0',
 'mixed-add':'LOCAL x:=1\nx:=1.25\n? x+1',
 'mixed-dead':'LOCAL x:=1\nx:=1.25\nIF .F.\n? x+1\nENDIF',
 'remainder':'LOCAL x:=3\n? x%2',

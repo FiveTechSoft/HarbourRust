@@ -7,7 +7,7 @@ from pathlib import Path
 p=argparse.ArgumentParser();p.add_argument('--repo',type=Path,required=True);p.add_argument('--without-emulator',action='store_true');a=p.parse_args()
 r=Path(__file__).resolve().parent;repo=a.repo.resolve();rustc=os.environ.get('RUSTC','rustc')
 assert r!=repo/'experiments'/'arm64-native','Copy this experiment outside the checkout first'
-assert hashlib.sha256((repo/'src'/'hbc.rs').read_bytes()).hexdigest()=='d1042495f27e1b4749bd391751b37fccdd56429b1068fae4229f9aededcb67ca','Frontend changed: review/rebase the isolated harness instead of patching an unknown version'
+assert hashlib.sha256((repo/'src'/'hbc.rs').read_bytes()).hexdigest()=='cefcf7093471f87b7a656d3222e26b39853d66bc45e6aa776c5a392b814a71ff','Frontend changed: review/rebase the isolated harness instead of patching an unknown version'
 os.chdir(r)
 def run(*cmd):subprocess.run(list(map(str,cmd)),check=True)
 run(sys.executable,'derive-sha-constants.py')
@@ -39,8 +39,9 @@ if not a.without_emulator:
  run(sys.executable,'test-i64-division.py')
  run(sys.executable,'test-numeric-comparison.py')
  run(sys.executable,'test-i64-increment.py')
+ run(sys.executable,'test-f64-arithmetic.py')
  run(sys.executable,'test-numeric-result.py')
- for folder in ['trace-fixtures-out','ast-trace-cases','pair-source-cases','mixed-source-cases','i64-transport-cases','i64-arithmetic-cases','i64-division-cases','numeric-comparison-cases','i64-increment-cases','numeric-result-cases']:
+ for folder in ['trace-fixtures-out','ast-trace-cases','pair-source-cases','mixed-source-cases','i64-transport-cases','i64-arithmetic-cases','i64-division-cases','numeric-comparison-cases','i64-increment-cases','f64-arithmetic-cases','numeric-result-cases']:
   for f in (r/folder).glob('*.arm'):run(sys.executable,'check_reference.py',f)
  for f in (r/'scalar-battery').glob('*.arm'):run(sys.executable,'check_reference.py',f)
  # Independent parser is optional; it is not used by generation or our verifier.
