@@ -11456,7 +11456,7 @@ fn cg_data_value(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
         }
         Ty::Bool => { cg_value(e, env, sigs, strs, out, target); out.push_str("    mov %rax, %rdx\n    mov $3, %eax\n"); }
         Ty::Date => { cg_value(e, env, sigs, strs, out, target); out.push_str("    mov %rax, %rdx\n    mov $11, %eax\n"); }
-        Ty::Dyn => { cg_expr(e, env, sigs, strs, out, target); cg_dyn_clone_if_str(out); }
+        Ty::Dyn => { cg_expr(e, env, sigs, strs, out, target); if !dyn_expr_owned(e) { cg_dyn_clone_if_str(out); } }
         _ => unreachable!("checked: scalar DATA only"),
     }
 }
@@ -11718,6 +11718,9 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                         out.push_str(&format!("    mov ${}, %edx\n", s.as_bytes().len()));
                     } else {
                         cg_expr(a, env, sigs, strs, out, target);
+                    }
+                    if ta == Ty::Dyn && tb == Ty::Dyn && !dyn_expr_owned(a) {
+                        cg_dyn_clone_if_str(out);
                     }
                     // Owned-string unification (63zf): a borrowed side is
                     // cloned here, on its own (taken) path only, so the
@@ -12439,7 +12442,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
     mov $3, %eax
 "),
                     Ty::Dyn => {
-                        cg_dyn_clone_if_str(out);
+                        if !dyn_expr_owned(a) { cg_dyn_clone_if_str(out); }
                         if !CLASSES.with(|c| c.borrow().is_empty()) {
                             out.push_str(&format!("    @HBC_TAG_KIND@cmp $13, %rax@HBC_TAG_END@\n    jne .Lthnoobj{}\n    sub $32, %rsp\n    mov %rax, 8(%rsp)\n    mov %rdx, 16(%rsp)\n    mov %rdx, %rdi\n    call hrobj_retain\n    mov 8(%rsp), %rax\n    mov 16(%rsp), %rdx\n    add $32, %rsp\n.Lthnoobj{}:\n", l, l));
                         }
@@ -12809,7 +12812,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
     mov $3, %eax
 "),
                     Ty::Dyn => {
-                        cg_dyn_clone_if_str(out);
+                        if !dyn_expr_owned(a) { cg_dyn_clone_if_str(out); }
                         if !CLASSES.with(|c| c.borrow().is_empty()) {
                             out.push_str(&format!("    @HBC_TAG_KIND@cmp $13, %rax@HBC_TAG_END@
     jne .Lmxnoobj{}
@@ -13179,6 +13182,8 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                 unreachable!("checked: hb_HValueAt takes a hash variable");
             }
             out.push_str("    test %rax, %rax\n    je 85f\n    mov (%rax), %rcx\n    mov 8(%rax), %rdx\n    mov %rcx, %rax\n    jmp 86f\n85:\n    call hbc_bound_error\n86:\n");
+            // The hash keeps its payload; the builtin call returns an owned copy.
+            cg_dyn_clone_if_str(out);
         }
         Expr::Call(id, args) if is_builtin(id, "hb_hget") => {
             // hb_HGet(h, key [, default]): key first (borrowed), then
@@ -13214,6 +13219,8 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                 unreachable!("checked: hb_HGet takes a hash variable");
             }
             out.push_str("    test %rax, %rax\n    je 81f\n    mov (%rax), %rcx\n    mov 8(%rax), %rdx\n    mov %rcx, %rax\n    jmp 82f\n81:\n    call hbc_bound_error\n82:\n");
+            // The hash keeps its payload; the builtin call returns an owned copy.
+            cg_dyn_clone_if_str(out);
         }
         Expr::Call(id, args) if is_builtin(id, "hb_hgetdef") => {
             // hb_HGetDef(h, key [, default]): hbc_hget does the lookup
@@ -13232,7 +13239,8 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             if args.len() == 3 {
                 cg_value(&args[2], env, sigs, strs, out, target);
                 if expr_ty(&args[2], env, sigs) == Ty::Dyn {
-                    // Already a Dyn pair (rax = tag, rdx = payload).
+                    // Snapshot a borrowed default; an owned call result moves in.
+                    if !dyn_expr_owned(&args[2]) { cg_dyn_clone_if_str(out); }
                     out.push_str("    mov %rax, 16(%rsp)\n    mov %rdx, 24(%rsp)\n");
                 } else if expr_ty(&args[2], env, sigs) == Ty::Bool {
                     // A logical: tag 3, payload 0/1.
@@ -13257,7 +13265,11 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                 unreachable!("checked: hb_HGetDef takes a hash variable");
             }
             let addend = if temp_key { 48 } else { 32 };
-            out.push_str(&format!("    test %rax, %rax\n    je 81f\n    mov (%rax), %rcx\n    mov 8(%rax), %rdx\n    mov %rcx, %rax\n    jmp 82f\n81:\n    mov 16(%rsp), %rax\n    mov 24(%rsp), %rdx\n82:\n    add ${}, %rsp\n", addend));
+            out.push_str("    test %rax, %rax\n    je 81f\n    mov (%rax), %rcx\n    mov 8(%rax), %rdx\n    mov %rcx, %rax\n");
+            cg_dyn_clone_if_str(out);
+            // Preserve the hit result while releasing the unused default snapshot.
+            out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n    @HBC_TAG_KIND@cmpq $4, 32(%rsp)@HBC_TAG_END@\n    jne 83f\n    mov 40(%rsp), %rdi\n    call hbc_freestr\n83:\n    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    add $16, %rsp\n    jmp 82f\n81:\n    mov 16(%rsp), %rax\n    mov 24(%rsp), %rdx\n");
+            out.push_str(&format!("82:\n    add ${}, %rsp\n", addend));
         }
         Expr::Call(id, args) if is_builtin(id, "hb_hsetdef") => {
             // hb_HSetDef(h, key [, default]): key first (borrowed),
@@ -13276,6 +13288,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             if args.len() == 3 {
                 cg_value(&args[2], env, sigs, strs, out, target);
                 if expr_ty(&args[2], env, sigs) == Ty::Dyn {
+                    if !dyn_expr_owned(&args[2]) { cg_dyn_clone_if_str(out); }
                     out.push_str("    mov %rax, 16(%rsp)\n    mov %rdx, 24(%rsp)\n");
                 } else if expr_ty(&args[2], env, sigs) == Ty::Bool {
                     out.push_str("    movq $3, 16(%rsp)\n    mov %rax, 24(%rsp)\n");
@@ -13299,13 +13312,17 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                 // evaluation above may clobber it, nothing below does.
                 let setflag = if has_def { "    mov $1, %r8d\n" } else { "    xor %r8d, %r8d\n" };
                 if temp_key {
-                    out.push_str(&format!("    lea -{}(%rbp), %rdi\n    mov (%rsp), %rsi\n    mov 8(%rsp), %rdx\n    lea 16(%rsp), %rcx\n{}    call hbc_hsetdef\n    mov %rax, 32(%rsp)\n    mov %rdx, 40(%rsp)\n    mov (%rsp), %rdi\n    call hbc_freestr\n    mov 32(%rsp), %rax\n    mov 40(%rsp), %rdx\n    add $48, %rsp\n", var.off, setflag));
+                    out.push_str(&format!("    lea -{}(%rbp), %rdi\n    mov (%rsp), %rsi\n    mov 8(%rsp), %rdx\n    lea 16(%rsp), %rcx\n{}    call hbc_hsetdef\n    mov %rax, 32(%rsp)\n    mov %rdx, 40(%rsp)\n    mov (%rsp), %rdi\n    call hbc_freestr\n    mov 32(%rsp), %rax\n    mov 40(%rsp), %rdx\n", var.off, setflag));
                 } else {
-                    out.push_str(&format!("    lea -{}(%rbp), %rdi\n    mov (%rsp), %rsi\n    mov 8(%rsp), %rdx\n    lea 16(%rsp), %rcx\n{}    call hbc_hsetdef\n    add $32, %rsp\n", var.off, setflag));
+                    out.push_str(&format!("    lea -{}(%rbp), %rdi\n    mov (%rsp), %rsi\n    mov 8(%rsp), %rdx\n    lea 16(%rsp), %rcx\n{}    call hbc_hsetdef\n", var.off, setflag));
                 }
             } else {
                 unreachable!("checked: hb_HSetDef takes a hash variable");
             }
+            // The hash keeps its payload; the builtin call returns an owned copy.
+            cg_dyn_clone_if_str(out);
+            if args.len()==3 && expr_ty(&args[2],env,sigs)==Ty::Dyn { cg_dyn_stack_release(out,16,true); }
+            out.push_str(if temp_key { "    add $48, %rsp\n" } else { "    add $32, %rsp\n" });
         }
         Expr::Call(id, args) if is_builtin(id, "hb_hclone") => {
             // hb_HClone(h): the helper deep-copies every entry into a
@@ -13769,7 +13786,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                     // epilogue like any owned param): a string payload is
                     // cloned at the boundary so caller and callee never
                     // share an allocation.
-                    if !(DBF_USED.with(|v|v.get()) && matches!(a, Expr::Call(..))) { cg_dyn_clone_if_str(out); }
+                    if !dyn_expr_owned(a) { cg_dyn_clone_if_str(out); }
                     // DBF-active call temporaries transfer string ownership.
                     // ains P2 stage 1 closure (independent-review
                     // blocker): a Dyn-held ARRAY (tag 8) may not cross a
@@ -14775,6 +14792,29 @@ fn obj_fresh(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> bool {
 
 // rax=tag, rdx=payload -> the pair with any string (tag 2 or 4) cloned
 // into a fresh owned tag-4 copy. Scalar tags pass through untouched.
+// A language call produces its own temporary; sequence tails preserve that
+// ownership. IIF Dyn arms are normalized on the selected branch below.
+fn dyn_expr_owned(e: &Expr) -> bool {
+    match e {
+        Expr::Call(..) | Expr::Send(..) => true,
+        Expr::Seq(es) => es.last().map_or(false, dyn_expr_owned),
+        _ => false,
+    }
+}
+// Release a tag-4 snapshot at offset from rsp; optionally preserve the
+// result pair. Borrowed source slots never reach this helper.
+fn cg_dyn_stack_release(out: &mut String, off: usize, preserve: bool) {
+    let k=fresh_lbl();
+    out.push_str(&format!("    @HBC_TAG_KIND@cmpq $4, {}(%rsp)@HBC_TAG_END@\n    jne .Lhashdrop{}\n",off,k));
+    if preserve { out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n"); }
+    out.push_str(&format!("    mov {}(%rsp), %rdi\n    call hbc_freestr\n",off+8+if preserve{16}else{0}));
+    if preserve { out.push_str("    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    add $16, %rsp\n"); }
+    out.push_str(&format!(".Lhashdrop{}:\n",k));
+}
+fn hash_cell_borrow(e: &Expr, env: &[CgLocal]) -> bool {
+    matches!(e, Expr::Index(v, _) if env.iter().rev().any(|x|x.name==*v && x.ty==Ty::Hash))
+}
+
 fn cg_dyn_clone_if_str(out: &mut String) {
     out.push_str("    @HBC_TAG_KIND@cmp $2, %rax@HBC_TAG_END@\n    je 88f\n    @HBC_TAG_KIND@cmp $4, %rax@HBC_TAG_END@\n    jne 89f\n88:\n    mov %rdx, %rdi\n    mov -8(%rdx), %rsi\n    call hbc_strcpy\n    mov %rax, %rdx\n    mov $4, %eax\n89:\n");
 }
@@ -14942,12 +14982,12 @@ fn cg_dbf_scalar_container(e:&Expr,env:&[CgLocal],sigs:&[Sig],out:&mut String){
 }
 
 fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target, true_label: &str) {
-    // DBF-active owned Dyn call operands need one owner until comparison
+    // Owned Dyn call operands need one owner until comparison
     // ends on EITHER branch. Materialize in reserved frame scratch, borrow
     // through the established lowering, then release temporaries exactly once.
     if let Expr::Cmp(op,a,b)=cond {
-        let owned=|e:&Expr|expr_ty(e,env,sigs)==Ty::Dyn && matches!(e,Expr::Call(..));
-        if DBF_USED.with(|v|v.get()) && (owned(a)||owned(b)) {
+        let owned=|e:&Expr|expr_ty(e,env,sigs)==Ty::Dyn && dyn_expr_owned(e);
+        if owned(a)||owned(b) {
             let id=fresh_lbl();let mut ee=env.to_vec();let mut vv=Vec::new();
             for (i,e) in [a.as_ref(),b.as_ref()].iter().enumerate(){
                 let ty=expr_ty(e,env,sigs);let off=aview_scratch();
@@ -15729,8 +15769,8 @@ fn cg_print_items(es: &[Expr], inline: bool, raw: bool, stderr: bool, env: &[CgL
                             // owned by its slot, and a DArrDyn cell read stays
                             // owned by its CELL (ains piece 1a - the cell is
                             // borrowed, never moved out).
-                            let cell_borrow = matches!(e, Expr::Index(v, _) if env.iter().any(|x| x.name == *v && matches!(x.ty, Ty::DArrDyn | Ty::Dyn | Ty::RefDyn)));
-                            if !matches!(e, Expr::Var(_)) && !cell_borrow {
+                            let cell_borrow = hash_cell_borrow(e,env) || matches!(e, Expr::Index(v, _) if env.iter().any(|x| x.name == *v && matches!(x.ty, Ty::DArrDyn | Ty::Dyn | Ty::RefDyn)));
+                            if dyn_expr_owned(e) && !cell_borrow {
                                 out.push_str(&format!("    @HBC_TAG_KIND@cmpq $4, {}(%rsp)@HBC_TAG_END@\n    jne 95f\n    mov {}(%rsp), %rdi\n    test %rdi, %rdi\n    je 95f\n    call hbc_freestr\n95:\n", off, off + 8));
                             }
                         }
@@ -15963,7 +16003,9 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                                 out.push_str("    mov %rax, %rdx\n    mov $3, %eax\n");
                             }
                             out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
-                            out.push_str(&format!("    lea -{}(%rbp), %rdi\n    mov 16(%rsp), %rsi\n    mov 24(%rsp), %rdx\n    mov %rsp, %rcx\n    call hbc_hput\n    add $32, %rsp\n", off));
+                            out.push_str(&format!("    lea -{}(%rbp), %rdi\n    mov 16(%rsp), %rsi\n    mov 24(%rsp), %rdx\n    mov %rsp, %rcx\n    call hbc_hput\n", off));
+                            if expr_ty(v,env,sigs)==Ty::Dyn && dyn_expr_owned(v) { cg_dyn_stack_release(out,0,false); }
+                            out.push_str("    add $32, %rsp\n");
                         }
                         env.push(CgLocal { name: id.clone(), ty: t, off });
                         continue;
@@ -16032,7 +16074,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                                 // pair: clone any string payload so the new
                                 // slot owns its own copy (the same boundary
                                 // rule as Dyn-to-Dyn assignment).
-                                if t == Ty::Dyn && matches!(e, Expr::Var(_)) {
+                                if t == Ty::Dyn && !dyn_expr_owned(e) {
                                     cg_dyn_clone_if_str(out);
                                     // ains P2 stage 1: a tag-8 (array) copy
                                     // would alias the owner - clean error.
@@ -16147,7 +16189,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 // string payload (tag 4 owned temp): the callee's slot
                 // keeps its copy and the shared epilogue frees it.
                 if expr_ty(e, env, sigs) == Ty::Dyn {
-                    if !(DBF_USED.with(|v|v.get()) && matches!(e, Expr::Call(..))) { cg_dyn_clone_if_str(out); }
+                    if !dyn_expr_owned(e) { cg_dyn_clone_if_str(out); }
                     // A Dyn-held OBJECT likewise crosses with its own
                     // reference for the caller (class-free programs keep
                     // byte-identical asm).
@@ -16225,7 +16267,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                             // (cg_dyn_clone_if_str discipline). After
                             // this the temp owns any string payload and
                             // the dispatch stubs free it exactly once.
-                            if st == Ty::Dyn && !matches!(sel, Expr::Call(..)) {
+                            if st == Ty::Dyn && !dyn_expr_owned(sel) {
                                 cg_dyn_clone_if_str(out);
                             }
                             *frame += 16;
@@ -16876,7 +16918,9 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                                 out.push_str("    mov %rax, %rdx\n    mov $3, %eax\n");
                             }
                             out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
-                            out.push_str(&format!("    lea -{}(%rbp), %rdi\n    mov 16(%rsp), %rsi\n    mov 24(%rsp), %rdx\n    mov %rsp, %rcx\n    call hbc_hput\n    add $32, %rsp\n", off));
+                            out.push_str(&format!("    lea -{}(%rbp), %rdi\n    mov 16(%rsp), %rsi\n    mov 24(%rsp), %rdx\n    mov %rsp, %rcx\n    call hbc_hput\n", off));
+                            if expr_ty(v,env,sigs)==Ty::Dyn && dyn_expr_owned(v) { cg_dyn_stack_release(out,0,false); }
+                            out.push_str("    add $32, %rsp\n");
                         }
                         continue;
                     }
@@ -16968,7 +17012,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                                 // no-op (a tag-8 payload would otherwise be
                                 // freed before the store).
                                 if let Expr::Var(src) = e { if src == id { continue; } }
-                                if matches!(e, Expr::Var(_)) {
+                                if !dyn_expr_owned(e) {
                                     cg_dyn_clone_if_str(out);
                                     // ains P2 stage 1: copying a Dyn var
                                     // holding an ARRAY (tag 8) would alias
@@ -17833,7 +17877,9 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                     out.push_str("    mov %rax, %rdx\n    mov $3, %eax\n");
                 }
                 out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
-                out.push_str(&format!("    lea -{}(%rbp), %rdi\n    mov 16(%rsp), %rsi\n    mov 24(%rsp), %rdx\n    mov %rsp, %rcx\n    call hbc_hput\n    add $16, %rsp\n", var.off));
+                out.push_str(&format!("    lea -{}(%rbp), %rdi\n    mov 16(%rsp), %rsi\n    mov 24(%rsp), %rdx\n    mov %rsp, %rcx\n    call hbc_hput\n", var.off));
+                if expr_ty(ve,env,sigs)==Ty::Dyn && dyn_expr_owned(ve) { cg_dyn_stack_release(out,0,false); }
+                out.push_str("    add $16, %rsp\n");
                 if temp_key {
                     out.push_str("    mov (%rsp), %rdi\n    call hbc_freestr\n");
                 }
@@ -18087,9 +18133,13 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                         // Owned key copy (h[keys[i]] := v): hbc_hput copies
                         // the bytes, so the temporary is freed right after.
                         out.push_str("    sub $16, %rsp\n    mov %rsi, (%rsp)\n");
-                        out.push_str(&format!("    lea -{}(%rbp), %rdi\n    lea 16(%rsp), %rcx\n    call hbc_hput\n    mov (%rsp), %rdi\n    call hbc_freestr\n    add $32, %rsp\n", v.off));
+                        out.push_str(&format!("    lea -{}(%rbp), %rdi\n    lea 16(%rsp), %rcx\n    call hbc_hput\n    mov (%rsp), %rdi\n    call hbc_freestr\n    add $16, %rsp\n", v.off));
+                        if expr_ty(e,env,sigs)==Ty::Dyn && dyn_expr_owned(e) { cg_dyn_stack_release(out,0,false); }
+                        out.push_str("    add $16, %rsp\n");
                     } else {
-                        out.push_str(&format!("    lea -{}(%rbp), %rdi\n    mov %rsp, %rcx\n    call hbc_hput\n    add $16, %rsp\n", v.off));
+                        out.push_str(&format!("    lea -{}(%rbp), %rdi\n    mov %rsp, %rcx\n    call hbc_hput\n", v.off));
+                        if expr_ty(e,env,sigs)==Ty::Dyn && dyn_expr_owned(e) { cg_dyn_stack_release(out,0,false); }
+                        out.push_str("    add $16, %rsp\n");
                     }
                 } else if v.ty == Ty::DArr || v.ty == Ty::DArrRef {
                     // Dynamic array write: same value-first order; bounds

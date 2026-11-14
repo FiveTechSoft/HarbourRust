@@ -1,0 +1,13 @@
+procedure main()
+? work()
+? hb_memcheck()
+return
+function work()
+local a := {1,"canary"}
+local h := {"k"=>a[2]}
+local before := hb_memcheck()
+local y := hb_HValueAt(h,1)
+? y
+hb_HDel(h,"k")
+? y
+return 0
