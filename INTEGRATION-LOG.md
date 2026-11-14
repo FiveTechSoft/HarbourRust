@@ -89,3 +89,14 @@ holding object/array; multiple inheritance.
   `::name := e`; `Self:name := e` at statement level is not in the
   subset (expression-level `Self:name` works). Class instantiation is
   `ClassName()` (zero args; `:New(args...)` on the instance).
+
+## Stage A addendum (commit pending at write time)
+- Cmp rules: `==` on objects = pointer identity (cl7/cl19) accepted;
+  `!=`/`#` named rejection (BASE/1072); `=`/orderings on objects named
+  rejections; object-vs-scalar (incl. NIL) named rejection.
+- Parent approved (14 Nov 01:02): receiver-typed constructor result and
+  the t290 manifest update. Deep review happens on the full A+B package;
+  main is now 4e84240 (DBF hito 1 lands first; parent coordinates rebase).
+- DESIGN-stage-B.md committed (f1b993a): runtime blob, descriptors,
+  virtual dispatch (2 loads + indirect call), DATA access, ownership
+  points, print tag-13, gates.
