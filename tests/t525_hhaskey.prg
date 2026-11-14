@@ -1,7 +1,5 @@
 // t525: hb_HHasKey(h, k) - byte-exact, case-sensitive membership,
-// answered 1/0 (hk157 oracle prints .T./.F.; the dialect has no
-// logical type, so 1/0 is the PoC surface - the registered boolean
-// rendering family).
+// answered .T./.F. (hk157), matching Harbour's logical render.
 function main()
     local h := {"a" => 1, "bb" => 2}
     ? hb_HHasKey(h, "a")

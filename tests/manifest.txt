@@ -550,15 +550,15 @@ pos tests/t552_hclone_owned.prg \n         7\n         1\n         0\n         0
 neg tests/t553_neg_hclone_type.prg `hb_HClone` expects a hash variable
 pos tests/t554_hmerge_self.prg \n         2\n         1\n         2\n         1\n         2
 pos tests/t555_hmerge_srcfree.prg \n         2\n         2\n         0\n         0
-pos tests/t556_casematch_toggle.prg \n         1\n         0\n         1\n         1\n         0
-pos tests/t557_casematch_write.prg \n         1\n         9\na\n         0
-pos tests/t558_casematch_lastread.prg \n         2\n         2\n         1\n         3
+pos tests/t556_casematch_toggle.prg \n         1\n         0\n.T.\n         1\n.F.
+pos tests/t557_casematch_write.prg \n         1\n         9\na\n.F.
+pos tests/t558_casematch_lastread.prg \n         2\n         2\n.T.\n         3
 pos tests/t559_casematch_lastwrite.prg \n         2\na\n         1\nA\n         9
 pos tests/t560_casematch_clone.prg \n         0\n         1
 pos tests/t561_casematch_posdel.prg \n         2\n         1\na
 pos tests/t562_casematch_merge.prg \n         1\na\n         2\n         2
-pos tests/t563_casematch_emptyclone.prg \n         0\n         1
-pos tests/t564_casematch_owned.prg \n         1\n         1\n         0\n         0\n         0
+pos tests/t563_casematch_emptyclone.prg \n         0\n.T.
+pos tests/t564_casematch_owned.prg \n.T.\n         1\n.F.\n         0\n         0
 neg tests/t565_neg_casematch_type.prg hb_HSetCaseMatch expects a hash variable
 neg tests/t566_neg_casematch_flag.prg the hb_HSetCaseMatch flag is an integer
 neg tests/t567_neg_casematch_getter.prg `hb_HCaseMatch` expects a hash variable
@@ -578,16 +578,16 @@ pos tests/t580_hdelat.prg \n         2\nb\n         1\nb\n         0
 pos tests/t581_hdelat_owned.prg \nb\n         0\n         0
 neg tests/t582_neg_hdelat_type.prg hb_HDelAt expects a hash variable
 neg tests/t583_neg_hdelat_index.prg the hb_HDelAt position is an integer in this increment
-pos tests/t584_hclear.prg \n         0\n         1\n         9\n         1\n         0\n         0
+pos tests/t584_hclear.prg \n         0\n         1\n         9\n         1\n.F.\n         0
 pos tests/t585_hfill.prg \n         7\n         7\n         7\nb\n         3\nNIL\n         0
 pos tests/t586_hclear_owned.prg \n         5\n         0\nz\n         0\n         0
 neg tests/t587_neg_hclear_type.prg hb_HClear expects a hash variable
 neg tests/t588_neg_hfill_value.prg hash values are integers, logicals or NIL in this increment
-pos tests/t589_hgetdef.prg \n         1\n         9\n         1\nNIL\n         1\n         0\n         0
+pos tests/t589_hgetdef.prg \n         1\n         9\n         1\nNIL\n         1\n.F.\n.F.
 pos tests/t590_hgetdef_owned_key.prg \n         2\n         1\n        42\n         0
 pos tests/t591_hgetdef_dyn_def.prg \n         7\n         1\n         1
-pos tests/t592_hsetdef.prg \n         1\n         1\n         5\n         2\n         1\n         5\n         5
-pos tests/t593_hsetdef_nil_overwrite.prg \n         5\n         5\nNIL\n         2\n         1\nNIL
+pos tests/t592_hsetdef.prg \n         1\n         1\n         5\n         2\n.T.\n         5\n         5
+pos tests/t593_hsetdef_nil_overwrite.prg \n         5\n         5\nNIL\n         2\n.T.\nNIL
 pos tests/t594_hsetdef_present_nodef.prg \n         7\n         7\n         1
 pos tests/t595_hcopy.prg \n         2\nb\n         3\n         1\n         9\n         3
 pos tests/t596_hcopy_edges.prg \n         0\n         0
@@ -603,7 +603,7 @@ neg tests/t605_mixed_log_num.prg logicals compare only with another logical
 pos tests/t606_dotted_forms.prg \n.T.\n.F.\n.T.\n.T.
 pos tests/t607_bool_assign_if.prg \nsi\nno2
 pos tests/t608_log_dyn_mixed_literal.prg \n.T.\n.F.\nL\n.T.\n.T.\n.F.
-pos tests/t609_log_dyn_hash_write.prg \n.T.\n.F.\nL\n         1\n.T.\n.F.
+pos tests/t609_log_dyn_hash_write.prg \n.T.\n.F.\nL\n.T.\n.T.\n.F.
 pos tests/t610_log_dyn_hsetdef_hscan.prg \n.T.\n.T.\nL\n         1\n         0
 pos tests/t611_log_dyn_hclone_hvalues.prg \n.T.\nL\n.T.\nL\n         1
 pos tests/t612_log_dyn_aadd_arrset.prg \n.T.\nL\n.F.

@@ -1,7 +1,7 @@
 // t556: hb_HCaseMatch default 1; hb_HSetCaseMatch(h, 0) makes EXISTING
 // keys match case-insensitively (read and HasKey); back to 1 restores
-// byte-exact matching (oracle hk169; getter printed as 1/0 - the
-// dialect has no logical type, boolean rendering family registered).
+// byte-exact matching (oracle hk169). hb_HCaseMatch keeps its numeric
+// 1/0 flag surface; hb_HHasKey renders .T./.F. as a logical.
 function main()
     local h := {"a" => 1}
     ? hb_HCaseMatch(h)

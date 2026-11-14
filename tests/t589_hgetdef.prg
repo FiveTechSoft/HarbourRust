@@ -1,6 +1,6 @@
 // t589: hb_HGetDef(h, key [, default]) - hit returns the value; a
 // miss returns the default WITHOUT adding the key, or NIL with no
-// default (hk194; 1/0 is the registered boolean rendering family).
+// default (hk194); the trailing hb_HHasKey checks render .T./.F.
 function main()
     local h := {"a" => 1}
     ? hb_HGetDef(h, "a")

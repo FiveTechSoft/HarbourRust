@@ -1,6 +1,5 @@
 // t592: hb_HSetDef(h, key, def) - present same tag keeps the stored
-// value, absent adds key=def (hk196; 1/0 is the registered boolean
-// rendering family).
+// value, absent adds key=def (hk196); the membership check renders .T./.F.
 function main()
     local h := {"a" => 1}
     ? hb_HSetDef(h, "a", 7)
