@@ -43,6 +43,11 @@ base relocations are supported.
 
 VAS-eligible programs add `GetSystemInfo`, `VirtualAlloc` and `VirtualFree` to this whitelist (11 entries); ineligible programs retain the original eight-entry whitelist.
 
+On Windows 11 x86-64, an isolated run of `tests/run_battery_win.sh` with
+`HBC_INTERNAL_PE=1` over the current manifest reports 1638/1638 executed
+cases (21 newline-normalized) and 23 Linux-only skips; it is a
+manifest-scoped result, not a full compatibility claim.
+
 `--external-as` keeps the older MinGW-w64 path below, which is also what
 `tests/run_battery.sh` and `tests/run_battery_win.sh` use. For that fallback
 you need MinGW-w64 binutils (`x86_64-w64-mingw32-as` and

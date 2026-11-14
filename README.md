@@ -185,11 +185,12 @@ hello.exe
 `--external-as` keeps the older MinGW-w64 `x86_64-w64-mingw32-as`/`-ld` path;
 that toolchain is also used by the test runner. `dist\build.bat` chains the
 legacy path and defaults to the older `dist\2-hbc.exe`; set `HBC` to override.
-The internal writer was checked on Windows 11 x86-64 for representative
-programs (greeting, hashes, dates, nested arrays, loops and error exits) with
-matching output; the full native Windows battery is not claimed here. The
-v0.1.1 compiler and batch script were tested under Wine 11.0 as a release
-smoke test.
+The internal writer was exercised on Windows 11 x86-64 with an isolated
+native-manifest battery: 1638/1638 executed cases matched (1617 exact, 21
+recorded as newline-normalized), with 23 Linux-only cases skipped and no
+failures. This is a bounded manifest result, not a general compatibility
+claim. The v0.1.1 compiler and batch script were tested under Wine 11.0 as a
+release smoke test.
 
 ## Documentation and samples
 
