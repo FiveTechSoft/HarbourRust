@@ -37,6 +37,7 @@ thread_local! {
 #[path = "pp.rs"]
 mod pp;
 mod hasm;
+mod hpe;
 
 #[derive(Clone, Copy, PartialEq, Debug)]
 enum Ty { NumLocal, F64, I64, Str, Bool, Date, Arr(usize), Block(usize, BRet), DArr, DArrU, DArr2, DArr3, DArr4, DArrS, StrOwn, Dyn, Hash, DArrRef, DArrRef2, RefI64, RefDyn, RefStrOwn, DArrDyn, AView, Obj(u32) }
@@ -24931,12 +24932,46 @@ fn main() {
         return;
     }
 
-    // hbc AUTÓNOMO: la salida no termina en .s -> ejecutable ELF directo,
-    // sin invocar as/ld (Fase 1: Linux x86-64). --external-as conserva la
-    // vía externa como fallback. PE64 (Windows) es una Fase 2 aparte.
+    // hbc AUTÓNOMO: la salida no termina en .s -> ejecutable directo,
+    // sin invocar as/ld (Fase 1: Linux x86-64 ELF; Fase 2: Windows PE64).
+    // --external-as conserva la vía externa como fallback en ambos targets.
     if matches!(target, Target::Windows) {
-        eprintln!("error: executable output for --target=windows (PE64) is not supported yet: emit .s and link externally, or use --target=linux");
-        process::exit(1);
+        if external_as {
+            // La línea exacta de tests/run_battery.sh (toolchain mingw-w64
+            // en PATH); --target=windows con .s no pasa por aquí.
+            let dir = env::temp_dir();
+            let stem = format!("hbc-{}-extwin", process::id());
+            let s_path = dir.join(format!("{}.s", stem));
+            let o_path = dir.join(format!("{}.o", stem));
+            fs::write(&s_path, &out).unwrap_or_else(|e| { eprintln!("cannot write {:?}: {}", s_path, e); process::exit(2); });
+            let st = process::Command::new("x86_64-w64-mingw32-as").arg("-o").arg(&o_path).arg(&s_path).status()
+                .unwrap_or_else(|e| { eprintln!("error: cannot run x86_64-w64-mingw32-as: {} (mingw-w64 no esta en PATH; quita --external-as para el escritor interno)", e); process::exit(2); });
+            if !st.success() { eprintln!("error: x86_64-w64-mingw32-as failed on generated assembly"); process::exit(1); }
+            let mut cmd = process::Command::new("x86_64-w64-mingw32-ld");
+            cmd.arg(&o_path).arg("-o").arg(pos[1]).arg("-e").arg("_start")
+                .arg("--subsystem").arg("console");
+            if let Ok(mlib) = env::var("HBC_MINGW_LIB") { cmd.arg(format!("-L{}", mlib)); }
+            let st = cmd.arg("-lkernel32").status()
+                .unwrap_or_else(|e| { eprintln!("error: cannot run x86_64-w64-mingw32-ld: {} (mingw-w64 no esta en PATH; quita --external-as para el escritor interno)", e); process::exit(2); });
+            if !st.success() { eprintln!("error: x86_64-w64-mingw32-ld failed"); process::exit(1); }
+            let _ = fs::remove_file(&s_path); let _ = fs::remove_file(&o_path);
+            println!("{} -> {} ({} functions, external mingw as/ld)", args[1], args[2], funcs.len());
+            return;
+        }
+        match hasm::assemble_pe(&out) {
+            Ok(bytes) => {
+                fs::write(pos[1], bytes)
+                    .unwrap_or_else(|e| { eprintln!("cannot write {}: {}", args[2], e); process::exit(2); });
+                #[cfg(unix)]
+                {
+                    use std::os::unix::fs::PermissionsExt;
+                    let _ = fs::set_permissions(pos[1], fs::Permissions::from_mode(0o755));
+                }
+                println!("{} -> {} ({} functions, PE64)", args[1], args[2], funcs.len());
+            }
+            Err(e) => { eprintln!("error: hasm(PE64): {}", e); process::exit(1); }
+        }
+        return;
     }
     if external_as {
         let dir = env::temp_dir();
