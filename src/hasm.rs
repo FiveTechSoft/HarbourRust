@@ -678,7 +678,7 @@ fn fits_i32(v: i64) -> bool { (i32::MIN as i64..=i32::MAX as i64).contains(&v) }
 fn suffix_width(m: &str) -> (&str, Option<u8>) {
     // mnemónicos con significado propio que terminan en letra de sufijo: no tocar
     const EXACT: &[&str] = &[
-        "ret","leave","syscall","pause","endbr64","nop","rep movsb",
+        "ret","leave","syscall","pause","endbr64","nop","rep movsb","rep stosb",
         "fyl2x","fscale","frndint","fld1","f2xm1","fprem","fnstsw",
         "fldl","fstpl","fld","fstp","fxch","faddp","fsub",
         "movsd","addsd","subsd","mulsd","divsd","ucomisd","xorpd","cvtsi2sd","cvttsd2si","roundsd",
@@ -729,6 +729,7 @@ fn encode_into(e: &Enc, out: &mut Vec<u8>, ripp: &mut RipPatches, mnem0: &str, o
         "pause" => { out.extend_from_slice(&[0xF3, 0x90]); return Ok(()); }
         "endbr64" => { out.extend_from_slice(&[0xF3, 0x0F, 0x1E, 0xFA]); return Ok(()); }
         "rep movsb" => { out.extend_from_slice(&[0xF3, 0xA4]); return Ok(()); }
+        "rep stosb" => { out.extend_from_slice(&[0xF3, 0xAA]); return Ok(()); }
         "nop" => { out.push(0x90); return Ok(()); }
         // x87 sin operandos
         "fyl2x" => { out.extend_from_slice(&[0xD9, 0xF1]); return Ok(()); }

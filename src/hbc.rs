@@ -22197,6 +22197,14 @@ hbc_padr:
 # Leaf fill: rdi=destination, rcx=byte count, rax=repeated-byte word.
 # Preserves r10 and all callee-saved registers; touches every byte once.
 hbc_strfill:
+    cmp $64, %rcx
+    jb 2f
+    cmp $2048, %rcx
+    jb 1f
+    # Large fills use the byte in AL; small fills retain the store loop.
+    # Preserve r10 (the caller's retained result pointer).
+    rep stosb
+    ret
 1:  cmp $64, %rcx
     jb 2f
     mov %rax, 0(%rdi)
