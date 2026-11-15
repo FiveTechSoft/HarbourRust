@@ -182,7 +182,11 @@ pub fn write_pe(img: &PeImage) -> Vec<u8> {
     w32(&mut out, headers_size as u32);
     w32(&mut out, 0);                         // CheckSum: se parchea al final
     w16(&mut out, 3);                         // Subsystem: Windows CUI
-    w16(&mut out, 0x160);                     // DllCharacteristics
+    // No base relocation directory is emitted by this writer. Do not
+    // advertise DYNAMIC_BASE (0x40) or HIGH_ENTROPY_VA (0x20): absolute
+    // addresses in generated helpers are valid only at ImageBase.
+    // NX_COMPAT stays enabled. Real ASLR requires a separate .reloc unit.
+    w16(&mut out, 0x100);                     // DllCharacteristics: NX_COMPAT
     // Stack reserve/commit: commit the full 2 MB reserve. A commit of
     // one page made a frame larger than the initial committed region
     // fault with 0xC0000005 when a single `sub rsp, size` jumped past
