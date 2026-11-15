@@ -68,3 +68,5 @@ Required mixed-expression oracle matrix: literal versus MEMVAR int division (exa
 ## Limits
 
 This is design plus official-Harbour probes, not integration or new storage functionality. Dates, float/decimal storage, references, arrays, hashes, objects, calls and work areas remain outside the existing storage stage. Current stage is not full macro parity. The prior PUBLIC HARBOUR/CLIPPER defaults are already covered by the delivered storage oracle and were not rerun here. Error-route formatting/handler choice remains the other owner's decision.
+
+Amendment 2026-11-15 (M0): the recoverable-raise prerequisite is narrowed for M0 to fatal-channel PASS (f13158c6: terminal diagnostics, correct channel/EOL/exit1). ErrorBlock, BREAK/RECOVER and any recoverable raise remain OUTSIDE M0 as named limits; 'supported recovery' in the mixed matrix is declared unrun. A recoverable top-level boundary remains required before any unit claiming recoverable semantics. Cleanup-before-raise at the fatal boundary and deferred V_ERR are M0 gates.

@@ -1,37 +1,4 @@
-/* Own MIT. Runtime macro evaluator (M1): `&(expr)` / `&name` over constant
- * Harbour expressions. Freestanding C, no libc, compiled ahead of time to
- * generated/hrmacro.s with the SysV ABI (the hbc-internal convention on
- * every x86-64 target), so the same assembly serves ELF, PE and Mach-O.
- *
- * Semantics are Harbour 3.2.0's macro compiler, measured (docs/
- * MACRO-M1-2026-11-15.md). Because every operand is a literal, Harbour
- * constant-folds the expression (expropt2.c) before running it; the rules
- * below are those folding rules, not the runtime operator rules:
- *   int + - * int stays int (overflow becomes double); doubles take
- *   max(dec) for + - and dec1 + dec2 for *; / is int when exact between
- *   ints, otherwise a double with 2 decimals; any division or % by zero
- *   is the integer 0; % keeps the dividend's sign (int, or double with
- *   2 decimals); ^ and ** are left-associative doubles with 2 decimals;
- *   unary minus binds tighter than ^; .AND./.OR. fold against a logical
- *   constant on either side and return the other operand unchanged.
- * Identifiers are memvars/fields in Harbour. hbc has neither, so a bare
- * name is Harbour's own BASE/1003 error; LOCALs are invisible to macros
- * in Harbour too. Function calls are the named M2 limit.
- *
- * Values cross into hbc as the 16-byte Dyn cell: kind 9 literal int, 1 NIL,
- * 3 logical, 4 owned string (hbc_stralloc data pointer), 5 heap float
- * (hbc_float_new). All allocation goes through the hrm_* shims, which
- * preserve every SysV callee-saved register around the hbc helpers. */
-/* No system headers: the SysV build runs on a MinGW host whose headers
- * assume the Win64 ABI. Fixed-width types are spelled out (LP64 and LLP64
- * agree on long long and pointers). */
-typedef unsigned long long uint64_t;
-typedef long long int64_t;
-typedef unsigned long long size_t;
-typedef unsigned long long uintptr_t;
-#define INT64_MAX 0x7fffffffffffffffLL
-#define INT64_MIN (-INT64_MAX - 1)
-
+/* Own MIT. M0 contextual parse/fold/runtime separation; terminal-only boundary. */
 #include "hrmacro.h"
 
 extern unsigned char *hrm_alloc(size_t len);
@@ -47,65 +14,6 @@ extern void hrm_fail(const unsigned char *msg, size_t len) __attribute__((noretu
  * error in evaluation order wins. */
 enum { V_NIL, V_INT, V_DBL, V_LOG, V_STR, V_ERR };
 
-/* M0 memvar storage: una tabla fija de asignaciones nombre -> celda Dyn.
- * El compilador PRIVATE/PUBLIC llama hrmacro_set; el evaluador de
- * identificadores consulta hrmacro_get antes de dar BASE/1003. La celda
- * es el 16-byte Dyn: tag 0/9 int, 1 NIL, 3 logical, 5 heap float,
- * 4 owned string. */
-#define HRMV_TABLE 256
-#define HRMV_NAME_MAX 63
-typedef struct {
-  char name[HRMV_NAME_MAX + 1];
-  unsigned long long tag;
-  unsigned long long payload;
-  unsigned used;
-} hrmv_slot;
-static hrmv_slot hrmv_table[HRMV_TABLE];
-
-static unsigned hrmv_fold(unsigned char c){ return c >= 'A' && c <= 'Z' ? c + 32u : c; }
-static unsigned hrmv_namelen_eq(const unsigned char *a, const unsigned char *b, unsigned long long n){
-  for (unsigned long long i = 0; i < n; i++) if (hrmv_fold(a[i]) != hrmv_fold(b[i])) return 0;
-  return 1;
-}
-void hrmacro_set(unsigned long long tag, unsigned long long payload,
-                 const unsigned char *name, unsigned long long name_len){
-  if (name_len == 0 || name_len > 63) return;
-  unsigned h = 5381u;
-  for (unsigned long long i = 0; i < name_len; i++) h = h * 33u + hrmv_fold((unsigned char)name[i]);
-  unsigned idx = h % HRMV_TABLE;
-  hrmv_slot *free_slot = 0;
-  for (unsigned probe = 0; probe < HRMV_TABLE; probe++) {
-    hrmv_slot *k = &hrmv_table[(idx + probe) % HRMV_TABLE];
-    if (!k->used) { if (!free_slot) free_slot = k; break; }
-    if (k->name[0] == name[0] && hrmv_namelen_eq((const unsigned char*)k->name, name, name_len)) {
-      k->tag = tag; k->payload = payload;
-      return;
-    }
-  }
-  if (!free_slot) return; /* tabla llena: límite con nombre */
-  for (unsigned long long i = 0; i < name_len; i++) free_slot->name[i] = (char)hrmv_fold(name[i]);
-  free_slot->name[name_len] = 0;
-  free_slot->tag = tag;
-  free_slot->payload = payload;
-  free_slot->used = 1;
-}
-
-unsigned hrmacro_get(const unsigned char *name, unsigned long long name_len,
-                     unsigned long long *tag, unsigned long long *payload){
-  if (name_len == 0 || name_len > 63) return 0;
-  unsigned h = 5381u;
-  for (unsigned long long i = 0; i < name_len; i++) h = h * 33u + hrmv_fold((unsigned char)name[i]);
-  unsigned idx = h % HRMV_TABLE;
-  for (unsigned probe = 0; probe < HRMV_TABLE; probe++) {
-    hrmv_slot *k = &hrmv_table[(idx + probe) % HRMV_TABLE];
-    if (!k->used) return 0;
-    if (k->name[0] == name[0] && hrmv_namelen_eq((const unsigned char*)k->name, name, name_len)) {
-      *tag = k->tag; *payload = k->payload;
-      return 1;
-    }
-  }
-  return 0;
-}
 typedef struct {
   int kind;
   int64_t i;            /* V_INT value, V_LOG 0/1 */
@@ -113,8 +21,10 @@ typedef struct {
   int dec;              /* V_DBL decimals */
   const unsigned char *s; /* V_STR bytes */
   size_t n;             /* V_STR length */
+  uint64_t meta;       /* exact binding float metadata, or calculated operator metadata */
+  int literal;         /* source provenance only, never inferred from binding tag9 */
   int owned;            /* V_STR: s came from hrm_alloc */
-  unsigned char ebuf[96]; /* V_ERR message */
+  unsigned char ebuf[512]; /* V_ERR message */
   size_t en;
 } val;
 
@@ -125,19 +35,14 @@ typedef struct {
   int tok;
   const unsigned char *ts; size_t tn; /* token text (strings: contents) */
   int op;                              /* T_OP operator code */
+  int error; const char *message;
   val num;                             /* T_NUM value */
 } lex;
 
 /* Operator codes. */
 enum { O_PLUS = 1, O_MINUS, O_STAR, O_SLASH, O_PCT, O_POW, O_EQ, O_EXEQ, O_NE, O_LT, O_LE, O_GT, O_GE, O_DOLLAR, O_BANG };
 
-__attribute__((noreturn)) static void fail_lit(const char *m) {
-  size_t n = 0;
-  while (m[n]) n++;
-  hrm_fail((const unsigned char *)m, n);
-}
-__attribute__((noreturn)) static void syntax(void) { fail_lit("Error BASE/1449  Syntax error: &\n"); }
-
+static void lex_fail(lex *L,const char*m){L->error=1;L->message=m;L->tok=T_END;L->p=L->end;}
 static int is_space(int c) { return c == ' ' || c == '\t' || c == '\r' || c == '\n'; }
 static int is_digit(int c) { return c >= '0' && c <= '9'; }
 static int is_alpha(int c) { return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_'; }
@@ -175,7 +80,7 @@ static void number(lex *L) {
       iv = (int64_t)((uint64_t)iv * 16u + (uint64_t)v);
       q++;
     }
-    if (q == h) syntax();
+    if(q==h){lex_fail(L,"Error BASE/1449  Syntax error: &");return;}
     L->num.kind = V_INT; L->num.i = iv; L->p = q; L->tok = T_NUM;
     return;
   }
@@ -206,12 +111,12 @@ static void next(lex *L) {
   if (L->p >= L->end) { L->tok = T_END; return; }
   int c = *L->p;
   if (is_digit(c) || (c == '.' && L->p + 1 < L->end && is_digit(L->p[1]))) { number(L); return; }
-  if (c == '.') { if (dot_word(L)) return; syntax(); }
+  if (c == '.') { if (dot_word(L)) return; {lex_fail(L,"Error BASE/1449  Syntax error: &");return;} }
   if (c == '"' || c == '\'' || c == '[') {
     int close = c == '[' ? ']' : c;
     const unsigned char *q = L->p + 1;
     while (q < L->end && *q != close) q++;
-    if (q >= L->end) syntax();
+    if (q >= L->end) {lex_fail(L,"Error BASE/1449  Syntax error: &");return;}
     L->ts = L->p + 1; L->tn = (size_t)(q - L->p - 1);
     L->p = q + 1; L->tok = T_STR; return;
   }
@@ -232,9 +137,9 @@ static void next(lex *L) {
     case ',': L->tok = T_COMMA; return;
     case '&': L->tok = T_AMP; return;
     case ':':
-      if (c2 == '=') fail_lit("Error: macro assignments are not in this increment (M1)\n");
-      syntax();
-    case '{': fail_lit("Error: macro arrays, hashes and codeblocks are not in this increment (M1)\n");
+      if (c2 == '=') {lex_fail(L,"Error: macro assignments are not in this increment (M0)");return;}
+      {lex_fail(L,"Error BASE/1449  Syntax error: &");return;}
+    case '{': {lex_fail(L,"Error: macro arrays, hashes and codeblocks are not in this increment (M0)");return;}
     case '+': L->op = O_PLUS; return;
     case '-': L->op = O_MINUS; return;
     case '*': if (c2 == '*') { L->p++; L->op = O_POW; } else L->op = O_STAR; return;
@@ -251,7 +156,7 @@ static void next(lex *L) {
       else L->op = O_LT;
       return;
     case '>': if (c2 == '=') { L->p++; L->op = O_GE; } else L->op = O_GT; return;
-    default: syntax();
+    default: {lex_fail(L,"Error BASE/1449  Syntax error: &");return;}
   }
 }
 
@@ -291,7 +196,7 @@ static val arg_err(int op) {
 static int is_num(const val *v) { return v->kind == V_INT || v->kind == V_DBL; }
 static double as_d(const val *v) { return v->kind == V_INT ? (double)v->i : v->d; }
 static int dec_of(const val *v) { return v->kind == V_DBL ? v->dec : 0; }
-static val mkdbl(double d, int dec) { val r = {0}; r.kind = V_DBL; r.d = d; r.dec = dec; return r; }
+static val mkdbl(double d, int dec) { val r = {0}; r.kind = V_DBL; r.d = d; r.dec = dec; r.meta=(((uint64_t)((d>9999999999.0||d< -999999999.0)?20:10))<<16)|(unsigned)dec; return r; }
 static val mkint(int64_t i) { val r = {0}; r.kind = V_INT; r.i = i; return r; }
 static val mklog(int b) { val r = {0}; r.kind = V_LOG; r.i = b ? 1 : 0; return r; }
 
@@ -302,7 +207,9 @@ static double trunc_d(double x) {
 
 static val concat(val *a, val *b, int minus) {
   size_t n = a->n + b->n, k = 0, keep = a->n, trail = 0;
-  unsigned char *o = hrm_alloc(n);
+  unsigned char *o;
+  if(n<a->n){drop(a);drop(b);return mkerr("Error: macro allocation size limit (M0)");}
+  o=hrm_alloc(n);if(!o){drop(a);drop(b);return mkerr("Error: macro allocation failure (M0)");}
   if (minus) { while (keep > 0 && a->s[keep - 1] == ' ') { keep--; trail++; } }
   for (size_t j = 0; j < keep; j++) o[k++] = a->s[j];
   for (size_t j = 0; j < b->n; j++) o[k++] = b->s[j];
@@ -362,7 +269,7 @@ static val compare(int op, val *a, val *b) {
   }
 }
 
-static val arith(int op, val *a, val *b) {
+static val arith(int op, val *a, val *b, int folding) {
   val e;
   if (pending(a, b, &e)) return e;
   if (op == O_PLUS && a->kind == V_STR && b->kind == V_STR) return concat(a, b, 0);
@@ -382,7 +289,7 @@ static val arith(int op, val *a, val *b) {
       return mkdbl(as_d(a) * as_d(b), dec_of(a) + dec_of(b));
     case O_SLASH: {
       if (as_d(b) == 0.0) return mkint(0);
-      if (ints && !(a->i == INT64_MIN && b->i == -1) && a->i % b->i == 0) return mkint(a->i / b->i);
+      if (folding && ints && !(a->i == INT64_MIN && b->i == -1) && a->i % b->i == 0) return mkint(a->i / b->i);
       return mkdbl(as_d(a) / as_d(b), 2);
     }
     case O_PCT: {
@@ -404,231 +311,212 @@ static val arith(int op, val *a, val *b) {
   }
 }
 
-static val expr_or(lex *L);
-static val eval_text(const unsigned char *src, size_t len);
-
-static val primary(lex *L) {
-  val v = {0};
-  switch (L->tok) {
-    case T_NUM: v = L->num; next(L); return v;
-    case T_STR: v.kind = V_STR; v.s = L->ts; v.n = L->tn; next(L); return v;
-    case T_TRUE: next(L); return mklog(1);
-    case T_FALSE: next(L); return mklog(0);
-    case T_NIL: next(L); v.kind = V_NIL; return v;
-    case T_LPAREN:
-      /* (a, b, c) is a list expression: the last value (Harbour). */
-      next(L);
-      v = expr_or(L);
-      while (L->tok == T_COMMA) {
-        drop(&v);
-        next(L);
-        v = expr_or(L);
-      }
-      if (L->tok != T_RPAREN) syntax();
-      next(L);
-      return v;
-    case T_AMP: {
-      /* Nested macro: &(text) evaluates text; &name names a variable. */
-      next(L);
-      if (L->tok == T_IDENT) {
-        val e = mkerr2("Error BASE/1003  Variable does not exist: ", L->ts, L->tn);
-        next(L);
-        return e;
-      }
-      if (L->tok != T_LPAREN) syntax();
-      next(L);
-      v = expr_or(L);
-      if (L->tok != T_RPAREN) syntax();
-      next(L);
-      if (v.kind == V_ERR) return v;
-      if (v.kind != V_STR) { drop(&v); syntax(); }
-      val r = eval_text(v.s, v.n);
-      drop(&v);
-      return r;
-    }
-    case T_IDENT: {
-      const unsigned char *s = L->ts; size_t n = L->tn;
-      next(L);
-      if (L->tok == T_LPAREN) {
-        /* Calls are M2: parse and release the arguments, defer the limit. */
-        next(L);
-        if (L->tok != T_RPAREN) {
-          for (;;) {
-            val a = expr_or(L);
-            drop(&a);
-            if (L->tok != T_COMMA) break;
-            next(L);
-          }
-        }
-        if (L->tok != T_RPAREN) syntax();
-        next(L);
-        return mkerr2("Error: macro function calls are not in this increment (M1): ", s, n);
-      }
-      /* M0 memvar lookup: PRIVATE/PUBLIC values stored by hrc codegen. */
-      unsigned long long mt, mp;
-      if (hrmacro_get(s, n, &mt, &mp)) {
-        val v;
-        switch (mt) {
-          case 0: case 9: v.kind = V_INT; v.i = (long long)mp; break;
-          case 1: v.kind = V_NIL; break;
-          case 3: v.kind = V_LOG; v.i = mp ? 1 : 0; break;
-          default: return mkerr2("Error BASE/1003  Variable does not exist: ", s, n);
-        }
-        return v;
-      }
-      return mkerr2("Error BASE/1003  Variable does not exist: ", s, n);
-    }
-    default: syntax();
+/* Parse owns nodes, but performs no binding lookup and calls no fatal route. */
+enum { N_VALUE,N_LOOKUP,N_UNARY,N_BINARY,N_AND,N_OR,N_LIST,N_MACRO,N_CALL };
+typedef struct node {
+ struct node *allocated,*a,*b;
+ int kind,op;
+ val value;
+ const unsigned char *name; size_t len;
+} node;
+typedef struct {
+ lex L; hrmacro_context *ctx; node *allocated; size_t count;unsigned depth;
+ node emergency;
+} parser;
+static node *parse_or(parser*);
+static void parse_bad(parser*p){lex_fail(&p->L,"Error BASE/1449  Syntax error: &");}
+static node *newnode(parser*p,int kind,node*a,node*b){
+ node*n;
+ if(p->count>=4096){lex_fail(&p->L,"Error: macro node budget limit (M0)");return &p->emergency;}
+ n=p->ctx->bridge.storage.alloc(p->ctx->bridge.storage.user,sizeof(*n));
+ if(!n){lex_fail(&p->L,"Error: macro allocation failure (M0)");return &p->emergency;}
+ *n=(node){0};n->kind=kind;n->a=a;n->b=b;n->allocated=p->allocated;p->allocated=n;p->count++;p->ctx->scratch_live++;return n;
+}
+static node *binary(parser*p,int kind,int op,node*a,node*b){node*n=newnode(p,kind,a,b);n->op=op;return n;}
+static node *primary(parser*p){
+ lex*L=&p->L;node*n;
+ if(++p->depth>128){lex_fail(L,"Error: macro nesting limit (M0)");p->depth--;return &p->emergency;}
+ switch(L->tok){
+ case T_NUM:n=newnode(p,N_VALUE,0,0);n->value=L->num;n->value.literal=1;next(L);break;
+ case T_STR:n=newnode(p,N_VALUE,0,0);n->value.kind=V_STR;n->value.s=L->ts;n->value.n=L->tn;n->value.literal=1;next(L);break;
+ case T_TRUE:case T_FALSE:n=newnode(p,N_VALUE,0,0);n->value=mklog(L->tok==T_TRUE);n->value.literal=1;next(L);break;
+ case T_NIL:n=newnode(p,N_VALUE,0,0);n->value.literal=1;next(L);break;
+ case T_LPAREN:
+  next(L);n=parse_or(p);
+  while(L->tok==T_COMMA&&!L->error){next(L);n=binary(p,N_LIST,0,n,parse_or(p));}
+  if(L->tok!=T_RPAREN)parse_bad(p);else next(L);break;
+ case T_AMP:
+  next(L);
+  if(L->tok==T_IDENT){node*x=newnode(p,N_LOOKUP,0,0);x->name=L->ts;x->len=L->tn;next(L);n=newnode(p,N_MACRO,x,0);break;}
+  if(L->tok!=T_LPAREN){parse_bad(p);n=&p->emergency;break;}
+  next(L);n=newnode(p,N_MACRO,parse_or(p),0);
+  if(L->tok!=T_RPAREN)parse_bad(p);else next(L);break;
+ case T_IDENT:{
+  const unsigned char*s=L->ts;size_t len=L->tn;
+  /* Explicit M-> is MEMVAR-only, never a field fallback. */
+  const unsigned char*q=L->p;while(q<L->end&&is_space(*q))q++;
+  if(len==1&&upper(s[0])=='M'&&q+1<L->end&&q[0]=='-'&&q[1]=='>'){
+   L->p=q+2;next(L);if(L->tok!=T_IDENT){parse_bad(p);n=&p->emergency;break;}s=L->ts;len=L->tn;
   }
-  return v;
-}
-
-/* Unary operators bind tighter than ^ (Harbour: -2 ^ 2 is 4). */
-static val unary(lex *L) {
-  if (L->tok == T_OP && L->op == O_MINUS) {
-    next(L);
-    val v = unary(L);
-    if (v.kind == V_INT) {
-      if (v.i == INT64_MIN) return mkdbl(-(double)v.i, 0);
-      v.i = -v.i; return v;
-    }
-    if (v.kind == V_DBL) { v.d = -v.d; return v; }
-    if (v.kind == V_ERR) return v;
-    drop(&v);
-    return mkerr("Error BASE/1080  Argument error: -");
+  next(L);n=newnode(p,N_LOOKUP,0,0);n->name=s;n->len=len;
+  if(L->tok==T_LPAREN){
+   n->kind=N_CALL;next(L);node*args=0;
+   if(L->tok!=T_RPAREN){for(;;){node*x=parse_or(p);args=args?binary(p,N_LIST,0,args,x):x;if(L->tok!=T_COMMA||L->error)break;next(L);}}
+   n->a=args;if(L->tok!=T_RPAREN)parse_bad(p);else next(L);
   }
-  if (L->tok == T_OP && L->op == O_PLUS) { next(L); return unary(L); }
-  return primary(L);
+  break;}
+ default:parse_bad(p);n=&p->emergency;break;
+ }
+ p->depth--;return n;
 }
-
-static val power(lex *L) {
-  val a = unary(L);
-  while (L->tok == T_OP && L->op == O_POW) {
-    next(L);
-    val b = unary(L);
-    a = arith(O_POW, &a, &b);
-  }
-  return a;
+static node *unary(parser*p){
+ if(p->L.tok==T_OP&&(p->L.op==O_MINUS||p->L.op==O_PLUS)){
+  int op=p->L.op;next(&p->L);
+  if(++p->depth>128){lex_fail(&p->L,"Error: macro nesting limit (M0)");p->depth--;return &p->emergency;}
+  node*n=binary(p,N_UNARY,op,unary(p),0);p->depth--;return n;
+ }
+ return primary(p);
 }
-
-static val term(lex *L) {
-  val a = power(L);
-  while (L->tok == T_OP && (L->op == O_STAR || L->op == O_SLASH || L->op == O_PCT)) {
-    int op = L->op; next(L);
-    val b = power(L);
-    a = arith(op, &a, &b);
-  }
-  return a;
+static node *power(parser*p){node*a=unary(p);while(p->L.tok==T_OP&&p->L.op==O_POW&&!p->L.error){next(&p->L);a=binary(p,N_BINARY,O_POW,a,unary(p));}return a;}
+static node *term(parser*p){node*a=power(p);while(p->L.tok==T_OP&&(p->L.op==O_STAR||p->L.op==O_SLASH||p->L.op==O_PCT)&&!p->L.error){int op=p->L.op;next(&p->L);a=binary(p,N_BINARY,op,a,power(p));}return a;}
+static node *sum(parser*p){node*a=term(p);while(p->L.tok==T_OP&&(p->L.op==O_PLUS||p->L.op==O_MINUS)&&!p->L.error){int op=p->L.op;next(&p->L);a=binary(p,N_BINARY,op,a,term(p));}return a;}
+static node *relation(parser*p){node*a=sum(p);while(p->L.tok==T_OP&&p->L.op>=O_EQ&&p->L.op<=O_DOLLAR&&!p->L.error){int op=p->L.op;next(&p->L);a=binary(p,N_BINARY,op,a,sum(p));}return a;}
+static node *negation(parser*p){if(p->L.tok==T_NOT||(p->L.tok==T_OP&&p->L.op==O_BANG)){next(&p->L);if(++p->depth>128){lex_fail(&p->L,"Error: macro nesting limit (M0)");p->depth--;return &p->emergency;}node*n=binary(p,N_UNARY,O_BANG,negation(p),0);p->depth--;return n;}return relation(p);}
+static node *parse_and(parser*p){node*a=negation(p);while(p->L.tok==T_AND&&!p->L.error){next(&p->L);a=binary(p,N_AND,0,a,negation(p));}return a;}
+static node *parse_or(parser*p){node*a=parse_and(p);while(p->L.tok==T_OR&&!p->L.error){next(&p->L);a=binary(p,N_OR,0,a,parse_and(p));}return a;}
+static val borrow(val v){v.owned=0;return v;}
+static val unary_value(int op,val v){
+ if(v.kind==V_ERR)return v;
+ if(op==O_BANG){if(v.kind!=V_LOG){drop(&v);return mkerr("Error BASE/1077  Argument error: .NOT.");}v.i=!v.i;return v;}
+ if(op==O_PLUS)return v;
+ if(v.kind==V_INT){if(v.i==INT64_MIN)return mkdbl(-(double)v.i,0);v.i=-v.i;return v;}
+ if(v.kind==V_DBL){v.d=-v.d;return v;}drop(&v);return mkerr("Error BASE/1080  Argument error: -");
 }
-
-static val sum(lex *L) {
-  val a = term(L);
-  while (L->tok == T_OP && (L->op == O_PLUS || L->op == O_MINUS)) {
-    int op = L->op; next(L);
-    val b = term(L);
-    a = arith(op, &a, &b);
-  }
-  return a;
+static val binary_value(int op,val a,val b,int folding){
+ if(op>=O_EQ&&op<=O_GE)return compare(op,&a,&b);
+ if(op==O_DOLLAR){val e;if(pending(&a,&b,&e))return e;if(a.kind!=V_STR||b.kind!=V_STR){drop(&a);drop(&b);return arg_err(op);}int found=0;if(a.n>0&&a.n<=b.n){for(size_t j=0;j+a.n<=b.n&&!found;j++){size_t k=0;while(k<a.n&&b.s[j+k]==a.s[k])k++;found=k==a.n;}}drop(&a);drop(&b);return mklog(found);}
+ return arith(op,&a,&b,folding);
 }
-
-static val relation(lex *L) {
-  val a = sum(L);
-  while (L->tok == T_OP && L->op >= O_EQ && L->op <= O_DOLLAR) {
-    int op = L->op; next(L);
-    val b = sum(L);
-    if (op == O_DOLLAR) {
-      val e;
-      if (pending(&a, &b, &e)) { a = e; continue; }
-      if (a.kind != V_STR || b.kind != V_STR) { drop(&a); drop(&b); a = arg_err(O_DOLLAR); continue; }
-      int found = 0;
-      if (a.n > 0 && a.n <= b.n) {
-        for (size_t j = 0; j + a.n <= b.n && !found; j++) {
-          size_t m = 0;
-          while (m < a.n && b.s[j + m] == a.s[m]) m++;
-          if (m == a.n) found = 1;
-        }
-      }
-      drop(&a); drop(&b);
-      a = mklog(found);
-    } else a = compare(op, &a, &b);
-  }
-  return a;
+/* No lookup is possible in this pass. Only literal-source values are cached.
+ * Boolean constant elimination is allowed with an unresolved other subtree. */
+static node *fold(node*n){
+ if(!n)return n;
+ n->a=fold(n->a);n->b=fold(n->b);
+ if(n->kind==N_AND||n->kind==N_OR){
+  int a=n->a->kind==N_VALUE&&n->a->value.kind==V_LOG;
+  int b=n->b->kind==N_VALUE&&n->b->value.kind==V_LOG;
+  if(a){if(n->kind==N_AND?!n->a->value.i:n->a->value.i)return n->a;return n->b;}
+  if(b){if(n->kind==N_AND?n->b->value.i:!n->b->value.i)return n->a;return n->b;}
+ }
+ if(n->kind==N_UNARY&&n->a->kind==N_VALUE){n->value=unary_value(n->op,borrow(n->a->value));n->value.literal=1;n->kind=N_VALUE;}
+ else if(n->kind==N_BINARY&&n->a->kind==N_VALUE&&n->b->kind==N_VALUE){n->value=binary_value(n->op,borrow(n->a->value),borrow(n->b->value),1);n->value.literal=1;n->kind=N_VALUE;}
+ return n;
 }
-
-static val negation(lex *L) {
-  if (L->tok == T_NOT || (L->tok == T_OP && L->op == O_BANG)) {
-    next(L);
-    val v = negation(L);
-    if (v.kind == V_ERR) return v;
-    if (v.kind != V_LOG) { drop(&v); return mkerr("Error BASE/1077  Argument error: .NOT."); }
-    v.i = !v.i;
-    return v;
-  }
-  return relation(L);
+static val status_error(hrmv_status rc,const unsigned char*s,size_t len){
+ switch(rc){
+ case HRMV_UNDEFINED:return mkerr2("Error BASE/1003  Variable does not exist: ",s,len);
+ case HRMV_TYPE_UNSUPPORTED:return mkerr("Error: unsupported MEMVAR value representation (M0)");
+ case HRMV_BAD_NAME:return mkerr("Error: MEMVAR names are ASCII-only in M0");
+ case HRMV_MEMORY:return mkerr("Error: MEMVAR allocation failure (M0)");
+ case HRMV_BAD_FRAME:return mkerr("Error: MEMVAR frame mismatch (M0)");
+ default:return mkerr("Error: MEMVAR context/size limit (M0)");
+ }
 }
-
-/* Constant folding of .AND./.OR. (expropt2.c): a logical constant on
- * either side decides or passes the other operand through unchanged. */
-static val logic(int is_and, val *a, val *b) {
-  if (a->kind == V_LOG) {
-    if (is_and ? !a->i : a->i) { drop(b); return *a; }
-    return *b;
-  }
-  if (b->kind == V_LOG) {
-    if (is_and ? b->i : !b->i) return *a;
-    drop(a); return *b;
-  }
-  if (a->kind == V_ERR) { drop(b); return *a; }
-  drop(a); drop(b);
-  return mkerr(is_and ? "Error BASE/1078  Argument error: .AND." : "Error BASE/1079  Argument error: .OR.");
+static val eval_text(hrmacro_context*,const unsigned char*,size_t,unsigned);
+static val evaluate(hrmacro_context*c,node*n,unsigned nesting){
+ val a,b;hrm_cell cell;hrmv_status rc;
+ if(n->kind==N_VALUE)return borrow(n->value);
+ if(n->kind==N_LOOKUP){
+  c->lookups++;rc=hrmb_get_copy(&c->bridge,(const char*)n->name,n->len,&cell);if(rc!=HRMV_OK)return status_error(rc,n->name,n->len);
+  a=(val){0}; /* tag9 read from a binding is NEVER a source literal. */
+  switch(cell.tag&255u){
+  case 0:case 9:a.kind=V_INT;a.i=(int64_t)cell.payload;break;
+  case 1:a.kind=V_NIL;break;
+  case 3:a=mklog(cell.payload!=0);break;
+  case 4:a.kind=V_STR;a.s=(const unsigned char*)(uintptr_t)cell.payload;a.n=((const uint64_t*)a.s)[-1];a.owned=1;break;
+  case 5:{const uint64_t*p=(const uint64_t*)(uintptr_t)cell.payload;union{uint64_t u;double d;}x;x.u=p[0];a=mkdbl(x.d,(int)(p[1]&65535u));a.meta=p[1];hrm_free((unsigned char*)(uintptr_t)cell.payload);break;}
+  default:return status_error(HRMV_TYPE_UNSUPPORTED,n->name,n->len);
+  }return a;
+ }
+ if(n->kind==N_CALL)return mkerr2("Error: macro function calls are not in this increment (M1): ",n->name,n->len);
+ a=evaluate(c,n->a,nesting);if(n->kind==N_UNARY)return unary_value(n->op,a);
+ if(n->kind==N_MACRO){
+  if(a.kind==V_ERR)return a;
+  if(a.kind!=V_STR){drop(&a);return mkerr("Error BASE/1449  Syntax error: &");}
+  if(nesting>=64){drop(&a);return mkerr("Error: nested macro limit (M0)");}
+  b=eval_text(c,a.s,a.n,nesting+1);drop(&a);return b;
+ }
+ if(n->kind==N_LIST){if(a.kind==V_ERR)return a;drop(&a);return evaluate(c,n->b,nesting);}
+ if(n->kind==N_AND||n->kind==N_OR){
+  if(a.kind==V_ERR)return a;
+  if(a.kind!=V_LOG){drop(&a);return mkerr(n->kind==N_AND?"Error BASE/1078  Argument error: .AND.":"Error BASE/1079  Argument error: .OR.");}
+  if(n->kind==N_AND?!a.i:a.i)return a;
+  b=evaluate(c,n->b,nesting);if(b.kind==V_ERR)return b;
+  if(b.kind!=V_LOG){drop(&b);return mkerr(n->kind==N_AND?"Error BASE/1078  Argument error: .AND.":"Error BASE/1079  Argument error: .OR.");}return b;
+ }
+ /* Left surviving error wins without resolving later runtime names. */
+ if(a.kind==V_ERR)return a;
+ b=evaluate(c,n->b,nesting);return binary_value(n->op,a,b,0);
 }
-
-static val conj(lex *L) {
-  val a = negation(L);
-  while (L->tok == T_AND) { next(L); val b = negation(L); a = logic(1, &a, &b); }
-  return a;
+static val eval_text(hrmacro_context*c,const unsigned char*src,size_t len,unsigned nesting){
+ parser p={0};val v;p.ctx=c;p.L.p=src;p.L.end=src+len;p.emergency.kind=N_VALUE;p.emergency.value=mkerr("Error: macro allocation failure (M0)");
+ if(len>65536)return mkerr("Error: macro text byte budget limit (M0)");
+ next(&p.L);node*n=parse_or(&p);if(p.L.tok!=T_END&&!p.L.error)parse_bad(&p);
+ if(p.L.error)v=mkerr(p.L.message);else{n=fold(n);v=evaluate(c,n,nesting);}
+ /* Borrowed cache/source string must be copied before the parser dies. */
+ if(v.kind==V_STR&&!v.owned){unsigned char*o=hrm_alloc(v.n);if(!o)v=mkerr("Error: macro allocation failure (M0)");else{for(size_t j=0;j<v.n;j++)o[j]=v.s[j];v.s=o;v.owned=1;}}
+ while(p.allocated){node*q=p.allocated;p.allocated=q->allocated;drop(&q->value);c->bridge.storage.free(c->bridge.storage.user,q,sizeof(*q));c->scratch_live--;}
+ return v;
 }
-
-static val expr_or(lex *L) {
-  val a = conj(L);
-  while (L->tok == T_OR) { next(L); val b = conj(L); a = logic(0, &a, &b); }
-  return a;
+hrmv_status hrmacro_init(hrmacro_context*c,hrmv_alloc_fn a,hrmv_free_fn f,void*raw,hrmb_string_fn s,hrmb_float_fn d,void*compiler,hrmacro_fatal_fn fatal,void*user){
+ if(!c||!fatal)return HRMV_BAD_ARGUMENT;hrmv_status rc=hrmb_init(&c->bridge,a,f,raw,s,d,compiler);if(rc)return rc;c->fatal=fatal;c->fatal_user=user;c->scratch_live=0;c->lookups=0;return HRMV_OK;
 }
-
-static uint64_t dbl_bits(double d) { union { double d; uint64_t u; } x; x.d = d; return x.u; }
-
-/* Entry: rdi/rsi = borrowed macro text -> rax/rdx = owned Dyn cell. */
-static val eval_text(const unsigned char *src, size_t len) {
-  lex L;
-  L.p = src; L.end = src + len; L.op = 0; L.ts = 0; L.tn = 0; L.num = mkint(0);
-  next(&L);
-  if (L.tok == T_END) syntax();
-  val v = expr_or(&L);
-  if (L.tok != T_END) { drop(&v); syntax(); }
-  return v;
+void hrmacro_destroy(hrmacro_context*c){if(c)hrmb_destroy(&c->bridge);}
+hrm_cell hrmacro_eval(hrmacro_context*c,const unsigned char*src,size_t len){
+ val v=eval_text(c,src,len,0);hrm_cell out={1,0};hrmv_status rc=HRMV_OK;
+ switch(v.kind){
+ case V_INT:out.tag=v.literal?9:0;out.payload=(uint64_t)v.i;break;
+ case V_LOG:out.tag=3;out.payload=(uint64_t)v.i;break;
+ case V_NIL:break;
+ case V_STR:out.tag=4;out.payload=(uint64_t)(uintptr_t)v.s;v.owned=0;break;
+ case V_DBL:{union{double d;uint64_t u;}x;x.d=v.d;uint64_t meta=v.meta;if(!meta)meta=(10u<<16)|(unsigned)v.dec;rc=c->bridge.float_new(c->bridge.compiler_user,x.u,meta,&out);break;}
+ default:break;
+ }
+ if(rc!=HRMV_OK)v=status_error(rc,0,0);
+ if(v.kind==V_ERR){
+  /* Terminal M0 only: no ErrorBlock/BREAK/RECOVER claim. All evaluator
+   * temporaries and every context/frame binding die before host fatal. */
+  drop(&v);hrmacro_destroy(c);c->fatal(c->fatal_user,v.ebuf,v.en);
+  /* A fatal host callback is contractually noreturn. Fail closed if broken. */
+  for(;;){}
+ }
+ drop(&v);return out;
 }
-
-hrm_cell hrmacro_eval(const unsigned char *src, size_t len) {
-  val v = eval_text(src, len);
-  if (v.kind == V_ERR) hrm_fail(v.ebuf, v.en);
-  hrm_cell c;
-  switch (v.kind) {
-    /* Folded integers carry literal widths in Harbour (10000000000 prints
-     * in 12 columns, not 20): hbc's literal-integer kind 9. */
-    case V_INT: c.tag = 9; c.payload = (uint64_t)v.i; return c;
-    case V_LOG: c.tag = 3; c.payload = (uint64_t)v.i; return c;
-    case V_NIL: c.tag = 1; c.payload = 0; return c;
-    case V_STR: {
-      unsigned char *o = (unsigned char *)v.s;
-      if (!v.owned) {
-        o = hrm_alloc(v.n);
-        for (size_t j = 0; j < v.n; j++) o[j] = v.s[j];
-      }
-      c.tag = 4; c.payload = (uint64_t)(uintptr_t)o; return c;
-    }
-    default: {
-      uint64_t width = (v.d >= 10000000000.0 || v.d <= -1000000000.0) ? 20 : 10;
-      return hrm_float(dbl_bits(v.d), (width << 16) | (uint64_t)v.dec);
-    }
-  }
+/* Generated-program adapters remain internal SysV, same as this unit. */
+extern void *hrm_raw_alloc(void*,size_t);
+extern void hrm_raw_free(void*,void*,size_t);
+extern hrmv_status hrm_export_string(void*,const unsigned char*,size_t,hrv_cell*);
+extern hrmv_status hrm_export_float(void*,uint64_t,uint64_t,hrv_cell*);
+extern void hrm_builtin_fail(const unsigned char*,size_t,const unsigned char*,size_t) __attribute__((noreturn));
+static void program_fatal(void*u,const unsigned char*s,size_t n){(void)u;hrm_fail(s,n);}
+/* Root owns this object on its stack. No storage singleton exists. */
+void hrmacro_start(hrmacro_context*c){
+ typedef char context_must_fit_root_slot[(sizeof(hrmacro_context)<=256)?1:-1];(void)sizeof(context_must_fit_root_slot);
+ hrmv_status rc=hrmacro_init(c,hrm_raw_alloc,hrm_raw_free,0,hrm_export_string,hrm_export_float,0,program_fatal,0);
+ if(rc){static const unsigned char msg[]="Error: MEMVAR context initialization failure (M0)\n";hrm_fail(msg,sizeof(msg)-1);}
+ /* HARBOUR/CLIPPER do NOT exist before PUBLIC declaration in the oracle. */
 }
+static void raise_status(hrmacro_context*c,hrmv_status rc,const unsigned char*s,size_t n){if(rc){val v=status_error(rc,s,n);hrmacro_destroy(c);c->fatal(c->fatal_user,v.ebuf,v.en);for(;;){}}}
+uint64_t hrmacro_enter(hrmacro_context*c){uint64_t mark=0;raise_status(c,hrmb_frame_enter(&c->bridge,&mark),0,0);return mark;}
+void hrmacro_leave(hrmacro_context*c,uint64_t mark){raise_status(c,hrmb_frame_leave(&c->bridge,mark),0,0);}
+void hrmacro_declare(hrmacro_context*c,int priv,const unsigned char*s,size_t n){raise_status(c,hrmb_declare(&c->bridge,priv,(const char*)s,n),s,n);}
+void hrmacro_put(hrmacro_context*c,const unsigned char*s,size_t n,uint64_t tag,uint64_t payload){hrv_cell v={tag,payload};raise_status(c,hrmv_put_copy(&c->bridge.storage,(const char*)s,n,v),s,n);}
+hrm_cell hrmacro_lookup(hrmacro_context*c,const unsigned char*s,size_t n){hrv_cell v={1,0};raise_status(c,hrmb_get_copy(&c->bridge,(const char*)s,n,&v),s,n);if(v.tag==9)v.tag=0;return v;}
+void hrmacro_str_check(hrmacro_context*c,uint64_t tag,uint64_t payload,int owned){
+ unsigned kind=(unsigned)(tag&255u);if(kind==0||kind==9||kind==5)return;
+ if(owned&&kind==4)hrm_free((unsigned char*)(uintptr_t)payload);
+ val v=mkerr("Error BASE/1099  Argument error: STR");hrmacro_destroy(c);
+ if(c->fatal==program_fatal)hrm_builtin_fail(v.ebuf,v.en,(const unsigned char*)"STR",3);
+ c->fatal(c->fatal_user,v.ebuf,v.en);for(;;){}
+}
+uint64_t hrmacro_exists(hrmacro_context*c,const unsigned char*s,size_t n){int yes=0;raise_status(c,hrmv_exists(&c->bridge.storage,(const char*)s,n,&yes),s,n);return (uint64_t)yes;}

@@ -857,7 +857,8 @@ fn encode_into(e: &Enc, out: &mut Vec<u8>, ripp: &mut RipPatches, mnem0: &str, o
                 "movsbq" | "movsbl" => 0xBE,
                 "movzbl" | "movzbq" => 0xB6,
                 "movzwl" => 0xB7,
-                "movslq" | "movswl" => 0x63,
+                "movswl" => 0xBF,
+                "movslq" => 0x63,
                 "movzx" => {
                     let sw = match src { Op::Reg(_, w, _) => *w, Op::Mem { .. } => return Err("movzx mem sin sufijo".into()), _ => return Err("movzx src".into()) };
                     if sw == 8 { 0xB6 } else { 0xB7 }

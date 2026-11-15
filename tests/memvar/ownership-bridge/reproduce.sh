@@ -13,10 +13,10 @@ python3 real/make-runtime.py
 python3 real/make-abi.py
 python3 - <<'PYID'
 from pathlib import Path
-import hashlib,json
+import hashlib,json,re
 r=Path('real');rows=[]
 for target in ['linux','windows']:
- a=(r/(target+'.s')).read_text();b=(r/(target+'-linked.s')).read_text();expected=a.replace('.globl _start','.globl hrbt_unused_start').replace('\n_start:','\nhrbt_unused_start:');assert b.startswith(expected)
+ a=(r/(target+'.s')).read_text();b=(r/(target+'-linked.s')).read_text();expected=a.replace('.globl _start','.globl hrbt_unused_start').replace('\n_start:','\nhrbt_unused_start:');expected=re.sub(r'\b(hrm[bv]_[A-Za-z0-9_]+)\b',r'hrbt_embedded_\1',expected);assert b.startswith(expected)
  assert 'call hbc_str_f64' in a[:a.index('hbc_persistent_release:')]
  rows.append({'target':target,'template_sha256':hashlib.sha256(a.encode()).hexdigest(),'all_production_helper_bodies_unchanged':True,'Str_F64_codegen_calls':'hbc_str_f64','bridge_constructor':'hbc_float_new','unpack':'hbc_float_unpack'})
  (r/(target+'-codegen-Str-fragment.s')).write_text(a[a.index('hbc_fn_main:'):a.index('hbc_persistent_release:')])

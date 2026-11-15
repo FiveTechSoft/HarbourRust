@@ -1,5 +1,5 @@
 {
-  "compiler": "gcc.exe (MinGW-W64 x86_64-ucrt-posix-seh, built by Brecht Sanders, r3) 16.2.0",
+  "compiler": "gcc (Ubuntu 11.4.0-1ubuntu1~22.04.3) 11.4.0",
   "flags": [
     "-std=c99",
     "-O2",
@@ -13,19 +13,39 @@
     "-fno-ident",
     "-mno-red-zone",
     "-fno-pic",
+    "-mcmodel=large",
+    "-fno-jump-tables",
+    "-mno-push-args",
+    "-fcf-protection=none",
     "-Wall",
     "-Wextra",
     "-Werror",
     "-Wno-misleading-indentation"
   ],
-  "source_sha256": "8c6b88c59da2c3d91e78557ba64fe0b8f27b80fe700f38a6c743eff234abf3f8",
-  "asm_sha256": "f00c3561ff41fef2d5fb92a129f66a6e6699a4310a41a48547761e7826d7966d",
+  "source_sha256": "e5673233da8c1d55e7c6933fba302cc78966242a414716eacc4f1b9a89e4c2b6",
+  "source_dependencies_sha256": {
+    "runtime/hrdbf.h": "86f2b78f5e0c215d5a7edf3005c79d326e966eef13477879f25c6385cf2771c0",
+    "runtime/hrdyn.h": "d09ac5d22d93f07f9e67435b7cb9ef60e57ce9a41ba872be6e62cdd34593ac9d",
+    "runtime/hrmacro.c": "c672fb6ed3ea543c312433d8f3502c5bb0412787a578885aab49b004c9608a8a",
+    "runtime/hrmacro.h": "259d8a959237b430a96821d151a012957720846d1324ad9e43732c9c6f696e62",
+    "runtime/hrmacro_embedded.c": "e5673233da8c1d55e7c6933fba302cc78966242a414716eacc4f1b9a89e4c2b6",
+    "runtime/hrmembridge.c": "e2b2a440e667f9c11c83d1c81d76d62f4bd2466a4f1706a50e077d4f6e04cda4",
+    "runtime/hrmembridge.h": "ec593141216ebba35b61ed3376a5ef145b620ec76d415e87eb1896c23b8ec5ac",
+    "runtime/hrmemvar.c": "7ec6dcad19c1dfe27e1f4b7dc1ac69113c5150c647b7768a0a377682bb661d8c",
+    "runtime/hrmemvar.h": "d291fe0c4260f150842f83ffc90a495909048a3bd016e6f109946554027b7e1c",
+    "runtime/hrvalue.h": "a00bad363533877e846aa43084d727441f016972aa7439c10d0733abedf20a32"
+  },
+  "asm_sha256": "79ad5963ce97bd15dd733d21a12613f368cb7814f5ff46c750e9c994c629a9fd",
   "external_calls": [
     "hrm_alloc",
+    "hrm_builtin_fail",
     "hrm_exp",
+    "hrm_export_float",
+    "hrm_export_string",
     "hrm_fail",
-    "hrm_float",
     "hrm_free",
-    "hrm_log"
+    "hrm_log",
+    "hrm_raw_alloc",
+    "hrm_raw_free"
   ]
 }

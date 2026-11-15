@@ -30,6 +30,8 @@ use std::fs;
 use std::process;
 
 thread_local! {
+    static CG_MEMVAR_NAMES: std::cell::RefCell<std::collections::HashSet<String>> = std::cell::RefCell::new(std::collections::HashSet::new());
+    static MACRO_CONTEXT: std::cell::Cell<bool> = const {std::cell::Cell::new(false)};
     // I2 (Goose hybrid): true while emit_asm must carry the scope arena.
     static ARENA_ACTIVE: std::cell::Cell<bool> = std::cell::Cell::new(false);
     // I2: per-function arena routing map (set after eligibility; consumed by cg).
@@ -548,6 +550,9 @@ fn trace_link(off: usize, strs: &mut Vec<String>, out: &mut String) {
     let name = PROC_NAME.with(|v| v.borrow().clone());
     let ix = strs.len(); let len = name.len(); strs.push(name);
     out.push_str(&format!("    movq $0, -{}(%rbp)\n    lea .Lstr{}(%rip), %r11\n    mov %r11, -{}(%rbp)\n    movq ${}, -{}(%rbp)\n", off - 24, ix, off - 32, len, off - 40));
+    if MACRO_CONTEXT.with(|c|c.get()) {
+        out.push_str(&format!("    mov -{}(%rbp), %r11\n    test %r11, %r11\n    jz 71f\n    mov 48(%r11), %r10\n71:\n    mov %r10, -{}(%rbp)\n    mov %r10, %rdi\n    call hrmacro_enter\n    mov %rax, -{}(%rbp)\n",off,off-48,off-56));
+    }
 }
 // Program-wide fail-closed proof: skipping line stores is allowed only when
 // every checked AST node is known not to invoke stack introspection. A future
@@ -587,12 +592,15 @@ fn proc_metadata_needed(funcs: &[Func], externs: bool) -> bool {
 }
 
 fn trace_unlink(off: usize, out: &mut String) {
+    if MACRO_CONTEXT.with(|c|c.get()) {
+        out.push_str(&format!("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n    movsd %xmm0, 16(%rsp)\n    mov %rdi, 24(%rsp)\n    mov -{}(%rbp), %rdi\n    mov -{}(%rbp), %rsi\n    call hrmacro_leave\n    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    movsd 16(%rsp), %xmm0\n    mov 24(%rsp), %rdi\n    add $32, %rsp\n",off-48,off-56));
+    }
     out.push_str(&format!("    mov -{}(%rbp), %r11\n    mov %r11, hbc_trace_top(%rip)\n", off));
 }
 fn stmt_line(s: &Stmt) -> usize {
     match s {
         Stmt::Local(n,..) | Stmt::Static(n,..) | Stmt::Print(n,..) | Stmt::Ret(n,..) | Stmt::If(n,..) |
-        Stmt::While(n,..) | Stmt::Assign(n,..) | Stmt::MemvarSet(n,..) | Stmt::HDel(n,..) | Stmt::HDelAt(n,..) |
+        Stmt::While(n,..) | Stmt::Assign(n,..) | Stmt::MemvarSet(n,..) | Stmt::MemvarDecl(n,..) | Stmt::HDel(n,..) | Stmt::HDelAt(n,..) |
         Stmt::HClear(n,..) | Stmt::HFill(n,..) | Stmt::HMerge(n,..) | Stmt::HCopy(n,..) |
         Stmt::HSet(n,..) | Stmt::HSetCaseMatch(n,..) | Stmt::ArrSet(n,..) |
         Stmt::ArrSet2(n,..) | Stmt::ArrSet3(n,..) | Stmt::ArrSet4(n,..) |
@@ -921,7 +929,8 @@ enum Stmt {
     If(usize, Expr, Vec<Stmt>, Vec<Stmt>), // line, condition, then, else (possibly empty)
     While(usize, Expr, Vec<Stmt>), // line, condition, body
     Assign(usize, String, Expr),   // x := expr on an already-declared local
-    MemvarSet(usize, bool, String, Expr), // PRIVATE/PUBLIC name := expr
+    MemvarSet(usize, bool, String, Expr), // real scoped declaration followed by put
+    MemvarDecl(usize, bool, String), // declaration only, preserve prior/default value
     HDel(usize, String, Expr), // hb_HDel(h, key) statement: remove the key's entry (hk155/hk156)
     HDelAt(usize, String, Expr), // hb_HDelAt(h, n) statement: remove the entry at the 1-based position (hk187/hk190)
     HClear(usize, String), // hb_HClear(h) statement: empty the hash, resetting the CaseMatch flag (hk191/hk193)
@@ -1094,6 +1103,7 @@ impl P {
     fn factor_primary(&mut self) -> Result<Expr, String> {
         match self.bump() {
             Some(Tok::Macro) => {
+                MACRO_CONTEXT.with(|c|c.set(true));
                 // Literal-only macro text is lowered at compile time by the
                 // closed-scalar gate (macro_m1, 1c08a0f). Everything else -
                 // dynamic text, `&name`, and literal text that gate does not
@@ -3013,29 +3023,17 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                 *i += 1;
             }
             Tok::KwPrivate | Tok::KwPublic => {
-                // PRIVATE name := expr / PUBLIC name := expr
-                // The memvar storage runtime (hrmemvar, ff00ccb) supplies
-                // the scalar bindings with function-frame shadowing.
-                let is_private = matches!(&toks[0], Tok::KwPrivate);
-                let mname = match toks.get(1) {
-                    Some(Tok::Ident(mn)) => mn.clone(),
-                    _ => return Err(format!("line {}: `{} name` expects an identifier", n, if is_private { "PRIVATE" } else { "PUBLIC" })),
-                };
-                if toks.len() < 4 || (toks[2] != Tok::Assign && toks[2] != Tok::Eq) {
-                    return Err(format!("line {}: `{}` requires `name := expr`", n, if is_private { "PRIVATE" } else { "PUBLIC" }));
+                MACRO_CONTEXT.with(|c|c.set(true));
+                let private=matches!(&toks[0],Tok::KwPrivate);
+                let rest=&toks[1..];let mut depth=0i32;let mut start=0;let mut spans=Vec::new();
+                for(k,t)in rest.iter().enumerate(){match t {Tok::LParen|Tok::LBracket|Tok::LBrace=>depth+=1,Tok::RParen|Tok::RBracket|Tok::RBrace=>depth-=1,Tok::Comma if depth==0=>{spans.push(&rest[start..k]);start=k+1;},_=>{}}}spans.push(&rest[start..]);
+                for it in spans {
+                    let id=match it.first(){Some(Tok::Ident(id))=>{check_ident(id,n)?;id.clone()},_=>return Err(format!("line {}: MEMVAR declaration expects an identifier",n))};
+                    if it.len()==1 {out.push(Stmt::MemvarDecl(n,private,id));}
+                    else if it.len()>=3&&matches!(it[1],Tok::Assign|Tok::Eq){out.push(Stmt::MemvarSet(n,private,id,parse_expr_tokens(it[2..].to_vec(),n)?));}
+                    else{return Err(format!("line {}: MEMVAR declaration expects name [:= expression]",n));}
                 }
-                check_ident(&mname, n)?;
-                let e = parse_expr_tokens(toks[3..].to_vec(), n)?;
-                // El checker y el codegen lo tratan como LOCAL (con slot
-                // de stack); el valor adicionalmente se registra en la
-                // tabla de memvars del runtime (hrc_macro_set) para que
-                // el evaluador de macros lo resuelva por nombre en run time.
-                out.push(Stmt::Local(n, mname.clone(), e));
-                // Registro en la tabla de memvars (el evaluador de macros
-                // la resuelve por nombre en run time).
-                out.push(Stmt::CallStmt(n, Expr::Call("__mvset".to_string(), vec![
-                    Expr::Str(mname.clone()), Expr::Var(mname.clone())])));
-                *i += 1;
+                *i+=1;
             }
             Tok::ColonColon => {
                 // ::name := e (statement form inside a method body)
@@ -3117,6 +3115,7 @@ struct Prog {
 }
 
 fn parse(src: &str) -> Result<Prog, String> {
+    MACRO_CONTEXT.with(|c|c.set(false));
     SET_CONSOLE_LINE.with(|v|v.set(None));
     let mut lines: Vec<(usize, Vec<Tok>)> = Vec::new();
     for (idx, raw) in src.lines().enumerate() {
@@ -4163,11 +4162,6 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
                     for a in args { pin_vars(f,a,Ty::Str,pin,n)?; walk(f,a,sigs,lit,pin,printed,n)?; }
                     return Ok(());
                 }
-                if id=="__mvset" {
-                    // El nombre es un literal; el valor es prestado (no moves).
-                    for a in args { walk(f,a,sigs,lit,pin,printed,n)?; }
-                    return Ok(());
-                }
                 if let Some(kinds)=str_builtin_kinds(id,args.len()) {
                     // String-batch builtins (PadC/RAt/Stuff/Is*/StrZero):
                     // each position pins to its fixed kind.
@@ -4405,6 +4399,7 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
     fn walk_stmts(f: &Func, stmts: &[Stmt], sigs: &[Sig], lit: &mut Vec<(String, Ty)>, pin: &mut Vec<Option<Ty>>, printed: &mut Vec<bool>, nil_ret: bool) -> Result<(), String> {
         for st in stmts {
             match st {
+                Stmt::MemvarDecl(..)=>{},
                 Stmt::Local(n, name, e) | Stmt::Static(n, name, e) => {
                     walk(f, e, sigs, lit, pin, printed, *n)?;
                     match e {
@@ -5997,14 +5992,10 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 }
                 return Ok(Ty::I64);
             }
-            if id=="__mvset" {
-                // Almacena el valor en la tabla de memvars del runtime.
-                if args.len()!=2 { return Err(format!("line {}: `__mvset` takes exactly two arguments",n)); }
-                if !matches!(&args[0], Expr::Str(_)) {
-                    return Err(format!("line {}: `__mvset` expects a literal name",n));
-                }
-                type_expr(&args[1],env,sigs,n)?;
-                return Ok(Ty::I64);
+            if id=="__mvexist" {
+                MACRO_CONTEXT.with(|c|c.set(true));
+                if args.len()!=1||!matches!(type_expr(&args[0],env,sigs,n)?,Ty::Str|Ty::StrOwn){return Err(format!("line {}: __mvExist expects one string",n));}
+                return Ok(Ty::Bool);
             }
             if id=="&" {
                 if MACHO_MODE.with(|v|v.get()) { return Err(format!("line {}: the macro operator is not ported to Mach-O in this increment",n)); }
@@ -8313,6 +8304,7 @@ fn stmts_mention(stmts: &[Stmt], name: &str) -> bool {
 
 fn stmt_mentions(s: &Stmt, name: &str) -> bool {
     match s {
+        Stmt::MemvarDecl(_,_,id)=>id==name,
         Stmt::Local(_, id, e) | Stmt::Static(_, id, e) => id == name || expr_mentions(e, name),
         Stmt::Print(_, items, _) => items.iter().any(|e| expr_mentions(e, name)),
         Stmt::Ret(_, Some(e)) => expr_mentions(e, name),
@@ -9864,17 +9856,14 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                     return Err(format!("line {}: use of moved value `{}`", n, id));
                 }
             }
-            Stmt::MemvarSet(n, _, id, e) => {
-                // PRIVATE/PUBLIC: the name gets a local slot AND the value
-                // is stored in the memvar table at run time (the macro
-                // evaluator resolves it by name). The codegen emits the
-                // normal local assignment plus a memvar_set call.
-                let t = type_expr(e, env, sigs, *n)?;
-                apply_moves(e, env, sigs, true);
-                if env.iter().any(|v| v.name == *id) {
-                    return Err(format!("line {}: duplicate memvar `{}`", n, id));
+            Stmt::MemvarDecl(n,_,id) | Stmt::MemvarSet(n,_,id,_) => {
+                if let Stmt::MemvarSet(_,_,_,e)=s {
+                    let t=type_expr(e,env,sigs,*n)?;
+                    if !matches!(t,Ty::I64|Ty::F64|Ty::Bool|Ty::Str|Ty::StrOwn|Ty::Dyn){return Err(format!("line {}: MEMVAR value type is outside scalar M0 storage",n));}
+                    apply_moves(e,env,sigs,false);
                 }
-                env.push(Local { name: id.clone(), ty: t, moved: false, ro: false, byref: false });
+                if let Some(old)=env.iter().find(|v|v.name==*id){if old.ty!=Ty::Dyn{return Err(format!("line {}: LOCAL/MEMVAR same-name direct access is outside this stage",n));}}
+                else {env.push(Local{name:id.clone(),ty:Ty::Dyn,moved:false,ro:false,byref:false});}
             }
             Stmt::Assign(n, id, e) => {
                 if static_dyn(id) {
@@ -10134,7 +10123,7 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
                 for a in args { apply_moves(a, env, sigs, false); }
                 return;
             }
-            if id == "__mvset" {
+            if id=="__mvexist" {
                 for a in args { apply_moves(a, env, sigs, false); }
                 return;
             }
@@ -10518,6 +10507,7 @@ impl<'a> EscPass<'a> {
     fn walk(&mut self, stmts: &[Stmt], depth: usize, in_loop: bool) {
         for s in stmts {
             match s {
+                Stmt::MemvarDecl(_,_,id)=>{self.note(id);self.esc(id,"MEMVAR resolver binding");},
                 Stmt::Try(_, b, c, f) => {
                     // Bodies are ordinary branches for escape purposes; the
                     // pending exception binds a Dyn the runtime produced.
@@ -10961,6 +10951,7 @@ impl<'a> EligW<'a> {
         for s in stmts {
             let line = stmt_line(s);
             match s {
+                Stmt::MemvarDecl(_,_,id)=>{self.mentions.push((id.clone(),line));},
                 Stmt::Try(_, b, c, f) => {
                     self.walk(b, loop_stack);
                     if let Some((v, cb)) = c {
@@ -12254,6 +12245,16 @@ hbc_mutex_queue_info:
 // tagged Dyn pair in rax (tag) / rdx (payload). Strings become fresh OWNED
 // tag-4 copies (the template/slot never aliases rodata or a borrower).
 // Objects/arrays/hashes/blocks never reach here (stage-A rejection).
+fn cg_memvar_context(out:&mut String){out.push_str("    mov hbc_trace_top(%rip), %rdi\n    mov 48(%rdi), %rdi\n");}
+fn cg_memvar_put(id:&str,e:&Expr,env:&[CgLocal],sigs:&[Sig],strs:&mut Vec<String>,out:&mut String,target:Target){
+    if expr_ty(e,env,sigs)==Ty::StrOwn&&!matches!(e,Expr::Var(_)) {
+        cg_value(e,env,sigs,strs,out,target);out.push_str("    mov %rax, %rdx\n    mov $4, %eax\n");
+    }else{cg_data_value(e,env,sigs,strs,out,target);}
+    out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n    mov %rax, %rcx\n    mov %rdx, %r8\n");
+    let ix=strs.len();strs.push(id.to_string());cg_memvar_context(out);
+    out.push_str(&format!("    lea .Lstr{}(%rip), %rsi\n    mov ${}, %edx\n    call hrmacro_put\n",ix,id.len()));
+    cg_dyn_stack_release(out,0,false);out.push_str("    add $16, %rsp\n");
+}
 fn cg_data_value(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target) {
     match expr_ty(e, env, sigs) {
         Ty::I64 => { cg_value(e, env, sigs, strs, out, target); cg_i64_tagged(out); }
@@ -12439,6 +12440,10 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             out.push_str("    jo hbc_inc_overflow\n    mov %r11, (%r10)\n");
             if v.ty==Ty::I64 || i64_meta_ref(v) {out.push_str("    movq $0, 8(%r10)\n");}
             if *prefix { out.push_str("    mov %r11, %rax\n    xor %edx, %edx\n"); }
+        }
+        Expr::Var(id) if env.iter().rev().any(|v|v.name==*id&&v.off==0)=>{
+            let ix=strs.len();strs.push(id.clone());cg_memvar_context(out);
+            out.push_str(&format!("    lea .Lstr{}(%rip), %rsi\n    mov ${}, %edx\n    call hrmacro_lookup\n",ix,id.len()));
         }
         Expr::Var(id) => {
             let v = env.iter().rev().find(|v| v.name == *id).expect("checked");
@@ -12943,6 +12948,9 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                 _ => unreachable!("checked"),
             }
         }
+        Expr::Call(id,args) if is_builtin(id,"str")&&expr_ty(&args[0],env,sigs)==Ty::Dyn=>{
+            cg_str_dyn(args,env,sigs,strs,out,target);
+        }
         Expr::Call(id,args) if is_builtin(id,"str") && str_needs_f64(args,env,sigs) => {
             cg_str_f64(args,env,sigs,strs,out,target);
         }
@@ -13196,37 +13204,18 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             } else { cg_expr(&args[0],env,sigs,strs,out,target); }
             out.push_str("    mov %rax, %rdi\n    call hbc_space\n");
         }
-        Expr::Call(id,args) if id=="__mvset" => {
-            // hrmacro_set(tag, payload, name_ptr, name_len) — la tabla
-            // interna del evaluador (M0). El nombre es un literal .rdata.
-            let name = match &args[0] { Expr::Str(t) => t.clone(), _ => unreachable!("checked") };
-            let name_idx = strs.len();
-            strs.push(name.clone());
-            let vt = expr_ty(&args[1], env, sigs);
-            match vt {
-                Ty::I64 => {
-                    // hrmacro_set(rdi=tag, rsi=payload, rdx=name, rcx=name_len)
-                    cg_value(&args[1],env,sigs,strs,out,target);
-                    out.push_str(&format!("    mov %rax, %rsi\n    lea .Lstr{}(%rip), %rdx\n    mov ${}, %ecx\n    mov $0, %edi\n    call hrmacro_set\n", name_idx, name.len()));
-                }
-                Ty::Str | Ty::StrOwn => {
-                    // tag 4 owned string; el payload lleva el puntero a los
-                    // bytes y la longitud va en el header (payload-8).
-                    cg_value(&args[1],env,sigs,strs,out,target);
-                    out.push_str(&format!("    mov %rax, %rdx\n    mov $4, %edi\n    mov %rdx, %rsi\n    mov ${}, %ecx\n    call hrmacro_set\n", name.len()));
-                }
-                _ => {
-                    cg_value(&args[1],env,sigs,strs,out,target);
-                    out.push_str(&format!("    lea .Lstr{}(%rip), %rdx\n    mov ${}, %ecx\n    mov $0, %edi\n    xor %esi, %esi\n    call hrmacro_set\n", name_idx, name.len()));
-                }
-            }
+        Expr::Call(id,args) if id=="__mvexist"=>{
+            let temp=expr_ty(&args[0],env,sigs)==Ty::StrOwn&&!matches!(&args[0],Expr::Var(_));
+            cg_value(&args[0],env,sigs,strs,out,target);
+            out.push_str("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rax, %rsi\n");cg_memvar_context(out);out.push_str("    call hrmacro_exists\n");
+            if temp{out.push_str("    mov %rax, 8(%rsp)\n    mov (%rsp), %rdi\n    call hbc_freestr\n    mov 8(%rsp), %rax\n");}out.push_str("    add $32, %rsp\n");
         }
         Expr::Call(id,args) if id=="&" => {
             // Text borrowed for the call; an owned temporary is released
             // after the evaluator returns its own Dyn result.
             let temp=expr_ty(&args[0],env,sigs)==Ty::StrOwn && !matches!(&args[0],Expr::Var(_));
             cg_value(&args[0],env,sigs,strs,out,target);
-            out.push_str("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_macro_eval\n");
+            out.push_str("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, %rdx\n    mov %rax, %rsi\n    mov hbc_trace_top(%rip), %rdi\n    mov 48(%rdi), %rdi\n    call hbc_macro_eval\n");
             if temp { out.push_str("    mov %rax, 8(%rsp)\n    mov %rdx, 16(%rsp)\n    mov (%rsp), %rdi\n    call hbc_freestr\n    mov 8(%rsp), %rax\n    mov 16(%rsp), %rdx\n"); }
             out.push_str("    add $32, %rsp\n");
         }
@@ -15573,10 +15562,30 @@ fn str_builtin_ty(id: &str) -> Ty {
 fn check_str_num_args(id: &str, args: &[Expr], env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Result<(), String> {
     for (i,a) in args.iter().enumerate() {
         let t=type_expr(a,env,sigs,n)?;
-        let ok=if i==0 {matches!(t,Ty::I64|Ty::F64)} else {t==Ty::I64};
+        let ok=if i==0 {matches!(t,Ty::I64|Ty::F64)||(is_builtin(id,"str")&&t==Ty::Dyn)} else {t==Ty::I64};
+        if i==0&&t==Ty::Dyn&&is_builtin(id,"str"){MACRO_CONTEXT.with(|c|c.set(true));}
         if !ok { return Err(format!("line {}: `{}` argument {} must be {} in this increment",n,id,i+1,if i==0 {"an integer or a float"} else {"an integer"})); }
     }
     Ok(())
+}
+// Dyn is checked at runtime. Static nonnumeric arguments keep BASE rejection.
+fn cg_str_dyn(args:&[Expr],env:&[CgLocal],sigs:&[Sig],strs:&mut Vec<String>,out:&mut String,target:Target){
+    let owned=dyn_expr_owned(&args[0]);let k=fresh_lbl();
+    cg_expr(&args[0],env,sigs,strs,out,target);
+    out.push_str("    sub $64, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n    mov %rax, %rsi\n");cg_memvar_context(out);
+    out.push_str(&format!("    mov ${}, %ecx\n    call hrmacro_str_check\n",if owned{1}else{0}));
+    // Evaluate optional width/dec once, in source order, after validating n.
+    out.push_str("    movq $0, 32(%rsp)\n    movq $0, 40(%rsp)\n");
+    for i in 1..args.len(){cg_expr(&args[i],env,sigs,strs,out,target);out.push_str(&format!("    mov %rax, {}(%rsp)\n",24+i*8));}
+    out.push_str(&format!("    mov (%rsp), %rax\n    and $255, %eax\n    cmp $5, %eax\n    je .Lsdynfloat{}\n",k));
+    if args.len()!=3{
+        out.push_str(&format!("    mov 8(%rsp), %rdi\n    mov 32(%rsp), %rsi\n    call hbc_str_int_field\n    jmp .Lsdyndone{}\n",k));
+    }else{
+        out.push_str(&format!("    cvtsi2sdq 8(%rsp), %xmm0\n    mov $655360, %edi\n    jmp .Lsdynrender{}\n",k));
+    }
+    out.push_str(&format!(".Lsdynfloat{}:\n    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    call hbc_float_unpack\n.Lsdynrender{}:\n    mov 32(%rsp), %rsi\n    mov 40(%rsp), %rdx\n    mov ${}, %ecx\n    call hbc_str_f64\n.Lsdyndone{}:\n    mov %rax, 48(%rsp)\n    mov %rdx, 56(%rsp)\n",k,k,match args.len(){1=>0,2=>1,_=>3},k));
+    if owned{cg_dyn_stack_release(out,0,false);}
+    out.push_str("    mov 48(%rsp), %rax\n    mov 56(%rsp), %rdx\n    add $64, %rsp\n");
 }
 // The float path: a float value, or any explicit dec argument.
 fn str_needs_f64(args: &[Expr], env: &[CgLocal], sigs: &[Sig]) -> bool {
@@ -15605,6 +15614,7 @@ fn cg_str_f64(args: &[Expr], env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<Strin
 fn macro_helpers(target: Target) -> String {
     let rodata = if target == Target::Windows { ".section .rdata,\"r\"" } else { ".section .rodata" };
     let mut h = String::from(MACRO_SHIMS);
+    h.push_str(include_str!("memvar_shims.s"));
     h.push_str(match target {
         Target::Windows => MACRO_FAIL_WINDOWS,
         _ => MACRO_FAIL_LINUX,
@@ -16251,7 +16261,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             if ["left", "right"].iter().any(|b| is_builtin(id,b)) { return Ty::StrOwn; }
             if is_builtin(id, "at") { return Ty::I64; }
             if id=="&" { return Ty::Dyn; }
-            if id=="__mvset" { return Ty::I64; }
+            if id=="__mvexist" { return Ty::Bool; }
             if ["padc","rat","stuff","isdigit","isalpha","isupper","islower","strzero"].iter().any(|b|is_builtin(id,b)) { return str_builtin_ty(id); }
             if is_builtin(id, "padl") { return Ty::StrOwn; }
             if is_builtin(id, "val") { return Ty::F64; }
@@ -16542,6 +16552,7 @@ fn obj_fresh(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> bool {
 // ownership. IIF Dyn arms are normalized on the selected branch below.
 fn dyn_expr_owned(e: &Expr) -> bool {
     match e {
+        Expr::Var(id)=>CG_MEMVAR_NAMES.with(|c|c.borrow().contains(id)),
         Expr::Call(..) | Expr::Send(..) | Expr::SelfGet(..) => true,
         Expr::Seq(es) => es.last().map_or(false, dyn_expr_owned),
         _ => false,
@@ -16573,6 +16584,9 @@ fn cg_dyn_clone_if_str(out: &mut String) {
 fn layout_locals(stmts: &[Stmt], env: &mut Vec<CgLocal>, sigs: &[Sig], frame: &mut usize, darr_slots: &mut Vec<(usize, u8)>, dyn_names: &std::collections::HashSet<String>, byref_names: &std::collections::HashSet<String>, slot_names: &mut std::collections::HashMap<usize, String>) {
     for (si, s) in stmts.iter().enumerate() {
         match s {
+            Stmt::MemvarDecl(_,_,id)|Stmt::MemvarSet(_,_,id,_)=>{
+                if !env.iter().any(|v|v.name==*id){env.push(CgLocal{name:id.clone(),ty:Ty::Dyn,off:0});}
+            }
             Stmt::Static(_, id, _) => {
                 *frame += 8;
                 env.push(CgLocal { name: id.clone(), ty: if static_dyn(id) {Ty::RefDyn}else{Ty::RefI64}, off: *frame });
@@ -16620,7 +16634,7 @@ fn layout_locals(stmts: &[Stmt], env: &mut Vec<CgLocal>, sigs: &[Sig], frame: &m
                     }
                 }
             }
-            Stmt::Assign(_, id, e) | Stmt::MemvarSet(_, _, id, e) => {
+            Stmt::Assign(_, id, e) => {
                 let vt = expr_ty(e, env, sigs);
                 let mut flip = None;
                 if let Some(v) = env.iter_mut().find(|v| v.name == *id) {
@@ -18707,35 +18721,14 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 }
                 out.push_str(&format!("    jmp {}\n", c));
             }
-            Stmt::MemvarSet(_, _, id, e) => {
-                // The checker created the local slot; the codegen emits
-                // the normal assignment AND a memvar table store.
-                let t = expr_ty(e, env, sigs);
-                let l = env.iter().find(|v| v.name == *id).expect("checker pushed the memvar local");
-                let off = l.off;
-                let lty = l.ty;
-                // normal local assignment (same as Assign)
-                if t==Ty::I64 && (lty==Ty::I64 || (lty==Ty::RefI64 && i64_meta_ref(l))) {
-                    cg_value(e,env,sigs,strs,out,target);
-                    if lty==Ty::I64 {out.push_str(&format!("    mov %rax, -{}(%rbp)\n    mov %rdx, -{}(%rbp)\n",off,off-8));}
-                    else {out.push_str(&format!("    mov -{}(%rbp), %r11\n    mov %rax, (%r11)\n    mov %rdx, 8(%r11)\n",off));}
-                } else {
-                    cg_value(e,env,sigs,strs,out,target);
-                    out.push_str(&format!("    mov %rax, -{}(%rbp)\n    mov %rdx, -{}(%rbp)\n", off, off - 8));
-                }
-                // memvar table store: hrc_macro_set(name_ptr, name_len, tag, payload, str, str_len)
-                let name_idx = strs.len();
-                strs.push(id.clone());
-                out.push_str(&format!("    lea .Lstr{}(%rip), %rdi\n    mov ${}, %esi\n", name_idx, id.len()));
-                if t == Ty::I64 {
-                    out.push_str("    mov $0, %edx\n    mov %rax, %rcx\n    mov $0, %r8\n    mov $0, %r9\n    sub $8, %rsp\n    movq $0, (%rsp)\n    call hrc_macro_set\n    add $8, %rsp\n");
-                } else if t == Ty::StrOwn || t == Ty::Str {
-                    out.push_str("    mov $4, %edx\n    mov $0, %rcx\n    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n    call hrc_macro_set\n    add $16, %rsp\n");
-                } else {
-                    out.push_str("    mov $0, %edx\n    mov $0, %rcx\n    mov $0, %r8\n    mov $0, %r9\n    sub $8, %rsp\n    movq $0, (%rsp)\n    call hrc_macro_set\n    add $8, %rsp\n");
-                }
+            Stmt::MemvarDecl(_,private,id)|Stmt::MemvarSet(_,private,id,_)=>{
+                if !env.iter().any(|v|v.name==*id){env.push(CgLocal{name:id.clone(),ty:Ty::Dyn,off:0});}
+                let ix=strs.len();strs.push(id.clone());cg_memvar_context(out);
+                out.push_str(&format!("    mov ${}, %esi\n    lea .Lstr{}(%rip), %rdx\n    mov ${}, %ecx\n    call hrmacro_declare\n",if *private{1}else{0},ix,id.len()));
+                if let Stmt::MemvarSet(_,_,_,e)=s {cg_memvar_put(id,e,env,sigs,strs,out,target);}
             }
-            Stmt::Assign(_, id, e) | Stmt::MemvarSet(_, _, id, e) => {
+            Stmt::Assign(_, id, e) => {
+                if env.iter().rev().any(|v|v.name==*id&&v.off==0){cg_memvar_put(id,e,env,sigs,strs,out,target);continue;}
                 if let Some(v)=env.iter().rev().find(|v|v.name==*id && v.ty==Ty::RefDyn) {
                     cg_persistent_store(v,e,env,sigs,strs,out,target);continue;
                 }
@@ -20359,6 +20352,7 @@ fn collect_blocks_expr(e: &Expr, out: &mut Vec<(usize, Vec<String>, Vec<Expr>)>)
 fn collect_blocks_stmts(stmts: &[Stmt], out: &mut Vec<(usize, Vec<String>, Vec<Expr>)>) {
     for s in stmts {
         match s {
+            Stmt::MemvarDecl(..)=>{},
             Stmt::Try(_, b, c, f) => {
                 collect_blocks_stmts(b, out);
                 if let Some((_, cb)) = c { collect_blocks_stmts(cb, out); }
@@ -20412,7 +20406,7 @@ fn emit_block(owner: &str, id: usize, params: &[String], body: &[Expr], sigs: &[
         lenv.push(CgLocal { name: p.clone(), ty: Ty::I64, off: frame });
     }
     let n = lenv.len();
-    let trace_off = frame + 48;
+    let trace_off = frame + if MACRO_CONTEXT.with(|c|c.get()){64}else{48};
     frame = trace_off;
     out.push_str(&format!("hbc_blk_{}:\n", id));
     out.push_str("    push %rbp\n    mov %rsp, %rbp\n");
@@ -20508,6 +20502,7 @@ fn cg_func(f: &Func, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, tar
     let byref_names_layout = byref_names_in(&f.stmts);
     let mut slot_names: std::collections::HashMap<usize, String> = std::collections::HashMap::new();
     layout_locals(&f.stmts, &mut lenv, sigs, &mut frame, &mut darr_slots, &f.dyn_names, &byref_names_layout, &mut slot_names);
+    CG_MEMVAR_NAMES.with(|c|*c.borrow_mut()=lenv.iter().filter(|v|v.off==0).map(|v|v.name.clone()).collect());
     // Dynamic-array parameters are owned by this function: their slots are
     // freed at the shared epilogue like any other DArr local.
     for v in &lenv[..lenv.len().min(f.params.len())] {
@@ -20544,7 +20539,7 @@ fn cg_func(f: &Func, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, tar
         }
     }
 
-    let trace_off = frame + 48;
+    let trace_off = frame + if MACRO_CONTEXT.with(|c|c.get()){64}else{48};
     frame = trace_off;
     AVIEW_FRAME_END.with(|c| c.set((frame+15)&!15));
     let avframe=fresh_lbl();
@@ -24763,6 +24758,7 @@ fn emit_asm(funcs: &[Func], sigs: &[Sig], externs: &[String], target: Target, in
         eprintln!("error: --instrument is not supported with threads in this increment (the allocation registry is process-global)");
         process::exit(1);
     }
+    if MACRO_CONTEXT.with(|c|c.get())&&THREADS.with(|c|c.get()){eprintln!("error: MEMVAR/macro contexts with threads are outside this stage");process::exit(1);}
     let mut out = String::new();
     out.push_str("# generated by hbc (PoC: Harbour syntax -> x86-64 assembly)\n");
     out.push_str(CONSOLE_NUL_HELPER);
@@ -24773,12 +24769,17 @@ fn emit_asm(funcs: &[Func], sigs: &[Sig], externs: &[String], target: Target, in
     match target {
         Target::Linux => {
             out.push_str("    .text\n    .globl _start\n_start:\n");
+            if MACRO_CONTEXT.with(|c|c.get()){out.push_str("    mov %rsp, %rbp\n    and $-16, %rsp\n    sub $256, %rsp\n    mov %rsp, %rdi\n    call hrmacro_start\n");}
             // Pinned oracle: INIT hooks run in reverse source order, once
             // before Main. Ordinary symbols cannot spell the '$' suffix.
             for f in funcs.iter().rev().filter(|f| f.init) {
+                if MACRO_CONTEXT.with(|c|c.get()){out.push_str("    mov %rsp, %r10\n");}
                 out.push_str(&format!("    call hbc_fn_{}\n", f.name));
             }
-            out.push_str("    call hbc_fn_main\n    call hbc_persistent_cleanup\n    call hbc_str_cache_flush\n");
+            if MACRO_CONTEXT.with(|c|c.get()){out.push_str("    mov %rsp, %r10\n");}
+            out.push_str("    call hbc_fn_main\n");
+            if MACRO_CONTEXT.with(|c|c.get()){out.push_str("    mov %rsp, %rdi\n    call hrmacro_destroy\n");}
+            out.push_str("    call hbc_persistent_cleanup\n    call hbc_str_cache_flush\n");
             out.push_str("    mov $60, %eax\n    xor %edi, %edi\n    syscall\n\n");
         }
         Target::Windows => {
@@ -24790,12 +24791,17 @@ fn emit_asm(funcs: &[Func], sigs: &[Sig], externs: &[String], target: Target, in
             // The Win64 loader does not guarantee one specific rsp % 16 at
             // the entry point; align explicitly instead of assuming.
             out.push_str("    and $-16, %rsp\n    sub $48, %rsp\n");
+            if MACRO_CONTEXT.with(|c|c.get()){out.push_str("    sub $256, %rsp\n    mov %rsp, %rdi\n    call hrmacro_start\n");}
             // Pinned oracle: INIT hooks run in reverse source order, once
             // before Main. Ordinary symbols cannot spell the '$' suffix.
             for f in funcs.iter().rev().filter(|f| f.init) {
+                if MACRO_CONTEXT.with(|c|c.get()){out.push_str("    mov %rsp, %r10\n");}
                 out.push_str(&format!("    call hbc_fn_{}\n", f.name));
             }
-            out.push_str("    call hbc_fn_main\n    call hbc_persistent_cleanup\n    call hbc_str_cache_flush\n");
+            if MACRO_CONTEXT.with(|c|c.get()){out.push_str("    mov %rsp, %r10\n");}
+            out.push_str("    call hbc_fn_main\n");
+            if MACRO_CONTEXT.with(|c|c.get()){out.push_str("    mov %rsp, %rdi\n    call hrmacro_destroy\n");}
+            out.push_str("    call hbc_persistent_cleanup\n    call hbc_str_cache_flush\n");
             out.push_str("    xor %ecx, %ecx\n");
             out.push_str("    call ExitProcess\n\n");
         }
@@ -26995,7 +27001,7 @@ fn finalize_trace(mut out: String, target: Target) -> String {
     if out.contains("call hbc_str_f64") {
         out.push_str(&f64_fmt_helper());
     }
-    if out.contains("call hbc_macro_eval") || out.contains("call hrmacro_set") {
+    if MACRO_CONTEXT.with(|c|c.get()) {
         out.push_str(&macro_helpers(target));
     }
     if ["ctod", "date_today", "date_render", "stod", "dtos", "year", "day", "month", "dow", "cdow", "cmonth", "dtoc", "date_add", "date_diff", "date_days", "date_from_days"].iter().any(|name| out.contains(&format!("call hbc_{}",name))) {

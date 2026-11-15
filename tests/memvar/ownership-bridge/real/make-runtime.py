@@ -1,4 +1,5 @@
 from pathlib import Path
+import re
 R=Path(__file__).resolve().parent
 pro='''    push %rbp
     mov %rsp,%rbp
@@ -48,7 +49,10 @@ functions={
 'hrbt_flush':'    call hbc_str_cache_flush\n'}
 for target in ['linux','windows']:
  s=(R/(target+'.s')).read_text().replace('.globl _start','.globl hrbt_unused_start').replace('\n_start:','\nhrbt_unused_start:')
- # No changes to any production helper body, only entrypoint rename + wrappers.
+ # B2 embeds the same bridge symbols under internal SysV. Keep them separate
+ # from the native-C bridge linked by this legacy B1 callback gate.
+ s=re.sub(r'\b(hrm[bv]_[A-Za-z0-9_]+)\b',r'hrbt_embedded_\1',s)
+ # Production formatting/allocator bodies are unchanged; only API labels differ.
  s+='\n.text\n'
  for name,body in functions.items():s+='.globl '+name+'\n'+name+':\n'+pro+body+epi
  (R/(target+'-linked.s')).write_text(s)
