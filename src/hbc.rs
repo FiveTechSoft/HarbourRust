@@ -26516,6 +26516,7 @@ hbc_math_mod:
     .quad 0x3fe0000000000000
 .Lmath_ln2:
     .quad 0x3fe62e42fefa39ef
+.popsection
 
 "#;
 
