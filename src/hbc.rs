@@ -26753,6 +26753,20 @@ hbc_math_mod:
     fstpl 8(%rsp)
     fstp %st(0)
     movsd 8(%rsp), %xmm0
+    # Harbour's remainder follows the divisor's sign, unlike FPREM.
+    # Preserve zero (including signed zero) and unordered results.
+    xorpd %xmm2, %xmm2
+    ucomisd %xmm2, %xmm0
+    jp .Lmod_meta
+    je .Lmod_meta
+    movsd (%rsp), %xmm1
+    movq %xmm0, %rax
+    movq %xmm1, %rcx
+    xor %rcx, %rax
+    test %rax, %rax
+    jns .Lmod_meta
+    addsd %xmm1, %xmm0
+.Lmod_meta:
     mov $655362, %edi
     leave
     ret
