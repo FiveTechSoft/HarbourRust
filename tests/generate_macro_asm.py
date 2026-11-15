@@ -30,6 +30,8 @@ s = re.sub(r'\.L([A-Za-z0-9_.$]+)', r'.Lhrm_\1', s)
 s = re.sub(r'(?<![A-Za-z0-9_.$])(\d+)\+([A-Za-z_.$][A-Za-z0-9_.$]*)', r'\2+\1', s)
 s = re.sub(r'^(\s*(?:sal|sar|shl|shr|rol|ror)[bwlq]?)\s+(%\w+)\s*$', r'\1 $1, \2', s, flags=re.M)
 s = s.replace('movabsq', 'movabs')
+s = re.sub(r'^\s*\.lcomm\s+([A-Za-z_][A-Za-z0-9_]*)\s*,\s*(\d+)(?:\s*,\s*\d+)?\s*$',
+           r'\t.section .data\n\1:\n\t.zero \2\n\t.section .text', s, flags=re.M)
 s = re.sub(r'^\s*\.ascii\s+(".*")\s*$',
            lambda m: '\t.byte ' + ','.join(str(b) for b in ast.literal_eval('b' + m[1])), s, flags=re.M)
 # Static C functions get a private prefix; only hrmacro_eval is exported.

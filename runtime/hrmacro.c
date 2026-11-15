@@ -46,6 +46,66 @@ extern void hrm_fail(const unsigned char *msg, size_t len) __attribute__((noretu
  * and only an error that survives folding reaches the program. The first
  * error in evaluation order wins. */
 enum { V_NIL, V_INT, V_DBL, V_LOG, V_STR, V_ERR };
+
+/* M0 memvar storage: una tabla fija de asignaciones nombre -> celda Dyn.
+ * El compilador PRIVATE/PUBLIC llama hrmacro_set; el evaluador de
+ * identificadores consulta hrmacro_get antes de dar BASE/1003. La celda
+ * es el 16-byte Dyn: tag 0/9 int, 1 NIL, 3 logical, 5 heap float,
+ * 4 owned string. */
+#define HRMV_TABLE 256
+#define HRMV_NAME_MAX 63
+typedef struct {
+  char name[HRMV_NAME_MAX + 1];
+  unsigned long long tag;
+  unsigned long long payload;
+  unsigned used;
+} hrmv_slot;
+static hrmv_slot hrmv_table[HRMV_TABLE];
+
+static unsigned hrmv_fold(unsigned char c){ return c >= 'A' && c <= 'Z' ? c + 32u : c; }
+static unsigned hrmv_namelen_eq(const unsigned char *a, const unsigned char *b, unsigned long long n){
+  for (unsigned long long i = 0; i < n; i++) if (hrmv_fold(a[i]) != hrmv_fold(b[i])) return 0;
+  return 1;
+}
+void hrmacro_set(unsigned long long tag, unsigned long long payload,
+                 const unsigned char *name, unsigned long long name_len){
+  if (name_len == 0 || name_len > 63) return;
+  unsigned h = 5381u;
+  for (unsigned long long i = 0; i < name_len; i++) h = h * 33u + hrmv_fold((unsigned char)name[i]);
+  unsigned idx = h % HRMV_TABLE;
+  hrmv_slot *free_slot = 0;
+  for (unsigned probe = 0; probe < HRMV_TABLE; probe++) {
+    hrmv_slot *k = &hrmv_table[(idx + probe) % HRMV_TABLE];
+    if (!k->used) { if (!free_slot) free_slot = k; break; }
+    if (k->name[0] == name[0] && hrmv_namelen_eq((const unsigned char*)k->name, name, name_len)) {
+      k->tag = tag; k->payload = payload;
+      return;
+    }
+  }
+  if (!free_slot) return; /* tabla llena: límite con nombre */
+  for (unsigned long long i = 0; i < name_len; i++) free_slot->name[i] = (char)hrmv_fold(name[i]);
+  free_slot->name[name_len] = 0;
+  free_slot->tag = tag;
+  free_slot->payload = payload;
+  free_slot->used = 1;
+}
+
+unsigned hrmacro_get(const unsigned char *name, unsigned long long name_len,
+                     unsigned long long *tag, unsigned long long *payload){
+  if (name_len == 0 || name_len > 63) return 0;
+  unsigned h = 5381u;
+  for (unsigned long long i = 0; i < name_len; i++) h = h * 33u + hrmv_fold((unsigned char)name[i]);
+  unsigned idx = h % HRMV_TABLE;
+  for (unsigned probe = 0; probe < HRMV_TABLE; probe++) {
+    hrmv_slot *k = &hrmv_table[(idx + probe) % HRMV_TABLE];
+    if (!k->used) return 0;
+    if (k->name[0] == name[0] && hrmv_namelen_eq((const unsigned char*)k->name, name, name_len)) {
+      *tag = k->tag; *payload = k->payload;
+      return 1;
+    }
+  }
+  return 0;
+}
 typedef struct {
   int kind;
   int64_t i;            /* V_INT value, V_LOG 0/1 */
@@ -403,6 +463,18 @@ static val primary(lex *L) {
         if (L->tok != T_RPAREN) syntax();
         next(L);
         return mkerr2("Error: macro function calls are not in this increment (M1): ", s, n);
+      }
+      /* M0 memvar lookup: PRIVATE/PUBLIC values stored by hrc codegen. */
+      unsigned long long mt, mp;
+      if (hrmacro_get(s, n, &mt, &mp)) {
+        val v;
+        switch (mt) {
+          case 0: case 9: v.kind = V_INT; v.i = (long long)mp; break;
+          case 1: v.kind = V_NIL; break;
+          case 3: v.kind = V_LOG; v.i = mp ? 1 : 0; break;
+          default: return mkerr2("Error BASE/1003  Variable does not exist: ", s, n);
+        }
+        return v;
       }
       return mkerr2("Error BASE/1003  Variable does not exist: ", s, n);
     }

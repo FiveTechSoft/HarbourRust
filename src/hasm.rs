@@ -387,6 +387,9 @@ impl Asm {
                 let name = rest.split(|c: char| c == ',' || c.is_whitespace()).next().unwrap_or("");
                 match name {
                     ".rodata" | ".rdata" => self.cur = Sec::Rodata,
+                    ".data" => self.cur = Sec::Data,
+                    ".bss" => self.cur = Sec::Bss,
+                    ".text" => self.cur = Sec::Text,
                     ".note.gnu.property" => self.cur = Sec::Note,
                     ".note.GNU-stack" => self.has_gnu_stack = true,
                     _ => return Err(format!(".section desconocida: {}", name)),
@@ -847,13 +850,14 @@ fn encode_into(e: &Enc, out: &mut Vec<u8>, ripp: &mut RipPatches, mnem0: &str, o
     }
     // movzx/movsx
     match m {
-        "movsbq" | "movzbl" | "movzbq" | "movzwl" | "movzx" => {
+        "movsbq" | "movsbl" | "movzbl" | "movzbq" | "movzwl" | "movzx" | "movslq" | "movswl" => {
             let (src, dst) = (&ops[0], &ops[1]);
             let dw = if let Op::Reg(_, w, _) = dst { *w } else { return Err("movzx dst".into()); };
             let op2 = match m {
-                "movsbq" => 0xBE,
+                "movsbq" | "movsbl" => 0xBE,
                 "movzbl" | "movzbq" => 0xB6,
                 "movzwl" => 0xB7,
+                "movslq" | "movswl" => 0x63,
                 "movzx" => {
                     let sw = match src { Op::Reg(_, w, _) => *w, Op::Mem { .. } => return Err("movzx mem sin sufijo".into()), _ => return Err("movzx src".into()) };
                     if sw == 8 { 0xB6 } else { 0xB7 }

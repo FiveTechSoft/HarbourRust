@@ -109,6 +109,7 @@ enum Tok {
     Ne,       // <> or !=
     Lt, Le, Gt, Ge,
     KwFunction, KwLocal, KwReturn, KwNil, KwIf, KwElseif, KwElse, KwEndif, KwWhile, KwEnddo, KwExit, KwLoop,
+    KwPrivate, KwPublic,
     KwFor, KwTo, KwStep, KwNext, KwEach, KwIn, KwSwitch, KwEndswitch,
     EqEq,       // == (measured: integers hk124, DArr identity hk126; object identity cl7/cl19 class-gated)
     Colon,      // : (message send, o:name)
@@ -591,7 +592,7 @@ fn trace_unlink(off: usize, out: &mut String) {
 fn stmt_line(s: &Stmt) -> usize {
     match s {
         Stmt::Local(n,..) | Stmt::Static(n,..) | Stmt::Print(n,..) | Stmt::Ret(n,..) | Stmt::If(n,..) |
-        Stmt::While(n,..) | Stmt::Assign(n,..) | Stmt::HDel(n,..) | Stmt::HDelAt(n,..) |
+        Stmt::While(n,..) | Stmt::Assign(n,..) | Stmt::MemvarSet(n,..) | Stmt::HDel(n,..) | Stmt::HDelAt(n,..) |
         Stmt::HClear(n,..) | Stmt::HFill(n,..) | Stmt::HMerge(n,..) | Stmt::HCopy(n,..) |
         Stmt::HSet(n,..) | Stmt::HSetCaseMatch(n,..) | Stmt::ArrSet(n,..) |
         Stmt::ArrSet2(n,..) | Stmt::ArrSet3(n,..) | Stmt::ArrSet4(n,..) |
@@ -745,6 +746,8 @@ fn tokenize(line: &str, n: usize) -> Result<Vec<Tok>, String> {
                     "procedure" => Tok::KwFunction,
                     "proc" => Tok::KwFunction, // 4-letter abbreviation (hk249)
                     "local" => Tok::KwLocal,
+                    "private" => Tok::KwPrivate,
+                    "public" => Tok::KwPublic,
                     "return" => Tok::KwReturn,
                     "nil" => Tok::KwNil,
                     "if" => Tok::KwIf,
@@ -918,6 +921,7 @@ enum Stmt {
     If(usize, Expr, Vec<Stmt>, Vec<Stmt>), // line, condition, then, else (possibly empty)
     While(usize, Expr, Vec<Stmt>), // line, condition, body
     Assign(usize, String, Expr),   // x := expr on an already-declared local
+    MemvarSet(usize, bool, String, Expr), // PRIVATE/PUBLIC name := expr
     HDel(usize, String, Expr), // hb_HDel(h, key) statement: remove the key's entry (hk155/hk156)
     HDelAt(usize, String, Expr), // hb_HDelAt(h, n) statement: remove the entry at the 1-based position (hk187/hk190)
     HClear(usize, String), // hb_HClear(h) statement: empty the hash, resetting the CaseMatch flag (hk191/hk193)
@@ -3008,6 +3012,31 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                 out.push(Stmt::Assign(n, id, e));
                 *i += 1;
             }
+            Tok::KwPrivate | Tok::KwPublic => {
+                // PRIVATE name := expr / PUBLIC name := expr
+                // The memvar storage runtime (hrmemvar, ff00ccb) supplies
+                // the scalar bindings with function-frame shadowing.
+                let is_private = matches!(&toks[0], Tok::KwPrivate);
+                let mname = match toks.get(1) {
+                    Some(Tok::Ident(mn)) => mn.clone(),
+                    _ => return Err(format!("line {}: `{} name` expects an identifier", n, if is_private { "PRIVATE" } else { "PUBLIC" })),
+                };
+                if toks.len() < 4 || (toks[2] != Tok::Assign && toks[2] != Tok::Eq) {
+                    return Err(format!("line {}: `{}` requires `name := expr`", n, if is_private { "PRIVATE" } else { "PUBLIC" }));
+                }
+                check_ident(&mname, n)?;
+                let e = parse_expr_tokens(toks[3..].to_vec(), n)?;
+                // El checker y el codegen lo tratan como LOCAL (con slot
+                // de stack); el valor adicionalmente se registra en la
+                // tabla de memvars del runtime (hrc_macro_set) para que
+                // el evaluador de macros lo resuelva por nombre en run time.
+                out.push(Stmt::Local(n, mname.clone(), e));
+                // Registro en la tabla de memvars (el evaluador de macros
+                // la resuelve por nombre en run time).
+                out.push(Stmt::CallStmt(n, Expr::Call("__mvset".to_string(), vec![
+                    Expr::Str(mname.clone()), Expr::Var(mname.clone())])));
+                *i += 1;
+            }
             Tok::ColonColon => {
                 // ::name := e (statement form inside a method body)
                 match toks.as_slice() {
@@ -4134,6 +4163,11 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
                     for a in args { pin_vars(f,a,Ty::Str,pin,n)?; walk(f,a,sigs,lit,pin,printed,n)?; }
                     return Ok(());
                 }
+                if id=="__mvset" {
+                    // El nombre es un literal; el valor es prestado (no moves).
+                    for a in args { walk(f,a,sigs,lit,pin,printed,n)?; }
+                    return Ok(());
+                }
                 if let Some(kinds)=str_builtin_kinds(id,args.len()) {
                     // String-batch builtins (PadC/RAt/Stuff/Is*/StrZero):
                     // each position pins to its fixed kind.
@@ -4380,7 +4414,7 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
                         _ => {}
                     }
                 }
-                Stmt::Assign(n, id, e) => {
+                Stmt::Assign(n, id, e) | Stmt::MemvarSet(n, _, id, e) => {
                     // `x := NIL` pins a parameter to the tagged union.
                     if matches!(e, Expr::Nil) {
                         pin_vars(f, &Expr::Var(id.clone()), Ty::Dyn, pin, *n)?;
@@ -4968,7 +5002,7 @@ fn borrow_stmts_ok(stmts: &[Stmt], pname: &str) -> Option<usize> {
                 if ok { None } else { Some(*n) }
             }
             Stmt::Ret(n, Some(e)) => if borrow_expr_ok(e, pname) { None } else { Some(*n) },
-            Stmt::Assign(n, id, e) => {
+            Stmt::Assign(n, id, e) | Stmt::MemvarSet(n, _, id, e) => {
                 if id == pname || !borrow_expr_ok(e, pname) { Some(*n) } else { None }
             }
             Stmt::ArrSet(n, id, ie, e) => {
@@ -5961,6 +5995,15 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                         return Err(format!("line {}: `At` expects two strings",n));
                     }
                 }
+                return Ok(Ty::I64);
+            }
+            if id=="__mvset" {
+                // Almacena el valor en la tabla de memvars del runtime.
+                if args.len()!=2 { return Err(format!("line {}: `__mvset` takes exactly two arguments",n)); }
+                if !matches!(&args[0], Expr::Str(_)) {
+                    return Err(format!("line {}: `__mvset` expects a literal name",n));
+                }
+                type_expr(&args[1],env,sigs,n)?;
                 return Ok(Ty::I64);
             }
             if id=="&" {
@@ -8290,7 +8333,7 @@ fn stmt_mentions(s: &Stmt, name: &str) -> bool {
                 || arms.iter().any(|(_, _, b)| stmts_mention(b, name))
                 || otherwise.as_ref().map_or(false, |(_, b)| stmts_mention(b, name))
         }
-        Stmt::Assign(_, id, e) => id == name || expr_mentions(e, name),
+        Stmt::Assign(_, id, e) | Stmt::MemvarSet(_, _, id, e) => id == name || expr_mentions(e, name),
         Stmt::HDel(_, id, e) | Stmt::HDelAt(_, id, e) | Stmt::HFill(_, id, e) => {
             id == name || expr_mentions(e, name)
         }
@@ -9821,6 +9864,18 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                     return Err(format!("line {}: use of moved value `{}`", n, id));
                 }
             }
+            Stmt::MemvarSet(n, _, id, e) => {
+                // PRIVATE/PUBLIC: the name gets a local slot AND the value
+                // is stored in the memvar table at run time (the macro
+                // evaluator resolves it by name). The codegen emits the
+                // normal local assignment plus a memvar_set call.
+                let t = type_expr(e, env, sigs, *n)?;
+                apply_moves(e, env, sigs, true);
+                if env.iter().any(|v| v.name == *id) {
+                    return Err(format!("line {}: duplicate memvar `{}`", n, id));
+                }
+                env.push(Local { name: id.clone(), ty: t, moved: false, ro: false, byref: false });
+            }
             Stmt::Assign(n, id, e) => {
                 if static_dyn(id) {
                     let vals:Vec<&Expr>=if let Expr::ArrLit(es)=e {es.iter().collect()}else{vec![e]};
@@ -10076,6 +10131,10 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
             if is_builtin(id, "eval") {
                 // Block values are Copy pointers; arguments are integers:
                 // nothing moves (checked in analysis).
+                for a in args { apply_moves(a, env, sigs, false); }
+                return;
+            }
+            if id == "__mvset" {
                 for a in args { apply_moves(a, env, sigs, false); }
                 return;
             }
@@ -10488,7 +10547,7 @@ impl<'a> EscPass<'a> {
                     self.esc(id, "process-owned STATIC");
                     self.process_expr(e, &EscCtx::Observe, false, depth);
                 }
-                Stmt::Assign(_, id, e) => {
+                Stmt::Assign(_, id, e) | Stmt::MemvarSet(_, _, id, e) => {
                     self.note(id);
                     if static_dyn(id) {
                         // Persistent tagged slot: values are stored per
@@ -10918,7 +10977,7 @@ impl<'a> EligW<'a> {
                     self.note_expr(e, line);
                 }
                 Stmt::Static(_, id, e) => { self.declare(id, None); self.note_expr(e, line); }
-                Stmt::Assign(_, id, e) => {
+                Stmt::Assign(_, id, e) | Stmt::MemvarSet(_, _, id, e) => {
                     self.mentions.push((id.clone(), line));
                     if self.producer_bad(id, e) { self.bad_producer.insert(id.clone()); }
                     self.note_expr(e, line);
@@ -13136,6 +13195,31 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                 out.push_str("    call hbc_space_count_f64\n");
             } else { cg_expr(&args[0],env,sigs,strs,out,target); }
             out.push_str("    mov %rax, %rdi\n    call hbc_space\n");
+        }
+        Expr::Call(id,args) if id=="__mvset" => {
+            // hrmacro_set(tag, payload, name_ptr, name_len) — la tabla
+            // interna del evaluador (M0). El nombre es un literal .rdata.
+            let name = match &args[0] { Expr::Str(t) => t.clone(), _ => unreachable!("checked") };
+            let name_idx = strs.len();
+            strs.push(name.clone());
+            let vt = expr_ty(&args[1], env, sigs);
+            match vt {
+                Ty::I64 => {
+                    // hrmacro_set(rdi=tag, rsi=payload, rdx=name, rcx=name_len)
+                    cg_value(&args[1],env,sigs,strs,out,target);
+                    out.push_str(&format!("    mov %rax, %rsi\n    lea .Lstr{}(%rip), %rdx\n    mov ${}, %ecx\n    mov $0, %edi\n    call hrmacro_set\n", name_idx, name.len()));
+                }
+                Ty::Str | Ty::StrOwn => {
+                    // tag 4 owned string; el payload lleva el puntero a los
+                    // bytes y la longitud va en el header (payload-8).
+                    cg_value(&args[1],env,sigs,strs,out,target);
+                    out.push_str(&format!("    mov %rax, %rdx\n    mov $4, %edi\n    mov %rdx, %rsi\n    mov ${}, %ecx\n    call hrmacro_set\n", name.len()));
+                }
+                _ => {
+                    cg_value(&args[1],env,sigs,strs,out,target);
+                    out.push_str(&format!("    lea .Lstr{}(%rip), %rdx\n    mov ${}, %ecx\n    mov $0, %edi\n    xor %esi, %esi\n    call hrmacro_set\n", name_idx, name.len()));
+                }
+            }
         }
         Expr::Call(id,args) if id=="&" => {
             // Text borrowed for the call; an owned temporary is released
@@ -16167,6 +16251,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             if ["left", "right"].iter().any(|b| is_builtin(id,b)) { return Ty::StrOwn; }
             if is_builtin(id, "at") { return Ty::I64; }
             if id=="&" { return Ty::Dyn; }
+            if id=="__mvset" { return Ty::I64; }
             if ["padc","rat","stuff","isdigit","isalpha","isupper","islower","strzero"].iter().any(|b|is_builtin(id,b)) { return str_builtin_ty(id); }
             if is_builtin(id, "padl") { return Ty::StrOwn; }
             if is_builtin(id, "val") { return Ty::F64; }
@@ -16535,7 +16620,7 @@ fn layout_locals(stmts: &[Stmt], env: &mut Vec<CgLocal>, sigs: &[Sig], frame: &m
                     }
                 }
             }
-            Stmt::Assign(_, id, e) => {
+            Stmt::Assign(_, id, e) | Stmt::MemvarSet(_, _, id, e) => {
                 let vt = expr_ty(e, env, sigs);
                 let mut flip = None;
                 if let Some(v) = env.iter_mut().find(|v| v.name == *id) {
@@ -18622,7 +18707,35 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 }
                 out.push_str(&format!("    jmp {}\n", c));
             }
-            Stmt::Assign(_, id, e) => {
+            Stmt::MemvarSet(_, _, id, e) => {
+                // The checker created the local slot; the codegen emits
+                // the normal assignment AND a memvar table store.
+                let t = expr_ty(e, env, sigs);
+                let l = env.iter().find(|v| v.name == *id).expect("checker pushed the memvar local");
+                let off = l.off;
+                let lty = l.ty;
+                // normal local assignment (same as Assign)
+                if t==Ty::I64 && (lty==Ty::I64 || (lty==Ty::RefI64 && i64_meta_ref(l))) {
+                    cg_value(e,env,sigs,strs,out,target);
+                    if lty==Ty::I64 {out.push_str(&format!("    mov %rax, -{}(%rbp)\n    mov %rdx, -{}(%rbp)\n",off,off-8));}
+                    else {out.push_str(&format!("    mov -{}(%rbp), %r11\n    mov %rax, (%r11)\n    mov %rdx, 8(%r11)\n",off));}
+                } else {
+                    cg_value(e,env,sigs,strs,out,target);
+                    out.push_str(&format!("    mov %rax, -{}(%rbp)\n    mov %rdx, -{}(%rbp)\n", off, off - 8));
+                }
+                // memvar table store: hrc_macro_set(name_ptr, name_len, tag, payload, str, str_len)
+                let name_idx = strs.len();
+                strs.push(id.clone());
+                out.push_str(&format!("    lea .Lstr{}(%rip), %rdi\n    mov ${}, %esi\n", name_idx, id.len()));
+                if t == Ty::I64 {
+                    out.push_str("    mov $0, %edx\n    mov %rax, %rcx\n    mov $0, %r8\n    mov $0, %r9\n    sub $8, %rsp\n    movq $0, (%rsp)\n    call hrc_macro_set\n    add $8, %rsp\n");
+                } else if t == Ty::StrOwn || t == Ty::Str {
+                    out.push_str("    mov $4, %edx\n    mov $0, %rcx\n    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n    call hrc_macro_set\n    add $16, %rsp\n");
+                } else {
+                    out.push_str("    mov $0, %edx\n    mov $0, %rcx\n    mov $0, %r8\n    mov $0, %r9\n    sub $8, %rsp\n    movq $0, (%rsp)\n    call hrc_macro_set\n    add $8, %rsp\n");
+                }
+            }
+            Stmt::Assign(_, id, e) | Stmt::MemvarSet(_, _, id, e) => {
                 if let Some(v)=env.iter().rev().find(|v|v.name==*id && v.ty==Ty::RefDyn) {
                     cg_persistent_store(v,e,env,sigs,strs,out,target);continue;
                 }
@@ -20253,7 +20366,7 @@ fn collect_blocks_stmts(stmts: &[Stmt], out: &mut Vec<(usize, Vec<String>, Vec<E
             }
             Stmt::CatchBind(..) => {}
             Stmt::Break(_, e) => collect_blocks_expr(e, out),
-            Stmt::Local(_, _, e) | Stmt::Static(_, _, e) | Stmt::Assign(_, _, e) => collect_blocks_expr(e, out),
+            Stmt::Local(_, _, e) | Stmt::Static(_, _, e) | Stmt::Assign(_, _, e) | Stmt::MemvarSet(_, _, _, e) => collect_blocks_expr(e, out),
             Stmt::HDel(_, _, e) => { collect_blocks_expr(e, out); }
             Stmt::HDelAt(_, _, e) => { collect_blocks_expr(e, out); }
             Stmt::HClear(_, _) => {}
@@ -26882,7 +26995,7 @@ fn finalize_trace(mut out: String, target: Target) -> String {
     if out.contains("call hbc_str_f64") {
         out.push_str(&f64_fmt_helper());
     }
-    if out.contains("call hbc_macro_eval") {
+    if out.contains("call hbc_macro_eval") || out.contains("call hrmacro_set") {
         out.push_str(&macro_helpers(target));
     }
     if ["ctod", "date_today", "date_render", "stod", "dtos", "year", "day", "month", "dow", "cdow", "cmonth", "dtoc", "date_add", "date_diff", "date_days", "date_from_days"].iter().any(|name| out.contains(&format!("call hbc_{}",name))) {
@@ -30416,13 +30529,13 @@ hbc_aclone_alloc:
         return;
     }
 
-    // hbc AUTÓNOMO: la salida no termina en .s -> ejecutable directo,
+    // hbc AUTÃƒâ€œNOMO: la salida no termina en .s -> ejecutable directo,
     // sin invocar as/ld (Fase 1: Linux x86-64 ELF; Fase 2: Windows PE64).
-    // --external-as conserva la vía externa como fallback en ambos targets.
+    // --external-as conserva la vÃƒÂ­a externa como fallback en ambos targets.
     if matches!(target, Target::Windows) {
         if external_as {
-            // La línea exacta de tests/run_battery.sh (toolchain mingw-w64
-            // en PATH); --target=windows con .s no pasa por aquí.
+            // La lÃƒÂ­nea exacta de tests/run_battery.sh (toolchain mingw-w64
+            // en PATH); --target=windows con .s no pasa por aquÃƒÂ­.
             let dir = env::temp_dir();
             let stem = format!("hbc-{}-extwin", process::id());
             let s_path = dir.join(format!("{}.s", stem));
