@@ -722,6 +722,9 @@ fn encode_ins(e: &Enc, mnem: &str, ops: &[Op], lock: bool, cur_va: u64, near: bo
 fn encode_into(e: &Enc, out: &mut Vec<u8>, ripp: &mut RipPatches, mnem0: &str, ops: &[Op], cur_va: u64, near: bool) -> Result<(), String> {
     // sin cambio de contexto; cur_va = va del inicio de la instrucción (post lock prefix!)
     let (m, sfx) = suffix_width(mnem0);
+    if ["movd","movdqu","movdqa","pcmpeqb","pcmpgtb","pand","pxor","punpcklbw","punpcklwd","pshufd","pmovmskb","bsf"].contains(&m) {
+        return encode_byte_simd(e,out,ripp,m,ops);
+    }
     match m {
         "ret" => { out.push(0xC3); return Ok(()); }
         "leave" => { out.push(0xC9); return Ok(()); }
@@ -1175,6 +1178,66 @@ fn encode_alu(e: &Enc, out: &mut Vec<u8>, ripp: &mut RipPatches, ops: &[Op], sfx
             Ok(())
         }
         _ => Err(format!("{} forma", m)),
+    }
+}
+
+// Only the instruction forms needed by the bounded byte-string helpers.
+fn encode_byte_simd(e: &Enc, out: &mut Vec<u8>, ripp: &mut RipPatches, m: &str, ops: &[Op]) -> Result<(), String> {
+    fn rm(e: &Enc,out: &mut Vec<u8>,ripp: &mut RipPatches,prefix: u8,opcode: u8,reg: u8,operand: &Op) -> Result<(),String> {
+        if !matches!(operand,Op::Xmm(_)|Op::Mem{..}) {return Err("SSE2 source must be XMM or memory".into());}
+        out.push(prefix);
+        match operand {
+            Op::Xmm(x)=>{
+                if let Some(r)=rex_byte(false,reg,0,*x,false){out.push(r);}
+                out.extend_from_slice(&[0x0f,opcode]);out.push(modrm(3,reg,*x));
+            }
+            _=>{
+                if let Some(r)=rex_for(false,reg,operand,false){out.push(r);}
+                out.extend_from_slice(&[0x0f,opcode]);emit_modrm(out,ripp,e,reg,operand)?;
+            }
+        }
+        Ok(())
+    }
+    let count=if m=="pshufd"{3}else{2};
+    if ops.len()!=count{return Err(format!("{} requires {} operands",m,count));}
+    match m {
+        "movd"=>{
+            if let (Op::Reg(g,32,false),Op::Xmm(x))=(&ops[0],&ops[1]) {
+                out.push(0x66);if let Some(r)=rex_byte(false,*x,0,*g,false){out.push(r);}
+                out.extend_from_slice(&[0x0f,0x6e]);out.push(modrm(3,*x,*g));Ok(())
+            }else{Err("movd supports GPR32 to XMM only".into())}
+        }
+        "pmovmskb"=>{
+            if let (Op::Xmm(x),Op::Reg(g,32,false))=(&ops[0],&ops[1]) {
+                out.push(0x66);if let Some(r)=rex_byte(false,*g,0,*x,false){out.push(r);}
+                out.extend_from_slice(&[0x0f,0xd7]);out.push(modrm(3,*g,*x));Ok(())
+            }else{Err("pmovmskb supports XMM to GPR32 only".into())}
+        }
+        "bsf"=>{
+            if let Op::Reg(g,32,false)=&ops[1] {
+                if !matches!(&ops[0],Op::Reg(_,32,false)|Op::Mem{..}){return Err("bsf source must be GPR32 or memory".into());}
+                if let Some(r)=rex_for(false,*g,&ops[0],false){out.push(r);}
+                out.extend_from_slice(&[0x0f,0xbc]);emit_modrm(out,ripp,e,*g,&ops[0])
+            }else{Err("bsf destination must be GPR32".into())}
+        }
+        "movdqu" if matches!(&ops[0],Op::Xmm(_)) && matches!(&ops[1],Op::Mem{..})=>{
+            if let Op::Xmm(x)=&ops[0]{rm(e,out,ripp,0xf3,0x7f,*x,&ops[1])}else{unreachable!()}
+        }
+        "pshufd"=>{
+            let value=if let Op::Imm(v)=&ops[0]{e.eval(v)?}else{return Err("pshufd requires immediate".into());};
+            if !(0..=255).contains(&value){return Err("pshufd immediate outside 0..255".into());}
+            let dst=if let Op::Xmm(x)=&ops[2]{*x}else{return Err("pshufd destination must be XMM".into());};
+            rm(e,out,ripp,0x66,0x70,dst,&ops[1])?;out.push(value as u8);Ok(())
+        }
+        _=>{
+            let dst=if let Op::Xmm(x)=&ops[1]{*x}else{return Err(format!("{} destination must be XMM",m));};
+            let (prefix,opcode)=match m {
+                "movdqu"=>(0xf3,0x6f),"movdqa"=>(0x66,0x6f),"pcmpeqb"=>(0x66,0x74),
+                "pcmpgtb"=>(0x66,0x64),"pand"=>(0x66,0xdb),"pxor"=>(0x66,0xef),
+                "punpcklbw"=>(0x66,0x60),"punpcklwd"=>(0x66,0x61),_=>unreachable!()
+            };
+            rm(e,out,ripp,prefix,opcode,dst,&ops[0])
+        }
     }
 }
 
