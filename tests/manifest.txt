@@ -1660,7 +1660,7 @@ neg tests/t1661_date_param_neg.prg must be a dynamic value, got a date
 pos tests/t1662_date_today.prg \n.T.\nD\n.F.\n.F.\n.F.
 neg tests/t1663_date_arity_neg.prg `date` takes no arguments
 neg tests/t1664_ctod_nonstring_neg.prg `ctod` expects a string
-neg tests/t1665_date_arith_neg.prg date arithmetic
+pos tests/t1665_date_arith_neg.prg \n01/06/26
 neg tests/t1666_date_mixedcmp_neg.prg dates compare only with other dates
 neg tests/t1667_date_assign_neg.prg type mismatch in assignment
 neg tests/t1668_date_array_neg.prg array elements must be integers or logicals
