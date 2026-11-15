@@ -23,3 +23,11 @@ tests/**/*.stderr text eol=lf
 tests/t1041_longstr_linux.out -text
 tests/t1041_longstr_windows.out -text
 tests/t1576_text_cr.prg -text
+
+# Byte-exact Windows error streams intentionally contain CRLF.
+tests/macro/error-contract/fixtures/windows/m1-arg-err.terminal.stderr -text
+tests/macro/error-contract/fixtures/windows/m1-arg-err.terminal.stdout -text
+tests/macro/error-contract/fixtures/windows/m1-local-invisible.terminal.stderr -text
+tests/macro/error-contract/fixtures/windows/m1-local-invisible.terminal.stdout -text
+tests/macro/error-contract/fixtures/windows/m1-syntax-err.terminal.stderr -text
+tests/macro/error-contract/fixtures/windows/m1-syntax-err.terminal.stdout -text
