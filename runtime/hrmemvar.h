@@ -1,6 +1,9 @@
 /* Own MIT scalar MEMVAR storage. No frontend/evaluator integration.
  * Strings follow Dyn16: payload points to bytes with uint64 length at [-1].
- * get_copy returns owned tag4 strings; caller must use hrmv_value_free.
+ * get_copy returns raw-context-owned tag4 strings and marked heap floats.
+ * Caller must use hrmv_value_free, never compiler Dyn destructors.
+ * Heap float: exact tag0x8000000000000005, raw16 {bits,metadata}; legacy
+ * inline5 with tag bits0..31 copies verbatim without allocation.
  * Inputs are borrowed for the duration of a call, never consumed. */
 #ifndef HRMEMVAR_H
 #define HRMEMVAR_H

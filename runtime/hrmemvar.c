@@ -1,5 +1,6 @@
 /* Own MIT MEMVAR storage, freestanding and context-owned. No Harbour code. */
 #include "hrmemvar.h"
+#include "hrdyn.h"
 #include <stdint.h>
 
 typedef struct hrmv_binding {
@@ -42,12 +43,28 @@ void hrmv_value_free(hrmv_context*c,hrv_cell*v){
   uint64_t *p=(uint64_t*)(uintptr_t)v->payload;
   c->free(c->user,p-1,(size_t)p[-1]+sizeof(uint64_t)+1);
  }
+ if(valid(c)&&v->tag==(HR_DYN_FLOAT_HEAP|HR_DYN_FLOAT_KIND)&&v->payload)
+  c->free(c->user,(void*)(uintptr_t)v->payload,16);
  *v=nil();
 }
 static hrmv_status value_copy(hrmv_context*c,hrv_cell v,hrv_cell*out){
  unsigned k=(unsigned)(v.tag&255u);
  if(k==HRV_I64||k==HRV_I64_LITERAL||k==HRV_NIL||k==HRV_LOGICAL){
   if(v.tag!=k||(k==HRV_NIL&&v.payload)||(k==HRV_LOGICAL&&v.payload>1))return HRMV_TYPE_UNSUPPORTED;
+  *out=v;return HRMV_OK;
+ }
+ if(k==HRV_DOUBLE){
+  if(v.tag==(HR_DYN_FLOAT_HEAP|HR_DYN_FLOAT_KIND)){
+   const uint64_t*src=(const uint64_t*)(uintptr_t)v.payload;
+   uint64_t*dst;
+   if(!src)return HRMV_BAD_ARGUMENT;
+   dst=(uint64_t*)c->alloc(c->user,16);if(!dst)return HRMV_MEMORY;
+   dst[0]=src[0];dst[1]=src[1];*out=v;
+   out->payload=(uint64_t)(uintptr_t)dst;return HRMV_OK;
+  }
+  /* Legacy inline bits: opaque bit-preserving storage; export policy belongs
+   * to the bridge, not this copier. Bits32..63 are reserved here. */
+  if(v.tag&~UINT64_C(0x00000000ffffff05))return HRMV_TYPE_UNSUPPORTED;
   *out=v;return HRMV_OK;
  }
  if((k==HRV_STR_BORROW||k==HRV_STR_OWN)&&v.tag==k){
@@ -63,7 +80,7 @@ static hrmv_status value_copy(hrmv_context*c,hrv_cell v,hrv_cell*out){
   ((unsigned char*)(dst+1))[n]=0;
   out->tag=HRV_STR_OWN;out->payload=(uint64_t)(uintptr_t)(dst+1);return HRMV_OK;
  }
- /* Dates (D), float/decimal, arrays/hash/objects/blocks/refs need their own
+ /* Dates (D), decimal, arrays/hash/objects/blocks/refs need their own
   * measured ABI/ownership gates. Do not silently deep-copy or borrow them. */
  return HRMV_TYPE_UNSUPPORTED;
 }
