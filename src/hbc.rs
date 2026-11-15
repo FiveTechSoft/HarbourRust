@@ -21143,65 +21143,140 @@ hbc_chr:
     ret
 
 # hbc_upper / hbc_lower: borrowed rdi/length rsi -> OWNED copy with the
-# ASCII a-z (A-Z) range case-flipped; non-letters pass through (the ERP
-# string batch, issue #1). Byte-codepage only. The len pair convention:
+# ASCII a-z (A-Z) range case-flipped while copying, 16 bounded bytes at a
+# time and a bounded scalar tail. Non-letters pass through; no Unicode.
+# Reuses hbc_stralloc ownership/cache/header protocol. The len pair convention:
 # rax = bytes, rdx = length (same as hbc_strcpy's (ptr, len) pair).
 hbc_upper:
     push %rbp
     mov %rsp, %rbp
-    sub $16, %rsp
-    mov %rsi, -8(%rbp)
-    call hbc_strcpy
-    mov %rax, %r10
-    mov -8(%rbp), %rcx
+    push %rbx
+    push %r12
+    push %r13
+    sub $8, %rsp
+    mov %rdi, %r13
+    mov %rsi, %r12
+    call hbc_stralloc
+    mov %rax, %rbx
+    mov %r12, %rcx
+    mov %r13, %rsi
+    mov %rbx, %rdi
+    cmp $16, %rcx
+    jb .Lcase_upper_tail
+    mov $1616928864, %eax
+    movd %eax, %xmm0
+    pshufd $0, %xmm0, %xmm0
+    mov $2071690107, %eax
+    movd %eax, %xmm1
+    pshufd $0, %xmm1, %xmm1
+    mov $538976288, %eax
+    movd %eax, %xmm2
+    pshufd $0, %xmm2, %xmm2
+.Lcase_upper_vector:
+    movdqu (%rsi), %xmm3
+    movdqa %xmm3, %xmm4
+    pcmpgtb %xmm0, %xmm4
+    movdqa %xmm1, %xmm5
+    pcmpgtb %xmm3, %xmm5
+    pand %xmm5, %xmm4
+    pand %xmm2, %xmm4
+    pxor %xmm4, %xmm3
+    movdqu %xmm3, (%rdi)
+    add $16, %rsi
+    add $16, %rdi
+    sub $16, %rcx
+    cmp $16, %rcx
+    jae .Lcase_upper_vector
+.Lcase_upper_tail:
     test %rcx, %rcx
-    jz .Lupr_done
-    mov %rax, %r11
-.Lupr_loop:
-    movzbl (%r11), %eax
+    jz .Lcase_upper_done
+.Lcase_upper_scalar:
+    movzbl (%rsi), %eax
     cmp $97, %eax
-    jb .Lupr_next
+    jb .Lcase_upper_store
     cmp $122, %eax
-    ja .Lupr_next
+    ja .Lcase_upper_store
     sub $32, %eax
-    mov %al, (%r11)
-.Lupr_next:
-    inc %r11
+.Lcase_upper_store:
+    mov %al, (%rdi)
+    inc %rsi
+    inc %rdi
     dec %rcx
-    jnz .Lupr_loop
-.Lupr_done:
-    mov %r10, %rax
-    mov -8(%rbp), %rdx
-    leave
+    jnz .Lcase_upper_scalar
+.Lcase_upper_done:
+    mov %rbx, %rax
+    mov %r12, %rdx
+    add $8, %rsp
+    pop %r13
+    pop %r12
+    pop %rbx
+    pop %rbp
     ret
 
 hbc_lower:
     push %rbp
     mov %rsp, %rbp
-    sub $16, %rsp
-    mov %rsi, -8(%rbp)
-    call hbc_strcpy
-    mov %rax, %r10
-    mov -8(%rbp), %rcx
+    push %rbx
+    push %r12
+    push %r13
+    sub $8, %rsp
+    mov %rdi, %r13
+    mov %rsi, %r12
+    call hbc_stralloc
+    mov %rax, %rbx
+    mov %r12, %rcx
+    mov %r13, %rsi
+    mov %rbx, %rdi
+    cmp $16, %rcx
+    jb .Lcase_lower_tail
+    mov $1077952576, %eax
+    movd %eax, %xmm0
+    pshufd $0, %xmm0, %xmm0
+    mov $1532713819, %eax
+    movd %eax, %xmm1
+    pshufd $0, %xmm1, %xmm1
+    mov $538976288, %eax
+    movd %eax, %xmm2
+    pshufd $0, %xmm2, %xmm2
+.Lcase_lower_vector:
+    movdqu (%rsi), %xmm3
+    movdqa %xmm3, %xmm4
+    pcmpgtb %xmm0, %xmm4
+    movdqa %xmm1, %xmm5
+    pcmpgtb %xmm3, %xmm5
+    pand %xmm5, %xmm4
+    pand %xmm2, %xmm4
+    pxor %xmm4, %xmm3
+    movdqu %xmm3, (%rdi)
+    add $16, %rsi
+    add $16, %rdi
+    sub $16, %rcx
+    cmp $16, %rcx
+    jae .Lcase_lower_vector
+.Lcase_lower_tail:
     test %rcx, %rcx
-    jz .Llwr_done
-    mov %rax, %r11
-.Llwr_loop:
-    movzbl (%r11), %eax
+    jz .Lcase_lower_done
+.Lcase_lower_scalar:
+    movzbl (%rsi), %eax
     cmp $65, %eax
-    jb .Llwr_next
+    jb .Lcase_lower_store
     cmp $90, %eax
-    ja .Llwr_next
+    ja .Lcase_lower_store
     add $32, %eax
-    mov %al, (%r11)
-.Llwr_next:
-    inc %r11
+.Lcase_lower_store:
+    mov %al, (%rdi)
+    inc %rsi
+    inc %rdi
     dec %rcx
-    jnz .Llwr_loop
-.Llwr_done:
-    mov %r10, %rax
-    mov -8(%rbp), %rdx
-    leave
+    jnz .Lcase_lower_scalar
+.Lcase_lower_done:
+    mov %rbx, %rax
+    mov %r12, %rdx
+    add $8, %rsp
+    pop %r13
+    pop %r12
+    pop %rbx
+    pop %rbp
     ret
 
 # hbc_left: rdi/rsi = borrowed string, rdx = length -> OWNED copy of the
