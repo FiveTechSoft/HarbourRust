@@ -16,7 +16,7 @@ Unix stderr bytes are:
 
 No final LF follows those trailing spaces. Windows uses CRLF. The expected program stdout is LF + before on Unix, CRLF + before on Windows. It excludes only Alert/UI bytes, not the newline of the program's QOut. If the existing compiler QOut differs on PE, the end-to-end checker must fail; the isolated adapter cannot establish QOut parity.
 
-The official.* fixtures retain the full measured UI as provenance and are not expectations for the selected profile. The terminal stderr fixtures are exact copies of the official stderr, unnormalized. Program stdout fixtures are the known before prefix, not a lossy conversion of the Alert box.
+The repository publishes only the selected terminal-profile fixtures. Full official Alert/UI captures are retained in the separately delivered oracle evidence archive, not at repository fixture paths, so specs.json does not reference them. The terminal stderr fixtures are exact copies of the official stderr, unnormalized. Program stdout fixtures are the known before prefix, not a lossy conversion of the Alert box.
 
 ## Proposed hrm_fail patch
 

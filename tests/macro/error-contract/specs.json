@@ -8,12 +8,10 @@
       "line": 4,
       "targets": {
         "linux": {
-          "official_stdout": "fixtures/linux/m1-syntax-err.official.stdout",
           "terminal_stdout": "fixtures/linux/m1-syntax-err.terminal.stdout",
           "stderr": "fixtures/linux/m1-syntax-err.terminal.stderr"
         },
         "windows": {
-          "official_stdout": "fixtures/windows/m1-syntax-err.official.stdout",
           "terminal_stdout": "fixtures/windows/m1-syntax-err.terminal.stdout",
           "stderr": "fixtures/windows/m1-syntax-err.terminal.stderr"
         }
@@ -25,12 +23,10 @@
       "line": 5,
       "targets": {
         "linux": {
-          "official_stdout": "fixtures/linux/m1-local-invisible.official.stdout",
           "terminal_stdout": "fixtures/linux/m1-local-invisible.terminal.stdout",
           "stderr": "fixtures/linux/m1-local-invisible.terminal.stderr"
         },
         "windows": {
-          "official_stdout": "fixtures/windows/m1-local-invisible.official.stdout",
           "terminal_stdout": "fixtures/windows/m1-local-invisible.terminal.stdout",
           "stderr": "fixtures/windows/m1-local-invisible.terminal.stderr"
         }
@@ -42,12 +38,10 @@
       "line": 4,
       "targets": {
         "linux": {
-          "official_stdout": "fixtures/linux/m1-arg-err.official.stdout",
           "terminal_stdout": "fixtures/linux/m1-arg-err.terminal.stdout",
           "stderr": "fixtures/linux/m1-arg-err.terminal.stderr"
         },
         "windows": {
-          "official_stdout": "fixtures/windows/m1-arg-err.official.stdout",
           "terminal_stdout": "fixtures/windows/m1-arg-err.terminal.stdout",
           "stderr": "fixtures/windows/m1-arg-err.terminal.stderr"
         }
