@@ -6,7 +6,8 @@ DBF increment, not standard RDD compatibility.
 
 ## Admitted calls
 
-Linux x86-64, ordinary assembly backend only:
+Linux/Windows x86-64 ordinary native backend. The [Windows adapter](DBF-WINDOWS-READONLY.md) has an ASCII path contract and Wine-only evidence:
+
 
 ```harbour
 function Main()
@@ -41,7 +42,7 @@ zero. Unsupported consumers fail explicitly rather than truncate values.
 
 - No NTX/CDX, memo, writes, shared locking, filtering, collation or codepage
   conversion. NTX is the next planned increment, followed by CDX.
-- No Windows DBF or LLVM DBF backend.
+- No LLVM DBF backend. [Windows path/handle contract](DBF-WINDOWS-READONLY.md).
 - No general conversion between static Date values and dynamic DBF Dates.
   Mixed `CToD`/`Date` versus `FieldGet` Date comparison is rejected at compile time.
 - New Date/numeric-field values are rejected in SWITCH and HScan. Dynamic

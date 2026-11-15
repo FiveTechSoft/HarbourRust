@@ -29,7 +29,7 @@ The current compiler includes the independently reviewed Date/CToD port,
 the CurDir/trailing-space work, and the bounded C Extend-System bridge (v9)
 on Linux and Windows x64 (Windows verified under Wine 11.0, not on real
 Windows). The [read-only DBF increment](docs/DBF-READONLY.md) adds bounded dBASE III
-support on Linux x86-64. The [NTX increment](docs/NTX-READONLY.md) adds
+support on Linux x86-64 and a [bounded Windows PE adapter](docs/DBF-WINDOWS-READONLY.md) verified under Wine, not native Windows. The [NTX increment](docs/NTX-READONLY.md) adds
 read-only character-field indexes on the same backend. Main also includes
 the bounded single-tag read-only CDX increment described below.
 Against the pinned Harbour source:
@@ -66,19 +66,19 @@ work in progress. No unmeasured speed or capability claims are made.
 
 - **DBF support.** Read-only dBASE III tables are in main and v0.4.0: one
   workarea, C/N/L/D fields, `dbUseArea`, `FieldGet`, `dbGoTop`, `dbSkip`,
-  `RecNo`/`LastRec`, `BOF`/`EOF`, `Deleted` and `dbCloseArea`, on Linux x86-64.
+  `RecNo`/`LastRec`, `BOF`/`EOF`, `Deleted` and `dbCloseArea`, on Linux x86-64 and the bounded Windows PE adapter.
   This is an own MIT implementation, checked byte-for-byte against real Harbour.
   It is not standard RDD compatibility: no memo, writes/shared locking,
-  Windows DBF, general static-Date/Dyn conversion or decimal arithmetic/comparison.
+  general static-Date/Dyn conversion or decimal arithmetic/comparison.
   Unsupported consumers fail explicitly.
 - **NTX support.** Read-only NTX is in main and v0.5.0: one ascending,
   nonunique, unconditional index over a direct C field; OrdListAdd/Clear,
   top/bottom/skip and DbSeek/Found, with duplicate/prefix/softseek/findLast
   behavior checked against real Harbour. Six same-source programs pass in
   both modes (**12/12** paired executions). Eager snapshot validation; no
-  writes, calculated/noncharacter keys, multiple orders, Windows or LLVM.
+  writes, calculated/noncharacter keys, multiple orders or LLVM. Windows paths and handle limits are [separate](docs/DBF-WINDOWS-READONLY.md).
   See [scope and tests](docs/NTX-READONLY.md).
-- **CDX support.** Linux read-only, explicitly opened nonstructural compound
+- **CDX support.** Linux/Windows x86-64 read-only, explicitly opened nonstructural compound
   CDX with exactly one ascending, nonunique, unconditional tag over a direct
   C field of at most 240 bytes. Same navigation/seek surface as NTX; no autoopen
   or implicit tag selection. Seven same-source programs pass in both modes

@@ -42,6 +42,8 @@ thread_local! {
 }
 thread_local! {
     // Compiler admission flag only, never emitted user mutable state.
+    static DBF_NATIVE: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+    static DBF_WINDOWS: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
     static DBF_USED: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
     static SET_CONSOLE_LINE: std::cell::Cell<Option<usize>> = const { std::cell::Cell::new(None) };
     static CURDIR_LINUX_NATIVE: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
@@ -5102,6 +5104,21 @@ fn aview_candidates(funcs: &[Func], base: &[Sig], strict: bool) -> Vec<Vec<bool>
     tab.into_iter().map(|s| s.aview).collect()
 }
 
+fn dbf_windows_literal_path(s: &str) -> bool {
+    let b=s.as_bytes();
+    if b.is_empty() || b.len()>259 || b.iter().any(|c| !c.is_ascii() || *c<32 || b"*?\"<>|".contains(c)) {return false;}
+    let p=s.replace('/',"\\");
+    if p.starts_with('\\') {return false;}
+    for (i,c) in b.iter().enumerate() {if *c==b':' && (i!=1 || !b[0].is_ascii_alphabetic() || b.get(2).map_or(true,|x| !b"/\\".contains(x))) {return false;}}
+    for part in p.split('\\') {
+        if part=="." || part==".." || part.is_empty() {continue;}
+        if part.ends_with('.') || part.ends_with(' ') {return false;}
+        let base=part.split('.').next().unwrap().trim_end_matches(' ').to_ascii_uppercase();
+        if ["CON","PRN","AUX","NUL","CONIN$","CONOUT$","CLOCK$"].contains(&base.as_str()) || (base.len()==4 && (base.starts_with("COM")||base.starts_with("LPT")) && base.as_bytes()[3].is_ascii_digit()) {return false;}
+    }
+    true
+}
+
 fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Result<Ty, String> {
     match e {
         Expr::Seq(es) => {
@@ -5191,8 +5208,12 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
         },
         Expr::Call(id, args) => {
             if let Some(ty) = dbf_result(id) {
-                if !CURDIR_LINUX_NATIVE.with(|v|v.get()) {return Err(format!("line {}: DBF file adapter is Linux x86-64 only in this increment",n));}
+                if !DBF_NATIVE.with(|v|v.get()) {return Err(format!("line {}: DBF file adapter requires the Linux/Windows x86-64 ordinary native backend",n));}
                 DBF_USED.with(|v|v.set(true));
+                if DBF_WINDOWS.with(|v|v.get()) {
+                    let path=if id=="dbusearea" {args.get(2)} else if id=="ordlistadd" {args.first()} else {None};
+                    if let Some(Expr::Str(p))=path {if !dbf_windows_literal_path(p) {return Err(format!("line {}: Windows DBF path requires bounded ASCII ordinary relative/drive-absolute form; NUL, devices, UNC, namespaces and long paths are unsupported",n));}}
+                }
                 if id=="dbusearea" {
                     if args.len()!=6 {return Err(format!("line {}: dbUseArea requires six explicit arguments: new, DBFNTX/DBFCDX, filename, alias, shared=.F., readonly=.T.",n));}
                     if !matches!(&args[0],Expr::Log(_)) || !matches!(&args[1],Expr::Str(v) if v.eq_ignore_ascii_case("DBFNTX")||v.eq_ignore_ascii_case("DBFCDX")) || !matches!(&args[3],Expr::Str(v) if !v.is_empty()) || !matches!(&args[4],Expr::Log(false)) || !matches!(&args[5],Expr::Log(true)) {
@@ -24012,7 +24033,7 @@ hbc_dbf_eprint:
     ret
 "#);
             }
-            result.push_str(include_str!("../generated/hrdbf_linux.s"));
+            result.push_str(include_str!("../generated/hrdbf_windows.s"));
         }
         finalize_tag_kind_accessors(result,active)
     };
@@ -28795,6 +28816,8 @@ fn main() {
     if macho && (llvm || external_as) { eprintln!("error: Mach-O Intel currently requires the internal native backend; LLVM and --external-as are not ported"); process::exit(1); }
     MACHO_MODE.with(|v| v.set(macho));
     CURDIR_LINUX_NATIVE.with(|v| v.set(!macho && !llvm && matches!(target, Target::Linux)));
+    DBF_NATIVE.with(|v| v.set(!macho && !llvm));
+    DBF_WINDOWS.with(|v| v.set(matches!(target, Target::Windows)));
     if llvm && instrument { eprintln!("error: LLVM scalar: --instrument is not supported; registry checks must not be silently omitted"); process::exit(1); }
     // Preprocessing runs automatically on every compile. Errors cite the
     // line in the ORIGINAL file for the main input; lines injected by an

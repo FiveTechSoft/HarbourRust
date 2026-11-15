@@ -1,33 +1,51 @@
 #include "hrdyn.h"
-/* Own MIT compiler-facing single-area adapter. Linux only. */
+/* Own MIT compiler-facing single-area adapter. */
 #include "hrdbf_file.h"
 #include "hrvalue.h"
+#ifdef _WIN32
+#define HRDBF_APP_PATH_MAX 260
+#else
+#define HRDBF_APP_PATH_MAX 4096
+#endif
 /* C static storage supplies zero-init by construction. No caller-init grant. */
 static hrdbf_file hrdbf_app_state;
 static hrntx_file hrdbf_app_order;
 static uint64_t hrdbf_app_pos;
 static unsigned hrdbf_app_found_flag;
 static unsigned hrdbf_app_cdx;
-static unsigned char hrdbf_app_basename[4096];
+static unsigned char hrdbf_app_basename[HRDBF_APP_PATH_MAX];
 static size_t hrdbf_app_baselen;
 static void hrdbf_app_fail(const char *msg){
  size_t n=0;while(msg[n])n++;
+#ifdef _WIN32
+ {DWORD written;WriteFile(GetStdHandle(STD_ERROR_HANDLE),msg,(DWORD)n,&written,0);}
+#else
  syscall3(1,2,(long)msg,n);
+#endif
  hrntx_file_close(&hrdbf_app_order);
  hrdbf_file_close(&hrdbf_app_state);
- syscall3(60,1,0,0);__builtin_unreachable();
+#ifdef _WIN32
+ ExitProcess(1);
+#else
+ syscall3(60,1,0,0);
+#endif
+ __builtin_unreachable();
 }
 static void hrdbf_app_require(void){if(!hrdbf_app_state.area.open)hrdbf_app_fail("hbc: DBF no workarea is open\n");}
 void hrdbf_app_close(void){hrdbf_error a=hrntx_file_close(&hrdbf_app_order),b=hrdbf_file_close(&hrdbf_app_state);hrdbf_app_found_flag=0;hrdbf_app_pos=0;if(a||b)hrdbf_app_fail("hbc: DBF/NTX close failed\n");}
 void hrdbf_app_open(const unsigned char *p,size_t len,uint64_t new_area,uint64_t cdx){
- char path[4096];size_t i,start=0,end;hrdbf_error e;
+ char path[HRDBF_APP_PATH_MAX];size_t i,start=0,end;hrdbf_error e;
  if(new_area&&hrdbf_app_state.area.open)hrdbf_app_fail("hbc: DBF only one workarea is supported\n");
  if(!len||len>=sizeof path)hrdbf_app_fail("hbc: DBF filename length outside supported range\n");
  for(i=0;i<len;i++){if(!p[i])hrdbf_app_fail("hbc: DBF filename contains NUL\n");path[i]=(char)p[i];}path[len]=0;
  if(hrntx_file_close(&hrdbf_app_order))hrdbf_app_fail("hbc: DBF index close failed\n");
  hrdbf_app_found_flag=0;hrdbf_app_pos=0;
  hrdbf_app_cdx=cdx!=0;
- for(i=0;i<len;i++)if(p[i]=='/')start=i+1;
+ for(i=0;i<len;i++)if(p[i]=='/'
+#ifdef _WIN32
+ ||p[i]=='\\'
+#endif
+ )start=i+1;
  end=len;for(i=start;i<len;i++)if(p[i]=='.')end=i;
  hrdbf_app_baselen=end-start;
  for(i=0;i<hrdbf_app_baselen;i++)hrdbf_app_basename[i]=cxupper(p[start+i]);
@@ -61,11 +79,15 @@ void hrdbf_app_skip(int64_t n){
  hrdbf_app_order_sync();
 }
 uint64_t hrdbf_app_order_add(const unsigned char*p,size_t len){
- char path[4096];size_t i,last=0,end;int dot=0,same=1;hrdbf_error err;
+ char path[HRDBF_APP_PATH_MAX];size_t i,last=0,end;int dot=0,same=1;hrdbf_error err;
  hrdbf_app_require();
  if(hrdbf_app_order.index.bytes)hrdbf_app_fail("hbc: DBF index only one index is supported\n");
  if(!len||len>sizeof(path)-5)hrdbf_app_fail("hbc: DBF index filename length outside supported range\n");
- for(i=0;i<len;i++){if(!p[i])hrdbf_app_fail("hbc: DBF index filename contains NUL\n");path[i]=(char)p[i];if(p[i]=='/')last=i+1;}
+ for(i=0;i<len;i++){if(!p[i])hrdbf_app_fail("hbc: DBF index filename contains NUL\n");path[i]=(char)p[i];if(p[i]=='/'
+#ifdef _WIN32
+ ||p[i]=='\\'
+#endif
+ )last=i+1;}
  end=len;for(i=last;i<len;i++)if(p[i]=='.'){dot=1;end=i;}
  if(hrdbf_app_cdx&&end-last==hrdbf_app_baselen){
   for(i=0;i<hrdbf_app_baselen;i++)if(cxupper(p[last+i])!=hrdbf_app_basename[i])same=0;

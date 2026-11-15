@@ -6,7 +6,7 @@ or translated. This is not general DBFCDX compatibility.
 
 ## Admitted subset
 
-Linux x86-64 ordinary assembly backend. One read-only dBASE III area and one
+Linux/Windows x86-64 ordinary native backend. One read-only dBASE III area and one
 explicitly opened, nonstructural compound CDX containing exactly one tag. The
 tag must be ascending, nonunique and unconditional, over one direct C field
 of width 1-240 bytes. Every physical DBF record, including deleted records,
@@ -79,7 +79,7 @@ concurrent-writer consistency guarantee is made.
 - Structural/autoopened indexes, multiple tags/orders, calculated/compound
   expressions, noncharacter keys, unique/descending/conditional/custom/partial
   tags, scopes, writes, shared locking, collation or codepage conversion.
-- Windows and LLVM CDX support. Existing DBF and NTX limits still apply.
+- LLVM CDX support. Existing DBF and NTX limits still apply. [Windows path/handle contract](DBF-WINDOWS-READONLY.md).
 - Header variants beyond the measured standard compact/compound headers and
   observed marker/signature are not claimed compatible.
 

@@ -5,7 +5,7 @@ copy its implementation, or evaluate the stored index expression.
 
 ## Supported subset
 
-Linux x86-64 ordinary assembly backend, one read-only DBF area and one existing
+Linux/Windows x86-64 ordinary native backend, one read-only DBF area and one existing
 NTX index. The index expression must name one C field directly, with the same
 key width as that field (1-255 bytes). Ascending, nonunique, unconditional,
 standard NTX only. All physical DBF records, including deleted records, must
@@ -49,7 +49,7 @@ A second open index is rejected; clear it before opening another.
 
 Unique, descending, conditional/custom/partial indexes, calculated or compound
 expressions, numeric/date/logical keys, shared locking, writes, scopes,
-collation/codepage conversion, multiple orders, Windows and LLVM. Unsupported
+collation/codepage conversion, multiple orders and LLVM. [Windows path/handle contract](DBF-WINDOWS-READONLY.md). Unsupported
 headers, DBF/index mismatches, cycles, repeated records/pages, overlapping
 entries, invalid page/slot bounds or uneven leaf depth fail closed. Only the
 standard 0x0006 signature is admitted; no broad compatibility claim is made for
