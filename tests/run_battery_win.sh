@@ -94,6 +94,29 @@ while IFS= read -r line; do
         elif norm_cmp "$sexp" ""$GENDIR"/${base}_w.stdout" && norm_cmp "$eexp" ""$GENDIR"/${base}_w.stderr"; then norm=$((norm+1)); echo "PASS* $file (normalized newlines)"
         else echo "FAIL $file (separate stdout/stderr bytes)"; fail=1; fi
       else echo "FAIL $file (separate stdout/stderr bytes)"; fail=1; fi;;
+    posx2)
+      # posx2 file rc linux.out windows.out: exit code plus raw combined
+      # stdout/stderr bytes against this target's file (QOut CRLF migration).
+      base=$(basename "$file"); base=${base%.*}
+      want_rc=$(echo "$line"|awk '{print $3}'); fexp=$(echo "$line"|awk '{print $5}')
+      n=$((n+1))
+      if build_win "$file"; then
+        timeout 20 "./"$GENDIR"/$base.exe" > ""$GENDIR"/${base}_w.actual" 2>&1; rc_win=$?
+        if [ "$rc_win" != "$want_rc" ]; then echo "FAIL $file (exit code win=$rc_win want=$want_rc)"; fail=1
+        elif cmp -s "$fexp" ""$GENDIR"/${base}_w.actual"; then echo "PASS $file"
+        else echo "FAIL $file (exact win bytes)"; fail=1; fi
+      else echo "FAIL $file (windows build)"; fail=1; fi;;
+    streams2)
+      # streams2 file linux.out windows.out shared.stderr: raw stdout against
+      # this target's file, raw stderr against the shared file.
+      base=$(basename "$file"); base=${base%.*}
+      sexp=$(echo "$line"|awk '{print $4}'); eexp=$(echo "$line"|awk '{print $5}')
+      n=$((n+1))
+      if build_win "$file" &&
+         timeout 20 "./"$GENDIR"/$base.exe" >""$GENDIR"/${base}_w.stdout" 2>""$GENDIR"/${base}_w.stderr"; then
+        if cmp -s "$sexp" ""$GENDIR"/${base}_w.stdout" && cmp -s "$eexp" ""$GENDIR"/${base}_w.stderr"; then echo "PASS $file"
+        else echo "FAIL $file (separate stdout/stderr bytes)"; fail=1; fi
+      else echo "FAIL $file (separate stdout/stderr bytes)"; fail=1; fi;;
     neg)  run_neg "$file" "$(echo "$line"|cut -d' ' -f3-)";;
     '') ;;
     \#*) ;;
