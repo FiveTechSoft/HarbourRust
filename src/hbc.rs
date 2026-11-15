@@ -1616,7 +1616,7 @@ const ASM_RESERVED: &[&str] = &[
     // Not backend keywords (there is no textual backend anymore), but labels
     // hbc itself emits; a user function with one of these names would
     // collide with a helper symbol.
-    "space", "substr", "date", "ctod", "date_pack", "date_render", "date_today", "curdir", "qout", "qqout", "outstd", "outerr", "empty", "procname", "min", "max", "str", "padr", "hb_ntos", "replicate", "aeval", "hb_isnumeric", "hb_isarray", "hb_isstring", "dfree", "upper", "lower", "left", "right", "at", "int", "abs", "hb_bitand", "hb_bitor", "hb_bitxor", "hb_bitnot", "hb_bittest", "hb_bitset", "hb_bitreset", "eprint_str", "eprint_sep", "eprint_i64", "eprint_i64c", "eprint_dyn", "eprint_dynlit", "print_dynlit", "eprint_f64", "hb_eol", "procline", "asc", "trim", "ltrim", "rtrim", "alltrim", "chr", "trace_top", "print_trace", "panic_exit", "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_range_error", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
+    "strtran", "space", "substr", "date", "ctod", "date_pack", "date_render", "date_today", "curdir", "qout", "qqout", "outstd", "outerr", "empty", "procname", "min", "max", "str", "padr", "hb_ntos", "replicate", "aeval", "hb_isnumeric", "hb_isarray", "hb_isstring", "dfree", "upper", "lower", "left", "right", "at", "int", "abs", "hb_bitand", "hb_bitor", "hb_bitxor", "hb_bitnot", "hb_bittest", "hb_bitset", "hb_bitreset", "eprint_str", "eprint_sep", "eprint_i64", "eprint_i64c", "eprint_dyn", "eprint_dynlit", "print_dynlit", "eprint_f64", "hb_eol", "procline", "asc", "trim", "ltrim", "rtrim", "alltrim", "chr", "trace_top", "print_trace", "panic_exit", "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_range_error", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
 ];
 
 fn dbf_result(id: &str) -> Option<Ty> {
@@ -4103,6 +4103,10 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
                     if args.len() > 1 { for a in &args[1..] { pin_vars(f,a,Ty::I64,pin,n)?; walk(f,a,sigs,lit,pin,printed,n)?; } }
                     return Ok(());
                 }
+                if is_builtin(id,"strtran") {
+                    for a in args { pin_vars(f,a,Ty::Str,pin,n)?; walk(f,a,sigs,lit,pin,printed,n)?; }
+                    return Ok(());
+                }
                 if is_builtin(id,"space") {
                     for a in args { pin_vars(f,a,Ty::I64,pin,n)?; walk(f,a,sigs,lit,pin,printed,n)?; }
                     return Ok(());
@@ -5952,6 +5956,15 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                     return Err(format!("line {}: `asc` expects a string (Harbour raises 1107; statically typed here)", n));
                 }
                 return Ok(Ty::I64);
+            }
+            if is_builtin(id,"strtran") {
+                if !(2..=3).contains(&args.len()) { return Err(format!("line {}: `StrTran` admits 2 or 3 arguments in this increment (start/count not covered)",n)); }
+                for a in args {
+                    if !matches!(type_expr(a,env,sigs,n)?,Ty::Str|Ty::StrOwn) {
+                        return Err(format!("line {}: `StrTran` expects typed strings in this increment (Dyn/coercion not covered)",n));
+                    }
+                }
+                return Ok(Ty::StrOwn);
             }
             if is_builtin(id,"space") {
                 if args.len()!=1 { return Err(format!("line {}: `Space` takes one argument in this increment",n)); }
@@ -9691,6 +9704,10 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
                 apply_moves(&args[0], env, sigs, false);
                 return;
             }
+            if is_builtin(id,"strtran") {
+                for a in args { apply_moves(a,env,sigs,false); }
+                return;
+            }
             if is_builtin(id,"space") {
                 apply_moves(&args[0],env,sigs,false);
                 return;
@@ -12671,6 +12688,27 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             }
             out.push_str("    add $16, %rsp\n");
         }
+        Expr::Call(id,args) if is_builtin(id,"strtran") => {
+            // Retain each earlier value before later argument evaluation.
+            // Nonvariable owned temporaries already have independent life.
+            out.push_str("    sub $80, %rsp\n");
+            let mut release=[false;2];
+            for i in 0..2 {
+                let owned=expr_ty(&args[i],env,sigs)==Ty::StrOwn && !matches!(&args[i],Expr::Var(_));
+                cg_value(&args[i],env,sigs,strs,out,target);
+                let snapshot=!owned && args[i+1..].iter().any(expr_has_call);
+                release[i]=owned || snapshot;
+                if snapshot { out.push_str("    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_strcpy\n"); }
+                out.push_str(&format!("    mov %rax, {}(%rsp)\n    mov %rdx, {}(%rsp)\n",i*16,i*16+8));
+            }
+            let rtemp=args.len()==3 && expr_ty(&args[2],env,sigs)==Ty::StrOwn && !matches!(&args[2],Expr::Var(_));
+            if args.len()==3 { cg_value(&args[2],env,sigs,strs,out,target); }
+            else { out.push_str("    xor %eax, %eax\n    xor %edx, %edx\n"); }
+            out.push_str("    mov %rax, 32(%rsp)\n    mov %rdx, 40(%rsp)\n    mov %rax, %r8\n    mov %rdx, %r9\n    mov (%rsp), %rdi\n    mov 8(%rsp), %rsi\n    mov 16(%rsp), %rdx\n    mov 24(%rsp), %rcx\n    call hbc_strtran\n    mov %rax, 48(%rsp)\n    mov %rdx, 56(%rsp)\n");
+            for i in 0..2 { if release[i] { out.push_str(&format!("    mov {}(%rsp), %rdi\n    call hbc_freestr\n",i*16)); } }
+            if rtemp { out.push_str("    mov 32(%rsp), %rdi\n    call hbc_freestr\n"); }
+            out.push_str("    mov 48(%rsp), %rax\n    mov 56(%rsp), %rdx\n    add $80, %rsp\n");
+        }
         Expr::Call(id,args) if is_builtin(id,"space") => {
             cg_expr(&args[0],env,sigs,strs,out,target);
             out.push_str("    mov %rax, %rdi\n    call hbc_space\n");
@@ -15005,6 +15043,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             if ["ltrim", "rtrim", "alltrim", "trim"].iter().any(|b| is_builtin(id,b)) { return Ty::StrOwn; }
             if is_builtin(id,"substr") { return Ty::StrOwn; }
             if is_builtin(id,"space") { return Ty::StrOwn; }
+            if is_builtin(id,"strtran") { return Ty::StrOwn; }
             // ERP string batch (issue #1): mirror the checker's types.
             if ["upper", "lower"].iter().any(|b| is_builtin(id,b)) { return Ty::StrOwn; }
             if ["left", "right"].iter().any(|b| is_builtin(id,b)) { return Ty::StrOwn; }
@@ -21394,6 +21433,287 @@ hbc_str_int_field:
     mov %r13, %rdx
 .Lsif_done:
     add $40, %rsp
+    pop %r13
+    pop %r12
+    pop %rbx
+    pop %rbp
+    ret
+
+# Internal byte search: rdi/rsi text, rdx/rcx seek; rax=offset or -1.
+# Caller admits nonempty seek. No ownership/callbacks; preserves r10/r11.
+hbc_strfind:
+    cmp %rcx, %rsi
+    jb 5f
+    cmp $2, %rcx
+    je 7f
+    sub %rcx, %rsi
+    xor %eax, %eax
+1:  cmp %rsi, %rax
+    ja 5f
+    movzbl (%rdi,%rax), %r8d
+    cmpb (%rdx), %r8b
+    jne 4f
+    mov $1, %r8d
+2:  cmp %rcx, %r8
+    jae 6f
+    lea (%rdi,%rax), %r9
+    movzbl (%r9,%r8), %r9d
+    cmpb (%rdx,%r8), %r9b
+    jne 4f
+    inc %r8
+    jmp 2b
+4:  inc %rax
+    jmp 1b
+5:  mov $-1, %rax
+6:  ret
+7:  sub $2, %rsi
+    movzbl (%rdx), %r8d
+    movzbl 1(%rdx), %r9d
+    xor %eax, %eax
+8:  cmp %rsi, %rax
+    ja 5b
+    cmp %r8b, (%rdi,%rax)
+    jne 9f
+    cmp %r9b, 1(%rdi,%rax)
+    je 6b
+9:  inc %rax
+    jmp 8b
+
+# rdi/rsi text, rdx/rcx seek, r8/r9 replacement. Fresh owned result.
+# Two passes count then fill nonoverlapping matches. No match copies text.
+hbc_strtran:
+    test %rcx, %rcx
+    jz hbc_strcpy
+    cmp %rcx, %rsi
+    jb hbc_strcpy
+    cmp $1, %rcx
+    je hbc_strtran_one
+    push %rbp
+    mov %rsp, %rbp
+    push %rbx
+    push %r12
+    push %r13
+    push %r14
+    push %r15
+    sub $72, %rsp
+    mov %rdi, %r12
+    mov %rsi, %r13
+    mov %rdx, %r14
+    mov %rcx, %r15
+    mov %r8, %rbx
+    mov %r9, (%rsp)
+    movq $0, 8(%rsp)
+    movq $0, 16(%rsp)
+1:  mov 8(%rsp), %rax
+    lea (%r12,%rax), %rdi
+    mov %r13, %rsi
+    sub %rax, %rsi
+    mov %r14, %rdx
+    mov %r15, %rcx
+    call hbc_strfind
+    test %rax, %rax
+    js 2f
+    add %r15, %rax
+    add %rax, 8(%rsp)
+    incq 16(%rsp)
+    jmp 1b
+2:  cmpq $0, 16(%rsp)
+    je 8f
+    mov (%rsp), %rax
+    sub %r15, %rax
+    imul 16(%rsp), %rax
+    jo hbc_oom
+    add %r13, %rax
+    jo hbc_oom
+    test %rax, %rax
+    js hbc_oom
+    mov %rax, 24(%rsp)
+    mov %rax, %rsi
+    call hbc_stralloc
+    mov %rax, 32(%rsp)
+    mov %rax, 40(%rsp)
+    movq $0, 8(%rsp)
+3:  mov 8(%rsp), %rax
+    lea (%r12,%rax), %rdi
+    mov %r13, %rsi
+    sub %rax, %rsi
+    mov %r14, %rdx
+    mov %r15, %rcx
+    call hbc_strfind
+    test %rax, %rax
+    js 7f
+    mov %rax, 48(%rsp)
+    mov %rax, %rcx
+    mov 8(%rsp), %rax
+    lea (%r12,%rax), %rsi
+    mov 40(%rsp), %rdi
+    test %rcx, %rcx
+    jz 41f
+    rep movsb
+41: mov %rbx, %rsi
+    mov (%rsp), %rcx
+    cmp $3, %rcx
+    je 46f
+    cmp $2, %rcx
+    je 47f
+    cmp $1, %rcx
+    je 48f
+    cmp $128, %rcx
+    jae 44f
+42: test %rcx, %rcx
+    jz 45f
+    movzbl (%rsi), %eax
+    mov %al, (%rdi)
+    inc %rsi
+    inc %rdi
+    dec %rcx
+    jmp 42b
+44: rep movsb
+    jmp 45f
+46: movzbl 2(%rsi), %eax
+    mov %al, 2(%rdi)
+    movzbl (%rsi), %eax
+    mov %al, (%rdi)
+    movzbl 1(%rsi), %eax
+    mov %al, 1(%rdi)
+    add $3, %rdi
+    jmp 45f
+47: movzbl (%rsi), %eax
+    mov %al, (%rdi)
+    movzbl 1(%rsi), %eax
+    mov %al, 1(%rdi)
+    add $2, %rdi
+    jmp 45f
+48: movzbl (%rsi), %eax
+    mov %al, (%rdi)
+    inc %rdi
+45: mov %rdi, 40(%rsp)
+    mov 48(%rsp), %rax
+    add %r15, %rax
+    add %rax, 8(%rsp)
+    jmp 3b
+7:  mov 8(%rsp), %rax
+    mov %r13, %rcx
+    sub %rax, %rcx
+    lea (%r12,%rax), %rsi
+    mov 40(%rsp), %rdi
+    rep movsb
+    mov 32(%rsp), %rax
+    mov 24(%rsp), %rdx
+    jmp 9f
+8:  mov %r12, %rdi
+    mov %r13, %rsi
+    call hbc_strcpy
+9:  add $72, %rsp
+    pop %r15
+    pop %r14
+    pop %r13
+    pop %r12
+    pop %rbx
+    pop %rbp
+    ret
+
+# Single-byte pattern: tight count and fill loops, no per-match calls.
+hbc_strtran_one:
+    push %rbp
+    mov %rsp, %rbp
+    push %rbx
+    push %r12
+    push %r13
+    push %r14
+    push %r15
+    sub $40, %rsp
+    mov %rdi, %r12
+    mov %rsi, %r13
+    movzbl (%rdx), %r14d
+    mov %r8, %rbx
+    mov %r9, %r15
+    cmp $1, %r15
+    je 3f
+    xor %ecx, %ecx
+    xor %eax, %eax
+1:  cmp %r13, %rcx
+    jae 2f
+    cmp %r14b, (%r12,%rcx)
+    jne 7f
+    inc %rax
+7:  inc %rcx
+    jmp 1b
+2:  mov %r15, %rcx
+    dec %rcx
+    imul %rcx, %rax
+    jo hbc_oom
+    add %r13, %rax
+    jo hbc_oom
+    test %rax, %rax
+    js hbc_oom
+    mov %rax, %rsi
+    jmp 4f
+3:  mov %r13, %rsi
+4:  call hbc_stralloc
+    mov %rax, (%rsp)
+    mov %rdx, 8(%rsp)
+    mov %rax, %rdi
+    xor %r8d, %r8d
+    test %rdx, %rdx
+    jz 8f
+    cmp $1, %r15
+    je 9f
+    test %r15, %r15
+    jz 12f
+    cmp $2, %r15
+    je 14f
+5:  cmp %r13, %r8
+    jae 8f
+    movzbl (%r12,%r8), %eax
+    inc %r8
+    cmp %r14b, %al
+    je 6f
+    mov %al, (%rdi)
+    inc %rdi
+    jmp 5b
+6:  mov %rbx, %rsi
+    mov %r15, %rcx
+    rep movsb
+    jmp 5b
+9:  movzbl (%rbx), %r9d
+10: cmp %r13, %r8
+    jae 8f
+    movzbl (%r12,%r8), %eax
+    cmp %r14b, %al
+    cmove %r9d, %eax
+    mov %al, (%rdi,%r8)
+    inc %r8
+    jmp 10b
+12: cmp %r13, %r8
+    jae 8f
+    movzbl (%r12,%r8), %eax
+    inc %r8
+    cmp %r14b, %al
+    je 12b
+    mov %al, (%rdi)
+    inc %rdi
+    jmp 12b
+14: movzbl (%rbx), %r9d
+    movzbl 1(%rbx), %r10d
+15: cmp %r13, %r8
+    jae 8f
+    movzbl (%r12,%r8), %eax
+    inc %r8
+    cmp %r14b, %al
+    jne 16f
+    mov %r9b, (%rdi)
+    mov %r10b, 1(%rdi)
+    add $2, %rdi
+    jmp 15b
+16: mov %al, (%rdi)
+    inc %rdi
+    jmp 15b
+8:  mov (%rsp), %rax
+    mov 8(%rsp), %rdx
+    add $40, %rsp
+    pop %r15
+    pop %r14
     pop %r13
     pop %r12
     pop %rbx
