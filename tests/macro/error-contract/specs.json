@@ -46,6 +46,38 @@
           "stderr": "fixtures/windows/m1-arg-err.terminal.stderr"
         }
       }
+    },
+    {
+      "source": "tests/macro/m1-conditional-err.prg",
+      "exit": 1,
+      "line": 4,
+      "note": "windows fixture is raw Harbour 3.2.0 mingw64 stderr (native Windows); linux fixture derived by CRLF->LF, not a Linux oracle run",
+      "targets": {
+        "linux": {
+          "terminal_stdout": "fixtures/linux/m1-conditional-err.terminal.stdout",
+          "stderr": "fixtures/linux/m1-conditional-err.terminal.stderr"
+        },
+        "windows": {
+          "terminal_stdout": "fixtures/windows/m1-conditional-err.terminal.stdout",
+          "stderr": "fixtures/windows/m1-conditional-err.terminal.stderr"
+        }
+      }
+    },
+    {
+      "source": "tests/macro/m1-precedence-err.prg",
+      "exit": 1,
+      "line": 4,
+      "note": "windows fixture is raw Harbour 3.2.0 mingw64 stderr (native Windows); linux fixture derived by CRLF->LF, not a Linux oracle run",
+      "targets": {
+        "linux": {
+          "terminal_stdout": "fixtures/linux/m1-precedence-err.terminal.stdout",
+          "stderr": "fixtures/linux/m1-precedence-err.terminal.stderr"
+        },
+        "windows": {
+          "terminal_stdout": "fixtures/windows/m1-precedence-err.terminal.stdout",
+          "stderr": "fixtures/windows/m1-precedence-err.terminal.stderr"
+        }
+      }
     }
   ]
 }

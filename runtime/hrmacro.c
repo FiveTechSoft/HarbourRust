@@ -6,6 +6,8 @@ extern void hrm_free(unsigned char *p);
 extern hrm_cell hrm_float(uint64_t bits, uint64_t meta);
 extern double hrm_exp(double x);
 extern double hrm_log(double x);
+extern double hrm_fmod(double x, double y);
+extern double hrm_powf(double x, double y);
 extern void hrm_fail(const unsigned char *msg, size_t len) __attribute__((noreturn));
 
 /* V_ERR is a deferred Harbour error: Harbour folds the expression before
@@ -140,8 +142,10 @@ static void next(lex *L) {
       if (c2 == '=') {lex_fail(L,"Error: macro assignments are not in this increment (M0)");return;}
       {lex_fail(L,"Error BASE/1449  Syntax error: &");return;}
     case '{': {lex_fail(L,"Error: macro arrays, hashes and codeblocks are not in this increment (M0)");return;}
-    case '+': L->op = O_PLUS; return;
-    case '-': L->op = O_MINUS; return;
+    /* ++ and -- are Harbour's increment/decrement operators; with no lvalue
+     * in macro text they are a syntax error (--5 is not 5). */
+    case '+': if (c2 == '+') { lex_fail(L, "Error BASE/1449  Syntax error: &"); return; } L->op = O_PLUS; return;
+    case '-': if (c2 == '-') { lex_fail(L, "Error BASE/1449  Syntax error: &"); return; } L->op = O_MINUS; return;
     case '*': if (c2 == '*') { L->p++; L->op = O_POW; } else L->op = O_STAR; return;
     case '/': L->op = O_SLASH; return;
     case '%': L->op = O_PCT; return;
@@ -195,8 +199,22 @@ static val arg_err(int op) {
 
 static int is_num(const val *v) { return v->kind == V_INT || v->kind == V_DBL; }
 static double as_d(const val *v) { return v->kind == V_INT ? (double)v->i : v->d; }
+/* DEF_DEC is Harbour's default-decimals marker (HB_DEFAULT_DECIMALS): the
+ * results of / % ^ carry it, it wins in any later + - *, and it prints as
+ * SET DECIMALS (2). (14 ^ 3) * 3.55 is 9741.20, not 9741.2000. */
+#define DEF_DEC (-1)
 static int dec_of(const val *v) { return v->kind == V_DBL ? v->dec : 0; }
-static val mkdbl(double d, int dec) { val r = {0}; r.kind = V_DBL; r.d = d; r.dec = dec; r.meta=(((uint64_t)((d>9999999999.0||d< -999999999.0)?20:10))<<16)|(unsigned)dec; return r; }
+static int dec_max(const val *a, const val *b) {
+  int x = dec_of(a), y = dec_of(b);
+  if (x == DEF_DEC || y == DEF_DEC) return DEF_DEC;
+  return x > y ? x : y;
+}
+static int dec_sum(const val *a, const val *b) {
+  int x = dec_of(a), y = dec_of(b);
+  if (x == DEF_DEC || y == DEF_DEC) return DEF_DEC;
+  return x + y;
+}
+static val mkdbl(double d, int dec) { val r = {0}; r.kind = V_DBL; r.d = d; r.dec = dec; r.meta=(((uint64_t)((d>9999999999.0||d< -999999999.0)?20:10))<<16)|(unsigned)(dec == DEF_DEC ? 2 : dec); return r; }
 static val mkint(int64_t i) { val r = {0}; r.kind = V_INT; r.i = i; return r; }
 static val mklog(int b) { val r = {0}; r.kind = V_LOG; r.i = b ? 1 : 0; return r; }
 
@@ -269,6 +287,39 @@ static val compare(int op, val *a, val *b) {
   }
 }
 
+/* x^k for integer k >= 0 in double-double arithmetic (Dekker products,
+ * about 106 bits), rounded to double once. Harbour calls the C runtime pow;
+ * repeated double products drift in the 16th digit. */
+static void two_prod(double a, double b, double *p, double *e) {
+  const double split = 134217729.0; /* 2^27 + 1 */
+  double t = split * a, ah = t - (t - a), al = a - ah;
+  t = split * b;
+  double bh = t - (t - b), bl = b - bh;
+  *p = a * b;
+  *e = ((ah * bh - *p) + ah * bl + al * bh) + al * bl;
+}
+static void dd_mul(double ah, double al, double bh, double bl, double *rh, double *rl) {
+  double p, e;
+  two_prod(ah, bh, &p, &e);
+  e += ah * bl + al * bh;
+  double s = p + e;
+  *rl = e - (s - p);
+  *rh = s;
+}
+static double pow_int(double x, int64_t k) {
+  double rh = 1.0, rl = 0.0, bh = x, bl = 0.0;
+  while (k) {
+    if (k & 1) dd_mul(rh, rl, bh, bl, &rh, &rl);
+    k >>= 1;
+    if (k) dd_mul(bh, bl, bh, bl, &bh, &bl);
+  }
+  return rh + rl;
+}
+
+/* folding = 1: Harbour's compile-time constant folding (both operands are
+ * literals); folding = 0: run-time operators. Run-time / and % always give
+ * a default-decimals double (memvar x := 10: x % 3 is 1.00, x / 2 is 5.00);
+ * a zero divisor is never folded (see fold) and yields the integer 0. */
 static val arith(int op, val *a, val *b, int folding) {
   val e;
   if (pending(a, b, &e)) return e;
@@ -280,33 +331,33 @@ static val arith(int op, val *a, val *b, int folding) {
   switch (op) {
     case O_PLUS:
       if (ints && !__builtin_add_overflow(a->i, b->i, &r)) return mkint(r);
-      return mkdbl(as_d(a) + as_d(b), dec_of(a) > dec_of(b) ? dec_of(a) : dec_of(b));
+      return mkdbl(as_d(a) + as_d(b), dec_max(a, b));
     case O_MINUS:
       if (ints && !__builtin_sub_overflow(a->i, b->i, &r)) return mkint(r);
-      return mkdbl(as_d(a) - as_d(b), dec_of(a) > dec_of(b) ? dec_of(a) : dec_of(b));
+      return mkdbl(as_d(a) - as_d(b), dec_max(a, b));
     case O_STAR:
       if (ints && !__builtin_mul_overflow(a->i, b->i, &r)) return mkint(r);
-      return mkdbl(as_d(a) * as_d(b), dec_of(a) + dec_of(b));
+      return mkdbl(as_d(a) * as_d(b), dec_sum(a, b));
     case O_SLASH: {
       if (as_d(b) == 0.0) return mkint(0);
       if (folding && ints && !(a->i == INT64_MIN && b->i == -1) && a->i % b->i == 0) return mkint(a->i / b->i);
-      return mkdbl(as_d(a) / as_d(b), 2);
+      return mkdbl(as_d(a) / as_d(b), DEF_DEC);
     }
     case O_PCT: {
       if (as_d(b) == 0.0) return mkint(0);
-      if (ints) return mkint(b->i == -1 ? 0 : a->i % b->i);
-      double x = as_d(a), y = as_d(b);
-      return mkdbl(x - trunc_d(x / y) * y, 2);
+      if (folding && ints) return mkint(b->i == -1 ? 0 : a->i % b->i);
+      return mkdbl(hrm_fmod(as_d(a), as_d(b)), DEF_DEC);
     }
     default: { /* O_POW */
       double x = as_d(a), y = as_d(b), p;
       if (y == trunc_d(y) && y >= -1024.0 && y <= 1024.0) {
         int64_t k = (int64_t)y; int neg = k < 0; if (neg) k = -k;
-        double base = x; p = 1.0;
-        while (k) { if (k & 1) p *= base; base *= base; k >>= 1; }
+        p = pow_int(x, k);
         if (neg) p = 1.0 / p;
-      } else p = hrm_exp(y * hrm_log(x));
-      return mkdbl(p, 2);
+      } else if (x > 0.0) p = hrm_powf(x, y);
+      else if (x == 0.0) p = y > 0.0 ? 0.0 : 1.0 / x;
+      else p = hrm_exp(y * hrm_log(x)); /* negative base, fractional power: NaN */
+      return mkdbl(p, DEF_DEC);
     }
   }
 }
@@ -369,7 +420,11 @@ static node *primary(parser*p){
  }
  p->depth--;return n;
 }
+static node *negation(parser*p);
 static node *unary(parser*p){
+ /* .NOT. / ! may also start an operand (x / .NOT. y): as in Harbour's
+  * grammar it then takes a negation-level operand. */
+ if(p->L.tok==T_NOT||(p->L.tok==T_OP&&p->L.op==O_BANG))return negation(p);
  if(p->L.tok==T_OP&&(p->L.op==O_MINUS||p->L.op==O_PLUS)){
   int op=p->L.op;next(&p->L);
   if(++p->depth>128){lex_fail(&p->L,"Error: macro nesting limit (M0)");p->depth--;return &p->emergency;}
@@ -380,7 +435,12 @@ static node *unary(parser*p){
 static node *power(parser*p){node*a=unary(p);while(p->L.tok==T_OP&&p->L.op==O_POW&&!p->L.error){next(&p->L);a=binary(p,N_BINARY,O_POW,a,unary(p));}return a;}
 static node *term(parser*p){node*a=power(p);while(p->L.tok==T_OP&&(p->L.op==O_STAR||p->L.op==O_SLASH||p->L.op==O_PCT)&&!p->L.error){int op=p->L.op;next(&p->L);a=binary(p,N_BINARY,op,a,power(p));}return a;}
 static node *sum(parser*p){node*a=term(p);while(p->L.tok==T_OP&&(p->L.op==O_PLUS||p->L.op==O_MINUS)&&!p->L.error){int op=p->L.op;next(&p->L);a=binary(p,N_BINARY,op,a,term(p));}return a;}
-static node *relation(parser*p){node*a=sum(p);while(p->L.tok==T_OP&&p->L.op>=O_EQ&&p->L.op<=O_DOLLAR&&!p->L.error){int op=p->L.op;next(&p->L);a=binary(p,N_BINARY,op,a,sum(p));}return a;}
+/* Harbour puts equality (= == != <> #) one level BELOW the ordering
+ * operators (< <= > >= $); both are left-associative. .T. != x $ y runs $
+ * first, which decides the first error raised. */
+static int is_ordering(int op){return op==O_LT||op==O_LE||op==O_GT||op==O_GE||op==O_DOLLAR;}
+static node *comparison(parser*p){node*a=sum(p);while(p->L.tok==T_OP&&is_ordering(p->L.op)&&!p->L.error){int op=p->L.op;next(&p->L);a=binary(p,N_BINARY,op,a,sum(p));}return a;}
+static node *relation(parser*p){node*a=comparison(p);while(p->L.tok==T_OP&&(p->L.op==O_EQ||p->L.op==O_EXEQ||p->L.op==O_NE)&&!p->L.error){int op=p->L.op;next(&p->L);a=binary(p,N_BINARY,op,a,comparison(p));}return a;}
 static node *negation(parser*p){if(p->L.tok==T_NOT||(p->L.tok==T_OP&&p->L.op==O_BANG)){next(&p->L);if(++p->depth>128){lex_fail(&p->L,"Error: macro nesting limit (M0)");p->depth--;return &p->emergency;}node*n=binary(p,N_UNARY,O_BANG,negation(p),0);p->depth--;return n;}return relation(p);}
 static node *parse_and(parser*p){node*a=negation(p);while(p->L.tok==T_AND&&!p->L.error){next(&p->L);a=binary(p,N_AND,0,a,negation(p));}return a;}
 static node *parse_or(parser*p){node*a=parse_and(p);while(p->L.tok==T_OR&&!p->L.error){next(&p->L);a=binary(p,N_OR,0,a,parse_and(p));}return a;}
@@ -409,7 +469,11 @@ static node *fold(node*n){
   if(b){if(n->kind==N_AND?n->b->value.i:!n->b->value.i)return n->a;return n->b;}
  }
  if(n->kind==N_UNARY&&n->a->kind==N_VALUE){n->value=unary_value(n->op,borrow(n->a->value));n->value.literal=1;n->kind=N_VALUE;}
- else if(n->kind==N_BINARY&&n->a->kind==N_VALUE&&n->b->kind==N_VALUE){n->value=binary_value(n->op,borrow(n->a->value),borrow(n->b->value),1);n->value.literal=1;n->kind=N_VALUE;}
+ else if(n->kind==N_BINARY&&n->a->kind==N_VALUE&&n->b->kind==N_VALUE
+         /* A division or % by zero is not folded: it runs at run time (the
+          * default recovery gives 0) and what is computed from it follows the
+          * run-time rules - 5 % 0 % 1 is 0.00 while the constant 0 % 1 is 0. */
+         &&!((n->op==O_SLASH||n->op==O_PCT)&&is_num(&n->b->value)&&as_d(&n->b->value)==0.0)){n->value=binary_value(n->op,borrow(n->a->value),borrow(n->b->value),1);n->value.literal=1;n->kind=N_VALUE;}
  return n;
 }
 static val status_error(hrmv_status rc,const unsigned char*s,size_t len){
@@ -449,10 +513,12 @@ static val evaluate(hrmacro_context*c,node*n,unsigned nesting){
  if(n->kind==N_LIST){if(a.kind==V_ERR)return a;drop(&a);return evaluate(c,n->b,nesting);}
  if(n->kind==N_AND||n->kind==N_OR){
   if(a.kind==V_ERR)return a;
-  if(a.kind!=V_LOG){drop(&a);return mkerr(n->kind==N_AND?"Error BASE/1078  Argument error: .AND.":"Error BASE/1079  Argument error: .OR.");}
+  /* Harbour compiles .AND./.OR. as conditional jumps: a non-logical left
+   * operand is BASE/1066 "conditional"; the right operand is the result,
+   * unchecked (folding already handled constant logicals). */
+  if(a.kind!=V_LOG){drop(&a);return mkerr("Error BASE/1066  Argument error: conditional");}
   if(n->kind==N_AND?!a.i:a.i)return a;
-  b=evaluate(c,n->b,nesting);if(b.kind==V_ERR)return b;
-  if(b.kind!=V_LOG){drop(&b);return mkerr(n->kind==N_AND?"Error BASE/1078  Argument error: .AND.":"Error BASE/1079  Argument error: .OR.");}return b;
+  return evaluate(c,n->b,nesting);
  }
  /* Left surviving error wins without resolving later runtime names. */
  if(a.kind==V_ERR)return a;

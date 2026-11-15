@@ -702,7 +702,7 @@ fn suffix_width(m: &str) -> (&str, Option<u8>) {
     const EXACT: &[&str] = &[
         "ret","leave","cqto","cqo","cltq","cdqe","cvtsi2sdl","cvtsi2sdq","cvttsd2siq","syscall","pause","endbr64","nop","ud2","rep movsb","rep movsq","rep stosb",
         "fyl2x","fscale","frndint","fld1","f2xm1","fprem","fnstsw",
-        "fldl","fstpl","fld","fstp","fxch","faddp","fsub",
+        "fldl","fstpl","fld","fstp","fxch","faddp","fsub","fmul",
         "movsd","addsd","subsd","mulsd","divsd","ucomisd","xorpd","cvtsi2sd","cvttsd2si","roundsd",
         "movslq","movsbq","movzbl","movzbq","movzwl","movzx","movabs","movq","comisd",
     ];
@@ -785,6 +785,10 @@ fn encode_into(e: &Enc, out: &mut Vec<u8>, ripp: &mut RipPatches, mnem0: &str, o
         "fsub" => {
             if let (Op::St(i), Op::St(_)) = (&ops[0], &ops[1]) { out.extend_from_slice(&[0xD8, 0xE0 + i]); return Ok(()); }
         }
+        // fmul %st(i), %st(0): st(0) *= st(i).
+        "fmul" => {
+            if let (Op::St(i), Op::St(0)) = (&ops[0], &ops[1]) { out.extend_from_slice(&[0xD8, 0xC8 + i]); return Ok(()); }
+        }
         "fldl" => { out.push(0xDD); emit_modrm(out, ripp, e, 0, &ops[0])?; return Ok(()); }
         "fstpl" => { out.push(0xDD); emit_modrm(out, ripp, e, 3, &ops[0])?; return Ok(()); }
         _ => {}
@@ -832,6 +836,19 @@ fn encode_into(e: &Enc, out: &mut Vec<u8>, ripp: &mut RipPatches, mnem0: &str, o
                     out.push(modrm(3, *x, *g));
                 }
                 return Ok(());
+            }
+            // movq m64 <-> xmm (GCC spills doubles this way).
+            if let (Op::Mem { .. }, Op::Xmm(x)) = (&ops[0], &ops[1]) {
+                out.push(0xF3);
+                if let Some(r) = rex_for(false, *x, &ops[0], false) { out.push(r); }
+                out.extend_from_slice(&[0x0F, 0x7E]);
+                return emit_modrm(out, ripp, e, *x, &ops[0]);
+            }
+            if let (Op::Xmm(x), Op::Mem { .. }) = (&ops[0], &ops[1]) {
+                out.push(0x66);
+                if let Some(r) = rex_for(false, *x, &ops[1], false) { out.push(r); }
+                out.extend_from_slice(&[0x0F, 0xD6]);
+                return emit_modrm(out, ripp, e, *x, &ops[1]);
             }
             // cae al camino genérico mov con w=64
         }
@@ -1281,7 +1298,11 @@ fn encode_byte_simd(e: &Enc, out: &mut Vec<u8>, ripp: &mut RipPatches, m: &str, 
             if let (Op::Reg(g,32,false),Op::Xmm(x))=(&ops[0],&ops[1]) {
                 out.push(0x66);if let Some(r)=rex_byte(false,*x,0,*g,false){out.push(r);}
                 out.extend_from_slice(&[0x0f,0x6e]);out.push(modrm(3,*x,*g));Ok(())
-            }else{Err("movd supports GPR32 to XMM only".into())}
+            }else if let (Op::Xmm(x),Op::Reg(g,32,false))=(&ops[0],&ops[1]) {
+                // movd %xmm, %r32 (66 0F 7E /r): GCC emits it for float bit tests.
+                out.push(0x66);if let Some(r)=rex_byte(false,*x,0,*g,false){out.push(r);}
+                out.extend_from_slice(&[0x0f,0x7e]);out.push(modrm(3,*x,*g));Ok(())
+            }else{Err("movd supports GPR32 <-> XMM only".into())}
         }
         "pmovmskb"=>{
             if let (Op::Xmm(x),Op::Reg(g,32,false))=(&ops[0],&ops[1]) {

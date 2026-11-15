@@ -362,6 +362,51 @@ procedure checks()
    c := ".F. .AND. ('a' + 1)"
    v := &(c)
    ? ValType(v), v, "|"
+   c := "(14 ^ 3) * 3.55"
+   v := &(c)
+   ? ValType(v), v, "|"
+   c := "568 - - 29.1 % 0x88 + 36.831"
+   v := &(c)
+   ? ValType(v), v, "|"
+   c := "5 % 0 % 1"
+   v := &(c)
+   ? ValType(v), v, "|"
+   c := "1.5 / 0 + 1"
+   v := &(c)
+   ? ValType(v), v, "|"
+   c := "5 % 0 + 0.5"
+   v := &(c)
+   ? ValType(v), v, "|"
+   c := "154 % 0.2 * 360"
+   v := &(c)
+   ? ValType(v), v, "|"
+   c := "138 ^ 7"
+   v := &(c)
+   ? ValType(v), v, "|"
+   c := "2 ^ 0.5"
+   v := &(c)
+   ? ValType(v), v, "|"
+   c := "10 ^ -2"
+   v := &(c)
+   ? ValType(v), v, "|"
+   c := "(38.621 / 0x60) / - 16 ^ 3"
+   v := &(c)
+   ? ValType(v), v, "|"
+   c := "1 < 2 = .T."
+   v := &(c)
+   ? ValType(v), v, "|"
+   c := ".T. == 1 < 2"
+   v := &(c)
+   ? ValType(v), v, "|"
+   c := "'ab' $ 'xaby' == .T."
+   v := &(c)
+   ? ValType(v), v, "|"
+   c := "(1/0) <= 2.5 .OR. .F."
+   v := &(c)
+   ? ValType(v), v, "|"
+   c := "2 * .NOT. .F. = .F. .OR. .T."
+   v := &(c)
+   ? ValType(v), v, "|"
    ? &("1 + 1"), &c
    for i := 1 to 200
       c := "'x' + 'y' - 'z  '"

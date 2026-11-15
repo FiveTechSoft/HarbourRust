@@ -1760,3 +1760,5 @@ pos2 tests/macro/m1-values.prg tests/expectations/qout/m1-values.linux.out tests
 # Macro fatal errors moved to raw, separate-channel gate (not posx):
 # python3 tests/macro/error-contract/check.py --root . --compiler ./hbc --target linux --output NEW_DIRECTORY
 # Run the same gate with --target windows --wine WINE as well; see docs/MACRO-ERROR-CONTRACT.md.
+pos2 tests/print-f64/negzero.prg tests/expectations/qout/negzero.linux.out tests/expectations/qout/negzero.windows.out
+pos2 tests/macro/m0-memvars.prg tests/expectations/qout/m0-memvars.linux.out tests/expectations/qout/m0-memvars.windows.out

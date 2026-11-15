@@ -15633,6 +15633,50 @@ hbc_macro_eval:
     mov %rbp, %rsp
     pop %rbp
     ret
+# hrm_powf: xmm0 = x > 0, xmm1 = y -> xmm0 = 2^(y*log2 x), the
+# hbc_math_exp x87 core with the exponent product kept extended.
+hrm_powf:
+    push %rbp
+    mov %rsp, %rbp
+    sub $16, %rsp
+    movsd %xmm1, (%rsp)
+    movsd %xmm0, 8(%rsp)
+    fldl (%rsp)
+    fldl 8(%rsp)
+    fyl2x
+    fld %st(0)
+    frndint
+    fxch %st(1)
+    fsub %st(1), %st(0)
+    f2xm1
+    fld1
+    faddp %st(0), %st(1)
+    fscale
+    fstp %st(1)
+    fstpl (%rsp)
+    movsd (%rsp), %xmm0
+    leave
+    ret
+# hrm_fmod: xmm0 = x, xmm1 = y -> xmm0 = C fmod (sign of x), exact via
+# FPREM like hbc_math_mod, without Mod()'s divisor-sign adjustment.
+hrm_fmod:
+    push %rbp
+    mov %rsp, %rbp
+    sub $32, %rsp
+    movsd %xmm0, 8(%rsp)
+    movsd %xmm1, (%rsp)
+    fldl (%rsp)
+    fldl 8(%rsp)
+.Lhrm_fmod_loop:
+    fprem
+    fnstsw %ax
+    test $4, %ah
+    jnz .Lhrm_fmod_loop
+    fstpl 8(%rsp)
+    fstp %st(0)
+    movsd 8(%rsp), %xmm0
+    leave
+    ret
 hrm_alloc:
     push %rbp
     mov %rsp, %rbp
@@ -27387,6 +27431,18 @@ hbc_print_num_f64:
     ucomisd %xmm1, %xmm0
     jp .Lnum_fallback
     jne .Lnum_fallback
+    # Exact integer printing only below 2^53: there it equals Harbour's
+    # 16-digit image, while the decimal normalisation of hbc_print_f64
+    # loses the last digit. Above 2^53 Harbour rounds to 16 digits, which
+    # is hbc_print_f64's image.
+    mov %rax, %rcx
+    sar $63, %rcx
+    mov %rax, %r11
+    xor %rcx, %r11
+    sub %rcx, %r11
+    movabs $9007199254740992, %rcx
+    cmp %rcx, %r11
+    jae .Lnum_fallback
     mov $10, %ecx
     mov $9999999999, %r11
     cmp %r11, %rax
@@ -27778,6 +27834,31 @@ hbc_print_f64:
     dec %r13
     jmp .Lf64_22
 .Lf64_40:
+    # A value that rounds to zero prints without its sign (Harbour: -0.001
+    # with 2 decimals is 0.00): no digit 1-9 in the field -> '-' becomes ' '.
+    lea -544(%rbp), %rcx
+    xor %r8d, %r8d
+.Lf64_nz:
+    cmp %r9, %rcx
+    jae .Lf64_nzend
+    movzbl (%rcx), %eax
+    cmp $45, %eax
+    jne .Lf64_nzd
+    mov %rcx, %r8
+    jmp .Lf64_nzn
+.Lf64_nzd:
+    cmp $49, %eax
+    jb .Lf64_nzn
+    cmp $57, %eax
+    jbe .Lf64_nzkeep
+.Lf64_nzn:
+    inc %rcx
+    jmp .Lf64_nz
+.Lf64_nzend:
+    test %r8, %r8
+    jz .Lf64_nzkeep
+    movb $32, (%r8)
+.Lf64_nzkeep:
     # write: start -112, len = r9 - start
     lea -544(%rbp), %rax
     mov %r9, %rdx

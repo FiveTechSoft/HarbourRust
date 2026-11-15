@@ -1,6 +1,6 @@
 # Macro operator M1, runtime evaluator: `&(expr)` and `&name`
 
-Base: 1c08a0f. That commit added the compile-time gate in
+Base: 1c08a0f, re-applied on 6f3927f (staged parse/fold/evaluate). 1c08a0f added the compile-time gate in
 [MACRO-M1.md](MACRO-M1.md), which lowers closed literal text at compile
 time. This increment adds the run-time half, so the two paths compose:
 
@@ -55,6 +55,28 @@ folding rules (expropt2.c), not its runtime operator rules:
 Floats carry width 10, or 20 from 1e10 upward or -1e9 downward. Integers
 use hbc's literal-integer kind, so they print with literal widths.
 
+Three more rules came out of differential fuzzing against Harbour:
+
+- **Default decimals.** Results of `/`, `%` and `^` carry Harbour's
+  default-decimals marker, not a literal 2. The marker wins in any later
+  `+ - *` and prints as SET DECIMALS. So `(14 ^ 3) * 3.55` is `9741.20`,
+  not `9741.2000`.
+- **Run-time values.** Harbour folds only constant operands. A division
+  or `%` by zero is not folded; it runs and returns the integer 0. Values
+  computed from it follow the run-time rules, where `/` and `%` always give
+  a default-decimals double: `5 % 0 % 1` is `0.00`, while `0 % 1` is `0`.
+  `.AND.`/`.OR.` fold only against a constant logical, so
+  `'ab' - hidden + 1 .OR. (1/0) <= 2.5` raises BASE/1003.
+- **Grammar.** Equality (`= == != <> #`) is one precedence level below
+  ordering (`< <= > >= $`). That decides which error comes first in
+  `.T. != 0 - 2.5 $ 2.5` (BASE/1109). `.NOT.` and `!` may start an
+  operand (`x / .NOT. y`). `++` and `--` are syntax errors, so `--5` is not
+  5. A non-logical left operand of `.AND.`/`.OR.` raises
+  `BASE/1066  Argument error: conditional`.
+
+Integer powers use double-double arithmetic and are correctly rounded.
+Fractional powers use the x87 `2^(y*log2 x)`. `%` uses an exact `fprem`.
+
 Harbour folds before it resolves names or raises operand errors. Errors
 are therefore deferred values: the first one in evaluation order wins, and
 logical folding can discard it. `.F. .AND. hidden`, `.T. .OR. hidden` and
@@ -108,8 +130,47 @@ The stdout callstack is the same as every other hbc runtime error.
   needs Linux, Wine and hbmk2, and it was not re-run here.
 - The Linux ELF build assembles. It was not executed, because no Linux
   runtime was available. Mach-O rejects the operator with a named error.
+- **Differential fuzzing against Harbour 3.2.0 (native Windows):**
+  - 40 seeds of 400 random typed expressions each (16,000 in total).
+    Every remaining difference is one of the two known divergences listed
+    under Limits: 2 asterisk overflows and 1 CRT `pow` ulp.
+  - 240 single-expression programs mixing types, names and zero divisors.
+    Exit status and Harbour's error line match in all of them.
+  - A 400-case power matrix with integer, negative and fractional
+    exponents. Its only differences are the same two kinds.
+- **Full native Windows battery** on the final compiler: 1,744 manifest
+  cases, 1,721 pass, 23 skipped (Linux-only classes), 0 fail.
 
-## Limits
+## Native Windows crash in 6f3927f, and the generator
+
+6f3927f generated `generated/hrmacro.s` with Linux GCC and
+`-mcmodel=large`. That emits 64-bit absolute addresses for string
+constants and callbacks (`movabs $.LC0`, `$hrm_alloc`). hbc's PE has
+DYNAMIC_BASE set and no base-relocation table. Native Windows loads the
+image at a randomised base, so every program using `&` or PRIVATE
+crashed with a segfault, including `? &("1+1")`. Wine loads at the
+preferred base, which hid it.
+
+The generator now uses MinGW GCC with these flags:
+
+- `-mabi=sysv` with `-D_WIN64`, so the MinGW headers detect the platform.
+- `-mcmodel=small`, so every symbol is RIP-relative and no `.refptr`
+  slots are needed.
+- `-fno-tree-vectorize`, which keeps function pointers out of
+  constant-pool vectors.
+- `-mno-stack-arg-probe`, `-minline-all-stringops` and
+  `-mstringop-strategy=rep_byte`, so the code needs no `___chkstk_ms`,
+  `memcpy` or `memset`.
+
+Every `rep movs`/`rep stos` form is byte-encoded. The output has no
+absolute symbol references. The same assembly serves PE and ELF.
+
+The M0 memvar path from 6f3927f was checked against Harbour with
+`tests/macro/m0-memvars.prg`: current values, case folding and run-time
+rules. After the shared evaluator fixes below it is byte-identical. A
+memvar is a run-time value, so `x % 3` with `x := 10` is `1.00`.
+
+## Limits## Limits
 
 - **M0 is not here.** hbc has no PRIVATE/PUBLIC storage, so `&name`
   resolving a memvar needs that subsystem first.
@@ -126,8 +187,16 @@ The stdout callstack is the same as every other hbc runtime error.
 - **Pre-existing hbc behaviour that shows up with Dyn results:**
   - A Dyn float compared with a number fails with a misleading NIL type
     error.
+  - Fixed in this unit for every program: a negative float that rounds to
+    zero printed `-0.00`, and Harbour prints `0.00`. The fixture is
+    `tests/print-f64/negzero.prg`.
   - `?` drops trailing spaces at the end of a line.
   - Mixing `??` with `OutStd` reorders buffered trailing spaces.
-- **Non-integer powers** use exp(y·ln x) through hbc's x87 helpers, not
-  libm `pow`. The last bits can differ, though not at the default two
-  decimals.
+- **Powers and the C runtime.** Harbour calls the C runtime `pow`, which
+  can be one ulp away from the correctly rounded result. hbc returns the
+  correctly rounded value, so above about 1e15 the 16th printed digit can
+  differ: `146 ^ 9` prints `...633170000.00` here and `...633160000.00` in
+  Harbour.
+- **Overflow past width 20.** hbc's float printer grows the field instead
+  of printing Harbour's asterisks. This is pre-existing and shared by every
+  float in hbc, not only macro results.
