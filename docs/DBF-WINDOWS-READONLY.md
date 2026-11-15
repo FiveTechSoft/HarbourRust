@@ -2,7 +2,7 @@
 
 This adds Windows x86-64 ordinary native PE support to the existing own-code
 read-only snapshot reader. It does not link Harbour's RDD, VM or RTL. This is
-not general DBFCDX compatibility. Runtime evidence is under Wine11, not native
+not general DBFCDX compatibility. Runtime evidence is under Wine 11, not native
 Windows certification. No guarantee is made that a particular customer DBF
 such as M_CLIE.DBF falls within the supported on-disk subset.
 
@@ -12,7 +12,7 @@ One workarea, six explicit DBUSEAREA arguments, literal DBFNTX/DBFCDX,
 shared=.F. and readonly=.T. Existing C/N/L/D dBASE III rules, scalar-consumer
 limits and size limits stay in force. NTX and CDX must be opened explicitly
 with OrdListAdd. CDX is one ascending, nonunique, unconditional tag over one
-direct C field of1..240bytes, with complete matching physical-record coverage.
+direct C field of 1..240 bytes, with complete matching physical-record coverage.
 See [DBF](DBF-READONLY.md), [NTX](NTX-READONLY.md) and [CDX](CDX-READONLY.md).
 No writes, memo fields, shared RDD locking, structural CDX autoopening,
 multitag/scopes/expressions/codepage conversion, LLVM or Mach-O DBF support.
@@ -27,7 +27,7 @@ is made for runtime file contents.
 
 ## Windows path contract
 
-ASCII only, ordinary relative or drive-absolute paths, maximum259bytes before
+ASCII only, ordinary relative or drive-absolute paths, maximum 259 bytes before
 the terminator. Both '/' and '\' are accepted. Forward slashes are normalised
 to backslashes before CreateFileW; basename/extension scans treat both as
 separators. Embedded NUL, non-ASCII, controls/wildcards, UNC, device/namespace
@@ -43,7 +43,7 @@ restriction rather than pretending to autoopen a structural index.
 
 ## Handles, snapshots and cleanup
 
-CreateFileW uses GENERIC_READ, OPEN_EXISTING and shareMode0. Handles remain
+CreateFileW uses GENERIC_READ, OPEN_EXISTING and shareMode 0. Handles remain
 exclusive until dbCloseArea or OrdListClear for an index. This lifetime was
 measured against a fresh official Harbour PE shared=.F./readonly=.T. oracle
 under Wine. DBF and CDX are still separate acquisitions; no atomic multi-file
@@ -72,18 +72,18 @@ the internal hbc_strcpy dependency are allowed. No CRT or __chkstk dependency.
 
 `tests/windows-dbf/check_oracle.py --help` lists the external compiler,
 Harbour hbmk2, cross-toolchain, Wine and new-output-directory inputs.
-Fresh Harbour pin694428e1c12f726675b19324d62167fa77d68185 builds the fixture
-writers and runtime oracles as PE; actual execution is under Wine11. Normal
-and instrumented modes cover21same-source DBF/NTX/CDX programs (42pairs).
+Fresh Harbour pin 694428e1c12f726675b19324d62167fa77d68185 builds the fixture
+writers and runtime oracles as PE; actual execution is under Wine 11. Normal
+and instrumented modes cover 21 same-source DBF/NTX/CDX programs (42 pairs).
 Both outputs have CRLF normalised for comparison: hbc's existing '?' path uses
 LF while hb_eol() on Windows returns CRLF. Raw channels remain available;
 this is not an unnormalised byte-exact Windows output claim.
 
-Additional gates in tests/windows-dbf cover41path cases,26pre-cursor/static
-rejections, a native-PE ABI canary, a100cycle/3000FieldGet probe ending in
-explicit hb_memcheck()0, and native-PE API-accounted stress/implicit/fatal cleanup, plus a
-real-Windows-API C harness with200cycles plus
-short-read/fault seams and handles0/snapshots0. Existing Linux DBF/NTX/CDX
+Additional gates in tests/windows-dbf cover 41 path cases, 26 pre-cursor/static
+rejections, a native-PE ABI canary, a 100-cycle/3000 FieldGet probe ending in
+explicit hb_memcheck() 0, native-PE API-accounted stress/implicit/fatal
+cleanup, and a real-Windows-API C harness with 200 cycles plus
+short-read/fault seams and handles 0/snapshots 0. Existing Linux DBF/NTX/CDX
 oracle gates also pass, and regenerated Linux assembly is unchanged. Full
-manifest: ELF1736/1736; PE/Wine1715/1736 with21unchanged CurDir/classes platform
+manifest: ELF 1736/1736; PE/Wine 1715/1736 with 21 unchanged CurDir/classes platform
 rejections, not a blanket all-green PE or native-Windows claim.

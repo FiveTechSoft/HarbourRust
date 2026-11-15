@@ -29137,22 +29137,40 @@ fn main() {
             "--experimental-llvm-no-trace" => {llvm = true; llvm_trace = false;},
             "-I" => { ai += 1; incdirs.push(args.get(ai).expect("-I needs a directory").clone()); }
             _ if a.starts_with("-I") => incdirs.push(a[2..].to_string()),
-            _ if a.starts_with("--") => { eprintln!("usage: hbc <input.prg> <output> [--target=linux|windows|macho|macho-arm64] [-I dir]...
+            _ if a.starts_with("--") => { eprintln!("usage: hbc <input.prg> [output] [--target=linux|windows|macho|macho-arm64] [-I dir]...
   target defaults to the compiler host (Linux: ELF, Windows: PE32+, Mac Intel: Mach-O)
   --target overrides it; macho-arm64 currently rejects (native ARM64 backend pending)
+  omitted output uses the input stem in the current directory (.exe on Windows target), preserving case
   output ending in .s writes assembly; any other name writes the selected target executable directly
   flag --external-as keeps the external as/ld path; --instrument, --no-arena, --no-escape-analysis, --experimental-llvm[-no-trace]"); process::exit(2); }
             _ => pos.push(a),
         }
         ai += 1;
     }
-    if pos.len() != 2 {
-        eprintln!("usage: hbc <input.prg> <output> [--target=linux|windows|macho|macho-arm64] [-I dir]...
+    if pos.is_empty() || pos.len() > 2 {
+        eprintln!("usage: hbc <input.prg> [output] [--target=linux|windows|macho|macho-arm64] [-I dir]...
   target defaults to the compiler host (Linux: ELF, Windows: PE32+, Mac Intel: Mach-O)
   --target overrides it; macho-arm64 currently rejects (native ARM64 backend pending)
+  omitted output uses the input stem in the current directory (.exe on Windows target), preserving case
   output ending in .s writes assembly; any other name writes the selected target executable directly
   flag --external-as keeps the external as/ld path; --instrument, --no-arena, --no-escape-analysis, --experimental-llvm[-no-trace]");
         process::exit(2);
+    }
+    // Keep argv strings unchanged. The optional derived output owns storage
+    // separate from args, so references in pos remain valid through emission.
+    let explicit_output = pos.len() == 2;
+    let default_output: String;
+    if !explicit_output {
+        let input = std::path::Path::new(pos[0]);
+        let stem = input.file_stem().and_then(|v| v.to_str()).filter(|v| !v.is_empty())
+            .unwrap_or_else(|| { eprintln!("error: cannot derive output name from input"); process::exit(2); });
+        default_output = if matches!(target, Target::Windows) { format!("{}.exe", stem) } else { stem.to_string() };
+        // Do not truncate an extensionless source in the current directory.
+        if std::path::Path::new(&default_output).canonicalize().ok().zip(input.canonicalize().ok()).map_or(false, |(a,b)| a==b) {
+            eprintln!("error: derived output would replace the input; provide an explicit output filename");
+            process::exit(2);
+        }
+        pos.push(&default_output);
     }
     if macho_arm64 { eprintln!("error: Mach-O ARM64 code generation is not implemented yet; --target=macho selects Intel x86-64, not native ARM64"); process::exit(1); }
     if macho && (llvm || external_as) { eprintln!("error: Mach-O Intel currently requires the internal native backend; LLVM and --external-as are not ported"); process::exit(1); }
@@ -29721,10 +29739,10 @@ hbc_aclone_alloc:
     });
     let out = if macho { hmacho::darwin_asm(&out).unwrap_or_else(|e| {eprintln!("error: {}",e);process::exit(1);}) } else {out};
 
-    if pos[1].ends_with(".s") {
+    if explicit_output && pos[1].ends_with(".s") {
         fs::write(pos[1], out)
-            .unwrap_or_else(|e| { eprintln!("cannot write {}: {}", args[2], e); process::exit(2); });
-        println!("{} -> {} ({} functions)", args[1], args[2], funcs.len());
+            .unwrap_or_else(|e| { eprintln!("cannot write {}: {}", pos[1], e); process::exit(2); });
+        println!("{} -> {} ({} functions)", pos[0], pos[1], funcs.len());
         return;
     }
 
@@ -29759,19 +29777,19 @@ hbc_aclone_alloc:
                 .unwrap_or_else(|e| { eprintln!("error: cannot run x86_64-w64-mingw32-ld: {} (mingw-w64 no esta en PATH; quita --external-as para el escritor interno)", e); process::exit(2); });
             if !st.success() { eprintln!("error: x86_64-w64-mingw32-ld failed"); process::exit(1); }
             let _ = fs::remove_file(&s_path); let _ = fs::remove_file(&o_path);
-            println!("{} -> {} ({} functions, external mingw as/ld)", args[1], args[2], funcs.len());
+            println!("{} -> {} ({} functions, external mingw as/ld)", pos[0], pos[1], funcs.len());
             return;
         }
         match hasm::assemble_pe(&out) {
             Ok(bytes) => {
                 fs::write(pos[1], bytes)
-                    .unwrap_or_else(|e| { eprintln!("cannot write {}: {}", args[2], e); process::exit(2); });
+                    .unwrap_or_else(|e| { eprintln!("cannot write {}: {}", pos[1], e); process::exit(2); });
                 #[cfg(unix)]
                 {
                     use std::os::unix::fs::PermissionsExt;
                     let _ = fs::set_permissions(pos[1], fs::Permissions::from_mode(0o755));
                 }
-                println!("{} -> {} ({} functions, PE64)", args[1], args[2], funcs.len());
+                println!("{} -> {} ({} functions, PE64)", pos[0], pos[1], funcs.len());
             }
             Err(e) => { eprintln!("error: hasm(PE64): {}", e); process::exit(1); }
         }
@@ -29790,18 +29808,18 @@ hbc_aclone_alloc:
             .unwrap_or_else(|e| { eprintln!("cannot run ld: {}", e); process::exit(2); });
         if !st.success() { eprintln!("error: ld failed"); process::exit(1); }
         let _ = fs::remove_file(&s_path); let _ = fs::remove_file(&o_path);
-        println!("{} -> {} ({} functions, external as/ld)", args[1], args[2], funcs.len());
+        println!("{} -> {} ({} functions, external as/ld)", pos[0], pos[1], funcs.len());
         return;
     }
     match hasm::assemble(&out) {
         Ok(bytes) => {
             fs::write(pos[1], bytes)
-                .unwrap_or_else(|e| { eprintln!("cannot write {}: {}", args[2], e); process::exit(2); });
+                .unwrap_or_else(|e| { eprintln!("cannot write {}: {}", pos[1], e); process::exit(2); });
             #[cfg(unix)] {
                 use std::os::unix::fs::PermissionsExt;
                 let _ = fs::set_permissions(pos[1], fs::Permissions::from_mode(0o755));
             }
-            println!("{} -> {} ({} functions, ELF directo)", args[1], args[2], funcs.len());
+            println!("{} -> {} ({} functions, ELF directo)", pos[0], pos[1], funcs.len());
         }
         Err(e) => { eprintln!("error: ensamblador interno: {}", e); process::exit(1); }
     }
