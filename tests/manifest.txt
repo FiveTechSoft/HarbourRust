@@ -822,7 +822,7 @@ pos tests/t824_docase_otherwise_end.prg \nfallback\nend-close\nnine\nno-otherwis
 pos tests/t825_docase_nested.prg \nnested-one\ndone
 neg tests/t826_docase_case_nocond_neg.prg `case` takes a condition
 neg tests/t827_docase_unclosed_neg.prg `do case` without `endcase`
-neg tests/t828_macro_named_rejection_neg.prg macro operator `&` is runtime dynamic evaluation
+neg tests/t828_macro_named_rejection_neg.prg macro M1 capacity limit
 pos tests/t829_ret_bare_if.prg 
 pos tests/t830_ret_value_block.prg \n        20
 pos tests/t831_ret_bare_while.prg 
@@ -1753,3 +1753,5 @@ pos tests/ascan-owned/temporary.prg \n         1          0\n         1 X\n     
 pos tests/math-extra/mathfns.prg \n         1.41\n         2.72\n         2.30\n***********************\n         1.50\n        10.5
 pos tests/math-extra/mod-signs.prg \n         1.00         -1.00         -2.00          2.00\n         0.50         -0.50         -2.50          2.50\n         0.00          0.00          0.00          0.00\n         5         -5          5.5         -5.5
 pos tests/string-extra/strfns.prg padc1=[  ab  ]\npadc2=[ abc  ]\npadc3=[*abc**]\npadc4=[abc]\npadc5=[abcd]\npadc6=[]\npadc7=[]\npadc8=[xxx]\nrat1=         6\nrat2=         4\nrat3=         0\nrat4=         0\nrat5=         0\nrat6=         1\nrat7=         0\nstuff1=[aXcdef]\nstuff2=[aXYbcdef]\nstuff3=[aef]\nstuff4=[Xbcdef]\nstuff5=[abcdefX]\nstuff6=[abcdX]\nstuff7=[abcdefX]\nstuff8=[abX]\nstuff9=[X]\nstuff10=[abcdefX]\nisd=TFFF\nisa=TTFFFF\nisu=TFFF\nisl=TFFF\nsz1=[005]\nsz2=[-005]\nsz3=[***]\nsz4=[0000000005]\nsz7=[0000]\nsz8=[*]\nsz9=[0000000007]\nnulfill=  0  0\npadl0=[][]\n**ABCDEF**|\n  9  1\nABxyEF|\naabcdef!cdef|abcdef!\n-abcdef-|abcdef!\nTTFT\n-000420000000007***\n 175  30 SRQPONMLKJIHGFEDCBAZYXWVUTSRQP\nmem=  0
+pos tests/macro-m1/literals.prg         10          3          5          1 ab .T. NIL
+pos tests/macro-m1/contexts.prg ABC         10          3         4 U XYZ

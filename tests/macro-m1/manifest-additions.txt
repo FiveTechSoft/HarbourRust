@@ -1,0 +1,2 @@
+pos tests/macro-m1/literals.prg         10          3          5          1 ab .T. NIL
+pos tests/macro-m1/contexts.prg ABC         10          3         4 U XYZ

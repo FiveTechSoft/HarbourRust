@@ -6,6 +6,9 @@ stays short.
 
 ## Current state and limits
 
+- [Precompiled macro literals (M1)](MACRO-M1.md): closed literal rvalues,
+  explicit dynamic/evaluator limits and raw-channel oracle gates.
+
 - [Roadmap and current limits](ROADMAP.md): ordered milestones, ERP coverage
   repeat and the embedded-C boundary.
 

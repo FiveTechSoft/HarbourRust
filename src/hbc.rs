@@ -59,6 +59,7 @@ mod dyn_float;
 mod hpe;
 mod hmacho;
 mod vas;
+mod macro_m1;
 
 #[derive(Clone, Copy, PartialEq, Debug)]
 enum Ty { NumLocal, F64, I64, Str, Bool, Date, Arr(usize), Block(usize, BRet), DArr, DArrU, DArr2, DArr3, DArr4, DArrS, StrOwn, Dyn, Hash, DArrRef, DArrRef2, RefI64, RefDyn, RefStrOwn, DArrDyn, AView, Obj(u32) }
@@ -104,7 +105,7 @@ enum Tok {
     At,       // @ by-reference call argument (hk216 family)
     Eq,       // =
     FatArrow, // =>
-    Macro,    // & (macro operator)
+    Macro,    // & (macro operator); M1 admits closed literal rvalues
     Ne,       // <> or !=
     Lt, Le, Gt, Ge,
     KwFunction, KwLocal, KwReturn, KwNil, KwIf, KwElseif, KwElse, KwEndif, KwWhile, KwEnddo, KwExit, KwLoop,
@@ -639,14 +640,10 @@ fn tokenize(line: &str, n: usize) -> Result<Vec<Tok>, String> {
             '%' => { toks.push(Tok::Pct); it.next(); }
             '^' => { toks.push(Tok::Caret); it.next(); }
             '$' => { toks.push(Tok::Dollar); it.next(); }
-            // The macro operator is runtime dynamic evaluation (oracles
-            // hk369-hk373): it evaluates string contents as Harbour code
-            // with real types, sees no locals in the expanded text, and
-            // works in expression, statement and dynamic-send positions.
-            // The evaluator is the hrmacro C blob embedded at codegen
-            // time (M0: memvar lookup, M1: expression eval).
+            // Keep the token distinct: literal macros are parsed in a
+            // closed scope; dynamic forms retain a named capacity limit.
+            // hrmacro runtime sources are not wired into this M1 path.
             '&' => { toks.push(Tok::Macro); it.next(); }
-            // `&&` comments never reach the lexer (the preprocessor strips them).
             '(' => { toks.push(Tok::LParen); it.next(); }
             ')' => { toks.push(Tok::RParen); it.next(); }
             ',' => { toks.push(Tok::Comma); it.next(); }
@@ -1058,6 +1055,7 @@ impl P {
             self.pos += 1;
             let name = match self.bump() {
                 Some(Tok::Ident(id)) => { check_ident(&id, self.n)?; id }
+                Some(Tok::Macro) => return Err(macro_m1::limit(self.n, "dynamic-send context requires the later evaluator")),
                 other => return Err(format!("line {}: expected a member name after `:`, got {:?}", self.n, other)),
             };
             let mut args: Vec<Expr> = Vec::new();
@@ -1091,6 +1089,27 @@ impl P {
     }
     fn factor_primary(&mut self) -> Result<Expr, String> {
         match self.bump() {
+            Some(Tok::Macro) => {
+                if self.bump() != Some(Tok::LParen) {
+                    return Err(macro_m1::limit(self.n, "dynamic macro text requires the later evaluator"));
+                }
+                let start = self.pos;
+                let mut depth = 1usize;
+                while let Some(t) = self.peek() {
+                    match t {
+                        Tok::LParen => { depth += 1; if depth > 64 { return Err(macro_m1::limit(self.n, "literal producer nesting exceeds 64")); } },
+                        Tok::RParen => { depth -= 1; if depth == 0 { break; } },
+                        _ => {},
+                    }
+                    self.pos += 1;
+                }
+                if self.peek() != Some(&Tok::RParen) {
+                    return Err(macro_m1::limit(self.n, "literal producer needs a closing parenthesis"));
+                }
+                let text = macro_m1::literal_text(&self.toks[start..self.pos], self.n)?;
+                self.pos += 1;
+                macro_m1::precompile(&text, self.n)
+            }
             Some(Tok::KwIf) if self.peek() == Some(&Tok::LParen) => {
                 // IF(...) is Harbour's inline IIF alias, not a block IF.
                 self.pos -= 1;
@@ -3010,6 +3029,7 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                 }
                 return Err(format!("line {}: expected the statement form `--x`; expression increments require a variable lvalue and an expression context", n));
             }
+            Tok::Macro => return Err(macro_m1::limit(n, "statement and lvalue macro contexts require the later evaluator")),
             Tok::LParen => {
                 // HB_SYMBOL_UNUSED expands to ((symbol)). Evaluate the
                 // expression; a bare variable is only read, never moved.
