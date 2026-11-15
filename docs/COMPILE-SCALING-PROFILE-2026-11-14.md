@@ -107,3 +107,14 @@ Two assembler changes landed after the measurements above.
 Both produce byte-identical PE output (timestamp/checksum normalized)
 and byte-identical ELF on the comparison corpus. The per-doubling factor
 for the statement source is now near 1.1x in this range.
+
+## Follow-up, 15 Nov 2026: one type query per Bin operand
+
+`expr_ty`'s Bin arm recomputed both operand types in every branch
+(up to six recursive calls per node). Left-associative arithmetic chains
+therefore grew exponentially: the f64 call-chain fixture (t770) issued
+26 million type queries at 12 factors and compiled in 103 s.
+
+Hoisting the two operand types into locals keeps semantics identical
+(byte-identical PE/ELF on the comparison corpus) and compiles t770 in
+1.3 s on this machine, about 80x faster.
