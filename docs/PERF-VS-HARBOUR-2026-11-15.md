@@ -6,7 +6,7 @@ workload benchmark.
 
 ## Method
 
-Five sources compiled by both compilers from the same `.prg` text:
+Six sources compiled by both compilers from the same `.prg` text:
 
 | kernel | work |
 |---|---|
@@ -15,6 +15,7 @@ Five sources compiled by both compilers from the same `.prg` text:
 | arr | 100000 `AAdd(a, i)` |
 | func | 500000 calls to `inc2(x) = x + 2` |
 | hash | 50000 `hb_hSet(h, "k", i)` |
+| strops | 20000 rounds of `SubStr` + `Upper` + `Lower` + `StrTran` |
 
 HarbourRust: the native Windows compiler at `06b45e1` (sha256 prefix
 `c66f404e...`), internal PE writer, no instrumentation.
@@ -44,8 +45,9 @@ median excludes that artefact.
 | arr | 0.006 | 0.088 | 14.6x |
 | func | 0.009 | 0.149 | 17.4x |
 | hash | 0.005 | 0.089 | 18.5x |
+| strops | 0.013 | 0.097 | 7.2x |
 
-All five kernels print the same result line in both implementations.
+All six kernels print the same result line in both implementations.
 
 ## Limits
 
