@@ -1641,7 +1641,7 @@ const ASM_RESERVED: &[&str] = &[
     // Not backend keywords (there is no textual backend anymore), but labels
     // hbc itself emits; a user function with one of these names would
     // collide with a helper symbol.
-    "dtos", "stod", "year", "day", "month", "dow", "cdow", "cmonth", "dtoc", "sqrt", "exp", "log", "mod", "padc", "rat", "stuff", "isdigit", "isalpha", "isupper", "islower", "strzero", "ischar", "strzero_fix", "date_add", "date_diff", "date_days", "date_from_days",
+    "dtos", "stod", "year", "day", "month", "dow", "cdow", "cmonth", "dtoc", "sqrt", "exp", "log", "mod", "padc", "rat", "stuff", "isdigit", "isalpha", "isupper", "islower", "strzero", "ischar", "strzero_fix", "str_f64", "fmt_f64", "date_add", "date_diff", "date_days", "date_from_days",
     "strtran", "space", "substr", "date", "ctod", "date_pack", "date_render", "date_today", "curdir", "qout", "qqout", "outstd", "outerr", "empty", "procname", "min", "max", "str", "padr", "hb_ntos", "replicate", "aeval", "hb_isnumeric", "hb_isarray", "hb_isstring", "dfree", "upper", "lower", "left", "right", "at", "int", "abs", "padl", "val", "ascan", "aclone", "atail", "asort", "hb_bitand", "hb_bitor", "hb_bitxor", "hb_bitnot", "hb_bittest", "hb_bitset", "hb_bitreset", "eprint_str", "eprint_sep", "eprint_i64", "eprint_i64c", "eprint_dyn", "eprint_dynlit", "print_dynlit", "eprint_f64", "hb_eol", "procline", "asc", "trim", "ltrim", "rtrim", "alltrim", "chr", "trace_top", "print_trace", "panic_exit", "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_range_error", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
 ];
 
@@ -5941,8 +5941,12 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 // STRING-EXTRA-2026-11-15.md). Positions are fixed kinds:
                 // 's' string (borrowed), 'i' integer.
                 let Some(kinds)=str_builtin_kinds(id,args.len()) else {
-                    return Err(format!("line {}: `{}` takes {} arguments in this increment{}",n,id,str_builtin_arity(id),if is_builtin(id,"strzero") {" (decimals are not in this increment)"} else {""}));
+                    return Err(format!("line {}: `{}` takes {} arguments in this increment",n,id,str_builtin_arity(id)));
                 };
+                if is_builtin(id,"strzero") {
+                    check_str_num_args(id,args,env,sigs,n)?;
+                    return Ok(Ty::StrOwn);
+                }
                 for (i,(a,k)) in args.iter().zip(kinds).enumerate() {
                     let t=type_expr(a,env,sigs,n)?;
                     let ok=if *k==b's' {matches!(t,Ty::Str|Ty::StrOwn)} else {t==Ty::I64};
@@ -6120,12 +6124,12 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
             // in the runtime helpers; decimals stay out (no float formatting
             // semantics assumed - a float argument keeps a named rejection).
             if is_builtin(id,"str") {
-                if args.len()<1 || args.len()>2 { return Err(format!("line {}: `str` takes 1 or 2 arguments in this increment",n)); }
-                for a in args {
-                    if type_expr(a,env,sigs,n)? != Ty::I64 {
-                        return Err(format!("line {}: `str` expects integer argument(s) in this increment (decimal formatting is not in this increment)",n));
-                    }
-                }
+                // Str(n [, width [, dec]]): integer n without dec keeps the
+                // exact integer field; a float n or an explicit dec goes
+                // through hbc_str_f64 (Harbour hb_itemStr sizing, docs/
+                // STR-DECIMALS-2026-11-15.md).
+                if args.len()<1 || args.len()>3 { return Err(format!("line {}: `str` takes 1 to 3 arguments in this increment",n)); }
+                check_str_num_args(id,args,env,sigs,n)?;
                 return Ok(Ty::StrOwn);
             }
             if is_builtin(id,"hb_ntos") {
@@ -12846,6 +12850,9 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                 _ => unreachable!("checked"),
             }
         }
+        Expr::Call(id,args) if is_builtin(id,"str") && str_needs_f64(args,env,sigs) => {
+            cg_str_f64(args,env,sigs,strs,out,target);
+        }
         Expr::Call(id,args) if is_builtin(id,"str") || is_builtin(id,"hb_ntos") => {
             cg_expr(&args[0],env,sigs,strs,out,target);
             // ains piece 1b step (c): Dyn cell -> integer via the verified
@@ -15418,14 +15425,14 @@ fn str_builtin_kinds(id: &str, argc: usize) -> Option<&'static [u8]> {
         ("rat",2) => Some(b"ss"),
         ("stuff",4) => Some(b"siis"),
         ("isdigit"|"isalpha"|"isupper"|"islower",1) => Some(b"s"),
-        ("strzero",1) => Some(b"i"), ("strzero",2) => Some(b"ii"),
+        ("strzero",1) => Some(b"n"), ("strzero",2) => Some(b"ni"), ("strzero",3) => Some(b"nii"),
         _ => None,
     }
 }
 fn str_builtin_arity(id: &str) -> &'static str {
     match id.to_ascii_lowercase().as_str() {
         "padc" => "two or three", "rat" => "two", "stuff" => "four",
-        "strzero" => "one or two integer", _ => "exactly one",
+        "strzero" => "one to three", _ => "exactly one",
     }
 }
 fn str_builtin_ty(id: &str) -> Ty {
@@ -15435,6 +15442,49 @@ fn str_builtin_ty(id: &str) -> Ty {
         _ => Ty::StrOwn,
     }
 }
+// Str/StrZero numeric arguments: n is an integer or a float, width and dec
+// are integers.
+fn check_str_num_args(id: &str, args: &[Expr], env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Result<(), String> {
+    for (i,a) in args.iter().enumerate() {
+        let t=type_expr(a,env,sigs,n)?;
+        let ok=if i==0 {matches!(t,Ty::I64|Ty::F64)} else {t==Ty::I64};
+        if !ok { return Err(format!("line {}: `{}` argument {} must be {} in this increment",n,id,i+1,if i==0 {"an integer or a float"} else {"an integer"})); }
+    }
+    Ok(())
+}
+// The float path: a float value, or any explicit dec argument.
+fn str_needs_f64(args: &[Expr], env: &[CgLocal], sigs: &[Sig]) -> bool {
+    args.len()==3 || expr_ty(&args[0],env,sigs)==Ty::F64
+}
+// Value (xmm0 + packed item metadata), then width and dec, evaluated once
+// left to right; hbc_str_f64 applies the hb_itemStr sizing rules.
+fn cg_str_f64(args: &[Expr], env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target) {
+    if expr_ty(&args[0],env,sigs)==Ty::F64 {
+        cg_f64_load(&args[0],env,sigs,strs,out,target);
+    } else {
+        cg_expr(&args[0],env,sigs,strs,out,target);
+        out.push_str("    cvtsi2sd %rax, %xmm0\n    mov $655360, %edi\n");
+    }
+    out.push_str("    sub $32, %rsp\n    movsd %xmm0, (%rsp)\n    mov %rdi, 8(%rsp)\n    movq $0, 16(%rsp)\n    movq $0, 24(%rsp)\n");
+    for i in 1..args.len() {
+        cg_expr(&args[i],env,sigs,strs,out,target);
+        out.push_str(&format!("    mov %rax, {}(%rsp)\n",8+8*i));
+    }
+    let flags=match args.len() { 1=>0, 2=>1, _=>3 };
+    out.push_str(&format!("    movsd (%rsp), %xmm0\n    mov 8(%rsp), %rdi\n    mov 16(%rsp), %rsi\n    mov 24(%rsp), %rdx\n    mov ${}, %ecx\n    call hbc_str_f64\n    add $32, %rsp\n",flags));
+}
+// hbc_fmt_f64 is hbc_print_f64 with its two writes turned into owned
+// copies: the same digits, rounding and stars, returned as rax/rdx.
+fn f64_fmt_helper() -> String {
+    let s=F64_HELPER;
+    let a=s.find("\nhbc_print_f64:\n").expect("print_f64")+1;
+    let b=s[a..].find("\n# --- math builtins").expect("math marker")+a;
+    let body=&s[a..b];
+    assert_eq!(body.matches("    call hbc_print_str\n").count(),2);
+    let body=body.replace("hbc_print_f64:","hbc_fmt_f64:").replace(".Lf64_",".Lfmt64_")
+        .replace("    call hbc_print_str\n","    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_strcpy\n");
+    format!("\n    .text\n{}\n{}",body,STR_F64_HELPER)
+}
 // Arguments evaluate once, left to right, into 16-byte slots. A borrowed
 // string is snapshotted (hbc_strcpy) when a later argument contains a call
 // that could mutate or reassign its owner; owned temporaries and snapshots
@@ -15443,6 +15493,11 @@ fn str_builtin_ty(id: &str) -> Ty {
 // field and zero-fills the fresh owned result in place.
 fn cg_str_builtin(id: &str, args: &[Expr], env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target) {
     let l=id.to_ascii_lowercase();
+    if l=="strzero" && str_needs_f64(args,env,sigs) {
+        cg_str_f64(args,env,sigs,strs,out,target);
+        out.push_str("    call hbc_strzero_fix\n");
+        return;
+    }
     if l=="strzero" {
         cg_expr(&args[0],env,sigs,strs,out,target);
         out.push_str("    mov %rax, %rdi\n");
@@ -22603,10 +22658,17 @@ hbc_strzero_fix:
     ret
 
 # hbc_val: rdi/rsi = borrowed text -> xmm0 = parsed value,
-# rdi = packed dec | len<<16 (the f64 pair convention). Skips spaces,
-# takes an optional sign, integer digits, optional dot and fraction
-# digits, and stops at the first non-numeric byte (Harbour's
-# leading-prefix parse). Digit caps: 18 integer, 15 fraction.
+# rdi = packed dec | len<<16 (the f64 pair convention).
+# Value (Harbour hb_str2number, non-PCode): skip leading whitespace
+# (space, 9..13), optional sign, then digits with at most one '.', stopping
+# at the first other byte. Digits accumulate exactly in an integer until
+# the next step could overflow, then in a double; the fraction digit count
+# divides by 10^n at the end. 1e3 and 0x1F stop at the letter.
+# Metadata (measured against Harbour 3.2.0, docs/STR-DECIMALS-2026-11-15.md):
+#   p = first '.' anywhere in the text; dec = len - p - 1 (every byte
+#   after it, digits or not); width = p when dec > 0, else the text
+#   length; width grows to the integer digits (+ sign) the value needs,
+#   to 20 when the value is >= 1e10 or <= -1e9, and is 10 for empty text.
 hbc_val:
     push %rbp
     mov %rsp, %rbp
@@ -22622,100 +22684,159 @@ hbc_val:
     mov %r12, %r15
 .Lval_skip:
     cmp %r14, %r15
-    jae .Lval_none
-    cmpb $32, (%r15)
-    jne .Lval_sign
+    jae .Lval_sign
+    movzbl (%r15), %eax
+    cmp $32, %eax
+    je .Lval_skipn
+    cmp $9, %eax
+    jb .Lval_sign
+    cmp $13, %eax
+    ja .Lval_sign
+.Lval_skipn:
     inc %r15
     jmp .Lval_skip
 .Lval_sign:
     xor %ebx, %ebx
+    cmp %r14, %r15
+    jae .Lval_digits
     cmpb $43, (%r15)
     je .Lval_sign_take
     cmpb $45, (%r15)
-    jne .Lval_int
+    jne .Lval_digits
     mov $1, %ebx
 .Lval_sign_take:
     inc %r15
-.Lval_int:
+.Lval_digits:
     xor %r8, %r8
-.Lval_int_loop:
-    cmp %r14, %r15
-    jae .Lval_frac
-    movzbl (%r15), %eax
-    sub $48, %eax
-    cmp $9, %eax
-    ja .Lval_frac
-    cmp $18, %r8
-    jae .Lval_int_skip
-    lea (%rax,%r8,8), %r9
-    lea (%r9,%r8,2), %r9
-    mov %r9, %r8
-.Lval_int_skip:
-    inc %r15
-    jmp .Lval_int_loop
-.Lval_frac:
     xor %r9, %r9
-    xor %r10, %r10
+    xor %r10d, %r10d
+    xorpd %xmm0, %xmm0
+    movsd .Lval_ten(%rip), %xmm3
+.Lval_loop:
     cmp %r14, %r15
-    jae .Lval_fin
-    cmpb $46, (%r15)
-    jne .Lval_fin
-    inc %r15
-.Lval_frac_loop:
-    cmp %r14, %r15
-    jae .Lval_fin
+    jae .Lval_value
     movzbl (%r15), %eax
+    cmp $46, %eax
+    jne .Lval_dig
+    test $1, %r10d
+    jnz .Lval_value
+    or $1, %r10d
+    jmp .Lval_next
+.Lval_dig:
     sub $48, %eax
     cmp $9, %eax
-    ja .Lval_fin
-    cmp $15, %r10
-    jae .Lval_frac_skip
-    lea (%rax,%r9,8), %r11
-    lea (%r11,%r9,2), %r11
-    mov %r11, %r9
-    inc %r10
-.Lval_frac_skip:
-    inc %r15
-    jmp .Lval_frac_loop
-.Lval_fin:
-    # value = int + frac / 10^dec; keep dec in r13 for the metadata
-    mov %r10, %r13
+    ja .Lval_value
+    test $2, %r10d
+    jnz .Lval_dbl
+    movabs $922337203685477579, %rcx
+    cmp %rcx, %r8
+    jge .Lval_todbl
+    lea (%r8,%r8,4), %r8
+    add %r8, %r8
+    add %rax, %r8
+    jmp .Lval_count
+.Lval_todbl:
     cvtsi2sd %r8, %xmm0
-    test %r10, %r10
-    jz .Lval_put
-    cvtsi2sd %r9, %xmm1
+    or $2, %r10d
+.Lval_dbl:
+    mulsd %xmm3, %xmm0
+    cvtsi2sd %rax, %xmm1
+    addsd %xmm1, %xmm0
+.Lval_count:
+    test $1, %r10d
+    jz .Lval_next
+    inc %r9
+.Lval_next:
+    inc %r15
+    jmp .Lval_loop
+.Lval_value:
+    test $2, %r10d
+    jnz .Lval_scale
+    cvtsi2sd %r8, %xmm0
+.Lval_scale:
+    test %r9, %r9
+    jz .Lval_signv
     mov $1, %eax
     cvtsi2sd %rax, %xmm2
-    movsd .Lval_ten(%rip), %xmm3
+    mov %r9, %rcx
 .Lval_pow:
     mulsd %xmm3, %xmm2
-    dec %r10
+    dec %rcx
     jnz .Lval_pow
-    divsd %xmm2, %xmm1
-    addsd %xmm1, %xmm0
-.Lval_put:
-    test %rbx, %rbx
+    divsd %xmm2, %xmm0
+.Lval_signv:
+    test %ebx, %ebx
     jz .Lval_meta
     xorpd %xmm4, %xmm4
     subsd %xmm0, %xmm4
     movsd %xmm4, %xmm0
 .Lval_meta:
-    mov %r15, %rax
-    sub %r12, %rax
-    shl $16, %rax
-    mov %r13, %rdi
-    or %rax, %rdi
-    add $8, %rsp
-    pop %r15
-    pop %r14
-    pop %r13
-    pop %r12
-    pop %rbx
-    pop %rbp
-    ret
-.Lval_none:
-    xorpd %xmm0, %xmm0
-    xor %edi, %edi
+    xor %ecx, %ecx
+    mov $-1, %rdx
+.Lval_dotscan:
+    cmp %r13, %rcx
+    jae .Lval_dotdone
+    cmpb $46, (%r12,%rcx)
+    je .Lval_dotfound
+    inc %rcx
+    jmp .Lval_dotscan
+.Lval_dotfound:
+    mov %rcx, %rdx
+.Lval_dotdone:
+    xor %r9d, %r9d
+    mov %r13, %r8
+    test %rdx, %rdx
+    js .Lval_width
+    mov %r13, %r9
+    sub %rdx, %r9
+    dec %r9
+    test %r9, %r9
+    jz .Lval_width
+    mov %rdx, %r8
+.Lval_width:
+    test %r13, %r13
+    jnz .Lval_need
+    mov $10, %r8d
+    jmp .Lval_pack
+.Lval_need:
+    movq %xmm0, %rax
+    movabs $0x7FFFFFFFFFFFFFFF, %rcx
+    and %rcx, %rax
+    movq %rax, %xmm1
+    cvttsd2si %xmm1, %rax
+    mov $1, %ecx
+    mov $10, %r11
+.Lval_ndig:
+    cmp %r11, %rax
+    jb .Lval_ndone
+    xor %edx, %edx
+    div %r11
+    inc %rcx
+    jmp .Lval_ndig
+.Lval_ndone:
+    xorpd %xmm4, %xmm4
+    ucomisd %xmm4, %xmm0
+    jae .Lval_nsign
+    inc %rcx
+.Lval_nsign:
+    cmp %rcx, %r8
+    jae .Lval_big
+    mov %rcx, %r8
+.Lval_big:
+    movsd .Lval_e10(%rip), %xmm1
+    ucomisd %xmm1, %xmm0
+    jae .Lval_wide
+    movsd .Lval_mn9(%rip), %xmm1
+    ucomisd %xmm0, %xmm1
+    jb .Lval_pack
+.Lval_wide:
+    cmp $20, %r8
+    jae .Lval_pack
+    mov $20, %r8d
+.Lval_pack:
+    mov %r8, %rdi
+    shl $16, %rdi
+    or %r9, %rdi
     add $8, %rsp
     pop %r15
     pop %r14
@@ -26372,6 +26493,9 @@ fn finalize_threads(out: String) -> String {
 
 fn finalize_trace(mut out: String, target: Target) -> String {
     out.push_str(dyn_float::HELPERS);
+    if out.contains("call hbc_str_f64") {
+        out.push_str(&f64_fmt_helper());
+    }
     if ["ctod", "date_today", "date_render", "stod", "dtos", "year", "day", "month", "dow", "cdow", "cmonth", "dtoc", "date_add", "date_diff", "date_days", "date_from_days"].iter().any(|name| out.contains(&format!("call hbc_{}",name))) {
         out.push_str(DATE_PORT_HELPERS);
     }
@@ -26560,6 +26684,7 @@ fn emit_strings(out: &mut String, strs: &[String]) {
     out.push_str(".Lround_lenmin:\n    .quad 4741671816358002688\n");
     out.push_str(".Lround_ten:\n    .quad 4621819117588971520\n");
     out.push_str(".Lval_ten:\n    .quad 4621819117588971520\n");
+    out.push_str(".Lval_e10:\n    .quad 4756540486875873280\n.Lval_mn9:\n    .quad -4481700220488384512\n");
     out.push_str(".Lround_five:\n    .quad 4617315517961601024\n");
     out.push_str(".Lround_factor:\n    .quad 4607182418800017409\n");
     out.push_str(".Loommsg:\n    .byte 79,117,116,32,111,102,32,109,101,109,111,114,121,10\n");
@@ -26608,6 +26733,133 @@ fn emit_strings(out: &mut String, strs: &[String]) {
 // call is hbc_print_str (same internal contract on both targets). The
 // "16 significant digits" rule is OBSERVED in the probes, not proven
 // universal; the half-up tie at digit 16 has no direct oracle yet.
+const STR_F64_HELPER: &str = r#"
+    .text
+# hbc_str_f64: xmm0 = value, rdi = packed item metadata (len << 16 | dec),
+# rsi = width, rdx = dec, ecx = flags (1: width given, 2: dec given) ->
+# OWNED Str() text. Harbour hb_itemStr sizing (oracle-pinned):
+#   W, D = item len, dec; a width W' resets D = 0 and W = W' (or 10
+#   when W' < 1); a dec D' <= 0 gives D = 0, otherwise D = D' and, when a
+#   width was given, W -= D + 1. Size S = W + 1 + D when D > 0, else W.
+# The digits come from hbc_fmt_f64 (the print_f64 image and its half-up
+# rounding); a result longer than S becomes S asterisks.
+hbc_str_f64:
+    push %rbp
+    mov %rsp, %rbp
+    push %rbx
+    push %r12
+    sub $16, %rsp
+    mov %rdi, %r8
+    shr $16, %r8
+    movzwl %di, %r9d
+    test $1, %ecx
+    jz .Lsf_nowidth
+    mov %rsi, %r8
+    cmp $1, %r8
+    jge .Lsf_width
+    mov $10, %r8d
+.Lsf_width:
+    xor %r9d, %r9d
+.Lsf_nowidth:
+    test $2, %ecx
+    jz .Lsf_size
+    mov %rdx, %r9
+    cmp $0, %r9
+    jg .Lsf_decpos
+    xor %r9d, %r9d
+    jmp .Lsf_size
+.Lsf_decpos:
+    test $1, %ecx
+    jz .Lsf_size
+    sub %r9, %r8
+    dec %r8
+.Lsf_size:
+    mov %r8, %rbx
+    test %r9, %r9
+    jz .Lsf_sized
+    lea 1(%r8,%r9), %rbx
+.Lsf_sized:
+    mov %r8, %rax
+    test %rax, %rax
+    jns .Lsf_len
+    xor %eax, %eax
+.Lsf_len:
+    shl $16, %rax
+    or %r9, %rax
+    mov %rax, %rdi
+    call hbc_fmt_f64
+    # A value that rounds to zero prints without its sign (Harbour
+    # Str(-0.4, 5) is "    0"): no digit 1-9 -> the '-' becomes a space.
+    xor %ecx, %ecx
+    xor %r10d, %r10d
+.Lsf_nz:
+    cmp %rdx, %rcx
+    jae .Lsf_nzend
+    movzbl (%rax,%rcx), %r8d
+    cmp $45, %r8d
+    jne .Lsf_nzdigit
+    lea 1(%rcx), %r10
+    jmp .Lsf_nznext
+.Lsf_nzdigit:
+    cmp $49, %r8d
+    jb .Lsf_nznext
+    cmp $57, %r8d
+    jbe .Lsf_fit
+.Lsf_nznext:
+    inc %rcx
+    jmp .Lsf_nz
+.Lsf_nzend:
+    test %r10, %r10
+    jz .Lsf_fit
+    movb $32, -1(%rax,%r10)
+.Lsf_fit:
+    cmp %rbx, %rdx
+    jle .Lsf_done
+    # Longer than S: only leading spaces may be dropped; anything else
+    # is an overflow and becomes S asterisks.
+    mov %rdx, %rcx
+    sub %rbx, %rcx
+    xor %r8d, %r8d
+.Lsf_lead:
+    cmp %rcx, %r8
+    jae .Lsf_trim
+    cmpb $32, (%rax,%r8)
+    jne .Lsf_over
+    inc %r8
+    jmp .Lsf_lead
+.Lsf_trim:
+    mov %rax, %r12
+    lea (%rax,%rcx), %rdi
+    mov %rbx, %rsi
+    call hbc_strcpy
+    mov %rax, -24(%rbp)
+    mov %r12, %rdi
+    call hbc_freestr
+    mov -24(%rbp), %rax
+    mov %rbx, %rdx
+    jmp .Lsf_done
+.Lsf_over:
+    mov %rax, %rdi
+    call hbc_freestr
+    mov %rbx, %rsi
+    call hbc_stralloc
+    xor %ecx, %ecx
+.Lsf_star:
+    cmp %rbx, %rcx
+    jae .Lsf_starred
+    movb $42, (%rax,%rcx)
+    inc %rcx
+    jmp .Lsf_star
+.Lsf_starred:
+    mov %rbx, %rdx
+.Lsf_done:
+    add $16, %rsp
+    pop %r12
+    pop %rbx
+    pop %rbp
+    ret
+"#;
+
 const F64_HELPER: &str = r#"
 # hbc_print_f64: %xmm0 = value, %rdi = dec_count. Frontier: nonzero |x| >= 1e-17 and the (int,dec) measured zone of hbc.rs (oracles hk278-hk288).
 # Integral F64 values are exact integers within the checked i64 range.

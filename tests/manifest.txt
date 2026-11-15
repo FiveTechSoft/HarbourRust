@@ -1392,12 +1392,12 @@ pos tests/t1395_str_big.prg \n[ 1234567890]\n[ 99999999999]\n[ 92233720368547758
 pos tests/t1396_hb_ntos.prg \n[42]\n[-7]\n[0]\n[123456789012345]
 pos tests/t1397_padr.prg \n[ab   ]\n[abc]\n[    ]\n[]\n[]\n      1000
 pos tests/t1398_str_temp.prg \n[ab   ]\n[         4]\n[4]\n[xy    ]
-neg tests/t1399_str_neg_float.prg expects integer argument(s) in this increment
-neg tests/t1400_str_neg_string.prg expects integer argument(s) in this increment
+pos tests/t1399_str_neg_float.prg \n         4.5
+neg tests/t1400_str_neg_string.prg must be an integer or a float in this increment
 neg tests/t1401_padr_neg_arity.prg `padr` takes 2 arguments in this increment
 neg tests/t1402_hb_ntos_neg_arity.prg `hb_ntos` takes one argument in this increment
 neg tests/t1403_padr_neg_noargs.prg `padr` takes 2 arguments in this increment
-neg tests/t1404_str_neg_noargs.prg `str` takes 1 or 2 arguments in this increment
+neg tests/t1404_str_neg_noargs.prg `str` takes 1 to 3 arguments in this increment
 neg tests/t1405_hb_ntos_neg_noargs.prg `hb_ntos` takes one argument in this increment
 pos tests/t1406_replicate.prg \n[ababab]\n[]\n[]\n[]\n   1000000\n[01234567890123456789]\n[ababab]\n[zzzz]
 neg tests/t1407_replicate_neg_noargs.prg `replicate` takes 2 arguments in this increment
@@ -1755,3 +1755,4 @@ pos tests/math-extra/mod-signs.prg \n         1.00         -1.00         -2.00  
 pos tests/string-extra/strfns.prg padc1=[  ab  ]\npadc2=[ abc  ]\npadc3=[*abc**]\npadc4=[abc]\npadc5=[abcd]\npadc6=[]\npadc7=[]\npadc8=[xxx]\nrat1=         6\nrat2=         4\nrat3=         0\nrat4=         0\nrat5=         0\nrat6=         1\nrat7=         0\nstuff1=[aXcdef]\nstuff2=[aXYbcdef]\nstuff3=[aef]\nstuff4=[Xbcdef]\nstuff5=[abcdefX]\nstuff6=[abcdX]\nstuff7=[abcdefX]\nstuff8=[abX]\nstuff9=[X]\nstuff10=[abcdefX]\nisd=TFFF\nisa=TTFFFF\nisu=TFFF\nisl=TFFF\nsz1=[005]\nsz2=[-005]\nsz3=[***]\nsz4=[0000000005]\nsz7=[0000]\nsz8=[*]\nsz9=[0000000007]\nnulfill=  0  0\npadl0=[][]\n**ABCDEF**|\n  9  1\nABxyEF|\naabcdef!cdef|abcdef!\n-abcdef-|abcdef!\nTTFT\n-000420000000007***\n 175  30 SRQPONMLKJIHGFEDCBAZYXWVUTSRQP\nmem=  0
 pos tests/macro-m1/literals.prg         10          3          5          1 ab .T. NIL
 pos tests/macro-m1/contexts.prg ABC         10          3         4 U XYZ
+pos tests/str-decimals/strfmt.prg 00 [         3.14159]\n01 [        -3.14159]\n02 [    3.14]\n03 [   -3.14]\n04 [    4]\n05 [    4]\n06 [    3]\n07 [   -3]\n08 [****]\n09 [1234.5]\n10 [*****]\n11 [  5.00]\n12 [ -5.00]\n13 [***]\n14 [5.00]\n15 [  0.01]\n16 [    0.3333]\n17 [         0.33]\n18 [         2.50]\n19 [**********]\n20 [***]\n21 [3.14]\n22 [3]\n23 [      3.14]\n24 [      3.14]\n25 [    3]\n26 [    3]\n27 [12.345]\n28 [         1.41]\n29 [ 3.141590000]\n30 [    0]\n31 [   0.0]\n32 [       123]\n33 [  2.68]\n34 [  1.01]\n35 [1000.00]\n36 [*******]\n37 [         5.0]\n38 [         5.10]\n39 [  12345678901.5]\n40 [00003.14]\n41 [-0003.5]\n42 [00000]\n43 [0003]\n44 [****]\n45 [0000000005.25]\n46 [    7]\n47 [-7]\n48 [*]\nv1 [  2.50][  7.00][         5.0][         9.5]\nv00 [123456789]\nv01 [1234567890]\nv02 [         12345678901]\nv03 [-123456789]\nv04 [         -1234567890]\nv05 [9999999999]\nv06 [         10000000000]\nv07 [1234567890.5]\nv08 [         12345678901.5]\nv09 [123456789.5]\nv10 [       1234567890123]\nv11 [1.5000]\nv12 [0.5]\nv13 [-0.5]\nv14 [0.5]\nv15 [0.5]\nv16 [ 5]\nv17 [ -5]\nv18 [0.25]\nv19 [0.25]\nv20 [ 0.25]\nv21 [ 12]\nv22 [1.200]\nv23 [   12]\nv24 [  1]\nv25 [   0]\nv26 [999999999.5]\nv27 [-999999999.5]\nv28 [         -1000000000.5]\nv30 [12345678901234570000]\nleak=[  111.000-00111.0  222.00]\nmem=  0

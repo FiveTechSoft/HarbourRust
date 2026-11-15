@@ -37,6 +37,7 @@ stays short.
 - [Day, Month, Dow, CDow, CMonth and DToC](DATE-EXTRA-2026-11-15.md): oracle-pinned date accessors and empty-date rules.
 - [Sqrt, Exp, Log and Mod](MATH-EXTRA-2026-11-15.md): oracle-pinned numeric builtins and limits.
 - [PadC, RAt, Stuff, Is* and StrZero](STRING-EXTRA-2026-11-15.md): oracle-pinned string builtins and two PadL fixes.
+- [Str and StrZero with decimals, Val rewrite](STR-DECIMALS-2026-11-15.md): hb_itemStr sizing and measured Val width/dec.
 
 ## Source and tests
 

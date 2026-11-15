@@ -69,6 +69,7 @@ its own `PadC` or `StrZero` must now drop that definition.
 
 ## Limits
 
-StrZero takes integers only, because Str has no decimal formatting yet.
+StrZero took integers only in this unit; floats and the decimal argument
+arrived with [STR-DECIMALS-2026-11-15.md](STR-DECIMALS-2026-11-15.md).
 Integer arguments must be I64; Dyn cells and floats are rejected with a
 named error. No codepage-aware character classes.
