@@ -1618,7 +1618,7 @@ const ASM_RESERVED: &[&str] = &[
     // hbc itself emits; a user function with one of these names would
     // collide with a helper symbol.
     "dtos", "stod", "year", "date_add", "date_diff", "date_days", "date_from_days",
-    "strtran", "space", "substr", "date", "ctod", "date_pack", "date_render", "date_today", "curdir", "qout", "qqout", "outstd", "outerr", "empty", "procname", "min", "max", "str", "padr", "hb_ntos", "replicate", "aeval", "hb_isnumeric", "hb_isarray", "hb_isstring", "dfree", "upper", "lower", "left", "right", "at", "int", "abs", "padl", "val", "hb_bitand", "hb_bitor", "hb_bitxor", "hb_bitnot", "hb_bittest", "hb_bitset", "hb_bitreset", "eprint_str", "eprint_sep", "eprint_i64", "eprint_i64c", "eprint_dyn", "eprint_dynlit", "print_dynlit", "eprint_f64", "hb_eol", "procline", "asc", "trim", "ltrim", "rtrim", "alltrim", "chr", "trace_top", "print_trace", "panic_exit", "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_range_error", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
+    "strtran", "space", "substr", "date", "ctod", "date_pack", "date_render", "date_today", "curdir", "qout", "qqout", "outstd", "outerr", "empty", "procname", "min", "max", "str", "padr", "hb_ntos", "replicate", "aeval", "hb_isnumeric", "hb_isarray", "hb_isstring", "dfree", "upper", "lower", "left", "right", "at", "int", "abs", "padl", "val", "ascan", "hb_bitand", "hb_bitor", "hb_bitxor", "hb_bitnot", "hb_bittest", "hb_bitset", "hb_bitreset", "eprint_str", "eprint_sep", "eprint_i64", "eprint_i64c", "eprint_dyn", "eprint_dynlit", "print_dynlit", "eprint_f64", "hb_eol", "procline", "asc", "trim", "ltrim", "rtrim", "alltrim", "chr", "trace_top", "print_trace", "panic_exit", "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_range_error", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
 ];
 
 fn dbf_result(id: &str) -> Option<Ty> {
@@ -4101,6 +4101,12 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
                     if !args.is_empty() { pin_vars(f,&args[0],Ty::Str,pin,n)?; walk(f,&args[0],sigs,lit,pin,printed,n)?; }
                     return Ok(());
                 }
+                if is_builtin(id,"ascan") {
+                    // The array borrows by address; the target borrows.
+                    if !args.is_empty() { walk(f,&args[0],sigs,lit,pin,printed,n)?; }
+                    if args.len() > 1 { walk(f,&args[1],sigs,lit,pin,printed,n)?; }
+                    return Ok(());
+                }
                 if is_builtin(id,"int") || is_builtin(id,"abs") {
                     // Int/Abs are the polymorphic numeric pair: the checker
                     // admits i64 AND f64 operands (a mixed numeric LOCAL is
@@ -5920,6 +5926,25 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 }
                 return Ok(Ty::I64);
             }
+            if is_builtin(id, "ascan") {
+                // AScan(a, target) (issue #1): the 1-based first position
+                // of target in a flat dynamic array, or 0. Bounded to the
+                // two-argument form; the array must be a variable (the
+                // slot borrows by address like hb_HKeys) and the element
+                // family decides the comparison: integer arrays compare
+                // integers, string arrays compare exact bytes.
+                if args.len()!=2 { return Err(format!("line {}: `AScan` takes two arguments in this increment",n)); }
+                if !matches!(&args[0], Expr::Var(_)) {
+                    return Err(format!("line {}: `AScan` expects an array variable (the slot is passed by address)",n));
+                }
+                let ta = type_expr(&args[0],env,sigs,n)?;
+                let tb = type_expr(&args[1],env,sigs,n)?;
+                match (ta, tb) {
+                    (Ty::DArr, Ty::I64) | (Ty::DArrS, Ty::Str) | (Ty::DArrS, Ty::StrOwn) => {}
+                    _ => return Err(format!("line {}: `AScan` needs an integer array with an integer target or a string array with a string target in this increment",n)),
+                }
+                return Ok(Ty::I64);
+            }
             if is_builtin(id, "int") {
                 // Int(n) (issue #1): truncation toward zero; i64 is the
                 // identity, f64 converts (hb_vmInt). Dyn is the named
@@ -5948,7 +5973,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 if args.len()<1 || args.len()>2 { return Err(format!("line {}: `str` takes 1 or 2 arguments in this increment",n)); }
                 for a in args {
                     if type_expr(a,env,sigs,n)? != Ty::I64 {
-                        return Err(format!("line {}: `str` expects integer argument(s) in this increment (no decimal formatting yet)",n));
+                        return Err(format!("line {}: `str` expects integer argument(s) in this increment (decimal formatting is not in this increment)",n));
                     }
                 }
                 return Ok(Ty::StrOwn);
@@ -9792,6 +9817,11 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
                 for a in args { apply_moves(a,env,sigs,false); }
                 return;
             }
+            if is_builtin(id,"ascan") {
+                apply_moves(&args[0],env,sigs,false);
+                apply_moves(&args[1],env,sigs,false);
+                return;
+            }
             if is_builtin(id,"int") || is_builtin(id,"abs") {
                 apply_moves(&args[0],env,sigs,false);
                 return;
@@ -12916,6 +12946,24 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             cg_value(&args[0],env,sigs,strs,out,target);
             out.push_str("    mov %rax, %rdi\n    call hbc_year\n");
         }
+        Expr::Call(id,args) if is_builtin(id,"ascan") => {
+            // AScan(a, target): the array slot borrows by address (count
+            // at off-8, cells pointer at off); the target borrows. The
+            // element family picks the helper (integer compare vs exact
+            // byte compare).
+            let av = match &args[0] { Expr::Var(v) => v.clone(), _ => unreachable!("checked") };
+            let var = env.iter().rev().find(|x| x.name == *av).expect("checked");
+            match expr_ty(&args[1], env, sigs) {
+                Ty::Str | Ty::StrOwn => {
+                    cg_value(&args[1],env,sigs,strs,out,target);
+                    out.push_str(&format!("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n    mov -{}(%rbp), %rdi\n    mov -{}(%rbp), %rsi\n    mov (%rsp), %rdx\n    mov 8(%rsp), %rcx\n    call hbc_ascan_s\n    add $32, %rsp\n", var.off, var.off - 8));
+                }
+                _ => {
+                    cg_expr(&args[1],env,sigs,strs,out,target);
+                    out.push_str(&format!("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov -{}(%rbp), %rdi\n    mov -{}(%rbp), %rsi\n    mov (%rsp), %rdx\n    call hbc_ascan\n    add $16, %rsp\n", var.off, var.off - 8));
+                }
+            }
+        }
         Expr::Call(id, args) if is_builtin(id, "chr") => {
             cg_expr(&args[0], env, sigs, strs, out, target);
             out.push_str("    mov %rax, %rdi\n    call hbc_chr\n");
@@ -15292,6 +15340,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             if is_builtin(id, "dtos") { return Ty::StrOwn; }
             if is_builtin(id, "stod") { return Ty::Date; }
             if is_builtin(id, "year") { return Ty::I64; }
+            if is_builtin(id, "ascan") { return Ty::I64; }
             if is_builtin(id, "int") { return Ty::I64; }
             if is_builtin(id, "abs") {
                 // Type-preserving: i64/f64/NumLocal per the operand.
@@ -21117,6 +21166,93 @@ hbc_trim:
     jmp .Ltrim_again
 .Ltrim_copy:
     jmp hbc_strcpy
+
+# hbc_ascan: rdi = cells pointer, rsi = count, rdx = integer target ->
+# rax = the 1-based first position whose cell is an integer (tag 0
+# runtime or tag 9 literal-provenance) equal to the target, or 0
+# (issue #1 AScan; two-argument form).
+hbc_ascan:
+    xor %r8, %r8
+    test %rsi, %rsi
+    jz .Lasc_zero
+1:  cmp %rsi, %r8
+    jae .Lasc_zero
+    lea (%rdi,%r8,8), %r9
+    lea (%r9,%r8,8), %r9
+    cmpq $0, (%r9)
+    je 2f
+    cmpq $9, (%r9)
+    jne .Lasc_next
+2:  cmp %rdx, 8(%r9)
+    jne .Lasc_next
+    inc %r8
+    mov %r8, %rax
+    ret
+.Lasc_next:
+    inc %r8
+    jmp 1b
+.Lasc_zero:
+    xor %eax, %eax
+    ret
+
+# hbc_ascan_s: rdi = cells pointer, rsi = count, rdx/rcx = exact string
+# target -> rax = the 1-based first position whose cell is a tag-2/4
+# string equal byte-exactly to the target, or 0.
+hbc_ascan_s:
+    push %rbx
+    push %r12
+    push %r13
+    push %r14
+    push %r15
+    xor %r8, %r8
+    test %rsi, %rsi
+    jz .LascS_zero
+1:  cmp %rsi, %r8
+    jae .LascS_zero
+    lea (%rdi,%r8,8), %r9
+    lea (%r9,%r8,8), %r9
+    movq $2, %r10
+    cmp (%r9), %r10
+    je .LascS_cell
+    movq $4, %r10
+    cmp (%r9), %r10
+    jne .LascS_next
+.LascS_cell:
+    mov 8(%r9), %rax
+    test %rax, %rax
+    jz .LascS_next
+    mov -8(%rax), %r11
+    cmp %rcx, %r11
+    jne .LascS_next
+    xor %r12, %r12
+3:  cmp %rcx, %r12
+    jae .LascS_hit
+    movzbl (%rax,%r12), %r13d
+    movzbl (%rdx,%r12), %r14d
+    cmp %r14d, %r13d
+    jne .LascS_next
+    inc %r12
+    jmp 3b
+.LascS_hit:
+    inc %r8
+    mov %r8, %rax
+    pop %r15
+    pop %r14
+    pop %r13
+    pop %r12
+    pop %rbx
+    ret
+.LascS_next:
+    inc %r8
+    jmp 1b
+.LascS_zero:
+    xor %eax, %eax
+    pop %r15
+    pop %r14
+    pop %r13
+    pop %r12
+    pop %rbx
+    ret
 
 # hbc_asc: borrowed rdi/length rsi -> unsigned first byte, empty ->0.
 # Byte-codepage only (src/rtl/chrasc.c). Never dereference empty input.
