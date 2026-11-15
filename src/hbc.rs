@@ -12590,14 +12590,31 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             // its owner, matching Harbour's retained argument value. Numeric
             // arguments run once in source order. The result owns its copy.
             let temp=expr_ty(&args[0],env,sigs)==Ty::StrOwn && !matches!(&args[0],Expr::Var(_));
-            cg_value(&args[0],env,sigs,strs,out,target);
-            out.push_str("    sub $48, %rsp\n    mov %rax, (%rsp)\n    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_strcpy\n    mov %rax, 8(%rsp)\n    mov %rdx, 16(%rsp)\n");
-            if temp { out.push_str("    mov (%rsp), %rdi\n    call hbc_freestr\n"); }
-            cg_expr(&args[1],env,sigs,strs,out,target);
-            out.push_str("    mov %rax, 24(%rsp)\n");
-            if args.len()==3 { cg_expr(&args[2],env,sigs,strs,out,target); out.push_str("    mov %rax, %rcx\n"); }
-            else { out.push_str("    movabs $9223372036854775807, %rcx\n"); }
-            out.push_str("    mov 8(%rsp), %rdi\n    mov 16(%rsp), %rsi\n    mov 24(%rsp), %rdx\n    call hbc_substr\n    mov %rax, 32(%rsp)\n    mov %rdx, 40(%rsp)\n    mov 8(%rsp), %rdi\n    call hbc_freestr\n    mov 32(%rsp), %rax\n    mov 40(%rsp), %rdx\n    add $48, %rsp\n");
+            // Literal-only proof: later numeric operands cannot execute code or
+            // mutate the source. Unknown/effectful expressions keep the exact
+            // snapshot fallback below. Fresh owned sources still need release.
+            if args[1..].iter().all(|e|matches!(e,Expr::Int(_))) {
+                cg_value(&args[0],env,sigs,strs,out,target);
+                out.push_str("    sub $48, %rsp\n    mov %rax, 8(%rsp)\n    mov %rdx, 16(%rsp)\n");
+                cg_expr(&args[1],env,sigs,strs,out,target);
+                out.push_str("    mov %rax, 24(%rsp)\n");
+                if args.len()==3 { cg_expr(&args[2],env,sigs,strs,out,target); out.push_str("    mov %rax, %rcx\n"); }
+                else { out.push_str("    movabs $9223372036854775807, %rcx\n"); }
+                out.push_str("    mov 8(%rsp), %rdi\n    mov 16(%rsp), %rsi\n    mov 24(%rsp), %rdx\n    call hbc_substr\n");
+                if temp {
+                    out.push_str("    mov %rax, 32(%rsp)\n    mov %rdx, 40(%rsp)\n    mov 8(%rsp), %rdi\n    call hbc_freestr\n    mov 32(%rsp), %rax\n    mov 40(%rsp), %rdx\n");
+                }
+                out.push_str("    add $48, %rsp\n");
+            } else {
+                cg_value(&args[0],env,sigs,strs,out,target);
+                out.push_str("    sub $48, %rsp\n    mov %rax, (%rsp)\n    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_strcpy\n    mov %rax, 8(%rsp)\n    mov %rdx, 16(%rsp)\n");
+                if temp { out.push_str("    mov (%rsp), %rdi\n    call hbc_freestr\n"); }
+                cg_expr(&args[1],env,sigs,strs,out,target);
+                out.push_str("    mov %rax, 24(%rsp)\n");
+                if args.len()==3 { cg_expr(&args[2],env,sigs,strs,out,target); out.push_str("    mov %rax, %rcx\n"); }
+                else { out.push_str("    movabs $9223372036854775807, %rcx\n"); }
+                out.push_str("    mov 8(%rsp), %rdi\n    mov 16(%rsp), %rsi\n    mov 24(%rsp), %rdx\n    call hbc_substr\n    mov %rax, 32(%rsp)\n    mov %rdx, 40(%rsp)\n    mov 8(%rsp), %rdi\n    call hbc_freestr\n    mov 32(%rsp), %rax\n    mov 40(%rsp), %rdx\n    add $48, %rsp\n");
+            }
         }
         Expr::Call(id,args) if is_builtin(id,"padr") => {
             let temp=expr_ty(&args[0],env,sigs)==Ty::StrOwn && !matches!(&args[0],Expr::Var(_));
@@ -12680,13 +12697,28 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             // source evaluates first, the count second: Harbour's
             // left-to-right order. The result owns its copy.
             let temp=expr_ty(&args[0],env,sigs)==Ty::StrOwn && !matches!(&args[0],Expr::Var(_));
-            cg_value(&args[0],env,sigs,strs,out,target);
-            out.push_str("    sub $48, %rsp\n    mov %rax, (%rsp)\n    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_strcpy\n    mov %rax, 8(%rsp)\n    mov %rdx, 16(%rsp)\n");
-            if temp { out.push_str("    mov (%rsp), %rdi\n    call hbc_freestr\n"); }
-            cg_expr(&args[1],env,sigs,strs,out,target);
-            out.push_str("    mov %rax, %rdx\n    mov 8(%rsp), %rdi\n    mov 16(%rsp), %rsi\n");
-            out.push_str(if is_builtin(id,"left") { "    call hbc_left\n" } else { "    call hbc_right\n" });
-            out.push_str("    mov %rax, 32(%rsp)\n    mov %rdx, 40(%rsp)\n    mov 8(%rsp), %rdi\n    call hbc_freestr\n    mov 32(%rsp), %rax\n    mov 40(%rsp), %rdx\n    add $48, %rsp\n");
+            // Literal-only proof: later numeric operands cannot execute code or
+            // mutate the source. Unknown/effectful expressions keep the exact
+            // snapshot fallback below. Fresh owned sources still need release.
+            if args[1..].iter().all(|e|matches!(e,Expr::Int(_))) {
+                cg_value(&args[0],env,sigs,strs,out,target);
+                out.push_str("    sub $48, %rsp\n    mov %rax, 8(%rsp)\n    mov %rdx, 16(%rsp)\n");
+                cg_expr(&args[1],env,sigs,strs,out,target);
+                out.push_str("    mov %rax, %rdx\n    mov 8(%rsp), %rdi\n    mov 16(%rsp), %rsi\n");
+                out.push_str(if is_builtin(id,"left") { "    call hbc_left\n" } else { "    call hbc_right\n" });
+                if temp {
+                    out.push_str("    mov %rax, 32(%rsp)\n    mov %rdx, 40(%rsp)\n    mov 8(%rsp), %rdi\n    call hbc_freestr\n    mov 32(%rsp), %rax\n    mov 40(%rsp), %rdx\n");
+                }
+                out.push_str("    add $48, %rsp\n");
+            } else {
+                cg_value(&args[0],env,sigs,strs,out,target);
+                out.push_str("    sub $48, %rsp\n    mov %rax, (%rsp)\n    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_strcpy\n    mov %rax, 8(%rsp)\n    mov %rdx, 16(%rsp)\n");
+                if temp { out.push_str("    mov (%rsp), %rdi\n    call hbc_freestr\n"); }
+                cg_expr(&args[1],env,sigs,strs,out,target);
+                out.push_str("    mov %rax, %rdx\n    mov 8(%rsp), %rdi\n    mov 16(%rsp), %rsi\n");
+                out.push_str(if is_builtin(id,"left") { "    call hbc_left\n" } else { "    call hbc_right\n" });
+                out.push_str("    mov %rax, 32(%rsp)\n    mov %rdx, 40(%rsp)\n    mov 8(%rsp), %rdi\n    call hbc_freestr\n    mov 32(%rsp), %rax\n    mov 40(%rsp), %rdx\n    add $48, %rsp\n");
+            }
         }
         Expr::Call(id,args) if is_builtin(id,"at") => {
             // At(search, text): Harbour evaluates the arguments left to

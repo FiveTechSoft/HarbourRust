@@ -1,0 +1,13 @@
+function Main()
+Work()
+? hb_memcheck()
+return nil
+function Work()
+local s:=Replicate("AbC"+Chr(0),8)
+? Len(Left(s,0)),Len(Right(s,99)),Len(SubStr(s,0,99))
+? Asc(Left(s,1)),Asc(Right(s,1)),Asc(SubStr(s,4,1))
+? Left(Replicate("AB",3),3),Right(Replicate("AB",3),3),SubStr(Replicate("AB",3),2,3)
+? Left(Left(s,6),2),Right(Right(s,6),2),SubStr(SubStr(s,2,5),2,2)
+? Len(Left("",4)),Len(Right("",4)),Len(SubStr("",1,4))
+? Len(s),Asc(SubStr(s,4,1))
+return nil
