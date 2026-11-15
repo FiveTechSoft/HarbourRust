@@ -1618,7 +1618,7 @@ const ASM_RESERVED: &[&str] = &[
     // hbc itself emits; a user function with one of these names would
     // collide with a helper symbol.
     "dtos", "stod", "year", "date_add", "date_diff", "date_days", "date_from_days",
-    "strtran", "space", "substr", "date", "ctod", "date_pack", "date_render", "date_today", "curdir", "qout", "qqout", "outstd", "outerr", "empty", "procname", "min", "max", "str", "padr", "hb_ntos", "replicate", "aeval", "hb_isnumeric", "hb_isarray", "hb_isstring", "dfree", "upper", "lower", "left", "right", "at", "int", "abs", "padl", "val", "ascan", "hb_bitand", "hb_bitor", "hb_bitxor", "hb_bitnot", "hb_bittest", "hb_bitset", "hb_bitreset", "eprint_str", "eprint_sep", "eprint_i64", "eprint_i64c", "eprint_dyn", "eprint_dynlit", "print_dynlit", "eprint_f64", "hb_eol", "procline", "asc", "trim", "ltrim", "rtrim", "alltrim", "chr", "trace_top", "print_trace", "panic_exit", "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_range_error", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
+    "strtran", "space", "substr", "date", "ctod", "date_pack", "date_render", "date_today", "curdir", "qout", "qqout", "outstd", "outerr", "empty", "procname", "min", "max", "str", "padr", "hb_ntos", "replicate", "aeval", "hb_isnumeric", "hb_isarray", "hb_isstring", "dfree", "upper", "lower", "left", "right", "at", "int", "abs", "padl", "val", "ascan", "aclone", "atail", "asort", "hb_bitand", "hb_bitor", "hb_bitxor", "hb_bitnot", "hb_bittest", "hb_bitset", "hb_bitreset", "eprint_str", "eprint_sep", "eprint_i64", "eprint_i64c", "eprint_dyn", "eprint_dynlit", "print_dynlit", "eprint_f64", "hb_eol", "procline", "asc", "trim", "ltrim", "rtrim", "alltrim", "chr", "trace_top", "print_trace", "panic_exit", "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_range_error", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
 ];
 
 fn dbf_result(id: &str) -> Option<Ty> {
@@ -4107,6 +4107,14 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
                     if args.len() > 1 { walk(f,&args[1],sigs,lit,pin,printed,n)?; }
                     return Ok(());
                 }
+                if is_builtin(id,"aclone") || is_builtin(id,"atail") {
+                    if !args.is_empty() { walk(f,&args[0],sigs,lit,pin,printed,n)?; }
+                    return Ok(());
+                }
+                if is_builtin(id,"asort") {
+                    for a in args { walk(f,a,sigs,lit,pin,printed,n)?; }
+                    return Ok(());
+                }
                 if is_builtin(id,"int") || is_builtin(id,"abs") {
                     // Int/Abs are the polymorphic numeric pair: the checker
                     // admits i64 AND f64 operands (a mixed numeric LOCAL is
@@ -5925,6 +5933,46 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                     return Err(format!("line {}: `Year` expects a date",n));
                 }
                 return Ok(Ty::I64);
+            }
+            if is_builtin(id, "aclone") {
+                if args.len()!=1 { return Err(format!("line {}: `AClone` takes one argument in this increment",n)); }
+                if !matches!(&args[0], Expr::Var(_)) {
+                    return Err(format!("line {}: `AClone` expects an array variable (the slot is passed by address)",n));
+                }
+                return match type_expr(&args[0],env,sigs,n)? {
+                    Ty::DArr => Ok(Ty::DArr),
+                    Ty::DArrS => Ok(Ty::DArrS),
+                    _ => Err(format!("line {}: `AClone` supports flat integer or string arrays in this increment",n)),
+                };
+            }
+            if is_builtin(id, "atail") {
+                if args.len()!=1 { return Err(format!("line {}: `ATail` takes one argument in this increment",n)); }
+                if !matches!(&args[0], Expr::Var(_)) {
+                    return Err(format!("line {}: `ATail` expects an array variable (the slot is passed by address)",n));
+                }
+                match type_expr(&args[0],env,sigs,n)? {
+                    Ty::DArr | Ty::DArrS => {}
+                    _ => return Err(format!("line {}: `ATail` supports flat integer or string arrays in this increment",n)),
+                }
+                return Ok(Ty::Dyn);
+            }
+            if is_builtin(id, "asort") {
+                if args.is_empty() || args.len()>3 {
+                    return Err(format!("line {}: `ASort` takes one to three arguments in this increment",n));
+                }
+                if !matches!(&args[0], Expr::Var(_)) {
+                    return Err(format!("line {}: `ASort` expects an array variable (the slot is passed by address)",n));
+                }
+                match type_expr(&args[0],env,sigs,n)? {
+                    Ty::DArr | Ty::DArrS => {}
+                    _ => return Err(format!("line {}: `ASort` supports flat integer or string arrays in this increment",n)),
+                }
+                for a in &args[1..] {
+                    if !matches!(type_expr(a,env,sigs,n)?, Ty::I64 | Ty::Dyn) {
+                        return Err(format!("line {}: `ASort` start/count are integers in this increment",n));
+                    }
+                }
+                return Ok(Ty::Dyn);
             }
             if is_builtin(id, "ascan") {
                 // AScan(a, target) (issue #1): the 1-based first position
@@ -9822,6 +9870,14 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
                 apply_moves(&args[1],env,sigs,false);
                 return;
             }
+            if is_builtin(id,"aclone") || is_builtin(id,"atail") {
+                apply_moves(&args[0],env,sigs,false);
+                return;
+            }
+            if is_builtin(id,"asort") {
+                for a in args { apply_moves(a,env,sigs,false); }
+                return;
+            }
             if is_builtin(id,"int") || is_builtin(id,"abs") {
                 apply_moves(&args[0],env,sigs,false);
                 return;
@@ -12964,6 +13020,37 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                 }
             }
         }
+        Expr::Call(id,args) if is_builtin(id,"aclone") => {
+            let av = match &args[0] { Expr::Var(v) => v.clone(), _ => unreachable!("checked") };
+            let var = env.iter().rev().find(|x| x.name == *av).expect("checked");
+            let helper = if expr_ty(&args[0],env,sigs) == Ty::DArrS { "hbc_aclone_s" } else { "hbc_aclone_i" };
+            out.push_str(&format!("    mov -{}(%rbp), %rdi\n    mov -{}(%rbp), %rsi\n    call {}\n", var.off, var.off-8, helper));
+        }
+        Expr::Call(id,args) if is_builtin(id,"atail") => {
+            let av = match &args[0] { Expr::Var(v) => v.clone(), _ => unreachable!("checked") };
+            let var = env.iter().rev().find(|x| x.name == *av).expect("checked");
+            let l = fresh_lbl();
+            if expr_ty(&args[0],env,sigs) == Ty::DArrS {
+                out.push_str(&format!("    mov -{}(%rbp), %rax\n    test %rax, %rax\n    jle .LatS{}\n    mov -{}(%rbp), %r11\n    dec %rax\n    shl $4, %rax\n    add %rax, %r11\n    mov 8(%r11), %rdi\n    mov -8(%rdi), %rsi\n    call hbc_strcpy\n    mov %rax, %rdx\n    mov $4, %eax\n    jmp .LatSe{}\n.LatS{}:\n    mov $1, %eax\n    xor %edx, %edx\n.LatSe{}:\n", var.off-8, l, var.off, l, l, l));
+            } else {
+                out.push_str(&format!("    mov -{}(%rbp), %rax\n    test %rax, %rax\n    jle .LatI{}\n    mov -{}(%rbp), %r11\n    dec %rax\n    shl $4, %rax\n    add %rax, %r11\n    mov 8(%r11), %rdx\n    mov (%r11), %rax\n    jmp .LatIe{}\n.LatI{}:\n    mov $1, %eax\n    xor %edx, %edx\n.LatIe{}:\n", var.off-8, l, var.off, l, l, l));
+            }
+        }
+        Expr::Call(id,args) if is_builtin(id,"asort") => {
+            let av = match &args[0] { Expr::Var(v) => v.clone(), _ => unreachable!("checked") };
+            let var = env.iter().rev().find(|x| x.name == *av).expect("checked");
+            let helper = if expr_ty(&args[0],env,sigs) == Ty::DArrS { "hbc_asort_s" } else { "hbc_asort_i" };
+            out.push_str("    sub $32, %rsp\n");
+            if args.len() >= 2 {
+                cg_expr(&args[1],env,sigs,strs,out,target);
+                out.push_str("    mov %rax, (%rsp)\n");
+            } else { out.push_str("    movq $1, (%rsp)\n"); }
+            if args.len() == 3 {
+                cg_expr(&args[2],env,sigs,strs,out,target);
+                out.push_str("    mov %rax, 8(%rsp)\n");
+            } else { out.push_str("    movq $-1, 8(%rsp)\n"); }
+            out.push_str(&format!("    mov -{}(%rbp), %rdi\n    mov -{}(%rbp), %rsi\n    mov (%rsp), %rdx\n    mov 8(%rsp), %rcx\n    call {}\n    add $32, %rsp\n    mov $1, %eax\n    xor %edx, %edx\n", var.off, var.off-8, helper));
+        }
         Expr::Call(id, args) if is_builtin(id, "chr") => {
             cg_expr(&args[0], env, sigs, strs, out, target);
             out.push_str("    mov %rax, %rdi\n    call hbc_chr\n");
@@ -15346,6 +15433,10 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             if is_builtin(id, "stod") { return Ty::Date; }
             if is_builtin(id, "year") { return Ty::I64; }
             if is_builtin(id, "ascan") { return Ty::I64; }
+            if is_builtin(id, "aclone") {
+                return match expr_ty(&args[0],env,sigs) { Ty::DArrS => Ty::DArrS, _ => Ty::DArr };
+            }
+            if is_builtin(id, "atail") || is_builtin(id, "asort") { return Ty::Dyn; }
             if is_builtin(id, "int") { return Ty::I64; }
             if is_builtin(id, "abs") {
                 // Type-preserving: i64/f64/NumLocal per the operand.
@@ -21171,6 +21262,220 @@ hbc_trim:
     jmp .Ltrim_again
 .Ltrim_copy:
     jmp hbc_strcpy
+
+# hbc_aclone_i: rdi = cells, rsi = count -> rax = new cells, rdx = count
+hbc_aclone_i:
+    push %rbp
+    mov %rsp, %rbp
+    push %rbx
+    push %r12
+    push %r13
+    sub $8, %rsp
+    mov %rdi, %rbx
+    mov %rsi, %r12
+    mov %r12, %rdi
+    shl $4, %rdi
+    add $8, %rdi
+    jc hbc_oom
+    call hbc_aclone_alloc
+    mov %r12, (%rax)
+    lea 8(%rax), %r13
+    mov %r13, %rdi
+    mov %rbx, %rsi
+    mov %r12, %rcx
+    shl $4, %rcx
+    rep movsb
+    mov %r13, %rax
+    mov %r12, %rdx
+    add $8, %rsp
+    pop %r13
+    pop %r12
+    pop %rbx
+    pop %rbp
+    ret
+
+# hbc_aclone_s: rdi = cells, rsi = count -> rax = new cells, rdx = count
+hbc_aclone_s:
+    push %rbp
+    mov %rsp, %rbp
+    push %rbx
+    push %r12
+    push %r13
+    push %r14
+    sub $8, %rsp
+    mov %rdi, %rbx
+    mov %rsi, %r12
+    mov %r12, %rdi
+    shl $4, %rdi
+    add $8, %rdi
+    jc hbc_oom
+    call hbc_aclone_alloc
+    mov %r12, (%rax)
+    lea 8(%rax), %r13
+    xor %r14, %r14
+1:  cmp %r12, %r14
+    jae 4f
+    mov %r14, %rax
+    shl $4, %rax
+    mov (%rbx,%rax), %rdx
+    mov 8(%rbx,%rax), %rsi
+    cmp $2, %rdx
+    je 2f
+    cmp $4, %rdx
+    je 2f
+    mov %rdx, (%r13,%rax)
+    mov %rsi, 8(%r13,%rax)
+    jmp 3f
+2:  mov %rsi, %rdi
+    mov -8(%rsi), %rsi
+    call hbc_strcpy
+    mov %r14, %r10
+    shl $4, %r10
+    movq $2, (%r13,%r10)
+    mov %rax, 8(%r13,%r10)
+3:  inc %r14
+    jmp 1b
+4:  mov %r13, %rax
+    mov %r12, %rdx
+    add $8, %rsp
+    pop %r14
+    pop %r13
+    pop %r12
+    pop %rbx
+    pop %rbp
+    ret
+
+# hbc_asort_i: rdi = cells, rsi = len, rdx = start(1-based), rcx = count
+hbc_asort_i:
+    test %rsi, %rsi
+    jz 9f
+    cmp $1, %rdx
+    jge 1f
+    mov $1, %rdx
+1:  cmp %rsi, %rdx
+    jg 9f
+    lea -1(%rdx), %r8
+    test %rcx, %rcx
+    jle 2f
+    lea (%r8,%rcx), %r9
+    cmp %rsi, %r9
+    jle 3f
+2:  mov %rsi, %r9
+3:  lea 1(%r8), %r10
+4:  cmp %r9, %r10
+    jge 9f
+    mov %r10, %r11
+5:  cmp %r8, %r11
+    jle 8f
+    mov %r11, %rax
+    shl $4, %rax
+    lea (%rdi,%rax), %rcx
+    mov (%rcx), %rdx
+    cmp $0, %rdx
+    je 6f
+    cmp $9, %rdx
+    jne hbc_type_error
+6:  mov -16(%rcx), %rdx
+    cmp $0, %rdx
+    je 7f
+    cmp $9, %rdx
+    jne hbc_type_error
+7:  mov 8(%rcx), %rdx
+    cmp -8(%rcx), %rdx
+    jge 8f
+    sub $16, %rsp
+    mov -16(%rcx), %rax
+    mov -8(%rcx), %rdx
+    mov %rax, (%rsp)
+    mov %rdx, 8(%rsp)
+    mov (%rcx), %rax
+    mov 8(%rcx), %rdx
+    mov %rax, -16(%rcx)
+    mov %rdx, -8(%rcx)
+    mov (%rsp), %rax
+    mov 8(%rsp), %rdx
+    mov %rax, (%rcx)
+    mov %rdx, 8(%rcx)
+    add $16, %rsp
+    dec %r11
+    jmp 5b
+8:  inc %r10
+    jmp 4b
+9:  ret
+
+# hbc_asort_s: rdi = cells, rsi = len, rdx = start(1-based), rcx = count
+hbc_asort_s:
+    test %rsi, %rsi
+    jz 29f
+    push %rbp
+    mov %rsp, %rbp
+    push %rbx
+    push %r12
+    push %r13
+    push %r14
+    push %r15
+    sub $8, %rsp
+    mov %rdi, %rbx
+    cmp $1, %rdx
+    jge 21f
+    mov $1, %rdx
+21: cmp %rsi, %rdx
+    jg 28f
+    lea -1(%rdx), %r12
+    test %rcx, %rcx
+    jle 22f
+    lea (%r12,%rcx), %r13
+    cmp %rsi, %r13
+    jle 23f
+22: mov %rsi, %r13
+23: lea 1(%r12), %r14
+24: cmp %r13, %r14
+    jge 28f
+    mov %r14, %r15
+25: cmp %r12, %r15
+    jle 27f
+    mov %r15, %rax
+    shl $4, %rax
+    lea (%rbx,%rax), %rcx
+    mov (%rcx), %r10
+    mov 8(%rcx), %r11
+    mov -16(%rcx), %rax
+    mov -8(%rcx), %rdx
+    mov %r10, %rcx
+    mov %r11, %r8
+    mov $1, %r9d
+    call hbc_dynxcmp
+    test %rax, %rax
+    jle 27f
+    mov %r15, %rax
+    shl $4, %rax
+    lea (%rbx,%rax), %rcx
+    sub $16, %rsp
+    mov -16(%rcx), %rax
+    mov -8(%rcx), %rdx
+    mov %rax, (%rsp)
+    mov %rdx, 8(%rsp)
+    mov (%rcx), %rax
+    mov 8(%rcx), %rdx
+    mov %rax, -16(%rcx)
+    mov %rdx, -8(%rcx)
+    mov (%rsp), %rax
+    mov 8(%rsp), %rdx
+    mov %rax, (%rcx)
+    mov %rdx, 8(%rcx)
+    add $16, %rsp
+    dec %r15
+    jmp 25b
+27: inc %r14
+    jmp 24b
+28: add $8, %rsp
+    pop %r15
+    pop %r14
+    pop %r13
+    pop %r12
+    pop %rbx
+    pop %rbp
+29: ret
 
 # hbc_ascan: rdi = cells pointer, rsi = count, rdx = integer target ->
 # rax = the 1-based first position whose cell is an integer (tag 0
@@ -28527,7 +28832,20 @@ fn main() {
     let arena_active = !macho && !no_arena && !THREADS.with(|c| c.get()) && ARENA_MAP.with(|m| m.borrow().values().any(|a| a.any()));
     ARENA_ACTIVE.with(|a| a.set(arena_active));
     if macho && (DBF_USED.with(|v|v.get()) || THREADS.with(|v|v.get()) || !externs.is_empty()) { eprintln!("error: Mach-O Intel: DBF, threads and EXTERNAL are not ported in this increment"); process::exit(1); }
-    let out = vas::finish(emit_asm(&funcs, &sigs, &externs, target, instrument), target, instrument);
+    let mut out = vas::finish(emit_asm(&funcs, &sigs, &externs, target, instrument), target, instrument);
+    out.push_str(if vas::active() {
+        "
+    .text
+hbc_aclone_alloc:
+    jmp hbc_valloc
+"
+    } else {
+        "
+    .text
+hbc_aclone_alloc:
+    jmp hbc_alloc
+"
+    });
     let out = if macho { hmacho::darwin_asm(&out).unwrap_or_else(|e| {eprintln!("error: {}",e);process::exit(1);}) } else {out};
 
     if pos[1].ends_with(".s") {
