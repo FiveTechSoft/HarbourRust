@@ -10,6 +10,10 @@ HarbourRust is an ahead-of-time native compiler for Harbour, written in Rust. **
 
 No VM, no pcode, no garbage collector. Ownership checked at compile time, with deterministic release and no pause times; one limited persistent-value path uses reference counting (see below). In the same family of GC-free designs as Rust and the recent Goose language.
 
+## .hrb files
+
+HarbourRust does not support `.hrb` files, by design. A `.hrb` is precompiled pcode for the Harbour virtual machine (magic `\xC0HRB`, stable version 2 format), and HarbourRust has no pcode VM: it compiles the original `.prg` sources directly to native code. If you have the `.prg` sources, recompile them with `hbc`. If you only have the `.hrb`, you need `hbrun`/Harbour to run it. A pcode-to-native translator remains a possible future direction only if real user demand appears.
+
 ## Current status
 
 The current compiler includes the independently reviewed Date/CToD port,
