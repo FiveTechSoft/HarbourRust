@@ -6,6 +6,9 @@ stays short.
 
 ## Current state and limits
 
+- [Roadmap and current limits](ROADMAP.md): ordered milestones, ERP coverage
+  repeat and the embedded-C boundary.
+
 - [Diagnostic baseline - 2026-11-13](BASELINE-2026-11-13.md): current admission and
   exact-output results, inherited failures, scope limits, reproduction and
   published increment records. This is the current marker, not a completion percentage.
