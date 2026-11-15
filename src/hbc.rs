@@ -13026,7 +13026,13 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             match expr_ty(&args[1], env, sigs) {
                 Ty::Str | Ty::StrOwn => {
                     cg_value(&args[1],env,sigs,strs,out,target);
-                    out.push_str(&format!("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n    mov -{}(%rbp), %rdi\n    mov -{}(%rbp), %rsi\n    mov (%rsp), %rdx\n    mov 8(%rsp), %rcx\n    call hbc_ascan_s\n    add $32, %rsp\n", var.off, var.off - 8));
+                    out.push_str(&format!("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n    mov -{}(%rbp), %rdi\n    mov -{}(%rbp), %rsi\n    mov (%rsp), %rdx\n    mov 8(%rsp), %rcx\n    call hbc_ascan_s\n", var.off, var.off - 8));
+                    // cg_value borrows variables but owns temporary StrOwn
+                    // expressions. Save the scan result across their release.
+                    if expr_ty(&args[1],env,sigs)==Ty::StrOwn && !matches!(&args[1],Expr::Var(_)) {
+                        out.push_str("    mov %rax, 16(%rsp)\n    mov (%rsp), %rdi\n    call hbc_freestr\n    mov 16(%rsp), %rax\n");
+                    }
+                    out.push_str("    add $32, %rsp\n");
                 }
                 _ => {
                     cg_expr(&args[1],env,sigs,strs,out,target);
