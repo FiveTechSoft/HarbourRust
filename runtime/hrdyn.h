@@ -1,4 +1,4 @@
-/* Versioned Dyn float contract shared by runtime readers. Low kind stays5;
+/* Versioned Dyn float contract shared by runtime readers. Low kind stays 5;
  * the 16-byte casilla ABI is unchanged. Do not reuse reserved bits. */
 #ifndef HR_DYN_H
 #define HR_DYN_H
