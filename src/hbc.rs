@@ -20923,10 +20923,10 @@ hbc_upper:
     sub $16, %rsp
     mov %rsi, -8(%rbp)
     call hbc_strcpy
+    mov %rax, %r10
     mov -8(%rbp), %rcx
     test %rcx, %rcx
     jz .Lupr_done
-    mov %rax, %r10
     mov %rax, %r11
 .Lupr_loop:
     movzbl (%r11), %eax
@@ -20952,10 +20952,10 @@ hbc_lower:
     sub $16, %rsp
     mov %rsi, -8(%rbp)
     call hbc_strcpy
+    mov %rax, %r10
     mov -8(%rbp), %rcx
     test %rcx, %rcx
     jz .Llwr_done
-    mov %rax, %r10
     mov %rax, %r11
 .Llwr_loop:
     movzbl (%r11), %eax
