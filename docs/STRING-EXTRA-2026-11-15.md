@@ -58,12 +58,16 @@ its own `PadC` or `StrZero` must now drop that definition.
 - Real Windows PE: the oracle matrix and the ownership checks in
   `tests/string-extra/strfns.prg` are byte-identical to Harbour, plain and
   `--instrument`, with `hb_memcheck()` at 0.
-- Full native Windows battery (internal PE, 1737-case manifest): 1553
-  PASS and 23 SKIP on the first run; the 414 cases after a mid-run
-  environment break (every build failing from t1131 on) were rerun and
-  pass, except `gen/arith.prg`, whose untracked input lives in `gen/` and
-  was checked by hand. The fixture's first rerun failure was its own CRLF
-  from `hb_eol()`; it now writes `Chr(10)` and passes.
+- Native Windows battery report (internal PE, 1737-case manifest): the
+  original run summary reports 1553 PASS and 23 SKIP, then a 414-case rerun
+  after an environment break, with `gen/arith.prg` checked by hand because
+  its input was untracked. These are reported run counts, not reconciled
+  unique-case totals: 1553 + 23 = 1576, and adding 414 would give 1990, not
+  1737. The source tree does not include the per-case logs for these runs,
+  so their overlap and final PASS/SKIP/failure totals cannot be verified
+  here. No aggregate full-battery pass claim is made from these counts.
+  The report also records a fixture CRLF mismatch from `hb_eol()`, changed
+  to `Chr(10)` before its reported successful rerun.
 - The same fixture compiles for the Linux ELF and Mach-O Intel targets. It
   was not executed there.
 
