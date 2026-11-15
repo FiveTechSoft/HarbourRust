@@ -15625,35 +15625,233 @@ hrm_log:
     pop %rbp
     ret
 ";
-// hrm_fail: rdi/rsi = message -> stderr, exit status 1 (noreturn).
-const MACRO_FAIL_LINUX: &str = r"
+// Terminal diagnostic proposal only. Recoverable errors require the result API.
+const MACRO_FAIL_LINUX: &str = r#"
+    .text
+    .globl hrm_fail
+# Terminal-only proposal. This path does NOT implement recoverable raise.
+# rdi/rsi: message bytes/length, may end in LF. Uses language trace metadata.
 hrm_fail:
-    mov %rsi, %rdx
-    mov %rdi, %rsi
+    and $-16, %rsp
+    sub $128, %rsp
+    mov %rdi, 64(%rsp)
+.Lhrmf_trim:
+    test %rsi, %rsi
+    jz .Lhrmf_body
+    mov -1(%rdi,%rsi), %al
+    cmp $10, %al
+    je .Lhrmf_cut
+    cmp $13, %al
+    jne .Lhrmf_body
+.Lhrmf_cut:
+    dec %rsi
+    jmp .Lhrmf_trim
+.Lhrmf_body:
+    mov %rsi, 72(%rsp)
+    lea .Lhrmf_eol(%rip), %rax
+    mov $1, %edx
+    call hrm_contract_write
+    mov 64(%rsp), %rax
+    mov 72(%rsp), %rdx
+    call hrm_contract_write
+    mov hbc_trace_top(%rip), %rax
+    mov %rax, 80(%rsp)
+.Lhrmf_frame:
+    mov 80(%rsp), %rax
+    test %rax, %rax
+    jz hrm_contract_exit
+    lea .Lhrmf_called(%rip), %rax
+    mov $13, %edx
+    call hrm_contract_write
+    movq $0, 88(%rsp)
+.Lhrmf_name:
+    mov 80(%rsp), %rax
+    mov 88(%rsp), %rcx
+    cmp 40(%rax), %rcx
+    jae .Lhrmf_line
+    mov 32(%rax), %rax
+    mov (%rax,%rcx), %al
+    cmp $97, %al
+    jb .Lhrmf_char
+    cmp $122, %al
+    ja .Lhrmf_char
+    sub $32, %al
+.Lhrmf_char:
+    mov %al, 112(%rsp)
+    lea 112(%rsp), %rax
+    mov $1, %edx
+    call hrm_contract_write
+    incq 88(%rsp)
+    jmp .Lhrmf_name
+.Lhrmf_line:
+    lea .Lhrmf_open(%rip), %rax
+    mov $1, %edx
+    call hrm_contract_write
+    mov 80(%rsp), %rax
+    mov 24(%rax), %rax
+    lea 112(%rsp), %r8
+    mov $10, %r9d
+    xor %ecx, %ecx
+.Lhrmf_digit:
+    xor %edx, %edx
+    div %r9
+    add $48, %dl
+    dec %r8
+    mov %dl, (%r8)
+    inc %ecx
+    test %rax, %rax
+    jnz .Lhrmf_digit
+    mov %r8, %rax
+    mov %ecx, %edx
+    call hrm_contract_write
+    lea .Lhrmf_close(%rip), %rax
+    mov $3, %edx
+    call hrm_contract_write
+    mov 80(%rsp), %rax
+    mov (%rax), %rax
+    mov %rax, 80(%rsp)
+    jmp .Lhrmf_frame
+hrm_contract_write:
+    mov %rax, %rsi
     mov $2, %edi
     mov $1, %eax
     syscall
-    mov $60, %eax
+    ret
+hrm_contract_exit:
     mov $1, %edi
+    mov $60, %eax
     syscall
-";
-const MACRO_FAIL_WINDOWS: &str = r"
+
+.section .rodata
+.Lhrmf_eol:
+    .byte 10
+.Lhrmf_called:
+    .byte 10
+    .ascii "Called from "
+.Lhrmf_open:
+    .ascii "("
+.Lhrmf_close:
+    .ascii ")  "
+    .text
+"#;
+const MACRO_FAIL_WINDOWS: &str = r#"
+    .text
+    .globl hrm_fail
+# Terminal-only proposal. This path does NOT implement recoverable raise.
+# rdi/rsi: message bytes/length, may end in LF. Uses language trace metadata.
 hrm_fail:
-    mov %rdi, %r12
-    mov %rsi, %r13
     and $-16, %rsp
+    sub $128, %rsp
+    mov %rdi, 64(%rsp)
+.Lhrmf_trim:
+    test %rsi, %rsi
+    jz .Lhrmf_body
+    mov -1(%rdi,%rsi), %al
+    cmp $10, %al
+    je .Lhrmf_cut
+    cmp $13, %al
+    jne .Lhrmf_body
+.Lhrmf_cut:
+    dec %rsi
+    jmp .Lhrmf_trim
+.Lhrmf_body:
+    mov %rsi, 72(%rsp)
+    lea .Lhrmf_eol(%rip), %rax
+    mov $2, %edx
+    call hrm_contract_write
+    mov 64(%rsp), %rax
+    mov 72(%rsp), %rdx
+    call hrm_contract_write
+    mov hbc_trace_top(%rip), %rax
+    mov %rax, 80(%rsp)
+.Lhrmf_frame:
+    mov 80(%rsp), %rax
+    test %rax, %rax
+    jz hrm_contract_exit
+    lea .Lhrmf_called(%rip), %rax
+    mov $14, %edx
+    call hrm_contract_write
+    movq $0, 88(%rsp)
+.Lhrmf_name:
+    mov 80(%rsp), %rax
+    mov 88(%rsp), %rcx
+    cmp 40(%rax), %rcx
+    jae .Lhrmf_line
+    mov 32(%rax), %rax
+    mov (%rax,%rcx), %al
+    cmp $97, %al
+    jb .Lhrmf_char
+    cmp $122, %al
+    ja .Lhrmf_char
+    sub $32, %al
+.Lhrmf_char:
+    mov %al, 112(%rsp)
+    lea 112(%rsp), %rax
+    mov $1, %edx
+    call hrm_contract_write
+    incq 88(%rsp)
+    jmp .Lhrmf_name
+.Lhrmf_line:
+    lea .Lhrmf_open(%rip), %rax
+    mov $1, %edx
+    call hrm_contract_write
+    mov 80(%rsp), %rax
+    mov 24(%rax), %rax
+    lea 112(%rsp), %r8
+    mov $10, %r9d
+    xor %ecx, %ecx
+.Lhrmf_digit:
+    xor %edx, %edx
+    div %r9
+    add $48, %dl
+    dec %r8
+    mov %dl, (%r8)
+    inc %ecx
+    test %rax, %rax
+    jnz .Lhrmf_digit
+    mov %r8, %rax
+    mov %ecx, %edx
+    call hrm_contract_write
+    lea .Lhrmf_close(%rip), %rax
+    mov $3, %edx
+    call hrm_contract_write
+    mov 80(%rsp), %rax
+    mov (%rax), %rax
+    mov %rax, 80(%rsp)
+    jmp .Lhrmf_frame
+hrm_contract_write:
+    push %rbp
+    mov %rsp, %rbp
     sub $64, %rsp
+    mov %rax, 48(%rsp)
+    mov %rdx, 56(%rsp)
     mov $-12, %ecx
     call GetStdHandle
     mov %rax, %rcx
-    mov %r12, %rdx
-    mov %r13d, %r8d
-    lea 48(%rsp), %r9
+    mov 48(%rsp), %rdx
+    mov 56(%rsp), %r8d
+    lea 40(%rsp), %r9
     movq $0, 32(%rsp)
     call WriteFile
-    mov $1, %ecx
+    leave
+    ret
+hrm_contract_exit:
+    xor %ecx, %ecx
+    inc %ecx
     call ExitProcess
-";
+
+.section .rdata,"r"
+.Lhrmf_eol:
+    .byte 13,10
+.Lhrmf_called:
+    .byte 13,10
+    .ascii "Called from "
+.Lhrmf_open:
+    .ascii "("
+.Lhrmf_close:
+    .ascii ")  "
+    .text
+"#;
 // hbc_fmt_f64 is hbc_print_f64 with its two writes turned into owned
 // copies: the same digits, rounding and stars, returned as rax/rdx.
 fn f64_fmt_helper() -> String {

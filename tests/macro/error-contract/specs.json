@@ -1,0 +1,57 @@
+{
+  "base": "c6561a106f45a15be3707956ea87c41a1a85a747",
+  "profile_decision": "APPROVED terminal-headless: Alert/Quit omitted, documented divergence",
+  "cases": [
+    {
+      "source": "tests/macro/m1-syntax-err.prg",
+      "exit": 1,
+      "line": 4,
+      "targets": {
+        "linux": {
+          "official_stdout": "fixtures/linux/m1-syntax-err.official.stdout",
+          "terminal_stdout": "fixtures/linux/m1-syntax-err.terminal.stdout",
+          "stderr": "fixtures/linux/m1-syntax-err.terminal.stderr"
+        },
+        "windows": {
+          "official_stdout": "fixtures/windows/m1-syntax-err.official.stdout",
+          "terminal_stdout": "fixtures/windows/m1-syntax-err.terminal.stdout",
+          "stderr": "fixtures/windows/m1-syntax-err.terminal.stderr"
+        }
+      }
+    },
+    {
+      "source": "tests/macro/m1-local-invisible.prg",
+      "exit": 1,
+      "line": 5,
+      "targets": {
+        "linux": {
+          "official_stdout": "fixtures/linux/m1-local-invisible.official.stdout",
+          "terminal_stdout": "fixtures/linux/m1-local-invisible.terminal.stdout",
+          "stderr": "fixtures/linux/m1-local-invisible.terminal.stderr"
+        },
+        "windows": {
+          "official_stdout": "fixtures/windows/m1-local-invisible.official.stdout",
+          "terminal_stdout": "fixtures/windows/m1-local-invisible.terminal.stdout",
+          "stderr": "fixtures/windows/m1-local-invisible.terminal.stderr"
+        }
+      }
+    },
+    {
+      "source": "tests/macro/m1-arg-err.prg",
+      "exit": 1,
+      "line": 4,
+      "targets": {
+        "linux": {
+          "official_stdout": "fixtures/linux/m1-arg-err.official.stdout",
+          "terminal_stdout": "fixtures/linux/m1-arg-err.terminal.stdout",
+          "stderr": "fixtures/linux/m1-arg-err.terminal.stderr"
+        },
+        "windows": {
+          "official_stdout": "fixtures/windows/m1-arg-err.official.stdout",
+          "terminal_stdout": "fixtures/windows/m1-arg-err.terminal.stdout",
+          "stderr": "fixtures/windows/m1-arg-err.terminal.stderr"
+        }
+      }
+    }
+  ]
+}
