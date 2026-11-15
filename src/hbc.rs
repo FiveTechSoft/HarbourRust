@@ -104,6 +104,7 @@ enum Tok {
     At,       // @ by-reference call argument (hk216 family)
     Eq,       // =
     FatArrow, // =>
+    Macro,    // & (macro operator)
     Ne,       // <> or !=
     Lt, Le, Gt, Ge,
     KwFunction, KwLocal, KwReturn, KwNil, KwIf, KwElseif, KwElse, KwEndif, KwWhile, KwEnddo, KwExit, KwLoop,
@@ -639,13 +640,13 @@ fn tokenize(line: &str, n: usize) -> Result<Vec<Tok>, String> {
             '^' => { toks.push(Tok::Caret); it.next(); }
             '$' => { toks.push(Tok::Dollar); it.next(); }
             // The macro operator is runtime dynamic evaluation (oracles
-            // hk369-hk373: it evaluates string contents as Harbour code
+            // hk369-hk373): it evaluates string contents as Harbour code
             // with real types, sees no locals in the expanded text, and
-            // works in expression, statement and dynamic-send positions) -
-            // it needs an evaluator embedded in the emitted binary, out of
-            // this native increment. `&&` comments never reach the lexer
-            // (the preprocessor strips them).
-            '&' => return Err(format!("line {}: the macro operator `&` is runtime dynamic evaluation (hk369-hk373): it would need an evaluator embedded in the emitted binary - a named limit of this native increment, not a Harbour error", n)),
+            // works in expression, statement and dynamic-send positions.
+            // The evaluator is the hrmacro C blob embedded at codegen
+            // time (M0: memvar lookup, M1: expression eval).
+            '&' => { toks.push(Tok::Macro); it.next(); }
+            // `&&` comments never reach the lexer (the preprocessor strips them).
             '(' => { toks.push(Tok::LParen); it.next(); }
             ')' => { toks.push(Tok::RParen); it.next(); }
             ',' => { toks.push(Tok::Comma); it.next(); }
