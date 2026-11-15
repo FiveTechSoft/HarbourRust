@@ -15610,41 +15610,7 @@ fn macro_helpers(target: Target) -> String {
         _ => MACRO_FAIL_LINUX,
     });
     h.push_str(&include_str!("../generated/hrmacro.s").replace("@HRM_RODATA@", rodata));
-    h.push_str(&macro_call_dispatch());
     h
-}
-
-/* Despachador M2 de llamadas a macros: una comparación por cada builtin
- * string (ptr,len → ptr,len) que el binario ya enlaza. El convenio es
- * SysV (rdi/esi in, rax/rdx out); las celdas 16-byte llevan el puntero
- * en payload y la longitud en el header payload[-1]. */
-fn macro_call_dispatch() -> String {
-    let mut d = String::from("\n    .text\nhrm_call:\n");
-    // Hoja (caller-saved únicamente): rdi/rsi = nombre, rcx = args,
-    // r8 = out. El nombre ya está en rdi/rsi del SysV.
-    for [name, sym] in [["upper", "hbc_upper"], ["lower", "hbc_lower"]] {
-        let nl = name.len();
-        let tag = format!(".Lnm_{name}");
-        d.push_str(&format!("    cmpq ${}, %rsi\n    jne {tag}\n", nl));
-        for (i, ch) in name.bytes().enumerate() {
-            d.push_str(&format!("    cmpb ${}, {}(%rdi)\n    jne {tag}\n", ch, i));
-        }
-        // argv[0] = {tag, payload}: el payload está en 8(%rcx)
-        d.push_str("    mov 8(%rcx), %r10\n    mov -8(%r10), %rsi\n    mov %r10, %rdi\n    push %r8\n    call ");
-        d.push_str(sym);
-        d.push_str("\n    pop %r8\n    movq $4, (%r8)\n    mov %rax, 8(%r8)\n    mov $1, %eax\n    ret\n");
-        d.push_str(&format!("{tag}:\n"));
-    }
-    // Round(n, d): xmm0 = float(n), rdi = dec → xmm0 = valor, rdi = meta;
-    // hrm_float(bits, meta) responde el cell heap-float {5, ptr}.
-    d.push_str("    cmpq $5, %rsi\n    jne .Lnmc_notrd\n");
-    for (i, ch) in b"round".iter().enumerate() {
-        d.push_str(&format!("    cmpb ${}, {}(%rdi)\n    jne .Lnmc_notrd\n", ch, i));
-    }
-    // El primer arg puede ser int (payload=valor) o float (payload=ptr heap):
-    d.push_str("    mov 8(%rcx), %rax\n    mov (%rcx), %r10\n    cmpq $5, %r10\n    jne .Lnmc_rdi\n    movsd (%rax), %xmm0\n    jmp .Lnmc_rdc\n.Lnmc_rdi:\n    cvtsi2sd %rax, %xmm0\n.Lnmc_rdc:\n    mov 24(%rcx), %rdi\n    push %r8\n    call hbc_round\n    movq %xmm0, %rax\n    mov %rdi, %rsi\n    mov %rax, %rdi\n    call hrm_float\n    pop %r8\n    movq $5, (%r8)\n    mov %rdx, 8(%r8)\n    mov $1, %eax\n    ret\n");
-    d.push_str(".Lnmc_notrd:\n    xor %eax, %eax\n    ret\n");
-    d
 }
 const MACRO_SHIMS: &str = r"
     .text
