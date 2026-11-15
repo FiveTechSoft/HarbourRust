@@ -96,6 +96,6 @@ hbc_strtran_test:
    q=subprocess.run(cmd,capture_output=True);assert q.returncode==0,q.stderr
   q=subprocess.run([str(exe)],capture_output=True,timeout=30)
   assert(q.returncode,q.stdout,q.stderr)==(0,b'',b''),(label,q.returncode,q.stderr)
-  exe.unlink();obj.unlink();rows.append(dict(case=index,instrument=instrument,exact=True,callee_saved=True,headers=True,logical_balance=True))
+  exe.unlink();obj.unlink();asm.unlink();src.unlink();rows.append(dict(case=index,instrument=instrument,exact=True,callee_saved=True,headers=True,logical_balance=True))
 (a.output/'summary.json').write_text(json.dumps(rows,indent=2)+'\n')
 print('PASS',len(rows),'GNU helper canaries')

@@ -4104,7 +4104,7 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
                     return Ok(());
                 }
                 if is_builtin(id,"strtran") {
-                    for a in args { pin_vars(f,a,Ty::Str,pin,n)?; walk(f,a,sigs,lit,pin,printed,n)?; }
+                    for (i,a) in args.iter().enumerate() { pin_vars(f,a,if i<3 {Ty::Str} else {Ty::I64},pin,n)?; walk(f,a,sigs,lit,pin,printed,n)?; }
                     return Ok(());
                 }
                 if is_builtin(id,"space") {
@@ -5958,10 +5958,14 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 return Ok(Ty::I64);
             }
             if is_builtin(id,"strtran") {
-                if !(2..=3).contains(&args.len()) { return Err(format!("line {}: `StrTran` admits 2 or 3 arguments in this increment (start/count not covered)",n)); }
-                for a in args {
-                    if !matches!(type_expr(a,env,sigs,n)?,Ty::Str|Ty::StrOwn) {
-                        return Err(format!("line {}: `StrTran` expects typed strings in this increment (Dyn/coercion not covered)",n));
+                if !(2..=5).contains(&args.len()) { return Err(format!("line {}: `StrTran` admits 2 through 5 arguments in this increment",n)); }
+                for (i,a) in args.iter().enumerate() {
+                    let ty=type_expr(a,env,sigs,n)?;
+                    if i<3 && !matches!(ty,Ty::Str|Ty::StrOwn) {
+                        return Err(format!("line {}: `StrTran` expects typed strings in arguments 1 through 3 (Dyn/coercion not covered)",n));
+                    }
+                    if i>=3 && ty!=Ty::I64 {
+                        return Err(format!("line {}: `StrTran` expects I64 occurrence start/count (F64 truncation and Dyn/default coercion not covered)",n));
                     }
                 }
                 return Ok(Ty::StrOwn);
@@ -12689,11 +12693,11 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             out.push_str("    add $16, %rsp\n");
         }
         Expr::Call(id,args) if is_builtin(id,"strtran") => {
-            // Retain each earlier value before later argument evaluation.
-            // Nonvariable owned temporaries already have independent life.
-            out.push_str("    sub $80, %rsp\n");
-            let mut release=[false;2];
-            for i in 0..2 {
+            // Snapshot all earlier borrowed strings before any later effects,
+            // including numeric start/count calls; owned temporaries stay live.
+            out.push_str("    sub $96, %rsp\n");
+            let mut release=[false;3];
+            for i in 0..args.len().min(3) {
                 let owned=expr_ty(&args[i],env,sigs)==Ty::StrOwn && !matches!(&args[i],Expr::Var(_));
                 cg_value(&args[i],env,sigs,strs,out,target);
                 let snapshot=!owned && args[i+1..].iter().any(expr_has_call);
@@ -12701,13 +12705,19 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                 if snapshot { out.push_str("    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_strcpy\n"); }
                 out.push_str(&format!("    mov %rax, {}(%rsp)\n    mov %rdx, {}(%rsp)\n",i*16,i*16+8));
             }
-            let rtemp=args.len()==3 && expr_ty(&args[2],env,sigs)==Ty::StrOwn && !matches!(&args[2],Expr::Var(_));
-            if args.len()==3 { cg_value(&args[2],env,sigs,strs,out,target); }
-            else { out.push_str("    xor %eax, %eax\n    xor %edx, %edx\n"); }
-            out.push_str("    mov %rax, 32(%rsp)\n    mov %rdx, 40(%rsp)\n    mov %rax, %r8\n    mov %rdx, %r9\n    mov (%rsp), %rdi\n    mov 8(%rsp), %rsi\n    mov 16(%rsp), %rdx\n    mov 24(%rsp), %rcx\n    call hbc_strtran\n    mov %rax, 48(%rsp)\n    mov %rdx, 56(%rsp)\n");
-            for i in 0..2 { if release[i] { out.push_str(&format!("    mov {}(%rsp), %rdi\n    call hbc_freestr\n",i*16)); } }
-            if rtemp { out.push_str("    mov 32(%rsp), %rdi\n    call hbc_freestr\n"); }
-            out.push_str("    mov 48(%rsp), %rax\n    mov 56(%rsp), %rdx\n    add $80, %rsp\n");
+            if args.len()==2 { out.push_str("    movq $0, 32(%rsp)\n    movq $0, 40(%rsp)\n"); }
+            if args.len()>3 { cg_expr(&args[3],env,sigs,strs,out,target); out.push_str("    mov %rax, 48(%rsp)\n"); }
+            if args.len()>4 { cg_expr(&args[4],env,sigs,strs,out,target); out.push_str("    mov %rax, 56(%rsp)\n"); }
+            out.push_str("    mov (%rsp), %rdi\n    mov 8(%rsp), %rsi\n    mov 16(%rsp), %rdx\n    mov 24(%rsp), %rcx\n    mov 32(%rsp), %r8\n    mov 40(%rsp), %r9\n");
+            if args.len()>3 {
+                out.push_str("    mov 48(%rsp), %r10\n");
+                if args.len()>4 { out.push_str("    mov 56(%rsp), %r11\n"); }
+                else { out.push_str("    mov $-1, %r11\n"); }
+                out.push_str("    call hbc_strtran_limit\n");
+            } else { out.push_str("    call hbc_strtran\n"); }
+            out.push_str("    mov %rax, 64(%rsp)\n    mov %rdx, 72(%rsp)\n");
+            for i in 0..3 { if release[i] { out.push_str(&format!("    mov {}(%rsp), %rdi\n    call hbc_freestr\n",i*16)); } }
+            out.push_str("    mov 64(%rsp), %rax\n    mov 72(%rsp), %rdx\n    add $96, %rsp\n");
         }
         Expr::Call(id,args) if is_builtin(id,"space") => {
             cg_expr(&args[0],env,sigs,strs,out,target);
@@ -21450,6 +21460,12 @@ hbc_strfind:
     xor %eax, %eax
 1:  cmp %rsi, %rax
     ja 5f
+    # Bounded last-byte prefilter rejects long common-prefix misses early.
+    # It is not a linear-general-search guarantee; r10/r11 stay preserved.
+    movzbl -1(%rdx,%rcx), %r8d
+    lea (%rax,%rcx), %r9
+    cmp %r8b, -1(%rdi,%r9)
+    jne 4f
     movzbl (%rdi,%rax), %r8d
     cmpb (%rdx), %r8b
     jne 4f
@@ -21600,6 +21616,375 @@ hbc_strtran:
     rep movsb
     mov 32(%rsp), %rax
     mov 24(%rsp), %rdx
+    jmp 9f
+8:  mov %r12, %rdi
+    mov %r13, %rsi
+    call hbc_strcpy
+9:  add $72, %rsp
+    pop %r15
+    pop %r14
+    pop %r13
+    pop %r12
+    pop %rbx
+    pop %rbp
+    ret
+
+# Extended typed I64 occurrence range. Same six string registers, signed
+# start/count in r10/r11. Zero overrides empty seek/negative start. Negative
+# start has no reachable occurrence; any negative count is unlimited.
+# Preserve the original all-occurrences kernels for default-equivalent input.
+hbc_strtran_limit:
+    test %r10, %r10
+    jz .Lstrtran_limit_empty
+    test %r11, %r11
+    jz .Lstrtran_limit_empty
+    test %r10, %r10
+    js hbc_strcpy
+    cmp $1, %r10
+    jne 1f
+    test %r11, %r11
+    js hbc_strtran
+1:  test %rcx, %rcx
+    jz hbc_strcpy
+    cmp %rcx, %rsi
+    jb hbc_strcpy
+    cmp $1, %rcx
+    jne 11f
+    test %r11, %r11
+    js hbc_strtran_limit_one
+    cmp $16, %r11
+    ja hbc_strtran_limit_one
+11: push %rbp
+    mov %rsp, %rbp
+    push %rbx
+    push %r12
+    push %r13
+    push %r14
+    push %r15
+    sub $104, %rsp
+    mov %rdi, %r12
+    mov %rsi, %r13
+    mov %rdx, %r14
+    mov %rcx, %r15
+    mov %r8, %rbx
+    mov %r9, (%rsp)
+    dec %r10
+    mov %r10, 8(%rsp)
+    mov %r11, 16(%rsp)
+    movq $0, 24(%rsp)
+# Find the input byte at which the selected occurrence interval begins.
+2:  cmpq $0, 8(%rsp)
+    je 3f
+    mov 24(%rsp), %rax
+    lea (%r12,%rax), %rdi
+    mov %r13, %rsi
+    sub %rax, %rsi
+    mov %r14, %rdx
+    mov %r15, %rcx
+    call hbc_strfind
+    test %rax, %rax
+    js 8f
+    add %r15, %rax
+    add %rax, 24(%rsp)
+    decq 8(%rsp)
+    jmp 2b
+3:  mov 24(%rsp), %rax
+    mov %rax, 32(%rsp)
+    movq $0, 40(%rsp)
+# Count selected nonoverlapping matches only; negatives never decremented.
+4:  mov 32(%rsp), %rax
+    lea (%r12,%rax), %rdi
+    mov %r13, %rsi
+    sub %rax, %rsi
+    mov %r14, %rdx
+    mov %r15, %rcx
+    call hbc_strfind
+    test %rax, %rax
+    js 5f
+    add %r15, %rax
+    add %rax, 32(%rsp)
+    incq 40(%rsp)
+    cmpq $0, 16(%rsp)
+    jl 4b
+    decq 16(%rsp)
+    jnz 4b
+5:  cmpq $0, 40(%rsp)
+    je 8f
+    mov (%rsp), %rax
+    sub %r15, %rax
+    imul 40(%rsp), %rax
+    jo hbc_oom
+    add %r13, %rax
+    jo hbc_oom
+    test %rax, %rax
+    js hbc_oom
+    mov %rax, 48(%rsp)
+    mov %rax, %rsi
+    call hbc_stralloc
+    mov %rax, 56(%rsp)
+    mov %rax, %rdi
+# Prefix includes all skipped matches unchanged.
+    mov %r12, %rsi
+    mov 24(%rsp), %rcx
+    rep movsb
+    mov %rdi, 64(%rsp)
+6:  mov 24(%rsp), %rax
+    lea (%r12,%rax), %rdi
+    mov %r13, %rsi
+    sub %rax, %rsi
+    mov %r14, %rdx
+    mov %r15, %rcx
+    call hbc_strfind
+    mov %rax, 72(%rsp)
+    mov %rax, %rcx
+    mov 24(%rsp), %rax
+    lea (%r12,%rax), %rsi
+    mov 64(%rsp), %rdi
+    test %rcx, %rcx
+    jz 61f
+    rep movsb
+61: mov %rbx, %rsi
+    mov (%rsp), %rcx
+    cmp $1, %rcx
+    je 62f
+    cmp $2, %rcx
+    je 64f
+    cmp $3, %rcx
+    je 65f
+    test %rcx, %rcx
+    jz 63f
+    rep movsb
+    jmp 63f
+62: movzbl (%rsi), %eax
+    mov %al, (%rdi)
+    inc %rdi
+    jmp 63f
+64: movzbl (%rsi), %eax
+    mov %al, (%rdi)
+    movzbl 1(%rsi), %eax
+    mov %al, 1(%rdi)
+    add $2, %rdi
+    jmp 63f
+65: movzbl (%rsi), %eax
+    mov %al, (%rdi)
+    movzbl 1(%rsi), %eax
+    mov %al, 1(%rdi)
+    movzbl 2(%rsi), %eax
+    mov %al, 2(%rdi)
+    add $3, %rdi
+63: mov %rdi, 64(%rsp)
+    mov 72(%rsp), %rax
+    add %r15, %rax
+    add %rax, 24(%rsp)
+    decq 40(%rsp)
+    jnz 6b
+    mov 24(%rsp), %rax
+    lea (%r12,%rax), %rsi
+    mov %r13, %rcx
+    sub %rax, %rcx
+    mov 64(%rsp), %rdi
+    rep movsb
+    mov 56(%rsp), %rax
+    mov 48(%rsp), %rdx
+    jmp 9f
+8:  mov %r12, %rdi
+    mov %r13, %rsi
+    call hbc_strcpy
+9:  add $104, %rsp
+    pop %r15
+    pop %r14
+    pop %r13
+    pop %r12
+    pop %rbx
+    pop %rbp
+    ret
+.Lstrtran_limit_empty:
+    xor %esi, %esi
+    jmp hbc_stralloc
+
+# One-byte occurrence interval: bounded linear count/fill, no search call
+# per match. r10/r11 retain their original start/count entry semantics.
+hbc_strtran_limit_one:
+    push %rbp
+    mov %rsp, %rbp
+    push %rbx
+    push %r12
+    push %r13
+    push %r14
+    push %r15
+    sub $72, %rsp
+    mov %rdi, %r12
+    mov %rsi, %r13
+    movzbl (%rdx), %r14d
+    mov %r8, %rbx
+    mov %r9, %r15
+    dec %r10
+    mov %r10, (%rsp)
+    mov %r11, 8(%rsp)
+    movq $0, 48(%rsp)
+    xor %r8d, %r8d
+    xor %r9d, %r9d
+    xor %r10d, %r10d
+    jmp .Lslo_skip_fast
+1:  cmp %r13, %r8
+    jae 3f
+    movzbl (%r12,%r8), %eax
+    inc %r8
+    cmp %r14b, %al
+    jne 1b
+    cmp (%rsp), %r9
+    jae 2f
+    inc %r9
+    mov %r8, 48(%rsp)
+    jmp .Lslo_skip_fast
+.Lslo_skip_fast:
+    cmp (%rsp), %r9
+    jae 1b
+    lea 4(%r8), %rax
+    cmp %r13, %rax
+    ja 1b
+    cmp %r14b, (%r12,%r8)
+    je 1b
+    cmp %r14b, 1(%r12,%r8)
+    je 1b
+    cmp %r14b, 2(%r12,%r8)
+    je 1b
+    cmp %r14b, 3(%r12,%r8)
+    je 1b
+    add $4, %r8
+    jmp .Lslo_skip_fast
+2:  inc %r10
+    cmpq $0, 8(%rsp)
+    jl 1b
+    cmp 8(%rsp), %r10
+    jb 1b
+3:  test %r10, %r10
+    jz 8f
+    mov %r10, 16(%rsp)
+    mov %r15, %rax
+    dec %rax
+    imul %r10, %rax
+    jo hbc_oom
+    add %r13, %rax
+    jo hbc_oom
+    test %rax, %rax
+    js hbc_oom
+    mov %rax, %rsi
+    call hbc_stralloc
+    mov %rax, 24(%rsp)
+    mov %rdx, 32(%rsp)
+    mov %rax, %rdi
+    cmpq $0, 8(%rsp)
+    jl .Lstrtran_one_all
+    xor %r8d, %r8d
+    mov (%rsp), %r9
+    mov 16(%rsp), %r10
+4:  cmp %r13, %r8
+    jae 7f
+    movzbl (%r12,%r8), %eax
+    inc %r8
+    cmp %r14b, %al
+    jne 6f
+    test %r9, %r9
+    jz 41f
+    dec %r9
+    jmp 6f
+41: test %r10, %r10
+    jz 6f
+    dec %r10
+    test %r15, %r15
+    jz 4b
+    cmp $1, %r15
+    je 42f
+    cmp $2, %r15
+    je 43f
+    mov %rbx, %rsi
+    mov %r15, %rcx
+    rep movsb
+    jmp 4b
+42: movzbl (%rbx), %eax
+    mov %al, (%rdi)
+    inc %rdi
+    jmp 4b
+43: movzbl (%rbx), %eax
+    mov %al, (%rdi)
+    movzbl 1(%rbx), %eax
+    mov %al, 1(%rdi)
+    add $2, %rdi
+    jmp 4b
+6:  mov %al, (%rdi)
+    inc %rdi
+    jmp 4b
+# Unlimited suffix after skipped occurrences: copy the skipped prefix in bulk,
+# then use tight 0/1/2-byte replacement loops with no per-byte range counter.
+.Lstrtran_one_all:
+    mov 48(%rsp), %rcx
+    mov %r12, %rsi
+    rep movsb
+    mov 48(%rsp), %r8
+    cmp $1, %r15
+    je .Lslo_one
+    test %r15, %r15
+    jz .Lslo_delete
+    cmp $2, %r15
+    je .Lslo_two
+.Lslo_general:
+    cmp %r13, %r8
+    jae 7f
+    movzbl (%r12,%r8), %eax
+    inc %r8
+    cmp %r14b, %al
+    je .Lslo_repl
+    mov %al, (%rdi)
+    inc %rdi
+    jmp .Lslo_general
+.Lslo_repl:
+    mov %rbx, %rsi
+    mov %r15, %rcx
+    rep movsb
+    jmp .Lslo_general
+.Lslo_one:
+    movzbl (%rbx), %r9d
+.Lslo_one_loop:
+    cmp %r13, %r8
+    jae 7f
+    movzbl (%r12,%r8), %eax
+    cmp %r14b, %al
+    cmove %r9d, %eax
+    mov %al, (%rdi)
+    inc %rdi
+    inc %r8
+    jmp .Lslo_one_loop
+.Lslo_delete:
+    cmp %r13, %r8
+    jae 7f
+    movzbl (%r12,%r8), %eax
+    inc %r8
+    cmp %r14b, %al
+    je .Lslo_delete
+    mov %al, (%rdi)
+    inc %rdi
+    jmp .Lslo_delete
+.Lslo_two:
+    movzbl (%rbx), %r9d
+    movzbl 1(%rbx), %r10d
+.Lslo_two_loop:
+    cmp %r13, %r8
+    jae 7f
+    movzbl (%r12,%r8), %eax
+    inc %r8
+    cmp %r14b, %al
+    jne .Lslo_two_copy
+    mov %r9b, (%rdi)
+    mov %r10b, 1(%rdi)
+    add $2, %rdi
+    jmp .Lslo_two_loop
+.Lslo_two_copy:
+    mov %al, (%rdi)
+    inc %rdi
+    jmp .Lslo_two_loop
+7:  mov 24(%rsp), %rax
+    mov 32(%rsp), %rdx
     jmp 9f
 8:  mov %r12, %rdi
     mov %r13, %rsi

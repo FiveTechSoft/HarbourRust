@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""StrTran typed 2/3-argument gate against fresh Harbour, with explicit limits.
+"""StrTran typed 2 through 5-argument gate against fresh Harbour, with explicit limits.
 
 PE/Wine is not native Windows. Memory wrappers are HR diagnostics. No
-claim of start/count, Dyn/coercion or unrestricted Harbour arity.
+claim of Dyn/coercion or unrestricted Harbour arity.
 """
 import argparse,hashlib,json,os,subprocess
 from pathlib import Path
@@ -46,7 +46,7 @@ build([a.hbmk2,src,'-quiet','-gtstd','-mt','-o'+str(exe)],'thread-hb')
 q=run([exe]);exe.unlink();assert(q.returncode,q.stderr)==(0,b''),q.stderr
 for n in range(5):check(src,'thread-'+str(n),q.stdout,'linux')
 for src in sorted(root.glob('*-neg.prg')):
-    expected=(b'`StrTran` admits 2 or 3 arguments' if src.stem.startswith('arity') else b'`StrTran` expects typed strings')
+    expected=(b'`StrTran` admits 2 through 5 arguments' if src.stem.startswith('arity') else b'`StrTran` expects typed strings')
     for target in ['linux','windows'] if a.wine else ['linux']:
         dest=a.output/(src.stem+'-'+target+'.program')
         q=run([a.compiler,src,dest,'--target='+target])
@@ -65,6 +65,6 @@ for src in sorted((root/'limits').glob('*.prg')):
         (a.output/(label+'.stdout')).write_bytes(q.stdout)
         known_limits.append(dict(name=label,final_memcheck=balance,owned_error_leak=True))
 summary=dict(compiler_sha256=hashlib.sha256(a.compiler.read_bytes()).hexdigest(),rows=rows,known_limits=known_limits,
-             limits='Typed strings, arity2/3 only; no start/count or Dyn/coercion; Wine is not native Windows')
+             limits='Typed strings; I64 start/count; no F64 or Dyn/coercion; Wine is not native Windows')
 (a.output/'summary.json').write_text(json.dumps(summary,indent=2)+'\n')
 print('PASS',sum(r.get('exact',False) for r in rows),'exact executions;',sum(r.get('rejected',False) for r in rows),'named rejections')
