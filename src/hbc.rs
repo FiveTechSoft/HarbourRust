@@ -43,6 +43,7 @@ thread_local! {
 thread_local! {
     // Compiler admission flag only, never emitted user mutable state.
     static DBF_USED: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+    static SET_CONSOLE_LINE: std::cell::Cell<Option<usize>> = const { std::cell::Cell::new(None) };
     static CURDIR_LINUX_NATIVE: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
     static MACHO_MODE: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
 }
@@ -2293,6 +2294,17 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                     return Ok(());
                 }
                 if id.eq_ignore_ascii_case("set") && !(toks.len() >= 2 && toks[1] == Tok::LParen) {
+                    if matches!(toks.get(1),Some(Tok::Ident(name)) if name.eq_ignore_ascii_case("talk") || name.eq_ignore_ascii_case("echo")) {
+                        if toks.len()!=3 || !matches!(toks.get(2),Some(Tok::Ident(value)) if value.eq_ignore_ascii_case("on") || value.eq_ignore_ascii_case("off")) {
+                            return Err(format!("line {}: SET TALK/ECHO require exactly ON or OFF in this increment",n));
+                        }
+                        // No observable effect in measured console-only programs.
+                        // Reject mixed DBF programs after all functions are checked:
+                        // TALK feedback for that subsystem is not implemented here.
+                        SET_CONSOLE_LINE.with(|v|if v.get().is_none(){v.set(Some(n));});
+                        *i += 1;
+                        continue;
+                    }
                     // SET commands switch runtime state. Measured sweep
                     // forms (63zk): SET PRINTER/DEVICE/ALTERNATE/MARGIN
                     // belong to the output-routing subsystem (dev/longdev/
@@ -3028,6 +3040,7 @@ struct Prog {
 }
 
 fn parse(src: &str) -> Result<Prog, String> {
+    SET_CONSOLE_LINE.with(|v|v.set(None));
     let mut lines: Vec<(usize, Vec<Tok>)> = Vec::new();
     for (idx, raw) in src.lines().enumerate() {
         let n = idx + 1;
@@ -27843,6 +27856,12 @@ fn main() {
             }
         }
     });
+    if DBF_USED.with(|v|v.get()) {
+        if let Some(n)=SET_CONSOLE_LINE.with(|v|v.get()) {
+            eprintln!("error: line {}: SET TALK/ECHO with DBF operations is not in this increment (TALK feedback is not implemented)",n);
+            process::exit(1);
+        }
+    }
     let arena_active = !macho && !no_arena && !THREADS.with(|c| c.get()) && ARENA_MAP.with(|m| m.borrow().values().any(|a| a.any()));
     ARENA_ACTIVE.with(|a| a.set(arena_active));
     if macho && (DBF_USED.with(|v|v.get()) || THREADS.with(|v|v.get()) || !externs.is_empty()) { eprintln!("error: Mach-O Intel: DBF, threads and EXTERNAL are not ported in this increment"); process::exit(1); }
