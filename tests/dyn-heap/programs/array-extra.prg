@@ -1,0 +1,20 @@
+procedure main()
+checks()
+? hb_memcheck()
+return
+procedure checks()
+local a:=makevalues()
+local b:=AClone(a)
+? ATail(a),ATail(b)
+ASize(a,0)
+? ATail(b)
+ASize(b,1)
+? ATail(b)
+return
+function makevalues()
+local h:={=>}
+h["one"]:=floating(1.250)
+h["two"]:=floating(2.500)
+return hb_HValues(h)
+function floating(x)
+return hb_PValue(1)

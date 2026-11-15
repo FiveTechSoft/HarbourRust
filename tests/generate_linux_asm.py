@@ -11,7 +11,7 @@ flags=['-std=c99','-O2','-S','-ffreestanding','-fno-builtin','-fno-stack-protect
 # keep ordinary integer/floating ABI conventions, with no architecture tuning.
 out=root/'generated/hrdbf_linux.s';raw=root/'generated/hrdbf_linux.raw.s'
 p=subprocess.run(['gcc',*flags,'runtime/hrdbf_embedded_linux.c','-o',str(raw)],cwd=root,capture_output=True);assert p.returncode==0,p.stderr
-s=raw.read_text();s=re.sub(r'\.L([A-Za-z0-9_.$]+)',r'.Lhrdbf_\1',s);s=re.sub(r'^\s*\.file .*\n','',s,flags=re.M)
+s=raw.read_text();s=re.sub(r'\.L([A-Za-z0-9_.$]+)',r'.Lhrdbf_\1',s);s=re.sub(r'^\s*\.file\s+.*\n','',s,flags=re.M)
 assert not re.search(r'\.cfi|\.eh_frame|@GOT|@PLT|\.got|\.plt',s)
 # GCC may emit unprefixed static switch/date tables, not just .L labels.
 for label in re.findall(r'^([A-Za-z_.$][A-Za-z0-9_.$]*):',s,re.M):
@@ -35,5 +35,9 @@ relocs=subprocess.check_output(['objdump','-r',str(obj)],text=True)
 # assembler object. No external/PLT/GOT relocation is admitted.
 assert not re.search(r'GOT|PLT|JUMP_SLOT|GLOB_DAT',relocs),relocs
 version=subprocess.check_output(['gcc','--version'],text=True).splitlines()[0]
-ledger={'compiler':version,'flags':flags,'source_sha256':hashlib.sha256((root/'runtime/hrdbf_embedded_linux.c').read_bytes()).hexdigest(),'asm_sha256':hashlib.sha256(s.encode()).hexdigest(),'labels':len(labels),'undefined_symbols':[],'local_label_namespace':'.Lhrdbf_','notes':'Experimental compiler integration; separate non-DBF byte-identity evidence required. CWD-independent output: .file stripped.'}
+# Bind the actual unity translation unit, including its transitive headers.
+deps=subprocess.check_output(['gcc',*flags,'-MM','runtime/hrdbf_embedded_linux.c'],cwd=root,text=True)
+dep_paths=sorted(set(deps.replace('\\\n',' ').split(':',1)[1].split()))
+source_hashes={name:hashlib.sha256((root/name).read_bytes()).hexdigest() for name in dep_paths}
+ledger={'compiler':version,'flags':flags,'source_sha256':hashlib.sha256((root/'runtime/hrdbf_embedded_linux.c').read_bytes()).hexdigest(),'source_dependencies_sha256':source_hashes,'asm_sha256':hashlib.sha256(s.encode()).hexdigest(),'labels':len(labels),'undefined_symbols':[],'local_label_namespace':'.Lhrdbf_','notes':'Experimental compiler integration; separate non-DBF byte-identity evidence required. CWD-independent output: .file stripped.'}
 (root/'generated/recipe.json').write_text(json.dumps(ledger,indent=2)+'\n');(root/'generated/relocations.txt').write_text(relocs);print(json.dumps(ledger,indent=2))

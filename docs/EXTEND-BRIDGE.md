@@ -134,7 +134,8 @@ Milestone 2.2 (@ by reference, 2026-11-13):
 Milestone 2.3 (f64 at the boundary, 2026-11-13):
 
 - A Harbour float literal or expression crosses as a tag-5 Dyn casilla:
-  the payload IS the 8 value bits (scalar; no allocation, no metadata).
+  the historical inline payload is the 8 value bits. Since4.2 new callers
+  use an owned heap item; see the protocol section below.
 - `hb_parnd(i)` reads integers as (double) and doubles bit-exact; a
   non-numeric argument answers 0.0. `hb_retnd(d)` returns a double.
 - `hb_parnl(i)` on a double truncates like Harbour's (long) read.
@@ -154,8 +155,8 @@ Milestone 2.3 (f64 at the boundary, 2026-11-13):
   is the Dyn numeric tower decision (H2 architecture note).
 - Demo: extend/demo/apif64.c + apif64.prg (build like the m1 demo).
 
-- A double's DECIMAL COUNT crosses with the value (it rides in the tag
-  word's high bits of the tag-5 casilla, an internal representation
+- A double's DECIMAL COUNT crosses with the value (legacy inline casillas
+  put it in the tag high bits; heap casillas retain full F64 metadata, an internal representation
   invisible through the masked hb_* API): echoing a literal 3.5 back
   through hb_itemReturn prints "3.5" byte-exact like the native `?
   3.5`, while a C-constructed double (hb_retnd / hb_itemPutND) keeps
@@ -341,3 +342,15 @@ byte-identical with the Linux build on the whole extend/demo suite
   hb_parc scratch arena (freed after each call); `hb_retclen` copies
   through the runtime's own `hbc_strcpy`, so the returned string is an
   ordinary hbc-owned string.
+
+## Heap float protocol (4.2)
+
+The kind remains5 and the casilla remains16bytes. Bit63 marks an owned
+16-byte item `{double_bits, f64_metadata}`; unmarked kind5 is still the
+legacy inline layout. The new bridge reads both. Bit32 of internal argc
+negotiates heap output for that call; count readers mask it and require
+count<=INT_MAX. An unflagged old caller receives inline returns/stores.
+New heap-producing objects require the rebuilt bridge. New-object/old-
+bridge linkage is unsupported. No proxy casillas or copy-back pass is used.
+Nested thunks and callbacks preserve argc/capability, argv, return and
+scratch scopes. See [the representation and limits](DYN-HEAP-FLOAT-2026-11-15.md).

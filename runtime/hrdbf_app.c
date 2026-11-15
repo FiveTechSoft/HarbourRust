@@ -1,3 +1,4 @@
+#include "hrdyn.h"
 /* Own MIT compiler-facing single-area adapter. Linux only. */
 #include "hrdbf_file.h"
 #include "hrvalue.h"
@@ -123,7 +124,7 @@ uint64_t hrdbf_app_empty(uint64_t t,uint64_t p){
  hrv_cell c={t,p};unsigned k=hrv_kind(c);int yes;hrv_error e;
  if(k==HRV_STR_OWN||k==HRV_STR_BORROW){size_t i,n=((const uint64_t*)p)[-1];const unsigned char*s=(const unsigned char*)p;for(i=0;i<n;i++)if(s[i]!=' '&&s[i]!=9&&s[i]!=10&&s[i]!=13)return 0;return 1;}
  if(k==HRV_ARRAY)return !p||!((const uint64_t*)p)[-1];
- if(k==HRV_DOUBLE){union{uint64_t u;double d;}v;v.u=p;return v.d==0.0;}
+ if(k==HRV_DOUBLE){union{uint64_t u;double d;}v;v.u=(t&HR_DYN_FLOAT_HEAP)?((const uint64_t*)p)[0]:p;return v.d==0.0;}
  if(k==HRV_BLOCK)return 0;
  e=hrv_empty(c,&yes);if(e)hrdbf_app_fail("hbc: DBF scalar Empty rejected\n");return (uint64_t)yes;
 }

@@ -724,7 +724,7 @@ pos tests/t727_float_edge.prg \n         2.675\n         0.999\n         9.999\n
 pos tests/t728_float_copy_reassign.prg \n         2.5\n         0.25\n         2.5
 neg tests/t729_float_arith_neg.prg arithmetic needs numeric operands
 neg tests/t730_float_cond_neg.prg not a condition
-neg tests/t731_float_callarg_neg.prg argument 1 of `p`
+pos tests/t731_float_callarg_neg.prg \n         1.5
 neg tests/t732_float_frontier_neg.prg measured precision frontier
 pos tests/t733_float_ret_neg.prg \n         1.5
 neg tests/t734_float_frontier2_neg.prg measured precision frontier
@@ -767,7 +767,7 @@ pos tests/t773_mixed_sig_str_f64.prg \nn:\n         3.0\nm:\n         6
 pos tests/t774_f64_forward_ref.prg \n         2.0\n         2.5
 pos tests/t775_f64_cyclic_infer.prg \n         2.5
 neg tests/t767_f64_mixed_return_neg.prg return type mismatch
-neg tests/t768_dyn_float_boundary_neg.prg must be a dynamic value, got a float
+pos tests/t768_dyn_float_boundary_neg.prg \n         1.5
 posx tests/t769_f64_fold_defer_guard.prg 1 Error: float field out of range\nCallstack:\n  at main (tests/t769_f64_fold_defer_guard.prg:2)
 posx tests/t770_f64_callchain_overflow.prg 1 Error: float field out of range\nCallstack:\n  at q (tests/t770_f64_callchain_overflow.prg:2)\n  at main (tests/t770_f64_callchain_overflow.prg:4)
 posx tests/t771_f64_varchain_overflow.prg 1 Error: float field out of range\nCallstack:\n  at main (tests/t771_f64_varchain_overflow.prg:5)
@@ -875,7 +875,7 @@ pos tests/t877_qout_param_order.prg          4         4A\n         5          5
 pos tests/t878_qout_param_forward.prg F\n.T.         7\n.T.\n         1.25\n         1.75
 pos tests/t882_qout_param_owned.prg A\n.T.\n         1         65B\n.T.\n         0
 neg tests/t879_qout_param_array_neg.prg a static array argument
-neg tests/t880_qout_param_float_neg.prg must be a dynamic value, got a float
+pos tests/t880_qout_param_float_neg.prg          1.25
 pos tests/t881_qout_param_copy_only.prg          1
 pos tests/t883_print_dyn_temp.prg ABC\n        65\n         0
 pos tests/t884_qout_param_nested_temp.prg \n.T.B\n.T.A\n.T.\n        65\n         0
@@ -1355,8 +1355,8 @@ pos tests/t1362_hb_pvalue_scalars.prg \n         5 abc .T. NIL
 pos tests/t1363_hb_pvalue_dyn.prg \n        11\nxy\n.F.
 pos tests/t1364_hb_pvalue_byref.prg \n        42\n        42
 neg tests/t1365_hb_pvalue_block_neg.prg `hb_PValue` inside a codeblock is not in this increment
-neg tests/t1366_omitted_float_pin_neg.prg but a call site omits it
-neg tests/t1367_hb_pvalue_float_neg.prg Dyn has no float payload tag
+neg tests/t1366_omitted_float_pin_neg.prg arithmetic between a NIL-able (Dyn) value and a float
+pos tests/t1367_hb_pvalue_float_neg.prg \n         5 abc          2.5
 neg tests/t1368_pcount_neg.prg `PCount` is not in this increment
 neg tests/t1369_unknown_nested_arg_neg.prg unknown function `nosuchfn_xyzzy`
 pos tests/t1370_parexpr_inline_assign.prg \n        10\n        10\n        90\n         3

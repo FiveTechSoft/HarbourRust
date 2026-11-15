@@ -11,6 +11,7 @@
  */
 
 #include "hbhbr.h"
+#include "../runtime/hrdyn.h"
 
 /* Provided by the hbc-generated object (exported when EXTERNAL is used):
  * hbc_strcpy(src, len) -> owned buffer copy with its length word at
@@ -29,13 +30,27 @@ __asm__(
     ".p2align 3\n"
     ".globl hbw_strcpy\n"
     "hbw_strcpy:\n"
+    "    push %rdi\n"
+    "    push %rsi\n"
+    "    sub $40, %rsp\n"
     "    mov %rcx, %rdi\n"
     "    mov %rdx, %rsi\n"
-    "    jmp hbc_strcpy\n"
+    "    call hbc_strcpy\n"
+    "    add $40, %rsp\n"
+    "    pop %rsi\n"
+    "    pop %rdi\n"
+    "    ret\n"
     ".globl hbw_freestr\n"
     "hbw_freestr:\n"
+    "    push %rdi\n"
+    "    push %rsi\n"
+    "    sub $40, %rsp\n"
     "    mov %rcx, %rdi\n"
-    "    jmp hbc_freestr\n" );
+    "    call hbc_freestr\n"
+    "    add $40, %rsp\n"
+    "    pop %rsi\n"
+    "    pop %rdi\n"
+    "    ret\n" );
 extern void * hbw_strcpy( const void * src, HB_ULONG len );
 extern void   hbw_freestr( void * owned );
 #define hbc_strcpy hbw_strcpy
@@ -83,11 +98,46 @@ static HB_ULONG field_type( HB_ULONG tag, HB_ULONG pay )
     return ( (HB_LONG) pay >= -2147483648L && (HB_LONG) pay <= 2147483647L ) ? HB_IT_INTEGER : HB_IT_LONG;
 }
 
+/* Versioned kind5. Keep legacy inline values readable; all owned item
+ * producers use an accounted hbc payload, released by hbc_freestr. */
+#define HBC_FLOAT_HEAP HR_DYN_FLOAT_HEAP
+#define HBC_CALL_HEAP HR_DYN_BRIDGE_HEAP_CAP
+static int float_heap( HB_ULONG t ) { return tag_kind(t)==HBC_TAG_DOUBLE && (t&HBC_FLOAT_HEAP)!=0; }
+static HB_ULONG float_bits( const HB_ULONG *w ) {
+    return float_heap(w[0]) ? ((const HB_ULONG *)w[1])[0] : w[1];
+}
+static HB_ULONG float_meta( const HB_ULONG *w ) {
+    HB_ULONG dec; union { HB_ULONG b; double d; } u;
+    if(float_heap(w[0])) return ((const HB_ULONG *)w[1])[1];
+    dec=w[0]>>8; if(!dec) dec=2; u.b=w[1];
+    return (((HB_ULONG)(u.d>9999999999.0 || u.d < -9999999999.0 ? 20:10))<<16)|dec;
+}
+static HB_ULONG float_owned( HB_ULONG bits, HB_ULONG meta ) {
+    HB_ULONG v[2]; v[0]=bits; v[1]=meta;
+    return (HB_ULONG)hbc_strcpy(v,16);
+}
+static void float_clear( HB_ULONG t, HB_ULONG p ) {
+    if(float_heap(t) && p) hbc_freestr((void *)p);
+}
+/* High bits other than the negotiated capability are invalid. Counts
+ * are explicitly bounded to the public signed-int hb_pcount range. */
+static void sys_write_err( const char *, HB_ULONG );
+static void sys_exit1( void );
+static HB_ULONG actual_argc(void) {
+    HB_ULONG n=hbc_ext_argc & ~HBC_CALL_HEAP;
+    if(n>HR_DYN_ARGC_MAX) {
+        static const char msg[]="hbc: invalid Extend argument count\n";
+        sys_write_err(msg,sizeof(msg)-1); sys_exit1();
+    }
+    return n;
+}
+static int caller_heap(void) { (void)actual_argc(); return (hbc_ext_argc&HBC_CALL_HEAP)!=0; }
+
 /* The raw casilla of argument i, or NULL when omitted. */
 static const HB_ULONG * cell_raw( int i )
 {
-    if( i < 1 || (HB_ULONG) i > hbc_ext_argc ) return (const HB_ULONG *) 0;
-    return hbc_ext_argv + 2 * ( hbc_ext_argc - (HB_ULONG) i );
+    if( i < 1 || (HB_ULONG) i > actual_argc() ) return (const HB_ULONG *) 0;
+    return hbc_ext_argv + 2 * ( actual_argc() - (HB_ULONG) i );
 }
 /* The value casilla: a byref argument reads through to the caller's. */
 static const HB_ULONG * cell_ptr( int i )
@@ -107,13 +157,13 @@ static HB_ULONG cell_pay( int i )
     return cas ? cas[ 1 ] : 0;
 }
 
-int hb_pcount( void ) { return (int) hbc_ext_argc; }
+int hb_pcount( void ) { return (int) actual_argc(); }
 
 HB_ULONG hb_parinfo( int iParam )
 {
     HB_ULONG t;
     const HB_ULONG * raw;
-    if( iParam == 0 ) return hbc_ext_argc; /* Harbour: param count */
+    if( iParam == 0 ) return actual_argc(); /* Harbour: param count */
     raw = cell_raw( iParam );
     switch( cell_tag( iParam ) )
     {
@@ -211,8 +261,8 @@ PHB_ITEM hb_param( int iParam, HB_LONG lMask )
      * handle IS the argument's {tag,payload} casilla (milestone 2.1:
      * read-only through the item API; hb_itemNew() copies it). */
     const HB_ULONG * cas;
-    if( iParam < 1 || (HB_ULONG) iParam > hbc_ext_argc ) return (PHB_ITEM) 0;
-    cas = hbc_ext_argv + 2 * ( hbc_ext_argc - (HB_ULONG) iParam );
+    if( iParam < 1 || (HB_ULONG) iParam > actual_argc() ) return (PHB_ITEM) 0;
+    cas = hbc_ext_argv + 2 * ( actual_argc() - (HB_ULONG) iParam );
     if( tag_kind( cas[ 0 ] ) == HBC_TAG_NIL )
         return lMask == (HB_LONG) HB_IT_ANY ? (PHB_ITEM) cas : (PHB_ITEM) 0;
     return ( hb_parinfo( iParam ) & (HB_ULONG) lMask ) ? (PHB_ITEM) cas : (PHB_ITEM) 0;
@@ -223,7 +273,7 @@ HB_LONG hb_parnl( int iParam )
     HB_ULONG t = cell_tag( iParam );
     if( t == HBC_TAG_FIELD_NUMERIC ) return field_i64( cell_ptr( iParam ) );
     if( t == HBC_TAG_INT || t == HBC_TAG_INT_LIT ) return (HB_LONG) cell_pay( iParam );
-    if( t == HBC_TAG_DOUBLE ) { union { HB_ULONG b; double d; } u; u.b = cell_pay( iParam ); return (HB_LONG) u.d; }
+    if( t == HBC_TAG_DOUBLE ) { union { HB_ULONG b; double d; } u; u.b = float_bits( cell_ptr(iParam) ); return (HB_LONG) u.d; }
     return 0; /* Harbour answers 0 on a type mismatch at this API level */
 }
 
@@ -232,7 +282,7 @@ double hb_parnd( int iParam )
     HB_ULONG t = cell_tag( iParam );
     if( t == HBC_TAG_FIELD_NUMERIC ) return (double) field_i64( cell_ptr( iParam ) );
     if( t == HBC_TAG_INT || t == HBC_TAG_INT_LIT ) return (double) (HB_LONG) cell_pay( iParam );
-    if( t == HBC_TAG_DOUBLE ) { union { HB_ULONG b; double d; } u; u.b = cell_pay( iParam ); return u.d; }
+    if( t == HBC_TAG_DOUBLE ) { union { HB_ULONG b; double d; } u; u.b = float_bits( cell_ptr(iParam) ); return u.d; }
     return 0.0; /* Harbour answers 0 on a type mismatch at this API level */
 }
 int hb_parni( int iParam ) { return (int) hb_parnl( iParam ); }
@@ -330,6 +380,7 @@ static void sys_exit1( void )
 #define HBC_EXT_SCRATCH_MAX 256
 static void * scratch[ HBC_EXT_SCRATCH_MAX ];
 static int    scratch_n;
+static int    scratch_floor;
 
 static void * scratch_alloc( HB_ULONG len )
 {
@@ -348,7 +399,7 @@ static void * scratch_alloc( HB_ULONG len )
 /* Called by hbc_ext_dispatch after the C function returns. */
 void hbc_ext_end( void )
 {
-    while( scratch_n > 0 )
+    while( scratch_n > scratch_floor )
     {
         void * base = scratch[ --scratch_n ];
         sys_munmap( base, *(HB_ULONG *) base );
@@ -388,6 +439,7 @@ static void ret_set( HB_ULONG tag, HB_ULONG pay )
 {
     if( tag_kind( hbc_ext_ret_tag ) == HBC_TAG_STR_OWN && hbc_ext_ret_pay )
         hbc_freestr( (void *) hbc_ext_ret_pay );
+    float_clear(hbc_ext_ret_tag,hbc_ext_ret_pay);
     hbc_ext_ret_tag = tag; hbc_ext_ret_pay = pay;
 }
 
@@ -418,11 +470,18 @@ void hb_retclen( const char * szText, HB_SIZE nLen )
     owned = hbc_strcpy( szText, nLen );
     ret_set( HBC_TAG_STR_OWN, (HB_ULONG) owned );
 }
+/* Convert a borrowed float into a fresh return/store for this caller's ABI. */
+static void float_for_caller(const HB_ULONG *src,HB_ULONG *tag,HB_ULONG *pay) {
+    HB_ULONG bits=float_bits(src),meta=float_meta(src);
+    if(caller_heap()) { *tag=HBC_FLOAT_HEAP|HBC_TAG_DOUBLE; *pay=float_owned(bits,meta); }
+    else { *tag=!float_heap(src[0]) ? src[0] : ((meta&65535u)==2 ? HBC_TAG_DOUBLE : HBC_TAG_DOUBLE|((meta&65535u)<<8)); *pay=bits; }
+}
 void hb_retnd( double dNumber )
 {
     union { double d; HB_ULONG b; } u;
-    u.d = dNumber;
-    ret_set( HBC_TAG_DOUBLE, u.b );
+    HB_ULONG src[2],tag,pay;
+    u.d = dNumber; src[0]=HBC_TAG_DOUBLE; src[1]=u.b;
+    float_for_caller(src,&tag,&pay); ret_set(tag,pay);
 }
 
 void hb_retc( const char * szText )
@@ -456,6 +515,7 @@ static void stor_scalar( int i, HB_ULONG tag, HB_ULONG pay )
         sys_exit1();
     }
     if( tag_kind( w[ 0 ] ) == HBC_TAG_STR_OWN && w[ 1 ] ) hbc_freestr( (void *) w[ 1 ] );
+    float_clear(w[0],w[1]);
     w[ 0 ] = tag; w[ 1 ] = pay;
 }
 int hb_storni( int iValue, int iParam )  { stor_scalar( iParam, HBC_TAG_INT, (HB_ULONG) (HB_LONG) iValue ); return stor_ptr( iParam ) != 0; }
@@ -463,8 +523,10 @@ int hb_stornl( HB_LONG lValue, int iParam ) { stor_scalar( iParam, HBC_TAG_INT, 
 int hb_stornd( double dValue, int iParam )
 {
     union { double d; HB_ULONG b; } u;
-    u.d = dValue;
-    stor_scalar( iParam, HBC_TAG_DOUBLE, u.b );
+    HB_ULONG src[2],tag,pay;
+    if(!stor_ptr(iParam)) return 0;
+    u.d = dValue; src[0]=HBC_TAG_DOUBLE; src[1]=u.b;
+    float_for_caller(src,&tag,&pay); stor_scalar(iParam,tag,pay);
     return stor_ptr( iParam ) != 0;
 }
 int hb_storl( int iLogical, int iParam ) { stor_scalar( iParam, HBC_TAG_LOGICAL, iLogical ? 1 : 0 ); return stor_ptr( iParam ) != 0; }
@@ -557,6 +619,7 @@ static void item_free_str( void * p )
 static void item_clear_string( HB_ULONG * w )
 {
     if( tag_kind( w[ 0 ] ) == HBC_TAG_STR_OWN && w[ 1 ] ) item_free_str( (void *) w[ 1 ] );
+    float_clear(w[0],w[1]);
 }
 
 static void item_set_string( HB_ULONG * w, const char * s, HB_ULONG len )
@@ -585,6 +648,10 @@ PHB_ITEM hb_itemNew( PHB_ITEM pNullOrSrc )
             const char * b = (const char *) s[ 1 ];
             item_set_string( w, b, ( (const HB_ULONG *) b )[ -1 ] );
         }
+        else if(tag_kind(s[0])==HBC_TAG_DOUBLE) {
+            w[0]=HBC_FLOAT_HEAP|HBC_TAG_DOUBLE;
+            w[1]=float_owned(float_bits(s),float_meta(s));
+        }
         else { w[ 0 ] = s[ 0 ]; w[ 1 ] = s[ 1 ]; }
     }
     return (PHB_ITEM) w;
@@ -612,7 +679,7 @@ HB_LONG hb_itemGetNL( PHB_ITEM p )
     if( ! w ) return 0;
     if( tag_kind( w[0] ) == HBC_TAG_FIELD_NUMERIC ) return field_i64( w );
     if( tag_kind( w[ 0 ] ) == HBC_TAG_INT || tag_kind( w[ 0 ] ) == HBC_TAG_INT_LIT ) return (HB_LONG) w[ 1 ];
-    if( tag_kind( w[ 0 ] ) == HBC_TAG_DOUBLE ) { union { HB_ULONG b; double d; } u; u.b = w[ 1 ]; return (HB_LONG) u.d; }
+    if( tag_kind( w[ 0 ] ) == HBC_TAG_DOUBLE ) { union { HB_ULONG b; double d; } u; u.b = float_bits(w); return (HB_LONG) u.d; }
     return 0;
 }
 double hb_itemGetND( PHB_ITEM p )
@@ -621,7 +688,7 @@ double hb_itemGetND( PHB_ITEM p )
     if( ! w ) return 0.0;
     if( tag_kind( w[0] ) == HBC_TAG_FIELD_NUMERIC ) return (double) field_i64( w );
     if( tag_kind( w[ 0 ] ) == HBC_TAG_INT || tag_kind( w[ 0 ] ) == HBC_TAG_INT_LIT ) return (double) (HB_LONG) w[ 1 ];
-    if( tag_kind( w[ 0 ] ) == HBC_TAG_DOUBLE ) { union { HB_ULONG b; double d; } u; u.b = w[ 1 ]; return u.d; }
+    if( tag_kind( w[ 0 ] ) == HBC_TAG_DOUBLE ) { union { HB_ULONG b; double d; } u; u.b = float_bits(w); return u.d; }
     return 0.0;
 }
 HB_BOOL hb_itemGetL( PHB_ITEM p )
@@ -670,7 +737,7 @@ void hb_xfree( void * pMemory )
 
 PHB_ITEM hb_itemPutNI( PHB_ITEM p, int iNumber )  { HB_ULONG * w = item_words( p ); if( w ) { item_clear_string( w ); w[ 0 ] = HBC_TAG_INT; w[ 1 ] = (HB_ULONG) (HB_LONG) iNumber; } return p; }
 PHB_ITEM hb_itemPutNL( PHB_ITEM p, HB_LONG lNumber ) { HB_ULONG * w = item_words( p ); if( w ) { item_clear_string( w ); w[ 0 ] = HBC_TAG_INT; w[ 1 ] = (HB_ULONG) lNumber; } return p; }
-PHB_ITEM hb_itemPutND( PHB_ITEM p, double dNumber ) { HB_ULONG * w = item_words( p ); union { double d; HB_ULONG b; } u; if( w ) { item_clear_string( w ); u.d = dNumber; w[ 0 ] = HBC_TAG_DOUBLE; w[ 1 ] = u.b; } return p; }
+PHB_ITEM hb_itemPutND( PHB_ITEM p, double dNumber ) { HB_ULONG * w = item_words( p ); union { double d; HB_ULONG b; } u; if( w ) { item_clear_string( w ); u.d = dNumber; w[ 0 ] = HBC_FLOAT_HEAP|HBC_TAG_DOUBLE; HB_ULONG src[2]; src[0]=HBC_TAG_DOUBLE;src[1]=u.b; w[ 1 ] = float_owned(u.b,float_meta(src)); } return p; }
 PHB_ITEM hb_itemPutL( PHB_ITEM p, HB_BOOL bValue ){ HB_ULONG * w = item_words( p ); if( w ) { item_clear_string( w ); w[ 0 ] = HBC_TAG_LOGICAL; w[ 1 ] = bValue ? 1 : 0; } return p; }
 PHB_ITEM hb_itemPutCL( PHB_ITEM p, const char * szText, HB_SIZE nLen )
 {
@@ -699,12 +766,14 @@ PHB_ITEM hb_itemReturn( PHB_ITEM pItem )
     {
         case HBC_TAG_INT:
         case HBC_TAG_INT_LIT:
-        case HBC_TAG_DOUBLE:
         case HBC_TAG_LOGICAL:
         case HBC_TAG_DATE:
         case HBC_TAG_FIELD_NUMERIC:
             ret_set( w[ 0 ], w[ 1 ] );
             break;
+        case HBC_TAG_DOUBLE: {
+            HB_ULONG tag,pay; float_for_caller(w,&tag,&pay); ret_set(tag,pay); break;
+        }
         case HBC_TAG_STR_BRW:
         case HBC_TAG_STR_OWN: {
             const char * b = (const char *) w[ 1 ];
@@ -844,7 +913,20 @@ PHB_ITEM hb_evalLaunch( PHB_EVALINFO pEvalInfo )
     n = pEvalInfo->paramCount;
     for( i = 0; i < n; i++ )
         vals[ i ] = item_words( pEvalInfo->pItems[ i + 1 ] )[ 1 ];
-    ret = hbc_blk_launch( codeptr, vals, n );
+    {
+        HB_ULONG argc=hbc_ext_argc, rt=hbc_ext_ret_tag, rp=hbc_ext_ret_pay;
+        const HB_ULONG *argv=hbc_ext_argv;
+        int floor=scratch_floor;
+        scratch_floor=scratch_n;
+        hbc_ext_ret_tag=HBC_TAG_NIL; hbc_ext_ret_pay=0;
+        ret = hbc_blk_launch( codeptr, vals, n );
+        /* A nested old thunk may leave its last return pair in the global
+         * channel even after its caller consumed it. Do not free it here:
+         * ownership transferred at that boundary. Only release scratch. */
+        hbc_ext_end(); scratch_floor=floor;
+        hbc_ext_argc=argc; hbc_ext_argv=argv;
+        hbc_ext_ret_tag=rt; hbc_ext_ret_pay=rp;
+    }
     return hb_itemPutNL( hb_itemNew( (PHB_ITEM) 0 ), ret );
 }
 

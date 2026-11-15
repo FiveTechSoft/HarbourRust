@@ -53,6 +53,7 @@ thread_local! {
 #[path = "pp.rs"]
 mod pp;
 mod hasm;
+mod dyn_float;
 mod hpe;
 mod hmacho;
 mod vas;
@@ -1614,6 +1615,7 @@ impl P {
 }
 
 const ASM_RESERVED: &[&str] = &[
+    "float_new", "float_clone", "float_release", "float_unpack", "float_cells_release",
     // Not backend keywords (there is no textual backend anymore), but labels
     // hbc itself emits; a user function with one of these names would
     // collide with a helper symbol.
@@ -4705,7 +4707,7 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
         if nil_ev.get(i).copied().unwrap_or(false) {
             pin[i] = match pin[i] {
                 None | Some(Ty::Dyn) => Some(Ty::Dyn),
-                Some(Ty::I64) | Some(Ty::Bool) | Some(Ty::Str) | Some(Ty::StrOwn) => Some(Ty::Dyn),
+                Some(Ty::I64) | Some(Ty::Bool) | Some(Ty::Str) | Some(Ty::StrOwn) | Some(Ty::F64) => Some(Ty::Dyn),
                 Some(t) => {
                     if pin_err.is_none() {
                         pin_err = Some(format!("parameter `{}` of function `{}` is {} by its body but a call site omits it; Harbour fills it with NIL and this increment's Dyn casilla cannot carry {}", p, f.name, ty_name(t), ty_name(t)));
@@ -6607,8 +6609,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 if let Some(s) = sigs.iter().find(|v| v.name == cur) {
                     for (pi, pt) in s.params.iter().enumerate() {
                         match pt {
-                            Ty::I64 | Ty::Bool | Ty::Str | Ty::StrOwn | Ty::Dyn => {}
-                            Ty::F64 => return Err(format!("line {}: `hb_PValue` in `{}` would expose parameter #{} as Dyn, but Dyn has no float payload tag in this increment (the representation decision is pending)", n, cur, pi + 1)),
+                            Ty::I64 | Ty::Bool | Ty::Str | Ty::StrOwn | Ty::Dyn | Ty::F64 => {}
                             other => return Err(format!("line {}: `hb_PValue` in `{}` cannot expose parameter #{} ({}) as a Dyn casilla in this increment", n, cur, pi + 1, ty_name(*other))),
                         }
                     }
@@ -6630,6 +6631,9 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                     // rejections; floats cross as tag-5 Dyn casillas
                     // (value bits in the payload); the C side only BORROWS
                     // during the call.
+                    if args.len() as u64 > dyn_float::MAX_ARGC {
+                        return Err(format!("line {}: Extend argument count exceeds INT_MAX",n));
+                    }
                     for a in args.iter() {
                         if let Expr::ByRef(vn) = a {
                             // `@x` across the C boundary (milestone 2.2):
@@ -7016,7 +7020,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 let ok = ta == sig_params[i]
                     || (ta == Ty::Dyn && sig_params[i] == Ty::I64)  // runtime extract (nil -> clean type error)
                     || (ta == Ty::I64 && sig_params[i] == Ty::F64) // integer converts to a double at the boundary (63zd; oracles hk302/hk303/hk307)
-                    || (ta == Ty::I64 && sig_params[i] == Ty::Dyn) // tagged at the call
+                    || (matches!(ta,Ty::I64|Ty::F64) && sig_params[i] == Ty::Dyn) // tagged at the call
                     || ((ta == Ty::Str || ta == Ty::StrOwn) && sig_params[i] == Ty::Dyn) // cloned to an owned tag-4 payload at the boundary (hk259)
                     || (ta == Ty::Bool && sig_params[i] == Ty::Dyn) // tagged 3 at the call (hk264)
                     || (matches!(ta, Ty::Obj(_)) && sig_params[i] == Ty::Dyn) // object tags 13 in place (sharing, hk-registered)
@@ -7898,7 +7902,7 @@ fn unify_ret(ret: Option<Ty>, t: Ty, n: usize) -> Result<Ty, String> {
     match (ret, t) {
         (None, t) => Ok(t),
         (Some(p), t) if p == t => Ok(t),
-        (Some(Ty::I64), Ty::Dyn) | (Some(Ty::Dyn), Ty::I64) => Ok(Ty::Dyn),
+        (Some(Ty::I64|Ty::F64), Ty::Dyn) | (Some(Ty::Dyn), Ty::I64|Ty::F64) => Ok(Ty::Dyn),
         // A rodata string and an owned string unify to owned (the caller
         // always owns the result; a rodata return point emits a copy).
         (Some(Ty::Str), Ty::StrOwn) | (Some(Ty::StrOwn), Ty::Str) => Ok(Ty::StrOwn),
@@ -9755,7 +9759,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 } else if env[idx].ty == Ty::DArrU && matches!(t, Ty::DArr | Ty::DArr2 | Ty::DArrDyn) {
                     // Assigning a pinned dynamic array pins the empty `{}`.
                     env[idx].ty = t;
-                } else if env[idx].ty == Ty::Dyn && matches!(t, Ty::I64 | Ty::Bool | Ty::Dyn | Ty::Str | Ty::StrOwn) {
+                } else if env[idx].ty == Ty::Dyn && matches!(t, Ty::I64 | Ty::Bool | Ty::Dyn | Ty::Str | Ty::StrOwn | Ty::F64) {
                     // Dyn slot: an i64 is tagged in, a Dyn is copied (probe
                     // n2: reassignment re-tags a live variable), a string
                     // becomes an OWNED tag-4 casilla (hk242): a literal is
@@ -11856,6 +11860,16 @@ hbc_mutex_notify_all:
     lock btsq $0, (%r8)
     jc .Lmxa_sp
 .Lmxa_ok:
+    sub $16, %rsp
+    mov %rsi, (%rsp)
+    mov %rdx, 8(%rsp)
+    mov 48(%rbx), %rax
+    mov 56(%rbx), %rdx
+    call hbc_float_release
+    mov (%rsp), %rsi
+    mov 8(%rsp), %rdx
+    add $16, %rsp
+    lea 72(%rbx), %r8
     mov %rsi, 48(%rbx)
     mov %rdx, 56(%rbx)
     lock incq 64(%rbx)
@@ -11961,6 +11975,20 @@ hbc_mutex_subscribe:
     mov $1, %eax
     jmp .Lmxs_out
 .Lmxs_bcast:
+    mov 48(%rbx), %rax
+    cmp $5, %al
+    jne .Lmxs_bcast_legacy
+    test %rax, %rax
+    jns .Lmxs_bcast_legacy
+    mov 56(%rbx), %rdx
+    call hbc_float_clone
+    mov %rdx, %rcx
+    mov %rax, %rdx
+    lea 72(%rbx), %r8
+    lock btrq $0, (%r8)
+    mov $1, %eax
+    jmp .Lmxs_out
+.Lmxs_bcast_legacy:
     mov 48(%rbx), %rdx
     mov 56(%rbx), %rcx
     lock btrq $0, (%r8)
@@ -12064,7 +12092,7 @@ fn cg_data_value(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
         Ty::I64 => { cg_value(e, env, sigs, strs, out, target); cg_i64_tagged(out); }
         Ty::F64 => {
             cg_f64_load(e, env, sigs, strs, out, target);
-            out.push_str("    movq %xmm0, %rax\n    mov %rdi, %r10\n    and $0xffff, %r10\n    shl $8, %r10\n    or $5, %r10\n    mov %rax, %rdx\n    mov %r10, %rax\n");
+            out.push_str("    mov %rdi, %rsi\n    movq %xmm0, %rdi\n    call hbc_float_new\n");
         }
         Ty::Str | Ty::StrOwn => {
             cg_value(e, env, sigs, strs, out, target);
@@ -12122,7 +12150,7 @@ fn cg_i64_tagged(out: &mut String) {
 fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target) {
     match e {
         Expr::Seq(es) => {
-            for e in es {
+            for (i,e) in es.iter().enumerate() {
                 let t = expr_ty(e, env, sigs);
                 if t == Ty::F64 {
                     cg_f64_load(e, env, sigs, strs, out, target);
@@ -12136,6 +12164,11 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                     out.push_str(&format!("    lea .Lstr{}(%rip), %rax\n", idx));
                     out.push_str(&format!("    mov ${}, %edx\n", s.as_bytes().len()));
                 } else { cg_value(e, env, sigs, strs, out, target); }
+                if i+1<es.len() && t==Ty::Dyn && dyn_expr_owned(e) {
+                    out.push_str("    sub $16,%rsp\n    mov %rax,(%rsp)\n    mov %rdx,8(%rsp)\n");
+                    cg_dyn_stack_release(out,0,false);
+                    out.push_str("    add $16,%rsp\n");
+                }
             }
         }
         Expr::Set(id, rhs) => {
@@ -12177,7 +12210,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             let ci = if ci >= 0 { ci as u32 } else { unreachable!("checked") };
             let off = data_lookup(ci, &name.to_lowercase()).expect("checked");
             let sv = env.iter().rev().find(|x| x.name == "Self").expect("method env has Self");
-            out.push_str(&format!("    mov -{}(%rbp), %rax\n    mov {}(%rax), %rdx\n    mov {}(%rax), %rax\n\n    cmp $4, %rax\n    jne 83f\n    mov %rdx, %rdi\n    mov -8(%rdx), %rsi\n    call hbc_strcpy\n    mov %rax, %rdx\n    mov $4, %eax\n83:\n", sv.off, 16 + off * 16 + 8, 16 + off * 16));
+            out.push_str(&format!("    mov -{}(%rbp), %rax\n    mov {}(%rax), %rdx\n    mov {}(%rax), %rax\n    call hbc_float_clone\n\n    cmp $4, %rax\n    jne 83f\n    mov %rdx, %rdi\n    mov -8(%rdx), %rsi\n    call hbc_strcpy\n    mov %rax, %rdx\n    mov $4, %eax\n83:\n", sv.off, 16 + off * 16 + 8, 16 + off * 16));
         }
         Expr::Send(recv, name, args) => {
             let ci = match expr_ty(recv, env, sigs) { Ty::Obj(ci) => ci, _ => unreachable!("checked") };
@@ -12198,7 +12231,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             // DATA casilla read: compile-time offset, borrowed Dyn pair.
             let off = data_lookup(ci, &lname).expect("checked");
             cg_value(recv, env, sigs, strs, out, target);
-            out.push_str(&format!("    mov {}(%rax), %rdx\n    mov {}(%rax), %rax\n\n    cmp $4, %rax\n    jne 83f\n    mov %rdx, %rdi\n    mov -8(%rdx), %rsi\n    call hbc_strcpy\n    mov %rax, %rdx\n    mov $4, %eax\n83:\n", 16 + off * 16 + 8, 16 + off * 16));
+            out.push_str(&format!("    mov {}(%rax), %rdx\n    mov {}(%rax), %rax\n    call hbc_float_clone\n\n    cmp $4, %rax\n    jne 83f\n    mov %rdx, %rdi\n    mov -8(%rdx), %rsi\n    call hbc_strcpy\n    mov %rax, %rdx\n    mov $4, %eax\n83:\n", 16 + off * 16 + 8, 16 + off * 16));
         }
         Expr::ByRef(_) => unreachable!("`@` arguments are emitted at the call site"),
         Expr::FuncRef(_) => unreachable!("`@f()` is marshaled by the hb_threadStart call site"),
@@ -12558,8 +12591,8 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                     cg_value(&args[0],env,sigs,strs,out,target);
                     out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n    mov %rax, %r10\n");
                     vt_classify_scalar(strs,out);
-                    out.push_str("    push %rdx\n    push %rax\n    cmpb $4, 16(%rsp)\n    jne .Ldbfvtkeep");
-                    let k=fresh_lbl();out.push_str(&format!("{}\n    mov 24(%rsp), %rdi\n    call hbc_freestr\n.Ldbfvtkeep{}:\n    pop %rax\n    pop %rdx\n    add $16, %rsp\n",k,k));
+                    cg_dyn_stack_release(out,0,true);
+                    out.push_str("    add $16, %rsp\n");
                 }
                 Expr::Call(id,_) if is_builtin(id,"date") || is_builtin(id,"ctod") => {
                     cg_expr(&args[0],env,sigs,strs,out,target);vt_letter(strs,out,"D");
@@ -13077,7 +13110,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             if expr_ty(&args[0],env,sigs) == Ty::DArrS {
                 out.push_str(&format!("    mov -{}(%rbp), %rax\n    test %rax, %rax\n    jle .LatS{}\n    mov -{}(%rbp), %r11\n    dec %rax\n    shl $4, %rax\n    add %rax, %r11\n    mov 8(%r11), %rdi\n    mov -8(%rdi), %rsi\n    call hbc_strcpy\n    mov %rax, %rdx\n    mov $4, %eax\n    jmp .LatSe{}\n.LatS{}:\n    mov $1, %eax\n    xor %edx, %edx\n.LatSe{}:\n", var.off-8, l, var.off, l, l, l));
             } else {
-                out.push_str(&format!("    mov -{}(%rbp), %rax\n    test %rax, %rax\n    jle .LatI{}\n    mov -{}(%rbp), %r11\n    dec %rax\n    shl $4, %rax\n    add %rax, %r11\n    mov 8(%r11), %rdx\n    mov (%r11), %rax\n    jmp .LatIe{}\n.LatI{}:\n    mov $1, %eax\n    xor %edx, %edx\n.LatIe{}:\n", var.off-8, l, var.off, l, l, l));
+                out.push_str(&format!("    mov -{}(%rbp), %rax\n    test %rax, %rax\n    jle .LatI{}\n    mov -{}(%rbp), %r11\n    dec %rax\n    shl $4, %rax\n    add %rax, %r11\n    mov 8(%r11), %rdx\n    mov (%r11), %rax\n    call hbc_float_clone\n    jmp .LatIe{}\n.LatI{}:\n    mov $1, %eax\n    xor %edx, %edx\n.LatIe{}:\n", var.off-8, l, var.off, l, l, l));
             }
         }
         Expr::Call(id,args) if is_builtin(id,"asort") => {
@@ -13546,8 +13579,10 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                 let lo = fresh_lbl();
                 // Release the slot's previous payload before overwriting
                 // (owned string, or object when classes are active).
-                out.push_str(&format!("    sub $16, %rsp
+                out.push_str(&format!("    sub $32, %rsp
     mov %rax, (%rsp)
+    mov %rdx, 8(%rsp)
+    mov %rcx, 16(%rsp)
     mov -{}(%rbp), %rax
     cmp $4, %rax
     jne .Lthj{}
@@ -13555,6 +13590,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
     call hbc_freestr
 .Lthj{}:
 ", var.off, lf, var.off - 8, lf));
+                out.push_str(&format!("    mov -{}(%rbp), %rax\n    mov -{}(%rbp), %rdx\n    call hbc_float_release\n", var.off, var.off - 8));
                 if !CLASSES.with(|c| c.borrow().is_empty()) {
                     out.push_str(&format!("    mov -{}(%rbp), %rax
     @HBC_TAG_KIND@cmp $13, %rax@HBC_TAG_END@
@@ -13565,11 +13601,14 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
 ", var.off, lo, var.off - 8, lo));
                 }
                 out.push_str(&format!("    mov (%rsp), %rax
-    add $16, %rsp
+    mov 8(%rsp), %rdx
+    mov 16(%rsp), %rcx
+    add $32, %rsp
     mov %rdx, -{}(%rbp)
     mov %rcx, -{}(%rbp)
 ", var.off, var.off - 8));
             } else {
+                out.push_str("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, %rax\n    mov %rcx, %rdx\n    call hbc_float_release\n    mov %rdx, %rcx\n    mov %rax, %rdx\n    mov (%rsp), %rax\n    add $32, %rsp\n");
                 // Discarded result: free an owned-string payload.
                 let l2 = fresh_lbl();
                 out.push_str(&format!("    cmp $4, %rdx
@@ -13878,6 +13917,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
     call hbc_freestr
 .Lmxs_nf{}:
 ", l, var.off, l, var.off - 8, l));
+            out.push_str(&format!("    mov -{}(%rbp), %rax\n    mov -{}(%rbp), %rdx\n    call hbc_float_release\n",var.off,var.off-8));
             if !CLASSES.with(|c| c.borrow().is_empty()) {
                 out.push_str(&format!("    mov -{}(%rbp), %rax
     @HBC_TAG_KIND@cmp $13, %rax@HBC_TAG_END@
@@ -13987,6 +14027,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
     call hbc_freestr
 .Lmxs_nf{}:
 ", l, var.off, l, var.off - 8, l));
+            out.push_str(&format!("    mov -{}(%rbp), %rax\n    mov -{}(%rbp), %rdx\n    call hbc_float_release\n",var.off,var.off-8));
             if !CLASSES.with(|c| c.borrow().is_empty()) {
                 out.push_str(&format!("    mov -{}(%rbp), %rax
     @HBC_TAG_KIND@cmp $13, %rax@HBC_TAG_END@
@@ -14034,6 +14075,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
     call hbc_freestr
 .Lmqi_nf{}:
 ", 8 * k, var.off, l, var.off - 8, l));
+                    out.push_str(&format!("    mov -{}(%rbp), %rax\n    mov -{}(%rbp), %rdx\n    call hbc_float_release\n",var.off,var.off-8));
                     if !CLASSES.with(|c| c.borrow().is_empty()) {
                         out.push_str(&format!("    mov -{}(%rbp), %rax
     @HBC_TAG_KIND@cmp $13, %rax@HBC_TAG_END@
@@ -14199,8 +14241,10 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             let addend = if temp_key { 48 } else { 32 };
             out.push_str("    test %rax, %rax\n    je 81f\n    mov (%rax), %rcx\n    mov 8(%rax), %rdx\n    mov %rcx, %rax\n");
             cg_dyn_clone_if_str(out);
-            // Preserve the hit result while releasing the unused default snapshot.
-            out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n    @HBC_TAG_KIND@cmpq $4, 32(%rsp)@HBC_TAG_END@\n    jne 83f\n    mov 40(%rsp), %rdi\n    call hbc_freestr\n83:\n    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    add $16, %rsp\n    jmp 82f\n81:\n    mov 16(%rsp), %rax\n    mov 24(%rsp), %rdx\n");
+            // Preserve the hit while releasing the unused owned default.
+            out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+            cg_dyn_stack_release(out,32,false);
+            out.push_str("    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    add $16, %rsp\n    jmp 82f\n81:\n    mov 16(%rsp), %rax\n    mov 24(%rsp), %rdx\n");
             out.push_str(&format!("82:\n    add ${}, %rsp\n", addend));
         }
         Expr::Call(id, args) if is_builtin(id, "hb_hsetdef") => {
@@ -14419,7 +14463,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                     if DBF_USED.with(|v|v.get()) {
                         cg_value(e,env,sigs,strs,out,target);
                         out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hrdbf_app_empty\n");
-                        if !matches!(e,Expr::Var(_)|Expr::Index(..)) {let k=fresh_lbl();out.push_str(&format!("    sub $16, %rsp\n    mov %rax, (%rsp)\n    cmpb $4, 16(%rsp)\n    jne .Ldbfemptykeep{}\n    mov 24(%rsp), %rdi\n    call hbc_freestr\n.Ldbfemptykeep{}:\n    mov (%rsp), %rax\n    add $16, %rsp\n",k,k));}
+                        if dyn_expr_owned(e) { cg_dyn_stack_release(out,0,true); }
                         out.push_str("    add $16, %rsp\n");
                     }else{out.push_str("    mov $1, %eax\n");}
                 }
@@ -14507,6 +14551,9 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                 out.push_str(&format!(".Lpv{}_{}:\n", k, i));
                 match v.ty {
                     Ty::I64 => {out.push_str(&format!("    mov -{}(%rbp), %rax\n    mov -{}(%rbp), %rdx\n", v.off,v.off-8));cg_i64_tagged(out);},
+                    Ty::F64 => {
+                        out.push_str(&format!("    mov -{}(%rbp), %rdi\n    mov -{}(%rbp), %rsi\n    call hbc_float_new\n",v.off,v.off-8));
+                    }
                     Ty::Bool => out.push_str(&format!("    mov -{}(%rbp), %rdx\n    mov $3, %eax\n", v.off)),
                     Ty::RefI64 => {
                         out.push_str(&format!("    mov -{}(%rbp), %r10\n    mov (%r10), %rax\n",v.off));
@@ -14615,6 +14662,11 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                 }
                 let ta = expr_ty(a, env, sigs);
                 let pty = psig.as_ref().and_then(|p| p.get(ai).copied());
+                if pty == Some(Ty::Dyn) && ta == Ty::F64 {
+                    cg_f64_load(a,env,sigs,strs,out,target);
+                    out.push_str("    mov %rdi, %rsi\n    movq %xmm0, %rdi\n    call hbc_float_new\n    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+                    continue;
+                }
                 if pty == Some(Ty::F64) && ta == Ty::F64 {
                     // Float argument (63zd): the declared convention is
                     // the established F64 pair - value bits in xmm0,
@@ -15693,6 +15745,8 @@ fn collect_byref_variants(funcs: &[Func]) -> std::collections::BTreeSet<(String,
 // exactly one owner (slot overwrite, epilogue, or a print/compare temp).
 // Every store into a Dyn slot first releases a live tag-4 payload.
 fn cg_dyn_free_old(out: &mut String, off: usize) {
+    // Marked heap floats share the owned-payload lifetime, not the string kind.
+    out.push_str(&format!("    mov -{}(%rbp), %rax\n    mov -{}(%rbp), %rdx\n    call hbc_float_release\n", off, off-8));
     // ains P2 stage 1: a live tag-8 payload (OWNED scalar-cell array,
     // 8-byte count header, DATA pointer) is released with hbc_dfree
     // verbatim; -8(DATA) is the live count (equal to capacity in this
@@ -15750,17 +15804,14 @@ fn cg_ext_call(id: &str, args: &[Expr], env: &[CgLocal], sigs: &[Sig], strs: &mu
                 // internal param/return gates stay (ownership).
                 cg_value(a, env, sigs, strs, out, target); // rax=tag, rdx=payload
                 out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
-                if DBF_USED.with(|v|v.get()) && matches!(a, Expr::Call(..)) {dyn_temp_slots.push(ai);}
+                if dyn_expr_owned(a) {dyn_temp_slots.push(ai);}
             }
             Ty::F64 => {
-                // f64 crosses as tag 5 with the value bits as payload.
-                // The literal/operation's DECIMAL COUNT rides in the tag
-                // word's high bits (5 | dec<<8) so an echo through C
-                // keeps Harbour's width/dec (oracle: HBR_ECHO(3.5) prints
-                // "3.5", not "3.50"); a C-constructed double keeps the
-                // plain tag and prints dec 2, hb_itemPutND's default.
+                // Heap kind5 preserves the complete F64 formatting metadata.
+                // The bridge emits legacy inline values only for old callers.
                 cg_f64_load(a, env, sigs, strs, out, target); // xmm0=value, rdi=(width<<16)|dec
-                out.push_str("    movq %xmm0, %rax\n    mov %rdi, %r10\n    and $0xffff, %r10\n    shl $8, %r10\n    or $5, %r10\n    sub $16, %rsp\n    mov %r10, (%rsp)\n    mov %rax, 8(%rsp)\n");
+                out.push_str("    mov %rdi, %rsi\n    movq %xmm0, %rdi\n    call hbc_float_new\n    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+                str_slots.push(ai);
             }
             Ty::Block(..) => {
                 // Milestone 2.5: the block value is its 8-byte code
@@ -15787,8 +15838,7 @@ fn cg_ext_call(id: &str, args: &[Expr], env: &[CgLocal], sigs: &[Sig], strs: &mu
         out.push_str(&format!("    mov {}(%rsp), %rdi\n    call hbc_freestr\n", 16 * (n - ai) + 8));
     }
     for ai in dyn_temp_slots {
-        let done=fresh_lbl();
-        out.push_str(&format!("    cmpb $4, {}(%rsp)\n    jne .Ldbfextfree{}\n    mov {}(%rsp), %rdi\n    call hbc_freestr\n.Ldbfextfree{}:\n",16*(n-ai),done,16*(n-ai)+8,done));
+        cg_dyn_stack_release(out,16*(n-ai),false);
     }
     out.push_str(&format!("    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    add ${}, %rsp\n", 16 * (n + 1)));
     true
@@ -15807,7 +15857,7 @@ fn obj_fresh(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> bool {
 // ownership. IIF Dyn arms are normalized on the selected branch below.
 fn dyn_expr_owned(e: &Expr) -> bool {
     match e {
-        Expr::Call(..) | Expr::Send(..) => true,
+        Expr::Call(..) | Expr::Send(..) | Expr::SelfGet(..) => true,
         Expr::Seq(es) => es.last().map_or(false, dyn_expr_owned),
         _ => false,
     }
@@ -15815,6 +15865,10 @@ fn dyn_expr_owned(e: &Expr) -> bool {
 // Release a tag-4 snapshot at offset from rsp; optionally preserve the
 // result pair. Borrowed source slots never reach this helper.
 fn cg_dyn_stack_release(out: &mut String, off: usize, preserve: bool) {
+    if preserve { out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n"); }
+    let base=off+if preserve{16}else{0};
+    out.push_str(&format!("    mov {}(%rsp), %rax\n    mov {}(%rsp), %rdx\n    call hbc_float_release\n",base,base+8));
+    if preserve { out.push_str("    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    add $16, %rsp\n"); }
     let k=fresh_lbl();
     out.push_str(&format!("    @HBC_TAG_KIND@cmpq $4, {}(%rsp)@HBC_TAG_END@\n    jne .Lhashdrop{}\n",off,k));
     if preserve { out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n"); }
@@ -15827,6 +15881,7 @@ fn hash_cell_borrow(e: &Expr, env: &[CgLocal]) -> bool {
 }
 
 fn cg_dyn_clone_if_str(out: &mut String) {
+    out.push_str("    call hbc_float_clone\n");
     out.push_str("    @HBC_TAG_KIND@cmp $2, %rax@HBC_TAG_END@\n    je 88f\n    @HBC_TAG_KIND@cmp $4, %rax@HBC_TAG_END@\n    jne 89f\n88:\n    mov %rdx, %rdi\n    mov -8(%rdx), %rsi\n    call hbc_strcpy\n    mov %rax, %rdx\n    mov $4, %eax\n89:\n");
 }
 
@@ -16039,7 +16094,7 @@ fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<Strin
             cg_cond_jump(&c,&ee,sigs,strs,out,target,&format!(".Ldbfcmpt{}",id));
             out.push_str(&format!("    xor %eax, %eax\n    jmp .Ldbfcmpd{}\n.Ldbfcmpt{}:\n    mov $1, %eax\n.Ldbfcmpd{}:\n    sub $16, %rsp\n    mov %rax, (%rsp)\n",id,id,id));
             for (e,v) in [a.as_ref(),b.as_ref()].iter().zip(vv.iter()) {
-                if owned(e){let skip=fresh_lbl();out.push_str(&format!("    cmpb $4, -{}(%rbp)\n    jne .Ldbfcmps{}\n    mov -{}(%rbp), %rdi\n    call hbc_freestr\n.Ldbfcmps{}:\n",v.off,skip,v.off-8,skip));}
+                if owned(e){out.push_str(&format!("    mov -{}(%rbp),%rax\n    mov -{}(%rbp),%rdx\n    call hbc_float_release\n",v.off,v.off-8));let skip=fresh_lbl();out.push_str(&format!("    cmpb $4, -{}(%rbp)\n    jne .Ldbfcmps{}\n    mov -{}(%rbp), %rdi\n    call hbc_freestr\n.Ldbfcmps{}:\n",v.off,skip,v.off-8,skip));}
                 else if v.ty==Ty::StrOwn && !matches!(e,Expr::Var(_)){out.push_str(&format!("    mov -{}(%rbp), %rdi\n    call hbc_freestr\n",v.off));}
             }
             out.push_str(&format!("    mov (%rsp), %rax\n    add $16, %rsp\n    test %rax, %rax\n    jnz {}\n",true_label));return;
@@ -16811,7 +16866,7 @@ fn cg_print_items(es: &[Expr], inline: bool, raw: bool, stderr: bool, env: &[CgL
                             // borrowed, never moved out).
                             let cell_borrow = hash_cell_borrow(e,env) || matches!(e, Expr::Index(v, _) if env.iter().any(|x| x.name == *v && matches!(x.ty, Ty::DArrDyn | Ty::Dyn | Ty::RefDyn)));
                             if dyn_expr_owned(e) && !cell_borrow {
-                                out.push_str(&format!("    @HBC_TAG_KIND@cmpq $4, {}(%rsp)@HBC_TAG_END@\n    jne 95f\n    mov {}(%rsp), %rdi\n    test %rdi, %rdi\n    je 95f\n    call hbc_freestr\n95:\n", off, off + 8));
+                                cg_dyn_stack_release(out,off,false);
                             }
                         }
                         Ty::Date => {
@@ -16924,7 +16979,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 match expr_ty(e, env, sigs) {
                     Ty::Dyn => {
                         // Discarded casilla: owned string or object.
-                        out.push_str("    @HBC_TAG_KIND@cmp $4, %rax@HBC_TAG_END@\n    jne 82f\n    mov %rdx, %rdi\n    call hbc_freestr\n    jmp 81f\n82:\n    @HBC_TAG_KIND@cmp $13, %rax@HBC_TAG_END@\n    jne 81f\n    mov %rdx, %rdi\n    call hrobj_release\n81:\n");
+                        out.push_str("    call hbc_float_release\n    @HBC_TAG_KIND@cmp $4, %rax@HBC_TAG_END@\n    jne 82f\n    mov %rdx, %rdi\n    call hbc_freestr\n    jmp 81f\n82:\n    @HBC_TAG_KIND@cmp $13, %rax@HBC_TAG_END@\n    jne 81f\n    mov %rdx, %rdi\n    call hrobj_release\n81:\n");
                     }
                     Ty::Obj(_) => out.push_str("    mov %rax, %rdi\n    call hrobj_release\n"),
                     Ty::StrOwn => out.push_str("    mov %rax, %rdi\n    call hbc_freestr\n"),
@@ -16941,6 +16996,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 out.push_str(&format!("    mov -{}(%rbp), %rax\n    mov %rax, 16(%rsp)\n", sv));
                 // Release the old casilla value (tag 4 owned string only;
                 // tag 13 impossible in this increment).
+                out.push_str(&format!("    mov {}(%rax), %rdx\n    mov {}(%rax), %rax\n    call hbc_float_release\n    mov 16(%rsp), %rax\n",16+off*16+8,16+off*16));
                 out.push_str(&format!("    cmpq $4, {}(%rax)\n    jne 84f\n    mov {}(%rax), %rdi\n    test %rdi, %rdi\n    je 84f\n    call hbc_freestr\n84:\n", 16 + off * 16, 16 + off * 16 + 8));
                 out.push_str(&format!("    mov 16(%rsp), %rax\n    mov (%rsp), %rcx\n    mov %rcx, {}(%rax)\n    mov 8(%rsp), %rcx\n    mov %rcx, {}(%rax)\n    add $32, %rsp\n", 16 + off * 16, 16 + off * 16 + 8));
             }
@@ -16951,6 +17007,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n");
                 cg_data_value(e, env, sigs, strs, out, target);
                 out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+                out.push_str(&format!("    mov 16(%rsp), %rax\n    mov {}(%rax), %rdx\n    mov {}(%rax), %rax\n    call hbc_float_release\n",16+off*16+8,16+off*16));
                 out.push_str(&format!("    mov 16(%rsp), %rax\n    cmpq $4, {}(%rax)\n    jne 84f\n    mov {}(%rax), %rdi\n    test %rdi, %rdi\n    je 84f\n    call hbc_freestr\n84:\n", 16 + off * 16, 16 + off * 16 + 8));
                 out.push_str(&format!("    mov 16(%rsp), %rax\n    mov (%rsp), %rcx\n    mov %rcx, {}(%rax)\n    mov 8(%rsp), %rcx\n    mov %rcx, {}(%rax)\n    add $32, %rsp\n", 16 + off * 16, 16 + off * 16 + 8));
             }
@@ -16969,6 +17026,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
     call hbc_freestr
 "),
                     Ty::DArr => vas::emit_flat(out, "    mov %rax, %rdi
+    call hbc_float_cells_release
     mov $16, %esi
     call hbc_free
 "),
@@ -16984,7 +17042,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
     mov %rdx, %rsi
     call hbc_free2
 "),
-                    Ty::Dyn => out.push_str("    @HBC_TAG_KIND@cmp $4, %rax@HBC_TAG_END@\n    jne 95f\n    mov %rdx, %rdi\n    test %rdi, %rdi\n    je 95f\n    call hbc_freestr\n95:\n"),
+                    Ty::Dyn => out.push_str("    call hbc_float_release\n    @HBC_TAG_KIND@cmp $4, %rax@HBC_TAG_END@\n    jne 95f\n    mov %rdx, %rdi\n    test %rdi, %rdi\n    je 95f\n    call hbc_freestr\n95:\n"),
                     _ => {}
                 }
             }
@@ -17155,10 +17213,11 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                                     // with hbc_dfree verbatim (as the
                                     // epilogue); .L labels (numeric locals
                                     // could hijack a neighboring snippet).
+                                    out.push_str(&format!("    mov -{}(%rbp), %rax\n    mov -{}(%rbp), %rdx\n    call hbc_float_release\n",off,off-8));
                                     let k8 = fresh_lbl();
                                     out.push_str(&format!("    @HBC_TAG_KIND@cmpq $4, -{}(%rbp)@HBC_TAG_END@\n    jne .Ll8a{}\n    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 85f\n    call hbc_freestr\n    jmp 85f\n.Ll8a{}:\n    @HBC_TAG_KIND@cmpq $8, -{}(%rbp)@HBC_TAG_END@\n    jne 85f\n    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 85f\n    mov -8(%rdi), %rsi\n    call hbc_dfree\n85:\n", off, k8, off - 8, k8, off, off - 8));
                                 } else {
-                                    vas::emit_flat(out, &format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 85f\n    mov $16, %esi\n    call hbc_free\n85:\n", off));
+                                    vas::emit_flat(out, &format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 85f\n    mov -{}(%rbp), %rdx\n    call hbc_float_cells_release\n    mov $16, %esi\n    call hbc_free\n85:\n", off,off-8));
                                 }
                                 out.push_str(&format!("    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    add $16, %rsp\n    mov %rax, -{}(%rbp)\n    mov %rdx, -{}(%rbp)\n", off, off - 8));
                             }
@@ -17199,7 +17258,9 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 // float temporaries need no shuffling. The shared
                 // epilogue preserves the pair across the slot frees.
                 cg_f64_load(e, env, sigs, strs, out, target);
-                arena_return_rewind(pending_marks, true, out);
+                let dynret=sigs.iter().any(|sg|sg.name==fname && sg.ret==Some(Ty::Dyn));
+                if dynret {out.push_str("    mov %rdi, %rsi\n    movq %xmm0, %rdi\n    call hbc_float_new\n");}
+                arena_return_rewind(pending_marks, !dynret, out);
                 out.push_str(&format!("    jmp .Lret_{}\n", fname));
                 } else {
                 cg_value(e, env, sigs, strs, out, target);
@@ -17338,7 +17399,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 let emit_free = |out: &mut String, tag: &str| {
                     match free_class {
                         1 => out.push_str(&format!("    mov -{}(%rbp), %rdi\n    call hbc_freestr\n", hoff)),
-                        2 => out.push_str(&format!("    @HBC_TAG_KIND@cmpq $4, -{}(%rbp)@HBC_TAG_END@\n    jne .Lswf{}\n    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je .Lswf{}\n    call hbc_freestr\n.Lswf{}:\n", hoff, tag, hoff - 8, tag, tag)),
+                        2 => {out.push_str(&format!("    mov -{}(%rbp),%rax\n    mov -{}(%rbp),%rdx\n    call hbc_float_release\n",hoff,hoff-8));out.push_str(&format!("    @HBC_TAG_KIND@cmpq $4, -{}(%rbp)@HBC_TAG_END@\n    jne .Lswf{}\n    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je .Lswf{}\n    call hbc_freestr\n.Lswf{}:\n", hoff, tag, hoff - 8, tag, tag));},
                         _ => {}
                     }
                 };
@@ -17541,11 +17602,13 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                         _ => vas::emit_flat(out, &format!("    mov -{}(%rbp), %rdi
     test %rdi, %rdi
     je .Lfetf{}
+    mov -{}(%rbp), %rdx
+    call hbc_float_cells_release
     mov $16, %esi
     call hbc_free
 .Lfetf{}:
     movq $0, -{}(%rbp)
-", coll_off, fl, fl, coll_off)),
+", coll_off, fl,coll_off-8, fl, coll_off)),
                     }
                 }
                 if let Expr::Index(id, ie) = coll {
@@ -18114,6 +18177,12 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                         cg_num(e,env,sigs,strs,out,target);
                         out.push_str(&format!("    mov %rax, -{}(%rbp)\n    mov %rdx, -{}(%rbp)\n",off,off-8));
                     }
+                    Ty::F64 if lty == Ty::Dyn => {
+                        cg_f64_load(e,env,sigs,strs,out,target);
+                        out.push_str("    mov %rdi, %rsi\n    movq %xmm0, %rdi\n    call hbc_float_new\n    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+                        cg_dyn_free_old(out,off);
+                        out.push_str(&format!("    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    add $16, %rsp\n    mov %rax, -{}(%rbp)\n    mov %rdx, -{}(%rbp)\n",off,off-8));
+                    }
                     Ty::F64 => {
                         // Two dynamic slots: value + decimal metadata
                         // (reassignment replaces both; copies carry both).
@@ -18259,7 +18328,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                                 } else if cur_ty == Some(Ty::Hash) {
                                     out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 86f\n    mov -{}(%rbp), %rsi\n    call hbc_hfree\n86:\n", off, off - 8));
                                 } else {
-                                    vas::emit_flat(out, &format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 86f\n    mov $16, %esi\n    call hbc_free\n86:\n", off));
+                                    vas::emit_flat(out, &format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 86f\n    mov -{}(%rbp), %rdx\n    call hbc_float_cells_release\n    mov $16, %esi\n    call hbc_free\n86:\n", off,off-8));
                                 }
                                 out.push_str(&format!("    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    add $16, %rsp\n    mov %rax, -{}(%rbp)\n    mov %rdx, -{}(%rbp)\n", off, off - 8));
                                 // Replicate the checker's pinning of `{}`.
@@ -18354,6 +18423,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                     // (i64 -> {0, v}, NIL/Dyn -> copied pair).
                     cg_expr(e, env, sigs, strs, out, target);
                     cg_dbf_scalar_container(e,env,sigs,out);
+                    if expr_ty(e,env,sigs)==Ty::Dyn && !dyn_expr_owned(e) {out.push_str("    call hbc_float_clone\n");}
                     if expr_ty(e, env, sigs) == Ty::I64 {
                         cg_i64_tagged(out);
                     }
@@ -18437,6 +18507,14 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
     mov (%rsp), %r11
     mov %rcx, %r10
     shl $4, %r10
+    mov %rcx, 32(%rsp)
+    mov (%r11,%r10), %rax
+    mov 8(%r11,%r10), %rdx
+    call hbc_float_release
+    mov 32(%rsp), %rcx
+    mov (%rsp), %r11
+    mov %rcx, %r10
+    shl $4, %r10
     @HBC_TAG_KIND@cmpq $4, (%r11,%r10)@HBC_TAG_END@
     jne .Lass@K@
     mov 8(%r11,%r10), %rdi
@@ -18490,6 +18568,17 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
     dec %r10
     shl $4, %r10
     add %r11, %r10
+    sub $32,%rsp
+    mov %rcx,(%rsp)
+    mov %r11,8(%rsp)
+    mov %r10,16(%rsp)
+    mov (%r10),%rax
+    mov 8(%r10),%rdx
+    call hbc_float_release
+    mov (%rsp),%rcx
+    mov 8(%rsp),%r11
+    mov 16(%rsp),%r10
+    add $32,%rsp
     @HBC_TAG_KIND@cmpq $4, (%r10)@HBC_TAG_END@
     jne .Laisf@K@
     mov 8(%r10), %rdi
@@ -18561,6 +18650,17 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
     dec %r10
     shl $4, %r10
     add %r11, %r10
+    sub $32,%rsp
+    mov %rcx,(%rsp)
+    mov %r11,8(%rsp)
+    mov %r10,16(%rsp)
+    mov (%r10),%rax
+    mov 8(%r10),%rdx
+    call hbc_float_release
+    mov (%rsp),%rcx
+    mov 8(%rsp),%r11
+    mov 16(%rsp),%r10
+    add $32,%rsp
     @HBC_TAG_KIND@cmpq $4, (%r10)@HBC_TAG_END@
     jne .Ladsf@K@
     mov 8(%r10), %rdi
@@ -18644,6 +18744,8 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                         // fill); only a genuinely owned temporary (call
                         // result etc.) is consumed and freed directly.
                         let borrowed = matches!(e, Expr::Var(_) | Expr::Index(..) | Expr::Index2(..) | Expr::Index3(..) | Expr::Index4(..));
+                        if !dyn_expr_owned(e) {out.push_str("    call hbc_float_clone\n");}
+                        out.push_str(&format!("    cmpb $5, %al\n    jne .Lfdnonfloat{}\n    movq $2, 24(%rsp)\n    mov %rax, 32(%rsp)\n    mov %rdx, 40(%rsp)\n    movq $0, 56(%rsp)\n    jmp .Lfdd{}\n.Lfdnonfloat{}:\n",k,k,k));
                         let asm = r#"    @HBC_TAG_KIND@cmp $2, %rax@HBC_TAG_END@
     je .Lfds@K@
     @HBC_TAG_KIND@cmp $4, %rax@HBC_TAG_END@
@@ -18743,6 +18845,11 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
     add %rcx, %rax
     shl $4, %rax
     add (%rsp), %rax
+    mov %rax,72(%rsp)
+    mov 8(%rax),%rdx
+    mov (%rax),%rax
+    call hbc_float_release
+    mov 72(%rsp),%rax
     @HBC_TAG_KIND@cmpq $4, (%rax)@HBC_TAG_END@
     jne .Lfnf@K@
     mov 8(%rax), %rdi
@@ -18752,6 +18859,17 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
     call hbc_freestr
     mov 72(%rsp), %rax
 .Lfnf@K@:
+    cmpq $2,24(%rsp)
+    jne .Lfdnotheap@K@
+    mov %rax,72(%rsp)
+    mov 32(%rsp),%rax
+    mov 40(%rsp),%rdx
+    call hbc_float_clone
+    mov 72(%rsp),%r10
+    mov %rax,(%r10)
+    mov %rdx,8(%r10)
+    jmp .Lfn@K@
+.Lfdnotheap@K@:
     cmpq $1, 24(%rsp)
     je .Lfs@K@
     mov 32(%rsp), %r10
@@ -18771,6 +18889,12 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
     incq 16(%rsp)
     jmp .Lfl@K@
 .Lfe@K@:
+    cmpq $2,24(%rsp)
+    jne 79f
+    mov 32(%rsp),%rax
+    mov 40(%rsp),%rdx
+    call hbc_float_release
+79:
     mov 56(%rsp), %rdi
     test %rdi, %rdi
     jz .Lft@K@
@@ -18779,6 +18903,12 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
     add $96, %rsp
     jmp .Lfx@K@
 .Lfdn@K@:
+    cmpq $2,24(%rsp)
+    jne 79f
+    mov 32(%rsp),%rax
+    mov 40(%rsp),%rdx
+    call hbc_float_release
+79:
     mov 56(%rsp), %rdi
     test %rdi, %rdi
     jz .Lft2@K@
@@ -19138,8 +19268,10 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 if expr_ty(e, env, sigs) == Ty::Bool {
                     out.push_str("    mov %rax, %rdx\n    mov $3, %eax\n");
                 }
-                out.push_str("    mov %rax, %rsi\n");
+                out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n    mov %rax, %rsi\n");
                 out.push_str(&format!("    lea -{}(%rbp), %rdi\n    call hbc_hfill\n", var.off));
+                if expr_ty(e,env,sigs)==Ty::Dyn && dyn_expr_owned(e) {cg_dyn_stack_release(out,0,false);}
+                out.push_str("    add $16, %rsp\n");
             }
             Stmt::HDelAt(_, id, e) => {
                 // hb_HDelAt: position first, then the slot address;
@@ -19320,6 +19452,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                     if expr_ty(e, env, sigs) == Ty::Bool {
                         out.push_str("    mov %rax, %rdx\n    mov $3, %eax\n");
                     }
+                    if expr_ty(e,env,sigs)==Ty::Dyn && !dyn_expr_owned(e) {out.push_str("    call hbc_float_clone\n");}
                     out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
                     if expr_ty(ie, env, sigs) == Ty::Dyn {
                         cg_expr(ie, env, sigs, strs, out, target);
@@ -19335,7 +19468,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                         out.push_str(&format!("    cmp $1, %rcx\n    jl 83f\n    cmp -{}(%rbp), %rcx\n    jg 83f\n", v.off - 8));
                         out.push_str(&format!("    mov -{}(%rbp), %r11\n", v.off));
                     }
-                    out.push_str("    dec %rcx\n    shl $4, %rcx\n    add %r11, %rcx\n    mov %rax, (%rcx)\n    mov %rdx, 8(%rcx)\n    jmp 84f\n");
+                    out.push_str("    dec %rcx\n    shl $4, %rcx\n    add %r11, %rcx\n    sub $32,%rsp\n    mov %rax,(%rsp)\n    mov %rdx,8(%rsp)\n    mov %rcx,16(%rsp)\n    mov (%rcx),%rax\n    mov 8(%rcx),%rdx\n    call hbc_float_release\n    mov (%rsp),%rax\n    mov 8(%rsp),%rdx\n    mov 16(%rsp),%rcx\n    add $32,%rsp\n    mov %rax, (%rcx)\n    mov %rdx, 8(%rcx)\n    jmp 84f\n");
                     out.push_str("83:\n    call hbc_bound_error\n84:\n");
                 } else {
                 let k = match v.ty { Ty::Arr(k) => k, _ => unreachable!("checked") };
@@ -19837,6 +19970,7 @@ fn cg_func(f: &Func, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, tar
                 // hbc_dfree verbatim, live count at -8(DATA)). Borrowed
                 // tag-2 views (FOR EACH over hash keys) and scalar tags
                 // (0/1/3) own nothing.
+                out.push_str(&format!("    mov -{}(%rbp), %rax\n    mov -{}(%rbp), %rdx\n    call hbc_float_release\n",off,off-8));
                 let k7 = fresh_lbl();
                 if CLASSES.with(|c| !c.borrow().is_empty()) {
                     out.push_str(&format!("    @HBC_TAG_KIND@cmpq $4, -{}(%rbp)@HBC_TAG_END@\n    jne .Le8a{}\n    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 91{}f\n    call hbc_freestr\n    jmp 91{}f\n.Le8a{}:\n    @HBC_TAG_KIND@cmpq $8, -{}(%rbp)@HBC_TAG_END@\n    jne .Le8b{}\n    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 91{}f\n    mov -8(%rdi), %rsi\n    call hbc_dfree\n    jmp 91{}f\n.Le8b{}:\n    @HBC_TAG_KIND@cmpq $13, -{}(%rbp)@HBC_TAG_END@\n    jne 91{}f\n    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 91{}f\n    call hrobj_release\n91{}:\n", off, k7, off - 8, i, i, k7, off, k7, off - 8, i, i, k7, off, i, off - 8, i, i));
@@ -19850,7 +19984,7 @@ fn cg_func(f: &Func, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, tar
                 // instance into its class freelist).
                 out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 91{}f\n    call hrobj_release\n91{}:\n", off, i, i));            }
             _ => {
-                vas::emit_flat(out, &format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 91{}f\n    mov $16, %esi\n    call hbc_free\n91{}:\n", off, i, i));
+                vas::emit_flat(out, &format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 91{}f\n    mov -{}(%rbp), %rdx\n    call hbc_float_cells_release\n    mov $16, %esi\n    call hbc_free\n91{}:\n", off, i,off-8, i));
             }
         }
     }
@@ -20412,10 +20546,16 @@ hbc_hput:
     push %r13
     push %r14
     push %r15
-    sub $40, %rsp
+    sub $72, %rsp
     mov %rdi, %rbx
     mov %rsi, %r14
     mov %rdx, %r15
+    mov (%rcx), %rax
+    mov 8(%rcx), %rdx
+    call hbc_float_clone
+    mov %rax, -112(%rbp)
+    mov %rdx, -104(%rbp)
+    lea -112(%rbp), %rcx
     mov %rcx, -48(%rbp)
     mov (%rbx), %r12
     mov 8(%rbx), %r13
@@ -20472,6 +20612,12 @@ hbc_hput:
 340: mov %rcx, %rax
     shl $5, %rax
     add %r12, %rax
+    mov %rax, -96(%rbp)
+    mov 16(%rax), %r10
+    mov 24(%rax), %rdx
+    mov %r10, %rax
+    call hbc_float_release
+    mov -96(%rbp), %rax
     mov -48(%rbp), %rcx
     mov (%rcx), %r8
     mov %r8, 16(%rax)
@@ -20542,7 +20688,7 @@ hbc_hput:
     mov %r12, (%rbx)
     inc %r13
     mov %r13, 8(%rbx)
-49: add $40, %rsp
+49: add $72, %rsp
     pop %r15
     pop %r14
     pop %r13
@@ -20572,6 +20718,12 @@ hbc_hfree:
     shl $5, %rax
     mov (%rbx,%rax), %rdi
     call hbc_freestr
+    mov %r13, %rax
+    shl $5, %rax
+    lea (%rbx,%rax), %rcx
+    mov 16(%rcx), %rax
+    mov 24(%rcx), %rdx
+    call hbc_float_release
     inc %r13
     jmp 20b
 21: mov %rbx, %rdi
@@ -20659,6 +20811,9 @@ hbc_hdel:
     jmp 60b
 620: mov (%rbx), %rdi
     call hbc_freestr
+    mov 16(%rbx), %rax
+    mov 24(%rbx), %rdx
+    call hbc_float_release
 65: lea 1(%r14), %rax
     cmp %r13, %rax
     jae 66f
@@ -21017,6 +21172,7 @@ hbc_hvalues:
     lea (%r12,%rax), %rcx
     mov 16(%rcx), %rax
     mov 24(%rcx), %rdx
+    call hbc_float_clone
     mov %r14, %r8
     shl $4, %r8
     lea 8(%rbx,%r8), %r9
@@ -21198,6 +21354,12 @@ hbc_hdelat:
     shl $5, %rax
     mov (%r8,%rax), %rdi
     call hbc_freestr
+    mov %r13, %rax
+    shl $5, %rax
+    add %r12, %rax
+    mov 24(%rax), %rdx
+    mov 16(%rax), %rax
+    call hbc_float_release
     mov 8(%rbx), %r9
 857: lea 1(%r13), %rax
     cmp %r9, %rax
@@ -21234,21 +21396,49 @@ hbc_hdelat:
 # stored NIL; NIL over everything; an empty hash is a no-op). Leaf:
 # caller-saved registers only, no allocation, values own no memory.
 hbc_hfill:
-    mov (%rdi), %r8
-    test %r8, %r8
-    je 859f
-    mov 8(%rdi), %r9
-    xor %ecx, %ecx
-860: cmp %r9, %rcx
-    jae 859f
-    mov %rcx, %rax
-    shl $5, %rax
-    add %r8, %rax
-    mov %rsi, 16(%rax)
-    mov %rdx, 24(%rax)
-    inc %rcx
-    jmp 860b
-859: ret
+    push %rbp
+    mov %rsp,%rbp
+    push %rbx
+    push %r12
+    push %r13
+    push %r14
+    push %r15
+    sub $24,%rsp
+    mov (%rdi),%rbx
+    mov 8(%rdi),%r12
+    mov %rsi,%rax
+    call hbc_float_clone
+    mov %rax,-48(%rbp)
+    mov %rdx,-56(%rbp)
+    xor %r13d,%r13d
+.Lhf_loop:
+    cmp %r12,%r13
+    jae .Lhf_done
+    mov %r13,%r14
+    shl $5,%r14
+    add %rbx,%r14
+    mov 16(%r14),%rax
+    mov 24(%r14),%rdx
+    call hbc_float_release
+    mov -48(%rbp),%rax
+    mov -56(%rbp),%rdx
+    call hbc_float_clone
+    mov %rax,16(%r14)
+    mov %rdx,24(%r14)
+    inc %r13
+    jmp .Lhf_loop
+.Lhf_done:
+    mov -48(%rbp),%rax
+    mov -56(%rbp),%rdx
+    call hbc_float_release
+    add $24,%rsp
+    pop %r15
+    pop %r14
+    pop %r13
+    pop %r12
+    pop %rbx
+    leave
+    ret
 
 # hbc_hclear: rdi = hash slot address. Empties the hash: every
 # hash-owned key copy is freed, the whole data block is released
@@ -21277,6 +21467,12 @@ hbc_hclear:
     add %r12, %rax
     mov (%rax), %rdi
     call hbc_freestr
+    mov %r13, %rax
+    shl $5, %rax
+    add %r12, %rax
+    mov 24(%rax), %rdx
+    mov 16(%rax), %rax
+    call hbc_float_release
     inc %r13
     jmp 862b
 863: mov %r12, %rdi
@@ -21377,6 +21573,24 @@ hbc_aclone_i:
     mov %r12, %rcx
     shl $4, %rcx
     rep movsb
+    # Flat DArr cells may own marked heap floats. Clone each copy;
+    # legacy inline scalars still pass through without allocation.
+    xor %ebx, %ebx
+.Laclone_float_next:
+    cmp %r12, %rbx
+    jae .Laclone_float_done
+    mov %rbx, %r10
+    shl $4, %r10
+    mov (%r13,%r10), %rax
+    mov 8(%r13,%r10), %rdx
+    call hbc_float_clone
+    mov %rbx, %r10
+    shl $4, %r10
+    mov %rax, (%r13,%r10)
+    mov %rdx, 8(%r13,%r10)
+    inc %rbx
+    jmp .Laclone_float_next
+.Laclone_float_done:
     mov %r13, %rax
     mov %r12, %rdx
     add $8, %rsp
@@ -23608,17 +23822,17 @@ fn emit_asm(funcs: &[Func], sigs: &[Sig], externs: &[String], target: Target, in
     }
     if !externs.is_empty() {
         for name in externs.iter() {
-            // The thunk reads its own hbc-convention frame (argc at
-            // 16(%rbp), casillas from 32(%rbp)); that layout is the same
-            // on both targets. The C calls it makes (HBHBR_FN_<NAME>,
-            // hbc_ext_end) follow the platform ABI: SysV needs nothing
-            // extra (rsp is 16-aligned at the call after push %rbp),
-            // Win64 additionally requires the caller's 32-byte shadow
-            // space, kept allocated across both calls.
-            match target {
-                Target::Linux => out.push_str(&format!("hbc_fn_{}:\n    push %rbp\n    mov %rsp, %rbp\n    mov 16(%rbp), %rax\n    mov %rax, hbc_ext_argc(%rip)\n    lea 32(%rbp), %rax\n    mov %rax, hbc_ext_argv(%rip)\n    movq $1, hbc_ext_ret_tag(%rip)\n    movq $0, hbc_ext_ret_pay(%rip)\n    call HBHBR_FN_{}\n    call hbc_ext_end\n    mov hbc_ext_ret_tag(%rip), %rax\n    mov hbc_ext_ret_pay(%rip), %rdx\n    pop %rbp\n    ret\n", name, name.to_ascii_uppercase())),
-                Target::Windows => out.push_str(&format!("hbc_fn_{}:\n    push %rbp\n    mov %rsp, %rbp\n    mov 16(%rbp), %rax\n    mov %rax, hbc_ext_argc(%rip)\n    lea 32(%rbp), %rax\n    mov %rax, hbc_ext_argv(%rip)\n    movq $1, hbc_ext_ret_tag(%rip)\n    movq $0, hbc_ext_ret_pay(%rip)\n    sub $32, %rsp\n    call HBHBR_FN_{}\n    call hbc_ext_end\n    add $32, %rsp\n    mov hbc_ext_ret_tag(%rip), %rax\n    mov hbc_ext_ret_pay(%rip), %rdx\n    pop %rbp\n    ret\n", name, name.to_ascii_uppercase())),
+            out.push_str(&format!("hbc_fn_{}:\n    push %rbp\n    mov %rsp, %rbp\n    sub $80, %rsp\n",name));
+            //32 bytes at rsp remain Win64 shadow space. Slots32..63 save
+            //the old channel;64..79 retain this call's return across restore.
+            for (i,slot) in ["argc","argv","ret_tag","ret_pay"].iter().enumerate() {
+                out.push_str(&format!("    mov hbc_ext_{}(%rip), %rax\n    mov %rax, {}(%rsp)\n",slot,32+i*8));
             }
+            out.push_str(&format!("    mov 16(%rbp), %rax\n    mov ${}, %r10\n    or %r10, %rax\n    mov %rax, hbc_ext_argc(%rip)\n    lea 32(%rbp), %rax\n    mov %rax, hbc_ext_argv(%rip)\n    movq $1, hbc_ext_ret_tag(%rip)\n    movq $0, hbc_ext_ret_pay(%rip)\n    call HBHBR_FN_{}\n    call hbc_ext_end\n    mov hbc_ext_ret_tag(%rip), %rax\n    mov %rax, 64(%rsp)\n    mov hbc_ext_ret_pay(%rip), %rax\n    mov %rax, 72(%rsp)\n",dyn_float::BRIDGE_HEAP_CAP,name.to_ascii_uppercase()));
+            for (i,slot) in ["argc","argv","ret_tag","ret_pay"].iter().enumerate() {
+                out.push_str(&format!("    mov {}(%rsp), %rax\n    mov %rax, hbc_ext_{}(%rip)\n",32+i*8,slot));
+            }
+            out.push_str("    mov 64(%rsp), %rax\n    mov 72(%rsp), %rdx\n    leave\n    ret\n");
         }
         // hbhbr.o calls back into these runtime helpers across the
         // object boundary; without the bridge they stay internal.
@@ -24192,7 +24406,19 @@ hbc_print_dyn:
 9:  mov %rdx, %rax
     mov -8(%rax), %rdx
     jmp hbc_print_str
-14: movq %rdx, %xmm0
+14: test %rax, %rax
+    jns .Ldynfloat_print_legacy
+    call hbc_float_unpack
+    sub $16, %rsp
+    movsd %xmm0, (%rsp)
+    mov %rdi, 8(%rsp)
+    call hbc_pflush
+    movsd (%rsp), %xmm0
+    mov 8(%rsp), %rdi
+    add $16, %rsp
+    jmp hbc_print_num_f64
+.Ldynfloat_print_legacy:
+    movq %rdx, %xmm0
     push %rax
     call hbc_pflush
     pop %rax
@@ -25067,6 +25293,8 @@ hbc_free2:
     mov (%rbx,%rax), %rdi
     test %rdi, %rdi
     jz 73f
+    mov 8(%rbx,%rax),%rdx
+    call hbc_float_cells_release
     mov $16, %esi
     call hbc_free
 73: inc %r13
@@ -25096,8 +25324,15 @@ hbc_dfree:
     mov %r13, %rax
     shl $4, %rax
     mov (%rbx,%rax), %rcx
+    cmp $5, %cl
+    jne .Ldfree_not_float
+    test %rcx, %rcx
+    jns 883f
+    jmp .Ldfree_owned
+.Ldfree_not_float:
     @HBC_TAG_KIND@cmp $4, %rcx@HBC_TAG_END@
     jne 883f
+.Ldfree_owned:
     mov 8(%rbx,%rax), %rdi
     test %rdi, %rdi
     jz 883f
@@ -25329,7 +25564,20 @@ hbc_asize:
     jmp 67b
 68: mov %r12, 8(%rbx)
     jmp 75f
-59: # shrink: kind 2 frees the removed string copies, kind 1 the children
+59: # shrink: release heap-float cells only in the flat family.
+    test %r15,%r15
+    jnz 59f
+    mov (%rbx),%rdi
+    test %rdi,%rdi
+    jz 76f
+    mov %r12,%rax
+    shl $4,%rax
+    add %rax,%rdi
+    mov 8(%rbx),%rdx
+    sub %r12,%rdx
+    call hbc_float_cells_release
+    jmp 76f
+59: # deep families retain their own destructors.
     cmp $2, %r15
     je 80f
     cmp $3, %r15
@@ -25739,6 +25987,7 @@ fn finalize_threads(out: String) -> String {
 }
 
 fn finalize_trace(mut out: String, target: Target) -> String {
+    out.push_str(dyn_float::HELPERS);
     if ["ctod", "date_today", "date_render", "stod", "dtos", "year", "day", "month", "dow", "cdow", "cmonth", "dtoc", "date_add", "date_diff", "date_days", "date_from_days"].iter().any(|name| out.contains(&format!("call hbc_{}",name))) {
         out.push_str(DATE_PORT_HELPERS);
     }
@@ -25765,7 +26014,7 @@ fn finalize_trace(mut out: String, target: Target) -> String {
             let end = rest[..end].find("\n    .section").unwrap_or(end);
             let mut helper = rest[..end].replace("hbc_write_bytes", "hbc_eprint_str")
                 .replace("hbc_print_", "hbc_eprint_")
-                .replace(".Lf64_", ".Lef64_").replace(".Lnum_", ".Lenum_");
+                .replace(".Lf64_", ".Lef64_").replace(".Lnum_", ".Lenum_").replace(".Ldynfloat_", ".Ledynfloat_");
             helper = match target {
                 Target::Linux => helper.replace("mov $1, %edi", "mov $2, %edi"),
                 Target::Windows => helper.replace("mov $-11, %ecx", "mov $-12, %ecx"),
@@ -26971,7 +27220,20 @@ hbc_print_dyn:
     # variant. Flush the pending separator BEFORE the field (review v7),
     # width by the asymmetric 10/20 zone, dec from the tag's high bits
     # (0 = the hb_itemPutND default, 2).
-14: movq %rdx, %xmm0
+14: test %rax, %rax
+    jns .Ldynfloat_print_legacy
+    call hbc_float_unpack
+    sub $16, %rsp
+    movsd %xmm0, (%rsp)
+    mov %rdi, 8(%rsp)
+    call hbc_pflush
+    movsd (%rsp), %xmm0
+    mov 8(%rsp), %rdi
+    add $16, %rsp
+    leave
+    jmp hbc_print_num_f64
+.Ldynfloat_print_legacy:
+    movq %rdx, %xmm0
     push %rax
     call hbc_pflush
     pop %rax
@@ -27846,6 +28108,8 @@ hbc_free2:
     mov (%rbx,%rax), %rdi
     test %rdi, %rdi
     jz 73f
+    mov 8(%rbx,%rax),%rdx
+    call hbc_float_cells_release
     mov $16, %esi
     call hbc_free
 73: inc %r13
@@ -27877,8 +28141,15 @@ hbc_dfree:
     mov %r13, %rax
     shl $4, %rax
     mov (%rbx,%rax), %rcx
+    cmp $5, %cl
+    jne .Ldfree_not_float
+    test %rcx, %rcx
+    jns 883f
+    jmp .Ldfree_owned
+.Ldfree_not_float:
     @HBC_TAG_KIND@cmp $4, %rcx@HBC_TAG_END@
     jne 883f
+.Ldfree_owned:
     mov 8(%rbx,%rax), %rdi
     test %rdi, %rdi
     jz 883f
@@ -28108,9 +28379,20 @@ hbc_asize:
     jmp 67b
 68: mov %r12, 8(%rbx)
     jmp 75f
-59: # shrink: kind 2 frees the removed string copies, kind 1 the children.
-# The counter lives on the stack: kernel32 may clobber the volatile r9
-# across the hbc_free call.
+59: # flat shrink releases owned float payloads, never moved cells.
+    test %r15,%r15
+    jnz 59f
+    mov (%rbx),%rdi
+    test %rdi,%rdi
+    jz 76f
+    mov %r12,%rax
+    shl $4,%rax
+    add %rax,%rdi
+    mov 8(%rbx),%rdx
+    sub %r12,%rdx
+    call hbc_float_cells_release
+    jmp 76f
+59:
     cmp $2, %r15
     je 80f
     cmp $3, %r15

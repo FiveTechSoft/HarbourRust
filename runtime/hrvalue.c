@@ -1,3 +1,4 @@
+#include "hrdyn.h"
 /* Own MIT. No libc or allocation. Scalar tags11/12 keep the16-byte ABI. */
 #include "hrvalue.h"
 hrv_cell hrv_date(uint32_t p){hrv_cell v={HRV_DATE,p};return v;}
@@ -7,6 +8,7 @@ hrv_error hrv_validate(hrv_cell v){
  if(k>HRV_FIELD_NUMERIC)return HRV_TAG_INVALID;
  if(k==HRV_FIELD_NUMERIC){if(v.tag>>32||!hrv_width(v)||hrv_width(v)>255||hrv_decimals(v)>17||hrv_decimals(v)>=hrv_width(v))return HRV_TAG_INVALID;}
  else if(k!=HRV_DOUBLE&&v.tag>>8)return HRV_TAG_INVALID;
+ else if(k==HRV_DOUBLE&&(v.tag&HR_DYN_FLOAT_HEAP)&&v.tag!=(HR_DYN_FLOAT_HEAP|HRV_DOUBLE))return HRV_TAG_INVALID;
  if(k==HRV_DATE){if(v.payload>99991231u)return HRV_TAG_INVALID;unsigned y=(unsigned)(v.payload/10000),m=(unsigned)(v.payload/100%100),d=(unsigned)(v.payload%100),limit;static const unsigned days[]={31,28,31,30,31,30,31,31,30,31,30,31};
  if(!v.payload)return HRV_OK;if(y<1||y>9999||m<1||m>12||d<1)return HRV_TAG_INVALID;
  limit=days[m-1]+(m==2&&y%4==0&&(y%100!=0||y%400==0));if(d>limit)return HRV_TAG_INVALID;}

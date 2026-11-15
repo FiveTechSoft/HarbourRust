@@ -60,3 +60,5 @@ reorganization. Relative links in the moved README are adjusted for its new loca
 - [Host target default and limits](HOST-TARGET-DEFAULT.md)
 
 - [Experimental Intel Mach-O and native ARM64 limits](MACHO-INTEL.md)
+
+- [Dyn heap float representation and limits](DYN-HEAP-FLOAT-2026-11-15.md)

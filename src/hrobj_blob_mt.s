@@ -51,6 +51,17 @@ hrobj_new:
 	addq	%rbx, %rax
 	movq	(%rax), %r13
 	movq	8(%rax), %rdi
+	cmpb	$5, %r13b
+	jne	.Lhrobj_float_copy_not
+	testq	%r13, %r13
+	jns	.Lhrobj_13
+	movq	%r13, %rax
+	movq	%rdi, %rdx
+	call	hbc_float_clone
+	movq	%rax, %r13
+	movq	%rdx, %rdi
+	jmp	.Lhrobj_13
+.Lhrobj_float_copy_not:
 	cmpq	$4, %r13
 	jne	.Lhrobj_13
 	xorl	%esi, %esi
@@ -185,7 +196,12 @@ hrobj_release:
 	salq	$4, %rax
 	addq	%rbp, %rax
 	cmpq	$4, 16(%rax)
+	je	.Lhrobj_payload_free
+	cmpb	$5, 16(%rax)
 	jne	.Lhrobj_40
+	cmpq	$0, 16(%rax)
+	jns	.Lhrobj_40
+.Lhrobj_payload_free:
 	movq	24(%rax), %rdi
 	addl	$1, %ebx
 	call	hbc_freestr

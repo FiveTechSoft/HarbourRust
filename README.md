@@ -10,6 +10,15 @@ HarbourRust is an ahead-of-time native compiler for Harbour, written in Rust. **
 
 No VM, no pcode, no garbage collector. Ownership checked at compile time, with deterministic release and no pause times; one limited persistent-value path uses reference counting (see below). In the same family of GC-free designs as Rust and the recent Goose language.
 
+## Dyn heap floats
+
+Kind-5 Dyn values now keep their double bits and full display metadata in
+an owned heap item. Old inline casillas remain readable, and the Extend
+bridge negotiates return/store format per call so old callers keep inline
+results. This supports the original `multiarg.prg` and bounded F64/Dyn
+transport, not general Dyn-float arithmetic. New objects require a rebuilt
+bridge. See [representation, compatibility and limits](docs/DYN-HEAP-FLOAT-2026-11-15.md).
+
 ## .hrb files
 
 HarbourRust does not support `.hrb` files, by design. A `.hrb` is precompiled pcode for the Harbour virtual machine (magic `\xC0HRB`, stable version 2 format), and HarbourRust has no pcode VM: it compiles the original `.prg` sources directly to native code. If you have the `.prg` sources, recompile them with `hbc`. If you only have the `.hrb`, you need `hbrun`/Harbour to run it. A pcode-to-native translator remains a possible future direction only if real user demand appears.
