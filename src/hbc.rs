@@ -22294,8 +22294,6 @@ hbc_replicate:
     mov %rax, %rdi
     cmp $1, %r13
     jne 2f
-    cmp $8192, %rbx
-    jae 2f
     movzbl (%r12), %eax
     movabs $0x0101010101010101, %r11
     imul %r11, %rax
