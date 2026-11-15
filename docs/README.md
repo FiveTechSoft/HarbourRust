@@ -33,6 +33,7 @@ stays short.
 - [Independent Date port](DATE-PORT-2026-11-13.md): current representation and limits.
 - [Day, Month, Dow, CDow, CMonth and DToC](DATE-EXTRA-2026-11-15.md): oracle-pinned date accessors and empty-date rules.
 - [Sqrt, Exp, Log and Mod](MATH-EXTRA-2026-11-15.md): oracle-pinned numeric builtins and limits.
+- [PadC, RAt, Stuff, Is* and StrZero](STRING-EXTRA-2026-11-15.md): oracle-pinned string builtins and two PadL fixes.
 
 ## Source and tests
 

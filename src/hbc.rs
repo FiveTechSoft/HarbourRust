@@ -559,7 +559,7 @@ fn proc_metadata_needed(funcs: &[Func], externs: bool) -> bool {
             Expr::Call(id,args) => {
                 if ["procname", "procline", "eval"].iter().any(|n|is_builtin(id,n)) { return true; }
                 let direct = funcs.iter().any(|f| f.name == *id);
-                let safe_builtin = ["str", "len", "hb_ntos", "chr", "asc", "replicate", "space", "strtran", "substr", "upper", "lower", "left", "right", "at", "trim", "ltrim", "rtrim", "alltrim", "int", "abs", "padr", "valtype", "hb_eol", "empty", "round", "min", "max", "qout", "qqout", "outstd", "outerr"].iter().any(|n|is_builtin(id,n));
+                let safe_builtin = ["str", "len", "hb_ntos", "chr", "asc", "replicate", "space", "strtran", "substr", "upper", "lower", "left", "right", "at", "trim", "ltrim", "rtrim", "alltrim", "int", "abs", "padr", "valtype", "hb_eol", "empty", "round", "min", "max", "qout", "qqout", "outstd", "outerr", "padc", "rat", "stuff", "isdigit", "isalpha", "isupper", "islower", "strzero"].iter().any(|n|is_builtin(id,n));
                 (!direct && !safe_builtin) || args.iter().any(|a|expr(a,funcs))
             }
             _ => true,
@@ -1621,7 +1621,7 @@ const ASM_RESERVED: &[&str] = &[
     // Not backend keywords (there is no textual backend anymore), but labels
     // hbc itself emits; a user function with one of these names would
     // collide with a helper symbol.
-    "dtos", "stod", "year", "day", "month", "dow", "cdow", "cmonth", "dtoc", "sqrt", "exp", "log", "mod", "date_add", "date_diff", "date_days", "date_from_days",
+    "dtos", "stod", "year", "day", "month", "dow", "cdow", "cmonth", "dtoc", "sqrt", "exp", "log", "mod", "padc", "rat", "stuff", "isdigit", "isalpha", "isupper", "islower", "strzero", "ischar", "strzero_fix", "date_add", "date_diff", "date_days", "date_from_days",
     "strtran", "space", "substr", "date", "ctod", "date_pack", "date_render", "date_today", "curdir", "qout", "qqout", "outstd", "outerr", "empty", "procname", "min", "max", "str", "padr", "hb_ntos", "replicate", "aeval", "hb_isnumeric", "hb_isarray", "hb_isstring", "dfree", "upper", "lower", "left", "right", "at", "int", "abs", "padl", "val", "ascan", "aclone", "atail", "asort", "hb_bitand", "hb_bitor", "hb_bitxor", "hb_bitnot", "hb_bittest", "hb_bitset", "hb_bitreset", "eprint_str", "eprint_sep", "eprint_i64", "eprint_i64c", "eprint_dyn", "eprint_dynlit", "print_dynlit", "eprint_f64", "hb_eol", "procline", "asc", "trim", "ltrim", "rtrim", "alltrim", "chr", "trace_top", "print_trace", "panic_exit", "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_range_error", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
 ];
 
@@ -4086,6 +4086,15 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
                     for a in args { pin_vars(f,a,Ty::Str,pin,n)?; walk(f,a,sigs,lit,pin,printed,n)?; }
                     return Ok(());
                 }
+                if let Some(kinds)=str_builtin_kinds(id,args.len()) {
+                    // String-batch builtins (PadC/RAt/Stuff/Is*/StrZero):
+                    // each position pins to its fixed kind.
+                    for (a,k) in args.iter().zip(kinds) {
+                        pin_vars(f,a,if *k==b's' {Ty::Str} else {Ty::I64},pin,n)?;
+                        walk(f,a,sigs,lit,pin,printed,n)?;
+                    }
+                    return Ok(());
+                }
                 if is_builtin(id,"padl") {
                     if !args.is_empty() { pin_vars(f,&args[0],Ty::Str,pin,n)?; walk(f,&args[0],sigs,lit,pin,printed,n)?; }
                     if args.len() > 1 { pin_vars(f,&args[1],Ty::I64,pin,n)?; walk(f,&args[1],sigs,lit,pin,printed,n)?; }
@@ -5906,10 +5915,25 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 }
                 return Ok(Ty::I64);
             }
+            if ["padc","rat","stuff","isdigit","isalpha","isupper","islower","strzero"].iter().any(|b|is_builtin(id,b)) {
+                // String batch pinned against Harbour 3.2.0 (docs/
+                // STRING-EXTRA-2026-11-15.md). Positions are fixed kinds:
+                // 's' string (borrowed), 'i' integer.
+                let Some(kinds)=str_builtin_kinds(id,args.len()) else {
+                    return Err(format!("line {}: `{}` takes {} arguments in this increment{}",n,id,str_builtin_arity(id),if is_builtin(id,"strzero") {" (decimals are not in this increment)"} else {""}));
+                };
+                for (i,(a,k)) in args.iter().zip(kinds).enumerate() {
+                    let t=type_expr(a,env,sigs,n)?;
+                    let ok=if *k==b's' {matches!(t,Ty::Str|Ty::StrOwn)} else {t==Ty::I64};
+                    if !ok { return Err(format!("line {}: `{}` argument {} must be {} in this increment",n,id,i+1,if *k==b's' {"a string"} else {"an integer"})); }
+                }
+                return Ok(str_builtin_ty(id));
+            }
             if is_builtin(id, "padl") {
                 // PadL(c, width [, fill]) (issue #1): right-aligned pad.
                 // The fill must be a string (its first byte is the pad
-                // byte; empty fill pads spaces).
+                // byte; an explicit empty fill pads NUL bytes, as Harbour reads the
+                // terminator; width <= 0 is the empty string).
                 if args.len()!=2 && args.len()!=3 { return Err(format!("line {}: `PadL` takes two or three arguments in this increment",n)); }
                 if !matches!(type_expr(&args[0],env,sigs,n)?,Ty::Str|Ty::StrOwn) {
                     return Err(format!("line {}: `PadL` expects a string",n));
@@ -9916,6 +9940,10 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
                 for a in args { apply_moves(a,env,sigs,false); }
                 return;
             }
+            if ["padc","rat","stuff","isdigit","isalpha","isupper","islower","strzero"].iter().any(|b|is_builtin(id,b)) {
+                for a in args { apply_moves(a,env,sigs,false); }
+                return;
+            }
             if is_builtin(id,"padl") || is_builtin(id,"val") {
                 for a in args { apply_moves(a,env,sigs,false); }
                 return;
@@ -13047,6 +13075,9 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             } else { cg_expr(&args[0],env,sigs,strs,out,target); }
             out.push_str("    mov %rax, %rdi\n    call hbc_space\n");
         }
+        Expr::Call(id,args) if ["padc","rat","stuff","isdigit","isalpha","isupper","islower","strzero"].iter().any(|b|is_builtin(id,b)) => {
+            cg_str_builtin(id,args,env,sigs,strs,out,target);
+        }
         Expr::Call(id,args) if is_builtin(id,"padl") => {
             // PadL(c, width [, fill]): source borrows, width borrows,
             // fill borrows; the save block is 96 bytes (6 words) with
@@ -15357,6 +15388,91 @@ fn cg_darr2_literal(es: &[Expr], env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<S
 
 // Evaluate any expression whose value might be a Str: string literals need a
 // .rodata slot, so they are handled here with a label table.
+// String batch (PadC, RAt, Stuff, IsDigit/IsAlpha/IsUpper/IsLower, StrZero):
+// fixed positional kinds per accepted arity, 's' = string, 'i' = integer.
+fn str_builtin_kinds(id: &str, argc: usize) -> Option<&'static [u8]> {
+    let l=id.to_ascii_lowercase();
+    match (l.as_str(),argc) {
+        ("padc",2) => Some(b"si"), ("padc",3) => Some(b"sis"),
+        ("rat",2) => Some(b"ss"),
+        ("stuff",4) => Some(b"siis"),
+        ("isdigit"|"isalpha"|"isupper"|"islower",1) => Some(b"s"),
+        ("strzero",1) => Some(b"i"), ("strzero",2) => Some(b"ii"),
+        _ => None,
+    }
+}
+fn str_builtin_arity(id: &str) -> &'static str {
+    match id.to_ascii_lowercase().as_str() {
+        "padc" => "two or three", "rat" => "two", "stuff" => "four",
+        "strzero" => "one or two integer", _ => "exactly one",
+    }
+}
+fn str_builtin_ty(id: &str) -> Ty {
+    match id.to_ascii_lowercase().as_str() {
+        "rat" => Ty::I64,
+        "isdigit"|"isalpha"|"isupper"|"islower" => Ty::Bool,
+        _ => Ty::StrOwn,
+    }
+}
+// Arguments evaluate once, left to right, into 16-byte slots. A borrowed
+// string is snapshotted (hbc_strcpy) when a later argument contains a call
+// that could mutate or reassign its owner; owned temporaries and snapshots
+// are released after the helper returns. Slots map onto the SysV argument
+// registers in order (a string takes two). StrZero reuses Str's integer
+// field and zero-fills the fresh owned result in place.
+fn cg_str_builtin(id: &str, args: &[Expr], env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target) {
+    let l=id.to_ascii_lowercase();
+    if l=="strzero" {
+        cg_expr(&args[0],env,sigs,strs,out,target);
+        out.push_str("    mov %rax, %rdi\n");
+        if args.len()==2 {
+            out.push_str("    sub $16, %rsp\n    mov %rdi, (%rsp)\n");
+            cg_expr(&args[1],env,sigs,strs,out,target);
+            out.push_str("    mov %rax, %rsi\n    mov (%rsp), %rdi\n    add $16, %rsp\n");
+        } else { out.push_str("    xor %esi, %esi\n"); }
+        // hbc_str_int_field already treats a width below 1 as absent
+        // (Harbour oracle sz9: StrZero(7, 0) is ten digits).
+        out.push_str("    call hbc_str_int_field\n    call hbc_strzero_fix\n");
+        return;
+    }
+    let kinds=str_builtin_kinds(id,args.len()).expect("checked");
+    let frame=args.len()*16+16;
+    let res=frame-16;
+    out.push_str(&format!("    sub ${}, %rsp\n",frame));
+    let mut release=vec![false;args.len()];
+    for i in 0..args.len() {
+        if kinds[i]==b's' {
+            let owned=expr_ty(&args[i],env,sigs)==Ty::StrOwn && !matches!(&args[i],Expr::Var(_));
+            cg_value(&args[i],env,sigs,strs,out,target);
+            let snapshot=!owned && args[i+1..].iter().any(expr_has_call);
+            if snapshot { out.push_str("    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_strcpy\n"); }
+            release[i]=owned||snapshot;
+            out.push_str(&format!("    mov %rax, {}(%rsp)\n    mov %rdx, {}(%rsp)\n",i*16,i*16+8));
+        } else {
+            cg_expr(&args[i],env,sigs,strs,out,target);
+            out.push_str(&format!("    mov %rax, {}(%rsp)\n",i*16));
+        }
+    }
+    let regs=["%rdi","%rsi","%rdx","%rcx","%r8","%r9"];
+    let mut r=0;
+    for i in 0..args.len() {
+        out.push_str(&format!("    mov {}(%rsp), {}\n",i*16,regs[r])); r+=1;
+        if kinds[i]==b's' { out.push_str(&format!("    mov {}(%rsp), {}\n",i*16+8,regs[r])); r+=1; }
+    }
+    match l.as_str() {
+        "padc" => { if args.len()==2 { out.push_str("    xor %ecx, %ecx\n    xor %r8d, %r8d\n"); } out.push_str("    call hbc_padc\n"); }
+        "rat" => out.push_str("    call hbc_rat\n"),
+        "stuff" => out.push_str("    call hbc_stuff\n"),
+        _ => {
+            let (lo,hi,fold)=match l.as_str() { "isdigit"=>(48,57,0), "isupper"=>(65,90,0), "islower"=>(97,122,0), _=>(97,122,1) };
+            out.push_str(&format!("    mov ${}, %edx\n    mov ${}, %ecx\n    mov ${}, %r8d\n    call hbc_ischar\n",lo,hi,fold));
+        }
+    }
+    out.push_str(&format!("    mov %rax, {}(%rsp)\n    mov %rdx, {}(%rsp)\n",res,res+8));
+    for i in 0..args.len() { if release[i] { out.push_str(&format!("    mov {}(%rsp), %rdi\n    call hbc_freestr\n",i*16)); } }
+    out.push_str(&format!("    mov {}(%rsp), %rax\n    mov {}(%rsp), %rdx\n    add ${}, %rsp\n",res,res+8,frame));
+    if str_builtin_ty(id)!=Ty::StrOwn { out.push_str("    xor %edx, %edx\n"); }
+}
 fn cg_value(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target) {
     if let Expr::ArrLit(es) = e {
         if es.iter().any(|x| matches!(x, Expr::ArrLit(inner) if inner.iter().any(|y| matches!(y, Expr::ArrLit(_) | Expr::DArrNew)))) {
@@ -15589,6 +15705,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             if ["upper", "lower"].iter().any(|b| is_builtin(id,b)) { return Ty::StrOwn; }
             if ["left", "right"].iter().any(|b| is_builtin(id,b)) { return Ty::StrOwn; }
             if is_builtin(id, "at") { return Ty::I64; }
+            if ["padc","rat","stuff","isdigit","isalpha","isupper","islower","strzero"].iter().any(|b|is_builtin(id,b)) { return str_builtin_ty(id); }
             if is_builtin(id, "padl") { return Ty::StrOwn; }
             if is_builtin(id, "val") { return Ty::F64; }
             if is_builtin(id, "dtos") { return Ty::StrOwn; }
@@ -22176,7 +22293,8 @@ hbc_at:
     ret
 
 # hbc_padl: rdi/rsi = borrowed source, rdx = width, rcx/r8 = borrowed
-# fill (r8 = fill length; r8 == 0 pads spaces) -> OWNED result.
+# fill (rcx == 0: no fill argument, pad spaces; an explicit empty fill
+# pads NUL bytes like Harbour 3.2.0) -> OWNED result.
 # width <= 0 -> empty copy; len >= width -> the RIGHTMOST width bytes;
 # len < width -> (width - len) fill bytes then the source bytes.
 hbc_padl:
@@ -22196,9 +22314,14 @@ hbc_padl:
     mov %rsi, %r13
     mov %rdx, %rbx
     mov %rcx, %r14
-    test %r8, %r8
+    test %r14, %r14
     jz .Lpl_spaces
+    test %r8, %r8
+    jz .Lpl_nul
     movzbl (%r14), %r14d
+    jmp .Lpl_alloc
+.Lpl_nul:
+    xor %r14d, %r14d
     jmp .Lpl_alloc
 .Lpl_spaces:
     mov $32, %r14d
@@ -22236,8 +22359,227 @@ hbc_padl:
     mov %rdx, %rsi
     jmp hbc_strcpy
 .Lpl_empty:
-    xor %edx, %edx
+    xor %esi, %esi
     jmp hbc_strcpy
+
+# hbc_padc: rdi/rsi = borrowed source, rdx = width, rcx/r8 = borrowed
+# fill (rcx == 0: no fill argument, pad spaces; an explicit empty fill
+# pads NUL bytes, as Harbour reads the terminator) -> OWNED result.
+# width <= 0 -> empty; len >= width -> the LEFTMOST width bytes;
+# otherwise (width - len) / 2 fill bytes on the left, the rest on the
+# right (Harbour 3.2.0 oracle: PadC of ab in 6 is 2+2, abc in 6 is 1+2).
+hbc_padc:
+    test %rdx, %rdx
+    jle .Lpc_empty
+    cmp %rdx, %rsi
+    jge .Lpc_trunc
+    push %rbp
+    mov %rsp, %rbp
+    push %rbx
+    push %r12
+    push %r13
+    push %r14
+    mov %rdi, %r12
+    mov %rsi, %r13
+    mov %rdx, %rbx
+    mov $32, %r14d
+    test %rcx, %rcx
+    jz .Lpc_alloc
+    xor %r14d, %r14d
+    test %r8, %r8
+    jz .Lpc_alloc
+    movzbl (%rcx), %r14d
+.Lpc_alloc:
+    mov %rbx, %rsi
+    call hbc_stralloc
+    mov %rax, %r10
+    xor %ecx, %ecx
+.Lpc_fill:
+    cmp %rbx, %rcx
+    jae .Lpc_copy
+    mov %r14b, (%r10,%rcx)
+    inc %rcx
+    jmp .Lpc_fill
+.Lpc_copy:
+    mov %rbx, %rcx
+    sub %r13, %rcx
+    shr $1, %rcx
+    lea (%r10,%rcx), %rdi
+    mov %r12, %rsi
+    mov %r13, %rcx
+    rep movsb
+    mov %r10, %rax
+    mov %rbx, %rdx
+    pop %r14
+    pop %r13
+    pop %r12
+    pop %rbx
+    pop %rbp
+    ret
+.Lpc_trunc:
+    mov %rdx, %rsi
+    jmp hbc_strcpy
+.Lpc_empty:
+    xor %esi, %esi
+    jmp hbc_strcpy
+
+# hbc_rat: rdi/rsi = borrowed search, rdx/rcx = borrowed text ->
+# rax = 1-based position of the LAST occurrence or 0. An empty search,
+# or a search longer than the text, finds 0 (Harbour oracle).
+hbc_rat:
+    xor %eax, %eax
+    test %rsi, %rsi
+    jz .Lrat_ret
+    cmp %rsi, %rcx
+    jb .Lrat_ret
+    mov %rcx, %r8
+    sub %rsi, %r8
+.Lrat_scan:
+    xor %r9d, %r9d
+    lea (%rdx,%r8), %r10
+.Lrat_cmp:
+    cmp %rsi, %r9
+    jae .Lrat_found
+    mov (%r10,%r9), %r11b
+    cmp %r11b, (%rdi,%r9)
+    jne .Lrat_next
+    inc %r9
+    jmp .Lrat_cmp
+.Lrat_found:
+    lea 1(%r8), %rax
+    ret
+.Lrat_next:
+    test %r8, %r8
+    jz .Lrat_ret
+    dec %r8
+    jmp .Lrat_scan
+.Lrat_ret:
+    ret
+
+# hbc_stuff: rdi/rsi = borrowed text, rdx = start, rcx = delete count,
+# r8/r9 = borrowed insert -> OWNED result. Harbour's unsigned clamps:
+# start 0 stays 0; start < 1 or > len becomes len (append); otherwise
+# start - 1. Delete 0 stays 0; delete < 1 or > len - start becomes
+# len - start (delete the rest).
+hbc_stuff:
+    test %rdx, %rdx
+    jz .Lst_posok
+    cmp $1, %rdx
+    jl .Lst_posend
+    cmp %rsi, %rdx
+    jg .Lst_posend
+    dec %rdx
+    jmp .Lst_posok
+.Lst_posend:
+    mov %rsi, %rdx
+.Lst_posok:
+    mov %rsi, %rax
+    sub %rdx, %rax
+    test %rcx, %rcx
+    jz .Lst_delok
+    cmp $1, %rcx
+    jl .Lst_delend
+    cmp %rax, %rcx
+    jle .Lst_delok
+.Lst_delend:
+    mov %rax, %rcx
+.Lst_delok:
+    push %rbp
+    mov %rsp, %rbp
+    push %rbx
+    push %r12
+    push %r13
+    push %r14
+    push %r15
+    sub $24, %rsp
+    mov %rdi, %r12
+    mov %rsi, %r13
+    mov %rdx, %r14
+    mov %rcx, %r15
+    mov %r8, %rbx
+    mov %r9, -48(%rbp)
+    mov %r13, %rsi
+    sub %r15, %rsi
+    add %r9, %rsi
+    mov %rsi, -56(%rbp)
+    call hbc_stralloc
+    mov %rax, %r10
+    mov %rax, %rdi
+    mov %r12, %rsi
+    mov %r14, %rcx
+    rep movsb
+    mov %rbx, %rsi
+    mov -48(%rbp), %rcx
+    rep movsb
+    lea (%r12,%r14), %rsi
+    add %r15, %rsi
+    mov %r13, %rcx
+    sub %r14, %rcx
+    sub %r15, %rcx
+    rep movsb
+    mov %r10, %rax
+    mov -56(%rbp), %rdx
+    add $24, %rsp
+    pop %r15
+    pop %r14
+    pop %r13
+    pop %r12
+    pop %rbx
+    pop %rbp
+    ret
+
+# hbc_ischar: rdi/rsi = borrowed text, edx = low byte, ecx = high byte,
+# r8d = 1 to fold ASCII case first -> rax = 1 when the FIRST byte is in
+# [low, high], else 0 (empty text is 0). IsDigit/IsUpper/IsLower use a
+# plain range; IsAlpha folds to lower case and tests a-z. ASCII only:
+# Harbour 3.2.0 answers .F. for IsAlpha(Chr(233)) in the default codepage.
+hbc_ischar:
+    xor %eax, %eax
+    test %rsi, %rsi
+    jz .Lisc_done
+    movzbl (%rdi), %r9d
+    test %r8d, %r8d
+    jz .Lisc_cmp
+    or $32, %r9d
+.Lisc_cmp:
+    cmp %edx, %r9d
+    jb .Lisc_done
+    cmp %ecx, %r9d
+    ja .Lisc_done
+    mov $1, %eax
+.Lisc_done:
+    ret
+
+# hbc_strzero_fix: rax/rdx = fresh OWNED Str(n[,w]) result -> the same
+# pair, rewritten in place: leading spaces (and a minus sign among them)
+# become zeros and a negative value gets its sign in byte 0. A field of
+# asterisks (overflow) is left untouched (Harbour oracle sz3/sz8).
+hbc_strzero_fix:
+    test %rdx, %rdx
+    jz .Lszf_ret
+    cmpb $42, (%rax)
+    je .Lszf_ret
+    xor %ecx, %ecx
+    xor %r8d, %r8d
+.Lszf_loop:
+    cmp %rdx, %rcx
+    jae .Lszf_sign
+    movzbl (%rax,%rcx), %r9d
+    cmp $32, %r9d
+    je .Lszf_zero
+    cmp $45, %r9d
+    jne .Lszf_sign
+    mov $1, %r8d
+.Lszf_zero:
+    movb $48, (%rax,%rcx)
+    inc %rcx
+    jmp .Lszf_loop
+.Lszf_sign:
+    test %r8d, %r8d
+    jz .Lszf_ret
+    movb $45, (%rax)
+.Lszf_ret:
+    ret
 
 # hbc_val: rdi/rsi = borrowed text -> xmm0 = parsed value,
 # rdi = packed dec | len<<16 (the f64 pair convention). Skips spaces,
