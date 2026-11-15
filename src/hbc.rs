@@ -1617,7 +1617,7 @@ const ASM_RESERVED: &[&str] = &[
     // Not backend keywords (there is no textual backend anymore), but labels
     // hbc itself emits; a user function with one of these names would
     // collide with a helper symbol.
-    "dtos", "stod", "year", "day", "month", "dow", "cdow", "cmonth", "dtoc", "date_add", "date_diff", "date_days", "date_from_days",
+    "dtos", "stod", "year", "day", "month", "dow", "cdow", "cmonth", "dtoc", "sqrt", "exp", "log", "mod", "date_add", "date_diff", "date_days", "date_from_days",
     "strtran", "space", "substr", "date", "ctod", "date_pack", "date_render", "date_today", "curdir", "qout", "qqout", "outstd", "outerr", "empty", "procname", "min", "max", "str", "padr", "hb_ntos", "replicate", "aeval", "hb_isnumeric", "hb_isarray", "hb_isstring", "dfree", "upper", "lower", "left", "right", "at", "int", "abs", "padl", "val", "ascan", "aclone", "atail", "asort", "hb_bitand", "hb_bitor", "hb_bitxor", "hb_bitnot", "hb_bittest", "hb_bitset", "hb_bitreset", "eprint_str", "eprint_sep", "eprint_i64", "eprint_i64c", "eprint_dyn", "eprint_dynlit", "print_dynlit", "eprint_f64", "hb_eol", "procline", "asc", "trim", "ltrim", "rtrim", "alltrim", "chr", "trace_top", "print_trace", "panic_exit", "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_range_error", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
 ];
 
@@ -4115,6 +4115,10 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
                     for a in args { walk(f,a,sigs,lit,pin,printed,n)?; }
                     return Ok(());
                 }
+                if ["sqrt","exp","log","mod"].iter().any(|b|is_builtin(id,b)) {
+                    for a in args { walk(f,a,sigs,lit,pin,printed,n)?; }
+                    return Ok(());
+                }
                 if is_builtin(id,"int") || is_builtin(id,"abs") {
                     // Int/Abs are the polymorphic numeric pair: the checker
                     // admits i64 AND f64 operands (a mixed numeric LOCAL is
@@ -6006,6 +6010,22 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                     _ => return Err(format!("line {}: `AScan` needs an integer array with an integer target or a string array with a string target in this increment",n)),
                 }
                 return Ok(Ty::I64);
+            }
+            if ["sqrt","exp","log"].iter().any(|b|is_builtin(id,b)) {
+                if args.len()!=1 { return Err(format!("line {}: `{}` takes exactly one numeric argument in this increment",n,id)); }
+                if !matches!(type_expr(&args[0],env,sigs,n)?, Ty::I64 | Ty::F64 | Ty::NumLocal) {
+                    return Err(format!("line {}: `{}` expects a numeric argument",n,id));
+                }
+                return Ok(Ty::F64);
+            }
+            if is_builtin(id, "mod") {
+                if args.len()!=2 { return Err(format!("line {}: `Mod` takes two numeric arguments in this increment",n)); }
+                for a in args {
+                    if !matches!(type_expr(a,env,sigs,n)?, Ty::I64 | Ty::F64 | Ty::NumLocal) {
+                        return Err(format!("line {}: `Mod` expects numeric arguments",n));
+                    }
+                }
+                return Ok(Ty::F64);
             }
             if is_builtin(id, "int") {
                 // Int(n) (issue #1): truncation toward zero; i64 is the
@@ -9892,6 +9912,10 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
                 for a in args { apply_moves(a,env,sigs,false); }
                 return;
             }
+            if ["sqrt","exp","log","mod"].iter().any(|b|is_builtin(id,b)) {
+                for a in args { apply_moves(a,env,sigs,false); }
+                return;
+            }
             if is_builtin(id,"int") || is_builtin(id,"abs") {
                 apply_moves(&args[0],env,sigs,false);
                 return;
@@ -13093,6 +13117,29 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
     call hbc_dtoc
 ");
         }
+        Expr::Call(id,args) if ["sqrt","exp","log"].iter().any(|b|is_builtin(id,b)) => {
+            cg_f64_operand(&args[0],env,sigs,strs,out,target);
+            out.push_str(&format!("    call hbc_math_{}
+", id.to_lowercase()));
+        }
+        Expr::Call(id,args) if is_builtin(id,"mod") => {
+            cg_f64_operand(&args[0],env,sigs,strs,out,target);
+            out.push_str("    mov $10, %eax
+    shl $16, %rax
+    or %rcx, %rax
+    mov %rax, %rdi
+    sub $32, %rsp
+    movsd %xmm0, (%rsp)
+    mov %rdi, 8(%rsp)
+");
+            cg_f64_operand(&args[1],env,sigs,strs,out,target);
+            out.push_str("    movsd %xmm0, %xmm1
+    movsd (%rsp), %xmm0
+    mov 8(%rsp), %rdi
+    add $32, %rsp
+    call hbc_math_mod
+");
+        }
         Expr::Call(id, args) if is_builtin(id, "chr") => {
             cg_expr(&args[0], env, sigs, strs, out, target);
             out.push_str("    mov %rax, %rdi\n    call hbc_chr\n");
@@ -15482,6 +15529,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             }
             if is_builtin(id, "atail") || is_builtin(id, "asort") { return Ty::Dyn; }
             if is_builtin(id, "int") { return Ty::I64; }
+            if ["sqrt","exp","log","mod"].iter().any(|b|is_builtin(id,b)) { return Ty::F64; }
             if is_builtin(id, "abs") {
                 // Type-preserving: i64/f64/NumLocal per the operand.
                 let t = expr_ty(&args[0], env, sigs);
@@ -26349,6 +26397,125 @@ hbc_print_f64:
     pop %r12
     leave
     ret
+
+
+# --- math builtins (Sqrt/Exp/Log/Mod), dec = SET(2) like Harbour RTL ---
+hbc_math_sqrt:
+    xorpd %xmm2, %xmm2
+    ucomisd %xmm2, %xmm0
+    jp .Lsqrt_zero
+    jbe .Lsqrt_zero
+    push %rbp
+    mov %rsp, %rbp
+    sub $32, %rsp
+    movsd %xmm0, (%rsp)
+    movsd .Lmath_half(%rip), %xmm1
+    movsd %xmm1, 8(%rsp)
+    fldl 8(%rsp)
+    fldl (%rsp)
+    fyl2x
+    fld %st(0)
+    frndint
+    fxch %st(1)
+    fsub %st(1), %st(0)
+    f2xm1
+    fld1
+    faddp %st(0), %st(1)
+    fscale
+    fstp %st(1)
+    fstpl (%rsp)
+    movsd (%rsp), %xmm0
+    leave
+    jmp .Lsqrt_meta
+.Lsqrt_zero:
+    xorpd %xmm0, %xmm0
+.Lsqrt_meta:
+    mov $655362, %edi
+    ret
+
+# hbc_math_exp: xmm0 = x -> exp(x) = 2^(x*log2(e)), rdi = (10<<16)|2
+hbc_math_exp:
+    push %rbp
+    mov %rsp, %rbp
+    sub $32, %rsp
+    movsd .Lmath_log2e(%rip), %xmm1
+    mulsd %xmm1, %xmm0
+    movsd %xmm0, (%rsp)
+    fldl (%rsp)
+    fld %st(0)
+    frndint
+    fxch %st(1)
+    fsub %st(1), %st(0)
+    f2xm1
+    fld1
+    faddp %st(0), %st(1)
+    fscale
+    fstp %st(1)
+    fstpl (%rsp)
+    movsd (%rsp), %xmm0
+    mov $655362, %edi
+    leave
+    ret
+
+# hbc_math_log: xmm0 = x -> ln(x), rdi = (20<<16)|2 for non-finite, else (10<<16)|2
+hbc_math_log:
+    push %rbp
+    mov %rsp, %rbp
+    sub $32, %rsp
+    movsd %xmm0, (%rsp)
+    movsd .Lmath_ln2(%rip), %xmm1
+    movsd %xmm1, 8(%rsp)
+    fldl 8(%rsp)
+    fldl (%rsp)
+    fyl2x
+    fstpl (%rsp)
+    movsd (%rsp), %xmm0
+    movq %xmm0, %rax
+    mov $0x7ff0000000000000, %rcx
+    and %rcx, %rax
+    cmp %rcx, %rax
+    mov $655362, %edi
+    jne .Llog_meta
+    mov $1310722, %edi
+.Llog_meta:
+    leave
+    ret
+
+# hbc_math_mod: xmm0 = a, rdi = a metadata, xmm1 = b -> fmod; b==0 returns a
+hbc_math_mod:
+    xorpd %xmm2, %xmm2
+    ucomisd %xmm2, %xmm1
+    jp .Lmod_nz
+    jne .Lmod_nz
+    ret
+.Lmod_nz:
+    push %rbp
+    mov %rsp, %rbp
+    sub $32, %rsp
+    movsd %xmm0, 8(%rsp)
+    movsd %xmm1, (%rsp)
+    fldl (%rsp)
+    fldl 8(%rsp)
+.Lmod_loop:
+    fprem
+    fnstsw %ax
+    test $4, %ah
+    jnz .Lmod_loop
+    fstpl 8(%rsp)
+    fstp %st(0)
+    movsd 8(%rsp), %xmm0
+    mov $655362, %edi
+    leave
+    ret
+
+.pushsection .rodata
+.align 8
+.Lmath_log2e:
+    .quad 0x3ff71547652b82fe
+.Lmath_half:
+    .quad 0x3fe0000000000000
+.Lmath_ln2:
+    .quad 0x3fe62e42fefa39ef
 
 "#;
 
