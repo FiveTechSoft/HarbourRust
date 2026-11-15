@@ -14,4 +14,6 @@ function main()
    ? CMonth(x)
    ? DToC(x)
    ? Dow(x)
+   ? Dow(CToD("01/01/1900"))
+   ? CDow(CToD("01/01/1900"))
    return nil

@@ -697,7 +697,7 @@ fn fits_i32(v: i64) -> bool { (i32::MIN as i64..=i32::MAX as i64).contains(&v) }
 fn suffix_width(m: &str) -> (&str, Option<u8>) {
     // mnemónicos con significado propio que terminan en letra de sufijo: no tocar
     const EXACT: &[&str] = &[
-        "ret","leave","syscall","pause","endbr64","nop","rep movsb","rep stosb",
+        "ret","leave","cqto","cqo","syscall","pause","endbr64","nop","rep movsb","rep stosb",
         "fyl2x","fscale","frndint","fld1","f2xm1","fprem","fnstsw",
         "fldl","fstpl","fld","fstp","fxch","faddp","fsub",
         "movsd","addsd","subsd","mulsd","divsd","ucomisd","xorpd","cvtsi2sd","cvttsd2si","roundsd",
@@ -747,6 +747,7 @@ fn encode_into(e: &Enc, out: &mut Vec<u8>, ripp: &mut RipPatches, mnem0: &str, o
     match m {
         "ret" => { out.push(0xC3); return Ok(()); }
         "leave" => { out.push(0xC9); return Ok(()); }
+        "cqto" | "cqo" => { out.extend_from_slice(&[0x48, 0x99]); return Ok(()); }
         "syscall" => { out.extend_from_slice(&[0x0F, 0x05]); return Ok(()); }
         "pause" => { out.extend_from_slice(&[0xF3, 0x90]); return Ok(()); }
         "endbr64" => { out.extend_from_slice(&[0xF3, 0x0F, 0x1E, 0xFA]); return Ok(()); }
@@ -2247,6 +2248,13 @@ mod safe_shorten_tests {
     fn asm(src:&str)->Asm {
         let mut a=Asm{p:Parser{consts:HashMap::new(),labels:HashMap::new(),numlabels:HashMap::new(),seq:Cell::new(0)},text:vec![],rodata:vec![],data:vec![],bss:vec![],note:vec![],has_gnu_stack:false,cur:Sec::Text,secstack:vec![],text_align:1,rod_align:1,dat_align:1,bss_align:1};
         for l in expand_rept(src).unwrap().lines(){a.parse_line(l).unwrap();}a
+    }
+    #[test]fn signed_dividend_extension_aliases() {
+        let resolve=|_: &Expr| -> Result<i64,String> { panic!("CQO has no operands") };
+        let e=Enc{resolve:&resolve};
+        for mnemonic in ["cqto","cqo"] {
+            assert_eq!(encode_ins(&e,mnemonic,&[],false,0,false).unwrap(),vec![0x48,0x99]);
+        }
     }
     #[test]fn forward_rel8_boundary(){for n in [0,1,126,127,128,129,4096]{let a=asm(&format!("jmp target\n.rept {}\nnop\n.endr\ntarget:\nret",n));assert_eq!(a.cannot_shorten(0,&a.minimum_text_prefix().unwrap().unwrap()),n>127);}}
     #[test]fn backward_rel8_boundary(){for n in [0,1,125,126,127,128,4096]{let a=asm(&format!("target:\n.rept {}\nnop\n.endr\njmp target",n));assert_eq!(a.cannot_shorten(n,&a.minimum_text_prefix().unwrap().unwrap()),n+2>128);}}

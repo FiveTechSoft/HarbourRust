@@ -30032,7 +30032,7 @@ hbc_dow:
     mov %rsp, %rbp
     call hbc_date_days
     add $4, %rax
-    xor %edx, %edx
+    cqto
     mov $7, %ecx
     idiv %rcx
     test %rdx, %rdx
