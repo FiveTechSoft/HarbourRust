@@ -1447,7 +1447,42 @@ impl Asm {
         }
     }
 
-    fn encode_all(&self, near: &[bool], l: &Layout) -> Result<(Vec<u8>, Vec<u64>), String> {
+    // An instruction is layout-free when no operand depends on label
+    // addresses: numeric immediates only, no RIP-relative labels, and not
+    // a branch or call (those size or relocate with layout). Its encoded
+    // bytes are identical in every relaxation pass, so they are computed
+    // once and reused by encode_all.
+    fn expr_layout_free(e: &Expr) -> bool {
+        e.0.iter().all(|(_, t)| matches!(t, Term::Num(_)))
+    }
+    fn op_layout_free(o: &Op) -> bool {
+        match o {
+            Op::Imm(e) => Self::expr_layout_free(e),
+            Op::Mem { disp, riplab, .. } => riplab.is_none()
+                && disp.as_ref().map_or(true, |e| Self::expr_layout_free(e)),
+            Op::Star(x) => Self::op_layout_free(x),
+            _ => true,
+        }
+    }
+    fn ins_layout_free(mnem: &str, ops: &[Op]) -> bool {
+        mnem != "call" && !is_jump(mnem) && ops.iter().all(Self::op_layout_free)
+    }
+    fn precompute_layout_free(&self, l: &Layout) -> Result<Vec<Option<Vec<u8>>>, String> {
+        let resolve = self.make_resolver(l);
+        let enc = Enc { resolve: &resolve };
+        let mut cache = Vec::with_capacity(self.text.len());
+        for it in &self.text {
+            match it {
+                TItem::Ins { mnem, ops, lock } if Self::ins_layout_free(mnem, ops) => {
+                    cache.push(Some(encode_ins(&enc, mnem, ops, *lock, 0, false)?));
+                }
+                _ => cache.push(None),
+            }
+        }
+        Ok(cache)
+    }
+
+    fn encode_all(&self, near: &[bool], l: &Layout, inv: &[Option<Vec<u8>>]) -> Result<(Vec<u8>, Vec<u64>), String> {
         let resolve = self.make_resolver(l);
         let enc = Enc { resolve: &resolve };
         let mut bytes = Vec::with_capacity(l.text_size as usize + 16);
@@ -1462,10 +1497,14 @@ impl Asm {
                     if do_fill { bytes.extend_from_slice(&nop_fill(pad as usize)); }
                 }
                 TItem::Ins { mnem, ops, lock } => {
-                    let cur_va = l.text_va + bytes.len() as u64;
-                    let b = encode_ins(&enc, mnem, ops, *lock, cur_va, near[i])
-                        .map_err(|e| format!("item {} ({} {:?}): {}", i, mnem, ops, e))?;
-                    bytes.extend_from_slice(&b);
+                    if let Some(b) = &inv[i] {
+                        bytes.extend_from_slice(b);
+                    } else {
+                        let cur_va = l.text_va + bytes.len() as u64;
+                        let b = encode_ins(&enc, mnem, ops, *lock, cur_va, near[i])
+                            .map_err(|e| format!("item {} ({} {:?}): {}", i, mnem, ops, e))?;
+                        bytes.extend_from_slice(&b);
+                    }
                 }
                 TItem::Raw(d) => {
                     match d {
@@ -1569,6 +1608,7 @@ impl Asm {
             pe_imports: pe_import_names.as_ref()
                 .map(|v| v.iter().map(|s| (s.clone(), 0u64)).collect()),
         };
+        let inv = self.precompute_layout_free(&prov)?;
         // Relajación tipo GAS: los saltos solo crecen; los pads de .p2align se
         // recalculan cada pasada (pueden encoger). El sistema no es monótono por
         // los pads, así que tras converger hacemos búsqueda local: para cada salto
@@ -1577,7 +1617,7 @@ impl Asm {
         let mut final_offs: Vec<u64> = Vec::new();
         let mut relax = |near: &mut Vec<bool>, final_offs: &mut Vec<u64>| -> Result<u64, String> {
             loop {
-                let (bytes, offs) = self.encode_all(near, &prov)?;
+                let (bytes, offs) = self.encode_all(near, &prov, &inv)?;
                 *final_offs = offs.clone();
                 let lprov = Layout { text_offs: offs.clone(), text_size: bytes.len() as u64, ..prov_clone(&prov) };
                 let resolve = self.make_resolver(&lprov);
@@ -1620,9 +1660,9 @@ impl Asm {
             break;
         }
         if pe {
-            self.finish_pe(near, final_offs, pe_import_names.unwrap())
+            self.finish_pe(near, final_offs, pe_import_names.unwrap(), &inv)
         } else {
-            self.finish_layout(near, final_offs)
+            self.finish_layout(near, final_offs, &inv)
         }
     }
 
@@ -1700,7 +1740,7 @@ impl Asm {
     // 0x1000 propia desde RVA 0x1000; ImageBase 0x140000000; thunks de import
     // al final de .text (FF 25 rel32 + 2 NOP, 8B, orden alfabético INVERSO);
     // cola de .text: NOPs hasta 16, luego 32B (FF x8, 00 x8) x2.
-    fn finish_pe(self, near: Vec<bool>, offs_pre: Vec<u64>, imports: Vec<String>) -> Result<Vec<u8>, String> {
+    fn finish_pe(self, near: Vec<bool>, offs_pre: Vec<u64>, imports: Vec<String>, inv: &[Option<Vec<u8>>]) -> Result<Vec<u8>, String> {
         if ditems_size(&self.note) > 0 || self.has_gnu_stack {
             return Err("PE64: secciones .note no soportadas en windows".into());
         }
@@ -1743,7 +1783,7 @@ impl Asm {
             has_rod, has_dat, has_bss, has_note: false,
             phnum: 0, headers_end: 0, pe_imports: Some(imp0),
         };
-        let (text_pre, _) = self.encode_all(&near, &prov)?;
+        let (text_pre, _) = self.encode_all(&near, &prov, inv)?;
         let code_size = text_pre.len() as u64;
 
         // layout definitivo
@@ -1785,7 +1825,7 @@ impl Asm {
             has_rod, has_dat, has_bss, has_note: false,
             phnum: 0, headers_end: 0, pe_imports: Some(imp_va),
         };
-        let (text_bytes, _) = self.encode_all(&near, &l)?;
+        let (text_bytes, _) = self.encode_all(&near, &l, inv)?;
         if text_bytes.len() as u64 != code_size {
             return Err(format!("PE64: oscilación interna {} vs {}", code_size, text_bytes.len()));
         }
@@ -1821,7 +1861,7 @@ impl Asm {
         }))
     }
 
-    fn finish_layout(self, near: Vec<bool>, offs_pre: Vec<u64>) -> Result<Vec<u8>, String> {
+    fn finish_layout(self, near: Vec<bool>, offs_pre: Vec<u64>, inv: &[Option<Vec<u8>>]) -> Result<Vec<u8>, String> {
         // tamaños de datos
         let rod_size = ditems_size(&self.rodata);
         let dat_size = ditems_size(&self.data);
@@ -1845,7 +1885,7 @@ impl Asm {
             text_va: 0x401000, rod_va: 0, dat_va: 0, bss_va: 0, note_va: 0,
             has_rod, has_dat, has_bss, has_note, phnum, headers_end, pe_imports: None,
         };
-        let (text_bytes_pre, offs_pre) = self.encode_all(&near, &prov)?;
+        let (text_bytes_pre, offs_pre) = self.encode_all(&near, &prov, inv)?;
         let text_size = text_bytes_pre.len() as u64;
         let _ = offs_pre;
 
@@ -1918,7 +1958,7 @@ impl Asm {
             w.sort();
             for (n, s, o) in w { eprintln!("num {} seq {} = {:x}", n, s, o); }
         }
-        let (text_bytes, _offs) = self.encode_all(&near, &l)?;
+        let (text_bytes, _offs) = self.encode_all(&near, &l, inv)?;
         if std::env::var("HASM_DEBUG").is_ok() {
             for (i, (a, b)) in l.text_offs.iter().zip(_offs.iter()).enumerate() {
                 if a != b {
