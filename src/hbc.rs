@@ -25126,7 +25126,7 @@ fn finalize_threads(out: String) -> String {
 }
 
 fn finalize_trace(mut out: String, target: Target) -> String {
-    if out.contains("call hbc_ctod") || out.contains("call hbc_date_today") || out.contains("call hbc_date_render") {
+    if ["ctod", "date_today", "date_render", "stod", "dtos", "year", "date_add", "date_diff", "date_days", "date_from_days"].iter().any(|name| out.contains(&format!("call hbc_{}",name))) {
         out.push_str(DATE_PORT_HELPERS);
     }
     if out.contains("call hbc_date_today") {
