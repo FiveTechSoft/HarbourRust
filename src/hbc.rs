@@ -15237,18 +15237,23 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
         Expr::Float(..) | Expr::FloatV(..) => Ty::F64,
         Expr::Int(_) | Expr::Inc(..) | Expr::IdxCompound(..) => Ty::I64,
         Expr::Bin(op, a, b) => {
-            if *op=='/' && (expr_ty(a,env,sigs)==Ty::NumLocal || expr_ty(b,env,sigs)==Ty::NumLocal) {return Ty::F64;}
+            // Compute each operand's type ONCE: the previous arm called
+            // expr_ty repeatedly per node, which is exponential on long
+            // left-associative chains (t770: 26M calls at 12 factors).
+            let ta = expr_ty(a, env, sigs);
+            let tb = expr_ty(b, env, sigs);
+            if *op=='/' && (ta==Ty::NumLocal || tb==Ty::NumLocal) {return Ty::F64;}
 
             // Mirror of type_expr: date arithmetic.
-            if matches!(expr_ty(a,env,sigs), Ty::Date) || matches!(expr_ty(b,env,sigs), Ty::Date) {
-                if *op=='-' && expr_ty(a,env,sigs)==Ty::Date && expr_ty(b,env,sigs)==Ty::Date { return Ty::I64; }
+            if matches!(ta, Ty::Date) || matches!(tb, Ty::Date) {
+                if *op=='-' && ta==Ty::Date && tb==Ty::Date { return Ty::I64; }
                 if matches!(*op, '+' | '-') { return Ty::Date; }
                 return Ty::I64;
             }
 
-            if (expr_ty(a,env,sigs)==Ty::NumLocal || expr_ty(b,env,sigs)==Ty::NumLocal) && *op!='/' && expr_ty(a,env,sigs)!=Ty::F64 && expr_ty(b,env,sigs)!=Ty::F64 { return Ty::NumLocal; }
+            if (ta==Ty::NumLocal || tb==Ty::NumLocal) && *op!='/' && ta!=Ty::F64 && tb!=Ty::F64 { return Ty::NumLocal; }
 
-            if matches!(expr_ty(a, env, sigs), Ty::Str | Ty::StrOwn) || matches!(expr_ty(b, env, sigs), Ty::Str | Ty::StrOwn) {
+            if matches!(ta, Ty::Str | Ty::StrOwn) || matches!(tb, Ty::Str | Ty::StrOwn) {
                 Ty::StrOwn
             } else if *op == '%' {
                 // Mirror of type_expr: runtime modulus is always F64.
@@ -15256,10 +15261,10 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             } else if *op == '^' {
                 // Mirror of type_expr: runtime power is always F64.
                 Ty::F64
-            } else if *op == '/' && expr_ty(a, env, sigs) == Ty::I64 && expr_ty(b, env, sigs) == Ty::I64 {
+            } else if *op == '/' && ta == Ty::I64 && tb == Ty::I64 {
                 // Mirror of type_expr: runtime int/int division is F64.
                 Ty::F64
-            } else if expr_ty(a, env, sigs) == Ty::F64 || expr_ty(b, env, sigs) == Ty::F64 {
+            } else if ta == Ty::F64 || tb == Ty::F64 {
                 // Mirror of type_expr: float arithmetic is F64.
                 Ty::F64
             } else {
