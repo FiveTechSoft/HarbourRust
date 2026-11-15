@@ -87,3 +87,23 @@ assembler timings use an instrumented build; instrumentation overhead
 is included in its wall times but not in production numbers. No claim
 is made about other hosts or about minimum-layout (GNU as parity)
 changes.
+
+## Follow-up, 15 Nov 2026: encoding cache and O(1) label offsets
+
+Two assembler changes landed after the measurements above.
+
+1. Layout-free instruction cache (`8dbd7a8`): instructions whose operands
+   are numeric-only, with no RIP label, branch or call, encode once and
+   are reused by all relaxation passes. Literal-array sources compile
+   2.3x-2.6x faster; statement-heavy sources 4%-17% faster.
+2. Precomputed section prefixes (this change): `loc_offset` recomputed
+   the prefix sum over all data items for every symbol reference. The
+   16000-statement source scanned 16.5 billion prefix entries. Resolver
+   construction now builds cumulative offsets once per pass, making each
+   lookup O(1). Alternating timings: 8000 statements 9.0-10.5 s ->
+   2.0-3.3 s; 16000 statements 33.2-34.7 s -> 3.6-3.8 s, about 9x.
+   Literal-array sources are cache-bound and stay near 0.8 s/1.3 s.
+
+Both produce byte-identical PE output (timestamp/checksum normalized)
+and byte-identical ELF on the comparison corpus. The per-doubling factor
+for the statement source is now near 1.1x in this range.
