@@ -21067,11 +21067,12 @@ hbc_stralloc:
     push %rbx
     push %r12
     mov %rsi, %r12
-    # Bounded exact-capacity cache of logically FREE strings <=64 KiB.
-    # Eight buckets, two ways each; at most 16 * 65552 retained bytes.
+    # Sixteen small slots retain eight-bucket/two-way associativity.
+    # Two exact-capacity large slots share the SAME1048832-byte allocation
+    # budget, headers included. Cache metadata is private to each thread.
     # Unlink before reuse: every live allocation still has one owner.
     cmp $65536, %rsi
-    ja .Lstr_cache_miss
+    ja .Lstr_cache_large
     mov %rsi, %rcx
     and $7, %ecx
     shl $4, %rcx
@@ -21092,9 +21093,30 @@ hbc_stralloc:
     jne .Lstr_cache_miss
     movq $0, 8(%r10)
 .Lstr_cache_take:
+    lea hbc_str_cache(%rip), %r11
     add $16, %rsi
+    sub %rsi, -64(%r11)
 @REG_CACHE_ALLOC@    incq hbc_mem_allocs(%rip)
     jmp .Lstr_cache_got
+.Lstr_cache_large:
+    cmp $1048576, %rsi
+    ja .Lstr_cache_miss
+    lea hbc_str_cache(%rip), %r10
+    mov -56(%r10), %rax
+    test %rax, %rax
+    jz .Lstr_cache_large_second
+    cmp %rsi, (%rax)
+    jne .Lstr_cache_large_second
+    movq $0, -56(%r10)
+    jmp .Lstr_cache_take
+.Lstr_cache_large_second:
+    mov -48(%r10), %rax
+    test %rax, %rax
+    jz .Lstr_cache_miss
+    cmp %rsi, (%rax)
+    jne .Lstr_cache_miss
+    movq $0, -48(%r10)
+    jmp .Lstr_cache_take
 .Lstr_cache_miss:
     lea 16(%rsi), %rdi
     call hbc_alloc
@@ -23583,7 +23605,7 @@ hbc_str_cache_flush:
     mov %rsp, %rbp
     push %r12
     push %r13
-    xor %r12d, %r12d
+    mov $-7, %r12
     lea hbc_str_cache(%rip), %r13
 .Lcache_flush_l_next:
     mov (%r13,%r12,8), %rdi
@@ -23598,8 +23620,13 @@ hbc_str_cache_flush:
     jnz hbc_os_bad
 .Lcache_flush_l_skip:
     inc %r12
+    cmp $-5, %r12
+    jne .Lcache_flush_l_cont
+    xor %r12d, %r12d
+.Lcache_flush_l_cont:
     cmp $16, %r12
-    jb .Lcache_flush_l_next
+    jl .Lcache_flush_l_next
+    movq $0, -64(%r13)
     pop %r13
     pop %r12
     pop %rbp
@@ -23847,22 +23874,31 @@ hbc_freestr:
     mov -16(%rdi), %rsi
     add $16, %rsi
     sub $16, %rdi
-@REG_FREE_L@    cmp $65552, %rsi
+@REG_FREE_L@    cmp $1048592, %rsi
     ja .Lstr_release_l
+    lea hbc_str_cache(%rip), %r11
+    mov -64(%r11), %rax
+    add %rsi, %rax
+    cmp $1048832, %rax
+    ja .Lstr_release_l
+    cmp $65552, %rsi
+    ja .Lstr_free_large_l
     mov (%rdi), %rcx
     and $7, %ecx
     shl $4, %rcx
-    lea hbc_str_cache(%rip), %r11
-    add %rcx, %r11
-    cmpq $0, (%r11)
-    jne .Lstr_free_second_l
-    mov %rdi, (%r11)
-    incq hbc_mem_frees(%rip)
-    ret
-.Lstr_free_second_l:
-    cmpq $0, 8(%r11)
+    lea (%r11,%rcx), %rcx
+    jmp .Lstr_free_slots_l
+.Lstr_free_large_l:
+    lea -56(%r11), %rcx
+.Lstr_free_slots_l:
+    cmpq $0, (%rcx)
+    je .Lstr_free_keep_l
+    add $8, %rcx
+    cmpq $0, (%rcx)
     jne .Lstr_release_l
-    mov %rdi, 8(%r11)
+.Lstr_free_keep_l:
+    mov %rdi, (%rcx)
+    mov %rax, -64(%r11)
     incq hbc_mem_frees(%rip)
     ret
 .Lstr_release_l:
@@ -24240,6 +24276,10 @@ hbc_asize:
     .align 8
 hbc_mem_allocs: .quad 0
 hbc_mem_frees:  .quad 0
+# Cache-local metadata before the unchanged sixteen small slots:
+# used physical bytes at -64; two large slots at -56/-48. Linux MT
+# maps these to existing unused TLS64/72/80, not the owner pointer120.
+    .zero 64
 hbc_str_cache: .zero 128
 
     .text
@@ -26200,7 +26240,7 @@ hbc_str_cache_flush:
     push %r12
     push %r13
     sub $48, %rsp
-    xor %r12d, %r12d
+    mov $-7, %r12
     lea hbc_str_cache(%rip), %r13
 .Lcache_flush_w_next:
     mov (%r13,%r12,8), %r8
@@ -26217,9 +26257,14 @@ hbc_str_cache_flush:
     jz hbc_os_bad
 .Lcache_flush_w_skip:
     inc %r12
+    cmp $-5, %r12
+    jne .Lcache_flush_w_cont
+    xor %r12d, %r12d
+.Lcache_flush_w_cont:
     cmp $16, %r12
-    jb .Lcache_flush_w_next
+    jl .Lcache_flush_w_next
     add $48, %rsp
+    movq $0, -64(%r13)
     pop %r13
     pop %r12
     pop %rbp
@@ -26461,25 +26506,34 @@ hbc_freestr:
     push %rbp
     mov %rsp, %rbp
     sub $48, %rsp
-@REG_SFREE_W@    cmpq $65536, -16(%rdi)
+@REG_SFREE_W@    mov -16(%rdi), %rsi
+    cmp $1048576, %rsi
     ja .Lstr_release_w
+    add $16, %rsi
+    lea hbc_str_cache(%rip), %r11
+    mov -64(%r11), %rax
+    add %rsi, %rax
+    cmp $1048832, %rax
+    ja .Lstr_release_w
+    cmp $65552, %rsi
+    ja .Lstr_free_large_w
     mov -16(%rdi), %rcx
     and $7, %ecx
     shl $4, %rcx
-    lea hbc_str_cache(%rip), %r11
-    add %rcx, %r11
-    cmpq $0, (%r11)
-    jne .Lstr_free_second_w
-    lea -16(%rdi), %rax
-    mov %rax, (%r11)
-    incq hbc_mem_frees(%rip)
-    leave
-    ret
-.Lstr_free_second_w:
-    cmpq $0, 8(%r11)
+    lea (%r11,%rcx), %rcx
+    jmp .Lstr_free_slots_w
+.Lstr_free_large_w:
+    lea -56(%r11), %rcx
+.Lstr_free_slots_w:
+    cmpq $0, (%rcx)
+    je .Lstr_free_keep_w
+    add $8, %rcx
+    cmpq $0, (%rcx)
     jne .Lstr_release_w
+.Lstr_free_keep_w:
+    mov %rax, -64(%r11)
     lea -16(%rdi), %rax
-    mov %rax, 8(%r11)
+    mov %rax, (%rcx)
     incq hbc_mem_frees(%rip)
     leave
     ret
@@ -26877,6 +26931,10 @@ hbc_asize:
     .align 8
 hbc_mem_allocs: .quad 0
 hbc_mem_frees:  .quad 0
+# Cache-local metadata before the unchanged sixteen small slots:
+# used physical bytes at -64; two large slots at -56/-48. Linux MT
+# maps these to existing unused TLS64/72/80, not the owner pointer120.
+    .zero 64
 hbc_str_cache: .zero 128
 
     .text
