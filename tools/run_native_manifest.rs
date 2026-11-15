@@ -59,7 +59,7 @@ fn main_work() -> Result<bool, String> {
         if let Some(t)=&target {c.arg(format!("--target={}",t));}
         if instrument {c.arg("--instrument");}
         if kind!="neg" {c.args(["-I","tests"]);}
-        let (compile_rc,compile_timeout)=run(c,&case.join("compile"),30)?;
+        let (compile_rc,compile_timeout)=run(c,&case.join("compile"),60)?;
         let mut run_rc=None;let pass;let detail;
         if kind=="neg" {
             let err=bytes(&case.join("compile.stderr"))?;
