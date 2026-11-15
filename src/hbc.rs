@@ -21240,6 +21240,48 @@ hbc_right:
 # rax = 1-based position or 0. Case-sensitive byte comparison; an empty
 # search or empty text finds 0 (Harbour returns 0 for an empty search).
 hbc_at:
+    cmp $1, %rsi
+    jne .Lat_original
+    movzbl (%rdi), %r8d
+    movd %r8d, %xmm0
+    punpcklbw %xmm0, %xmm0
+    punpcklwd %xmm0, %xmm0
+    pshufd $0, %xmm0, %xmm0
+    xor %eax, %eax
+.Lat_vscan:
+    cmp $16, %rcx
+    jb .Lat_vtail
+    movdqu (%rdx), %xmm1
+    pcmpeqb %xmm0, %xmm1
+    pmovmskb %xmm1, %r8d
+    test %r8d, %r8d
+    jnz .Lat_vfound
+    add $16, %rdx
+    add $16, %rax
+    sub $16, %rcx
+    jmp .Lat_vscan
+.Lat_vfound:
+    bsf %r8d, %r8d
+    add %r8, %rax
+    inc %rax
+    ret
+.Lat_vtail:
+    test %rcx, %rcx
+    jz .Lat_vmiss
+    mov (%rdi), %r8b
+    cmp %r8b, (%rdx)
+    je .Lat_vone
+    inc %rdx
+    inc %rax
+    dec %rcx
+    jmp .Lat_vtail
+.Lat_vone:
+    inc %rax
+    ret
+.Lat_vmiss:
+    xor %eax, %eax
+    ret
+.Lat_original:
     push %rbx
     push %r12
     push %r13
