@@ -185,7 +185,7 @@ impl Parser {
             let disp_s = t[..lp].trim();
             let parts: Vec<&str> = inner.split(',').map(|x| x.trim()).collect();
             if parts.len() == 1 && parts[0] == "%rip" {
-                return Ok(Op::Mem { disp: None, base: None, index: None, riplab: Some(disp_s.to_string()), fs });
+                return Ok(Op::Mem { disp: Some(self.parse_expr(disp_s)?), base: None, index: None, riplab: Some(disp_s.to_string()), fs });
             }
             let base = if parts[0].is_empty() { None } else {
                 let (c, w, _) = parse_reg(parts[0]).ok_or_else(|| format!("base no reg64: {}", parts[0]))?;
@@ -600,7 +600,7 @@ fn cc_code(cc: &str) -> Option<u8> {
 // ALU: (nombre, opcode base r/m8<-r8, ext /n para 80/81/83, acumulador 8-bit)
 fn alu_info(m: &str) -> Option<(u8, u8, u8)> {
     Some(match m {
-        "add" => (0x00, 0, 0x04), "or" => (0x08, 1, 0x0c), "and" => (0x20, 4, 0x24),
+        "add" => (0x00, 0, 0x04), "adc" => (0x10, 2, 0x14), "sbb" => (0x18, 3, 0x1c), "or" => (0x08, 1, 0x0c), "and" => (0x20, 4, 0x24),
         "sub" => (0x28, 5, 0x2c), "xor" => (0x30, 6, 0x34), "cmp" => (0x38, 7, 0x3c),
         _ => return None,
     })
@@ -608,7 +608,7 @@ fn alu_info(m: &str) -> Option<(u8, u8, u8)> {
 
 // ---------------------------------------------------------------- encoder
 
-type RipPatches = Vec<(usize, String)>; // (posición del disp32 en out, etiqueta)
+type RipPatches = Vec<(usize, Expr)>; // (posición del disp32 en out, etiqueta)
 
 fn rex_byte(w: bool, r: u8, x: u8, b: u8, force: bool) -> Option<u8> {
     let v = 0x40 | ((w as u8) << 3) | (((r >> 3) & 1) << 2) | (((x >> 3) & 1) << 1) | ((b >> 3) & 1);
@@ -646,7 +646,7 @@ fn emit_modrm(out: &mut Vec<u8>, ripp: &mut RipPatches, e: &Enc, regfield: u8, r
         Op::Mem { disp, base, index, riplab, .. } => {
             if let Some(lab) = riplab {
                 out.push(modrm(0, regfield, 5));
-                ripp.push((out.len(), lab.clone()));
+                ripp.push((out.len(), disp.clone().unwrap_or_else(|| Expr(vec![(false,Term::Sym(lab.clone()))]))));
                 out.extend_from_slice(&[0; 4]);
                 return Ok(());
             }
@@ -697,18 +697,18 @@ fn fits_i32(v: i64) -> bool { (i32::MIN as i64..=i32::MAX as i64).contains(&v) }
 fn suffix_width(m: &str) -> (&str, Option<u8>) {
     // mnemónicos con significado propio que terminan en letra de sufijo: no tocar
     const EXACT: &[&str] = &[
-        "ret","leave","cqto","cqo","syscall","pause","endbr64","nop","rep movsb","rep stosb",
+        "ret","leave","cqto","cqo","syscall","pause","endbr64","nop","ud2","rep movsb","rep movsq","rep stosb",
         "fyl2x","fscale","frndint","fld1","f2xm1","fprem","fnstsw",
         "fldl","fstpl","fld","fstp","fxch","faddp","fsub",
         "movsd","addsd","subsd","mulsd","divsd","ucomisd","xorpd","cvtsi2sd","cvttsd2si","roundsd",
-        "movsbq","movzbl","movzbq","movzwl","movzx","movabs","movq","comisd",
+        "movslq","movsbq","movzbl","movzbq","movzwl","movzx","movabs","movq","comisd",
     ];
     for x in EXACT { if m == *x { return (m, None); } }
     if m.starts_with("set") || m.starts_with("cmov") || m.starts_with('j') { return (m, None); }
     const BASES: &[&str] = &[
-        "mov","cmp","add","sub","and","or","xor","test","inc","dec",
-        "shl","sal","shr","sar","neg","not","lea","push","pop","bt","bts","btr",
-        "imul","div","xchg","cmpxchg",
+        "mov","cmp","add","adc","sbb","sub","and","or","xor","test","inc","dec",
+        "rol","ror","shl","sal","shr","sar","neg","not","lea","push","pop","bt","bts","btr",
+        "imul","mul","div","idiv","xchg","cmpxchg",
     ];
     for (suf, w) in [('q', 64u8), ('l', 32), ('b', 8), ('w', 16)] {
         if let Some(p) = m.strip_suffix(suf) {
@@ -731,7 +731,7 @@ fn encode_ins(e: &Enc, mnem: &str, ops: &[Op], lock: bool, cur_va: u64, near: bo
     encode_into(e, &mut out, &mut ripp, mnem, ops, cur_va, near)?;
     // parches RIP-relativos: disp32 = target - fin_instrucción
     for (pos, lab) in ripp {
-        let target = e.eval(&Expr(vec![(false, Term::Sym(lab.clone()))]))?;
+        let target = e.eval(&lab)?;
         let disp = target - (cur_va as i64 + out.len() as i64);
         out[pos..pos + 4].copy_from_slice(&(disp as i32).to_le_bytes());
     }
@@ -753,7 +753,17 @@ fn encode_into(e: &Enc, out: &mut Vec<u8>, ripp: &mut RipPatches, mnem0: &str, o
         "endbr64" => { out.extend_from_slice(&[0xF3, 0x0F, 0x1E, 0xFA]); return Ok(()); }
         "rep movsb" => { out.extend_from_slice(&[0xF3, 0xA4]); return Ok(()); }
         "rep stosb" => { out.extend_from_slice(&[0xF3, 0xAA]); return Ok(()); }
+        "bswap" => {
+            if let Op::Reg(c,w,false) = ops[0] {
+                if w!=32 && w!=64 { return Err("bswap width".into()); }
+                if let Some(r)=rex_byte(w==64,0,0,c,false) {out.push(r);}
+                out.extend_from_slice(&[0x0F,0xC8+(c&7)]); return Ok(());
+            }
+            return Err("bswap register required".into());
+        }
+        "rep movsq" => {out.extend_from_slice(&[0xF3,0x48,0xA5]);return Ok(());}
         "nop" => { out.push(0x90); return Ok(()); }
+        "ud2" => { out.extend_from_slice(&[0x0F,0x0B]); return Ok(()); }
         // x87 sin operandos
         "fyl2x" => { out.extend_from_slice(&[0xD9, 0xF1]); return Ok(()); }
         "fscale" => { out.extend_from_slice(&[0xD9, 0xFD]); return Ok(()); }
@@ -774,6 +784,13 @@ fn encode_into(e: &Enc, out: &mut Vec<u8>, ripp: &mut RipPatches, mnem0: &str, o
         "fldl" => { out.push(0xDD); emit_modrm(out, ripp, e, 0, &ops[0])?; return Ok(()); }
         "fstpl" => { out.push(0xDD); emit_modrm(out, ripp, e, 3, &ops[0])?; return Ok(()); }
         _ => {}
+    }
+    if m=="movslq" {
+        if let Op::Reg(c,64,false)=ops[1] {
+            if let Some(r)=rex_for(true,c,&ops[0],false){out.push(r);}
+            out.push(0x63);return emit_modrm(out,ripp,e,c,&ops[0]);
+        }
+        return Err("movslq destination".into());
     }
     // SSE y movq GPR<->XMM
     match m {
@@ -872,6 +889,11 @@ fn encode_into(e: &Enc, out: &mut Vec<u8>, ripp: &mut RipPatches, mnem0: &str, o
                 out.push(modrm(3, 0, c));
                 return Ok(());
             }
+            if matches!(ops[0], Op::Mem { .. }) {
+                if let Some(r) = rex_for(false, 0, &ops[0], false) { out.push(r); }
+                out.extend_from_slice(&[0x0F, 0x90 + cc]);
+                return emit_modrm(out, ripp, e, 0, &ops[0]);
+            }
         }
         return Err(format!("setcc: {}", m));
     }
@@ -934,21 +956,23 @@ fn encode_into(e: &Enc, out: &mut Vec<u8>, ripp: &mut RipPatches, mnem0: &str, o
         return Ok(());
     }
     // shifts
-    if let Some(digit) = match m { "shl" | "sal" => Some(4u8), "shr" => Some(5), "sar" => Some(7), _ => None } {
+    if let Some(digit) = match m { "rol" => Some(0u8), "ror" => Some(1), "shl" | "sal" => Some(4u8), "shr" => Some(5), "sar" => Some(7), _ => None } {
         let rm = &ops[1];
-        let w = sfx.or_else(|| reg_width(std::slice::from_ref(rm))).ok_or("shift sin ancho")? == 64;
+        let width=sfx.or_else(|| reg_width(std::slice::from_ref(rm))).ok_or("shift sin ancho")?;
+        if width==16 {out.push(0x66);}
+        let w=width==64;
         match &ops[0] {
             Op::Imm(x) => {
                 let v = e.eval(x)?;
                 if let Some(r) = rex_for(w, digit, rm, false) { out.push(r); }
-                out.push(0xC1);
+                out.push(if width==8 {0xC0}else{0xC1});
                 emit_modrm(out, ripp, e, digit, rm)?;
                 out.push(v as u8);
                 return Ok(());
             }
             Op::Reg(1, 8, _) => {
                 if let Some(r) = rex_for(w, digit, rm, false) { out.push(r); }
-                out.push(0xD3);
+                out.push(if width==8 {0xD2}else{0xD3});
                 emit_modrm(out, ripp, e, digit, rm)?;
                 return Ok(());
             }
@@ -966,6 +990,12 @@ fn encode_into(e: &Enc, out: &mut Vec<u8>, ripp: &mut RipPatches, mnem0: &str, o
             emit_modrm(out, ripp, e, digit, rm)?;
             out.push(v as u8);
             return Ok(());
+        }
+        if let Op::Reg(c,width,false) = ops[0] {
+            if width!=32 && width!=64 {return Err("bt register width".into());}
+            if let Some(r)=rex_for(w,c,rm,false) {out.push(r);}
+            out.extend_from_slice(&[0x0F,match digit {4=>0xA3,5=>0xAB,_=>0xB3}]);
+            return emit_modrm(out,ripp,e,c,rm);
         }
         return Err("bt forma".into());
     }
@@ -1055,6 +1085,7 @@ fn emit_imul_imm(out: &mut Vec<u8>, e: &Enc, v: i64, src: &Op, dst: &Op, w: bool
 }
 
 fn encode_mov(e: &Enc, out: &mut Vec<u8>, ripp: &mut RipPatches, ops: &[Op], sfx: Option<u8>) -> Result<(), String> {
+    if sfx.or_else(|| reg_width(ops))==Some(16) {out.push(0x66);}
     match (&ops[0], &ops[1]) {
         (Op::Imm(x), Op::Reg(c, w, h)) => {
             let v = e.eval(x)?;
@@ -1070,6 +1101,10 @@ fn encode_mov(e: &Enc, out: &mut Vec<u8>, ripp: &mut RipPatches, ops: &[Op], sfx
                         out.push(0xB8 + (c & 7));
                         out.extend_from_slice(&v.to_le_bytes());
                     }
+                }
+                16 => {
+                    if let Some(r)=rex_byte(false,0,0,*c,false){out.push(r);}
+                    out.push(0xB8+(c&7));out.extend_from_slice(&(v as i16).to_le_bytes());
                 }
                 32 => {
                     if let Some(r) = rex_byte(false, 0, 0, *c, false) { out.push(r); }
@@ -1091,7 +1126,7 @@ fn encode_mov(e: &Enc, out: &mut Vec<u8>, ripp: &mut RipPatches, ops: &[Op], sfx
             if let Some(r) = rex_for(w == 64, 0, dst, false) { out.push(r); }
             out.push(if w == 8 { 0xC6 } else { 0xC7 });
             emit_modrm(out, ripp, e, 0, dst)?;
-            if w == 8 { out.push(v as u8); } else { out.extend_from_slice(&(v as i32).to_le_bytes()); }
+            if w == 8 { out.push(v as u8); } else if w==16 {out.extend_from_slice(&(v as i16).to_le_bytes());} else { out.extend_from_slice(&(v as i32).to_le_bytes()); }
             Ok(())
         }
         (Op::Reg(c, w, h), dst) => {
@@ -1112,6 +1147,7 @@ fn encode_mov(e: &Enc, out: &mut Vec<u8>, ripp: &mut RipPatches, ops: &[Op], sfx
 }
 
 fn encode_test(e: &Enc, out: &mut Vec<u8>, ripp: &mut RipPatches, ops: &[Op], sfx: Option<u8>) -> Result<(), String> {
+    if sfx.or_else(|| reg_width(ops))==Some(16) {out.push(0x66);}
     match (&ops[0], &ops[1]) {
         (Op::Imm(x), rm) => {
             let w = sfx.or_else(|| reg_width(ops)).ok_or("test sin ancho")?;
@@ -1120,7 +1156,7 @@ fn encode_test(e: &Enc, out: &mut Vec<u8>, ripp: &mut RipPatches, ops: &[Op], sf
             if acc && w > 8 {
                 if let Some(r) = rex_byte(w == 64, 0, 0, 0, false) { out.push(r); }
                 out.push(0xA9);
-                out.extend_from_slice(&(v as i32).to_le_bytes());
+                if w==16 {out.extend_from_slice(&(v as i16).to_le_bytes());}else{out.extend_from_slice(&(v as i32).to_le_bytes());}
                 return Ok(());
             }
             if acc && w == 8 {
@@ -1131,7 +1167,7 @@ fn encode_test(e: &Enc, out: &mut Vec<u8>, ripp: &mut RipPatches, ops: &[Op], sf
             if let Some(r) = rex_for(w == 64, 0, rm, false) { out.push(r); }
             out.push(if w == 8 { 0xF6 } else { 0xF7 });
             emit_modrm(out, ripp, e, 0, rm)?;
-            if w == 8 { out.push(v as u8); } else { out.extend_from_slice(&(v as i32).to_le_bytes()); }
+            if w == 8 { out.push(v as u8); } else { if w==16 {out.extend_from_slice(&(v as i16).to_le_bytes());}else{out.extend_from_slice(&(v as i32).to_le_bytes());} }
             Ok(())
         }
         (Op::Reg(c, w, h), rm) => {
@@ -1147,6 +1183,7 @@ fn encode_test(e: &Enc, out: &mut Vec<u8>, ripp: &mut RipPatches, ops: &[Op], sf
 
 fn encode_alu(e: &Enc, out: &mut Vec<u8>, ripp: &mut RipPatches, ops: &[Op], sfx: Option<u8>,
               base8: u8, ext: u8, acc8: u8, m: &str) -> Result<(), String> {
+    if sfx.or_else(|| reg_width(ops))==Some(16) {out.push(0x66);}
     match (&ops[0], &ops[1]) {
         (Op::Imm(x), rm) => {
             let w = sfx.or_else(|| reg_width(ops)).ok_or(format!("{} sin ancho", m))?;
@@ -1175,13 +1212,13 @@ fn encode_alu(e: &Enc, out: &mut Vec<u8>, ripp: &mut RipPatches, ops: &[Op], sfx
             if acc {
                 if let Some(r) = rex_byte(w == 64, 0, 0, 0, false) { out.push(r); }
                 out.push(acc8 + 1);
-                out.extend_from_slice(&(v as i32).to_le_bytes());
+                if w==16 {out.extend_from_slice(&(v as i16).to_le_bytes());}else{out.extend_from_slice(&(v as i32).to_le_bytes());}
                 return Ok(());
             }
             if let Some(r) = rex_for(w == 64, ext, rm, false) { out.push(r); }
             out.push(0x81);
             emit_modrm(out, ripp, e, ext, rm)?;
-            out.extend_from_slice(&(v as i32).to_le_bytes());
+            if w==16 {out.extend_from_slice(&(v as i16).to_le_bytes());}else{out.extend_from_slice(&(v as i32).to_le_bytes());}
             Ok(())
         }
         (Op::Reg(c, w, h), rm) => {
@@ -1705,8 +1742,8 @@ impl Asm {
     // Símbolos referenciados y no definidos: candidatos a import kernel32.
     // Validados contra la lista blanca medida y devueltos ordenados.
     fn scan_imports(&self) -> Result<Vec<String>, String> {
-        const WHITELIST: [&str; 11] = ["VirtualAlloc", "VirtualFree", "GetSystemInfo", "ExitProcess", "GetEnvironmentVariableA", "GetLocalTime", "GetProcessHeap",
-            "GetStdHandle", "HeapAlloc", "HeapFree", "WriteFile"];
+        const WHITELIST: [&str; 15] = ["VirtualAlloc", "VirtualFree", "GetSystemInfo", "ExitProcess", "GetEnvironmentVariableA", "GetLocalTime", "GetProcessHeap",
+            "GetStdHandle", "HeapAlloc", "HeapFree", "WriteFile", "CreateFileW", "ReadFile", "GetFileSizeEx", "CloseHandle"];
         fn scan_expr(p: &Parser, e: &Expr, names: &mut Vec<String>) {
             for (_, t) in &e.0 {
                 if let Term::Sym(n) = t {
@@ -1726,10 +1763,7 @@ impl Asm {
                             Op::Mem { disp, riplab, .. } => {
                                 if let Some(e) = disp { scan_expr(&self.p, e, &mut imports); }
                                 if let Some(n) = riplab {
-                                    if !self.p.labels.contains_key(n) && !self.p.consts.contains_key(n)
-                                        && !imports.contains(n) {
-                                        imports.push(n.clone());
-                                    }
+                                    scan_expr(&self.p, &self.p.parse_expr(n)?, &mut imports);
                                 }
                             }
                             Op::Star(inner) => {
@@ -1737,9 +1771,7 @@ impl Asm {
                                 if let Op::Mem { disp, riplab, .. } = &**inner {
                                     if let Some(e) = disp { scan_expr(&self.p, e, &mut imports); }
                                     if let Some(n) = riplab {
-                                        if !self.p.labels.contains_key(n) && !imports.contains(n) {
-                                            imports.push(n.clone());
-                                        }
+                                        scan_expr(&self.p, &self.p.parse_expr(n)?, &mut imports);
                                     }
                                 }
                             }
@@ -2263,4 +2295,19 @@ mod safe_shorten_tests {
     #[test]fn numeric_labels_are_exact_targets(){let a=asm("jmp 1f\n.rept 128\nnop\n.endr\n1:\njmp 1b");let m=a.minimum_text_prefix().unwrap().unwrap();assert!(a.cannot_shorten(0,&m));assert!(!a.cannot_shorten(129,&m));}
     #[test]fn layout_dependent_nonbranch_uses_original_search(){let a=asm("jmp target\nmov $target, %rax\n.rept 200\nnop\n.endr\ntarget:\nret");assert!(a.minimum_text_prefix().unwrap().is_none());}
     #[test]fn numeric_instruction_lengths_strengthen_bound(){let a=asm("jmp target\n.rept 20\nmovabs $0x123456789abcdef0, %rax\n.endr\ntarget:\nret");assert!(a.cannot_shorten(0,&a.minimum_text_prefix().unwrap().unwrap()));}
+}
+
+#[cfg(test)]
+mod pe_dbf_encoder_tests {
+    use super::*;
+    #[test] fn pe_rip_addends_are_not_import_names() {
+        let source=".text\n.globl _start\n_start:\nmov data+8(%rip), %rax\nlea 8+data(%rip), %r9\ncall ExitProcess\n.data\ndata:\n.quad 0, 1\n";
+        assert!(assemble_pe(source).is_ok());
+    }
+    #[test] fn file_imports_are_explicit_only() {
+        for name in ["CreateFileW","GetFileSizeEx","ReadFile","CloseHandle"] {
+            assert!(assemble_pe(&format!(".text\n.globl _start\n_start:\ncall {}\ncall ExitProcess\n",name)).is_ok());
+        }
+        assert!(assemble_pe(".text\n.globl _start\n_start:\ncall NotAnApprovedFileApi\n").is_err());
+    }
 }

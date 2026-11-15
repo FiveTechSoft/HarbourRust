@@ -40,6 +40,10 @@ fn hint_of(name: &str) -> u16 {
         "HeapAlloc" => 863,
         "HeapFree" => 869,
         "WriteFile" => 1567,
+        "CreateFileW" => 212,
+        "ReadFile" => 1170,
+        "GetFileSizeEx" => 610,
+        "CloseHandle" => 141,
         _ => unreachable!("import fuera de lista blanca"),
     }
 }
