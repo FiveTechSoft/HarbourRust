@@ -1745,14 +1745,6 @@ neg tests/try-catch/try_exit_neg.prg E0025: invalid EXIT from within of SEQUENCE
 streams tests/hash-logical/haskey.prg tests/hash-logical/haskey.stdout tests/hash-logical/haskey.stderr
 neg tests/hash-logical/haskey-int-neg.prg arithmetic
 pos tests/t1678_acc_owned_seed.prg \nabef\nabcd\n         4\n         4
-        30
-bb
-NIL
-         1          9
-aa zz
-        10         20         30
-         5          3          4          2          1
-aa bb cc
 pos tests/array-extra/atail.prg \n        30\nbb\nNIL
 pos tests/array-extra/aclon.prg \n         1          9\naa zz
 pos tests/array-extra/asort.prg \n        10         20         30\n         5          3          4          2          1\naa bb cc
