@@ -40,6 +40,12 @@ extern hrm_cell hrm_float(uint64_t bits, uint64_t meta);
 extern double hrm_exp(double x);
 extern double hrm_log(double x);
 extern void hrm_fail(const unsigned char *msg, size_t len) __attribute__((noreturn));
+/* M2: despachador de llamadas a funciones de macros. hbc emite una tabla
+ * de comparación por cada builtin presente en el binario. Responde 1 con
+ * la celda resultado en *out, o 0 si el nombre no tiene builtin enlazado
+ * (el evaluador conserva entonces el error con nombre de siempre). */
+extern unsigned hrm_call(const unsigned char *name, unsigned long long name_len,
+                         unsigned long long argc, const hrm_cell *args, hrm_cell *out);
 
 /* V_ERR is a deferred Harbour error: Harbour folds the expression before
  * it resolves names or raises operand errors, so `.F. .AND. hidden` is .F.
@@ -450,11 +456,31 @@ static val primary(lex *L) {
       const unsigned char *s = L->ts; size_t n = L->tn;
       next(L);
       if (L->tok == T_LPAREN) {
-        /* Calls are M2: parse and release the arguments, defer the limit. */
+        /* M2: evalúa los argumentos y despacha por nombre vía hrm_call.
+         * Un argumento con error se difiere (Harbour pliega antes). */
         next(L);
+        hrm_cell argv[8];
+        unsigned long long argc = 0;
         if (L->tok != T_RPAREN) {
           for (;;) {
             val a = expr_or(L);
+            if (a.kind == V_ERR) { return a; }
+            if (argc < 8) {
+              if (a.kind == V_INT) { argv[argc].tag = 9; argv[argc].payload = (unsigned long long)a.i; }
+              else if (a.kind == V_LOG) { argv[argc].tag = 3; argv[argc].payload = a.i ? 1u : 0u; }
+              else if (a.kind == V_NIL) { argv[argc].tag = 1; argv[argc].payload = 0; }
+              else if (a.kind == V_DBL) { uint64_t bits; __builtin_memcpy(&bits, &a.d, 8); hrm_cell fc = hrm_float(bits, (uint64_t)a.dec); argv[argc].tag = 5; argv[argc].payload = fc.payload; }
+              else if (a.kind == V_STR) {
+                /* El argumento string siempre cruza owned: el builtin
+                 * lee la longitud del header payload[-1] y el literal
+                 * del texto no tiene header. Copiar con hrm_alloc. */
+                unsigned char *own = hrm_alloc(a.n);
+                for (size_t i = 0; i < a.n; i++) own[i] = a.s[i];
+                argv[argc].tag = 4; argv[argc].payload = (unsigned long long)(uintptr_t)own;
+              }
+              else { argv[argc].tag = 1; argv[argc].payload = 0; }
+              argc++;
+            }
             drop(&a);
             if (L->tok != T_COMMA) break;
             next(L);
@@ -462,6 +488,29 @@ static val primary(lex *L) {
         }
         if (L->tok != T_RPAREN) syntax();
         next(L);
+        hrm_cell out = {0, 0};
+        val r0 = {0};
+        (void)r0;
+        unsigned char lname[64];
+        unsigned long long ln = n < 64 ? n : 64;
+        for (unsigned long long i = 0; i < ln; i++) lname[i] = hrmv_fold(s[i]);
+        if (hrm_call(lname, ln, argc, argv, &out)) {
+          val r = {0};
+          switch (out.tag) {
+            case 9: r.kind = V_INT; r.i = (long long)out.payload; break;
+            case 1: r.kind = V_NIL; break;
+            case 3: r.kind = V_LOG; r.i = out.payload ? 1 : 0; break;
+            case 4: r.kind = V_STR; r.s = (const unsigned char *)(uintptr_t)out.payload;
+                    r.n = ((unsigned long long *)out.payload)[-1];
+                    r.owned = 1; break;
+            case 5: r.kind = V_DBL;
+                    __builtin_memcpy(&r.d, (const void *)(uintptr_t)out.payload, 8);
+                    r.dec = (int)(((unsigned long long *)(uintptr_t)out.payload)[1] & 0xFFFF);
+                    break;
+            default: return mkerr2("Error: macro function calls are not in this increment (M1): ", s, n);
+          }
+          return r;
+        }
         return mkerr2("Error: macro function calls are not in this increment (M1): ", s, n);
       }
       /* M0 memvar lookup: PRIVATE/PUBLIC values stored by hrc codegen. */
