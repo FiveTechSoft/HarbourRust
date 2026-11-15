@@ -1617,7 +1617,7 @@ const ASM_RESERVED: &[&str] = &[
     // Not backend keywords (there is no textual backend anymore), but labels
     // hbc itself emits; a user function with one of these names would
     // collide with a helper symbol.
-    "dtos", "stod", "year", "date_add", "date_diff", "date_days", "date_from_days",
+    "dtos", "stod", "year", "day", "month", "dow", "cdow", "cmonth", "dtoc", "date_add", "date_diff", "date_days", "date_from_days",
     "strtran", "space", "substr", "date", "ctod", "date_pack", "date_render", "date_today", "curdir", "qout", "qqout", "outstd", "outerr", "empty", "procname", "min", "max", "str", "padr", "hb_ntos", "replicate", "aeval", "hb_isnumeric", "hb_isarray", "hb_isstring", "dfree", "upper", "lower", "left", "right", "at", "int", "abs", "padl", "val", "ascan", "aclone", "atail", "asort", "hb_bitand", "hb_bitor", "hb_bitxor", "hb_bitnot", "hb_bittest", "hb_bitset", "hb_bitreset", "eprint_str", "eprint_sep", "eprint_i64", "eprint_i64c", "eprint_dyn", "eprint_dynlit", "print_dynlit", "eprint_f64", "hb_eol", "procline", "asc", "trim", "ltrim", "rtrim", "alltrim", "chr", "trace_top", "print_trace", "panic_exit", "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_range_error", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
 ];
 
@@ -4092,7 +4092,7 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
                     if !args.is_empty() { pin_vars(f,&args[0],Ty::Str,pin,n)?; walk(f,&args[0],sigs,lit,pin,printed,n)?; }
                     return Ok(());
                 }
-                if is_builtin(id,"dtos") || is_builtin(id,"year") {
+                if is_builtin(id,"dtos") || is_builtin(id,"year") || ["day","month","dow","cdow","cmonth","dtoc"].iter().any(|b|is_builtin(id,b)) {
                     // Date arguments borrow; nothing pins.
                     if !args.is_empty() { walk(f,&args[0],sigs,lit,pin,printed,n)?; }
                     return Ok(());
@@ -5933,6 +5933,20 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                     return Err(format!("line {}: `Year` expects a date",n));
                 }
                 return Ok(Ty::I64);
+            }
+            if ["day","month","dow"].iter().any(|b|is_builtin(id,b)) {
+                if args.len()!=1 { return Err(format!("line {}: `{}` takes exactly one date argument in this increment",n,id)); }
+                if type_expr(&args[0],env,sigs,n)? != Ty::Date {
+                    return Err(format!("line {}: `{}` expects a date",n,id));
+                }
+                return Ok(Ty::I64);
+            }
+            if ["cdow","cmonth","dtoc"].iter().any(|b|is_builtin(id,b)) {
+                if args.len()!=1 { return Err(format!("line {}: `{}` takes exactly one date argument in this increment",n,id)); }
+                if type_expr(&args[0],env,sigs,n)? != Ty::Date {
+                    return Err(format!("line {}: `{}` expects a date",n,id));
+                }
+                return Ok(Ty::StrOwn);
             }
             if is_builtin(id, "aclone") {
                 if args.len()!=1 { return Err(format!("line {}: `AClone` takes one argument in this increment",n)); }
@@ -9861,7 +9875,7 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
                 for a in args { apply_moves(a,env,sigs,false); }
                 return;
             }
-            if is_builtin(id,"dtos") || is_builtin(id,"stod") || is_builtin(id,"year") {
+            if is_builtin(id,"dtos") || is_builtin(id,"stod") || is_builtin(id,"year") || ["day","month","dow","cdow","cmonth","dtoc"].iter().any(|b|is_builtin(id,b)) {
                 for a in args { apply_moves(a,env,sigs,false); }
                 return;
             }
@@ -13051,6 +13065,28 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             } else { out.push_str("    movq $-1, 8(%rsp)\n"); }
             out.push_str(&format!("    mov -{}(%rbp), %rdi\n    mov -{}(%rbp), %rsi\n    mov (%rsp), %rdx\n    mov 8(%rsp), %rcx\n    call {}\n    add $32, %rsp\n    mov $1, %eax\n    xor %edx, %edx\n", var.off, var.off-8, helper));
         }
+        Expr::Call(id,args) if ["day","month","dow"].iter().any(|b|is_builtin(id,b)) => {
+            cg_value(&args[0],env,sigs,strs,out,target);
+            out.push_str(&format!("    mov %rax, %rdi
+    call hbc_{}
+    xor %edx, %edx
+", id.to_lowercase()));
+        }
+        Expr::Call(id,args) if ["cdow","cmonth"].iter().any(|b|is_builtin(id,b)) => {
+            cg_value(&args[0],env,sigs,strs,out,target);
+            out.push_str(&format!("    mov %rax, %rdi
+    call hbc_{}
+    mov %rax, %rdi
+    mov %rdx, %rsi
+    call hbc_strcpy
+", id.to_lowercase()));
+        }
+        Expr::Call(id,args) if is_builtin(id,"dtoc") => {
+            cg_value(&args[0],env,sigs,strs,out,target);
+            out.push_str("    mov %rax, %rdi
+    call hbc_dtoc
+");
+        }
         Expr::Call(id, args) if is_builtin(id, "chr") => {
             cg_expr(&args[0], env, sigs, strs, out, target);
             out.push_str("    mov %rax, %rdi\n    call hbc_chr\n");
@@ -15432,6 +15468,8 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             if is_builtin(id, "dtos") { return Ty::StrOwn; }
             if is_builtin(id, "stod") { return Ty::Date; }
             if is_builtin(id, "year") { return Ty::I64; }
+            if ["day","month","dow"].iter().any(|b|is_builtin(id,b)) { return Ty::I64; }
+            if ["cdow","cmonth","dtoc"].iter().any(|b|is_builtin(id,b)) { return Ty::StrOwn; }
             if is_builtin(id, "ascan") { return Ty::I64; }
             if is_builtin(id, "aclone") {
                 return match expr_ty(&args[0],env,sigs) { Ty::DArrS => Ty::DArrS, _ => Ty::DArr };
@@ -25647,7 +25685,7 @@ fn finalize_threads(out: String) -> String {
 }
 
 fn finalize_trace(mut out: String, target: Target) -> String {
-    if ["ctod", "date_today", "date_render", "stod", "dtos", "year", "date_add", "date_diff", "date_days", "date_from_days"].iter().any(|name| out.contains(&format!("call hbc_{}",name))) {
+    if ["ctod", "date_today", "date_render", "stod", "dtos", "year", "day", "month", "dow", "cdow", "cmonth", "dtoc", "date_add", "date_diff", "date_days", "date_from_days"].iter().any(|name| out.contains(&format!("call hbc_{}",name))) {
         out.push_str(DATE_PORT_HELPERS);
     }
     if out.contains("call hbc_date_today") {
@@ -29959,6 +29997,253 @@ hbc_date_render:
     call hbc_eprint_str
     leave
     ret
+
+# hbc_day: packed date -> day of month (0 for the empty date).
+hbc_day:
+    mov %rdi, %rax
+    xor %edx, %edx
+    mov $100, %ecx
+    div %rcx
+    mov %rdx, %rax
+    ret
+
+# hbc_month: packed date -> month (0 for the empty date).
+hbc_month:
+    mov %rdi, %rax
+    xor %edx, %edx
+    mov $100, %ecx
+    div %rcx
+    xor %edx, %edx
+    div %rcx
+    mov %rdx, %rax
+    ret
+
+# hbc_dow: packed date -> 1..7 with Sunday = 1 (0 for the empty date).
+hbc_dow:
+    test %rdi, %rdi
+    jz .Ldow_zero
+    push %rbp
+    mov %rsp, %rbp
+    call hbc_date_days
+    add $4, %rax
+    xor %edx, %edx
+    mov $7, %ecx
+    idiv %rcx
+    test %rdx, %rdx
+    jns .Ldow_modok
+    add $7, %rdx
+.Ldow_modok:
+    lea 1(%rdx), %rax
+    leave
+    ret
+.Ldow_zero:
+    xor %eax, %eax
+    ret
+
+# hbc_cdow: packed date -> borrowed name pointer/length (empty for 0).
+hbc_cdow:
+    test %rdi, %rdi
+    jz .Lcdow_empty
+    push %rbp
+    mov %rsp, %rbp
+    call hbc_dow
+    leave
+    dec %rax
+    cmp $0, %rax
+    jne .Lcdow_1
+    lea .Lcdow0(%rip), %rax
+    mov $6, %edx
+    ret
+.Lcdow_1:
+    cmp $1, %rax
+    jne .Lcdow_2
+    lea .Lcdow1(%rip), %rax
+    mov $6, %edx
+    ret
+.Lcdow_2:
+    cmp $2, %rax
+    jne .Lcdow_3
+    lea .Lcdow2(%rip), %rax
+    mov $7, %edx
+    ret
+.Lcdow_3:
+    cmp $3, %rax
+    jne .Lcdow_4
+    lea .Lcdow3(%rip), %rax
+    mov $9, %edx
+    ret
+.Lcdow_4:
+    cmp $4, %rax
+    jne .Lcdow_5
+    lea .Lcdow4(%rip), %rax
+    mov $8, %edx
+    ret
+.Lcdow_5:
+    cmp $5, %rax
+    jne .Lcdow_6
+    lea .Lcdow5(%rip), %rax
+    mov $6, %edx
+    ret
+.Lcdow_6:
+    lea .Lcdow6(%rip), %rax
+    mov $8, %edx
+    ret
+.Lcdow_empty:
+    lea .Ldate_name_empty(%rip), %rax
+    xor %edx, %edx
+    ret
+
+# hbc_cmonth: packed date -> borrowed month name pointer/length.
+hbc_cmonth:
+    test %rdi, %rdi
+    jz .Lcmonth_empty
+    call hbc_month
+    dec %rax
+    cmp $0, %rax
+    jne .Lcm_1
+    lea .Lcmonth0(%rip), %rax
+    mov $7, %edx
+    ret
+.Lcm_1:
+    cmp $1, %rax
+    jne .Lcm_2
+    lea .Lcmonth1(%rip), %rax
+    mov $8, %edx
+    ret
+.Lcm_2:
+    cmp $2, %rax
+    jne .Lcm_3
+    lea .Lcmonth2(%rip), %rax
+    mov $5, %edx
+    ret
+.Lcm_3:
+    cmp $3, %rax
+    jne .Lcm_4
+    lea .Lcmonth3(%rip), %rax
+    mov $5, %edx
+    ret
+.Lcm_4:
+    cmp $4, %rax
+    jne .Lcm_5
+    lea .Lcmonth4(%rip), %rax
+    mov $3, %edx
+    ret
+.Lcm_5:
+    cmp $5, %rax
+    jne .Lcm_6
+    lea .Lcmonth5(%rip), %rax
+    mov $4, %edx
+    ret
+.Lcm_6:
+    cmp $6, %rax
+    jne .Lcm_7
+    lea .Lcmonth6(%rip), %rax
+    mov $4, %edx
+    ret
+.Lcm_7:
+    cmp $7, %rax
+    jne .Lcm_8
+    lea .Lcmonth7(%rip), %rax
+    mov $6, %edx
+    ret
+.Lcm_8:
+    cmp $8, %rax
+    jne .Lcm_9
+    lea .Lcmonth8(%rip), %rax
+    mov $9, %edx
+    ret
+.Lcm_9:
+    cmp $9, %rax
+    jne .Lcm_10
+    lea .Lcmonth9(%rip), %rax
+    mov $7, %edx
+    ret
+.Lcm_10:
+    cmp $10, %rax
+    jne .Lcm_11
+    lea .Lcmonth10(%rip), %rax
+    mov $8, %edx
+    ret
+.Lcm_11:
+    lea .Lcmonth11(%rip), %rax
+    mov $8, %edx
+    ret
+.Lcmonth_empty:
+    lea .Ldate_name_empty(%rip), %rax
+    xor %edx, %edx
+    ret
+
+# hbc_dtoc: packed date -> owned MM/DD/YY string (spaces for 0).
+hbc_dtoc:
+    push %rbp
+    mov %rsp, %rbp
+    sub $32, %rsp
+    movabs $0x20202f20202f2020, %rcx
+    mov %rcx, -16(%rbp)
+    test %rdi, %rdi
+    jz .Ldtoc_alloc
+    mov %rdi, %rax
+    xor %edx, %edx
+    mov $100, %ecx
+    div %rcx
+    mov %edx, %r8d
+    xor %edx, %edx
+    div %rcx
+    mov %edx, %r9d
+    xor %edx, %edx
+    div %rcx
+    mov %edx, %r10d
+    mov $10, %ecx
+    mov %r10d, %eax
+    xor %edx, %edx
+    div %ecx
+    add $48, %al
+    add $48, %dl
+    mov %al, -10(%rbp)
+    mov %dl, -9(%rbp)
+    mov %r9d, %eax
+    xor %edx, %edx
+    div %ecx
+    add $48, %al
+    add $48, %dl
+    mov %al, -16(%rbp)
+    mov %dl, -15(%rbp)
+    mov %r8d, %eax
+    xor %edx, %edx
+    div %ecx
+    add $48, %al
+    add $48, %dl
+    mov %al, -13(%rbp)
+    mov %dl, -12(%rbp)
+.Ldtoc_alloc:
+    mov $8, %esi
+    call hbc_stralloc
+    mov -16(%rbp), %r8
+    mov %r8, (%rax)
+    leave
+    ret
+
+.Lcdow0: .byte 83,117,110,100,97,121
+.Lcdow1: .byte 77,111,110,100,97,121
+.Lcdow2: .byte 84,117,101,115,100,97,121
+.Lcdow3: .byte 87,101,100,110,101,115,100,97,121
+.Lcdow4: .byte 84,104,117,114,115,100,97,121
+.Lcdow5: .byte 70,114,105,100,97,121
+.Lcdow6: .byte 83,97,116,117,114,100,97,121
+.Lcmonth0: .byte 74,97,110,117,97,114,121
+.Lcmonth1: .byte 70,101,98,114,117,97,114,121
+.Lcmonth2: .byte 77,97,114,99,104
+.Lcmonth3: .byte 65,112,114,105,108
+.Lcmonth4: .byte 77,97,121
+.Lcmonth5: .byte 74,117,110,101
+.Lcmonth6: .byte 74,117,108,121
+.Lcmonth7: .byte 65,117,103,117,115,116
+.Lcmonth8: .byte 83,101,112,116,101,109,98,101,114
+.Lcmonth9: .byte 79,99,116,111,98,101,114
+.Lcmonth10: .byte 78,111,118,101,109,98,101,114
+.Lcmonth11: .byte 68,101,99,101,109,98,101,114
+.Ldate_name_empty: .byte 0
+
 "#;
 
 const DATE_TODAY_LINUX: &str = r#"

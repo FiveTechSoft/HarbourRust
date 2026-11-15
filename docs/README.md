@@ -28,6 +28,7 @@ stays short.
 - [Former main development history](MAIN-DEVELOPMENT-HISTORY.md): the separate
   main README, including its historical Date work, preserved during integration.
 - [Independent Date port](DATE-PORT-2026-11-13.md): current representation and limits.
+- [Day, Month, Dow, CDow, CMonth and DToC](DATE-EXTRA-2026-11-15.md): oracle-pinned date accessors and empty-date rules.
 
 ## Source and tests
 
