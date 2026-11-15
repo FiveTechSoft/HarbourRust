@@ -4108,7 +4108,9 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
                     return Ok(());
                 }
                 if is_builtin(id,"space") {
-                    for a in args { pin_vars(f,a,Ty::I64,pin,n)?; walk(f,a,sigs,lit,pin,printed,n)?; }
+                    // Numeric-polymorphic like Int/Abs: argument context must not
+                    // force a valid F64 parameter back into the I64 channel.
+                    for a in args { walk(f,a,sigs,lit,pin,printed,n)?; }
                     return Ok(());
                 }
                 if is_builtin(id, "chr") {
@@ -5972,8 +5974,8 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
             }
             if is_builtin(id,"space") {
                 if args.len()!=1 { return Err(format!("line {}: `Space` takes one argument in this increment",n)); }
-                if type_expr(&args[0],env,sigs,n)? != Ty::I64 {
-                    return Err(format!("line {}: `Space` expects an I64 count in this increment (Harbour numeric truncation and Dyn dispatch are not covered)",n));
+                if !matches!(type_expr(&args[0],env,sigs,n)?,Ty::I64|Ty::F64) {
+                    return Err(format!("line {}: `Space` expects an I64 or F64 count (Dyn/NumLocal/default coercion not covered)",n));
                 }
                 return Ok(Ty::StrOwn);
             }
@@ -12720,7 +12722,10 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             out.push_str("    mov 64(%rsp), %rax\n    mov 72(%rsp), %rdx\n    add $96, %rsp\n");
         }
         Expr::Call(id,args) if is_builtin(id,"space") => {
-            cg_expr(&args[0],env,sigs,strs,out,target);
+            if expr_ty(&args[0],env,sigs)==Ty::F64 {
+                cg_f64_operand(&args[0],env,sigs,strs,out,target);
+                out.push_str("    call hbc_space_count_f64\n");
+            } else { cg_expr(&args[0],env,sigs,strs,out,target); }
             out.push_str("    mov %rax, %rdi\n    call hbc_space\n");
         }
         Expr::Call(id, args) if is_builtin(id, "chr") => {
@@ -22127,6 +22132,29 @@ hbc_strtran_one:
     pop %rbp
     ret
 
+# Pure conversion gate: xmm0 -> signed I64 rax, truncation toward zero.
+# Validate bits BEFORE CVTT: positive values must be <2^63; negative may
+# equal -2^63. This rejects all NaNs/infinities without FP compare traps.
+# No allocation, no metadata/ABI widening, no int-as-double substitution.
+hbc_space_count_f64:
+    movq %xmm0, %rax
+    mov %rax, %rcx
+    shr $63, %rcx
+    movabs $0x7fffffffffffffff, %rdx
+    and %rdx, %rax
+    movabs $0x43e0000000000000, %rdx
+    test %rcx, %rcx
+    jnz .Lspace_f64_negative
+    cmp %rdx, %rax
+    jae hbc_space_range_error
+    jmp .Lspace_f64_convert
+.Lspace_f64_negative:
+    cmp %rdx, %rax
+    ja hbc_space_range_error
+.Lspace_f64_convert:
+    cvttsd2si %xmm0, %rax
+    ret
+
 # hbc_space: rdi=signed count -> owned space bytes in rax/rdx.
 # Nonpositive counts return an independently owned empty string.
 hbc_space:
@@ -23496,6 +23524,15 @@ hbc_inc_overflow:
     mov $1, %edi
     syscall
 
+# Named admission limit, not a Harbour error or catchable substitute.
+hbc_space_range_error:
+    lea .Lspace_range_msg(%rip), %rsi
+    mov $40, %edx
+    mov $1, %eax
+    mov $1, %edi
+    syscall
+    jmp hbc_panic_exit
+
 # hbc_f64range_error: a float field (padding + digits, or a non-finite
 # star fill) exceeds the helper's bounded compose scratch (456 bytes).
 # Harbour grows its print buffer dynamically; beyond this measured
@@ -24813,6 +24850,7 @@ fn emit_strings(out: &mut String, strs: &[String]) {
     out.push_str(".Lpersistmsg:\n    .byte 76,105,109,105,116,58,32,112,101,114,115,105,115,116,101,110,116,32,83,84,65,84,73,67,32,115,116,111,114,101,115,32,110,101,101,100,32,111,119,110,101,100,32,115,99,97,108,97,114,32,112,97,121,108,111,97,100,115,10\n");
     out.push_str(".Lstaticovmsg:\n    .byte 76,105,109,105,116,58,32,115,116,97,116,105,99,47,98,121,114,101,102,32,105,110,116,101,103,101,114,32,97,114,105,116,104,109,101,116,105,99,32,110,101,101,100,115,32,110,117,109,101,114,105,99,32,112,114,111,109,111,116,105,111,110,10\n");
     out.push_str(".Lincmsg:\n    .byte 76,105,109,105,116,58,32,105,110,99,114,101,109,101,110,116,32,111,118,101,114,102,108,111,119,32,110,101,101,100,115,32,110,117,109,101,114,105,99,32,112,114,111,109,111,116,105,111,110,10\n");
+    out.push_str(".Lspace_range_msg:\n    .byte 69,114,114,111,114,58,32,83,112,97,99,101,32,70,54,52,32,99,111,117,110,116,32,111,117,116,32,111,102,32,73,54,52,32,114,97,110,103,101,10\n");
     out.push_str(".Lf64rangemsg:\n    .byte 69,114,114,111,114,58,32,102,108,111,97,116,32,102,105,101,108,100,32,111,117,116,32,111,102,32,114,97,110,103,101,10\n");
     out.push_str(".Lroundmsg:\n    .byte 69,114,114,111,114,58,32,114,111,117,110,100,32,100,101,99,32,111,117,116,32,111,102,32,114,97,110,103,101,10\n");
     out.push_str(".Lround_pow10:\n    .quad 4607182418800017408, 4621819117588971520, 4636737291354636288, 4652007308841189376\n    .quad 4666723172467343360, 4681608360884174848, 4696837146684686336, 4711630319722168320\n    .quad 4726483295884279808, 4741671816366391296, 4756540486875873280, 4771362005757984768\n    .quad 4786511204640096256, 4801453603149578240, 4816244402031689728, 4831355200913801216\n");
@@ -26150,6 +26188,16 @@ hbc_inc_overflow:
     call hbc_print_str
     mov $1, %ecx
     call ExitProcess
+
+hbc_space_range_error:
+    push %rbp
+    mov %rsp, %rbp
+    and $-16, %rsp
+    sub $48, %rsp
+    lea .Lspace_range_msg(%rip), %rax
+    mov $40, %edx
+    call hbc_print_str
+    jmp hbc_panic_exit
 
 # hbc_f64range_error: same wording as the linux helper; exit code 1.
 hbc_f64range_error:

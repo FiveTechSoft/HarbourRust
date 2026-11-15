@@ -48,7 +48,7 @@ for n in range(5):check(src,'thread-'+str(n),q.stdout,'linux')
 for src in sorted(root.glob('*-neg.prg')):
     expected=(b'`Space` takes one argument' if src.stem.startswith('arity') else
               b'mixed numeric LOCAL cannot cross' if src.stem.startswith('numlocal') else
-              b'`Space` expects an I64 count')
+              b'`Space` expects an I64 or F64 count')
     for target in ['linux','windows'] if a.wine else ['linux']:
         dest=a.output/(src.stem+'-'+target+'.program')
         q=run([a.compiler,src,dest,'--target='+target])
@@ -56,6 +56,6 @@ for src in sorted(root.glob('*-neg.prg')):
         (a.output/(src.stem+'-'+target+'.stderr')).write_bytes(q.stderr)
         rows.append(dict(name=src.stem,target=target,rejected=True,diagnostic=expected.decode()))
 summary=dict(compiler_sha256=hashlib.sha256(a.compiler.read_bytes()).hexdigest(),rows=rows,
-             limits='I64 only, exact arity1; no Dyn/F64/NumLocal or nonfinite conversion; Wine is not native Windows')
+             limits='I64/F64, exact arity1; no Dyn/NumLocal or nonfinite conversion; Wine is not native Windows')
 (a.output/'summary.json').write_text(json.dumps(summary,indent=2)+'\n')
 print('PASS',sum(r.get('exact',False) for r in rows),'exact executions;',sum(r.get('rejected',False) for r in rows),'named rejections')
