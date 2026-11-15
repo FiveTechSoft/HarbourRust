@@ -110,7 +110,7 @@ static HB_ULONG float_meta( const HB_ULONG *w ) {
     HB_ULONG dec; union { HB_ULONG b; double d; } u;
     if(float_heap(w[0])) return ((const HB_ULONG *)w[1])[1];
     dec=w[0]>>8; if(!dec) dec=2; u.b=w[1];
-    return (((HB_ULONG)(u.d>9999999999.0 || u.d < -9999999999.0 ? 20:10))<<16)|dec;
+    return (((HB_ULONG)(u.d>9999999999.0 || u.d < -999999999.0 ? 20:10))<<16)|dec;
 }
 static HB_ULONG float_owned( HB_ULONG bits, HB_ULONG meta ) {
     HB_ULONG v[2]; v[0]=bits; v[1]=meta;

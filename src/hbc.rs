@@ -1615,7 +1615,7 @@ impl P {
 }
 
 const ASM_RESERVED: &[&str] = &[
-    "float_new", "float_clone", "float_release", "float_unpack", "float_cells_release",
+    "float_new", "float_clone", "float_release", "float_unpack", "float_cells_release", "aclone_i", "aclone_s", "asort_i", "asort_s", "aclone_alloc",
     // Not backend keywords (there is no textual backend anymore), but labels
     // hbc itself emits; a user function with one of these names would
     // collide with a helper symbol.
@@ -21393,8 +21393,8 @@ hbc_hdelat:
 # hbc_hfill: rdi = hash slot address, rsi = value tag, rdx = value
 # payload. Writes the {tag, payload} pair into EVERY entry, keeping
 # keys, positions and count (hk192: 7 over everything including a
-# stored NIL; NIL over everything; an empty hash is a no-op). Leaf:
-# caller-saved registers only, no allocation, values own no memory.
+# stored NIL; NIL over everything; an empty hash is a no-op). Uses a full
+# frame and clones owned heap floats independently for each cell.
 hbc_hfill:
     push %rbp
     mov %rsp,%rbp
