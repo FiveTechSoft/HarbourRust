@@ -1,0 +1,31 @@
+{
+  "compiler": "gcc.exe (MinGW-W64 x86_64-ucrt-posix-seh, built by Brecht Sanders, r3) 16.2.0",
+  "flags": [
+    "-std=c99",
+    "-O2",
+    "-S",
+    "-mabi=sysv",
+    "-ffreestanding",
+    "-fno-builtin",
+    "-fno-stack-protector",
+    "-fno-asynchronous-unwind-tables",
+    "-fno-unwind-tables",
+    "-fno-ident",
+    "-mno-red-zone",
+    "-fno-pic",
+    "-Wall",
+    "-Wextra",
+    "-Werror",
+    "-Wno-misleading-indentation"
+  ],
+  "source_sha256": "a2e0233ad4b382e122c5db45f6ffe77ce0a1b6c1d356161141a13edf7efd5f4a",
+  "asm_sha256": "e924cd9af98ecfcdd684a3c953a43c7ac54da3a4ece84d77afc0ee5bd59a40e0",
+  "external_calls": [
+    "hrm_alloc",
+    "hrm_exp",
+    "hrm_fail",
+    "hrm_float",
+    "hrm_free",
+    "hrm_log"
+  ]
+}

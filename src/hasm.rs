@@ -697,7 +697,7 @@ fn fits_i32(v: i64) -> bool { (i32::MIN as i64..=i32::MAX as i64).contains(&v) }
 fn suffix_width(m: &str) -> (&str, Option<u8>) {
     // mnemónicos con significado propio que terminan en letra de sufijo: no tocar
     const EXACT: &[&str] = &[
-        "ret","leave","cqto","cqo","syscall","pause","endbr64","nop","ud2","rep movsb","rep movsq","rep stosb",
+        "ret","leave","cqto","cqo","cltq","cdqe","cvtsi2sdl","cvtsi2sdq","cvttsd2siq","syscall","pause","endbr64","nop","ud2","rep movsb","rep movsq","rep stosb",
         "fyl2x","fscale","frndint","fld1","f2xm1","fprem","fnstsw",
         "fldl","fstpl","fld","fstp","fxch","faddp","fsub",
         "movsd","addsd","subsd","mulsd","divsd","ucomisd","xorpd","cvtsi2sd","cvttsd2si","roundsd",
@@ -741,13 +741,14 @@ fn encode_ins(e: &Enc, mnem: &str, ops: &[Op], lock: bool, cur_va: u64, near: bo
 fn encode_into(e: &Enc, out: &mut Vec<u8>, ripp: &mut RipPatches, mnem0: &str, ops: &[Op], cur_va: u64, near: bool) -> Result<(), String> {
     // sin cambio de contexto; cur_va = va del inicio de la instrucción (post lock prefix!)
     let (m, sfx) = suffix_width(mnem0);
-    if ["movd","movdqu","movdqa","pcmpeqb","pcmpgtb","pand","pxor","punpcklbw","punpcklwd","pshufd","pmovmskb","bsf"].contains(&m) {
+    if ["movd","movdqu","movdqa","movaps","movups","movapd","pcmpeqb","pcmpgtb","pand","pxor","punpcklbw","punpcklwd","pshufd","pmovmskb","bsf"].contains(&m) {
         return encode_byte_simd(e,out,ripp,m,ops);
     }
     match m {
         "ret" => { out.push(0xC3); return Ok(()); }
         "leave" => { out.push(0xC9); return Ok(()); }
         "cqto" | "cqo" => { out.extend_from_slice(&[0x48, 0x99]); return Ok(()); }
+        "cltq" | "cdqe" => { out.extend_from_slice(&[0x48, 0x98]); return Ok(()); }
         "syscall" => { out.extend_from_slice(&[0x0F, 0x05]); return Ok(()); }
         "pause" => { out.extend_from_slice(&[0xF3, 0x90]); return Ok(()); }
         "endbr64" => { out.extend_from_slice(&[0xF3, 0x0F, 0x1E, 0xFA]); return Ok(()); }
@@ -797,6 +798,18 @@ fn encode_into(e: &Enc, out: &mut Vec<u8>, ripp: &mut RipPatches, mnem0: &str, o
         "movsd" | "addsd" | "subsd" | "mulsd" | "divsd" | "ucomisd" | "xorpd"
         | "cvtsi2sd" | "cvttsd2si" | "roundsd" | "comisd" => {
             return encode_sse(e, out, ripp, m, ops);
+        }
+        // AT&T size-suffixed forms GCC emits: q is the 64-bit default,
+        // cvtsi2sdl converts a 32-bit source (no REX.W).
+        "cvtsi2sdq" => { return encode_sse(e, out, ripp, "cvtsi2sd", ops); }
+        "cvttsd2siq" => { return encode_sse(e, out, ripp, "cvttsd2si", ops); }
+        "cvtsi2sdl" => {
+            let dc = if let Op::Xmm(d) = &ops[1] { *d } else { return Err("cvtsi2sdl dst".into()) };
+            out.push(0xF2);
+            if let Some(r) = rex_for(false, dc, &ops[0], false) { out.push(r); }
+            out.extend_from_slice(&[0x0F, 0x2A]);
+            emit_modrm(out, ripp, e, dc, &ops[0])?;
+            return Ok(());
         }
         "movq" => {
             if let (Op::Reg(_, 64, _), Op::Xmm(_)) = (&ops[0], &ops[1]) {
@@ -1242,7 +1255,8 @@ fn encode_alu(e: &Enc, out: &mut Vec<u8>, ripp: &mut RipPatches, ops: &[Op], sfx
 fn encode_byte_simd(e: &Enc, out: &mut Vec<u8>, ripp: &mut RipPatches, m: &str, ops: &[Op]) -> Result<(), String> {
     fn rm(e: &Enc,out: &mut Vec<u8>,ripp: &mut RipPatches,prefix: u8,opcode: u8,reg: u8,operand: &Op) -> Result<(),String> {
         if !matches!(operand,Op::Xmm(_)|Op::Mem{..}) {return Err("SSE2 source must be XMM or memory".into());}
-        out.push(prefix);
+        // prefix 0: the plain 0F form (movaps/movups).
+        if prefix!=0 {out.push(prefix);}
         match operand {
             Op::Xmm(x)=>{
                 if let Some(r)=rex_byte(false,reg,0,*x,false){out.push(r);}
@@ -1277,6 +1291,11 @@ fn encode_byte_simd(e: &Enc, out: &mut Vec<u8>, ripp: &mut RipPatches, m: &str, 
                 out.extend_from_slice(&[0x0f,0xbc]);emit_modrm(out,ripp,e,*g,&ops[0])
             }else{Err("bsf destination must be GPR32".into())}
         }
+        // Packed 128-bit moves GCC emits for struct copies: store forms.
+        "movaps"|"movups"|"movapd" if matches!(&ops[0],Op::Xmm(_)) && matches!(&ops[1],Op::Mem{..})=>{
+            let (prefix,opcode)=match m {"movaps"=>(0,0x29),"movapd"=>(0x66,0x29),_=>(0,0x11)};
+            if let Op::Xmm(x)=&ops[0]{rm(e,out,ripp,prefix,opcode,*x,&ops[1])}else{unreachable!()}
+        }
         "movdqu" if matches!(&ops[0],Op::Xmm(_)) && matches!(&ops[1],Op::Mem{..})=>{
             if let Op::Xmm(x)=&ops[0]{rm(e,out,ripp,0xf3,0x7f,*x,&ops[1])}else{unreachable!()}
         }
@@ -1290,6 +1309,7 @@ fn encode_byte_simd(e: &Enc, out: &mut Vec<u8>, ripp: &mut RipPatches, m: &str, 
             let dst=if let Op::Xmm(x)=&ops[1]{*x}else{return Err(format!("{} destination must be XMM",m));};
             let (prefix,opcode)=match m {
                 "movdqu"=>(0xf3,0x6f),"movdqa"=>(0x66,0x6f),"pcmpeqb"=>(0x66,0x74),
+                "movaps"=>(0,0x28),"movapd"=>(0x66,0x28),"movups"=>(0,0x10),
                 "pcmpgtb"=>(0x66,0x64),"pand"=>(0x66,0xdb),"pxor"=>(0x66,0xef),
                 "punpcklbw"=>(0x66,0x60),"punpcklwd"=>(0x66,0x61),_=>unreachable!()
             };
@@ -2272,6 +2292,31 @@ pub fn assemble(src: &str) -> Result<Vec<u8>, String> {
 
 pub fn assemble_pe(src: &str) -> Result<Vec<u8>, String> {
     assemble_target(src, true)
+}
+
+#[cfg(test)]
+mod gcc_sse_forms_tests {
+    use super::*;
+    // Reference bytes are GNU as encodings of the same AT&T lines.
+    #[test]fn gcc_emitted_forms_match_gnu_bytes(){
+        let cases:&[(&str,&[u8])]=&[
+            ("cltq",&[0x48,0x98]),
+            ("cvtsi2sdl %edx, %xmm1",&[0xf2,0x0f,0x2a,0xca]),
+            ("cvtsi2sdq %r11, %xmm0",&[0xf2,0x49,0x0f,0x2a,0xc3]),
+            ("cvtsi2sdq 88(%rsp), %xmm1",&[0xf2,0x48,0x0f,0x2a,0x4c,0x24,0x58]),
+            ("cvttsd2siq %xmm1, %rdx",&[0xf2,0x48,0x0f,0x2c,0xd1]),
+            ("movaps %xmm0, 16(%rsp)",&[0x0f,0x29,0x44,0x24,0x10]),
+            ("movups %xmm0, (%rax)",&[0x0f,0x11,0x00]),
+            ("movups (%rax), %xmm0",&[0x0f,0x10,0x00]),
+            ("movups %xmm9, -16(%rax)",&[0x44,0x0f,0x11,0x48,0xf0]),
+            ("movapd %xmm2, %xmm1",&[0x66,0x0f,0x28,0xca]),
+            ("movaps 32(%rsp), %xmm3",&[0x0f,0x28,0x5c,0x24,0x20]),
+        ];
+        for (line,want) in cases {
+            let out=assemble(&format!(".text\n.globl _start\n_start:\n    {}\n",line)).unwrap();
+            assert!(out.windows(want.len()).any(|w|w==*want),"{} did not encode as {:02x?}",line,want);
+        }
+    }
 }
 
 #[cfg(test)]

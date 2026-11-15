@@ -139,40 +139,17 @@ for target in ['linux', 'windows']:
             x.unlink()
         print('PASS', target, name)
 
+# Compile-time capacity rejections only. Since the runtime evaluator
+# (docs/MACRO-M1-RUNTIME-2026-11-15.md), dynamic text, names, calls,
+# invalid or deferred-error text, floats, powers, lists, nested macros and
+# array/hash/block literals compile and are decided at run time like
+# Harbour (tests/macro/*.prg pins those against the Harbour oracle).
 negative = [
-    ('dynamic', 'local c := "1+1"\n? &c'),
-    ('dynamic-paren', 'local c := "1+1"\n? &(c)'),
-    ('local-target', 'local hidden := 42\n? &("hidden")'),
-    ('static-target', 'static hidden := 42\n? &("hidden")'),
-    ('call', '? &("F()")'),
-    ('invalid-text', '? &("1+")'),
-    ('empty-text', '? &("")'),
-    ('zero-divide', '? &("1/0")'),
-    ('zero-mod', '? &("1%0")'),
-    ('fractional-result', '? &("1/2")'),
-    ('float', '? &("1.25")'),
-    ('power', '? &("2^3")'),
-    ('overflow', '? &("9223372036854775807+1")'),
-    ('type-error', '? &("1+\'x\'")'),
-    ('unsupported-hash-neq', '? &("3#5")'),
-    ('contains-type-error', '? &("1$2")'),
-    ('unreachable-lookup', '? &(".F. .AND. hidden")'),
-    ('array', '? &("{1}")'),
-    ('hash', '? &("{=>}")'),
-    ('block', '? &("{||1}")'),
-    ('list', '? &("1,2")'),
-    ('nested-macro', '? &("&(\'1\')")'),
-    ('macrotext', '? &("\'&name.\'")'),
-    ('comment', '? &("1 // trailing")'),
-    ('assignment', '? &("hidden:=1")'),
     ('lvalue', '&("hidden") := 1'),
     ('statement', '&("1+2")'),
     ('send', 'local o := nil\n? o:&("message")'),
     ('bad-producer', '? &(1)'),
-    ('producer-call', '? &(F())'),
     ('no-close', '? &("1"'),
-    ('dead-branch', 'if .F.\n? &("missing")\nendif'),
-    ('long-text', '? &("' + '+'.join(['1'] * 2050) + '")'),
 ]
 for target in ['linux', 'windows']:
     cli = [a.wine, pe_comp] if target == 'windows' else [comp]

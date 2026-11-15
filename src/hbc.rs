@@ -1090,25 +1090,47 @@ impl P {
     fn factor_primary(&mut self) -> Result<Expr, String> {
         match self.bump() {
             Some(Tok::Macro) => {
-                if self.bump() != Some(Tok::LParen) {
-                    return Err(macro_m1::limit(self.n, "dynamic macro text requires the later evaluator"));
-                }
-                let start = self.pos;
-                let mut depth = 1usize;
-                while let Some(t) = self.peek() {
-                    match t {
-                        Tok::LParen => { depth += 1; if depth > 64 { return Err(macro_m1::limit(self.n, "literal producer nesting exceeds 64")); } },
-                        Tok::RParen => { depth -= 1; if depth == 0 { break; } },
-                        _ => {},
-                    }
+                // Literal-only macro text is lowered at compile time by the
+                // closed-scalar gate (macro_m1, 1c08a0f). Everything else -
+                // dynamic text, `&name`, and literal text that gate does not
+                // admit (floats, deferred Harbour errors) - is evaluated at
+                // run time by the embedded evaluator (docs/MACRO-M1-RUNTIME-
+                // 2026-11-15.md). Harbour itself compiles every macro text at
+                // run time, so the fallback never changes a program's meaning.
+                if self.peek() == Some(&Tok::LParen) {
+                    let save = self.pos;
                     self.pos += 1;
+                    let start = self.pos;
+                    let mut depth = 1usize;
+                    while let Some(t) = self.peek() {
+                        match t {
+                            Tok::LParen => depth += 1,
+                            Tok::RParen => { depth -= 1; if depth == 0 { break; } },
+                            _ => {},
+                        }
+                        self.pos += 1;
+                    }
+                    if self.peek() == Some(&Tok::RParen) && depth <= 64 {
+                        if let Ok(text) = macro_m1::literal_text(&self.toks[start..self.pos], self.n) {
+                            self.pos += 1;
+                            if let Ok(e) = macro_m1::precompile(&text, self.n) { return Ok(e); }
+                            return Ok(Expr::Call("&".to_string(), vec![Expr::Str(text)]));
+                        }
+                    }
+                    self.pos = save;
                 }
-                if self.peek() != Some(&Tok::RParen) {
-                    return Err(macro_m1::limit(self.n, "literal producer needs a closing parenthesis"));
+                let text = match self.bump() {
+                    Some(Tok::LParen) => {
+                        let e = self.expr()?;
+                        match self.bump() { Some(Tok::RParen) => e, _ => return Err(macro_m1::limit(self.n, "macro text needs a closing parenthesis")) }
+                    }
+                    Some(Tok::Ident(id)) => { check_ident(&id, self.n)?; Expr::Var(id) }
+                    _ => return Err(macro_m1::limit(self.n, "`&` must be followed by `(` or a name")),
+                };
+                if matches!(self.peek(), Some(Tok::LParen)) {
+                    return Err(macro_m1::limit(self.n, "macro function calls (`&name(...)`) require the later evaluator"));
                 }
-                let text = macro_m1::literal_text(&self.toks[start..self.pos], self.n)?;
-                self.pos += 1;
-                macro_m1::precompile(&text, self.n)
+                Ok(Expr::Call("&".to_string(), vec![text]))
             }
             Some(Tok::KwIf) if self.peek() == Some(&Tok::LParen) => {
                 // IF(...) is Harbour's inline IIF alias, not a block IF.
@@ -4107,6 +4129,11 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
                     for a in args { pin_vars(f,a,Ty::Str,pin,n)?; walk(f,a,sigs,lit,pin,printed,n)?; }
                     return Ok(());
                 }
+                if id=="&" {
+                    // Macro text is a string; nothing pins through it.
+                    for a in args { pin_vars(f,a,Ty::Str,pin,n)?; walk(f,a,sigs,lit,pin,printed,n)?; }
+                    return Ok(());
+                }
                 if let Some(kinds)=str_builtin_kinds(id,args.len()) {
                     // String-batch builtins (PadC/RAt/Stuff/Is*/StrZero):
                     // each position pins to its fixed kind.
@@ -5935,6 +5962,13 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                     }
                 }
                 return Ok(Ty::I64);
+            }
+            if id=="&" {
+                if MACHO_MODE.with(|v|v.get()) { return Err(format!("line {}: the macro operator is not ported to Mach-O in this increment",n)); }
+                if !matches!(type_expr(&args[0],env,sigs,n)?,Ty::Str|Ty::StrOwn) {
+                    return Err(macro_m1::limit(n, "macro text must be a string"));
+                }
+                return Ok(Ty::Dyn);
             }
             if ["padc","rat","stuff","isdigit","isalpha","isupper","islower","strzero"].iter().any(|b|is_builtin(id,b)) {
                 // String batch pinned against Harbour 3.2.0 (docs/
@@ -9965,7 +9999,7 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
                 for a in args { apply_moves(a,env,sigs,false); }
                 return;
             }
-            if ["padc","rat","stuff","isdigit","isalpha","isupper","islower","strzero"].iter().any(|b|is_builtin(id,b)) {
+            if id=="&" || ["padc","rat","stuff","isdigit","isalpha","isupper","islower","strzero"].iter().any(|b|is_builtin(id,b)) {
                 for a in args { apply_moves(a,env,sigs,false); }
                 return;
             }
@@ -13103,6 +13137,15 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             } else { cg_expr(&args[0],env,sigs,strs,out,target); }
             out.push_str("    mov %rax, %rdi\n    call hbc_space\n");
         }
+        Expr::Call(id,args) if id=="&" => {
+            // Text borrowed for the call; an owned temporary is released
+            // after the evaluator returns its own Dyn result.
+            let temp=expr_ty(&args[0],env,sigs)==Ty::StrOwn && !matches!(&args[0],Expr::Var(_));
+            cg_value(&args[0],env,sigs,strs,out,target);
+            out.push_str("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_macro_eval\n");
+            if temp { out.push_str("    mov %rax, 8(%rsp)\n    mov %rdx, 16(%rsp)\n    mov (%rsp), %rdi\n    call hbc_freestr\n    mov 8(%rsp), %rax\n    mov 16(%rsp), %rdx\n"); }
+            out.push_str("    add $32, %rsp\n");
+        }
         Expr::Call(id,args) if ["padc","rat","stuff","isdigit","isalpha","isupper","islower","strzero"].iter().any(|b|is_builtin(id,b)) => {
             cg_str_builtin(id,args,env,sigs,strs,out,target);
         }
@@ -15473,6 +15516,144 @@ fn cg_str_f64(args: &[Expr], env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<Strin
     let flags=match args.len() { 1=>0, 2=>1, _=>3 };
     out.push_str(&format!("    movsd (%rsp), %xmm0\n    mov 8(%rsp), %rdi\n    mov 16(%rsp), %rsi\n    mov 24(%rsp), %rdx\n    mov ${}, %ecx\n    call hbc_str_f64\n    add $32, %rsp\n",flags));
 }
+// Macro M1 runtime: the generated SysV evaluator plus its hbc shims.
+// Every shim preserves the SysV callee-saved registers the C code relies
+// on before entering hbc's hand-written helpers.
+fn macro_helpers(target: Target) -> String {
+    let rodata = if target == Target::Windows { ".section .rdata,\"r\"" } else { ".section .rodata" };
+    let mut h = String::from(MACRO_SHIMS);
+    h.push_str(match target {
+        Target::Windows => MACRO_FAIL_WINDOWS,
+        _ => MACRO_FAIL_LINUX,
+    });
+    h.push_str(&include_str!("../generated/hrmacro.s").replace("@HRM_RODATA@", rodata));
+    h
+}
+const MACRO_SHIMS: &str = r"
+    .text
+hbc_macro_eval:
+    jmp hrmacro_eval
+hrm_alloc:
+    push %rbp
+    mov %rsp, %rbp
+    push %rbx
+    push %r12
+    push %r13
+    push %r14
+    push %r15
+    sub $8, %rsp
+    mov %rdi, %rsi
+    call hbc_stralloc
+    add $8, %rsp
+    pop %r15
+    pop %r14
+    pop %r13
+    pop %r12
+    pop %rbx
+    pop %rbp
+    ret
+hrm_free:
+    push %rbp
+    mov %rsp, %rbp
+    push %rbx
+    push %r12
+    push %r13
+    push %r14
+    push %r15
+    sub $8, %rsp
+    call hbc_freestr
+    add $8, %rsp
+    pop %r15
+    pop %r14
+    pop %r13
+    pop %r12
+    pop %rbx
+    pop %rbp
+    ret
+hrm_float:
+    push %rbp
+    mov %rsp, %rbp
+    push %rbx
+    push %r12
+    push %r13
+    push %r14
+    push %r15
+    sub $8, %rsp
+    call hbc_float_new
+    add $8, %rsp
+    pop %r15
+    pop %r14
+    pop %r13
+    pop %r12
+    pop %rbx
+    pop %rbp
+    ret
+hrm_exp:
+    push %rbp
+    mov %rsp, %rbp
+    push %rbx
+    push %r12
+    push %r13
+    push %r14
+    push %r15
+    sub $8, %rsp
+    call hbc_math_exp
+    add $8, %rsp
+    pop %r15
+    pop %r14
+    pop %r13
+    pop %r12
+    pop %rbx
+    pop %rbp
+    ret
+hrm_log:
+    push %rbp
+    mov %rsp, %rbp
+    push %rbx
+    push %r12
+    push %r13
+    push %r14
+    push %r15
+    sub $8, %rsp
+    call hbc_math_log
+    add $8, %rsp
+    pop %r15
+    pop %r14
+    pop %r13
+    pop %r12
+    pop %rbx
+    pop %rbp
+    ret
+";
+// hrm_fail: rdi/rsi = message -> stderr, exit status 1 (noreturn).
+const MACRO_FAIL_LINUX: &str = r"
+hrm_fail:
+    mov %rsi, %rdx
+    mov %rdi, %rsi
+    mov $2, %edi
+    mov $1, %eax
+    syscall
+    mov $60, %eax
+    mov $1, %edi
+    syscall
+";
+const MACRO_FAIL_WINDOWS: &str = r"
+hrm_fail:
+    mov %rdi, %r12
+    mov %rsi, %r13
+    and $-16, %rsp
+    sub $64, %rsp
+    mov $-12, %ecx
+    call GetStdHandle
+    mov %rax, %rcx
+    mov %r12, %rdx
+    mov %r13d, %r8d
+    lea 48(%rsp), %r9
+    movq $0, 32(%rsp)
+    call WriteFile
+    mov $1, %ecx
+    call ExitProcess
+";
 // hbc_fmt_f64 is hbc_print_f64 with its two writes turned into owned
 // copies: the same digits, rounding and stars, returned as rax/rdx.
 fn f64_fmt_helper() -> String {
@@ -15781,6 +15962,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             if ["upper", "lower"].iter().any(|b| is_builtin(id,b)) { return Ty::StrOwn; }
             if ["left", "right"].iter().any(|b| is_builtin(id,b)) { return Ty::StrOwn; }
             if is_builtin(id, "at") { return Ty::I64; }
+            if id=="&" { return Ty::Dyn; }
             if ["padc","rat","stuff","isdigit","isalpha","isupper","islower","strzero"].iter().any(|b|is_builtin(id,b)) { return str_builtin_ty(id); }
             if is_builtin(id, "padl") { return Ty::StrOwn; }
             if is_builtin(id, "val") { return Ty::F64; }
@@ -26495,6 +26677,9 @@ fn finalize_trace(mut out: String, target: Target) -> String {
     out.push_str(dyn_float::HELPERS);
     if out.contains("call hbc_str_f64") {
         out.push_str(&f64_fmt_helper());
+    }
+    if out.contains("call hbc_macro_eval") {
+        out.push_str(&macro_helpers(target));
     }
     if ["ctod", "date_today", "date_render", "stod", "dtos", "year", "day", "month", "dow", "cdow", "cmonth", "dtoc", "date_add", "date_diff", "date_days", "date_from_days"].iter().any(|name| out.contains(&format!("call hbc_{}",name))) {
         out.push_str(DATE_PORT_HELPERS);

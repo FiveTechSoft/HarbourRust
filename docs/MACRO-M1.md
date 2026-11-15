@@ -1,5 +1,17 @@
 # Precompiled macro literals (M1)
 
+> **Update (runtime evaluator).** Since
+> [MACRO-M1-RUNTIME-2026-11-15.md](MACRO-M1-RUNTIME-2026-11-15.md), this
+> compile-time gate is the first of two paths. Text it admits is still
+> lowered here. Everything it rejects as a capacity limit in expression
+> position is now evaluated at run time instead: dynamic text (`&c`,
+> `&(c)`), names, deferred errors, floats and powers, lists, nested macros.
+> That evaluator is pinned against the Harbour oracle, and Harbour itself
+> compiles every macro text at run time. The rejections in the
+> "Separate scopes" and "Named capacity limits" sections below describe
+> this gate on its own. Statement, lvalue and dynamic-send contexts remain
+> compile-time limits.
+
 This is a first step toward Harbour macro parity, not a replacement for
 Harbour's dynamic macro compiler.
 
