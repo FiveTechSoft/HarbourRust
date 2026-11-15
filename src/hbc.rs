@@ -15354,11 +15354,10 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             if expr_ty(a, env, sigs) == Ty::Dyn {
                 out.push_str("    call hbc_dyn_to_i64\n");
             }
-            // Keep the lhs on the stack while evaluating the rhs. On Windows
-            // a plain push would break 16-byte alignment for any call inside
-            // the rhs (e.g. `1 + valor()`), so reserve a full 16-byte slot.
+            // Keep the lhs in a full 16-byte slot on both targets so any
+            // C/SysV call within the rhs retains call-site alignment.
             match target {
-                Target::Linux => out.push_str("    push %rax\n"),
+                Target::Linux => out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n"),
                 Target::Windows => out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n"),
             }
             cg_expr(b, env, sigs, strs, out, target);
@@ -15366,7 +15365,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                 out.push_str("    call hbc_dyn_to_i64\n");
             }
             match target {
-                Target::Linux => out.push_str("    pop %rcx\n"), // %rcx = lhs, %rax = rhs
+                Target::Linux => out.push_str("    mov (%rsp), %rcx\n    add $16, %rsp\n"), // lhs / rhs
                 Target::Windows => out.push_str("    mov (%rsp), %rcx\n    add $16, %rsp\n"),
             }
             match op {
@@ -15532,7 +15531,14 @@ fn macro_helpers(target: Target) -> String {
 const MACRO_SHIMS: &str = r"
     .text
 hbc_macro_eval:
-    jmp hrmacro_eval
+    # Restore the exact caller stack, including callers with odd temporaries.
+    push %rbp
+    mov %rsp, %rbp
+    and $-16, %rsp
+    call hrmacro_eval
+    mov %rbp, %rsp
+    pop %rbp
+    ret
 hrm_alloc:
     push %rbp
     mov %rsp, %rbp
