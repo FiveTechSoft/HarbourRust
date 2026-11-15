@@ -1,0 +1,5 @@
+
+         0Type error: condition is not a logical
+Callstack:
+  at p (tests/t717_while_dyn_int.prg:9)
+  at main (tests/t717_while_dyn_int.prg:5)

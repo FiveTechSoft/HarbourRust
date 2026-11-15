@@ -28005,9 +28005,11 @@ hbc_write_bytes:
 
 # hbc_print_nl / hbc_print_sep: the `?` leading newline / item separator.
 hbc_print_nl:
-    lea .Lnl(%rip), %rax
-    mov $1, %edx
+    lea .Lqout_pe_crlf(%rip), %rax
+    mov $2, %edx
     jmp hbc_print_str
+.Lqout_pe_crlf:
+    .byte 13,10
 hbc_print_sep:
     lea .Lpad20(%rip), %rax
     mov $1, %edx

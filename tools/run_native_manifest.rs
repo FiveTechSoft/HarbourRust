@@ -74,9 +74,15 @@ fn main_work() -> Result<bool, String> {
                 "pos"=>(0,escaped(spec)?,Vec::new(),true),
                 "posx"=>{let (r,s)=spec.split_once(' ').ok_or("posx missing expectation")?;(r.parse().map_err(|_|"invalid posx rc")?,escaped(s)?,Vec::new(),true)},
                 "streams"=>{let (a,b)=spec.split_once(' ').ok_or("streams missing expected files")?;(0,bytes(Path::new(a))?,bytes(Path::new(b))?,false)},
-                // Mach-O compares the existing Unix/Linux contract here, not
-                // a native Harbour/Darwin oracle. Preserve this in the docs.
-                "pos2"=>{let(a,_)=spec.split_once(' ').ok_or("pos2 missing files")?;(0,bytes(Path::new(a))?,Vec::new(),false)},
+                // Per-target expectations: file A covers Linux/Mach-O/host,
+                // file B covers Windows. Mach-O compares the existing
+                // Unix/Linux contract here, not a native Harbour/Darwin
+                // oracle. Preserve this in the docs.
+                "pos2"=>{let(a,b)=spec.split_once(' ').ok_or("pos2 missing files")?;(0,bytes(Path::new(if target.as_deref()==Some("windows") {b} else {a}))?,Vec::new(),false)},
+                // posx2: like pos2 with an expected nonzero exit on both targets.
+                "posx2"=>{let(r,rest)=spec.split_once(' ').ok_or("posx2 missing rc")?;let(a,b)=rest.split_once(' ').ok_or("posx2 missing files")?;(r.parse().map_err(|_|"invalid posx2 rc")?,bytes(Path::new(if target.as_deref()==Some("windows") {b} else {a}))?,Vec::new(),false)},
+                // streams2: per-target stdout plus one shared exact stderr file.
+                "streams2"=>{let(a,rest)=spec.split_once(' ').ok_or("streams2 missing files")?;let(b,e)=rest.split_once(' ').ok_or("streams2 missing stderr file")?;(0,bytes(Path::new(if target.as_deref()==Some("windows") {b} else {a}))?,bytes(Path::new(e))?,false)},
                 _=>return Err(format!("unknown manifest kind {}",kind)),
             };
             fs::write(case.join("expected.stdout"),&expected).map_err(|e|e.to_string())?;

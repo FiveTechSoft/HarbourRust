@@ -1,0 +1,7 @@
+
+a := 10         10
+b := "X" X
+a pointer + 10 =         20
+b pointer := "A" = A
+return of "a" should = 20         20 worked
+return of "b" should = A A worked

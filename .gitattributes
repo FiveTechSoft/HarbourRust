@@ -31,3 +31,6 @@ tests/macro/error-contract/fixtures/windows/m1-local-invisible.terminal.stderr -
 tests/macro/error-contract/fixtures/windows/m1-local-invisible.terminal.stdout -text
 tests/macro/error-contract/fixtures/windows/m1-syntax-err.terminal.stderr -text
 tests/macro/error-contract/fixtures/windows/m1-syntax-err.terminal.stdout -text
+tests/expectations/qout/** -text
+tests/t1488_stepc_mem_1000_windows.out -text
+tests/t1491_stepd_mem_1000_windows.out -text

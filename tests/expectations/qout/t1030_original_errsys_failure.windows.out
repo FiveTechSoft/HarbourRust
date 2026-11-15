@@ -1,0 +1,4 @@
+
+We are running and now an error will raiseType error: NIL used as a number
+Callstack:
+  at main (tests/t1030_original_errsys_failure.prg:13)

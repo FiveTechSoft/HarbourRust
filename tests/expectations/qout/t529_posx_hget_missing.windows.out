@@ -1,0 +1,4 @@
+
+         1Bound error: array access
+Callstack:
+  at main (tests/t529_posx_hget_missing.prg:8)

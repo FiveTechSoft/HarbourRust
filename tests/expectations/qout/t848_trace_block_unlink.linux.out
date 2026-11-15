@@ -1,0 +1,4 @@
+
+         6Error: round dec out of range
+Callstack:
+  at main (tests/t848_trace_block_unlink.prg:5)

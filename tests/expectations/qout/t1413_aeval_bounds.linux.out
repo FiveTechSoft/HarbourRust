@@ -1,0 +1,23 @@
+
+start3:
+        30          3
+        40          4
+        50          5
+start2count2:
+        20          2
+        30          3
+start9:
+start0:
+        10          1
+        20          2
+        30          3
+        40          4
+        50          5
+count0:
+negstart:
+negcount:
+        20          2
+        30          3
+        40          4
+        50          5
+end

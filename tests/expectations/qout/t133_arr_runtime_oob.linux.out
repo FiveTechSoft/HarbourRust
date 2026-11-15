@@ -1,0 +1,4 @@
+
+        10Bound error: array access
+Callstack:
+  at main (tests/t133_arr_runtime_oob.prg:6)

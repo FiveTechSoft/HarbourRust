@@ -1,0 +1,7 @@
+
+outer try
+inner try
+inner finally
+outer caught: Bound error: array access
+outer finally
+after end

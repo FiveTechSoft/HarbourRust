@@ -1,0 +1,5 @@
+
+abcType error: condition is not a logical
+Callstack:
+  at p (tests/t714_dyn_cond_string.prg:9)
+  at main (tests/t714_dyn_cond_string.prg:5)

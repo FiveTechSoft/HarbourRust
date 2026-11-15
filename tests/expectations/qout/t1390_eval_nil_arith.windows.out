@@ -1,0 +1,4 @@
+
+testType error: NIL used as a number
+Callstack:
+  at main (tests/t1390_eval_nil_arith.prg:3)

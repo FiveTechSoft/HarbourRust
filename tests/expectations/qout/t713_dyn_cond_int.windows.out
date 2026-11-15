@@ -1,0 +1,5 @@
+
+         0Type error: condition is not a logical
+Callstack:
+  at p (tests/t713_dyn_cond_int.prg:10)
+  at main (tests/t713_dyn_cond_int.prg:6)
