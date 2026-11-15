@@ -232,6 +232,25 @@ fn ditems_size(items: &[DItem]) -> u64 {
     off
 }
 
+// Cumulative byte offsets of data items: prefix[i] = ditems_size(items[..i]).
+// The resolver needs these per symbol reference; building them once turns
+// each reference from O(idx) into O(1).
+fn prefix_sizes(items: &[DItem]) -> Vec<u64> {
+    let mut out = Vec::with_capacity(items.len() + 1);
+    let mut off = 0u64;
+    out.push(0);
+    for it in items {
+        match it {
+            DItem::Bytes(b) => off += b.len() as u64,
+            DItem::Align(n) => off = (off + n - 1) & !(n - 1),
+            DItem::Patch4(_) => off += 4,
+            DItem::Patch8(_) => off += 8,
+        }
+        out.push(off);
+    }
+    out
+}
+
 fn strip_comment(line: &str) -> String {
     let mut inq = false;
     let mut out = String::new();
@@ -1400,6 +1419,16 @@ impl Asm {
         }
     }
 
+    fn loc_offset_pre(&self, loc: Loc, pre: &(Vec<u64>, Vec<u64>, Vec<u64>, Vec<u64>), text_offs: &[u64], text_size: u64) -> u64 {
+        match loc.sec {
+            Sec::Text => if loc.idx >= text_offs.len() { text_size } else { text_offs[loc.idx] },
+            Sec::Rodata => pre.0[loc.idx],
+            Sec::Data => pre.1[loc.idx],
+            Sec::Bss => pre.2[loc.idx],
+            Sec::Note => pre.3[loc.idx],
+        }
+    }
+
     fn loc_offset(&self, loc: Loc, text_offs: &[u64], text_size: u64) -> u64 {
         match loc.sec {
             Sec::Text => if loc.idx >= text_offs.len() { text_size } else { text_offs[loc.idx] },
@@ -1411,6 +1440,12 @@ impl Asm {
     }
 
     fn make_resolver<'a>(&'a self, l: &'a Layout) -> impl Fn(&Expr) -> Result<i64, String> + 'a {
+        let pre = (
+            prefix_sizes(&self.rodata),
+            prefix_sizes(&self.data),
+            prefix_sizes(&self.bss),
+            prefix_sizes(&self.note),
+        );
         move |e: &Expr| {
             let mut acc: i64 = 0;
             for (neg, t) in &e.0 {
@@ -1423,7 +1458,7 @@ impl Asm {
                                 Sec::Text => l.text_va, Sec::Rodata => l.rod_va,
                                 Sec::Data => l.dat_va, Sec::Bss => l.bss_va, Sec::Note => l.note_va,
                             };
-                            (va + self.loc_offset(*loc, &l.text_offs, l.text_size)) as i64
+                            (va + self.loc_offset_pre(*loc, &pre, &l.text_offs, l.text_size)) as i64
                         }
                         else if let Some(v) = l.pe_imports.as_ref().and_then(|m| m.get(name)) {
                             *v as i64
@@ -1433,12 +1468,12 @@ impl Asm {
                     Term::Fwd(n, s) => {
                         let loc = self.resolve_num(*n, true, *s)?;
                         let va = match loc.sec { Sec::Text => l.text_va, Sec::Rodata => l.rod_va, Sec::Data => l.dat_va, Sec::Bss => l.bss_va, Sec::Note => l.note_va };
-                        (va + self.loc_offset(loc, &l.text_offs, l.text_size)) as i64
+                        (va + self.loc_offset_pre(loc, &pre, &l.text_offs, l.text_size)) as i64
                     }
                     Term::Back(n, s) => {
                         let loc = self.resolve_num(*n, false, *s)?;
                         let va = match loc.sec { Sec::Text => l.text_va, Sec::Rodata => l.rod_va, Sec::Data => l.dat_va, Sec::Bss => l.bss_va, Sec::Note => l.note_va };
-                        (va + self.loc_offset(loc, &l.text_offs, l.text_size)) as i64
+                        (va + self.loc_offset_pre(loc, &pre, &l.text_offs, l.text_size)) as i64
                     }
                 };
                 acc += if *neg { -v } else { v };
