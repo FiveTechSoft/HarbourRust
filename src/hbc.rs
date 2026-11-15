@@ -555,7 +555,7 @@ fn proc_metadata_needed(funcs: &[Func], externs: bool) -> bool {
             Expr::Call(id,args) => {
                 if ["procname", "procline", "eval"].iter().any(|n|is_builtin(id,n)) { return true; }
                 let direct = funcs.iter().any(|f| f.name == *id);
-                let safe_builtin = ["str", "len", "hb_ntos", "chr", "asc", "replicate", "space", "strtran", "substr", "upper", "lower", "left", "right", "at", "trim", "empty", "round", "min", "max", "qout", "qqout", "outstd", "outerr"].iter().any(|n|is_builtin(id,n));
+                let safe_builtin = ["str", "len", "hb_ntos", "chr", "asc", "replicate", "space", "strtran", "substr", "upper", "lower", "left", "right", "at", "trim", "ltrim", "empty", "round", "min", "max", "qout", "qqout", "outstd", "outerr"].iter().any(|n|is_builtin(id,n));
                 (!direct && !safe_builtin) || args.iter().any(|a|expr(a,funcs))
             }
             _ => true,
