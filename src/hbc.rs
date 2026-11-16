@@ -65,6 +65,7 @@ thread_local! {
     static SET_CONSOLE_LINE: std::cell::Cell<Option<usize>> = const { std::cell::Cell::new(None) };
     static CURDIR_LINUX_NATIVE: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
     static MACHO_MODE: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+    static MACHO_ARM64: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
 }
 
 // The preprocessor is part of hbc: every compile runs it automatically
@@ -6598,7 +6599,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 return Ok(Ty::Bool);
             }
             if id=="&" {
-                if MACHO_MODE.with(|v|v.get()) { return Err(format!("line {}: the macro operator is not ported to Mach-O in this increment",n)); }
+                if MACHO_MODE.with(|v|v.get()) && !MACHO_ARM64.with(|v|v.get()) { return Err(format!("line {}: the macro operator is not ported to Mach-O in this increment",n)); }
                 if !matches!(type_expr(&args[0],env,sigs,n)?,Ty::Str|Ty::StrOwn) {
                     return Err(macro_m1::limit(n, "macro text must be a string"));
                 }
@@ -31613,7 +31614,7 @@ fn main() {
             "--version" => { println!("hbc {}", HBC_VERSION); process::exit(0); }
             _ if a.starts_with("--") => { eprintln!("usage: hbc <input.prg> [output] [--target=linux|windows|macho|macho-arm64] [-I dir]...
   target defaults to the compiler host (Linux: ELF, Windows: PE32+, Mac Intel: Mach-O)
-  --target overrides it; macho-arm64 currently rejects (native ARM64 backend pending)
+  --target overrides it; macho-arm64 emits a native Apple Silicon executable
   omitted output uses the input stem in the current directory (.exe on Windows target), preserving case
   output ending in .s writes assembly; any other name writes the selected target executable directly
   flag --external-as keeps the external as/ld path; --instrument, --no-arena, --no-prune, --no-escape-analysis, --experimental-llvm[-no-trace]
@@ -31625,7 +31626,7 @@ fn main() {
     if pos.is_empty() || pos.len() > 2 {
         eprintln!("usage: hbc <input.prg> [output] [--target=linux|windows|macho|macho-arm64] [-I dir]...
   target defaults to the compiler host (Linux: ELF, Windows: PE32+, Mac Intel: Mach-O)
-  --target overrides it; macho-arm64 currently rejects (native ARM64 backend pending)
+  --target overrides it; macho-arm64 emits a native Apple Silicon executable
   omitted output uses the input stem in the current directory (.exe on Windows target), preserving case
   output ending in .s writes assembly; any other name writes the selected target executable directly
   flag --external-as keeps the external as/ld path; --instrument, --no-arena, --no-prune, --no-escape-analysis, --experimental-llvm[-no-trace]
@@ -31648,9 +31649,10 @@ fn main() {
         }
         pos.push(&default_output);
     }
-    if macho_arm64 { eprintln!("error: Mach-O ARM64 code generation is not implemented yet; --target=macho selects Intel x86-64, not native ARM64"); process::exit(1); }
+    if macho_arm64 && (llvm || external_as) { eprintln!("error: Mach-O ARM64 requires the internal native backend"); process::exit(1); }
     if macho && (llvm || external_as) { eprintln!("error: Mach-O Intel currently requires the internal native backend; LLVM and --external-as are not ported"); process::exit(1); }
     MACHO_MODE.with(|v| v.set(macho));
+    MACHO_ARM64.with(|v| v.set(macho_arm64));
     CURDIR_LINUX_NATIVE.with(|v| v.set(!macho && !llvm && matches!(target, Target::Linux)));
     DBF_NATIVE.with(|v| v.set(!macho && !llvm));
     DBF_WINDOWS.with(|v| v.set(matches!(target, Target::Windows)));
@@ -32215,7 +32217,7 @@ fn main() {
     }
     let arena_active = !macho && !no_arena && !THREADS.with(|c| c.get()) && ARENA_MAP.with(|m| m.borrow().values().any(|a| a.any()));
     ARENA_ACTIVE.with(|a| a.set(arena_active));
-    if macho && (DBF_USED.with(|v|v.get()) || THREADS.with(|v|v.get()) || !externs.is_empty()) { eprintln!("error: Mach-O Intel: DBF, threads and EXTERNAL are not ported in this increment"); process::exit(1); }
+    if macho && (DBF_USED.with(|v|v.get()) || THREADS.with(|v|v.get()) || !externs.is_empty()) { eprintln!("error: Mach-O: DBF, threads and EXTERNAL are not ported in this increment"); process::exit(1); }
     let mut out = vas::finish(emit_asm(&funcs, &sigs, &externs, target, instrument), target, instrument);
     out.push_str(if vas::active() {
         "
@@ -32237,7 +32239,7 @@ hbc_aclone_alloc:
     let out = if hb_rdd() { format!("{}
     .globl hrm_fail
 ", out) } else { out };
-    let out = if macho { hmacho::darwin_asm(&out).unwrap_or_else(|e| {eprintln!("error: {}",e);process::exit(1);}) } else {out};
+    let out = if macho && !macho_arm64 { hmacho::darwin_asm(&out).unwrap_or_else(|e| {eprintln!("error: {}",e);process::exit(1);}) } else {out};
 
     if hb_rdd() && THREADS.with(|c| c.get()) { eprintln!("error: --harbour-rdd links Harbour's single-thread VM; threads are not supported with it"); process::exit(1); }
     if hb_rdd() && !(explicit_output && pos[1].ends_with(".s")) {
@@ -32252,6 +32254,13 @@ hbc_aclone_alloc:
         return;
     }
 
+    if macho_arm64 {
+        let bytes = hasm::arm64::assemble_macho_arm64(&out).unwrap_or_else(|e| {eprintln!("error: Mach-O ARM64: {}",e);process::exit(1);});
+        fs::write(pos[1],bytes).unwrap_or_else(|e| {eprintln!("cannot write {}: {}",pos[1],e);process::exit(2);});
+        #[cfg(unix)] {use std::os::unix::fs::PermissionsExt; let _=fs::set_permissions(pos[1],fs::Permissions::from_mode(0o755));}
+        println!("{} -> {} ({} functions, native Mach-O ARM64)",pos[0],pos[1],funcs.len());
+        return;
+    }
     if macho {
         let bytes = hasm::assemble(&out).and_then(|elf| hmacho::from_elf(&elf)).unwrap_or_else(|e| {eprintln!("error: Mach-O Intel: {}",e);process::exit(1);});
         fs::write(pos[1],bytes).unwrap_or_else(|e| {eprintln!("cannot write {}: {}",pos[1],e);process::exit(2);});

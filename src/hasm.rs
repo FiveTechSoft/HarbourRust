@@ -5,6 +5,9 @@
 use std::cell::Cell;
 use std::collections::HashMap;
 
+#[path = "harm64.rs"]
+pub mod arm64;
+
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 enum Sec { Text, Rodata, Data, Bss, Note }
 
