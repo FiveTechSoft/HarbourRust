@@ -1,41 +1,37 @@
-# Rebased candidate on 7b746e2a
+# Names and Date probes on 7b746e2a
 
-This branch preserves all remote source changes. Names implementation and the Date builtin consumer fix are upstream, not new work here. The first replayed commit retains only tests/docs. The Date increment adds producer/assignment and call-site Date evidence, plus the direct-variable-only pin safety guard.
+## Final source contract
 
-The old global FUNCTION month negative is accepted by upstream despite the check_global_ident comment; it has been changed to a CLASS month collision which upstream still rejects. No compiler restriction was restored or weakened here. Separate review should decide whether that remote discrepancy is intentional.
+The lexical-name implementation and Date builtin consumer fix come from upstream 7b746e2a. This candidate preserves upstream DBF, Dyn print and year-zero changes. The Date increment adds producer/assignment and call-site Date evidence, plus a direct-variable-only pin guard so a Date consumer does not pin integer offsets inside a compound expression.
 
-The final-gate numbers in the historical sections below refer ONLY to the original 739655b4 candidate, not this rebase. See the attached new evidence for the new compiler hash. Year-zero changes in the remote base are preserved and not attributed to this increment.
+Locals, parameters, block parameters and class members use lexical names. Global function names remain subject to the helper-name guard: BOTH ordinary FUNCTION header branches use check_global_ident. DO fname and PRIVATE/PUBLIC/MEMVAR controls are preserved from upstream. The final negative names_global.prg declares FUNCTION month, not CLASS month.
 
-# Names and Date parameter regression probes
+The captured Harbour contract probe calls month() and declares FUNCTION month(). Harbour reports E0008 (redefinition of predefined MONTH) and E0021 (the call supplies zero arguments, expected one). The evidence does not isolate an unused declaration. HBC's final named negative rejects the global declaration through check_global_ident. This does not add arbitrary builtin redefinition, class grammar, module STATIC or dynamic method names.
 
-Own probes; Harbour stays an external oracle. Run from a built checkout:
+## Run and evidence
 
-    python3 tests/names-date/check.py --compiler ./hbc --hbmk2 /external/hbmk2 --output /new/evidence --group names
+    python3 tests/names-date/check.py --compiler ./hbc --hbmk2 /external/hbmk2 --output /new/evidence
 
-Add `--wine /path/to/wine` for PE execution and arrange the external oracle's MinGW toolchain (`HB_CCPREFIX=x86_64-w64-mingw32-`). The runner builds Harbour afresh from the same source, checks exit/stdout/stderr byte for byte, and records hashes and raw streams. It never normalizes CRLF or updates golden bytes. All sources are own test code. No original corpus source is copied.
+Add --wine /path/to/wine for PE execution and arrange the external oracle's MinGW toolchain (HB_CCPREFIX=x86_64-w64-mingw32-). The runner builds Harbour afresh from the same source and compares exit/stdout/stderr byte for byte. It records source and compiler hashes and raw streams. No CRLF or trailing-LF normalization is performed.
 
-Names fix: local variables, parameters, block parameters and class members are lexical names, not global code-generator helper labels. `check_ident` checks length; only ordinary global function declarations keep the helper-name restriction. Methods already lower to class-qualified functions and local/parameter slots already use offsets. Builtin calls stay calls even when a variable or member uses the same text.
+Final compiler SHA256: a08dc51ff9013ceb267c1357260645ff686865f27445633520c951d91c86dbc6. Gates on that compiler:
+- 14 positive sources x Linux/PE-Wine = 28 fresh Harbour comparisons, exact.
+- 5 named negatives x both targets = 10 correct rejections.
+- FILE: 56/56 with fresh Harbour Linux/PE-Wine and internal/external engines.
+- Classes Linux: 42/42 with fresh Harbour.
+- PE object separators: 3/3 against captured fixtures.
+- Compile-only PE CI: 1730 PASS, 21 recorded mismatches, 0 unexpected failures.
 
-Fresh own probes at base 739655b4 plus names change: 4 sources x Linux/PE under Wine = 8 exact oracle comparisons. Tests cover month/str/Left/Right locals and parameters, array local aSize, method Str/Left/Right/Month/aSize, ordinary builtin calls alongside those names, block shadowing and FOR counters. More scalar arithmetic/builtin behavior remains the existing compiler's contract; explicit Str widths avoid claiming Harbour's separate numeric-width metadata is newly implemented.
-
-Limits: global helper-name functions remain rejected. This does not add unsupported class grammar, global STATIC, arbitrary builtin redefinition, dynamic method names or year-zero handling. Wine is not native Windows verification.
+These are bounded gates. No native Windows executor or full root runtime battery was run here. Documentation-only follow-ups do not change this compiler hash. Do not substitute older candidate gate totals for these results.
 
 ## Date parameter pilot
 
-Date-consuming builtins (CDow/DoW/DToS/Year/Month/Day/CMonth/DToC) now pin a directly used parameter Date instead of leaving an integer placeholder. Assignment of Date()/SToD()/CToD(), a known Date-returning call or a local Date also supplies evidence. Ordinary call-site Date evidence propagates through identity/forwarding functions and methods; Date remains distinct from numeric I64. No runtime implementation or date calendar encoding changed.
+CDow/DoW/DToS/Year/Month/Day/CMonth/DToC supply Date evidence for a direct parameter. Date()/SToD()/CToD(), a known Date-returning call or a local Date can supply assignment evidence. Call-site Date evidence propagates through identity/forwarding functions and methods; Date remains distinct from numeric I64. This increment does not change runtime calendar encoding.
 
-Eight Date sources cover consumers including empty dates, Date() assignment, assignment through a local Date, forwarding/identity, recursion, methods and the ValType guard used by defaulting code. Positive source/target comparisons are raw-exact. Strings are bracketed in the empty-date probe to avoid claiming a fix to the pre-existing Windows terminal handling of trailing blank-only output; no stream normalization occurs. Current-date checks compare values inside the program rather than pinning a calendar date in the fixture.
+Nine Date sources cover consumers including empty dates, assignment, local copies, forwarding, recursion, methods, a ValType guard, the forwarded CDow regression, and CToD/DToC together. Empty-date strings are bracketed to avoid a pre-existing Windows terminal difference on trailing blank-only output. Explicit Str widths avoid claiming a fix to numeric-width metadata. Current-date checks compare values inside the program rather than fixing a calendar date in the fixture.
 
-Explicit limits: this is monomorphic Date transport/inference, not arbitrary Harbour parameter retyping or flow-sensitive narrowing of NIL/numeric/logical/string variants. Omitted Date arguments, a wrong integer and a mixed Date/string call retain named rejections (negative tests). Date by-reference and Date arithmetic-inference contexts are not newly supported. Some corpus functions still require dynamic type predicates, variant narrowing, arithmetic and library support. No year-zero change and no claim that all 9 Date-related corpus routes now compile. Linux-hosted Wine is not a native Windows executor.
+This is monomorphic Date transport/inference, not arbitrary parameter retyping or flow-sensitive narrowing of NIL/numeric/logical/string variants. Omitted arguments, integer arguments, mixed Date/string calls and literal NIL passed to a Date parameter retain named rejections. date_nil_argument really passes NIL; date_nil_assignment is a different positive case and does not prove acceptance of NIL. Date by-reference and general Date arithmetic inference are not newly supported. Several original corpus functions still need predicates, variant narrowing, arithmetic or libraries. No claim that all nine original Date-related corpus routes now compile.
 
-Final combined-candidate gate: 13 positive sources x 2 targets = 26 raw-exact comparisons (including the two forwarded regressions with matching source hashes), plus 4 named negatives x 2 = 8 rejection checks. FILE 56/56 with fresh external Harbour Linux/PE-Wine, class gate 42/42 fresh Linux, Windows object separators 3/3 captured fixtures, compile-only PE manifest 1727 PASS / 21 recorded mismatches / 0 unexpected. These are bounded gates, not a claim that all original sources or all runtime paths pass.
+## Provenance
 
-## Reviewer follow-up on rebased tree
-
-CToD and DToC are exercised together by date_ctod_dtoc, freshly compared on Linux and PE-Wine. date_nil_argument passes literal NIL across the call boundary into a date-consuming parameter and requires the named dynamic-value rejection; date_nil_assignment is a different positive case and is not proof of accepting NIL.
-
-Provenance: names_reported.prg and date_reported.prg are tiny reproducers forwarded by the owner in the supplied reported-three ZIP, not authored as new tests here. Their exact source hashes are recorded in results.json. All other names-date sources are own synthetic probes, not Harbour implementation bodies.
-
-On this tree no main global-name control was removed: DO fname and PRIVATE/PUBLIC/MEMVAR handling are exactly upstream. The FUNCTION month discrepancy is observed acceptance of this particular source, not a claim of arbitrary builtin redefinition support.
-
-Measured global contract: fresh Harbour rejects FUNCTION month as redefinition of a predefined function, even without a call. HBC upstream accepted the unused declaration. Both ordinary function header branches now use check_global_ident, preserving DO/MEMVAR checks. This replaces the provisional class-only negative.
+names_reported.prg and date_reported.prg are tiny reproducers forwarded by the owner in the supplied reported-three ZIP, not newly authored tests. Their source hashes are recorded in results.json. All other names-date sources are own synthetic probes. No Harbour implementation bodies are copied; Harbour remains an external oracle.
