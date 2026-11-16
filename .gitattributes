@@ -47,3 +47,5 @@ tests/file-compat/*.stderr -text
 # Raw Windows object-output oracle streams (byte-exact CRLF fixtures).
 tests/classes/windows-separators/*.windows.stdout -text
 tests/classes/windows-separators/*.windows.stderr -text
+# Module-STATIC oracle streams retain raw target bytes, including Windows CRLF.
+tests/module-static/expected/** -text

@@ -676,7 +676,7 @@ pos2 tests/t678_static_func_proc_note.prg tests/expectations/qout/t678_static_fu
 pos2 tests/t679_func_alias.prg tests/expectations/qout/t679_func_alias.linux.out tests/expectations/qout/t679_func_alias.windows.out
 pos2 tests/t680_predef_harbour.prg tests/expectations/qout/t680_predef_harbour.linux.out tests/expectations/qout/t680_predef_harbour.windows.out
 pos tests/t681_init_proc_neg.prg
-neg tests/t682_static_var_neg.prg file-scope STATIC variables are not in this increment
+neg tests/t682_static_var_neg.prg module STATIC currently requires a folded i64 constant initializer
 neg tests/t683_second_group_neg.prg code outside a function
 neg tests/t684_dup_main_neg.prg duplicate function
 neg tests/t685_memvar_ref_neg.prg assignment to undeclared variable `m_y`
@@ -1770,3 +1770,36 @@ cli tests/expectations/cli/version.out --version
 pos2 tests/review0114/r1_local_builtin_names.prg tests/expectations/qout/r1_local_builtin_names.linux.out tests/expectations/qout/r1_local_builtin_names.windows.out
 pos2 tests/review0114/r2_date_param.prg tests/expectations/qout/r2_date_param.linux.out tests/expectations/qout/r2_date_param.windows.out
 pos2 tests/review0114/r3_year_zero.prg tests/expectations/qout/r3_year_zero.linux.out tests/expectations/qout/r3_year_zero.windows.out
+
+# Module STATIC i64: fixtures from fresh same-source Harbour, no stream normalization.
+pos2 tests/module-static/programs/block_shadow.prg tests/module-static/expected/block_shadow.linux.out tests/module-static/expected/block_shadow.windows.out
+pos2 tests/module-static/programs/byref.prg tests/module-static/expected/byref.linux.out tests/module-static/expected/byref.windows.out
+pos2 tests/module-static/programs/folded.prg tests/module-static/expected/folded.linux.out tests/module-static/expected/folded.windows.out
+pos2 tests/module-static/programs/init.prg tests/module-static/expected/init.linux.out tests/module-static/expected/init.windows.out
+pos2 tests/module-static/programs/init_multiple.prg tests/module-static/expected/init_multiple.linux.out tests/module-static/expected/init_multiple.windows.out
+pos2 tests/module-static/programs/local_shadow.prg tests/module-static/expected/local_shadow.linux.out tests/module-static/expected/local_shadow.windows.out
+pos2 tests/module-static/programs/local_static_shadow.prg tests/module-static/expected/local_static_shadow.linux.out tests/module-static/expected/local_static_shadow.windows.out
+pos2 tests/module-static/programs/method.prg tests/module-static/expected/method.linux.out tests/module-static/expected/method.windows.out
+pos2 tests/module-static/programs/multiple.prg tests/module-static/expected/multiple.linux.out tests/module-static/expected/multiple.windows.out
+pos2 tests/module-static/programs/name_builtin.prg tests/module-static/expected/name_builtin.linux.out tests/module-static/expected/name_builtin.windows.out
+pos2 tests/module-static/programs/param_shadow.prg tests/module-static/expected/param_shadow.linux.out tests/module-static/expected/param_shadow.windows.out
+pos2 tests/module-static/programs/recursion.prg tests/module-static/expected/recursion.linux.out tests/module-static/expected/recursion.windows.out
+pos2 tests/module-static/programs/shared.prg tests/module-static/expected/shared.linux.out tests/module-static/expected/shared.windows.out
+pos2 tests/module-static/programs/unreferenced.prg tests/module-static/expected/unreferenced.linux.out tests/module-static/expected/unreferenced.windows.out
+neg tests/module-static/negative/array.prg module STATIC currently requires a folded i64 constant initializer
+neg tests/module-static/negative/branch_shadow.prg module STATIC shadow inside control flow
+neg tests/module-static/negative/date.prg module STATIC currently requires a folded i64 constant initializer
+neg tests/module-static/negative/duplicate.prg duplicate module STATIC
+neg tests/module-static/negative/effectful.prg module STATIC currently requires a folded i64 constant initializer
+neg tests/module-static/negative/float.prg module STATIC currently requires a folded i64 constant initializer
+neg tests/module-static/negative/hash.prg module STATIC currently requires a folded i64 constant initializer
+neg tests/module-static/negative/late.prg module STATIC declarations must precede
+neg tests/module-static/negative/logical.prg module STATIC currently requires a folded i64 constant initializer
+neg tests/module-static/negative/loop.prg STATIC loop counters require
+neg tests/module-static/negative/memvar.prg module STATIC and explicit MEMVAR
+neg tests/module-static/negative/nil.prg module STATIC currently requires a folded i64 constant initializer
+neg tests/module-static/negative/string.prg module STATIC currently requires a folded i64 constant initializer
+neg tests/module-static/negative/widen.prg type mismatch in assignment
+pos2 tests/module-static/programs/byref_variants.prg tests/module-static/expected/byref_variants.linux.out tests/module-static/expected/byref_variants.windows.out
+pos2 tests/module-static/programs/separate_local_statics.prg tests/module-static/expected/separate_local_statics.linux.out tests/module-static/expected/separate_local_statics.windows.out
+neg tests/module-static/negative/method_loop.prg STATIC loop counters require
