@@ -49,3 +49,6 @@ tests/classes/windows-separators/*.windows.stdout -text
 tests/classes/windows-separators/*.windows.stderr -text
 # Module-STATIC oracle streams retain raw target bytes, including Windows CRLF.
 tests/module-static/expected/** -text
+
+# Raw target bytes from the persistent-string oracle.
+tests/module-static-owned/expected/** -text

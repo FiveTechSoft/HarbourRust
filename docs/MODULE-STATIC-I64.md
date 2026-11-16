@@ -1,5 +1,7 @@
 # Module STATIC: first increment
 
+Historical S1 contract. S2 logical/string expansion and its current limits are documented in MODULE-STATIC-OWNED.md.
+
 ## Contract and design
 
 This increment starts from 4f801fdd. It adds one storage identity shared by functions, methods and startup hooks in a single preprocessed translation unit. It does not add a linker/module loader or a general dynamically typed persistent value.

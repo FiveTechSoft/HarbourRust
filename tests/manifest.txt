@@ -676,7 +676,7 @@ pos2 tests/t678_static_func_proc_note.prg tests/expectations/qout/t678_static_fu
 pos2 tests/t679_func_alias.prg tests/expectations/qout/t679_func_alias.linux.out tests/expectations/qout/t679_func_alias.windows.out
 pos2 tests/t680_predef_harbour.prg tests/expectations/qout/t680_predef_harbour.linux.out tests/expectations/qout/t680_predef_harbour.windows.out
 pos tests/t681_init_proc_neg.prg
-neg tests/t682_static_var_neg.prg module STATIC currently requires a folded i64 constant initializer
+neg tests/t682_static_var_neg.prg module STATIC requires a folded i64, logical or string constant initializer
 neg tests/t683_second_group_neg.prg code outside a function
 neg tests/t684_dup_main_neg.prg duplicate function
 neg tests/t685_memvar_ref_neg.prg assignment to undeclared variable `m_y`
@@ -1786,20 +1786,44 @@ pos2 tests/module-static/programs/param_shadow.prg tests/module-static/expected/
 pos2 tests/module-static/programs/recursion.prg tests/module-static/expected/recursion.linux.out tests/module-static/expected/recursion.windows.out
 pos2 tests/module-static/programs/shared.prg tests/module-static/expected/shared.linux.out tests/module-static/expected/shared.windows.out
 pos2 tests/module-static/programs/unreferenced.prg tests/module-static/expected/unreferenced.linux.out tests/module-static/expected/unreferenced.windows.out
-neg tests/module-static/negative/array.prg module STATIC currently requires a folded i64 constant initializer
+neg tests/module-static/negative/array.prg module STATIC requires a folded i64, logical or string constant initializer
 neg tests/module-static/negative/branch_shadow.prg module STATIC shadow inside control flow
-neg tests/module-static/negative/date.prg module STATIC currently requires a folded i64 constant initializer
+neg tests/module-static/negative/date.prg module STATIC requires a folded i64, logical or string constant initializer
 neg tests/module-static/negative/duplicate.prg duplicate module STATIC
-neg tests/module-static/negative/effectful.prg module STATIC currently requires a folded i64 constant initializer
-neg tests/module-static/negative/float.prg module STATIC currently requires a folded i64 constant initializer
-neg tests/module-static/negative/hash.prg module STATIC currently requires a folded i64 constant initializer
+neg tests/module-static/negative/effectful.prg module STATIC requires a folded i64, logical or string constant initializer
+neg tests/module-static/negative/float.prg module STATIC requires a folded i64, logical or string constant initializer
+neg tests/module-static/negative/hash.prg module STATIC requires a folded i64, logical or string constant initializer
 neg tests/module-static/negative/late.prg module STATIC declarations must precede
-neg tests/module-static/negative/logical.prg module STATIC currently requires a folded i64 constant initializer
 neg tests/module-static/negative/loop.prg STATIC loop counters require
 neg tests/module-static/negative/memvar.prg module STATIC and explicit MEMVAR
-neg tests/module-static/negative/nil.prg module STATIC currently requires a folded i64 constant initializer
-neg tests/module-static/negative/string.prg module STATIC currently requires a folded i64 constant initializer
+neg tests/module-static/negative/nil.prg module STATIC requires a folded i64, logical or string constant initializer
 neg tests/module-static/negative/widen.prg type mismatch in assignment
 pos2 tests/module-static/programs/byref_variants.prg tests/module-static/expected/byref_variants.linux.out tests/module-static/expected/byref_variants.windows.out
 pos2 tests/module-static/programs/separate_local_statics.prg tests/module-static/expected/separate_local_statics.linux.out tests/module-static/expected/separate_local_statics.windows.out
 neg tests/module-static/negative/method_loop.prg STATIC loop counters require
+
+# Fixed-type module logical/owned-string storage, raw fresh Harbour fixtures.
+pos2 tests/module-static-owned/programs/cleanup_stress.prg tests/module-static-owned/expected/cleanup_stress.linux.out tests/module-static-owned/expected/cleanup_stress.windows.out
+pos2 tests/module-static-owned/programs/exception.prg tests/module-static-owned/expected/exception.linux.out tests/module-static-owned/expected/exception.windows.out
+pos2 tests/module-static-owned/programs/init.prg tests/module-static-owned/expected/init.linux.out tests/module-static-owned/expected/init.windows.out
+pos2 tests/module-static-owned/programs/logical.prg tests/module-static-owned/expected/logical.linux.out tests/module-static-owned/expected/logical.windows.out
+pos2 tests/module-static-owned/programs/methods.prg tests/module-static-owned/expected/methods.linux.out tests/module-static-owned/expected/methods.windows.out
+pos2 tests/module-static-owned/programs/returned_copy.prg tests/module-static-owned/expected/returned_copy.linux.out tests/module-static-owned/expected/returned_copy.windows.out
+pos2 tests/module-static-owned/programs/shadow.prg tests/module-static-owned/expected/shadow.linux.out tests/module-static-owned/expected/shadow.windows.out
+pos2 tests/module-static-owned/programs/stress.prg tests/module-static-owned/expected/stress.linux.out tests/module-static-owned/expected/stress.windows.out
+pos2 tests/module-static-owned/programs/string_assign_other.prg tests/module-static-owned/expected/string_assign_other.linux.out tests/module-static-owned/expected/string_assign_other.windows.out
+pos2 tests/module-static-owned/programs/string_binary.prg tests/module-static-owned/expected/string_binary.linux.out tests/module-static-owned/expected/string_binary.windows.out
+pos2 tests/module-static-owned/programs/string_call.prg tests/module-static-owned/expected/string_call.linux.out tests/module-static-owned/expected/string_call.windows.out
+pos2 tests/module-static-owned/programs/string_copy.prg tests/module-static-owned/expected/string_copy.linux.out tests/module-static-owned/expected/string_copy.windows.out
+pos2 tests/module-static-owned/programs/string_replace.prg tests/module-static-owned/expected/string_replace.linux.out tests/module-static-owned/expected/string_replace.windows.out
+pos2 tests/module-static-owned/programs/string_shared.prg tests/module-static-owned/expected/string_shared.linux.out tests/module-static-owned/expected/string_shared.windows.out
+neg tests/module-static-owned/negative/array_escape.prg owned/container
+neg tests/module-static-owned/negative/bool_byref.prg logical by-reference use is outside
+neg tests/module-static-owned/negative/catch_shadow.prg module STATIC catch binding shadow
+neg tests/module-static-owned/negative/compound_call.prg inline-effect
+neg tests/module-static-owned/negative/counter_try.prg STATIC loop counters require
+neg tests/module-static-owned/negative/inline_write.prg inline-effect
+neg tests/module-static-owned/negative/logical_widen.prg type mismatch in assignment
+neg tests/module-static-owned/negative/string_widen.prg type mismatch in assignment
+neg tests/module-static-owned/negative/print_mutation.prg inline-effect
+neg tests/module-static-owned/negative/argument_mutation.prg inline-effect
