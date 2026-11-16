@@ -43,3 +43,7 @@ tests/procmeta/newline-oracle/raw.windows.stdout -text
 # FILE fixtures compare native target bytes, including Windows CRLF.
 tests/file-compat/*.stdout -text
 tests/file-compat/*.stderr -text
+
+# Raw Windows object-output oracle streams (byte-exact CRLF fixtures).
+tests/classes/windows-separators/*.windows.stdout -text
+tests/classes/windows-separators/*.windows.stderr -text

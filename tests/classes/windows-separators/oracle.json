@@ -1,0 +1,34 @@
+{
+  "oracle_revision": "694428e1c12f726675b19324d62167fa77d68185",
+  "banner": "Harbour 3.2.1dev r2610242111",
+  "build_flags": [
+    "-plat=win",
+    "-comp=mingw64",
+    "-gtstd"
+  ],
+  "executor": "Wine 11.22, LC_ALL=C.UTF-8",
+  "real_windows": false,
+  "cases": [
+    {
+      "name": "p_sep",
+      "source_sha256": "c4ea9d6d89bc490302f6fa81940186bac7d3e15b8af6c3be16c4526b5462153c",
+      "stdout_sha256": "85bed89d4e15cf9edcb48f6e0936f2d9b6aec670199eddb089fa9f5cc4248982",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "exit": 0
+    },
+    {
+      "name": "matrix",
+      "source_sha256": "8742272d9c15903b577ff4d2e762a9015ea18d2c0720b4a0da670a028a1a9e56",
+      "stdout_sha256": "dfb4d3db977cc897a9cbfa542841a90a821713eb0348b2aa6b50dde25166e423",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "exit": 0
+    },
+    {
+      "name": "mixed",
+      "source_sha256": "94c0f4a17c16f9910cc9017a40c2da4ac699d28bb489ad4d7c57272a6e58bd6d",
+      "stdout_sha256": "39a68979e369293249aa123f8962100764aa769b7bbf6b30c157ef380b01cb0b",
+      "stderr_sha256": "bb7208bc9b5d7c04f1236a82a0093a5e33f40423d5ba8d4266f7092c3ba43b62",
+      "exit": 0
+    }
+  ]
+}

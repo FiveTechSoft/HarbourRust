@@ -18710,7 +18710,18 @@ fn cg_print_items(es: &[Expr], inline: bool, raw: bool, stderr: bool, env: &[CgL
                 // widths are identical to `?`.
                 // Arguments (including nested output) have already evaluated.
                 let render_start = out.len();
-                if raw && !stderr && target == Target::Windows { out.push_str("    call hbc_pflush\n"); }
+                let object_hold = target == Target::Windows && CLASSES.with(|c| !c.borrow().is_empty());
+                if object_hold && !stderr && !raw && !inline {
+                    out.push_str("    call hbc_obj_drop_pending\n");
+                }
+                if raw && !stderr && target == Target::Windows {
+                    if object_hold {
+                        // Empty OutStd does not consume an object's hold.
+                        // A nonempty raw write drops it in hbc_obj_raw_write.
+                        let id = print_lbl();
+                        out.push_str(&format!("    cmpq $0, hbc_pending(%rip)\n    js .Lobj_raw{}\n    call hbc_pflush\n.Lobj_raw{}:\n", id, id));
+                    } else { out.push_str("    call hbc_pflush\n"); }
+                }
                 // GTSTD presentation replaces NUL with '.', but raw output
                 // verbs preserve it. Arguments (and their output effects)
                 // have already completed, so this mode covers only rendering.
@@ -18773,7 +18784,13 @@ fn cg_print_items(es: &[Expr], inline: bool, raw: bool, stderr: bool, env: &[CgL
                         // Live object: prints nothing (oracle p23/p_sep,
                         // the separator stays held). Null slot: NIL.
                         let id = print_lbl();
-                        out.push_str(&format!("    mov {}(%rsp), %rax\n    test %rax, %rax\n    je .Lpn{}\n    jmp .Lpo{}\n.Lpn{}:\n", off, id, id, id));
+                        out.push_str(&format!("    mov {}(%rsp), %rax\n    test %rax, %rax\n    je .Lpn{}\n", off, id));
+                        if object_hold && !stderr && !raw {
+                            // Bit 63 annotates an invisible object's hold. It
+                            // follows hbc_pending into TLS in threaded builds.
+                            out.push_str("    btsq $63, hbc_pending(%rip)\n");
+                        }
+                        out.push_str(&format!("    jmp .Lpo{}\n.Lpn{}:\n", id, id));
                         if !stderr && !raw { out.push_str("    call hbc_pflush\n"); }
                         out.push_str(&format!("    mov $1, %eax\n    xor %edx, %edx\n    call hbc_print_dyn\n.Lpo{}:\n", id));
                         continue;
@@ -26160,6 +26177,7 @@ fn emit_asm(funcs: &[Func], sigs: &[Sig], externs: &[String], target: Target, in
             if MACRO_CONTEXT.with(|c|c.get()){out.push_str("    mov %rsp, %r10\n");}
             out.push_str("    call hbc_fn_main\n");
             if MACRO_CONTEXT.with(|c|c.get()){out.push_str("    mov %rsp, %rdi\n    call hrmacro_destroy\n");}
+            if nclasses > 0 { out.push_str("    call hbc_obj_drop_pending\n"); }
             out.push_str("    call hbc_pflush\n");
             out.push_str("    call hbc_persistent_cleanup\n    call hbc_str_cache_flush\n");
             out.push_str("    xor %ecx, %ecx\n");
@@ -26276,7 +26294,32 @@ hbc_persistent_payload_release:
                 // byte-identical runtime asm.
                 let marked = WIN_HELPERS.replace("    @HBC_TAG_KIND@cmp $8, %rax@HBC_TAG_END@\n    je 9f\n    mov %rax, %r10", "    @HBC_TAG_KIND@cmp $8, %rax@HBC_TAG_END@\n    je 9f\n    @HBC_TAG_KIND@cmp $13, %rax@HBC_TAG_END@\n    je 9f\n    mov %rax, %r10");
                 assert!(marked.contains("$13"), "print blob tag-13 arm must apply");
+                let marked = marked.replace("    @HBC_TAG_KIND@cmp $13, %rax@HBC_TAG_END@\n    je 9f", "    @HBC_TAG_KIND@cmp $13, %rax@HBC_TAG_END@\n    jne .Lobj_print_not\n    cmpq $0, hbc_console_mode(%rip)\n    je 9f\n    btsq $63, hbc_pending(%rip)\n    jmp 9f\n.Lobj_print_not:");
+                assert!(marked.contains(".Lobj_print_not:"), "object hold arm must apply");
+                // Visible formatted output preserves held interior spaces,
+                // but removes their object-only boundary annotation first.
+                assert_eq!(marked.matches("hbc_pflush:\n").count(), 1);
+                let marked = marked.replace("hbc_pflush:\n", "hbc_pflush:\n    btrq $63, hbc_pending(%rip)\n");
                 out.push_str(&marked);
+                assert_eq!(out.matches("    je hbc_write_bytes\n").count(), 1);
+                out = out.replace("    je hbc_write_bytes\n", "    je hbc_obj_raw_write\n");
+                out.push_str(r#"
+hbc_obj_raw_write:
+    test %rdx, %rdx
+    jz .Lobj_raw_write
+    call hbc_obj_drop_pending
+.Lobj_raw_write:
+    jmp hbc_write_bytes
+# Only invisible-object holds use bit 63; string-only Windows output
+# retains the existing GTCGI profile. No register clobbers. TLS lowering
+# retargets this hbc_pending reference along with the existing counter.
+hbc_obj_drop_pending:
+    cmpq $0, hbc_pending(%rip)
+    jns .Lobj_hold_done
+    movq $0, hbc_pending(%rip)
+.Lobj_hold_done:
+    ret
+"#);
             } else {
                 out.push_str(WIN_HELPERS);
             }

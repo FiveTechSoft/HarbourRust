@@ -70,3 +70,14 @@ runtime blob clean under AddressSanitizer and UBSan.
   rejects them by name.
 - `=` as an expression operator remains outside the supported subset
   (pre-existing limitation, unchanged).
+
+## Windows object-output correction (16 November 2026)
+
+Fresh official Harbour GTSTD/Wine evidence shows that `? "x", o` with a
+live object must not leave a space before the next newline. The earlier
+claim that p_sep's space was an established GTCGI difference is withdrawn.
+The focused regression and its evidence scope are documented in
+[windows-separators](../tests/classes/windows-separators/README.md).
+Real-Windows execution is still pending. The broader string-only
+GTSTD/GTCGI hold/flush mismatch remains open Harbour compatibility debt;
+this fix does not change the global console profile or claim full parity.
