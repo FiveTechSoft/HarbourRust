@@ -23,6 +23,12 @@ bridge. See [representation, compatibility and limits](docs/DYN-HEAP-FLOAT-2026-
 
 HarbourRust does not support `.hrb` files, by design. A `.hrb` is precompiled pcode for the Harbour virtual machine (magic `\xC0HRB`, stable version 2 format), and HarbourRust has no pcode VM: it compiles the original `.prg` sources directly to native code. If you have the `.prg` sources, recompile them with `hbc`. If you only have the `.hrb`, you need `hbrun`/Harbour to run it. A pcode-to-native translator remains a possible future direction only if real user demand appears.
 
+## Latest release
+
+**v0.11.4** (16 November 2026) is the latest release, with a Windows x86-64 compiler (`hbc_0.11.4.exe`), a Linux x86-64 compiler and a macOS Apple Silicon (arm64) compiler, plus `SHA256SUMS.txt`. See the [release notes](https://github.com/FiveTechSoft/HarbourRust/releases/tag/v0.11.4) for hashes, evidence and limits. The macOS arm64 binary is a compiler that runs on Apple Silicon; it still emits x86-64 programs, because native ARM64 output is not implemented (see the [roadmap](docs/ROADMAP.md)). Windows results in the release notes were checked under Wine; native Windows runs are recorded where the sections below say so.
+
+Since the checkpoint described below, main also has: threads, mutexes and one-shot initialisation on Windows, native DBF field writes and decimal arithmetic/comparison, and a compile-time error for a fixed-size local array passed to a function that changes it. Each is described in its own bullet under Active development.
+
 ## Current status
 
 The current compiler includes the independently reviewed Date/CToD port,
@@ -64,12 +70,24 @@ The first DBF, NTX and CDX increments are released; classes and objects
 are in main (v0.7.0). Broader RDD support remains
 work in progress. No unmeasured speed or capability claims are made.
 
-- **DBF support.** Read-only dBASE III tables are in main and v0.4.0: one
+- **DBF write and decimals (v0.11.x).** On the native adapter (Linux and Windows
+  x86-64, one workarea): exclusive read-write open (`readonly=.F.`, `shared=.F.`),
+  bare field-name access, `REPLACE field WITH expr` (single field, no scope
+  clause), `ALIAS->field := expr`, `FieldPut` and `dbAppend`. Decimal numeric
+  values follow Harbour's rules for `+ - * / % ^` and for `= <> < > <= >=`.
+  Against Harbour 3.2 with DBFCDX, the acceptance programs print identical
+  values and leave a byte-identical DBF on the anonymised fixture
+  (tests/dbf/acceptance-test4 to test7). Not in this increment: `dbCommit`,
+  `dbDelete`, `dbRecall`, `dbGoTo`, `ordCreate`, index updates, multi-field or
+  scoped `REPLACE`, shared/record locking. Failure modes differ from Harbour's
+  recoverable error dialogs. See [open and field names](docs/DBF-WRITE-OPEN-D1.md).
+- **DBF support (read-only base).** Read-only dBASE III tables are in main and v0.4.0: one
   workarea, C/N/L/D fields, `dbUseArea`, `FieldGet`, `dbGoTop`, `dbSkip`,
   `RecNo`/`LastRec`, `BOF`/`EOF`, `Deleted` and `dbCloseArea`, on Linux x86-64 and the bounded Windows PE adapter.
   This is an own MIT implementation, checked byte-for-byte against real Harbour.
-  It is not standard RDD compatibility: no memo, writes/shared locking,
-  general static-Date/Dyn conversion or decimal arithmetic/comparison.
+  It is not standard RDD compatibility: no memo, shared locking or
+  general static-Date/Dyn conversion; writes and decimal arithmetic/comparison
+  are covered in the bullet above, within their limits.
   Unsupported consumers fail explicitly.
 - **Optional real Harbour RDD (`--harbour-rdd`, Windows).** Opt-in mode that
   links Harbour 3.2's own VM + RDD (DBFCDX/DBFNTX/FPT) behind the same DBF
@@ -131,12 +149,29 @@ work in progress. No unmeasured speed or capability claims are made.
   supported subset, as before.
   See [scope, model and tests](docs/CLASSES.md).
 
-- **Threads and mutexes.** In main and v0.8.0, on Linux x86-64: `hb_threadStart`/
+- **Threads and mutexes on Windows (16 November).** `--target=windows` now runs
+  the same thread, mutex and one-shot runtime, over `CreateThread` and
+  `WaitOnAddress` (Windows 8 or later). On native Windows 11 against Harbour 3.2
+  MT: **30/37** `tests/threads` and **33/36** `tests/threads-start` programs are
+  identical. The rest are documented: one uses classes (Linux-only), three name a
+  local `val` that the compiler rejects on every target, three hit a Harbour 3.2
+  Windows timeout in `hb_mutexSubscribeNow`, and three are declared compile-time
+  limits. Not a claim of full thread parity. macOS has no thread runtime.
+  See [Windows runtime](docs/THREADS.md#windows-runtime-2026-11-16).
+
+- **Fixed-size array arguments (16 November).** Harbour passes arrays by
+  reference. HarbourRust passes a fixed-size local array (`local v := {0,0}`) as
+  a copy, so a callee's changes used to be lost silently (issue #1, section 3.1).
+  Such a call is now a compile-time error whenever the callee can change the
+  array; read-only callees work as before. The check is conservative, so a
+  rejected call may be harmless. Arrays passed by reference are not implemented.
+  See [the record](docs/ARRAY-PARAM-COPY-2026-11-16.md).
+
+- **Threads and mutexes (Linux).** In main and v0.8.0, on Linux x86-64: `hb_threadStart`/
   `Join`/`Wait`/`Self`/`Detach`/`WaitForAll` and mutex create/lock/unlock/eval/
   notify queues over an own clone(2)+futex runtime, one-shot initialization and
   the MT-aware object runtime. Public gates run same-source probes against real
-  Harbour in both modes. Declared limits: Linux-only (`--target=windows` is a
-  named rejection), literal thread arguments only, an error inside a thread
+  Harbour in both modes. Declared limits: literal thread arguments only, an error inside a thread
   prints to stderr and returns NIL instead of opening the interactive error box,
   `--instrument` with threads is rejected and `hb_memcheck` counters are
   approximate while threads run.
@@ -183,7 +218,7 @@ bin\hbc.exe tests\samples\hello.prg hello.exe
 hello.exe
 ```
 
-**The tracked compiler is a main-branch snapshot, not the old v0.1.1 compiler.** It was built from source at `e17223f` and added to the repository in `8299ee4`; its full source pin and SHA256 are in [BUILDING.md](BUILDING.md#4-build-the-compiler-itself-as-a-windows-exe-hbcexe). It is not automatically rebuilt when source changes. v0.9.0 is not published yet; this snapshot is not a released v0.9.0 binary.
+**The tracked compiler is a main-branch snapshot, not the old v0.1.1 compiler.** It was built from source at `e17223f` and added to the repository in `8299ee4`; its full source pin and SHA256 are in [BUILDING.md](BUILDING.md#4-build-the-compiler-itself-as-a-windows-exe-hbcexe). It is not automatically rebuilt when source changes, so it can lag main; for current features use the [v0.11.4 release compiler](https://github.com/FiveTechSoft/HarbourRust/releases/tag/v0.11.4) or build from source.
 
 `hbc` writes supported native executables itself: ELF on Linux x86-64, PE32+ on Windows x86-64, and experimental Mach-O on macOS Intel x86-64. The native-only path needs no external assembler/linker or MinGW import libraries. The tracked compiler defaults to Windows output; use an explicit target for cross-compilation. Mach-O has structural checks but no real-Mac hardware smoke yet; native ARM64 output remains rejected. The exact tracked `bin/hbc.exe` was verified under Wine 11.0, not native Windows: hello and four positive TRY programs compiled and ran, and two TRY negatives rejected. This is not a full-manifest or general compatibility claim.
 
@@ -191,11 +226,15 @@ The internal PE writer emits a console image with entry `_start`, fixed ImageBas
 
 `--external-as` selects the legacy assembler/linker path. Its Windows route still needs MinGW-w64 binutils and the kernel32 import library. Building `hbc` itself requires Rust and a suitable compiler-build toolchain; building/linking C extensions or using the hbmk2 adapter requires a C toolchain. Those are separate from using the native-only compiler above.
 
-### Current download route and removed historical releases
+### Downloads and removed historical releases
 
-All nine historical GitHub releases (v0.1.0 through v0.8.0) and their uploaded assets were removed on 14 November 2026. Git tags remain as source history, not downloadable release binaries. There is currently no published release binary; v0.9.0 is still pending. Use the tracked Windows compiler [bin/hbc.exe](bin/hbc.exe) from the current repository, or build the compiler from source as [BUILDING.md](BUILDING.md) describes.
+Releases v0.1.0 to v0.8.0 and their assets were removed on 14 November 2026; their git tags remain as source history. The latest release is **v0.11.4**; download it from the [releases page](https://github.com/FiveTechSoft/HarbourRust/releases). The tracked Windows compiler [bin/hbc.exe](bin/hbc.exe) is an older main snapshot, and `bin/hbc-macos-intel` and `bin/hbc-macos-arm64` are Mac compiler snapshots; the release assets are the verified ones.
 
-Do not reuse an old release `hbc.exe` or its `build.bat` for the native-only quick start. The historical v0.1.1/v0.2.0 compilers emitted assembly text even if the output filename ended in `.EXE`; their scripts needed external MinGW-w64 assembler/linker tools to create a real executable. An output extension alone does not convert assembly into PE. The current tracked compiler writes PE32+ directly for supported native-only programs, without those tools.
+Do not reuse a v0.1.1/v0.2.0 `hbc.exe` or its `build.bat`: those compilers emitted assembly text even when the output name ended in `.EXE` and needed external MinGW-w64 tools. The current compilers write PE32+ directly for supported native-only programs.
+
+## Known limits
+
+Not implemented (no code for them in this repository): ODBC, SQL Server access and `hbwin`/OLE. `#pragma BEGINDUMP`/`ENDDUMP` is recognised and rejected with an explicit error; for C code use the separate-file [Extend bridge](docs/EXTEND-BRIDGE.md). `.hrb` files are unsupported by design. DBF: no index writes or locking (see the DBF bullets above). Native ARM64 output, classes on Windows and threads on macOS are not implemented. This is a bounded list, not a full inventory; see the [roadmap](docs/ROADMAP.md).
 
 ## Harbour standard-function compatibility
 
