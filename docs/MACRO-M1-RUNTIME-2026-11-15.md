@@ -177,11 +177,14 @@ memvar is a run-time value, so `x % 3` with `x := 10` is `1.00`.
   logical, NIL, string and float values read back byte-identical to
   Harbour 3.2 (fixture `tests/macro/m0-memvars.prg`). Memvars cannot be
   assigned from macro text (that is M4).
-- **No calls or assignments.** Function calls inside the text (M2),
-  assignments with `:=` and array, hash or codeblock literals (M4) end
-  with a named run-time error. That message is not a Harbour message.
-  Neither is field access (M3), which Harbour resolves when a work area is
-  open.
+- **Bounded builtin calls, not general calls or assignments.** Since
+  `5cdc4d50`, M2 dispatches Upper/Lower/Round inside macro text. Case conversion
+  is ASCII, calls admit at most 64 arguments, and Round's truncated decimals
+  must be -15..15. Other function names remain named M2 limits; surviving
+  arguments are evaluated before unknown-name and builtin type errors.
+  See [the M2 scope and evidence](MACRO-M2-2026-11-16.md). Assignments with
+  `:=` and array, hash or codeblock literals (M4), plus field-context access
+  (M3), remain outside this stage with named limits, not Harbour messages.
 - **Operand types.** A Dyn operand, such as an uninitialised `local c`
   later assigned a string, is rejected at compile time. Declare it
   `local c := ""`.
