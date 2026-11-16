@@ -37,3 +37,5 @@ CToD and DToC are exercised together by date_ctod_dtoc, freshly compared on Linu
 Provenance: names_reported.prg and date_reported.prg are tiny reproducers forwarded by the owner in the supplied reported-three ZIP, not authored as new tests here. Their exact source hashes are recorded in results.json. All other names-date sources are own synthetic probes, not Harbour implementation bodies.
 
 On this tree no main global-name control was removed: DO fname and PRIVATE/PUBLIC/MEMVAR handling are exactly upstream. The FUNCTION month discrepancy is observed acceptance of this particular source, not a claim of arbitrary builtin redefinition support.
+
+Measured global contract: fresh Harbour rejects FUNCTION month as redefinition of a predefined function, even without a call. HBC upstream accepted the unused declaration. Both ordinary function header branches now use check_global_ident, preserving DO/MEMVAR checks. This replaces the provisional class-only negative.

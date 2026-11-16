@@ -3681,11 +3681,11 @@ fn parse(src: &str) -> Result<Prog, String> {
         }
         let (name, params) = match toks {
             [Tok::KwFunction, Tok::Ident(id), Tok::LParen, Tok::RParen] => {
-                check_ident(id, n)?;
+                check_global_ident(id, n)?;
                 (id.clone(), Vec::new())
             }
             [Tok::KwFunction, Tok::Ident(id), Tok::LParen, rest @ .., Tok::RParen] if !rest.is_empty() => {
-                check_ident(id, n)?;
+                check_global_ident(id, n)?;
                 let mut ps: Vec<String> = Vec::new();
                 for (k, t) in rest.iter().enumerate() {
                     let want_ident = k % 2 == 0;
