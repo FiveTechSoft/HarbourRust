@@ -1,0 +1,25 @@
+PROCEDURE Main()
+   dbUseArea(.T.,"DBFCDX","clie.dbf","CLIE",.F.,.F.)
+   dbAppend()
+   FieldPut(1, "ZOE")
+   FieldPut(2, 61)
+   FieldPut(3, 99.5)
+   FieldPut(4, .F.)
+   FieldPut(5, SToD("20240229"))
+   FieldPut(6, "nota nueva, mas larga que diez bytes")
+   dbAppend()
+   FieldPut(1, "BEA")
+   FieldPut(2, 18)
+   FieldPut(3, -0.75)
+   FieldPut(4, .T.)
+   dbCommit()
+   ? LastRec(), RecNo(), EDAD, SALDO, ACTIVO, ALTA, "|"
+   ordCreate("clie", "NOMBRE", "UPPER(NOMBRE)")
+   ordCreate("clie", "EDAD", "STR(EDAD,3)+DTOS(ALTA)")
+   dbGoTop()
+   DO WHILE !Eof()
+      ? RecNo(), EDAD, NOMBRE, NOTA, "|"
+      dbSkip()
+   ENDDO
+   dbCloseArea()
+RETURN

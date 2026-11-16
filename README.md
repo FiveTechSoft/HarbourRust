@@ -71,6 +71,14 @@ work in progress. No unmeasured speed or capability claims are made.
   It is not standard RDD compatibility: no memo, writes/shared locking,
   general static-Date/Dyn conversion or decimal arithmetic/comparison.
   Unsupported consumers fail explicitly.
+- **Optional real Harbour RDD (`--harbour-rdd`, Windows).** Opt-in mode that
+  links Harbour 3.2's own VM + RDD (DBFCDX/DBFNTX/FPT) behind the same DBF
+  seam: writes, memo fields, several work areas, CDX/NTX creation with
+  VM-evaluated keys and seeks, byte-identical to Harbour (tables, indexes,
+  stdout/stderr/rc) on its gate. Needs MinGW gcc and a Harbour install; such
+  executables contain Harbour library code (GPL with the Harbour linking
+  exception). Default builds are unchanged and do not link Harbour.
+  See [design, licence and limits](docs/HARBOUR-RDD-2026-11-16.md).
 - **NTX support.** Read-only NTX is in main and v0.5.0: one ascending,
   nonunique, unconditional index over a direct C field; OrdListAdd/Clear,
   top/bottom/skip and DbSeek/Found, with duplicate/prefix/softseek/findLast

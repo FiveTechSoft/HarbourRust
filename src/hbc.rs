@@ -34,7 +34,12 @@ thread_local! {
     // per-program counter for field-reference labels.
     static DBF_ALIASES: std::cell::RefCell<Vec<String>> = std::cell::RefCell::new(Vec::new());
     static DBF_FIELD_SITE: std::cell::Cell<usize> = std::cell::Cell::new(0);
+    // --harbour-rdd (docs/HARBOUR-RDD-2026-11-16.md): the DBF seam
+    // (hrdbf_app_*) is served by runtime/hrharbour_rdd.c over Harbour 3.2's
+    // own VM + RDD, linked by src/hbrdd.rs. Off by default.
+    static HB_RDD: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
 }
+fn hb_rdd() -> bool { HB_RDD.with(|v| v.get()) }
 thread_local! {
     static CG_MEMVAR_NAMES: std::cell::RefCell<std::collections::HashSet<String>> = std::cell::RefCell::new(std::collections::HashSet::new());
     static MACRO_CONTEXT: std::cell::Cell<bool> = const {std::cell::Cell::new(false)};
@@ -69,6 +74,7 @@ mod hmacho;
 mod vas;
 mod macro_m1;
 mod prune;
+mod hbrdd;
 
 #[derive(Clone, Copy, PartialEq, Debug)]
 enum Ty { NumLocal, F64, I64, Str, Bool, Date, Arr(usize), Block(usize, BRet), DArr, DArrU, DArr2, DArr3, DArr4, DArrS, StrOwn, Dyn, Hash, DArrRef, DArrRef2, RefI64, RefDyn, RefStrOwn, DArrDyn, AView, Obj(u32) }
@@ -1699,6 +1705,12 @@ const ASM_RESERVED: &[&str] = &[
 ];
 
 fn dbf_result(id: &str) -> Option<Ty> {
+    if hb_rdd() {
+        match id {
+            "dbappend" | "dbcommit" | "dbdelete" | "dbrecall" | "dbgoto" | "fieldput" | "ordcreate" | "ordsetfocus" | "dbffieldput" => return Some(Ty::Dyn),
+            _ => {}
+        }
+    }
     match id { "fieldget" | "dbclosearea" | "dbgotop" | "dbgobottom" | "ordlistclear" | "dbskip" | "dbffieldref" => Some(Ty::Dyn),
         "recno" | "lastrec" => Some(Ty::I64), "bof" | "eof" | "deleted" | "dbusearea" | "ordlistadd" | "dbseek" | "found" => Some(Ty::Bool), _ => None }
 }
@@ -2460,6 +2472,18 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                 }
                 *i += 1;
                 out.push(Stmt::Try(n, body, catch, finally));
+            }
+            Tok::Ident(id) if hb_rdd() && toks.len() >= 6 && toks[1] == Tok::Minus && toks[2] == Tok::Gt
+                && matches!(&toks[3], Tok::Ident(_)) && matches!(toks[4], Tok::Assign | Tok::Eq)
+                && !id.eq_ignore_ascii_case("m") && !id.eq_ignore_ascii_case("memvar") => {
+                // --harbour-rdd field store: alias->name := e (FIELD-> / _FIELD-> mean
+                // the current work area), lowered to dbffieldput(name, alias, e).
+                let f = match &toks[3] { Tok::Ident(f) => f.clone(), _ => unreachable!() };
+                let alias = if id.eq_ignore_ascii_case("field") || id.eq_ignore_ascii_case("_field") { String::new() } else { id.to_ascii_uppercase() };
+                let e = parse_expr_tokens(toks[5..].to_vec(), n)?;
+                out.push(Stmt::CallStmt(n, Expr::Call("dbffieldput".to_string(), vec![Expr::Str(f), Expr::Str(alias), e])));
+                *i += 1;
+                continue;
             }
             Tok::Ident(id) => {
                 // DO CASE body terminators (oracles hk374-hk376): inside a
@@ -5171,6 +5195,20 @@ fn rewrite_field_expr(e: &mut Expr, declared: &std::collections::HashSet<String>
 }
 fn rewrite_field_stmts(stmts: &mut [Stmt], declared: &std::collections::HashSet<String>, shadows: &mut Vec<String>) {
     for s in stmts {
+        // --harbour-rdd: an assignment to a name the function never declares
+        // is NOT a field store in Harbour 3.2 (it assigns a memvar; measured
+        // by tests/dbf/harbour-rdd). Mark it so the checker can say so
+        // instead of the generic undefined-variable error.
+        if hb_rdd() {
+            if let Stmt::Assign(n, id, e) = s {
+                if !declared.contains(id.as_str()) && !shadows.iter().any(|x| x == id) {
+                    let mut e = std::mem::replace(e, Expr::Nil);
+                    rewrite_field_expr(&mut e, declared, shadows);
+                    *s = Stmt::CallStmt(*n, Expr::Call("dbffieldput".to_string(), vec![Expr::Str(id.clone()), Expr::Str("\u{1}bare".to_string()), e]));
+                    continue;
+                }
+            }
+        }
         match s {
             Stmt::Local(_, _, e) | Stmt::Static(_, _, e) | Stmt::Assign(_, _, e) | Stmt::MemvarSet(_, _, _, e)
             | Stmt::CallStmt(_, e) | Stmt::SendStmt(_, e) | Stmt::Break(_, e) | Stmt::HDel(_, _, e) | Stmt::HDelAt(_, _, e)
@@ -5548,6 +5586,34 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 if DBF_WINDOWS.with(|v|v.get()) {
                     let path=if id=="dbusearea" {args.get(2)} else if id=="ordlistadd" {args.first()} else {None};
                     if let Some(Expr::Str(p))=path {if !dbf_windows_literal_path(p) {return Err(format!("line {}: Windows DBF path requires bounded ASCII ordinary relative/drive-absolute form; NUL, devices, UNC, namespaces and long paths are unsupported",n));}}
+                }
+                if hb_rdd() && matches!(id.as_str(), "dbusearea"|"dbappend"|"dbcommit"|"dbdelete"|"dbrecall"|"dbgoto"|"fieldput"|"ordcreate"|"ordsetfocus"|"dbffieldput") {
+                    let scalar = |t: Ty| matches!(t, Ty::I64|Ty::F64|Ty::Str|Ty::StrOwn|Ty::Bool|Ty::Date|Ty::Dyn);
+                    let lit = |e: &Expr| matches!(e, Expr::Str(_));
+                    let why: Option<&str> = match id.as_str() {
+                        "dbusearea" => {
+                            if args.len()!=6 || !matches!(&args[0],Expr::Log(_)) || !matches!(&args[1],Expr::Str(v) if v.eq_ignore_ascii_case("DBFNTX")||v.eq_ignore_ascii_case("DBFCDX")) || !lit(&args[3]) || !matches!(&args[4],Expr::Log(_)) || !matches!(&args[5],Expr::Log(_)) {
+                                Some("dbUseArea(lNew, \"DBFCDX\"|\"DBFNTX\", cFile, \"ALIAS\", lShared, lReadonly) with literal flags, driver and alias")
+                            } else if !matches!(type_expr(&args[2],env,sigs,n)?,Ty::Str|Ty::StrOwn) { Some("a string filename") } else {
+                                if let Expr::Str(a)=&args[3] {DBF_ALIASES.with(|v|{let mut v=v.borrow_mut();let a=a.to_ascii_uppercase();if !a.is_empty()&&!v.contains(&a){v.push(a);}});}
+                                None
+                            }
+                        }
+                        "dbappend"|"dbcommit"|"dbdelete"|"dbrecall" => if args.is_empty() {None} else {Some("no arguments")},
+                        "dbgoto" => if args.len()==1 && matches!(type_expr(&args[0],env,sigs,n)?,Ty::I64) {None} else {Some("one integer record number")},
+                        "fieldput" => if args.len()==2 && matches!(type_expr(&args[0],env,sigs,n)?,Ty::I64) && scalar(type_expr(&args[1],env,sigs,n)?) {None} else {Some("FieldPut(nField, value) with an integer position and a C/N/D/L value")},
+                        "ordcreate" => if args.len()==3 && args.iter().all(lit) {None} else {Some("ordCreate(cBag, cTag, cKeyExpr) with literal strings")},
+                        "ordsetfocus" => if args.len()==1 && lit(&args[0]) {None} else {Some("ordSetFocus(cTag) with a literal tag name")},
+                        _ => {
+                            if matches!(&args[1], Expr::Str(m) if m=="\u{1}bare") {
+                                let f=match &args[0] {Expr::Str(f)=>f.to_ascii_uppercase(),_=>String::new()};
+                                return Err(format!("line {}: --harbour-rdd: `{} := ...` assigns an undeclared name; Harbour 3.2 stores that in a memvar, not in the field (measured), and hbc does not create memvars implicitly: write FIELD->{} := ... or ALIAS->{} := ... to store the field",n,f,f,f));
+                            }
+                            if args.len()==3 && lit(&args[0]) && lit(&args[1]) && scalar(type_expr(&args[2],env,sigs,n)?) {None} else {Some("a C/N/D/L value")}
+                        }
+                    };
+                    if let Some(w)=why {return Err(format!("line {}: --harbour-rdd: {} expects {}",n,id,w));}
+                    return Ok(ty);
                 }
                 if id=="dbusearea" {
                     if args.len()!=6 {return Err(format!("line {}: dbUseArea requires six explicit arguments: new, DBFNTX/DBFCDX, filename, alias, shared=.F., readonly literal",n));}
@@ -12720,7 +12786,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
         }
         Expr::Call(id,args) if dbf_result(id).is_some() => {
             match id.as_str() {
-                "dbusearea" => {
+                "dbusearea" if !hb_rdd() => {
                     cg_value(&args[2],env,sigs,strs,out,target);
                     out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rax, %rdi\n    mov %rdx, %rsi\n");
                     out.push_str(if matches!(args[0],Expr::Log(true)){"    mov $1, %edx\n"}else{"    xor %edx, %edx\n"});
@@ -12748,6 +12814,80 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                     out.push_str("    mov %rax, %rdi\n");
                     if id=="fieldget"{out.push_str("    lea hbc_strcpy(%rip), %rsi\n    call hrdbf_app_get\n");}
                     else{out.push_str("    call hrdbf_app_skip\n    mov $1, %eax\n    xor %edx, %edx\n");}
+                },
+                "dbusearea" if hb_rdd() => {
+                    let flag=|e: &Expr| matches!(e, Expr::Log(true)) as u64;
+                    let flags = flag(&args[0]) | ((matches!(&args[1],Expr::Str(v) if v.eq_ignore_ascii_case("DBFCDX")) as u64)<<1) | (flag(&args[4])<<2) | (flag(&args[5])<<3);
+                    let alias=match &args[3] {Expr::Str(a)=>a.clone(),_=>unreachable!("checked")};
+                    let ia=strs.len();strs.push(alias.clone());
+                    cg_value(&args[2],env,sigs,strs,out,target);
+                    out.push_str(&format!("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rax, %rdi\n    mov %rdx, %rsi\n    mov ${}, %edx\n    lea .Lstr{}(%rip), %rcx\n    mov ${}, %r8d\n    call hrdbf_app_open6\n", flags, ia, alias.len()));
+                    if expr_ty(&args[2],env,sigs)==Ty::StrOwn && !matches!(&args[2],Expr::Var(_)) {out.push_str("    mov (%rsp), %rdi\n    call hbc_freestr\n");}
+                    out.push_str("    add $16, %rsp\n    mov $1, %eax\n    xor %edx, %edx\n");
+                },
+                "dbappend" | "dbcommit" | "dbdelete" | "dbrecall" => {
+                    out.push_str(&format!("    call hrdbf_app_{}\n    mov $1, %eax\n    xor %edx, %edx\n", match id.as_str() {"dbappend"=>"append","dbcommit"=>"commit","dbdelete"=>"delete",_=>"recall"}));
+                },
+                "dbgoto" => {
+                    cg_value(&args[0],env,sigs,strs,out,target);
+                    out.push_str("    mov %rax, %rdi\n    call hrdbf_app_goto\n    mov $1, %eax\n    xor %edx, %edx\n");
+                },
+                "fieldput" => {
+                    cg_value(&args[0],env,sigs,strs,out,target);
+                    out.push_str("    sub $32, %rsp\n    mov %rax, 16(%rsp)\n");
+                    cg_data_value(&args[1],env,sigs,strs,out,target);
+                    out.push_str("    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n    mov 16(%rsp), %rdi\n    mov %rax, %rsi\n    call hrdbf_app_fieldput\n");
+                    cg_dyn_stack_release(out,0,false);
+                    out.push_str("    add $32, %rsp\n    mov $1, %eax\n    xor %edx, %edx\n");
+                },
+                "ordcreate" => {
+                    let mut ix=Vec::new();
+                    for a in args.iter() { let v=match a {Expr::Str(v)=>v.clone(),_=>unreachable!("checked")}; ix.push((strs.len(),v.len())); strs.push(v); }
+                    out.push_str(&format!("    lea .Lstr{}(%rip), %rdi\n    mov ${}, %esi\n    lea .Lstr{}(%rip), %rdx\n    mov ${}, %ecx\n    lea .Lstr{}(%rip), %r8\n    mov ${}, %r9d\n    call hrdbf_app_ordcreate\n    mov $1, %eax\n    xor %edx, %edx\n", ix[0].0, ix[0].1, ix[1].0, ix[1].1, ix[2].0, ix[2].1));
+                },
+                "ordsetfocus" => {
+                    let v=match &args[0] {Expr::Str(v)=>v.clone(),_=>unreachable!("checked")};
+                    let it=strs.len();strs.push(v.clone());
+                    out.push_str(&format!("    lea .Lstr{}(%rip), %rdi\n    mov ${}, %esi\n    lea hbc_strcpy(%rip), %rdx\n    call hrdbf_app_ordsetfocus\n", it, v.len()));
+                },
+                "dbffieldput" => {
+                    // ALIAS->NAME := e / FIELD->NAME := e (flag only): the value as an
+                    // owned Dyn cell, the field by name like dbffieldref, then
+                    // the RDD's direct field store.
+                    let name=match &args[0] {Expr::Str(f)=>f.clone(),_=>unreachable!("checked")};
+                    let alias=match &args[1] {Expr::Str(a)=>a.to_ascii_uppercase(),_=>unreachable!("checked")};
+                    let k=DBF_FIELD_SITE.with(|c|{let k=c.get();c.set(k+1);k});
+                    let alias_msg=format!("Error BASE/1002  Alias does not exist: {}\n",alias);
+                    let field_msg=format!("Error BASE/1003  Variable does not exist: {}\n",name.to_ascii_uppercase());
+                    let (ia,ifd,iname,ial)=(strs.len(),strs.len()+1,strs.len()+2,strs.len()+3);
+                    strs.push(alias_msg.clone());strs.push(field_msg.clone());strs.push(name.clone());strs.push(alias.clone());
+                    cg_data_value(&args[2],env,sigs,strs,out,target);
+                    out.push_str("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n    movq $0, 16(%rsp)\n");
+                    if !alias.is_empty() {
+                        out.push_str(&format!("    lea .Lstr{}(%rip), %rdi\n    mov ${}, %esi\n    call hrdbf_app_alias_select\n    test %rax, %rax\n    jnz .Ldbfput_alias{}\n    lea .Lstr{}(%rip), %rdi\n    mov ${}, %esi\n    call hrm_fail\n.Ldbfput_alias{}:\n    mov %rax, 16(%rsp)\n", ial, alias.len(), k, ia, alias_msg.len(), k));
+                    }
+                    out.push_str(&format!("    lea .Lstr{}(%rip), %rdi\n    mov ${}, %esi\n    call hrdbf_app_fieldpos\n    test %rax, %rax\n    jg .Ldbfput_ok{}\n    lea .Lstr{}(%rip), %rdi\n    mov ${}, %esi\n    call hrm_fail\n.Ldbfput_ok{}:\n    mov %rax, %rdi\n    mov (%rsp), %rsi\n    mov 8(%rsp), %rdx\n    call hrdbf_app_put\n", iname, name.len(), k, ifd, field_msg.len(), k));
+                    if !alias.is_empty() { out.push_str("    mov 16(%rsp), %rdi\n    call hrdbf_app_area_restore\n"); }
+                    cg_dyn_stack_release(out,0,false);
+                    out.push_str("    add $32, %rsp\n    mov $1, %eax\n    xor %edx, %edx\n");
+                },
+                "dbffieldref" if hb_rdd() => {
+                    // Same contract as the default lowering below, with real
+                    // work areas: alias-> selects that area for the read.
+                    let name=match &args[0] {Expr::Str(f)=>f.clone(),_=>unreachable!("checked")};
+                    let alias=match args.get(1) {Some(Expr::Str(a))=>a.to_ascii_uppercase(),_=>String::new()};
+                    let alias_msg=format!("Error BASE/1002  Alias does not exist: {}\n",alias);
+                    let field_msg=format!("Error BASE/1003  Variable does not exist: {}\n",name.to_ascii_uppercase());
+                    let (ia,ifd,iname,ial)=(strs.len(),strs.len()+1,strs.len()+2,strs.len()+3);
+                    strs.push(alias_msg.clone());strs.push(field_msg.clone());strs.push(name.clone());strs.push(alias.clone());
+                    let k=DBF_FIELD_SITE.with(|c|{let k=c.get();c.set(k+1);k});
+                    out.push_str("    sub $32, %rsp\n");
+                    if !alias.is_empty() {
+                        out.push_str(&format!("    lea .Lstr{}(%rip), %rdi\n    mov ${}, %esi\n    call hrdbf_app_alias_select\n    test %rax, %rax\n    jnz .Ldbffield_alias{}\n    lea .Lstr{}(%rip), %rdi\n    mov ${}, %esi\n    call hrm_fail\n.Ldbffield_alias{}:\n    mov %rax, (%rsp)\n", ial, alias.len(), k, ia, alias_msg.len(), k));
+                    }
+                    out.push_str(&format!("    lea .Lstr{}(%rip), %rdi\n    mov ${}, %esi\n    call hrdbf_app_fieldpos\n    test %rax, %rax\n    jg .Ldbffield_ok{}\n    lea .Lstr{}(%rip), %rdi\n    mov ${}, %esi\n    call hrm_fail\n.Ldbffield_ok{}:\n    mov %rax, %rdi\n    lea hbc_strcpy(%rip), %rsi\n    call hrdbf_app_get\n", iname, name.len(), k, ifd, field_msg.len(), k));
+                    if !alias.is_empty() { out.push_str("    mov %rax, 8(%rsp)\n    mov %rdx, 16(%rsp)\n    mov (%rsp), %rdi\n    call hrdbf_app_area_restore\n    mov 8(%rsp), %rax\n    mov 16(%rsp), %rdx\n"); }
+                    out.push_str("    add $32, %rsp\n");
                 },
                 "dbffieldref" => {
                     // Field by name (bare identifier, alias->name, FIELD->name):
@@ -25349,11 +25489,21 @@ hbc_dbf_eprint:
     ret
 "#);
             }
+            if hb_rdd() {
+                // runtime/hrharbour_rdd.c serves the seam; it reports
+                // Harbour's run-time errors through hrm_fail.
+                if !MACRO_CONTEXT.with(|c|c.get()) {result.push_str(MACRO_FAIL_WINDOWS);}
+            } else {
             result.push_str(include_str!("../generated/hrdbf_windows.s"));
             if result.contains("call hrdbf_app_fieldpos") || (result.contains("call hrm_fail") && !MACRO_CONTEXT.with(|c|c.get())) {
                 result.push_str(include_str!("../generated/hrdbf_fieldpos.s"));
                 if !MACRO_CONTEXT.with(|c|c.get()) {result.push_str(MACRO_FAIL_WINDOWS);}
             }
+            }
+        }
+        if hb_rdd() {
+            // Every exit leaves through the VM so the RDD closes and flushes.
+            result = result.replace("    call ExitProcess\n", "    call hr_hb_exitprocess\n");
         }
         finalize_tag_kind_accessors(result,active)
     };
@@ -30259,6 +30409,8 @@ fn main() {
     let mut no_vas = false;
     let mut external_as = false;
     let mut llvm_trace = true;
+    let mut harbour_dir: Option<String> = None;
+    let mut harbour_dll = false;
     let mut ai = 1;
     while ai < args.len() {
         let a = &args[ai];
@@ -30268,6 +30420,9 @@ fn main() {
             "--target=macho" => { target = Target::Linux; macho = true; macho_arm64 = false; },
             "--target=macho-arm64" => { target = Target::Linux; macho = true; macho_arm64 = true; },
             "--external-as" => external_as = true,
+            "--harbour-rdd" => HB_RDD.with(|v| v.set(true)),
+            "--harbour-dll" => harbour_dll = true,
+            _ if a.starts_with("--harbour-dir=") => harbour_dir = Some(a["--harbour-dir=".len()..].to_string()),
             "--instrument" => instrument = true,
             "--no-escape-analysis" => no_escape = true,
             "--no-arena" => no_arena = true,
@@ -30282,7 +30437,8 @@ fn main() {
   --target overrides it; macho-arm64 currently rejects (native ARM64 backend pending)
   omitted output uses the input stem in the current directory (.exe on Windows target), preserving case
   output ending in .s writes assembly; any other name writes the selected target executable directly
-  flag --external-as keeps the external as/ld path; --instrument, --no-arena, --no-prune, --no-escape-analysis, --experimental-llvm[-no-trace]"); process::exit(2); }
+  flag --external-as keeps the external as/ld path; --instrument, --no-arena, --no-prune, --no-escape-analysis, --experimental-llvm[-no-trace]
+  --harbour-rdd links Harbour 3.2's own VM + RDD for DBF access (Windows; needs MinGW gcc and --harbour-dir=<install> or HB_DIR; --harbour-dll links harbour-32-x64.dll)"); process::exit(2); }
             _ => pos.push(a),
         }
         ai += 1;
@@ -30293,7 +30449,8 @@ fn main() {
   --target overrides it; macho-arm64 currently rejects (native ARM64 backend pending)
   omitted output uses the input stem in the current directory (.exe on Windows target), preserving case
   output ending in .s writes assembly; any other name writes the selected target executable directly
-  flag --external-as keeps the external as/ld path; --instrument, --no-arena, --no-prune, --no-escape-analysis, --experimental-llvm[-no-trace]");
+  flag --external-as keeps the external as/ld path; --instrument, --no-arena, --no-prune, --no-escape-analysis, --experimental-llvm[-no-trace]
+  --harbour-rdd links Harbour 3.2's own VM + RDD for DBF access (Windows; needs MinGW gcc and --harbour-dir=<install> or HB_DIR; --harbour-dll links harbour-32-x64.dll)");
         process::exit(2);
     }
     // Keep argv strings unchanged. The optional derived output owns storage
@@ -30319,6 +30476,11 @@ fn main() {
     DBF_NATIVE.with(|v| v.set(!macho && !llvm));
     DBF_WINDOWS.with(|v| v.set(matches!(target, Target::Windows)));
     if llvm && instrument { eprintln!("error: LLVM scalar: --instrument is not supported; registry checks must not be silently omitted"); process::exit(1); }
+    if hb_rdd() && (!matches!(target, Target::Windows) || llvm || macho || external_as) {
+        eprintln!("error: --harbour-rdd supports only --target=windows with the ordinary native backend (no LLVM, Mach-O or --external-as)");
+        process::exit(1);
+    }
+    if !hb_rdd() && (harbour_dir.is_some() || harbour_dll) { eprintln!("error: --harbour-dir/--harbour-dll require --harbour-rdd"); process::exit(1); }
     // Preprocessing runs automatically on every compile. Errors cite the
     // line in the ORIGINAL file for the main input; lines injected by an
     // #include report against that include file.
@@ -30890,8 +31052,19 @@ hbc_aclone_alloc:
     });
     // Drop runtime helpers the program never reaches (src/prune.rs).
     let out = if no_prune { out } else { prune::prune(&out) };
+    // runtime/hrharbour_rdd.c (a separate object) reports Harbour errors
+    // through hrm_fail: keep the symbol exported after pruning.
+    let out = if hb_rdd() { format!("{}
+    .globl hrm_fail
+", out) } else { out };
     let out = if macho { hmacho::darwin_asm(&out).unwrap_or_else(|e| {eprintln!("error: {}",e);process::exit(1);}) } else {out};
 
+    if hb_rdd() && THREADS.with(|c| c.get()) { eprintln!("error: --harbour-rdd links Harbour's single-thread VM; threads are not supported with it"); process::exit(1); }
+    if hb_rdd() && !(explicit_output && pos[1].ends_with(".s")) {
+        hbrdd::link(&out, pos[1], harbour_dir.as_deref(), harbour_dll).unwrap_or_else(|e| { eprintln!("error: --harbour-rdd: {}", e); process::exit(1); });
+        println!("{} -> {} ({} functions, Harbour RDD {})", pos[0], pos[1], funcs.len(), if harbour_dll {"DLL"} else {"static"});
+        return;
+    }
     if explicit_output && pos[1].ends_with(".s") {
         fs::write(pos[1], out)
             .unwrap_or_else(|e| { eprintln!("cannot write {}: {}", pos[1], e); process::exit(2); });
