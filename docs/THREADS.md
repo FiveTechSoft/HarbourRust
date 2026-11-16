@@ -21,8 +21,14 @@ hb_threadWaitForAll()                 // block until every worker finishes
 ```
 
 - `hb_threadStart`'s first argument is a compile-time-known function
-  reference `@f()`. Harbour also accepts codeblocks and name strings:
-  both are a named compile-time rejection in this increment.
+  reference `@f()`, the name string of a function of the program
+  (`"Worker"`), or a codeblock that only uses its own parameters
+  (`{|n| Worker(n)}`, `{|| Log(1), Worker(2)}`). Such a block is lifted at
+  compile time into a function of its parameters (its frames show as
+  `HBTHREADBLOCK__<n>` where Harbour shows `(b)MAIN`) and started like
+  `@f()`. A block that reads or writes enclosing locals, uses Self or
+  nests a block remains a named compile-time rejection, as do name
+  strings that are not functions of the program.
 - Arguments marshal BY VALUE: strings are deep-copied, objects are
   retained (atomic reference count). Admitted argument values: integers,
   logicals, strings, objects and dynamic values holding those. Floats,

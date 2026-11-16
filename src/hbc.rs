@@ -1703,6 +1703,108 @@ fn dbf_result(id: &str) -> Option<Ty> {
         "recno" | "lastrec" => Some(Ty::I64), "bof" | "eof" | "deleted" | "dbusearea" | "ordlistadd" | "dbseek" | "found" => Some(Ty::Bool), _ => None }
 }
 
+// Generic post-order visitor over every expression of a statement list
+// (children first, then the node itself).
+fn visit_expr_mut(e: &mut Expr, ln: usize, f: &mut dyn FnMut(&mut Expr, usize)) {
+    match e {
+        Expr::Seq(v) | Expr::ArrLit(v) | Expr::Call(_, v) => for x in v.iter_mut() { visit_expr_mut(x, ln, f); },
+        Expr::Bin(_, a, b) | Expr::Cmp(_, a, b) | Expr::LAnd(a, b) | Expr::LOr(a, b) => { visit_expr_mut(a, ln, f); visit_expr_mut(b, ln, f); }
+        Expr::Index(_, a) | Expr::Set(_, a) | Expr::LNot(a) => visit_expr_mut(a, ln, f),
+        Expr::Index2(_, a, b) | Expr::IdxCompound(_, a, _, b) => { visit_expr_mut(a, ln, f); visit_expr_mut(b, ln, f); }
+        Expr::Index3(_, a, b, c) => { visit_expr_mut(a, ln, f); visit_expr_mut(b, ln, f); visit_expr_mut(c, ln, f); }
+        Expr::Index4(_, a, b, c, d) => { visit_expr_mut(a, ln, f); visit_expr_mut(b, ln, f); visit_expr_mut(c, ln, f); visit_expr_mut(d, ln, f); }
+        Expr::Send(r, _, args) => { visit_expr_mut(r, ln, f); for x in args.iter_mut() { visit_expr_mut(x, ln, f); } }
+        Expr::HashLit(kv) => for (k, v) in kv.iter_mut() { visit_expr_mut(k, ln, f); visit_expr_mut(v, ln, f); },
+        Expr::BlockLit(_, _, body) => for x in body.iter_mut() { visit_expr_mut(x, ln, f); },
+        _ => {}
+    }
+    f(e, ln);
+}
+fn visit_stmts_mut(ss: &mut [Stmt], f: &mut dyn FnMut(&mut Expr, usize)) {
+    for s in ss.iter_mut() {
+        let ln = stmt_line(s);
+        match s {
+            Stmt::Local(_, _, e) | Stmt::Static(_, _, e) | Stmt::Assign(_, _, e) | Stmt::MemvarSet(_, _, _, e)
+            | Stmt::HDel(_, _, e) | Stmt::HDelAt(_, _, e) | Stmt::HFill(_, _, e) | Stmt::HSetCaseMatch(_, _, e)
+            | Stmt::SelfSet(_, _, e) | Stmt::SendStmt(_, e) | Stmt::CallStmt(_, e) | Stmt::AIns(_, _, e) | Stmt::ADel(_, _, e)
+            | Stmt::AAdd(_, _, e) | Stmt::ASize(_, _, e) | Stmt::Break(_, e) => visit_expr_mut(e, ln, f),
+            Stmt::Print(_, v, _) => for e in v.iter_mut() { visit_expr_mut(e, ln, f); },
+            Stmt::Ret(_, Some(e)) => visit_expr_mut(e, ln, f),
+            Stmt::If(_, c, a, b) => { visit_expr_mut(c, ln, f); visit_stmts_mut(a, f); visit_stmts_mut(b, f); }
+            Stmt::While(_, c, b) => { visit_expr_mut(c, ln, f); visit_stmts_mut(b, f); }
+            Stmt::HCopy(_, _, _, a, b) => { if let Some(a) = a { visit_expr_mut(a, ln, f); } if let Some(b) = b { visit_expr_mut(b, ln, f); } }
+            Stmt::HSet(_, _, a, b) | Stmt::ArrSet(_, _, a, b) | Stmt::AAddSub(_, _, a, b) | Stmt::ASizeSub(_, _, a, b) => { visit_expr_mut(a, ln, f); visit_expr_mut(b, ln, f); }
+            Stmt::SendSet(_, r, _, v) => { visit_expr_mut(r, ln, f); visit_expr_mut(v, ln, f); }
+            Stmt::ArrSet2(_, _, a, b, c) | Stmt::AAddSub2(_, _, a, b, c) | Stmt::ASizeSub2(_, _, a, b, c) => { visit_expr_mut(a, ln, f); visit_expr_mut(b, ln, f); visit_expr_mut(c, ln, f); }
+            Stmt::ArrSet3(_, _, a, b, c, d) | Stmt::AAddSub3(_, _, a, b, c, d) | Stmt::ASizeSub3(_, _, a, b, c, d) => { visit_expr_mut(a, ln, f); visit_expr_mut(b, ln, f); visit_expr_mut(c, ln, f); visit_expr_mut(d, ln, f); }
+            Stmt::ArrSet4(_, _, a, b, c, d, g) => { visit_expr_mut(a, ln, f); visit_expr_mut(b, ln, f); visit_expr_mut(c, ln, f); visit_expr_mut(d, ln, f); visit_expr_mut(g, ln, f); }
+            Stmt::AFill(_, _, v, a, b) => { visit_expr_mut(v, ln, f); if let Some(a) = a { visit_expr_mut(a, ln, f); } if let Some(b) = b { visit_expr_mut(b, ln, f); } }
+            Stmt::For(_, _, a, b, _, body) => { visit_expr_mut(a, ln, f); visit_expr_mut(b, ln, f); visit_stmts_mut(body, f); }
+            Stmt::ForEach(_, _, c, body) => { visit_expr_mut(c, ln, f); visit_stmts_mut(body, f); }
+            Stmt::Switch(_, sel, arms, other) => { visit_expr_mut(sel, ln, f); for (_, _, b) in arms.iter_mut() { visit_stmts_mut(b, f); } if let Some((_, b)) = other { visit_stmts_mut(b, f); } }
+            Stmt::Try(_, b, c, fin) => { visit_stmts_mut(b, f); if let Some((_, cb)) = c { visit_stmts_mut(cb, f); } if let Some(fb) = fin { visit_stmts_mut(fb, f); } }
+            _ => {}
+        }
+    }
+}
+// Every variable name an expression touches (reads, writes, array roots,
+// by-reference), or None when it needs an enclosing context it cannot
+// carry to another function (Self, nested codeblocks).
+fn expr_names(e: &Expr, out: &mut Vec<String>) -> bool {
+    let mut push = |n: &String, out: &mut Vec<String>| if !out.contains(n) { out.push(n.clone()); };
+    match e {
+        Expr::Var(n) | Expr::Inc(n, _, _) | Expr::ByRef(n) => { push(n, out); true }
+        Expr::Set(n, a) | Expr::Index(n, a) => { push(n, out); expr_names(a, out) }
+        Expr::Index2(n, a, b) | Expr::IdxCompound(n, a, _, b) => { push(n, out); expr_names(a, out) && expr_names(b, out) }
+        Expr::Index3(n, a, b, c) => { push(n, out); expr_names(a, out) && expr_names(b, out) && expr_names(c, out) }
+        Expr::Index4(n, a, b, c, d) => { push(n, out); expr_names(a, out) && expr_names(b, out) && expr_names(c, out) && expr_names(d, out) }
+        Expr::Seq(v) | Expr::ArrLit(v) | Expr::Call(_, v) => v.iter().all(|x| expr_names(x, out)),
+        Expr::Bin(_, a, b) | Expr::Cmp(_, a, b) | Expr::LAnd(a, b) | Expr::LOr(a, b) => expr_names(a, out) && expr_names(b, out),
+        Expr::LNot(a) => expr_names(a, out),
+        Expr::Send(r, _, args) => expr_names(r, out) && args.iter().all(|x| expr_names(x, out)),
+        Expr::HashLit(kv) => kv.iter().all(|(k, v)| expr_names(k, out) && expr_names(v, out)),
+        Expr::BlockLit(..) | Expr::SelfObj | Expr::SelfGet(_) => false,
+        _ => true,
+    }
+}
+// hb_threadStart( {|p1..pn| e1, .., ek}, args ) and hb_threadStart( "name", args ):
+// a codeblock that captures nothing but its own parameters is the same as
+// a function of those parameters, so it is lifted into one and started as
+// `@f()`; a name string of a function of this program becomes `@name()`.
+// Blocks that read or write enclosing locals stay a named rejection
+// (sharing an activation's locals across threads needs its own design).
+fn lift_thread_blocks(funcs: &mut Vec<Func>) {
+    let names: Vec<String> = funcs.iter().map(|f| f.name.clone()).collect();
+    let mut lifted: Vec<Func> = Vec::new();
+    for f in funcs.iter_mut() {
+        let mut visit = |e: &mut Expr, ln: usize| {
+            let Expr::Call(id, args) = e else { return };
+            if !id.eq_ignore_ascii_case("hb_threadstart") || args.is_empty() { return; }
+            match &args[0] {
+                Expr::Str(n) => {
+                    let n = n.to_ascii_lowercase();
+                    if names.contains(&n) { args[0] = Expr::FuncRef(n); }
+                }
+                Expr::BlockLit(_, params, body) => {
+                    let line = &ln;
+                    let mut used = Vec::new();
+                    if body.is_empty() || !body.iter().all(|x| expr_names(x, &mut used)) { return; }
+                    if used.iter().any(|u| !params.iter().any(|p| p.eq_ignore_ascii_case(u))) { return; }
+                    if !body[..body.len() - 1].iter().all(|x| matches!(x, Expr::Call(..))) { return; }
+                    let name = format!("hbthreadblock__{}", names.len() + lifted.len());
+                    let mut stmts: Vec<Stmt> = body[..body.len() - 1].iter().map(|x| Stmt::CallStmt(*line, x.clone())).collect();
+                    stmts.push(Stmt::Ret(*line, Some(body[body.len() - 1].clone())));
+                    lifted.push(Func { init: false, name: name.clone(), params: params.clone(), ret: None, stmts, dyn_names: std::collections::HashSet::new() });
+                    args[0] = Expr::FuncRef(name);
+                }
+                _ => {}
+            }
+        };
+        visit_stmts_mut(&mut f.stmts, &mut visit);
+    }
+    funcs.extend(lifted);
+}
+
 fn is_builtin(id: &str, name: &str) -> bool { id.eq_ignore_ascii_case(name) }
 
 // Output calls share NIL result and existing value/ownership checks.
@@ -6521,7 +6623,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 }
                 let fname = match &args[0] {
                     Expr::FuncRef(f) => f.clone(),
-                    _ => return Err(format!("line {}: `hb_threadStart`'s first argument must be a `@f()` function reference in this increment (Harbour also accepts codeblocks and name strings)", n)),
+                    _ => return Err(format!("line {}: `hb_threadStart`'s first argument must be `@f()`, the name of a function of this program, or a codeblock that only uses its own parameters (a block that captures enclosing locals is not in this increment)", n)),
                 };
                 if fname.eq_ignore_ascii_case("main") {
                     return Err(format!("line {}: `hb_threadStart` cannot start the program's Main on a thread", n));
@@ -30325,6 +30427,7 @@ fn main() {
         funcs.push(f);
     }
     funcs.extend(synth_new_funcs);
+    lift_thread_blocks(&mut funcs);
 
     // DBF field-name access (D1b): bare undeclared identifiers in a
     // DBF-using program lower to dbffieldref calls before analysis.
