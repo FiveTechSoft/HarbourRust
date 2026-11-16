@@ -1,4 +1,4 @@
-STATIC n := {1,2}
+STATIC a := {1,2,3}
 PROCEDURE Main()
-? n
+? a
 RETURN

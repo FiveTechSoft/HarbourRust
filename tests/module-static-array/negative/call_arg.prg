@@ -1,0 +1,6 @@
+STATIC a := {1,2,3}
+PROCEDURE Main()
+? Show(a)
+RETURN
+FUNCTION Show(x)
+RETURN x

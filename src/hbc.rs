@@ -3566,8 +3566,9 @@ fn parse(src: &str) -> Result<Prog, String> {
                 parse_stmts(&[(n, declaration)], &mut 0, &mut parsed, 0)?;
                 for st in parsed {
                     if let Stmt::Local(line, name, value) = st {
-                        if !matches!(&value, Expr::Log(_) | Expr::Str(_)) && !matches!(&value, Expr::Int(v) if v.parse::<i64>().is_ok()) {
-                            return Err(format!("line {}: module STATIC requires a folded i64, logical or string constant initializer; NIL, Date, arrays and hashes are not in this increment", line));
+                        let flat_i64_array = matches!(&value, Expr::ArrLit(es) if !es.is_empty() && es.iter().all(|e| matches!(e, Expr::Int(v) if v.parse::<i64>().is_ok())));
+                        if !matches!(&value, Expr::Log(_) | Expr::Str(_)) && !matches!(&value, Expr::Int(v) if v.parse::<i64>().is_ok()) && !flat_i64_array {
+                            return Err(format!("line {}: module STATIC requires a folded i64, logical, string or flat integer-array constant initializer; NIL, Date, hashes and nested, mixed or empty arrays are not in this increment", line));
                         }
                         if module_slots.iter().any(|(_, id, _)| id == &name) {
                             return Err(format!("line {}: duplicate module STATIC `{}`", line, name));
@@ -16491,7 +16492,12 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             // opens an interactive error dialog (probes a1/a2) - a
             // registered failure-mode difference, same error condition.
             out.push_str(&format!("    cmp $1, %rax\n    jl 81f\n    cmp ${}, %rax\n    jg 81f\n", k));
-            out.push_str(&format!("    lea -{}(%rbp), %r11\n    mov -8(%r11,%rax,8), %rax\n    jmp 82f\n", v.off));
+            // A module array reads its cells from the shared .data label;
+            // a frame-resident fixed array keeps its rbp base.
+            match module_static::array_base(id) {
+                Some(label) => out.push_str(&format!("    lea {}(%rip), %r11\n    mov -8(%r11,%rax,8), %rax\n    jmp 82f\n", label)),
+                None => out.push_str(&format!("    lea -{}(%rbp), %r11\n    mov -8(%r11,%rax,8), %rax\n    jmp 82f\n", v.off)),
+            }
             out.push_str("81:\n    call hbc_bound_error\n82:\n");
         }
         Expr::Index2(id, ie, ie2) => {
@@ -17977,7 +17983,15 @@ fn layout_locals(stmts: &[Stmt], env: &mut Vec<CgLocal>, sigs: &[Sig], frame: &m
             }
             Stmt::Static(_, id, _) => {
                 *frame += 8;
-                env.push(CgLocal { name: id.clone(), ty: if module_static::current(id) == Some(Ty::StrOwn) {Ty::RefStrOwn} else if static_dyn(id) {Ty::RefDyn}else{Ty::RefI64}, off: *frame });
+                // A module array binds as its fixed arity; the frame slot is
+                // reserved but unused, since every cell route goes through
+                // the shared .data label (module_static::array_base).
+                let ty = match module_static::current(id) {
+                    Some(Ty::Arr(n)) => Ty::Arr(n),
+                    Some(Ty::StrOwn) => Ty::RefStrOwn,
+                    _ => if static_dyn(id) {Ty::RefDyn}else{Ty::RefI64},
+                };
+                env.push(CgLocal { name: id.clone(), ty, off: *frame });
             }
             Stmt::Local(_, id, e) => {
                 let mut t = expr_ty(e, env, sigs);
@@ -19210,8 +19224,16 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 *frame += 8;
                 let off = *frame;
                 let owner = CUR_FN.with(|c| c.borrow().clone());
-                out.push_str(&format!("    lea {}(%rip), %rax\n    mov %rax, -{}(%rbp)\n", module_static::storage(&owner, id), off));
-                env.push(CgLocal { name: id.clone(), ty: if module_static::current(id) == Some(Ty::StrOwn) {Ty::RefStrOwn} else if static_dyn(id) {Ty::RefDyn}else{Ty::RefI64}, off });
+                let arr_ty = module_static::current(id);
+                if !matches!(arr_ty, Some(Ty::Arr(_))) {
+                    out.push_str(&format!("    lea {}(%rip), %rax\n    mov %rax, -{}(%rbp)\n", module_static::storage(&owner, id), off));
+                }
+                let ty = match arr_ty {
+                    Some(Ty::Arr(n)) => Ty::Arr(n),
+                    Some(Ty::StrOwn) => Ty::RefStrOwn,
+                    _ => if static_dyn(id) {Ty::RefDyn}else{Ty::RefI64},
+                };
+                env.push(CgLocal { name: id.clone(), ty, off });
             }
             Stmt::Local(_, id, e) => {
                 let mut t = expr_ty(e, env, sigs);
@@ -21664,7 +21686,10 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 cg_expr(ie, env, sigs, strs, out, target);
                 out.push_str("    mov %rax, %rcx\n    mov (%rsp), %rax\n    add $16, %rsp\n");
                 out.push_str(&format!("    cmp $1, %rcx\n    jl 83f\n    cmp ${}, %rcx\n    jg 83f\n", k));
-                out.push_str(&format!("    lea -{}(%rbp), %r11\n    mov %rax, -8(%r11,%rcx,8)\n    jmp 84f\n", v.off));
+                match module_static::array_base(id) {
+                    Some(label) => out.push_str(&format!("    lea {}(%rip), %r11\n    mov %rax, -8(%r11,%rcx,8)\n    jmp 84f\n", label)),
+                    None => out.push_str(&format!("    lea -{}(%rbp), %r11\n    mov %rax, -8(%r11,%rcx,8)\n    jmp 84f\n", v.off)),
+                }
                 out.push_str("83:\n    call hbc_bound_error\n84:\n");
                 }
             }
@@ -21935,6 +21960,9 @@ fn cg_func(f: &Func, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, tar
                     Expr::Nil => "1, 0".to_string(),
                     Expr::Log(v) => format!("{}, 0", if *v {1}else{0}),
                     Expr::Str(_) => "0, 0".to_string(),
+                    // Persistent fixed array: one .quad per i64 cell,
+                    // constants only, no init hook and no cleanup.
+                    Expr::ArrLit(es) => es.iter().map(|e| match e { Expr::Int(v) => v.clone(), _ => unreachable!("checked STATIC") }).collect::<Vec<_>>().join(", "),
                     _ => unreachable!("checked STATIC"),
                 };
                 let storage = module_static::storage(&f.name, id);

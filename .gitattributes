@@ -52,3 +52,5 @@ tests/module-static/expected/** -text
 
 # Raw target bytes from the persistent-string oracle.
 tests/module-static-owned/expected/** -text
+
+tests/module-static-array/expected/** -text

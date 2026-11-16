@@ -32,6 +32,19 @@ pub fn current(name: &str) -> Option<Ty> {
 pub fn string_value(e: &Expr) -> bool {
     matches!(e, Expr::Var(v) if current(v) == Some(Ty::StrOwn))
 }
+// Absolute .data base label when `name` binds to the persistent module array
+// in the function under codegen; None for every other local. Cell reads and
+// writes route through this label instead of a frame slot, so every function
+// sharing the binding aliases the same storage, as Harbour does.
+pub fn array_base(name: &str) -> Option<String> {
+    crate::CUR_FN.with(|f| {
+        let owner = f.borrow().clone();
+        match kind(&owner, name) {
+            Some(Ty::Arr(_)) => Some(storage(&owner, name)),
+            _ => None,
+        }
+    })
+}
 
 pub fn first_emission(label: &str) -> bool {
     EMITTED.with(|v| v.borrow_mut().insert(label.to_owned()))
@@ -173,6 +186,74 @@ fn check_payload_uses(f: &Func, name: &str, ty: Ty) -> Result<(), String> {
     Ok(())
 }
 
+// Persistent fixed arrays admit cell reads, cell writes, len() and
+// cell-by-value call arguments only. Every whole-array route (assignment
+// copies, containers, calls, blocks, sends, @ borrows, structural AAdd/
+// AIns/ADel/ASize/AFill ops, multi-level indexes, compound cell ops) would
+// either copy where Harbour aliases or escape the fixed i64 storage model,
+// so the guard rejects it by name. The expression classifier is exhaustive
+// over expression forms without a wildcard, mirroring may_mutate/expr
+// above: a future form stops the build until it is classified. Statements
+// keep the shared mention-fallback accepted for the owned-string guard.
+fn check_array_uses(f: &Func, name: &str) -> Result<(), String> {
+    fn expr(e: &Expr, name: &str) -> bool {
+        match e {
+            // Cell read: the index may itself read other cells; recursion
+            // keeps a mutating call or a nested whole-array use rejected.
+            Expr::Index(_, i) => expr(i, name),
+            // Multi-level indexing on the module array is out of this
+            // increment; on any other array only the sub-expressions count.
+            Expr::Index2(id, a, b) => id != name && expr(a, name) && expr(b, name),
+            Expr::Index3(id, a, b, c) => id != name && expr(a, name) && expr(b, name) && expr(c, name),
+            Expr::Index4(id, a, b, c, d) => id != name && expr(a, name) && expr(b, name) && expr(c, name) && expr(d, name),
+            // No whole-array value (Harbour aliases, hbc would copy) and
+            // no @ borrow of the module array, on any route.
+            Expr::Var(v) | Expr::ByRef(v) => v != name,
+            Expr::Set(v, e) => v != name && expr(e, name),
+            Expr::Inc(v, ..) => v != name,
+            Expr::IdxCompound(v, i, _, r) => v != name && expr(i, name) && expr(r, name),
+            Expr::Call(id, es) => {
+                // len(a) is the single whole-array call form admitted: it
+                // lowers to the fixed arity constant without a value read.
+                if crate::is_builtin(id, "len") && es.len() == 1 {
+                    return matches!(&es[0], Expr::Var(v) if v == name) || !crate::expr_mentions(&es[0], name);
+                }
+                es.iter().all(|e| expr(e, name))
+            }
+            Expr::Bin(_, a, b) | Expr::Cmp(_, a, b) | Expr::LAnd(a, b) | Expr::LOr(a, b) => expr(a, name) && expr(b, name),
+            Expr::LNot(e) => expr(e, name),
+            Expr::Seq(es) => es.iter().all(|e| expr(e, name)),
+            Expr::ArrLit(es) => !es.iter().any(|e| crate::expr_mentions(e, name)),
+            Expr::HashLit(ps) => !ps.iter().any(|(k, v)| crate::expr_mentions(k, name) || crate::expr_mentions(v, name)),
+            Expr::BlockLit(..) | Expr::Send(..) => !crate::expr_mentions(e, name),
+            Expr::FloatV(..) | Expr::Float(..) | Expr::Int(_) | Expr::Str(_) | Expr::Nil | Expr::Log(_) | Expr::DArrNew | Expr::SelfObj | Expr::SelfGet(_) | Expr::FuncRef(_) => true,
+        }
+    }
+    fn walk(ss: &[Stmt], name: &str) -> bool {
+        ss.iter().all(|s| match s {
+            Stmt::Local(_, _, e) | Stmt::Ret(_, Some(e)) | Stmt::CallStmt(_, e) | Stmt::SendStmt(_, e) => expr(e, name),
+            // Whole-array assignment is the copy/alias divergence itself.
+            Stmt::Assign(_, v, e) => v != name && expr(e, name),
+            Stmt::Print(_, es, _) => es.iter().all(|e| expr(e, name)),
+            // Cell write on any array: value first, then index, each
+            // classified; a[i] := a[j] stays a pure i64 copy.
+            Stmt::ArrSet(_, _, ie, e) => expr(ie, name) && expr(e, name),
+            Stmt::If(_, e, a, b) => expr(e, name) && walk(a, name) && walk(b, name),
+            Stmt::While(_, e, b) => expr(e, name) && walk(b, name),
+            Stmt::Try(_, b, c, f) => walk(b, name) && c.as_ref().map_or(true, |(_, b)| walk(b, name)) && f.as_ref().map_or(true, |b| walk(b, name)),
+            Stmt::For(_, _, a, b, _, body) => expr(a, name) && expr(b, name) && walk(body, name),
+            Stmt::ForEach(_, _, e, body) => expr(e, name) && walk(body, name),
+            Stmt::Switch(_, e, arms, other) => expr(e, name) && arms.iter().all(|(_, _, b)| walk(b, name)) && other.as_ref().map_or(true, |(_, b)| walk(b, name)),
+            Stmt::Static(..) | Stmt::Ret(_, None) | Stmt::Exit(_) | Stmt::Loop(_) => true,
+            _ => !crate::stmt_mentions(s, name),
+        })
+    }
+    if !walk(&f.stmts, name) {
+        return Err(format!("module STATIC `{}`: whole-array, structural, multi-level, compound-cell or by-reference use is outside this increment", name));
+    }
+    Ok(())
+}
+
 pub fn bind(f: &mut Func, slots: &[(usize, String, Expr)]) -> Result<(), String> {
     let mut prefix = Vec::new();
     for (index, (line, name, init)) in slots.iter().enumerate() {
@@ -180,8 +261,9 @@ pub fn bind(f: &mut Func, slots: &[(usize, String, Expr)]) -> Result<(), String>
         if !crate::stmts_mention(&f.stmts, name) { continue; }
         check_counters(&f.stmts, name)?;
         ALIASES.with(|v| v.borrow_mut().insert((f.name.clone(), name.clone()), index));
-        let ty = match init { Expr::Log(_) => Ty::Bool, Expr::Str(_) => Ty::StrOwn, _ => Ty::I64 };
+        let ty = match init { Expr::Log(_) => Ty::Bool, Expr::Str(_) => Ty::StrOwn, Expr::ArrLit(es) => Ty::Arr(es.len()), _ => Ty::I64 };
         if matches!(ty,Ty::Bool|Ty::StrOwn) {check_payload_uses(f,name,ty)?;}
+        if matches!(ty,Ty::Arr(_)) {check_array_uses(f,name)?;}
         KINDS.with(|v| v.borrow_mut().insert((f.name.clone(), name.clone()), ty));
         prefix.push(Stmt::Static(*line, name.clone(), init.clone()));
     }
@@ -272,5 +354,67 @@ mod owned_tests {
     fn guard_nested_counter_and_catch_without_losing_i64() {
         assert!(crate::parse("STATIC n := 0\nFUNCTION Main()\nTRY\nFOR n := 1 TO 3\n? n\nNEXT\nCATCH\n? 1\nEND\nRETURN NIL\n").err().unwrap().contains("STATIC loop counters"));
         assert!(crate::parse("STATIC s := \"x\"\nFUNCTION Main()\nTRY\nBreak(1)\nCATCH s\n? s\nEND\nRETURN NIL\n").err().unwrap().contains("catch binding shadow"));
+    }
+}
+
+#[cfg(test)]
+mod array_tests {
+    use super::*;
+    #[test]
+    fn fixed_array_binds_with_shared_label_and_arity() {
+        crate::parse("STATIC a := {1,2,3}\nFUNCTION Main()\n? a[1]\nRETURN NIL\nFUNCTION ReadA()\nRETURN a[2]\n").unwrap_or_else(|e| panic!("{}", e));
+        assert_eq!(kind("main","a"), Some(Ty::Arr(3)));
+        let label = storage("main","a");
+        assert_eq!(label, storage("reada","a"));
+        crate::CUR_FN.with(|f| *f.borrow_mut() = "main".to_string());
+        assert_eq!(array_base("a"), Some(label.clone()));
+        crate::CUR_FN.with(|f| *f.borrow_mut() = "other".to_string());
+        assert_eq!(array_base("a"), None);
+    }
+    #[test]
+    fn guard_admits_cell_reads_writes_len_and_call_args() {
+        for src in [
+            "STATIC a := {1,2,3}\nPROCEDURE Main()\na[1] := a[2] + 10\n? a[1], len(a)\nRETURN\n",
+            "STATIC a := {1,2,3}\nPROCEDURE Main()\nLOCAL b := {0,0}\nb[1] := a[2]\n? Show(a[1])\nRETURN\nFUNCTION Show(x)\nRETURN x\n",
+            "STATIC a := {1,2,3}\nPROCEDURE Main()\nLOCAL i := 2\nLOCAL c := {10,20}\n? c[a[i]], a[c[1] - 9]\nRETURN\n",
+        ] {
+            crate::parse(src).unwrap_or_else(|e| panic!("{}: {}", src, e));
+        }
+    }
+    #[test]
+    fn guard_rejects_whole_array_structural_multilevel_and_ref_forms() {
+        let cases = [
+            // Whole-array assignment would copy where Harbour aliases.
+            "STATIC a := {1,2,3}\nPROCEDURE Main()\nLOCAL b := a\n? b[1]\nRETURN\n",
+            "STATIC a := {1,2,3}\nPROCEDURE Main()\n? a\nRETURN\n",
+            // Passing the whole array to a call.
+            "STATIC a := {1,2,3}\nPROCEDURE Main()\n? Show(a)\nRETURN\nFUNCTION Show(x)\nRETURN x\n",
+            // @ borrow of the module array.
+            "STATIC a := {1,2,3}\nPROCEDURE Main()\nLOCAL x := 0\nMut(@a)\nRETURN\nFUNCTION Mut(p)\nRETURN p\n",
+            // Multi-level index on the module array.
+            "STATIC a := {1,2,3}\nPROCEDURE Main()\n? a[1,1]\nRETURN\n",
+            // Structural ops.
+            "STATIC a := {1,2,3}\nPROCEDURE Main()\nAAdd(a, 4)\n? a[1]\nRETURN\n",
+            "STATIC a := {1,2,3}\nPROCEDURE Main()\nAFill(a, 0)\n? a[1]\nRETURN\n",
+            // Compound cell op.
+            "STATIC a := {1,2,3}\nPROCEDURE Main()\na[1] += 5\n? a[1]\nRETURN\n",
+            // Whole array inside a container or send.
+            "STATIC a := {1,2,3}\nPROCEDURE Main()\nLOCAL c := {a}\n? c[1]\nRETURN\n",
+            // Assign to the array name itself.
+            "STATIC a := {1,2,3}\nPROCEDURE Main()\na := {9,9,9}\n? a[1]\nRETURN\n",
+        ];
+        for src in cases {
+            let err = crate::parse(src).err().unwrap_or_else(|| panic!("accepted an unsafe form: {}", src));
+            assert!(err.contains("whole-array"), "{}: {}", src, err);
+        }
+    }
+    #[test]
+    fn nested_or_mixed_array_initializers_stay_rejected() {
+        let nested = crate::parse("STATIC a := {{1,2},3}\nPROCEDURE Main()\n? a[1]\nRETURN\n").err().unwrap();
+        assert!(nested.contains("folded"), "{}", nested);
+        let mixed = crate::parse("STATIC a := {1,\"x\",3}\nPROCEDURE Main()\n? a[1]\nRETURN\n").err().unwrap();
+        assert!(mixed.contains("folded"), "{}", mixed);
+        let empty = crate::parse("STATIC a := {}\nPROCEDURE Main()\n? a[1]\nRETURN\n").err().unwrap();
+        assert!(empty.contains("folded"), "{}", empty);
     }
 }
