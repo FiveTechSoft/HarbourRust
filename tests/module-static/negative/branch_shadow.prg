@@ -1,0 +1,7 @@
+STATIC n := 1
+PROCEDURE Main()
+IF .T.
+LOCAL n := 2
+? n
+ENDIF
+RETURN

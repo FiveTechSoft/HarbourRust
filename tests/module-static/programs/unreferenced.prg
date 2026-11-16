@@ -1,0 +1,4 @@
+STATIC unused := 99
+PROCEDURE Main()
+? 1
+RETURN

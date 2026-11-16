@@ -1,0 +1,7 @@
+STATIC n := 1
+INIT PROCEDURE Start()
+n := n+10
+RETURN
+PROCEDURE Main()
+? n
+RETURN

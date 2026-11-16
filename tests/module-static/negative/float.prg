@@ -1,0 +1,4 @@
+STATIC n := 1.5
+PROCEDURE Main()
+? n
+RETURN

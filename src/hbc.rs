@@ -78,6 +78,7 @@ mod hmacho;
 mod vas;
 mod macro_m1;
 mod prune;
+mod module_static;
 mod hbrdd;
 
 #[derive(Clone, Copy, PartialEq, Debug)]
@@ -3462,6 +3463,7 @@ struct Prog {
 }
 
 fn parse(src: &str) -> Result<Prog, String> {
+    module_static::reset();
     MACRO_CONTEXT.with(|c|c.set(false));
     FILE_USED.with(|v|v.set(false));
     FILE_PATH_LINE.with(|v|v.set(None));
@@ -3480,6 +3482,7 @@ fn parse(src: &str) -> Result<Prog, String> {
         if !toks.is_empty() { lines.push((n, toks)); }
     }
 
+    let mut module_slots: Vec<(usize, String, Expr)> = Vec::new();
     let mut funcs: Vec<Func> = Vec::new();
     let mut classes: Vec<ClassDecl> = Vec::new();
     let mut methods: Vec<MethodDef> = Vec::new();
@@ -3495,8 +3498,8 @@ fn parse(src: &str) -> Result<Prog, String> {
         // alone has no runtime effect, so it is accepted and ignored.
         // REQUEST (hk250a) is a link-time module request with no meaning
         // for this compiler. Parameterless NIL-returning INIT hooks have
-        // a single-module startup route below. EXIT teardown and file-scope
-        // STATIC variables (global storage) keep named rejections.
+        // a single-module startup route below. EXIT teardown remains rejected;
+        // module STATIC uses the restricted constant-i64 route below.
         if matches!(&toks[0], Tok::Ident(id) if id.eq_ignore_ascii_case("memvar")) {
             // Declaration only: it creates NO storage. Any later memvar
             // reference still fails with the usual unknown-variable error,
@@ -3548,13 +3551,32 @@ fn parse(src: &str) -> Result<Prog, String> {
         }
         let toks: &[Tok] = &init_header;
         // STATIC FUNCTION/PROCEDURE is plain visibility: a single-module
-        // compiler has one visibility domain (oracle hk249). File-scope
-        // STATIC variables are global storage, not in this subset.
+        // compiler has one visibility domain (oracle hk249). Module
+        // STATIC variables use the restricted constant-i64 route below.
         let toks: &[Tok] = if matches!(&toks[0], Tok::Ident(id) if id.eq_ignore_ascii_case("static")) {
             if toks.len() >= 2 && toks[1] == Tok::KwFunction {
                 &toks[1..]
             } else {
-                return Err(format!("line {}: file-scope STATIC variables are not in this increment (global storage needs its own design); STATIC FUNCTION/PROCEDURE works", n));
+                if !funcs.is_empty() || !methods.is_empty() {
+                    return Err(format!("line {}: module STATIC declarations must precede all functions and methods in this increment", n));
+                }
+                let mut declaration = toks.to_vec();
+                declaration[0] = Tok::KwLocal;
+                let mut parsed = Vec::new();
+                parse_stmts(&[(n, declaration)], &mut 0, &mut parsed, 0)?;
+                for st in parsed {
+                    if let Stmt::Local(line, name, value) = st {
+                        if !matches!(&value, Expr::Int(v) if v.parse::<i64>().is_ok()) {
+                            return Err(format!("line {}: module STATIC currently requires a folded i64 constant initializer; NIL, logical, Date and owned payloads are not in this increment", line));
+                        }
+                        if module_slots.iter().any(|(_, id, _)| id == &name) {
+                            return Err(format!("line {}: duplicate module STATIC `{}`", line, name));
+                        }
+                        module_slots.push((line, name, value));
+                    }
+                }
+                i += 1;
+                continue;
             }
         } else {
             &toks[..]
@@ -3754,6 +3776,8 @@ fn parse(src: &str) -> Result<Prog, String> {
             return Err(format!("line {}: REQUEST `{}` cannot be honored: the subset has no module linking; only functions defined in this file may be requested", ln, sym));
         }
     }
+    for f in &mut funcs { module_static::bind(f, &module_slots)?; }
+    for m in &mut methods { module_static::bind(&mut m.f, &module_slots)?; }
     Ok(Prog { funcs, classes, methods, externs })
 }
 
@@ -19177,7 +19201,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 *frame += 8;
                 let off = *frame;
                 let owner = CUR_FN.with(|c| c.borrow().clone());
-                out.push_str(&format!("    lea hbc_static_{}_{}_{}(%rip), %rax\n    mov %rax, -{}(%rbp)\n", owner.len(), owner, id, off));
+                out.push_str(&format!("    lea {}(%rip), %rax\n    mov %rax, -{}(%rbp)\n", module_static::storage(&owner, id), off));
                 env.push(CgLocal { name: id.clone(), ty: if static_dyn(id) {Ty::RefDyn}else{Ty::RefI64}, off });
             }
             Stmt::Local(_, id, e) => {
@@ -21900,7 +21924,10 @@ fn cg_func(f: &Func, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, tar
                     Expr::Nil => "1, 0".to_string(),
                     _ => unreachable!("checked STATIC"),
                 };
-                out.push_str(&format!("    .data\n    .align 8\nhbc_static_{}_{}_{}: .quad {}\n    .text\n", f.name.len(), f.name, id, words));
+                let storage = module_static::storage(&f.name, id);
+                if module_static::first_emission(&storage) {
+                    out.push_str(&format!("    .data\n    .align 8\n{}: .quad {}\n    .text\n", storage, words));
+                }
             }
         }
     }

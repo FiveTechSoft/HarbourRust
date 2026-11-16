@@ -1,0 +1,4 @@
+STATIC n := SToD("20261116")
+PROCEDURE Main()
+? n
+RETURN

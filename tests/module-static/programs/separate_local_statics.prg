@@ -1,0 +1,12 @@
+STATIC n := 1
+PROCEDURE Main()
+? A(),B(),A(),B(),n
+RETURN
+FUNCTION A()
+STATIC n := 10
+n := n+1
+RETURN n
+FUNCTION B()
+STATIC n := 100
+n := n+1
+RETURN n
