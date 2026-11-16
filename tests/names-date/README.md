@@ -1,3 +1,11 @@
+# Rebased candidate on 7b746e2a
+
+This branch preserves all remote source changes. Names implementation and the Date builtin consumer fix are upstream, not new work here. The first replayed commit retains only tests/docs. The Date increment adds producer/assignment and call-site Date evidence, plus the direct-variable-only pin safety guard.
+
+The old global FUNCTION month negative is accepted by upstream despite the check_global_ident comment; it has been changed to a CLASS month collision which upstream still rejects. No compiler restriction was restored or weakened here. Separate review should decide whether that remote discrepancy is intentional.
+
+The final-gate numbers in the historical sections below refer ONLY to the original 739655b4 candidate, not this rebase. See the attached new evidence for the new compiler hash. Year-zero changes in the remote base are preserved and not attributed to this increment.
+
 # Names and Date parameter regression probes
 
 Own probes; Harbour stays an external oracle. Run from a built checkout:
@@ -16,7 +24,7 @@ Limits: global helper-name functions remain rejected. This does not add unsuppor
 
 Date-consuming builtins (CDow/DoW/DToS/Year/Month/Day/CMonth/DToC) now pin a directly used parameter Date instead of leaving an integer placeholder. Assignment of Date()/SToD()/CToD(), a known Date-returning call or a local Date also supplies evidence. Ordinary call-site Date evidence propagates through identity/forwarding functions and methods; Date remains distinct from numeric I64. No runtime implementation or date calendar encoding changed.
 
-Seven own Date sources cover consumers including empty dates, Date() assignment, assignment through a local Date, forwarding/identity, recursion, methods and the ValType guard used by defaulting code. Positive source/target comparisons are raw-exact. Strings are bracketed in the empty-date probe to avoid claiming a fix to the pre-existing Windows terminal handling of trailing blank-only output; no stream normalization occurs. Current-date checks compare values inside the program rather than pinning a calendar date in the fixture.
+Eight Date sources cover consumers including empty dates, Date() assignment, assignment through a local Date, forwarding/identity, recursion, methods and the ValType guard used by defaulting code. Positive source/target comparisons are raw-exact. Strings are bracketed in the empty-date probe to avoid claiming a fix to the pre-existing Windows terminal handling of trailing blank-only output; no stream normalization occurs. Current-date checks compare values inside the program rather than pinning a calendar date in the fixture.
 
 Explicit limits: this is monomorphic Date transport/inference, not arbitrary Harbour parameter retyping or flow-sensitive narrowing of NIL/numeric/logical/string variants. Omitted Date arguments, a wrong integer and a mixed Date/string call retain named rejections (negative tests). Date by-reference and Date arithmetic-inference contexts are not newly supported. Some corpus functions still require dynamic type predicates, variant narrowing, arithmetic and library support. No year-zero change and no claim that all 9 Date-related corpus routes now compile. Linux-hosted Wine is not a native Windows executor.
 
