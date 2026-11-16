@@ -172,10 +172,11 @@ memvar is a run-time value, so `x % 3` with `x := 10` is `1.00`.
 
 ## Limits
 
-- **M0 is partial.** Since 6f3927f, `&name` and names inside `&(...)`
-  resolve PRIVATE/PUBLIC memvars of the current function (fixture
-  `tests/macro/m0-memvars.prg`). Only integer, logical and NIL values are
-  read back; a string or float memvar ends in a named limit.
+- **M0 is in.** Since 6f3927f, `&name` and names inside `&(...)` resolve
+  PRIVATE/PUBLIC memvars, including those declared by a caller. Integer,
+  logical, NIL, string and float values read back byte-identical to
+  Harbour 3.2 (fixture `tests/macro/m0-memvars.prg`). Memvars cannot be
+  assigned from macro text (that is M4).
 - **No calls or assignments.** Function calls inside the text (M2),
   assignments with `:=` and array, hash or codeblock literals (M4) end
   with a named run-time error. That message is not a Harbour message.
