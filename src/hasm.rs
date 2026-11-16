@@ -1801,12 +1801,12 @@ impl Asm {
         // D1.1: GetLastError feeds exact open-rejection diagnostics on PE.
         // D2: SetFilePointerEx + GetSystemTime feed record write-back and
         // the UTC header date on appends.
-        const WHITELIST: [&str; 26] = ["VirtualAlloc", "VirtualFree", "GetSystemInfo", "ExitProcess", "GetEnvironmentVariableA", "GetLocalTime", "GetProcessHeap",
+        const WHITELIST: [&str; 29] = ["VirtualAlloc", "VirtualFree", "GetSystemInfo", "ExitProcess", "GetEnvironmentVariableA", "GetLocalTime", "GetProcessHeap",
             "GetStdHandle", "HeapAlloc", "HeapFree", "WriteFile", "CreateFileW", "ReadFile", "GetFileSizeEx", "CloseHandle",
             "GetLastError", "SetFilePointerEx", "GetSystemTime",
             // Threads on Windows (CreateThread runtime, TEB TLS slots,
             // WaitOnAddress resolved at run time from the synch API set).
-            "CreateThread", "ExitThread", "GetCurrentThreadId", "TlsAlloc", "TlsFree", "LoadLibraryA", "GetProcAddress", "Sleep"];
+            "CreateThread", "ExitThread", "GetCurrentThreadId", "TlsAlloc", "TlsFree", "LoadLibraryA", "GetProcAddress", "Sleep", "FindFirstFileW", "FindNextFileW", "FindClose"];
         fn scan_expr(p: &Parser, e: &Expr, names: &mut Vec<String>) {
             for (_, t) in &e.0 {
                 if let Term::Sym(n) = t {

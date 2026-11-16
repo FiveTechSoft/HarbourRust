@@ -1,0 +1,11 @@
+
+star .T. .T. .F. .T. .T.
+zero-star .T. .T. .T. .T.
+collate .T. .T. .F.
+class .T. .T. .T. .T.
+esc .T. .T. .T. .T. .T.
+slash .F. .T. .T. .T.
+dot .T. .T. .F. .T. .T. .T.
+types .F. .F. .F. .F. .F.
+nul .T.
+unicode .T. .F. .T. .F.

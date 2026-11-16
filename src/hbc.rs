@@ -30,6 +30,10 @@ use std::fs;
 use std::process;
 
 thread_local! {
+    static FILE_USED: std::cell::Cell<bool> = const {std::cell::Cell::new(false)};
+    static FILE_PATH_LINE: std::cell::Cell<Option<usize>> = const {std::cell::Cell::new(None)};
+}
+thread_local! {
     // Literal aliases of the program's dbUseArea calls (upper case) and a
     // per-program counter for field-reference labels.
     static DBF_ALIASES: std::cell::RefCell<Vec<String>> = std::cell::RefCell::new(Vec::new());
@@ -650,6 +654,25 @@ static LBL_ID: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::
 fn fresh_lbl() -> usize { LBL_ID.fetch_add(1, std::sync::atomic::Ordering::SeqCst) }
 
 fn tokenize(line: &str, n: usize) -> Result<Vec<Tok>, String> {
+    // SET command <(path)> syntax keeps bare paths as text, including
+    // separators that are operators in ordinary expressions.
+    let text=line.trim();let mut words=text.splitn(2,char::is_whitespace);
+    if words.next().map(|x|x.eq_ignore_ascii_case("set")).unwrap_or(false) {
+        let rem=words.next().unwrap_or("").trim_start();let mut w=rem.splitn(2,char::is_whitespace);
+        let kind=w.next().unwrap_or("");
+        if kind.eq_ignore_ascii_case("default")||kind.eq_ignore_ascii_case("path") {
+            let rem=w.next().unwrap_or("").trim_start();let mut w=rem.splitn(2,char::is_whitespace);
+            if !w.next().map(|x|x.eq_ignore_ascii_case("to")).unwrap_or(false) {return Err(format!("line {}: SET DEFAULT/PATH require TO",n));}
+            let value=w.next().unwrap_or("").trim();
+            let mut toks=vec![Tok::Ident("set".into()),Tok::Ident(kind.into()),Tok::KwTo];
+            if value.starts_with('(')||value.starts_with('\"')||value.starts_with('\'')||value.starts_with('[')||value.starts_with("e\"")||value.starts_with("E\"") {
+                toks.extend(tokenize(value,n)?);
+            } else if value.starts_with('&') {return Err(format!("line {}: macro SET paths are outside this increment; use a parenthesized string expression",n));}
+            else if !value.is_empty(){toks.push(Tok::Str(value.into()));}
+            return Ok(toks);
+        }
+    }
+
     let mut toks = Vec::new();
     let mut it = line.char_indices().peekable();
     while let Some(&(i, c)) = it.peek() {
@@ -1716,7 +1739,7 @@ const ASM_RESERVED: &[&str] = &[
     // hbc itself emits; a user function with one of these names would
     // collide with a helper symbol.
     "dtos", "stod", "year", "day", "month", "dow", "cdow", "cmonth", "dtoc", "sqrt", "exp", "log", "mod", "padc", "rat", "stuff", "isdigit", "isalpha", "isupper", "islower", "strzero", "ischar", "strzero_fix", "str_f64", "fmt_f64", "date_add", "date_diff", "date_days", "date_from_days",
-    "strtran", "space", "substr", "date", "ctod", "date_pack", "date_render", "date_today", "curdir", "qout", "qqout", "outstd", "outerr", "empty", "procname", "min", "max", "str", "padr", "hb_ntos", "replicate", "aeval", "hb_isnumeric", "hb_isarray", "hb_isstring", "dfree", "upper", "lower", "left", "right", "at", "int", "abs", "padl", "val", "ascan", "aclone", "atail", "asort", "hb_bitand", "hb_bitor", "hb_bitxor", "hb_bitnot", "hb_bittest", "hb_bitset", "hb_bitreset", "eprint_str", "eprint_sep", "eprint_i64", "eprint_i64c", "eprint_dyn", "eprint_dynlit", "print_dynlit", "eprint_f64", "hb_eol", "procline", "asc", "trim", "ltrim", "rtrim", "alltrim", "chr", "trace_top", "print_trace", "panic_exit", "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_range_error", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
+    "strtran", "space", "substr", "date", "ctod", "date_pack", "date_render", "date_today", "curdir", "file", "hrfile_setdefault", "hrfile_setpath", "qout", "qqout", "outstd", "outerr", "empty", "procname", "min", "max", "str", "padr", "hb_ntos", "replicate", "aeval", "hb_isnumeric", "hb_isarray", "hb_isstring", "dfree", "upper", "lower", "left", "right", "at", "int", "abs", "padl", "val", "ascan", "aclone", "atail", "asort", "hb_bitand", "hb_bitor", "hb_bitxor", "hb_bitnot", "hb_bittest", "hb_bitset", "hb_bitreset", "eprint_str", "eprint_sep", "eprint_i64", "eprint_i64c", "eprint_dyn", "eprint_dynlit", "print_dynlit", "eprint_f64", "hb_eol", "procline", "asc", "trim", "ltrim", "rtrim", "alltrim", "chr", "trace_top", "print_trace", "panic_exit", "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_range_error", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
 ];
 
 fn dbf_result(id: &str) -> Option<Ty> {
@@ -2657,6 +2680,18 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                     return Ok(());
                 }
                 if id.eq_ignore_ascii_case("set") && !(toks.len() >= 2 && toks[1] == Tok::LParen) {
+                    if matches!(toks.get(1),Some(Tok::Ident(v)) if v.eq_ignore_ascii_case("default") || v.eq_ignore_ascii_case("path")) {
+                        let name=if matches!(&toks[1],Tok::Ident(v) if v.eq_ignore_ascii_case("default")){"hrfile_setdefault"}else{"hrfile_setpath"};
+                        let start=if matches!(toks.get(2),Some(Tok::KwTo)) {3}else{2};
+                        let value=match &toks[start..] {
+                            []=>Expr::Str(String::new()),
+                            [Tok::Ident(v)]=>Expr::Str(v.clone()),
+                            rest=>parse_expr_tokens(rest.to_vec(),n)?,
+                        };
+                        FILE_PATH_LINE.with(|v|v.set(Some(n)));
+                        out.push(Stmt::CallStmt(n,Expr::Call(name.to_string(),vec![value])));
+                        *i+=1;continue;
+                    }
                     if matches!(toks.get(1),Some(Tok::Ident(name)) if name.eq_ignore_ascii_case("talk") || name.eq_ignore_ascii_case("echo")) {
                         if toks.len()!=3 || !matches!(toks.get(2),Some(Tok::Ident(value)) if value.eq_ignore_ascii_case("on") || value.eq_ignore_ascii_case("off")) {
                             return Err(format!("line {}: SET TALK/ECHO require exactly ON or OFF in this increment",n));
@@ -3418,6 +3453,8 @@ struct Prog {
 
 fn parse(src: &str) -> Result<Prog, String> {
     MACRO_CONTEXT.with(|c|c.set(false));
+    FILE_USED.with(|v|v.set(false));
+    FILE_PATH_LINE.with(|v|v.set(None));
     SET_CONSOLE_LINE.with(|v|v.set(None));
     let mut lines: Vec<(usize, Vec<Tok>)> = Vec::new();
     for (idx, raw) in src.lines().enumerate() {
@@ -6753,6 +6790,14 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                     return Err(format!("line {}: `ctod` expects a string",n));
                 }
                 return Ok(Ty::Date);
+            }
+            if is_builtin(id,"file") || id=="hrfile_setdefault" || id=="hrfile_setpath" {
+                if MACHO_MODE.with(|v|v.get()) {return Err(format!("line {}: FILE/SET DEFAULT/PATH are implemented on Linux and Windows only",n));}
+                if args.len()!=1 {return Err(format!("line {}: {} expects exactly one argument",n,id));}
+                let t=type_expr(&args[0],env,sigs,n)?;
+                if !matches!(t,Ty::Str|Ty::StrOwn|Ty::Dyn|Ty::I64|Ty::Bool|Ty::F64|Ty::Date) {return Err(format!("line {}: FILE supports scalar arguments in this increment",n));}
+                FILE_USED.with(|v|v.set(true));
+                return Ok(if id=="file" {Ty::Bool}else{Ty::Dyn});
             }
             if is_builtin(id,"curdir") {
                 if !CURDIR_LINUX_NATIVE.with(|v| v.get()) && !MACHO_MODE.with(|v| v.get()) {
@@ -10630,6 +10675,9 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
             }
             if is_builtin(id,"date") { return; }
             if is_builtin(id,"ctod") { apply_moves(&args[0],env,sigs,false); return; }
+            if is_builtin(id,"file") || id=="hrfile_setdefault" || id=="hrfile_setpath" {
+                for a in args {apply_moves(a,env,sigs,false);}return;
+            }
             if is_builtin(id,"curdir") { return; } // admitted args are inert literals only
             if is_builtin(id,"replicate") {
                 for a in args { apply_moves(a,env,sigs,false); }
@@ -14116,6 +14164,37 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             out.push_str("    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_ctod\n");
             if temp { out.push_str("    mov %rax, 8(%rsp)\n    mov (%rsp), %rdi\n    call hbc_freestr\n    mov 8(%rsp), %rax\n    add $16, %rsp\n"); }
         }
+        Expr::Call(id,args) if is_builtin(id,"file") || id=="hrfile_setdefault" || id=="hrfile_setpath" => {
+            let a=&args[0];let t=expr_ty(a,env,sigs);let setter=id!="file";
+            if matches!(t,Ty::Str|Ty::StrOwn) {
+                let temp=t==Ty::StrOwn&&!matches!(a,Expr::Var(_));
+                cg_value(a,env,sigs,strs,out,target);
+                out.push_str("    sub $32, %rsp\n    mov %rax, (%rsp)\n");
+                if setter {
+                    out.push_str(&format!("    mov %rax, %rsi\n    mov ${}, %edi\n    call hrfile_app_set\n",if id=="hrfile_setpath"{1}else{0}));
+                } else {out.push_str("    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hrfile_app_exists\n");}
+                out.push_str("    mov %rax, 16(%rsp)\n");
+                if temp {out.push_str("    mov (%rsp), %rdi\n    call hbc_freestr\n");}
+                out.push_str("    mov 16(%rsp), %rax\n    add $32, %rsp\n");
+            } else if t==Ty::Dyn {
+                cg_data_value(a,env,sigs,strs,out,target);let k=fresh_lbl();
+                out.push_str("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+                if setter {
+                    out.push_str(&format!("    @HBC_TAG_KIND@cmp $1, %rax@HBC_TAG_END@\n    jne .Lfile_notnil{}\n    xor %esi, %esi\n    xor %edx, %edx\n    jmp .Lfile_set{}\n.Lfile_notnil{}:\n",k,k,k));
+                }
+                out.push_str(&format!("    @HBC_TAG_KIND@cmp $4, %rax@HBC_TAG_END@\n    je .Lfile_str{}\n    @HBC_TAG_KIND@cmp $2, %rax@HBC_TAG_END@\n    je .Lfile_str{}\n    xor %eax, %eax\n    jmp .Lfile_done{}\n.Lfile_str{}:\n",k,k,k,k));
+                if setter {
+                    out.push_str(&format!("    mov %rdx, %rsi\n    mov -8(%rdx), %rdx\n.Lfile_set{}:\n    mov ${}, %edi\n    call hrfile_app_set\n",k,if id=="hrfile_setpath"{1}else{0}));
+                } else {out.push_str("    mov %rdx, %rdi\n    mov -8(%rdx), %rsi\n    call hrfile_app_exists\n");}
+                out.push_str(&format!(".Lfile_done{}:\n    mov %rax, 16(%rsp)\n",k));
+                cg_dyn_stack_release(out,0,false);out.push_str("    mov 16(%rsp), %rax\n    add $32, %rsp\n");
+            } else {
+                if t==Ty::F64 {cg_f64_load(a,env,sigs,strs,out,target);}else{cg_value(a,env,sigs,strs,out,target);}
+                out.push_str("    xor %eax, %eax\n");
+            }
+            if setter {out.push_str("    mov $1, %eax\n    xor %edx, %edx\n");}
+            else {out.push_str("    xor %edx, %edx\n");}
+        }
         Expr::Call(id,_) if is_builtin(id,"curdir") => {
             out.push_str("    call hbc_curdir_linux\n");
         }
@@ -17501,6 +17580,8 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
                 let t = expr_ty(&args[0], env, sigs);
                 return t;
             }
+            if is_builtin(id,"file") {return Ty::Bool;}
+            if id=="hrfile_setdefault"||id=="hrfile_setpath" {return Ty::Dyn;}
             if is_builtin(id, "curdir") || is_builtin(id, "chr") || is_builtin(id, "str") || is_builtin(id, "hb_ntos") || is_builtin(id, "padr") || is_builtin(id, "replicate") { return Ty::StrOwn; }
             if is_builtin(id, "round") { return Ty::F64; } // hk384-hk386
             if is_builtin(id, "iif") {
@@ -26032,6 +26113,12 @@ fn emit_asm(funcs: &[Func], sigs: &[Sig], externs: &[String], target: Target, in
     }
     if MACRO_CONTEXT.with(|c|c.get())&&THREADS.with(|c|c.get()){eprintln!("error: MEMVAR/macro contexts with threads are outside this stage");process::exit(1);}
     let mut out = String::new();
+    if FILE_USED.with(|v|v.get()) {
+        if FILE_PATH_LINE.with(|v|v.get().is_some()) && (DBF_USED.with(|v|v.get()) || hb_rdd() || THREADS.with(|v|v.get())) {
+            eprintln!("error: SET DEFAULT/PATH with DBF or threads is outside this increment (shared path state is not integrated)");process::exit(1);
+        }
+        out.push_str(match target {Target::Linux=>include_str!("../generated/hrfile_linux.s"),Target::Windows=>include_str!("../generated/hrfile_windows.s")});
+    }
     out.push_str("# generated by hbc (PoC: Harbour syntax -> x86-64 assembly)\n");
     out.push_str(CONSOLE_NUL_HELPER);
     match target {
@@ -31860,6 +31947,7 @@ fn main() {
 
     // Pass 2: generate x86-64 assembly from the validated AST only.
     if llvm {
+        if FILE_USED.with(|v|v.get()) {eprintln!("error: FILE/SET DEFAULT/PATH are not implemented by the experimental LLVM backend");process::exit(1);}
         match llvm_scalar::emit(&funcs, &sigs, target, llvm_trace) {
             Ok(ir) => { fs::write(pos[1], ir).unwrap();
                 let mut rt = emit_asm(&[], &[], &[], target, false);

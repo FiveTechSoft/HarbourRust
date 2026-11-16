@@ -1,0 +1,19 @@
+{
+  "compiler": "gcc (Ubuntu 11.4.0-1ubuntu1~22.04.3) 11.4.0",
+  "flags": [
+    "-std=c99",
+    "-O2",
+    "-S",
+    "-ffreestanding",
+    "-fno-builtin",
+    "-fno-stack-protector",
+    "-fno-asynchronous-unwind-tables",
+    "-fno-unwind-tables",
+    "-fno-ident",
+    "-fno-jump-tables",
+    "-mno-red-zone",
+    "-fPIC"
+  ],
+  "source_sha256": "d36175055fa346eda2096b89dd4114b569f3dffc50b0357436a7de803fbf8b49",
+  "asm_sha256": "d2b28ac11f31e00d1bf8a26895e50f71a0fc597279a46c45a7686a331d7ed084"
+}

@@ -1,0 +1,11 @@
+
+owned .T. .T. .T.
+dynstr .T.
+dynint .F.
+dynbool .F.
+dynfloat .F.
+dynnil .F.
+set-owned .T.
+dynpath .T.
+set-ignore .T.
+set-nil .T.

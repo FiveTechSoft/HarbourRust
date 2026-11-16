@@ -1,0 +1,4 @@
+
+truncate .T. .T. .T.
+join .T. .T.
+long-path .T.

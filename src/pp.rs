@@ -1685,6 +1685,14 @@ fn strip_line(raw: &str, in_block: &mut bool, block_line: &mut usize, line: usiz
 // Physical trailing semicolons are continuation markers, consumed earlier.
 // Remaining unquoted semicolons separate statements, including macro results.
 fn split_statements(text: &str) -> Vec<&str> {
+    // SET PATH's std.ch wildcard capture includes a bare semicolon list.
+    let mut rem=text.trim_start();let mut path_command=true;
+    for keyword in ["set","path","to"] {
+        let mut words=rem.splitn(2,char::is_whitespace);
+        if !words.next().map(|v|v.eq_ignore_ascii_case(keyword)).unwrap_or(false){path_command=false;break;}
+        rem=words.next().unwrap_or("").trim_start();
+    }
+    if path_command && !rem.starts_with(['(', '\"', '\'', '[']) {return vec![text];}
     let mut q = None;
     let mut start = 0;
     let mut parts = Vec::new(); let mut escape_until=0;

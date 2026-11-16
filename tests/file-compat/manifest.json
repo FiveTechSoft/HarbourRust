@@ -1,0 +1,59 @@
+{
+  "oracle": {
+    "repository": "https://github.com/harbour/core",
+    "commit": "694428e1c12f726675b19324d62167fa77d68185",
+    "terminal": "GTSTD",
+    "encoding": "raw; Windows CRLF retained"
+  },
+  "positive": [
+    {
+      "name": "file_basic"
+    },
+    {
+      "name": "file_paths"
+    },
+    {
+      "name": "file_glob"
+    },
+    {
+      "name": "file_owned"
+    },
+    {
+      "name": "file_boundary"
+    },
+    {
+      "name": "file_memory",
+      "oracle": false
+    }
+  ],
+  "negative": [
+    {
+      "name": "neg_arity",
+      "contains": "expects exactly one argument"
+    },
+    {
+      "name": "neg_extra",
+      "contains": "expects exactly one argument"
+    },
+    {
+      "name": "neg_dbf",
+      "contains": "shared path state is not integrated"
+    },
+    {
+      "name": "neg_threads",
+      "contains": "shared path state is not integrated"
+    },
+    {
+      "name": "neg_macro",
+      "contains": "macro SET paths are outside"
+    },
+    {
+      "name": "neg_scalar",
+      "contains": "FILE supports scalar arguments"
+    },
+    {
+      "name": "neg_no_to",
+      "contains": "require TO"
+    }
+  ]
+}

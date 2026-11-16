@@ -40,3 +40,6 @@ tests/macro/error-contract/fixtures/windows/m1-precedence-err.terminal.stderr -t
 tests/macro/error-contract/fixtures/windows/m1-precedence-err.terminal.stdout -text
 # Windows console output (Harbour GTCGI writes trailing spaces and raw LF)
 tests/procmeta/newline-oracle/raw.windows.stdout -text
+# FILE fixtures compare native target bytes, including Windows CRLF.
+tests/file-compat/*.stdout -text
+tests/file-compat/*.stderr -text

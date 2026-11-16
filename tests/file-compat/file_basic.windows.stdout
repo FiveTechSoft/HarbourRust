@@ -1,0 +1,9 @@
+
+exact .T. .T. .F. .F.
+dirs .F. .F. .F. .F.
+nested .T. .T.
+glob .T. .T. .T. .T. .T. .F.
+hidden .F. .F. .T. .F.
+type .F. .F. .F.
+default .T. .F. .T.
+path .T. .T. .F.

@@ -1,0 +1,12 @@
+procedure Main()
+? "star",File("*"),File("*.*"),File("noext.*"),File("n?ext"),File("n????")
+? "zero-star",File("*Exact.TXT"),File("Exact*.TXT"),File("*noext"),File("no*ext")
+? "collate",File("[[.E.]]xact.TXT"),File("[[=E=]]xact.TXT"),File("[![:bad:]]xact.TXT")
+? "class",File("[E]xact.TXT"),File("[A-Z]xact.TXT"),File("[!a-z]xact.TXT"),File("[[:upper:]]xact.TXT")
+? "esc",File("\*.star"),File("\?.question"),File("[[]bracket"),File("[]]bracket"),File("[x")
+? "slash",File("s*/nested.txt"),File("sub/*"),File("sub/../Exact.TXT"),File("./Exact.TXT")
+? "dot",File(".*"),File(".h?????"),File("linkdir"),File("linkdir/*"),File("broken"),File("cycle")
+? "types",File(NIL),File(1),File(1.5),File(.T.),File(Date())
+? "nul",File("Exact.TXT"+Chr(0)+"absent")
+? "unicode",File("café.txt"),File("caf?.txt"),File("caf??.txt"),File("caf"+Chr(130)+".txt")
+return

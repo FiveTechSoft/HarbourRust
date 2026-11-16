@@ -1,0 +1,18 @@
+{
+  "compiler": "x86_64-w64-mingw32-gcc-posix (GCC) 10-posix 20220113",
+  "flags": [
+    "-std=c99",
+    "-O2",
+    "-S",
+    "-ffreestanding",
+    "-fno-builtin",
+    "-fno-stack-protector",
+    "-fno-asynchronous-unwind-tables",
+    "-fno-unwind-tables",
+    "-fno-ident",
+    "-fno-jump-tables",
+    "-mno-red-zone"
+  ],
+  "source_sha256": "d36175055fa346eda2096b89dd4114b569f3dffc50b0357436a7de803fbf8b49",
+  "asm_sha256": "6ed0f8fbfa07bb4da7753df71f7f35d4cf8dc51485863cd971915829760ad405"
+}

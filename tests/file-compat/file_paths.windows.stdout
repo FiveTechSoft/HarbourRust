@@ -1,0 +1,10 @@
+
+initial .F. .T.
+empty .T. .T.
+colon .F. .F. .T.
+semi .T. .T. .T.
+bare-semi .T.
+bare-colon .F.
+bare-default .T.
+reset .T. .F. .T.
+backslash .F.
