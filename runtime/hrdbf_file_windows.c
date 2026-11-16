@@ -28,16 +28,34 @@ static int hrdbfw_path(const char*p,WCHAR*w){
 }
 static void* allocate(size_t n){return VirtualAlloc(0,n,MEM_RESERVE|MEM_COMMIT,PAGE_READWRITE);}
 static int hrdbfw_release(void*p){return VirtualFree(p,0,MEM_RELEASE)!=0;}
+/* D1.1 diagnostics: OS-layer rejection reasons with the raw Win32 error.
+ * TU-static sink: hrdbfw_snapshot is shared with the NTX/CDX layer, which
+ * keeps its own error surface; only hrdbf_file_open copies the text out.
+ * Pointer-walking loops with ivopts disabled: gcc -O2 otherwise emits
+ * negated-symbol base addressing the internal assembler cannot read. */
+static char fsink[160];static unsigned fsink_len;
+static __attribute__((optimize("no-tree-loop-ivcanon,no-ivopts"))) void fset(const char *s){char *d=fsink;while(d<fsink+159&&*s){*d=*s;d++;s++;}*d=0;fsink_len=(unsigned)(d-fsink);}
+static __attribute__((optimize("no-tree-loop-ivcanon,no-ivopts"))) void fcat(const char *s){char *d=fsink+fsink_len;while(d<fsink+159&&*s){*d=*s;d++;s++;}*d=0;fsink_len=(unsigned)(d-fsink);}
+static __attribute__((optimize("no-tree-loop-ivcanon,no-ivopts"))) void fdec(uint64_t v){char t[20];unsigned n=0;do{t[n]=(char)('0'+v%10);n++;v/=10;}while(v&&n<20);while(n){n--;{char c[2]={t[n],0};fcat(c);}}}
+static __attribute__((optimize("no-tree-loop-ivcanon,no-ivopts"))) void werr(const char *what,DWORD code){
+ fset(what);fcat(" (win32 error ");fdec(code);fcat(")");
+}
 static hrdbf_error hrdbfw_snapshot(const char*path,unsigned char**bytes,size_t*size,void**handle,size_t min,unsigned page,int writable){
- WCHAR wide[260];HANDLE h;LARGE_INTEGER n,after;DWORD got;size_t pos=0;unsigned char extra;
- if(!hrdbfw_path(path,wide))return HRDBF_IO;
- h=CreateFileW(wide,GENERIC_READ|(writable?GENERIC_WRITE:0),0,0,OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL,0);if(h==INVALID_HANDLE_VALUE)return HRDBF_IO;
+ WCHAR wide[260];HANDLE h;LARGE_INTEGER n,after;DWORD got,e;size_t pos=0;unsigned char extra;
+ if(!hrdbfw_path(path,wide)){fset("path is not a supported plain file path (reserved device name or characters)");return HRDBF_IO;}
+ h=CreateFileW(wide,GENERIC_READ|(writable?GENERIC_WRITE:0),0,0,OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL,0);
+ if(h==INVALID_HANDLE_VALUE){werr("OS open failed (2=missing, 5=access denied, 32=another program has it open)",GetLastError());return HRDBF_IO;}
  *handle=h;
- if(!GetFileSizeEx(h,&n))return HRDBF_IO;
- if(n.QuadPart<(LONGLONG)min||n.QuadPart>HRDBF_MAX_BYTES||(page&&n.QuadPart%page))return HRDBF_FORMAT;
- *size=(size_t)n.QuadPart;*bytes=allocate(*size);if(!*bytes)return HRDBF_MEMORY;
- while(pos<*size){got=0;if(!ReadFile(h,*bytes+pos,(DWORD)(*size-pos),&got,0)||!got||got>*size-pos)return HRDBF_IO;pos+=got;}
- got=0;if(!ReadFile(h,&extra,1,&got,0)||got||!GetFileSizeEx(h,&after)||after.QuadPart!=n.QuadPart)return HRDBF_IO;
+ if(!GetFileSizeEx(h,&n)){werr("GetFileSizeEx failed",GetLastError());return HRDBF_IO;}
+ if(n.QuadPart<(LONGLONG)min){fset("file has fewer than the 33 header bytes");return HRDBF_FORMAT;}
+ if(n.QuadPart>HRDBF_MAX_BYTES){fset("file size ");fdec((uint64_t)n.QuadPart);fcat(" exceeds the 64 MiB limit");return HRDBF_FORMAT;}
+ if(page&&n.QuadPart%page){fset("file size is not a whole number of pages");return HRDBF_FORMAT;}
+ *size=(size_t)n.QuadPart;*bytes=allocate(*size);if(!*bytes){fset("out of memory snapshotting the file");return HRDBF_MEMORY;}
+ while(pos<*size){got=0;e=0;if(!ReadFile(h,*bytes+pos,(DWORD)(*size-pos),&got,0))e=GetLastError();
+  if(e||!got||got>*size-pos){werr("OS read failed",e);return HRDBF_IO;}pos+=got;}
+ got=0;
+ if(!ReadFile(h,&extra,1,&got,0)){werr("OS read failed",GetLastError());return HRDBF_IO;}
+ if(got||!GetFileSizeEx(h,&after)||after.QuadPart!=n.QuadPart){fset("file changed size while being read");return HRDBF_IO;}
  return HRDBF_OK;
 }
 hrdbf_error hrdbf_file_close(hrdbf_file*f){
@@ -47,8 +65,12 @@ hrdbf_error hrdbf_file_close(hrdbf_file*f){
  return e;
 }
 hrdbf_error hrdbf_file_open(hrdbf_file*f,const char*path,int writable){
- hrdbf_error e=hrdbf_file_close(f);if(e)return e;
+ hrdbf_error e;
+ f->diag[0]=0;fsink[0]=0;
+ e=hrdbf_file_close(f);if(e)return e;
+ f->diag[0]=0;fsink[0]=0;fsink_len=0;
  e=hrdbfw_snapshot(path,&f->owned,&f->size,&f->handle,33,0,writable);
+ if(e){char *d=f->diag;const char *q=fsink;while(d<f->diag+159&&*q){*d=*q;d++;q++;}*d=0;}
  if(!e)e=hrdbf_open(&f->area,f->owned,f->size);
  if(e){hrdbf_error c=hrdbf_file_close(f);if(c)return c;}return e;
 }

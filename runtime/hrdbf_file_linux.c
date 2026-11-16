@@ -24,19 +24,31 @@ hrdbf_error hrdbf_file_close(hrdbf_file *f){
  /* Do not silently abandon ownership when munmap fails; caller can retry. */
  if(r<0)return HRDBF_IO;f->owned=0;f->size=0;return HRDBF_OK;
 }
+/* D1.1 diagnostics: OS-layer rejection reasons with the raw errno.
+ * Pointer-walking loops with ivopts disabled: gcc -O2 otherwise emits
+ * negated-symbol base addressing the internal assembler cannot read. */
+static __attribute__((optimize("no-tree-loop-ivcanon,no-ivopts"))) void fset(hrdbf_file *f,const char *s){char *d=f->diag;while(d<f->diag+159&&*s){*d=*s;d++;s++;}*d=0;}
+static __attribute__((optimize("no-tree-loop-ivcanon,no-ivopts"))) void fcat(hrdbf_file *f,const char *s){char *d=f->diag;while(d<f->diag+159&&*d)d++;while(d<f->diag+159&&*s){*d=*s;d++;s++;}*d=0;}
+static __attribute__((optimize("no-tree-loop-ivcanon,no-ivopts"))) void fdec(hrdbf_file *f,uint64_t v){char t[20];unsigned n=0;do{t[n]=(char)('0'+v%10);n++;v/=10;}while(v&&n<20);while(n){n--;{char c[2]={t[n],0};fcat(f,c);}}}
+static __attribute__((optimize("no-tree-loop-ivcanon,no-ivopts"))) void ferr(hrdbf_file *f,const char *what,long code){
+ fset(f,what);fcat(f," (errno ");
+ if(code<0)code=-code;fdec(f,(uint64_t)code);fcat(f,")");
+}
 hrdbf_error hrdbf_file_open(hrdbf_file *f,const char *path,int writable){
  long fd,n,r;size_t pos=0;unsigned char extra;hrdbf_error err=HRDBF_OK;
  /* Caller zero-initializes the file. Reopen closes its previous owned buffer. */
+ f->diag[0]=0;
  err=hrdbf_file_close(f);if(err)return err;
- fd=open_dbf(path,writable);if(fd<0)return HRDBF_IO;
- n=syscall3(8,fd,0,2);if(n<0){err=HRDBF_IO;goto closefd;}
- if(n<33){err=HRDBF_FORMAT;goto closefd;}
- if(n>HRDBF_MAX_BYTES){err=HRDBF_LIMIT;goto closefd;}
- if(syscall3(8,fd,0,0)<0){err=HRDBF_IO;goto closefd;}
- f->size=(size_t)n;f->owned=allocate(f->size);if(!f->owned){f->size=0;err=HRDBF_MEMORY;goto closefd;}
- while(pos<f->size){r=syscall3(0,fd,(long)(f->owned+pos),f->size-pos);if(r==-4)continue;if(r<=0){err=HRDBF_IO;goto closefd;}pos+=(size_t)r;}
+ f->diag[0]=0;
+ fd=open_dbf(path,writable);if(fd<0){ferr(f,"OS open failed (missing file, permission or sharing conflict)",fd);return HRDBF_IO;}
+ n=syscall3(8,fd,0,2);if(n<0){ferr(f,"OS seek failed",n);err=HRDBF_IO;goto closefd;}
+ if(n<33){fset(f,"file has fewer than the 33 header bytes");err=HRDBF_FORMAT;goto closefd;}
+ if(n>HRDBF_MAX_BYTES){fset(f,"file size ");fdec(f,(uint64_t)n);fcat(f," exceeds the 64 MiB limit");err=HRDBF_LIMIT;goto closefd;}
+ if(syscall3(8,fd,0,0)<0){fset(f,"OS seek failed");err=HRDBF_IO;goto closefd;}
+ f->size=(size_t)n;f->owned=allocate(f->size);if(!f->owned){f->size=0;fset(f,"out of memory snapshotting the file");err=HRDBF_MEMORY;goto closefd;}
+ while(pos<f->size){r=syscall3(0,fd,(long)(f->owned+pos),f->size-pos);if(r==-4)continue;if(r<=0){ferr(f,"OS read failed",r);err=HRDBF_IO;goto closefd;}pos+=(size_t)r;}
  do{r=syscall3(0,fd,(long)&extra,1);}while(r==-4);
- if(r!=0){err=HRDBF_IO;goto closefd;}
+ if(r!=0){fset(f,"file changed size while being read");err=HRDBF_IO;goto closefd;}
  err=hrdbf_open(&f->area,f->owned,f->size);
 closefd:
  /* Linux close(EINTR) is not retried: the fd may already be released. */

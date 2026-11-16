@@ -5,6 +5,14 @@
 static unsigned u16(const unsigned char *p){return p[0]|((unsigned)p[1]<<8);}
 static uint32_t u32(const unsigned char *p){return (uint32_t)p[0]|((uint32_t)p[1]<<8)|((uint32_t)p[2]<<16)|((uint32_t)p[3]<<24);}
 void hrdbf_close(hrdbf_area *a){a->bytes=0;a->size=0;a->count=0;a->recno=0;a->nfields=0;a->open=0;a->bof=1;a->eof=1;}
+/* D1.1 diagnostics: exact rejection reasons for failed opens. The buffer is
+ * owned by the area and survives hrdbf_close so callers can report after
+ * cleanup. hrdbf_open clears it on entry. */
+static __attribute__((optimize("no-tree-loop-ivcanon,no-ivopts"))) void dset(hrdbf_area *a,const char *s){char *d=a->diag;while(d<a->diag+159&&*s){*d=*s;d++;s++;}*d=0;}
+static __attribute__((optimize("no-tree-loop-ivcanon,no-ivopts"))) void dcat(hrdbf_area *a,const char *s){char *d=a->diag;while(d<a->diag+159&&*d)d++;while(d<a->diag+159&&*s){*d=*s;d++;s++;}*d=0;}
+static __attribute__((optimize("no-tree-loop-ivcanon,no-ivopts"))) void ddec(hrdbf_area *a,uint64_t v){char t[20];unsigned n=0;do{t[n]=(char)('0'+v%10);n++;v/=10;}while(v&&n<20);while(n){n--;char c[2]={t[n],0};dcat(a,c);}}
+static __attribute__((optimize("no-tree-loop-ivcanon,no-ivopts"))) void dhex(hrdbf_area *a,unsigned v){const char *h="0123456789ABCDEF";char c[2];c[1]=0;c[0]=h[(v>>4)&15];dcat(a,c);c[0]=h[v&15];dcat(a,c);}
+static __attribute__((optimize("no-tree-loop-ivcanon,no-ivopts"))) void dname(hrdbf_area *a,const unsigned char *n){unsigned i;for(i=0;i<11&&n[i];i++){char c[2];c[0]=(char)n[i];c[1]=0;if(n[i]<32||n[i]>126)c[0]='?';dcat(a,c);}}
 static int blank(const unsigned char *p,unsigned n){unsigned i;for(i=0;i<n;i++)if(p[i]!=' ')return 0;return 1;}
 static hrdbf_error number(const unsigned char *p,const hrdbf_field *f,int64_t *out){
  unsigned b=0,e=f->width,i,frac=0,seen=0,point=0;int neg=0;uint64_t v=0,limit;
@@ -59,42 +67,55 @@ hrdbf_error hrdbf_get(const hrdbf_area *a,unsigned n,hrdbf_value *v){
 hrdbf_error hrdbf_deleted(const hrdbf_area *a,unsigned char *v){if(!a->open)return HRDBF_CLOSED;*v=a->recno<=a->count&&a->bytes[a->header+(size_t)(a->recno-1)*a->record]=='*';return HRDBF_OK;}
 hrdbf_error hrdbf_open(hrdbf_area *a,const unsigned char *b,size_t size){
  size_t i,end,pos=32;unsigned off=1,j,k,terminated=0;hrdbf_area tmp;hrdbf_value val;hrdbf_error err;
+ a->diag[0]=0;tmp.diag[0]=0;
  hrdbf_close(a);hrdbf_close(&tmp);
- if(size<33)return HRDBF_FORMAT;
- if(b[0]!=3)return HRDBF_VERSION;
- /* No encrypted/transaction flags, structural index, memo or codepage mapping.
-  * Codepage mark must be zero: bytes preserved, no conversion promise. */
- if(b[14]||b[15]||b[28]||b[29])return HRDBF_VERSION;
+ a->diag[0]=0;
+ if(size<33){dset(a,"file has fewer than the 33 header bytes");return HRDBF_FORMAT;}
+ if(b[0]!=3){dset(a,"version byte 0x");dhex(a,b[0]);dcat(a," is not 0x03 (dBASE III table without memo; 0x83/0xF5 carry a memo file)");return HRDBF_VERSION;}
+ /* D1.1: header flag bytes 14/15/28/29 are accepted and preserved verbatim
+  * (Antonio's real M_CLIE.DBF carries byte 28 = 0x01, the production-index
+  * flag for its M_CLIE.cdx). Read-only acceptance: no byte of these flags is
+  * ever written back, and no structural index or codepage conversion is
+  * derived from them. Bytes are preserved as read; no conversion promise. */
  tmp.header=u16(b+8);tmp.record=u16(b+10);tmp.count=u32(b+4);
- if(tmp.header<33||tmp.header>size||!tmp.record)return HRDBF_FORMAT;
+ if(tmp.header<33||tmp.header>size||!tmp.record){
+  dset(a,"implausible header length ");ddec(a,tmp.header);dcat(a," or record length ");ddec(a,tmp.record);dcat(a," for file size ");ddec(a,size);return HRDBF_FORMAT;}
  while(pos<tmp.header){
   hrdbf_field *f;
   if(b[pos]==13){terminated=1;pos++;break;}
-  if(tmp.header-pos<32)return HRDBF_FORMAT;
-  if(tmp.nfields==HRDBF_MAX_FIELDS)return HRDBF_LIMIT;
+  if(tmp.header-pos<32){dset(a,"field descriptor ");ddec(a,tmp.nfields+1);dcat(a," truncated before end of header");return HRDBF_FORMAT;}
+  if(tmp.nfields==HRDBF_MAX_FIELDS){dset(a,"more than 128 field descriptors");return HRDBF_LIMIT;}
   f=&tmp.fields[tmp.nfields++];
   for(j=0;j<11;j++)f->name[j]=b[pos+j];
-  if(!f->name[0])return HRDBF_FORMAT;
-  for(j=0;j+1<tmp.nfields;j++){for(k=0;k<11&&tmp.fields[j].name[k]==f->name[k];k++);if(k==11)return HRDBF_FORMAT;}
+  if(!f->name[0]){dset(a,"field descriptor ");ddec(a,tmp.nfields);dcat(a," has an empty name");return HRDBF_FORMAT;}
+  for(j=0;j+1<tmp.nfields;j++){for(k=0;k<11&&tmp.fields[j].name[k]==f->name[k];k++);if(k==11){dset(a,"duplicate field name '");dname(a,f->name);dcat(a,"'");return HRDBF_FORMAT;}}
   f->type=b[pos+11];f->width=b[pos+16];f->decimals=b[pos+17];f->offset=(uint16_t)off;
-  if(!f->width)return HRDBF_FORMAT;
-  if(f->type=='C'){if(f->decimals)return HRDBF_TYPE;}
-  else if(f->type=='N'){if(f->decimals>17||f->decimals>=f->width)return HRDBF_LIMIT;}
-  else if(f->type=='L'){if(f->width!=1||f->decimals)return HRDBF_FORMAT;}
-  else if(f->type=='D'){if(f->width!=8||f->decimals)return HRDBF_FORMAT;}
-  else return HRDBF_TYPE;
-  off+=f->width;if(off>65535)return HRDBF_LIMIT;pos+=32;
+  if(!f->width){dset(a,"field '");dname(a,f->name);dcat(a,"' has zero width");return HRDBF_FORMAT;}
+  if(f->type=='C'){if(f->decimals){dset(a,"C field '");dname(a,f->name);dcat(a,"' declares decimals");return HRDBF_TYPE;}}
+  else if(f->type=='N'){if(f->decimals>17||f->decimals>=f->width){dset(a,"N field '");dname(a,f->name);dcat(a,"' width ");ddec(a,f->width);dcat(a," / decimals ");ddec(a,f->decimals);dcat(a," outside supported range");return HRDBF_LIMIT;}}
+  else if(f->type=='L'){if(f->width!=1||f->decimals){dset(a,"L field '");dname(a,f->name);dcat(a,"' width must be 1 with no decimals");return HRDBF_FORMAT;}}
+  else if(f->type=='D'){if(f->width!=8||f->decimals){dset(a,"D field '");dname(a,f->name);dcat(a,"' width must be 8 with no decimals");return HRDBF_FORMAT;}}
+  else{dset(a,"field '");dname(a,f->name);dcat(a,"' has unsupported type '");{char c[2]={(char)f->type,0};if(f->type<32||f->type>126)c[0]='?';dcat(a,c);}dcat(a,"' (only C/N/D/L, no memo)");return HRDBF_TYPE;}
+  off+=f->width;if(off>65535){dset(a,"field widths exceed the 65535 record limit");return HRDBF_LIMIT;}pos+=32;
  }
- if(!terminated||!tmp.nfields||off!=tmp.record)return HRDBF_FORMAT;
- while(pos<tmp.header)if(b[pos++])return HRDBF_FORMAT;
- if(tmp.count>(size-tmp.header)/tmp.record)return HRDBF_FORMAT;
+ if(!terminated){dset(a,"field descriptors not terminated by 0x0D");return HRDBF_FORMAT;}
+ if(!tmp.nfields){dset(a,"table declares no fields");return HRDBF_FORMAT;}
+ if(off!=tmp.record){dset(a,"field widths plus delete flag sum to ");ddec(a,off);dcat(a," but header record length is ");ddec(a,tmp.record);return HRDBF_FORMAT;}
+ while(pos<tmp.header)if(b[pos++]){dset(a,"nonzero byte between field descriptors and header end");return HRDBF_FORMAT;}
+ if(tmp.count>(size-tmp.header)/tmp.record){dset(a,"header record count ");ddec(a,tmp.count);dcat(a," exceeds the ");ddec(a,(size-tmp.header)/tmp.record);dcat(a," records physically present");return HRDBF_FORMAT;}
  end=tmp.header+(size_t)tmp.count*tmp.record;
- if(end!=size&&(size-end!=1||b[end]!=26))return HRDBF_FORMAT;
+ if(end!=size&&(size-end!=1||b[end]!=26)){dset(a,"unexpected trailing bytes after the last record (no 0x1A terminator)");return HRDBF_FORMAT;}
  tmp.bytes=b;tmp.size=size;tmp.open=1;hrdbf_top(&tmp);
  /* Fail closed before exposing a cursor on malformed records. */
  for(i=0;i<tmp.count;i++){
-  unsigned char mark=b[tmp.header+i*tmp.record];if(mark!=' '&&mark!='*')return HRDBF_DATA;
-  tmp.recno=i+1;for(j=1;j<=tmp.nfields;j++){err=hrdbf_get(&tmp,j,&val);if(err)return err;}
+  unsigned char mark=b[tmp.header+i*tmp.record];
+  if(mark!=' '&&mark!='*'){dset(a,"record ");ddec(a,i+1);dcat(a," has delete flag 0x");dhex(a,mark);dcat(a," (expected space or '*')");return HRDBF_DATA;}
+  tmp.recno=i+1;for(j=1;j<=tmp.nfields;j++){err=hrdbf_get(&tmp,j,&val);if(err){
+   dset(a,"record ");ddec(a,i+1);dcat(a," field '");dname(a,tmp.fields[j-1].name);
+   dcat(a,err==HRDBF_LIMIT?"' numeric content overflows int64":"' content is not valid for its type");
+   if(tmp.fields[j-1].type=='L')dcat(a," (logical byte must be T/F/Y/N/?/space)");
+   if(mark=='*')dcat(a," inside a deleted record");
+   return err;}}
  }
  hrdbf_top(&tmp);*a=tmp;return HRDBF_OK;
 }

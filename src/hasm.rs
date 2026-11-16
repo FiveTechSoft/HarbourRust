@@ -1788,8 +1788,9 @@ impl Asm {
     // Símbolos referenciados y no definidos: candidatos a import kernel32.
     // Validados contra la lista blanca medida y devueltos ordenados.
     fn scan_imports(&self) -> Result<Vec<String>, String> {
-        const WHITELIST: [&str; 15] = ["VirtualAlloc", "VirtualFree", "GetSystemInfo", "ExitProcess", "GetEnvironmentVariableA", "GetLocalTime", "GetProcessHeap",
-            "GetStdHandle", "HeapAlloc", "HeapFree", "WriteFile", "CreateFileW", "ReadFile", "GetFileSizeEx", "CloseHandle"];
+        // D1.1: GetLastError feeds exact open-rejection diagnostics on PE.
+        const WHITELIST: [&str; 16] = ["VirtualAlloc", "VirtualFree", "GetSystemInfo", "ExitProcess", "GetEnvironmentVariableA", "GetLocalTime", "GetProcessHeap",
+            "GetStdHandle", "HeapAlloc", "HeapFree", "WriteFile", "CreateFileW", "ReadFile", "GetFileSizeEx", "CloseHandle", "GetLastError"];
         fn scan_expr(p: &Parser, e: &Expr, names: &mut Vec<String>) {
             for (_, t) in &e.0 {
                 if let Term::Sym(n) = t {

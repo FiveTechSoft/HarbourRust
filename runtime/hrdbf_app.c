@@ -15,13 +15,15 @@ static unsigned hrdbf_app_found_flag;
 static unsigned hrdbf_app_cdx;
 static unsigned char hrdbf_app_basename[HRDBF_APP_PATH_MAX];
 static size_t hrdbf_app_baselen;
-static void hrdbf_app_fail(const char *msg){
+static void hrdbf_app_write(const char *msg){
  size_t n=0;while(msg[n])n++;
 #ifdef _WIN32
  {DWORD written;WriteFile(GetStdHandle(STD_ERROR_HANDLE),msg,(DWORD)n,&written,0);}
 #else
  syscall3(1,2,(long)msg,n);
 #endif
+}
+static void hrdbf_app_exit(void){
  hrntx_file_close(&hrdbf_app_order);
  hrdbf_file_close(&hrdbf_app_state);
 #ifdef _WIN32
@@ -30,6 +32,10 @@ static void hrdbf_app_fail(const char *msg){
  syscall3(60,1,0,0);
 #endif
  __builtin_unreachable();
+}
+static void hrdbf_app_fail(const char *msg){hrdbf_app_write(msg);hrdbf_app_exit();}
+static void hrdbf_app_fail2(const char *prefix,const char *detail){
+ hrdbf_app_write(prefix);hrdbf_app_write(detail);hrdbf_app_write("\n");hrdbf_app_exit();
 }
 static void hrdbf_app_require(void){if(!hrdbf_app_state.area.open)hrdbf_app_fail("hbc: DBF no workarea is open\n");}
 void hrdbf_app_close(void){hrdbf_error a=hrntx_file_close(&hrdbf_app_order),b=hrdbf_file_close(&hrdbf_app_state);hrdbf_app_found_flag=0;hrdbf_app_pos=0;if(a||b)hrdbf_app_fail("hbc: DBF/NTX close failed\n");}
@@ -50,7 +56,16 @@ void hrdbf_app_open(const unsigned char *p,size_t len,uint64_t new_area,uint64_t
  hrdbf_app_baselen=end-start;
  for(i=0;i<hrdbf_app_baselen;i++)hrdbf_app_basename[i]=cxupper(p[start+i]);
  e=hrdbf_file_open(&hrdbf_app_state,path,writable!=0);
- if(e)hrdbf_app_fail("hbc: DBF open rejected (format, data, size, access mode or I/O)\n");
+ if(e){
+  /* D1.1: exact reason from the OS layer or the decoder, code fallback. */
+  const char *d=hrdbf_app_state.diag[0]?hrdbf_app_state.diag:hrdbf_app_state.area.diag;
+  if(!d[0])d=e==HRDBF_IO?"I/O error":e==HRDBF_MEMORY?"out of memory":
+            e==HRDBF_LIMIT?"size or field-count limit exceeded":
+            e==HRDBF_VERSION?"unsupported table version or header flags":
+            e==HRDBF_TYPE?"unsupported field type":
+            e==HRDBF_DATA?"record content invalid":"table format not supported";
+  hrdbf_app_fail2("hbc: DBF open rejected: ",d);
+ }
 }
 static void hrdbf_app_order_sync(void){
  hrdbf_area*d=&hrdbf_app_state.area;hrntx_index*x=&hrdbf_app_order.index;

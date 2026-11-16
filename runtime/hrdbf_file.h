@@ -7,6 +7,9 @@ typedef struct { hrdbf_area area; unsigned char *owned; size_t size;
 #ifdef _WIN32
  void *handle; /* retained exclusive OS handle; no RDD lock protocol */
 #endif
+ /* D1.1: OS-layer rejection reason (path, size, I/O). Empty on success.
+  * Survives hrdbf_file_close so the caller can report after cleanup. */
+ char diag[160];
 } hrdbf_file;
 /* No concurrent writer or snapshot-consistency guarantee. The caller supplies
  * an offline/quiescent file. Decoder never keeps a live mapping of file pages.

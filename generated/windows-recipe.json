@@ -19,12 +19,12 @@
   "source_dependencies_sha256": {
     "runtime/hrcdx.c": "9cae0f403f97877d111c8fb9c01741adba321e7578933a8ddde451e67e88802c",
     "runtime/hrcdx.h": "a6b48dce0cf0211715698cc16b5173ecc7bb1ff88b5e7ba8f03d1565a20db4ad",
-    "runtime/hrdbf.c": "b9dc0e0010235dfd3adf37a7bb0784d3d1d4da564fac3f2f297a8a539be2f7f4",
-    "runtime/hrdbf.h": "86f2b78f5e0c215d5a7edf3005c79d326e966eef13477879f25c6385cf2771c0",
-    "runtime/hrdbf_app.c": "8de3354672ab044dbdb972b4a07f277fa47743d0e3689a509b42f731be3aca58",
+    "runtime/hrdbf.c": "ee767959ff9cfaa64ff7d284ae525e8194e36ecb1d6c23b082e3885defc032f1",
+    "runtime/hrdbf.h": "5debf22b47153ad299766663512d7a73dd4e3de56c721b564fbc66081dcb6093",
+    "runtime/hrdbf_app.c": "0c7da8c90dc5ec4899e0ea6ae29aead151761c7eb012184c30f8ce757948219a",
     "runtime/hrdbf_embedded_windows.c": "ba2cd966c491a4ab080177b24e245c7ec762310ba9481b046c6e4505b5ec335c",
-    "runtime/hrdbf_file.h": "13992e3beb0d1c4b97f9c8492f2a70ea179dafefd9619b9976aa06d12470f27e",
-    "runtime/hrdbf_file_windows.c": "bd331dcc26ddd0aa8bdfa2fd641d575f3bc4b80e8b08b75bd8c315489f99a406",
+    "runtime/hrdbf_file.h": "e89e9fe98f3125fb5b76983590b238e504e3546f745422ea13298567bbb57bf2",
+    "runtime/hrdbf_file_windows.c": "ba74be168e1a2c8b5f0a8e600f4d3146aff22a3bfc1bfdd788c985eb40ae2e5b",
     "runtime/hrdyn.h": "d09ac5d22d93f07f9e67435b7cb9ef60e57ce9a41ba872be6e62cdd34593ac9d",
     "runtime/hrntx.c": "2aa645be8faba3a3dceca7d09a3993605fd9b846e5764e9d49541cf54a36bbb9",
     "runtime/hrntx.h": "6ea7588085846c416a72db9ae2fda9c39adfc080e3a20a5426b1d5412fb4f8ed",
@@ -32,6 +32,6 @@
     "runtime/hrvalue.c": "f66ce5a17d717e33bcf6a20623d06504656bd1ee72593ed2fd3b9f27630d13cd",
     "runtime/hrvalue.h": "a00bad363533877e846aa43084d727441f016972aa7439c10d0733abedf20a32"
   },
-  "asm_sha256": "12a072ab378ffc891808d055b20c2437a18830d52ce8b788b853b815911e0376",
+  "asm_sha256": "9e7a33747ca0aa1d5cab2abda345d52a7a1355c3a440085cf852b30f5636d96d",
   "notes": "Win64 C bodies; explicit internal ABI and copy callback bridges; DLL import pointer references normalised to named thunks"
 }

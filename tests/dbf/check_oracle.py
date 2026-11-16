@@ -37,6 +37,11 @@ def main():
 
     fixtures = output / 'fixtures'
     fixtures.mkdir()
+    # Anonymized M_CLIE.DBF fixture: exact structure of Antonio's production
+    # file (51 fields C/N/D, 13 records, rlen 757, production-index flag
+    # byte 28 = 0x01) with 100% synthetic data; D1.1 acceptance. Data
+    # fixture, no builder. Antonio's real file is never published.
+    shutil.copyfile(inputs / 'acceptance-test3/M_CLIE.DBF', fixtures / 'mclie_real.dbf')
     for name in ['fixtures', 'widths', 'mclie']:
         shutil.copyfile(inputs / (name + '.prg'), fixtures / (name + '.prg'))
         require([hbmk2, name + '.prg', '-gtstd', '-o' + name], fixtures, name + '-build')

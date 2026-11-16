@@ -15,6 +15,9 @@ typedef struct {
  uint16_t header,record,nfields;
  unsigned char bof,eof,open;
  hrdbf_field fields[HRDBF_MAX_FIELDS];
+ /* D1.1: exact rejection reason, filled by hrdbf_open on failure. Empty on
+  * success. Diagnostic only; never part of the accepted-format contract. */
+ char diag[160];
 } hrdbf_area;
 typedef struct {
  unsigned char type,width,decimals; /* U (NIL) for invalid field ordinal */
