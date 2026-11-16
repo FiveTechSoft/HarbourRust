@@ -1,5 +1,5 @@
 {
-  "compiler": "gcc.exe (MinGW-W64 x86_64-ucrt-posix-seh, built by Brecht Sanders, r3) 16.2.0",
+  "compiler": "x86_64-w64-mingw32-gcc-posix (GCC) 10-posix 20220113",
   "flags": [
     "-std=c99",
     "-O2",
@@ -27,23 +27,24 @@
     "-Werror",
     "-Wno-misleading-indentation"
   ],
-  "source_sha256": "b8bf9643f2568fa00393cca8fd83cd18c2c0ac2b0e76c84a6ca8af253e783cb6",
+  "source_sha256": "e5673233da8c1d55e7c6933fba302cc78966242a414716eacc4f1b9a89e4c2b6",
   "source_dependencies_sha256": {
-    "runtime/hrdbf.h": "ae85309d27935180573bd3bb4125d8a16f2e722dcad9c7a5e93c6618071a1631",
-    "runtime/hrdyn.h": "1046706fafb8ad19ea16b76dfdd1a6745f7d8a372b634db437984783ac859d30",
-    "runtime/hrmacro.c": "d33076a90d5b7f9f0298e3b5afe8afb4c079cba96f6cf2698c3c79701bc27595",
-    "runtime/hrmacro.h": "d113b93d3d1da1e98034205be85c2182a5fc36ed0184f0cd90825265bd9aaec7",
-    "runtime/hrmacro_embedded.c": "b8bf9643f2568fa00393cca8fd83cd18c2c0ac2b0e76c84a6ca8af253e783cb6",
-    "runtime/hrmembridge.c": "64af78a0f72fd0f8f50433bc911e7cecf11ba69ee1ffe0eefbaf045927a238c7",
-    "runtime/hrmembridge.h": "069c0e7e69b585f303517748ba72333f63f2a4a2bfc6648695509b55a52f3fc3",
-    "runtime/hrmemvar.c": "8b49fb2ea3ce978a26d42b8c44b5a27e748efe4ee7e07d2307fe9fe6ce150a02",
-    "runtime/hrmemvar.h": "128756621de99f58169037b7ad717cfe9daa21c6ae7561e861c51457e0a4665e",
-    "runtime/hrvalue.h": "5f4e7812cfd9f9ad49d56fa211bb2285b68dd5e56640bb4ca390df70a2ae2e97"
+    "runtime/hrdbf.h": "86f2b78f5e0c215d5a7edf3005c79d326e966eef13477879f25c6385cf2771c0",
+    "runtime/hrdyn.h": "d09ac5d22d93f07f9e67435b7cb9ef60e57ce9a41ba872be6e62cdd34593ac9d",
+    "runtime/hrmacro.c": "9d7b21dc94785a36be6d7aeffe594a649cf6ed4e6b6b201af127b48966789427",
+    "runtime/hrmacro.h": "259d8a959237b430a96821d151a012957720846d1324ad9e43732c9c6f696e62",
+    "runtime/hrmacro_embedded.c": "e5673233da8c1d55e7c6933fba302cc78966242a414716eacc4f1b9a89e4c2b6",
+    "runtime/hrmembridge.c": "e2b2a440e667f9c11c83d1c81d76d62f4bd2466a4f1706a50e077d4f6e04cda4",
+    "runtime/hrmembridge.h": "ec593141216ebba35b61ed3376a5ef145b620ec76d415e87eb1896c23b8ec5ac",
+    "runtime/hrmemvar.c": "7ec6dcad19c1dfe27e1f4b7dc1ac69113c5150c647b7768a0a377682bb661d8c",
+    "runtime/hrmemvar.h": "d291fe0c4260f150842f83ffc90a495909048a3bd016e6f109946554027b7e1c",
+    "runtime/hrvalue.h": "a00bad363533877e846aa43084d727441f016972aa7439c10d0733abedf20a32"
   },
-  "asm_sha256": "7966bc340582a6a8404d580273d63d2787a43e526483ac46b9123f01e7002499",
+  "asm_sha256": "2e16431ec89c7f62edf309189af6b298e7457a523f288233452829188b2e1c06",
   "external_calls": [
     "hrm_alloc",
     "hrm_builtin_fail",
+    "hrm_call",
     "hrm_exp",
     "hrm_export_float",
     "hrm_export_string",

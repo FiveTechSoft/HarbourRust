@@ -4,7 +4,7 @@ R=Path(__file__).resolve().parents[3];E=R/'evidence';lines=[x for x in (R/'tests
 summary={}
 for target in ['linux','windows']:
  O=E/'battery'/target;rows={}
- for p in sorted(p for p in O.glob('results-*.json') if '.pre-' not in p.name):
+ for p in sorted((p for p in O.glob('results-*.json') if '.pre-' not in p.name),key=lambda p:p.stat().st_mtime_ns):
   for x in json.loads(p.read_text()):rows[x['index']]=x
  stats={'count':len(rows),'raw_regressions':[],'not_executed':[],'manifest_raw_failures':[],'canonical_lf_failures':[],'emission_changed':[]}
  for i,x in sorted(rows.items()):
@@ -18,6 +18,8 @@ for target in ['linux','windows']:
   if not(d/'candidate.rc').exists():stats['not_executed'].append({'index':i,'source':source});continue
   rc=int((d/'candidate.rc').read_text());out=(d/'candidate.stdout').read_bytes();err=(d/'candidate.stderr').read_bytes();want_rc=None;want_err=b''
   if kind=='streams':sp,ep=rest.split();want=(R/sp).read_bytes();want_err=(R/ep).read_bytes()
+  elif kind=='streams2':lp,wp,ep=rest.split();want=(R/(lp if target=='linux'else wp)).read_bytes();want_err=(R/ep).read_bytes()
+  elif kind=='posx2':v,lp,wp=rest.split();want_rc=int(v);want=(R/(lp if target=='linux'else wp)).read_bytes()
   elif kind=='pos2':sp=rest.split()[0 if target=='linux'else 1];want=(R/sp).read_bytes()
   else:
    if kind=='posx':v,rest=rest.split(' ',1);want_rc=int(v)

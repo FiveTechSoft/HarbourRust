@@ -26,6 +26,7 @@ typedef struct {
   uint64_t meta;       /* exact binding float metadata, or calculated operator metadata */
   int literal;         /* source provenance only, never inferred from binding tag9 */
   int owned;            /* V_STR: s came from hrm_alloc */
+  const char *builtin; /* deferred terminal builtin frame, static spelling */
   unsigned char ebuf[512]; /* V_ERR message */
   size_t en;
 } val;
@@ -363,7 +364,7 @@ static val arith(int op, val *a, val *b, int folding) {
 }
 
 /* Parse owns nodes, but performs no binding lookup and calls no fatal route. */
-enum { N_VALUE,N_LOOKUP,N_UNARY,N_BINARY,N_AND,N_OR,N_LIST,N_MACRO,N_CALL };
+enum { N_VALUE,N_LOOKUP,N_UNARY,N_BINARY,N_AND,N_OR,N_LIST,N_MACRO,N_CALL,N_ARGUMENT };
 typedef struct node {
  struct node *allocated,*a,*b;
  int kind,op;
@@ -411,8 +412,8 @@ static node *primary(parser*p){
   }
   next(L);n=newnode(p,N_LOOKUP,0,0);n->name=s;n->len=len;
   if(L->tok==T_LPAREN){
-   n->kind=N_CALL;next(L);node*args=0;
-   if(L->tok!=T_RPAREN){for(;;){node*x=parse_or(p);args=args?binary(p,N_LIST,0,args,x):x;if(L->tok!=T_COMMA||L->error)break;next(L);}}
+   n->kind=N_CALL;next(L);node*args=0,**tail=&args;
+   if(L->tok!=T_RPAREN){for(;;){node*x=parse_or(p);node*arg=newnode(p,N_ARGUMENT,x,0);*tail=arg;tail=&arg->b;if(L->tok!=T_COMMA||L->error)break;next(L);}}
    n->a=args;if(L->tok!=T_RPAREN)parse_bad(p);else next(L);
   }
   break;}
@@ -459,9 +460,25 @@ static val binary_value(int op,val a,val b,int folding){
 }
 /* No lookup is possible in this pass. Only literal-source values are cached.
  * Boolean constant elimination is allowed with an unresolved other subtree. */
+static int builtin_id(const unsigned char*s,size_t n){
+ static const char names[][6]={"UPPER","LOWER","ROUND"};
+ for(int id=1;id<=3;id++){const char*t=names[id-1];size_t j=0;while(j<n&&t[j]&&upper(s[j])==t[j])j++;if(j==n&&!t[j])return id;}
+ return 0;
+}
+static val call_error(int id){val v=mkerr(id==1?"Error BASE/1102  Argument error: UPPER":id==2?"Error BASE/1103  Argument error: LOWER":"Error BASE/1094  Argument error: ROUND");v.builtin=id==1?"UPPER":id==2?"LOWER":"ROUND";return v;}
 static node *fold(node*n){
  if(!n)return n;
  n->a=fold(n->a);n->b=fold(n->b);
+ if(n->kind==N_CALL){
+  size_t argc=0;for(node*q=n->a;q;q=q->b)argc++;
+  int id=builtin_id(n->name,n->len);node*first=argc<=64&&n->a?n->a->a:0;
+  if((id==1||id==2)&&first&&first->kind==N_VALUE&&first->value.literal&&first->value.kind==V_STR){
+   val v=borrow(first->value);unsigned char*out=hrm_alloc(v.n);
+   if(!out)n->value=mkerr("Error: macro allocation failure (M2)");
+   else{for(size_t j=0;j<v.n;j++){unsigned char c=v.s[j];out[j]=(id==1)?(unsigned char)upper(c):(c>='A'&&c<='Z'?c+32:c);}n->value=v;n->value.s=out;n->value.owned=1;}
+   n->value.literal=1;n->kind=N_VALUE;
+  }
+ }
  if(n->kind==N_AND||n->kind==N_OR){
   int a=n->a->kind==N_VALUE&&n->a->value.kind==V_LOG;
   int b=n->b->kind==N_VALUE&&n->b->value.kind==V_LOG;
@@ -486,7 +503,53 @@ static val status_error(hrmv_status rc,const unsigned char*s,size_t len){
  default:return mkerr("Error: MEMVAR context/size limit (M0)");
  }
 }
+extern void hrm_builtin_fail(const unsigned char*,size_t,const unsigned char*,size_t) __attribute__((noreturn));
+static void program_fatal(void*,const unsigned char*,size_t);
 static val eval_text(hrmacro_context*,const unsigned char*,size_t,unsigned);
+extern unsigned hrm_call(unsigned,size_t,const hrm_cell*,hrm_cell*);
+static val evaluate(hrmacro_context*,node*,unsigned);
+static void call_cell_drop(hrm_cell*v){if((v->tag&255u)==4||(v->tag&255u)==5)hrm_free((unsigned char*)(uintptr_t)v->payload);v->tag=1;v->payload=0;}
+static val evaluate_call(hrmacro_context*c,node*n,unsigned nesting){
+ size_t count=0,used=0;node*arg=n->a;int id=builtin_id(n->name,n->len);val v={0};hrm_cell out={1,0};hrm_cell*argv=0;
+ for(node*q=arg;q;q=q->b)count++;
+ if(count>64)return mkerr("Error: macro call arity exceeds 64 (M2)");
+ if(count){argv=c->bridge.storage.alloc(c->bridge.storage.user,count*sizeof(*argv));if(!argv)return mkerr("Error: macro allocation failure (M2)");c->scratch_live++;}
+ for(;arg;arg=arg->b){
+  v=evaluate(c,arg->a,nesting);if(v.kind==V_ERR)goto done;
+  hrm_cell cell={1,0};hrmv_status rc=HRMV_OK;
+  switch(v.kind){
+   case V_INT:cell.tag=0;cell.payload=(uint64_t)v.i;break;
+   case V_LOG:cell.tag=3;cell.payload=(uint64_t)v.i;break;
+   case V_DBL:{union{uint64_t u;double d;}x;x.d=v.d;rc=c->bridge.float_new(c->bridge.compiler_user,x.u,v.meta,&cell);break;}
+   case V_STR:
+    cell.tag=4;if(v.owned){cell.payload=(uint64_t)(uintptr_t)v.s;v.owned=0;}
+    else{unsigned char*o=hrm_alloc(v.n);if(!o)rc=HRMV_MEMORY;else{for(size_t j=0;j<v.n;j++)o[j]=v.s[j];cell.payload=(uint64_t)(uintptr_t)o;}}break;
+   default:break;
+  }
+  drop(&v);if(rc!=HRMV_OK){v=status_error(rc,0,0);goto done;}argv[used++]=cell;
+ }
+ if(!id){v=mkerr2("Error: macro function not supported (M2): ",n->name,n->len);goto done;}
+ if((id<=2&&(!count||(argv[0].tag&255u)!=4))||(id==3&&(count<2||((argv[0].tag&255u)!=0&&(argv[0].tag&255u)!=5)||((argv[1].tag&255u)!=0&&(argv[1].tag&255u)!=5)))){v=call_error(id);goto done;}
+ if(id==3){
+  double d;if((argv[1].tag&255u)==5)d=*(const double*)(uintptr_t)argv[1].payload;else d=(double)(int64_t)argv[1].payload;
+  /* Validate before integer conversion or production helper's legacy fatal. */
+  if(!(d>-16.0&&d<16.0)){v=mkerr("Error: macro ROUND decimals outside -15..15 (M2)");goto done;}
+ }
+ if(!hrm_call((unsigned)id,count,argv,&out)){v=mkerr("Error: macro builtin dispatch failure (M2)");goto done;}
+ v=(val){0};switch(out.tag&255u){
+  case 0:case 9:v=mkint((int64_t)out.payload);break;
+  case 1:break;
+  case 3:v=mklog(out.payload!=0);break;
+  case 4:v.kind=V_STR;v.s=(const unsigned char*)(uintptr_t)out.payload;v.n=((const uint64_t*)v.s)[-1];v.owned=1;out.tag=1;break;
+  case 5:{const uint64_t*f=(const uint64_t*)(uintptr_t)out.payload;union{uint64_t u;double d;}x;x.u=f[0];v=mkdbl(x.d,(int)(f[1]&65535u));v.meta=f[1];break;}
+  default:v=mkerr("Error: macro builtin result type unsupported (M2)");break;
+ }
+ call_cell_drop(&out);
+ done:
+ while(used)call_cell_drop(&argv[--used]);
+ if(argv){c->bridge.storage.free(c->bridge.storage.user,argv,count*sizeof(*argv));c->scratch_live--;}
+ return v;
+}
 static val evaluate(hrmacro_context*c,node*n,unsigned nesting){
  val a,b;hrm_cell cell;hrmv_status rc;
  if(n->kind==N_VALUE)return borrow(n->value);
@@ -502,7 +565,7 @@ static val evaluate(hrmacro_context*c,node*n,unsigned nesting){
   default:return status_error(HRMV_TYPE_UNSUPPORTED,n->name,n->len);
   }return a;
  }
- if(n->kind==N_CALL)return mkerr2("Error: macro function calls are not in this increment (M1): ",n->name,n->len);
+ if(n->kind==N_CALL)return evaluate_call(c,n,nesting);
  a=evaluate(c,n->a,nesting);if(n->kind==N_UNARY)return unary_value(n->op,a);
  if(n->kind==N_MACRO){
   if(a.kind==V_ERR)return a;
@@ -552,7 +615,9 @@ hrm_cell hrmacro_eval(hrmacro_context*c,const unsigned char*src,size_t len){
  if(v.kind==V_ERR){
   /* Terminal M0 only: no ErrorBlock/BREAK/RECOVER claim. All evaluator
    * temporaries and every context/frame binding die before host fatal. */
-  drop(&v);hrmacro_destroy(c);c->fatal(c->fatal_user,v.ebuf,v.en);
+  drop(&v);hrmacro_destroy(c);
+  if(v.builtin&&c->fatal==program_fatal){size_t len=0;while(v.builtin[len])len++;hrm_builtin_fail(v.ebuf,v.en,(const unsigned char*)v.builtin,len);}
+  c->fatal(c->fatal_user,v.ebuf,v.en);
   /* A fatal host callback is contractually noreturn. Fail closed if broken. */
   for(;;){}
  }

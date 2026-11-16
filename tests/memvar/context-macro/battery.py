@@ -3,7 +3,7 @@ from pathlib import Path
 import argparse,subprocess,os,gzip,hashlib,json,resource,difflib
 p=argparse.ArgumentParser();p.add_argument('--start',type=int,default=0);p.add_argument('--end',type=int,required=True);p.add_argument('--target',choices=['linux','windows'],required=True);a=p.parse_args()
 R=Path(__file__).resolve().parents[3];O=R/'evidence'/'battery'/a.target;O.mkdir(parents=True,exist_ok=True)
-W='/tmp/hr-wine11/opt/wine-stable/bin/wine';M='/tmp/hr-win-root/usr/bin/x86_64-w64-mingw32-';env=os.environ.copy();env.update(WINEPREFIX='/tmp/hr-win11-prefix',WINEDEBUG='-all')
+W=os.environ.get('HB_WINE','/tmp/hr-wine11/opt/wine-stable/bin/wine');M='/tmp/hr-win-root/usr/bin/x86_64-w64-mingw32-';env=os.environ.copy();env.update(WINEPREFIX=os.environ.get('WINEPREFIX','/tmp/hr-m2-wine11-prefix'),WINEDEBUG='-all')
 lines=[x for x in (R/'tests/manifest.txt').read_text().splitlines() if x.strip() and not x.lstrip().startswith('#')];rows=[]
 def limits():
  resource.setrlimit(resource.RLIMIT_CPU,(5,5));resource.setrlimit(resource.RLIMIT_FSIZE,(4*1024**2,4*1024**2))

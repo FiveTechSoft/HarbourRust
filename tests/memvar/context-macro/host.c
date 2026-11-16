@@ -11,6 +11,7 @@ static char diagnostic[512];
 static unsigned fatal_count;
 static unsigned fault_kind,fault_step;
 static void faults(void);
+static void m2(void);
 unsigned char*hrm_alloc(size_t n){hrv_cell v;unsigned char*s=malloc(n?n:1);assert(s);memset(s,0,n);hrmv_status rc=strcopy(&compiler_pool,s,n,&v);free(s);return rc?0:(unsigned char*)(uintptr_t)v.payload;}
 void hrm_free(unsigned char*p){if(p){uint64_t*base=(uint64_t*)p-2;block*b=compiler_pool.head;while(b&&b->p!=base)b=b->next;assert(b);hrv_cell v={b->n==32?(HR_DYN_FLOAT_HEAP|5):4,(uint64_t)(uintptr_t)p};drop(&compiler_pool,v);}}
 double hrm_exp(double x){return exp(x);}
@@ -33,7 +34,7 @@ failure("s+' temp'+missing","Error BASE/1003  Variable does not exist: MISSING\n
 failure("('owned'+' temp') + missing + later","Error BASE/1003  Variable does not exist: MISSING\n");
 failure("left + ('owned'+' temp') + right","Error BASE/1003  Variable does not exist: LEFT\n");puts("fatal.order.raw_compiler_arena_zero_before_callback=PASS");
 failure("missing + )","Error BASE/1449  Syntax error: &\n");assert(ctx.lookups==0);failure("M->absent","Error BASE/1003  Variable does not exist: ABSENT\n");puts("parse.syntax_before_lookup.deferred_first_error=PASS");
-assert(fatal_count==5&&raw_pool.count==raw_pool.freed&&compiler_pool.count==compiler_pool.freed);puts("raw.compiler.frames.bindings.scratch=0");faults();return 0;}
+assert(fatal_count==5&&raw_pool.count==raw_pool.freed&&compiler_pool.count==compiler_pool.freed);puts("raw.compiler.frames.bindings.scratch=0");faults();m2();return 0;}
 void*hrm_raw_alloc(void*u,size_t n){return alloc(u?u:&raw_pool,n);}
 void hrm_raw_free(void*u,void*p,size_t n){release(u?u:&raw_pool,p,n);}
 hrmv_status hrm_export_string(void*u,const unsigned char*s,size_t n,hrv_cell*out){return strcopy(u?u:&compiler_pool,s,n,out);}
@@ -54,3 +55,37 @@ static void faults(void){
 }
 
 void hrm_builtin_fail(const unsigned char*s,size_t n,const unsigned char*b,size_t z){(void)b;(void)z;fatal(0,s,n);}
+
+double hrm_fmod(double x,double y){return fmod(x,y);}
+double hrm_powf(double x,double y){return pow(x,y);}
+/* Native host dispatch only: allocation/argument-lifetime proof, not production
+ * formatter/rounding proof. PRG gates execute the actual assembly helpers. */
+unsigned hrm_call(unsigned id,size_t argc,const hrm_cell*argv,hrm_cell*out){
+ (void)argc;
+ if(id==1||id==2){
+  const unsigned char*s=(const unsigned char*)(uintptr_t)argv[0].payload;size_t n=((const uint64_t*)s)[-1];unsigned char*p=hrm_alloc(n);if(!p)return 0;
+  for(size_t i=0;i<n;i++){unsigned char c=s[i];p[i]=id==1?(c>='a'&&c<='z'?c-32:c):(c>='A'&&c<='Z'?c+32:c);}
+  *out=(hrm_cell){4,(uint64_t)(uintptr_t)p};return 1;
+ }
+ if(id==3){double v=(argv[0].tag&255)==5?*(double*)(uintptr_t)argv[0].payload:(double)(int64_t)argv[0].payload;
+  int d=(int)((argv[1].tag&255)==5?*(double*)(uintptr_t)argv[1].payload:(double)(int64_t)argv[1].payload);double scale=pow(10,d);union{double d;uint64_t u;}bits;bits.d=round(v*scale)/scale;
+  return floating(&compiler_pool,bits.u,((uint64_t)10<<16)|(d>0?d:0),out)==HRMV_OK;
+ }
+ return 0;
+}
+
+static void m2(void){
+ init();hrv_cell v=run("Upper(Lower(s))");assert(v.tag==4&&!memcmp((void*)(uintptr_t)v.payload,"OWNED",5));drop(&compiler_pool,v);
+ size_t before=ctx.lookups;v=run("Upper('literal',missing)");assert(ctx.lookups==before&&v.tag==4);drop(&compiler_pool,v);
+ hrmacro_destroy(&ctx);
+ failure("Upper(s,1,2,3,4,5,6,7,8,missing)","Error BASE/1003  Variable does not exist: MISSING\n");
+ failure("Upper(missing)+)","Error BASE/1449  Syntax error: &\n");assert(ctx.lookups==0);
+ failure("Upper(1)","Error BASE/1102  Argument error: UPPER\n");
+ failure("Round(v,16)","Error: macro ROUND decimals outside -15..15 (M2)\n");
+ for(fault_kind=0;fault_kind<2;fault_kind++)for(fault_step=1;fault_step<=96;fault_step++){
+  init();pool*p=fault_kind?&compiler_pool:&raw_pool;p->fail=p->attempt+fault_step;
+  if(!setjmp(terminal)){v=run("Upper(Lower(s+' suffix'),Round(v/3,2))");drop(&compiler_pool,v);hrmacro_destroy(&ctx);}
+  raw_pool.fail=compiler_pool.fail=0;assert(!raw_pool.live&&!compiler_pool.live&&!ctx.scratch_live);assert(raw_pool.count==raw_pool.freed&&compiler_pool.count==compiler_pool.freed);
+ }
+ puts("M2.args.nested.fold.extras10.syntax.types.range.faults96x2.cleanup=PASS");
+}

@@ -15615,6 +15615,7 @@ fn macro_helpers(target: Target) -> String {
     let rodata = if target == Target::Windows { ".section .rdata,\"r\"" } else { ".section .rodata" };
     let mut h = String::from(MACRO_SHIMS);
     h.push_str(include_str!("memvar_shims.s"));
+    h.push_str(include_str!("macro_call_shims.s"));
     h.push_str(match target {
         Target::Windows => MACRO_FAIL_WINDOWS,
         _ => MACRO_FAIL_LINUX,
