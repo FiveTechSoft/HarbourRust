@@ -2493,6 +2493,18 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                     if !matches!(rest.get(1),Some(Tok::Ident(w)) if w.eq_ignore_ascii_case("with")) {return Err(format!("line {}: REPLACE expects WITH",n));}
                     (f, String::new(), &rest[2..])
                 };
+                // A scope keyword at top level ends the expression: scopes
+                // are outside this increment, named so the fix is obvious.
+                let mut dep=0i32;
+                for t in et.iter() {
+                    match t { Tok::LParen => dep+=1, Tok::RParen => dep-=1,
+                        Tok::KwFor | Tok::KwWhile | Tok::KwNext => {
+                            return Err(format!("line {}: REPLACE with a FOR/WHILE/NEXT/REST/ALL/RECORD scope is outside this increment (it writes the current record only)", n));
+                        },
+                        Tok::Ident(w) if dep==0 && ["rest","all","record"].iter().any(|k| w.eq_ignore_ascii_case(k)) => {
+                            return Err(format!("line {}: REPLACE with a FOR/WHILE/NEXT/REST/ALL/RECORD scope is outside this increment (it writes the current record only)", n));
+                        }, _ => {} }
+                }
                 let e = parse_expr_tokens(et.to_vec(), n)?;
                 out.push(Stmt::CallStmt(n, Expr::Call("dbffieldput".to_string(), vec![Expr::Str(f), Expr::Str(alias), e])));
                 *i += 1;

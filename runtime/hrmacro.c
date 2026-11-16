@@ -27,8 +27,8 @@ typedef struct {
   int literal;         /* source provenance only, never inferred from binding tag9 */
   int owned;            /* V_STR: s came from hrm_alloc */
   const char *builtin; /* deferred terminal builtin frame, static spelling */
-  unsigned char ebuf[512]; /* V_ERR message */
-  size_t en;
+  const char *error_prefix; /* V_ERR static diagnostic prefix */
+  const unsigned char *error_name; size_t error_name_len;
 } val;
 
 enum { T_END, T_NUM, T_STR, T_IDENT, T_OP, T_LPAREN, T_RPAREN, T_COMMA, T_TRUE, T_FALSE, T_NIL, T_AND, T_OR, T_NOT, T_AMP };
@@ -170,14 +170,17 @@ static void drop(val *v) { if (v->kind == V_STR && v->owned) { hrm_free((unsigne
 static val mkerr2(const char *pre, const unsigned char *name, size_t n) {
   val r = {0};
   r.kind = V_ERR;
-  size_t k = 0;
-  for (size_t j = 0; pre[j] && k < sizeof r.ebuf - 2; j++) r.ebuf[k++] = (unsigned char)pre[j];
-  for (size_t j = 0; j < n && k < sizeof r.ebuf - 2; j++) r.ebuf[k++] = (unsigned char)upper(name[j]);
-  r.ebuf[k++] = '\n';
-  r.en = k;
-  return r;
+  r.error_prefix=pre;r.error_name=name;r.error_name_len=n;return r;
 }
 static val mkerr(const char *m) { return mkerr2(m, 0, 0); }
+/* Render before an error's source/parser can die. Nested errors already
+ * point at the top-level stack sink and must never be formatted twice. */
+static void render_error(val *v,unsigned char *out){
+ if(!v->error_prefix){if(v->s!=out){for(size_t j=0;j<v->n;j++)out[j]=v->s[j];v->s=out;}return;}
+ size_t k=0;for(size_t j=0;v->error_prefix[j]&&k<510;j++)out[k++]=(unsigned char)v->error_prefix[j];
+ for(size_t j=0;j<v->error_name_len&&k<510;j++)out[k++]=(unsigned char)upper(v->error_name[j]);
+ out[k++]='\n';v->s=out;v->n=k;v->error_prefix=0;v->error_name=0;v->error_name_len=0;
+}
 
 static val arg_err(int op) {
   switch (op) {
@@ -594,6 +597,7 @@ static val eval_text(hrmacro_context*c,const unsigned char*src,size_t len,unsign
  if(p.L.error)v=mkerr(p.L.message);else{n=fold(n);v=evaluate(c,n,nesting);}
  /* Borrowed cache/source string must be copied before the parser dies. */
  if(v.kind==V_STR&&!v.owned){unsigned char*o=hrm_alloc(v.n);if(!o)v=mkerr("Error: macro allocation failure (M0)");else{for(size_t j=0;j<v.n;j++)o[j]=v.s[j];v.s=o;v.owned=1;}}
+ if(v.kind==V_ERR&&c->error_sink)render_error(&v,c->error_sink);
  while(p.allocated){node*q=p.allocated;p.allocated=q->allocated;drop(&q->value);c->bridge.storage.free(c->bridge.storage.user,q,sizeof(*q));c->scratch_live--;}
  return v;
 }
@@ -631,10 +635,11 @@ static void raw_reuse_destroy(hrmacro_raw_pool*p){
 }
 hrmv_status hrmacro_init(hrmacro_context*c,hrmv_alloc_fn a,hrmv_free_fn f,void*raw,hrmb_string_fn s,hrmb_float_fn d,void*compiler,hrmacro_fatal_fn fatal,void*user){
  if(!c||!fatal||!a||!f)return HRMV_BAD_ARGUMENT;c->raw_pool=(hrmacro_raw_pool){0};c->raw_pool.alloc=a;c->raw_pool.free=f;c->raw_pool.user=raw;
- hrmv_status rc=hrmb_init(&c->bridge,raw_reuse_alloc,raw_reuse_free,&c->raw_pool,s,d,compiler);if(rc)return rc;c->fatal=fatal;c->fatal_user=user;c->scratch_live=0;c->lookups=0;return HRMV_OK;
+ hrmv_status rc=hrmb_init(&c->bridge,raw_reuse_alloc,raw_reuse_free,&c->raw_pool,s,d,compiler);if(rc)return rc;c->fatal=fatal;c->fatal_user=user;c->scratch_live=0;c->lookups=0;c->error_sink=0;return HRMV_OK;
 }
 void hrmacro_destroy(hrmacro_context*c){if(c){hrmb_destroy(&c->bridge);raw_reuse_destroy(&c->raw_pool);}}
 hrm_cell hrmacro_eval(hrmacro_context*c,const unsigned char*src,size_t len){
+ unsigned char diagnostic[512];c->error_sink=diagnostic;
  val v=eval_text(c,src,len,0);hrm_cell out={1,0};hrmv_status rc=HRMV_OK;
  switch(v.kind){
  case V_INT:out.tag=v.literal?9:0;out.payload=(uint64_t)v.i;break;
@@ -648,13 +653,13 @@ hrm_cell hrmacro_eval(hrmacro_context*c,const unsigned char*src,size_t len){
  if(v.kind==V_ERR){
   /* Terminal M0 only: no ErrorBlock/BREAK/RECOVER claim. All evaluator
    * temporaries and every context/frame binding die before host fatal. */
-  drop(&v);hrmacro_destroy(c);
-  if(v.builtin&&c->fatal==program_fatal){size_t len=0;while(v.builtin[len])len++;hrm_builtin_fail(v.ebuf,v.en,(const unsigned char*)v.builtin,len);}
-  c->fatal(c->fatal_user,v.ebuf,v.en);
+  render_error(&v,diagnostic);c->error_sink=0;drop(&v);hrmacro_destroy(c);
+  if(v.builtin&&c->fatal==program_fatal){size_t len=0;while(v.builtin[len])len++;hrm_builtin_fail(v.s,v.n,(const unsigned char*)v.builtin,len);}
+  c->fatal(c->fatal_user,v.s,v.n);
   /* A fatal host callback is contractually noreturn. Fail closed if broken. */
   for(;;){}
  }
- drop(&v);return out;
+ c->error_sink=0;drop(&v);return out;
 }
 /* Generated-program adapters remain internal SysV, same as this unit. */
 extern void *hrm_raw_alloc(void*,size_t);
@@ -670,7 +675,7 @@ void hrmacro_start(hrmacro_context*c){
  if(rc){static const unsigned char msg[]="Error: MEMVAR context initialization failure (M0)\n";hrm_fail(msg,sizeof(msg)-1);}
  /* HARBOUR/CLIPPER do NOT exist before PUBLIC declaration in the oracle. */
 }
-static void raise_status(hrmacro_context*c,hrmv_status rc,const unsigned char*s,size_t n){if(rc){val v=status_error(rc,s,n);hrmacro_destroy(c);c->fatal(c->fatal_user,v.ebuf,v.en);for(;;){}}}
+static void raise_status(hrmacro_context*c,hrmv_status rc,const unsigned char*s,size_t n){if(rc){val v=status_error(rc,s,n);unsigned char diagnostic[512];render_error(&v,diagnostic);hrmacro_destroy(c);c->fatal(c->fatal_user,v.s,v.n);for(;;){}}}
 uint64_t hrmacro_enter(hrmacro_context*c){uint64_t mark=0;raise_status(c,hrmb_frame_enter(&c->bridge,&mark),0,0);return mark;}
 void hrmacro_leave(hrmacro_context*c,uint64_t mark){raise_status(c,hrmb_frame_leave(&c->bridge,mark),0,0);}
 void hrmacro_declare(hrmacro_context*c,int priv,const unsigned char*s,size_t n){raise_status(c,hrmb_declare(&c->bridge,priv,(const char*)s,n),s,n);}
@@ -679,8 +684,8 @@ hrm_cell hrmacro_lookup(hrmacro_context*c,const unsigned char*s,size_t n){hrv_ce
 void hrmacro_str_check(hrmacro_context*c,uint64_t tag,uint64_t payload,int owned){
  unsigned kind=(unsigned)(tag&255u);if(kind==0||kind==9||kind==5)return;
  if(owned&&kind==4)hrm_free((unsigned char*)(uintptr_t)payload);
- val v=mkerr("Error BASE/1099  Argument error: STR");hrmacro_destroy(c);
- if(c->fatal==program_fatal)hrm_builtin_fail(v.ebuf,v.en,(const unsigned char*)"STR",3);
- c->fatal(c->fatal_user,v.ebuf,v.en);for(;;){}
+ val v=mkerr("Error BASE/1099  Argument error: STR");unsigned char diagnostic[512];render_error(&v,diagnostic);hrmacro_destroy(c);
+ if(c->fatal==program_fatal)hrm_builtin_fail(v.s,v.n,(const unsigned char*)"STR",3);
+ c->fatal(c->fatal_user,v.s,v.n);for(;;){}
 }
 uint64_t hrmacro_exists(hrmacro_context*c,const unsigned char*s,size_t n){int yes=0;raise_status(c,hrmv_exists(&c->bridge.storage,(const char*)s,n,&yes),s,n);return (uint64_t)yes;}
