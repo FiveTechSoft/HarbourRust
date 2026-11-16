@@ -102,16 +102,30 @@ fn check_counters(ss: &[Stmt], name: &str) -> Result<(), String> {
 // Simple expression borrows, explicit ownership copies, and @string calls have
 // measured lowering. Dynamic containers and compound call effects remain held.
 fn check_payload_uses(f: &Func, name: &str, ty: Ty) -> Result<(), String> {
+    // Conservative effect scan. Every expression form is classified on its
+    // own arm and there is deliberately no wildcard: a future form fails the
+    // build until it is classified here. Anything that can run user code or
+    // write state counts as a possible mutation of the persistent slot;
+    // multi-level indexes and hash literals carry arbitrary index/key/value
+    // expressions, so they must recurse like every other composite form.
     fn may_mutate(e: &Expr) -> bool {
         match e {
             Expr::Call(id,es) => !["len","asc","left","right","substr","upper","lower","trim","ltrim","rtrim","alltrim","valtype","hb_isnumeric","hb_isstring","hb_isarray","chr","space","replicate"].iter().any(|b|crate::is_builtin(id,b)) || es.iter().any(may_mutate),
-            Expr::Set(..)|Expr::Inc(..)|Expr::Send(..)=>true,
+            Expr::Set(..)|Expr::Inc(..)|Expr::Send(..)|Expr::IdxCompound(..)=>true,
             Expr::Bin(_,a,b)|Expr::Cmp(_,a,b)|Expr::LAnd(a,b)|Expr::LOr(a,b)=>may_mutate(a)||may_mutate(b),
             Expr::Seq(es)|Expr::ArrLit(es)|Expr::BlockLit(_,_,es)=>es.iter().any(may_mutate),
+            Expr::HashLit(ps)=>ps.iter().any(|(k,v)|may_mutate(k)||may_mutate(v)),
             Expr::LNot(e)|Expr::Index(_,e)=>may_mutate(e),
-            _=>false,
+            Expr::Index2(_,a,b)=>may_mutate(a)||may_mutate(b),
+            Expr::Index3(_,a,b,c)=>may_mutate(a)||may_mutate(b)||may_mutate(c),
+            Expr::Index4(_,a,b,c,d)=>may_mutate(a)||may_mutate(b)||may_mutate(c)||may_mutate(d),
+            // Leaves and borrows: no sub-expression, no effect of their own.
+            Expr::FloatV(..)|Expr::Float(..)|Expr::Int(_)|Expr::Str(_)|Expr::Var(_)|Expr::ByRef(_)|Expr::FuncRef(_)|Expr::DArrNew|Expr::SelfObj|Expr::SelfGet(_)|Expr::Nil|Expr::Log(_)=>false,
         }
     }
+    // Admission check for one expression. Also exhaustive without a wildcard,
+    // for the same reason: an unclassified form must stop the build, never
+    // fall through to a permissive default.
     fn expr(e: &Expr, name: &str, ty: Ty) -> bool {
         match e {
             Expr::ByRef(v) if v == name => ty != Ty::Bool,
@@ -130,9 +144,15 @@ fn check_payload_uses(f: &Func, name: &str, ty: Ty) -> Result<(), String> {
             }
             Expr::BlockLit(_,_,es) => es.iter().all(|e|expr(e,name,ty)),
             Expr::Set(_,e) | Expr::LNot(e) | Expr::Index(_,e) => expr(e,name,ty),
+            Expr::Inc(..) => true, // ++/-- on another variable holds no borrow of this slot
             Expr::Send(o,_,es) => !(ty == Ty::StrOwn && crate::expr_mentions(e,name)) && expr(o,name,ty)&&es.iter().all(|e|expr(e,name,ty)),
             Expr::Var(_) | Expr::ByRef(_) => true,
-            _ => !crate::expr_mentions(e,name),
+            // Compound/multi-level forms with no lexical mention of the slot
+            // are admitted; a mutating call hidden in their index or right
+            // side is caught by the may_mutate scan at statement level.
+            Expr::IdxCompound(..) | Expr::Index2(..) | Expr::Index3(..) | Expr::Index4(..) => !crate::expr_mentions(e,name),
+            // Leaf forms carry no variable: nothing to mention, nothing held.
+            Expr::FloatV(..)|Expr::Float(..)|Expr::Int(_)|Expr::Str(_)|Expr::Nil|Expr::Log(_)|Expr::DArrNew|Expr::SelfObj|Expr::SelfGet(_)|Expr::FuncRef(_) => true,
         }
     }
     fn walk(ss: &[Stmt], name:&str,ty:Ty)->bool {
@@ -209,6 +229,44 @@ mod owned_tests {
         assert_eq!(kind("main","text"),Some(Ty::StrOwn));
         crate::parse("FUNCTION Main()\nRETURN NIL\n").unwrap_or_else(|e|panic!("{}",e));
         assert_eq!(kind("main","text"),None);
+    }
+    #[test]
+    fn guard_rejects_hidden_mutation_in_multilevel_index_hash_method_and_block() {
+        // Every form below is valid Harbour, but borrows the persistent
+        // string in a statement whose hidden call can release its owner.
+        // The original wildcard may_mutate classified Index2/3/4 and HashLit
+        // as pure and let the first of these through (use-after-free).
+        let cases = [
+            // The reported repro: one-level Index was covered, Index2 was not.
+            "STATIC text := \"old\"\nPROCEDURE Main()\nLOCAL a := {{1}}\n? text, a[Change(),1]\nRETURN\nFUNCTION Change()\ntext := \"new\"\nRETURN 1\n",
+            "STATIC text := \"old\"\nPROCEDURE Main()\nLOCAL a := {{{1}}}\n? text, a[Change(),1,1]\nRETURN\nFUNCTION Change()\ntext := \"new\"\nRETURN 1\n",
+            "STATIC text := \"old\"\nPROCEDURE Main()\nLOCAL a := {{{{1}}}}\n? text, a[Change(),1,1,1]\nRETURN\nFUNCTION Change()\ntext := \"new\"\nRETURN 1\n",
+            // Hash literal value hiding the call.
+            "STATIC text := \"old\"\nPROCEDURE Main()\n? text, {\"k\"=>Change()}\nRETURN\nFUNCTION Change()\ntext := \"new\"\nRETURN 1\n",
+            // Index nested inside an index.
+            "STATIC text := \"old\"\nPROCEDURE Main()\nLOCAL a := {{1}}\n? text, a[a[Change(),1],1]\nRETURN\nFUNCTION Change()\ntext := \"new\"\nRETURN 1\n",
+            // Method send mixing the borrow with a mutating receiver chain.
+            "STATIC text := \"old\"\nCLASS Holder\nMETHOD Change()\nENDCLASS\nMETHOD Change() CLASS Holder\ntext := \"new\"\nRETURN 1\nPROCEDURE Main()\nLOCAL o := Holder():New()\n? text, o:Change()\nRETURN\n",
+            // Code block body hiding the call.
+            "STATIC text := \"old\"\nPROCEDURE Main()\n? text, {|| Change()}\nRETURN\nFUNCTION Change()\ntext := \"new\"\nRETURN 1\n",
+            // Call argument mixing the borrow with a mutating index.
+            "STATIC text := \"old\"\nPROCEDURE Main()\nLOCAL a := {{1}}\n? Show(text,a[Change(),1])\nRETURN\nFUNCTION Show(t,x)\nRETURN t\nFUNCTION Change()\ntext := \"new\"\nRETURN 1\n",
+        ];
+        for src in cases {
+            let err = crate::parse(src).err().unwrap_or_else(|| panic!("accepted an unsafe form: {}", src));
+            assert!(err.contains("inline-effect"), "{}: {}", src, err);
+        }
+    }
+    #[test]
+    fn guard_admits_sequenced_forms_and_pure_indexes() {
+        // Splitting the effect into its own statement is the documented
+        // workaround: the borrow starts after the mutation completed.
+        for src in [
+            "STATIC text := \"old\"\nPROCEDURE Main()\nLOCAL a := {{1}}\nLOCAL i\ni := Change()\n? text, a[i,1]\nRETURN\nFUNCTION Change()\ntext := \"new\"\nRETURN 1\n",
+            "STATIC text := \"old\"\nPROCEDURE Main()\nLOCAL a := {{1}}\n? a[1,1]\n? text\nRETURN\nFUNCTION Unused()\nRETURN 1\n",
+        ] {
+            crate::parse(src).unwrap_or_else(|e| panic!("{}: {}", src, e));
+        }
     }
     #[test]
     fn guard_nested_counter_and_catch_without_losing_i64() {
