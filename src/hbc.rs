@@ -6848,7 +6848,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 return Ok(Ty::Date);
             }
             if is_builtin(id,"file") || id=="hrfile_setdefault" || id=="hrfile_setpath" {
-                if MACHO_MODE.with(|v|v.get()) {return Err(format!("line {}: FILE/SET DEFAULT/PATH are implemented on Linux and Windows only",n));}
+                if MACHO_MODE.with(|v|v.get()) && !MACHO_ARM64.with(|v|v.get()) {return Err(format!("line {}: FILE/SET DEFAULT/PATH are implemented on Linux, Windows and Mach-O ARM64 only",n));}
                 if args.len()!=1 {return Err(format!("line {}: {} expects exactly one argument",n,id));}
                 let t=type_expr(&args[0],env,sigs,n)?;
                 if !matches!(t,Ty::Str|Ty::StrOwn|Ty::Dyn|Ty::I64|Ty::Bool|Ty::F64|Ty::Date) {return Err(format!("line {}: FILE supports scalar arguments in this increment",n));}
@@ -31654,7 +31654,7 @@ fn main() {
     MACHO_MODE.with(|v| v.set(macho));
     MACHO_ARM64.with(|v| v.set(macho_arm64));
     CURDIR_LINUX_NATIVE.with(|v| v.set(!macho && !llvm && matches!(target, Target::Linux)));
-    DBF_NATIVE.with(|v| v.set(!macho && !llvm));
+    DBF_NATIVE.with(|v| v.set((!macho || macho_arm64) && !llvm));
     DBF_WINDOWS.with(|v| v.set(matches!(target, Target::Windows)));
     if llvm && instrument { eprintln!("error: LLVM scalar: --instrument is not supported; registry checks must not be silently omitted"); process::exit(1); }
     if hb_rdd() && (!matches!(target, Target::Windows) || llvm || macho || external_as) {
@@ -32217,7 +32217,8 @@ fn main() {
     }
     let arena_active = !macho && !no_arena && !THREADS.with(|c| c.get()) && ARENA_MAP.with(|m| m.borrow().values().any(|a| a.any()));
     ARENA_ACTIVE.with(|a| a.set(arena_active));
-    if macho && (DBF_USED.with(|v|v.get()) || THREADS.with(|v|v.get()) || !externs.is_empty()) { eprintln!("error: Mach-O: DBF, threads and EXTERNAL are not ported in this increment"); process::exit(1); }
+    if macho && !macho_arm64 && (DBF_USED.with(|v|v.get()) || THREADS.with(|v|v.get()) || !externs.is_empty()) { eprintln!("error: Mach-O Intel: DBF, threads and EXTERNAL are not ported in this increment"); process::exit(1); }
+    if macho_arm64 && (THREADS.with(|v|v.get()) || !externs.is_empty()) { eprintln!("error: Mach-O ARM64: threads and EXTERNAL are not ported in this increment"); process::exit(1); }
     let mut out = vas::finish(emit_asm(&funcs, &sigs, &externs, target, instrument), target, instrument);
     out.push_str(if vas::active() {
         "

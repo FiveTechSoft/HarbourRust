@@ -441,26 +441,55 @@ impl<'a> Tr<'a> {
         }
     }
 
-    fn syscall_number(&self, i: usize) -> Result<u32, String> {
-        for k in (i.saturating_sub(12)..i).rev() {
+    // The Linux system call number in rax, when a constant reaches the
+    // syscall on straight-line code (no label in between); None = dynamic.
+    fn syscall_number(&self, i: usize) -> Option<u64> {
+        let lo = i.saturating_sub(12);
+        let mut last_lab: Option<usize> = None; // highest text label position in (lo, i]
+        let mut see = |l: &Loc| if l.sec == Sec::Text && l.idx > lo && l.idx <= i { last_lab = Some(last_lab.map_or(l.idx, |m: usize| m.max(l.idx))); };
+        for l in self.a.p.labels.values() { see(l); }
+        for v in self.a.p.numlabels.values() { for (_, l) in v { see(l); } }
+        let labelled = |k: usize| last_lab.map_or(false, |m| m > k);
+        for k in (lo..i).rev() {
             if let TItem::Ins { mnem, ops, .. } = &self.a.text[k] {
-                if ops.len() == 2 {
-                    if let Op::Reg(0, 32 | 64, false) = ops[1] {
-                        if mnem == "mov" || mnem == "movl" || mnem == "movq" {
-                            if let Op::Imm(e) = &ops[0] { if let Some(v) = self.cval(e) { return Ok(v as u32); } }
-                        }
-                        return Err("ARM64: syscall number is not a constant".into());
+                let writes_rax = match ops.last() { Some(Op::Reg(0, _, _)) => true, _ => false };
+                if writes_rax || mnem.starts_with('j') || mnem == "call" || mnem == "ret" || mnem == "syscall" {
+                    if labelled(k) { return None; }
+                    if ops.len() == 2 && (mnem == "mov" || mnem == "movl" || mnem == "movq") {
+                        if let (Op::Imm(e), Op::Reg(0, 32 | 64, false)) = (&ops[0], &ops[1]) { return self.cval(e).map(|v| v as u64); }
                     }
+                    return None;
                 }
             }
         }
-        Err("ARM64: unclassified syscall".into())
+        None
     }
 
     fn syscall(&mut self, i: usize) -> Result<(), String> {
-        let n = self.syscall_number(i)?;
-        let mac = match n { 1 => 4, 2 => 5, 3 => 6, 9 => 197, 11 => 73, 60 => 1, 72 => 92, 96 => 116,
-            _ => return Err(format!("ARM64: OS operation {} is not ported", n)) };
+        let n = self.syscall_number(i);
+        if let Some(raw) = n.filter(|v| *v >= 0x200_0000 && *v < 0x200_1000) {
+            // runtime pseudo form: Darwin BSD call number raw, no conversion
+            if self.live[i] { self.w(e_mrs_nzcv(T4)); }
+            for (k, src) in [14u8, 13, 11, 21, 19, 20].iter().enumerate() { self.w(e_mov(true, k as u8, *src)); }
+            self.mov_imm(true, 16, raw - 0x200_0000);
+            self.w(SVC80);
+            self.w(e_csneg(true, 0, 0, 0, CC));
+            self.w(e_mov(true, 9, 0));
+            if self.live[i] { self.w(e_msr_nzcv(T4)); }
+            return Ok(());
+        }
+        let mac = match n { Some(1) => 4, Some(2) => 5, Some(3) => 6, Some(9) => 197, Some(11) => 73, Some(60) => 1, Some(72) => 92, Some(96) => 116,
+            Some(0) => 3, Some(8) => 199, Some(18) => 154,
+            _ => {
+                // dynamic number or a call that needs argument/structure
+                // conversion: the run-time dispatcher (x9 = Linux number)
+                if self.live[i] { return Err("ARM64: flags live across a dispatched system call".into()); }
+                self.w(e_addsub_imm(true, true, false, XSP, XSP, 128, false)); // keep the x86 red zone
+                self.call_seq(Some(Tg::E(Expr(vec![(false, Term::Sym("__a64_linux_syscall".into()))]))), 0);
+                self.w(e_addsub_imm(true, false, false, XSP, XSP, 128, false));
+                return Ok(());
+            } };
+        let n = n.unwrap();
         if self.live[i] { self.w(e_mrs_nzcv(T4)); }
         for (k, src) in [14u8, 13, 11, 21, 19, 20].iter().enumerate() { self.w(e_mov(true, k as u8, *src)); }
         match n {
@@ -558,6 +587,30 @@ impl<'a> Tr<'a> {
         let need = self.need[i];
         match base {
             "nop" | "endbr64" => {}
+            "ud2" => self.w(0xD420_0020), // brk #1
+            "ror" | "rol" => {
+                let n = match &ops[0] { Op::Imm(e) => self.cval(e).ok_or("ARM64: rotate count")? as u32, _ => return Err("ARM64: variable rotate".into()) };
+                if need { return Err("ARM64: flags of a rotate".into()); }
+                let a = self.val(&ops[1], w, T0)?;
+                if w == 16 && n & 15 == 8 {
+                    self.w(e_ubfx(false, T0, a, 0, 16));
+                    self.w(0x5AC0_0400 | r(T0) << 5 | r(T0)); // rev16
+                    self.put(&ops[1], w, T0)?;
+                } else if w >= 32 {
+                    let bits = w as u32;
+                    let n = n & (bits - 1);
+                    let rr = if base == "ror" { n } else { (bits - n) % bits };
+                    let direct = matches!(ops[1], Op::Reg(..));
+                    let d = if direct { a } else { T0 };
+                    self.w(if x { 0x93C0_0000 } else { 0x1380_0000 } | r(a) << 16 | rr << 10 | r(a) << 5 | r(d));
+                    if !direct { self.put(&ops[1], w, d)?; }
+                } else { return Err("ARM64: narrow rotate".into()); }
+            }
+            "bswap" => match &ops[0] {
+                Op::Reg(c, 64, false) => { let d = RMAP[*c as usize]; self.w(0xDAC0_0C00 | r(d) << 5 | r(d)); }
+                Op::Reg(c, 32, false) => { let d = RMAP[*c as usize]; self.w(0x5AC0_0800 | r(d) << 5 | r(d)); }
+                _ => return Err("ARM64: bswap form".into()),
+            },
             "mov" | "movabs" | "movq" if ops.iter().any(|o| matches!(o, Op::Xmm(_))) => {
                 match (&ops[0], &ops[1]) {
                     (Op::Xmm(s), Op::Xmm(d)) => self.w(e_fmov(*d, *s)),
@@ -575,7 +628,7 @@ impl<'a> Tr<'a> {
                         let src = match self.cval(e) {
                             Some(0) => ZR,
                             Some(v) => { self.mov_imm(w == 64, T1, v as u64); T1 }
-                            None => { self.out.push(AI::Adr { rd: T1, t: Tg::E(e.clone()) }); T1 }
+                            None => { if w != 64 { return Err("ARM64: 32-bit absolute address store".into()); } self.out.push(AI::Adr { rd: T1, t: Tg::E(e.clone()) }); T1 }
                         };
                         self.put(&ops[1], w, src)?;
                     }
@@ -583,7 +636,9 @@ impl<'a> Tr<'a> {
                         let d = RMAP[*c as usize];
                         match self.cval(e) {
                             Some(v) => self.mov_imm(*rw == 64, d, v as u64),
-                            None => { self.out.push(AI::Adr { rd: d, t: Tg::E(e.clone()) }); if *rw == 32 { self.w(e_mov(false, d, d)); } }
+                            // non-PIC code (gcc blobs) loads absolute addresses with a
+                            // 32-bit move: the address is zero-extended there, here it is 64-bit
+                            None => self.out.push(AI::Adr { rd: d, t: Tg::E(e.clone()) }),
                         }
                     }
                     (Op::Mem { .. }, Op::Reg(c, rw, false)) if *rw >= 32 => {
@@ -637,6 +692,20 @@ impl<'a> Tr<'a> {
                 self.w(e_addsub_imm(true, true, false, 10, 10, 1, false));
                 self.w(e_b(-16));
             }
+            "rep movsq" | "rep movsl" | "rep movsw" => {
+                let (sz, step) = match base { "rep movsq" => (3u32, 8i64), "rep movsl" => (2, 4), _ => (1, 2) };
+                self.w(e_cbz(true, false, 10, 20));
+                self.w(e_ldst_9(sz, false, 1, T0, 13, step, 1));
+                self.w(e_ldst_9(sz, false, 0, T0, 14, step, 1));
+                self.w(e_addsub_imm(true, true, false, 10, 10, 1, false));
+                self.w(e_b(-16));
+            }
+            "rep stosq" => {
+                self.w(e_cbz(true, false, 10, 16));
+                self.w(e_ldst_9(3, false, 0, 9, 14, 8, 1));
+                self.w(e_addsub_imm(true, true, false, 10, 10, 1, false));
+                self.w(e_b(-12));
+            }
             "rep stosb" => {
                 self.w(e_cbz(true, false, 10, 16));
                 self.w(e_ldst_9(0, false, 0, 9, 14, 1, 1));
@@ -661,8 +730,29 @@ impl<'a> Tr<'a> {
                 if !direct { self.put(&ops[0], w, d)?; }
             }
             "shl" | "sal" | "shr" | "sar" => {
+                if let (Op::Reg(1, 8, false), true) = (&ops[0], ops.len() == 2) {
+                    // shift by %cl: ARM lslv/lsrv/asrv mask the count like x86 (mod 32/64)
+                    if w < 32 { return Err("ARM64: narrow variable shift".into()); }
+                    if need { return Err("ARM64: flags of a variable shift".into()); }
+                    let a = self.val(&ops[1], w, T0)?;
+                    let direct = matches!(ops[1], Op::Reg(..));
+                    let d = if direct { a } else { T0 };
+                    let op = match base { "shr" => 0x1AC0_2400u32, "sar" => 0x1AC0_2800, _ => 0x1AC0_2000 };
+                    self.w(sf(x) | op | r(RMAP[1]) << 16 | r(a) << 5 | r(d));
+                    if !direct { self.put(&ops[1], w, d)?; }
+                    return Ok(1);
+                }
                 let n = match &ops[0] { Op::Imm(e) => self.cval(e).ok_or("ARM64: shift count")? as u32, _ => return Err("ARM64: variable shift".into()) };
-                if w < 32 { return Err("ARM64: narrow shift".into()); }
+                if w < 32 {
+                    // 8/16-bit: x86 masks the count to 5 bits; work on the extended value
+                    if need { return Err("ARM64: flags of a narrow shift".into()); }
+                    let n = n & 31;
+                    let a = self.val(&ops[1], w, T0)?;
+                    if base == "sar" { self.w(e_sbfx(false, T0, a, 0, w as u32)); } else { self.w(e_ubfx(false, T0, a, 0, w as u32)); }
+                    match base { "shr" => self.w(e_lsr(false, T0, T0, n)), "sar" => self.w(e_asr(false, T0, T0, n)), _ => self.w(e_lsl(false, T0, T0, n)) }
+                    self.put(&ops[1], w, T0)?;
+                    return Ok(1);
+                }
                 let a = self.val(&ops[1], w, T0)?;
                 let direct = matches!(ops[1], Op::Reg(..));
                 let d = if direct { a } else { T0 };
@@ -672,7 +762,15 @@ impl<'a> Tr<'a> {
                 if !direct { self.put(&ops[1], w, d)?; }
             }
             "imul" => {
-                let (src, s2, dst) = match ops.len() { 1 => return Err("ARM64: one-operand imul".into()),
+                let (src, s2, dst) = match ops.len() { 1 => {
+                    // rdx:rax = rax * src (signed)
+                    if !x || need { return Err("ARM64: one-operand imul form".into()); }
+                    let s = self.val(&ops[0], 64, T1)?;
+                    self.w(0x9B40_7C00 | r(s) << 16 | r(9) << 5 | r(T0)); // smulh
+                    self.w(e_madd(true, false, 9, 9, s, ZR));
+                    self.w(e_mov(true, 11, T0));
+                    return Ok(1);
+                }
                     2 => (&ops[0], &ops[1], &ops[1]), _ => (&ops[0], &ops[1], &ops[2]) };
                 let a = self.val(src, w, T1)?;
                 let b = self.val(s2, w, T0)?;
@@ -718,13 +816,20 @@ impl<'a> Tr<'a> {
             }
             "bt" | "bts" | "btr" => {
                 let n = match &ops[0] { Op::Imm(e) => self.cval(e).ok_or("ARM64: bt index")? as u32, _ => return Err("ARM64: bt form".into()) };
-                let d = match &ops[1] { Op::Reg(c, 64, false) => RMAP[*c as usize], _ => return Err("ARM64: bt dst".into()) };
-                let bit = bitmask_imm(1u64 << n, true).unwrap();
-                if base == "bt" || need { self.w(e_log_imm(true, 3, ZR, d, bit)); }
-                if base == "bts" { self.w(e_log_imm(true, 1, d, d, bit)); }
-                if base == "btr" { self.w(e_log_imm(true, 0, d, d, bitmask_imm(!(1u64 << n), true).unwrap())); }
+                if w < 32 { return Err("ARM64: narrow bt".into()); }
+                let n = n & if x { 63 } else { 31 };
+                let (d, mem) = match &ops[1] {
+                    Op::Reg(c, _, false) => (RMAP[*c as usize], false),
+                    m @ Op::Mem { .. } => { let v = self.val(m, w, T0)?; (v, true) }
+                    _ => return Err("ARM64: bt dst".into()),
+                };
+                let bit = bitmask_imm(1u64 << n, x).unwrap();
+                if base == "bt" || need { self.w(e_log_imm(x, 3, ZR, d, bit)); }
+                if base == "bts" { self.w(e_log_imm(x, 1, d, d, bit)); }
+                if base == "btr" { self.w(e_log_imm(x, 0, d, d, bitmask_imm(!(1u64 << n) & if x { u64::MAX } else { 0xffff_ffff }, x).unwrap())); }
+                if mem && base != "bt" { self.put(&ops[1], w, d)?; }
             }
-            "movdqu" | "movups" | "movdqa" | "movaps" => match (&ops[0], &ops[1]) {
+            "movdqu" | "movups" | "movdqa" | "movaps" | "movapd" | "movupd" => match (&ops[0], &ops[1]) {
                 (Op::Xmm(s), Op::Xmm(d)) => self.w(0x4EA0_1C00 | r(*s) << 16 | r(*s) << 5 | r(*d)),
                 (m @ Op::Mem { .. }, Op::Xmm(d)) => { let (b, o) = self.maddr(m, 16)?; self.ldst(16, true, 1, *d, b, o); }
                 (Op::Xmm(s), m @ Op::Mem { .. }) => { let (b, o) = self.maddr(m, 16)?; self.ldst(16, true, 0, *s, b, o); }
@@ -761,6 +866,18 @@ impl<'a> Tr<'a> {
                 let b = match &ops[0] { Op::Imm(e) => { let v = self.cval(e).ok_or("ARM64: sbb imm")?; self.mov_imm(x, T1, v as u64); T1 }
                     o => self.val(o, w, T1)? };
                 self.w(sf(x) | 0x5A00_0000 | if need { 0x2000_0000 } else { 0 } | r(b) << 16 | r(a) << 5 | r(a));
+            }
+            "adc" => {
+                // x86 CF: borrow after a subtract (ARM C clear), carry after an add (ARM C set)
+                let c = match self.ckind[i] { Some(FK::Sub) => CC, Some(FK::Add) => CS, k => return Err(format!("ARM64: adc after {:?} flags", k)) };
+                if need { return Err("ARM64: flags of adc".into()); }
+                if w < 32 { return Err("ARM64: narrow adc".into()); }
+                let a = match &ops[1] { Op::Reg(c, _, false) => RMAP[*c as usize], _ => return Err("ARM64: adc dst".into()) };
+                self.w(e_cset(T2, c));
+                let b = match &ops[0] { Op::Imm(e) => { let v = self.cval(e).ok_or("ARM64: adc imm")?; self.mov_imm(x, T1, v as u64); T1 }
+                    o => self.val(o, w, T1)? };
+                self.w(e_addsub_reg(x, false, false, a, a, b, 0, 0));
+                self.w(e_addsub_reg(x, false, false, a, a, T2, 0, 0));
             }
             "mul" => {
                 if !x { return Err("ARM64: 32-bit mul".into()); }
@@ -848,7 +965,12 @@ impl<'a> Tr<'a> {
             }
             _ if base.starts_with("cmov") => {
                 let k = self.ckind[i].ok_or("ARM64: cmov without producer")?;
-                let c = match map_cc(k, &base[4..])? { Cd::One(c) => c, _ => return Err("ARM64: compound cmov".into()) };
+                let c = match map_cc(k, &base[4..])? { Cd::One(c) => c, cd => {
+                    // compound (FP parity) condition: materialize, then select on it
+                    self.cset(cd, T2);
+                    self.w(e_addsub_imm(true, true, true, ZR, T2, 0, false));
+                    NE
+                } };
                 let s = self.val(&ops[0], w, T1)?;
                 let d = match &ops[1] { Op::Reg(c, _, false) => RMAP[*c as usize], _ => return Err("ARM64: cmov dst".into()) };
                 self.w(e_csel(x, d, s, d, c));
@@ -1155,8 +1277,307 @@ fn uleb(b: &mut Vec<u8>, mut v: u64) {
     loop { let mut x = (v & 0x7f) as u8; v >>= 7; if v != 0 { x |= 0x80; } b.push(x); if v == 0 { break; } }
 }
 
+// Run-time Linux -> Darwin system call dispatcher, written in the same
+// x86 subset and translated with the program. In: rax Linux number,
+// rdi rsi rdx r10 r8 r9 arguments. Out: rax (negative errno on error).
+// Preserves every register but rax, rcx and r11, like the syscall
+// instruction. "mov $0x2000000+N, %eax; syscall" is a raw Darwin call.
+const LINUX_SYSCALL_DISPATCH: &str = r#"
+    .text
+__a64_linux_syscall:
+    cmp $217, %rax
+    je .La64s_getdents
+    cmp $262, %rax
+    je .La64s_fstatat
+    cmp $257, %rax
+    je .La64s_openat
+    cmp $228, %rax
+    je .La64s_clock
+    cmp $9, %rax
+    je .La64s_mmap
+    cmp $0, %rax
+    je .La64s_n0
+    cmp $1, %rax
+    je .La64s_n1
+    cmp $2, %rax
+    je .La64s_n2
+    cmp $3, %rax
+    je .La64s_n3
+    cmp $8, %rax
+    je .La64s_n8
+    cmp $11, %rax
+    je .La64s_n11
+    cmp $18, %rax
+    je .La64s_n18
+    cmp $60, %rax
+    je .La64s_n60
+    cmp $72, %rax
+    je .La64s_n72
+    cmp $96, %rax
+    je .La64s_n96
+    mov $-38, %rax
+    ret
+.La64s_n0:
+    mov $0, %eax
+    syscall
+    ret
+.La64s_n1:
+    mov $1, %eax
+    syscall
+    ret
+.La64s_n2:
+    mov $2, %eax
+    syscall
+    ret
+.La64s_n3:
+    mov $3, %eax
+    syscall
+    ret
+.La64s_n8:
+    mov $8, %eax
+    syscall
+    ret
+.La64s_n11:
+    mov $11, %eax
+    syscall
+    ret
+.La64s_n18:
+    mov $18, %eax
+    syscall
+    ret
+.La64s_n60:
+    mov $60, %eax
+    syscall
+    ret
+.La64s_n72:
+    mov $72, %eax
+    syscall
+    ret
+.La64s_n96:
+    mov $96, %eax
+    syscall
+    ret
+.La64s_mmap:
+    push %r10
+    mov %r10, %rcx
+    and $-33, %rcx
+    test $32, %r10
+    jz .La64s_mmap1
+    or $4096, %rcx
+.La64s_mmap1:
+    mov %rcx, %r10
+    mov $33554629, %eax
+    syscall
+    pop %r10
+    ret
+.La64s_openat:
+    push %rdi
+    push %rdx
+    cmp $-100, %rdi
+    jne .La64s_oa1
+    mov $-2, %rdi
+.La64s_oa1:
+    mov %rdx, %rcx
+    and $3, %rcx
+    test $64, %rdx
+    jz .La64s_of0
+    or $512, %rcx
+.La64s_of0:
+    test $128, %rdx
+    jz .La64s_of1
+    or $2048, %rcx
+.La64s_of1:
+    test $512, %rdx
+    jz .La64s_of2
+    or $1024, %rcx
+.La64s_of2:
+    test $1024, %rdx
+    jz .La64s_of3
+    or $8, %rcx
+.La64s_of3:
+    test $2048, %rdx
+    jz .La64s_of4
+    or $4, %rcx
+.La64s_of4:
+    test $65536, %rdx
+    jz .La64s_of5
+    or $1048576, %rcx
+.La64s_of5:
+    test $131072, %rdx
+    jz .La64s_of6
+    or $256, %rcx
+.La64s_of6:
+    test $524288, %rdx
+    jz .La64s_of7
+    or $16777216, %rcx
+.La64s_of7:
+    mov %rcx, %rdx
+    mov $33554895, %eax
+    syscall
+    pop %rdx
+    pop %rdi
+    ret
+.La64s_fstatat:
+    push %rdi
+    push %r10
+    cmp $-100, %rdi
+    jne .La64s_fs1
+    mov $-2, %rdi
+.La64s_fs1:
+    xor %ecx, %ecx
+    test $256, %r10
+    jz .La64s_fs2
+    mov $32, %ecx
+.La64s_fs2:
+    mov %rcx, %r10
+    mov $33554902, %eax
+    syscall
+    pop %r10
+    pop %rdi
+    test %rax, %rax
+    jne .La64s_fs9
+    sub $144, %rsp
+    mov 0(%rdx), %rcx
+    mov %rcx, 0(%rsp)
+    mov 8(%rdx), %rcx
+    mov %rcx, 8(%rsp)
+    mov 16(%rdx), %rcx
+    mov %rcx, 16(%rsp)
+    mov 24(%rdx), %rcx
+    mov %rcx, 24(%rsp)
+    mov 32(%rdx), %rcx
+    mov %rcx, 32(%rsp)
+    mov 40(%rdx), %rcx
+    mov %rcx, 40(%rsp)
+    mov 48(%rdx), %rcx
+    mov %rcx, 48(%rsp)
+    mov 56(%rdx), %rcx
+    mov %rcx, 56(%rsp)
+    mov 64(%rdx), %rcx
+    mov %rcx, 64(%rsp)
+    mov 72(%rdx), %rcx
+    mov %rcx, 72(%rsp)
+    mov 80(%rdx), %rcx
+    mov %rcx, 80(%rsp)
+    mov 88(%rdx), %rcx
+    mov %rcx, 88(%rsp)
+    mov 96(%rdx), %rcx
+    mov %rcx, 96(%rsp)
+    mov 104(%rdx), %rcx
+    mov %rcx, 104(%rsp)
+    mov 112(%rdx), %rcx
+    mov %rcx, 112(%rsp)
+    mov 120(%rdx), %rcx
+    mov %rcx, 120(%rsp)
+    mov 128(%rdx), %rcx
+    mov %rcx, 128(%rsp)
+    mov 136(%rdx), %rcx
+    mov %rcx, 136(%rsp)
+    movslq 0(%rsp), %rcx
+    mov %rcx, 0(%rdx)
+    movq 8(%rsp), %rcx
+    mov %rcx, 8(%rdx)
+    movzwq 6(%rsp), %rcx
+    mov %rcx, 16(%rdx)
+    movzwq 4(%rsp), %rcx
+    movl %ecx, 24(%rdx)
+    movl 16(%rsp), %ecx
+    movl %ecx, 28(%rdx)
+    movl 20(%rsp), %ecx
+    movl %ecx, 32(%rdx)
+    movl $0, 36(%rdx)
+    movslq 24(%rsp), %rcx
+    mov %rcx, 40(%rdx)
+    movq 96(%rsp), %rcx
+    mov %rcx, 48(%rdx)
+    movslq 112(%rsp), %rcx
+    mov %rcx, 56(%rdx)
+    movq 104(%rsp), %rcx
+    mov %rcx, 64(%rdx)
+    movq 32(%rsp), %rcx
+    mov %rcx, 72(%rdx)
+    movq 40(%rsp), %rcx
+    mov %rcx, 80(%rdx)
+    movq 48(%rsp), %rcx
+    mov %rcx, 88(%rdx)
+    movq 56(%rsp), %rcx
+    mov %rcx, 96(%rdx)
+    movq 64(%rsp), %rcx
+    mov %rcx, 104(%rdx)
+    movq 72(%rsp), %rcx
+    mov %rcx, 112(%rdx)
+    movq $0, 120(%rdx)
+    movq $0, 128(%rdx)
+    movq $0, 136(%rdx)
+    add $144, %rsp
+    xor %eax, %eax
+.La64s_fs9:
+    ret
+.La64s_getdents:
+    push %r10
+    sub $8, %rsp
+    movq $0, (%rsp)
+    mov %rsp, %r10
+    mov $33554776, %eax
+    syscall
+    add $8, %rsp
+    pop %r10
+    test %rax, %rax
+    jle .La64s_gd9
+    push %rax
+    push %rsi
+    push %rdx
+    mov %rsi, %rdx
+    add %rax, %rdx
+.La64s_gd1:
+    cmp %rdx, %rsi
+    jae .La64s_gd8
+    movzwl 18(%rsi), %r11d
+    movzbl 20(%rsi), %ecx
+    movb %cl, 18(%rsi)
+    lea 1(%r11), %rcx
+    xor %r11d, %r11d
+.La64s_gd2:
+    movzbl 21(%rsi,%r11), %eax
+    movb %al, 19(%rsi,%r11)
+    inc %r11
+    cmp %rcx, %r11
+    jb .La64s_gd2
+    movzwl 16(%rsi), %ecx
+    test %rcx, %rcx
+    jz .La64s_gd8
+    add %rcx, %rsi
+    jmp .La64s_gd1
+.La64s_gd8:
+    pop %rdx
+    pop %rsi
+    pop %rax
+.La64s_gd9:
+    ret
+.La64s_clock:
+    push %rdi
+    push %rsi
+    push %rdx
+    mov %rsi, %rdi
+    xor %esi, %esi
+    mov $96, %eax
+    syscall
+    pop %rdx
+    pop %rsi
+    pop %rdi
+    test %rax, %rax
+    jne .La64s_ck9
+    mov 8(%rsi), %rcx
+    imul $1000, %rcx, %rcx
+    mov %rcx, 8(%rsi)
+.La64s_ck9:
+    ret
+"#;
+
 pub fn assemble_macho_arm64(src: &str) -> Result<Vec<u8>, String> {
-    let expanded = expand_rept(src)?;
+    let src = format!("{}
+{}", src, LINUX_SYSCALL_DISPATCH);
+    let expanded = expand_rept(&src)?;
     let mut a = Asm {
         p: Parser { consts: HashMap::new(), labels: HashMap::new(), numlabels: HashMap::new(), seq: Cell::new(0) },
         text: Vec::new(), rodata: Vec::new(), data: Vec::new(), bss: Vec::new(), note: Vec::new(),
