@@ -22,7 +22,7 @@ for src in sorted((root/'programs').glob('*.prg')):
    r=run(cmd,work,kind+'-build',local);assert r.returncode==0,(src.name,target,kind,r.stdout,r.stderr)
    r=run(([a.wine]if target=='windows'else[])+[exe],work,kind+'-run');results[kind]=(r.returncode,r.stdout,r.stderr)
   okay=results['harbour']==results['hbc'];rows.append({'source':src.name,'source_sha256':hashlib.sha256(src.read_bytes()).hexdigest(),'target':target,'exact':okay,'harbour':repr(results['harbour']),'hbc':repr(results['hbc'])});print(('PASS 'if okay else'FAIL ')+src.stem+' '+target,flush=True)
-expect={'date_wrong_type':'must be a date, got an integer','date_omitted':'call site omits it','date_polymorphic':'must be a date, got a string','names_global':'reserved by the code generator'}
+expect={'date_nil_argument':'must be a date, got a dynamic value','date_wrong_type':'must be a date, got an integer','date_omitted':'call site omits it','date_polymorphic':'must be a date, got a string','names_global':'reserved by the code generator'}
 for src in sorted((root/'negative').glob('*.prg')):
  if a.group!='all' and not src.stem.startswith(a.group+'_'):continue
  for target in ['linux']+(['windows']if a.wine else[]):

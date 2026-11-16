@@ -29,3 +29,11 @@ Eight Date sources cover consumers including empty dates, Date() assignment, ass
 Explicit limits: this is monomorphic Date transport/inference, not arbitrary Harbour parameter retyping or flow-sensitive narrowing of NIL/numeric/logical/string variants. Omitted Date arguments, a wrong integer and a mixed Date/string call retain named rejections (negative tests). Date by-reference and Date arithmetic-inference contexts are not newly supported. Some corpus functions still require dynamic type predicates, variant narrowing, arithmetic and library support. No year-zero change and no claim that all 9 Date-related corpus routes now compile. Linux-hosted Wine is not a native Windows executor.
 
 Final combined-candidate gate: 13 positive sources x 2 targets = 26 raw-exact comparisons (including the two forwarded regressions with matching source hashes), plus 4 named negatives x 2 = 8 rejection checks. FILE 56/56 with fresh external Harbour Linux/PE-Wine, class gate 42/42 fresh Linux, Windows object separators 3/3 captured fixtures, compile-only PE manifest 1727 PASS / 21 recorded mismatches / 0 unexpected. These are bounded gates, not a claim that all original sources or all runtime paths pass.
+
+## Reviewer follow-up on rebased tree
+
+CToD and DToC are exercised together by date_ctod_dtoc, freshly compared on Linux and PE-Wine. date_nil_argument passes literal NIL across the call boundary into a date-consuming parameter and requires the named dynamic-value rejection; date_nil_assignment is a different positive case and is not proof of accepting NIL.
+
+Provenance: names_reported.prg and date_reported.prg are tiny reproducers forwarded by the owner in the supplied reported-three ZIP, not authored as new tests here. Their exact source hashes are recorded in results.json. All other names-date sources are own synthetic probes, not Harbour implementation bodies.
+
+On this tree no main global-name control was removed: DO fname and PRIVATE/PUBLIC/MEMVAR handling are exactly upstream. The FUNCTION month discrepancy is observed acceptance of this particular source, not a claim of arbitrary builtin redefinition support.

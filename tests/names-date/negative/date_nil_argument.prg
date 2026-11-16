@@ -1,0 +1,5 @@
+PROCEDURE Main()
+? Show(NIL)
+RETURN
+FUNCTION Show(d)
+RETURN DToS(d)
