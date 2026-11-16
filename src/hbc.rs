@@ -2000,10 +2000,20 @@ fn is_bitop(id: &str) -> bool { ["hb_bitand", "hb_bitor", "hb_bitxor", "hb_bitno
 
 fn is_bitindex(id: &str) -> bool { ["hb_bittest", "hb_bitset", "hb_bitreset"].iter().any(|v| is_builtin(id,v)) }
 
+// Variables (locals, params, statics, block params, fields) live in frame
+// slots or Dyn cells and never become assembler symbols, so they may use
+// any name - including runtime helper names like `month` or `val`.
 fn check_ident(id: &str, n: usize) -> Result<(), String> {
     if id.is_empty() || id.len() > 64 {
         return Err(format!("line {}: invalid identifier length", n));
     }
+    Ok(())
+}
+
+// Names that DO become assembler symbols (functions, classes, MEMVARs)
+// must not collide with a helper label hbc emits.
+fn check_global_ident(id: &str, n: usize) -> Result<(), String> {
+    check_ident(id, n)?;
     if ASM_RESERVED.contains(&id) {
         return Err(format!("line {}: `{}` is reserved by the code generator", n, id));
     }
@@ -2529,7 +2539,7 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                         out.extend(else_stmts);
                         continue;
                     }
-                    check_ident(&fname, n)?;
+                    check_global_ident(&fname, n)?;
                     let args: Vec<Expr> = if toks.len() == 2 {
                         Vec::new()
                     } else if toks.len() >= 4 && matches!(&toks[2], Tok::Ident(w) if w.eq_ignore_ascii_case("with")) {
@@ -3365,7 +3375,7 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                 let rest=&toks[1..];let mut depth=0i32;let mut start=0;let mut spans=Vec::new();
                 for(k,t)in rest.iter().enumerate(){match t {Tok::LParen|Tok::LBracket|Tok::LBrace=>depth+=1,Tok::RParen|Tok::RBracket|Tok::RBrace=>depth-=1,Tok::Comma if depth==0=>{spans.push(&rest[start..k]);start=k+1;},_=>{}}}spans.push(&rest[start..]);
                 for it in spans {
-                    let id=match it.first(){Some(Tok::Ident(id))=>{check_ident(id,n)?;id.clone()},_=>return Err(format!("line {}: MEMVAR declaration expects an identifier",n))};
+                    let id=match it.first(){Some(Tok::Ident(id))=>{check_global_ident(id,n)?;id.clone()},_=>return Err(format!("line {}: MEMVAR declaration expects an identifier",n))};
                     if it.len()==1 {out.push(Stmt::MemvarDecl(n,private,id));}
                     else if it.len()>=3&&matches!(it[1],Tok::Assign|Tok::Eq){out.push(Stmt::MemvarSet(n,private,id,parse_expr_tokens(it[2..].to_vec(),n)?));}
                     else{return Err(format!("line {}: MEMVAR declaration expects name [:= expression]",n));}
@@ -3555,13 +3565,13 @@ fn parse(src: &str) -> Result<Prog, String> {
             // Base]` (what hbclass.ch translates) and the standard
             // `CLASS Name [FROM|INHERIT Base]`.
             let (cname, parent) = match toks {
-                [Tok::KwCreate, Tok::KwClass, Tok::Ident(c)] | [Tok::KwClass, Tok::Ident(c)] => { check_ident(c, n)?; (c.clone(), None) }
+                [Tok::KwCreate, Tok::KwClass, Tok::Ident(c)] | [Tok::KwClass, Tok::Ident(c)] => { check_global_ident(c, n)?; (c.clone(), None) }
                 [Tok::KwCreate, Tok::KwClass, Tok::Ident(c), Tok::KwInherit, Tok::Ident(b)]
                 | [Tok::KwClass, Tok::Ident(c), Tok::KwInherit, Tok::Ident(b)] => {
-                    check_ident(c, n)?; check_ident(b, n)?; (c.clone(), Some(b.clone()))
+                    check_global_ident(c, n)?; check_global_ident(b, n)?; (c.clone(), Some(b.clone()))
                 }
                 [Tok::KwClass, Tok::Ident(c), Tok::Ident(f), Tok::Ident(b)] if f.eq_ignore_ascii_case("from") => {
-                    check_ident(c, n)?; check_ident(b, n)?; (c.clone(), Some(b.clone()))
+                    check_global_ident(c, n)?; check_global_ident(b, n)?; (c.clone(), Some(b.clone()))
                 }
                 [Tok::KwCreate, Tok::KwClass, Tok::Ident(_), Tok::KwInherit, Tok::Ident(_), Tok::Comma, ..]
                 | [Tok::KwClass, Tok::Ident(_), Tok::KwInherit, Tok::Ident(_), Tok::Comma, ..] => {
@@ -4532,8 +4542,9 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
                     return Ok(());
                 }
                 if is_builtin(id,"dtos") || is_builtin(id,"year") || ["day","month","dow","cdow","cmonth","dtoc"].iter().any(|b|is_builtin(id,b)) {
-                    // Date arguments borrow; nothing pins.
-                    if !args.is_empty() { walk(f,&args[0],sigs,lit,pin,printed,n)?; }
+                    // Date arguments borrow; a bare parameter argument is
+                    // date evidence (Harbour: FUNCTION f(d) ... CDoW(d)).
+                    if !args.is_empty() { pin_vars(f,&args[0],Ty::Date,pin,n)?; walk(f,&args[0],sigs,lit,pin,printed,n)?; }
                     return Ok(());
                 }
                 if is_builtin(id,"stod") {
@@ -8608,6 +8619,12 @@ fn prescan_dyn(f: &Func, sigs: &[Sig], ptys: &[Ty]) -> std::collections::HashSet
             Expr::Nil => true,
             Expr::Index(id, _) | Expr::Index2(id, _, _) => darr.contains(id),
             Expr::Var(v) => dyn_names.contains(v),
+            // A DBF field read (FIELD->x / alias->x / FieldGet) yields a
+            // Dyn value: the local receiving it must be Dyn-wide too.
+            Expr::Call(id, _) if matches!(id.as_str(), "dbffieldref" | "fieldget") => true,
+            // ...and so does arithmetic over one (T->NDEC * 2 widens to the
+            // field's decimal value, not an I64).
+            Expr::Bin(_, a, b) if [a, b].iter().any(|x| has_dbf_read(x)) => true,
             Expr::Call(id, _) if !is_builtin(id, "len") && !is_builtin(id, "eval") && !is_builtin(id, "hb_memcheck") => {
                 sigs.iter().find(|s| s.name == *id).map(|s| s.ret == Some(Ty::Dyn)).unwrap_or(false)
             }
@@ -8624,6 +8641,16 @@ fn prescan_dyn(f: &Func, sigs: &[Sig], ptys: &[Ty]) -> std::collections::HashSet
         if dyn_names.len() == before { break; }
     }
     dyn_names
+}
+
+// Does this arithmetic operand contain a DBF field read (directly or
+// nested inside further arithmetic)?
+fn has_dbf_read(e: &Expr) -> bool {
+    match e {
+        Expr::Call(id, _) => matches!(id.as_str(), "dbffieldref" | "fieldget"),
+        Expr::Bin(_, a, b) => has_dbf_read(a) || has_dbf_read(b),
+        _ => false,
+    }
 }
 
 // Return-type unification (probe n2): an i64 return and a NIL return in
@@ -10517,6 +10544,11 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 } else if env[idx].ty == Ty::I64 && t == Ty::Dyn {
                     // i64 slot receiving a Dyn: the tag is checked at
                     // runtime (NIL payload -> clean type error).
+                } else if env[idx].ty == Ty::StrOwn && t == Ty::Dyn && has_dbf_read(e) {
+                    // String slot receiving a DBF field read (issue #1 x3,
+                    // `c := T->CCOD`): a character field is an owned tag-4
+                    // cell that moves in; any other field type is a clean
+                    // runtime type error.
                 } else if env[idx].ty == Ty::StrOwn && t == Ty::Str {
                     // rodata literal into an owned slot (hk225): the
                     // assignment boundary hands over an owned copy, same
@@ -20307,6 +20339,16 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                                 out.push_str(&format!("    mov %rdx, -{}(%rbp)\n", off - 8));
                             }
                             Ty::I64 | Ty::Block(..) | Ty::Bool | Ty::Date => out.push_str(&format!("    mov %rax, -{}(%rbp)\n", off)),
+                            Ty::Dyn if lty == Ty::StrOwn => {
+                                // DBF character field into an owned string
+                                // slot (checked: only a has_dbf_read RHS
+                                // gets here): tag 4 moves its owned
+                                // payload in; free the old value, store.
+                                out.push_str("    @HBC_TAG_KIND@cmp $4, %rax@HBC_TAG_END@\n    jne hbc_dbfstr_error\n    mov %rdx, %rax\n    mov -8(%rax), %rdx\n");
+                                out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+                                out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 86f\n    call hbc_freestr\n86:\n", off));
+                                out.push_str(&format!("    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    add $16, %rsp\n    mov %rax, -{}(%rbp)\n    mov %rdx, -{}(%rbp)\n", off, off - 8));
+                            }
                             Ty::Dyn if lty == Ty::I64 => {
                                 // i64 slot receiving a Dyn: the tag is
                                 // checked at runtime (NIL -> clean error).
@@ -26867,10 +26909,12 @@ hbc_print_dyn:
     add $16, %rsp
     jmp hbc_print_num_f64
 .Ldynfloat_print_legacy:
-    movq %rdx, %xmm0
     push %rax
+    push %rdx
     call hbc_pflush
+    pop %rdx
     pop %rax
+    movq %rdx, %xmm0
     mov $10, %edi
     movsd .Ldynw_hi(%rip), %xmm1
     ucomisd %xmm1, %xmm0
@@ -27024,6 +27068,19 @@ hbc_dyn_to_log:
 hbc_dynlog_error:
     lea .Llogmsg(%rip), %rsi
     mov $39, %edx
+    mov $1, %eax
+    mov $1, %edi
+    syscall
+    mov $60, %eax
+    mov $1, %edi
+    syscall
+
+# hbc_dbfstr_error: a non-character DBF field assigned to a string local
+# (issue #1 x3 shape). Harbour would retype the variable; this static
+# model reports it by name and exits 1.
+hbc_dbfstr_error:
+    lea .Ldbfstrmsg(%rip), %rsi
+    mov $43, %edx
     mov $1, %eax
     mov $1, %edi
     syscall
@@ -28676,6 +28733,7 @@ fn emit_strings(out: &mut String, strs: &[String]) {
     out.push_str(".Losbadmsg:\n    .byte 73,110,116,101,114,110,97,108,32,101,114,114,111,114,58,32,79,83,32,102,114,101,101,32,102,97,105,108,101,100,10\n");
     out.push_str(".Lregbadmsg:\n    .byte 73,110,116,101,114,110,97,108,32,101,114,114,111,114,58,32,97,108,108,111,99,97,116,105,111,110,32,114,101,103,105,115,116,114,121,32,109,105,115,109,97,116,99,104,10\n");
     out.push_str(".Ltypemsg:\n    .byte 84,121,112,101,32,101,114,114,111,114,58,32,78,73,76,32,117,115,101,100,32,97,115,32,97,32,110,117,109,98,101,114,10\n");
+    out.push_str(".Ldbfstrmsg:\n    .byte 84,121,112,101,32,101,114,114,111,114,58,32,102,105,101,108,100,32,105,115,32,110,111,116,32,97,32,99,104,97,114,97,99,116,101,114,32,118,97,108,117,101,10\n");
     out.push_str(".Llogmsg:\n    .byte 84,121,112,101,32,101,114,114,111,114,58,32,99,111,110,100,105,116,105,111,110,32,105,115,32,110,111,116,32,97,32,108,111,103,105,99,97,108,10\n");
     out.push_str(".Lasizenegmsg:\n    .byte 65,83,105,122,101,58,32,110,101,103,97,116,105,118,101,32,115,105,122,101,10\n");
     // TRY/CATCH caught-value descriptions: borrowed Dyn strings (tag 8),
@@ -29889,10 +29947,12 @@ hbc_print_dyn:
     leave
     jmp hbc_print_num_f64
 .Ldynfloat_print_legacy:
-    movq %rdx, %xmm0
     push %rax
+    push %rdx
     call hbc_pflush
+    pop %rdx
     pop %rax
+    movq %rdx, %xmm0
     mov $10, %edi
     movsd .Ldynw_hi(%rip), %xmm1
     ucomisd %xmm1, %xmm0
@@ -30054,6 +30114,18 @@ hbc_dynlog_error:
     sub $48, %rsp
     lea .Llogmsg(%rip), %rax
     mov $39, %edx
+    call hbc_print_str
+    mov $1, %ecx
+    call ExitProcess
+
+# hbc_dbfstr_error: see the linux copy.
+hbc_dbfstr_error:
+    push %rbp
+    mov %rsp, %rbp
+    and $-16, %rsp
+    sub $48, %rsp
+    lea .Ldbfstrmsg(%rip), %rax
+    mov $43, %edx
     call hbc_print_str
     mov $1, %ecx
     call ExitProcess
@@ -32700,8 +32772,6 @@ const DATE_PORT_HELPERS: &str = r#"
     .text
 # r8d=year, r9d=month, r10d=day -> rax packed scalar, zero invalid.
 hbc_date_pack:
-    cmp $1, %r8d
-    jb .Ldate_bad
     cmp $9999, %r8d
     ja .Ldate_bad
     cmp $1, %r9d
@@ -32757,8 +32827,10 @@ hbc_year:
     ret
 
 # Packed civil date -> day number (Howard Hinnant's days_from_civil).
-# All operands are non-negative for years 1..9999, so truncated
-# division is floor division. rdi = packed -> rax = days.
+# Years 0..9999 (Harbour admits year 0, a leap year). The year is
+# shifted by +400 (one 146097-day era) so every operand stays
+# non-negative and truncated division is floor division, also for
+# January/February of year 0. rdi = packed -> rax = days.
 hbc_date_days:
     push %rbx
     mov %rdi, %rax
@@ -32766,6 +32838,7 @@ hbc_date_days:
     mov $10000, %r9d
     div %r9
     mov %rax, %r8        # y
+    add $400, %r8        # era shift (undone below)
     mov %rdx, %rax
     xor %edx, %edx
     mov $100, %r9d
@@ -32810,17 +32883,21 @@ hbc_date_days:
     mov %rbx, %rax
     imul $146097, %rax, %rax
     add %r10, %rax
-    sub $719468, %rax    # days
+    sub $865565, %rax    # days (719468 + 146097 era shift)
     pop %rbx
     ret
 
 # Day number -> packed civil date (civil_from_days). rdi = days -> rax.
+# Same +400-year era shift as hbc_date_days; a result outside years
+# 0..9999 answers the empty date (0).
 hbc_date_from_days:
     push %rbx
     push %r12
     push %r13
     push %r14
-    lea 719468(%rdi), %r8    # z
+    lea 865565(%rdi), %r8    # z (719468 + 146097 era shift)
+    test %r8, %r8
+    js .Ldf_neg
     mov %r8, %rax
     xor %edx, %edx
     movabs $146097, %r9
@@ -32893,10 +32970,18 @@ hbc_date_from_days:
     ja .Ldf_pack
     inc %r12
 .Ldf_pack:
+    sub $400, %r12           # undo the era shift
+    xor %eax, %eax
+    cmp $9999, %r12          # unsigned: also catches years < 0
+    ja .Ldf_done
     imul $10000, %r12, %rax
     imul $100, %r14, %r9
     add %r9, %rax
     add %r13, %rax           # packed
+    jmp .Ldf_done
+.Ldf_neg:
+    xor %eax, %eax
+.Ldf_done:
     pop %r14
     pop %r13
     pop %r12

@@ -1767,3 +1767,6 @@ neg tests/issue1/a1_array_param_mut.prg line 3: array `v` is passed to `f`, whic
 neg tests/issue1/a2_array_param_mut_return.prg line 3: array `v` is passed to `f`, which can change its elements
 neg tests/issue1/a3_array_param_mut_case.prg line 3: array `v` is passed to `f`, which can change its elements
 cli tests/expectations/cli/version.out --version
+pos2 tests/review0114/r1_local_builtin_names.prg tests/expectations/qout/r1_local_builtin_names.linux.out tests/expectations/qout/r1_local_builtin_names.windows.out
+pos2 tests/review0114/r2_date_param.prg tests/expectations/qout/r2_date_param.linux.out tests/expectations/qout/r2_date_param.windows.out
+pos2 tests/review0114/r3_year_zero.prg tests/expectations/qout/r3_year_zero.linux.out tests/expectations/qout/r3_year_zero.windows.out

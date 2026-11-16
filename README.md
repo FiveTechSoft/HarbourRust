@@ -152,11 +152,10 @@ work in progress. No unmeasured speed or capability claims are made.
 - **Threads and mutexes on Windows (16 November).** `--target=windows` now runs
   the same thread, mutex and one-shot runtime, over `CreateThread` and
   `WaitOnAddress` (Windows 8 or later). On native Windows 11 against Harbour 3.2
-  MT: **30/37** `tests/threads` and **33/36** `tests/threads-start` programs are
-  identical. The rest are documented: one uses classes (Linux-only), three name a
-  local `val` that the compiler rejects on every target, three hit a Harbour 3.2
-  Windows timeout in `hb_mutexSubscribeNow`, and three are declared compile-time
-  limits. Not a claim of full thread parity. macOS has no thread runtime.
+  MT: **35/37** `tests/threads` and **33/36** `tests/threads-start` programs are
+  identical (re-measured after the local-name fix). The rest are documented: two
+  hit a Harbour 3.2 Windows timeout in `hb_mutexSubscribeNow`, and three are
+  declared compile-time limits. Not a claim of full thread parity. macOS has no thread runtime.
   See [Windows runtime](docs/THREADS.md#windows-runtime-2026-11-16).
 
 - **Fixed-size array arguments (16 November).** Harbour passes arrays by

@@ -317,13 +317,13 @@ into a call to a kernel32 shim that keeps the syscall register contract
 
 Evidence (native Windows 11, Harbour 3.2 mingw64 MT build as oracle,
 `tests/threads/check_oracle_windows.py`):
-- `tests/threads`: 30 of 37 identical. The 7 others:
-  - th25b uses classes, which are Linux-only;
-  - mt05, mt06 and mt13 name a local `val`, rejected by the current
-    compiler on every target (open, not threads);
-  - mt20, mt21 and mt22: Harbour 3.2 on Windows times out in
-    `hb_mutexSubscribeNow` even when a later notify arrives (mt21 waits the
-    full 2 s and returns .F.). hbc keeps the Linux-measured result (.T.).
+- `tests/threads`: 35 of 37 identical (re-measured 16 November after
+  th25b gained Windows classes and mt05, mt06 and mt13 their `val` local,
+  REPORTS-0114-FIXES-2026-11-16.md). The 2 others, mt20 and mt22:
+  Harbour 3.2 on Windows times out in `hb_mutexSubscribeNow` even when a
+  later notify arrives. hbc keeps the Linux-measured result (.T.). mt21
+  hits the same Harbour timeout on some runs (the first measurement: it
+  waited the full 2 s and returned .F.).
 - `tests/threads-start`: 33 of 36 identical. The 3 others are the
   declared compile-time limits that `check_oracle.py` also lists
   (block_variable, stress, name_literal_missing).
