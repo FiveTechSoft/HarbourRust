@@ -64,16 +64,11 @@ hrobj_new:
 .Lhrobj_float_copy_not:
 	cmpq	$4, %r13
 	jne	.Lhrobj_13
-	xorl	%esi, %esi
-	cmpb	$0, (%rdi)
-	je	.Lhrobj_14
-	.p2align 4,,10
-	.p2align 3
-.Lhrobj_15:
-	addq	$1, %rsi
-	cmpb	$0, (%rdi,%rsi)
-	jne	.Lhrobj_15
-.Lhrobj_14:
+	# hbc strings are NOT NUL-terminated: the length lives in the string
+	# header at -8(%rdi) (written by hbc_stralloc). The spike blob's
+	# strlen loop here read past the string end; it only worked on Linux
+	# because mmap'd pages are zeroed (Windows HeapAlloc memory is not).
+	movq	-8(%rdi), %rsi
 	call	hbc_strcpy
 	movq	%rax, %rdi
 	jmp	.Lhrobj_13
