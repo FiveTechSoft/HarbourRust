@@ -7626,6 +7626,22 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
             // Dyn operands are extracted at runtime: a NIL payload is a
             // clean type error (Harbour's interactive dialog is the
             // registered failure-mode difference, same condition).
+            // D3 DBF decimal arithmetic: with DBF active, +,-,*,/ with a
+            // Dyn operand over numeric mixes (I64/F64/Dyn) is computed by
+            // the runtime cell arithmetic (hrdbf_app_arith): integer fast
+            // path preserved, decimal/double widening with Harbour dec
+            // rules (max for +,-, sum for *, SET DECIMALS = 2 for /);
+            // the static result is a Dyn cell. Without DBF the
+            // integer-only extraction below is unchanged (Dyn division
+            // and Dyn/float mixes stay rejected by name there).
+            if matches!(*op, '+' | '-' | '*' | '/')
+                && (ta == Ty::Dyn || tb == Ty::Dyn)
+                && matches!(ta, Ty::I64 | Ty::F64 | Ty::Dyn)
+                && matches!(tb, Ty::I64 | Ty::F64 | Ty::Dyn)
+                && DBF_USED.with(|v| v.get())
+            {
+                return Ok(Ty::Dyn);
+            }
             // `%` (hb_vmModulus; oracles hk340-hk348): any numeric mix
             // produces a DOUBLE with dec = SET DECIMALS at runtime
             // ("Clipper always returns modulus with the SET number of
@@ -15976,6 +15992,43 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
 ");
                 return;
             }
+            // D3 DBF decimal arithmetic: with DBF active and a Dyn operand
+            // in +,-,*,/ over numeric mixes (checked in analysis), both
+            // operands box as Dyn cells and the runtime helper computes the
+            // result cell (hrdbf_app_arith): integer fast path preserved,
+            // decimal/double widening with Harbour dec rules. Boxing: a
+            // Dyn operand rides as-is; I64 -> tag 0; F64 -> legacy inline
+            // float cell (tag 5|(dec<<8) from its static metadata, payload
+            // the IEEE-754 bits). Result: rax=tag, rdx=pay (Dyn cell).
+            {
+                let da = expr_ty(a, env, sigs);
+                let db = expr_ty(b, env, sigs);
+                if matches!(*op, '+' | '-' | '*' | '/')
+                    && DBF_USED.with(|v| v.get())
+                    && (da == Ty::Dyn || db == Ty::Dyn)
+                    && matches!(da, Ty::I64 | Ty::F64 | Ty::Dyn)
+                    && matches!(db, Ty::I64 | Ty::F64 | Ty::Dyn)
+                {
+                    if da == Ty::F64 {
+                        cg_f64_load(a, env, sigs, strs, out, target);
+                        out.push_str("    movq %xmm0, %rdx\n    mov %rdi, %rax\n    and $65535, %eax\n    shl $8, %rax\n    or $5, %al\n");
+                    } else {
+                        cg_expr(a, env, sigs, strs, out, target);
+                        if da != Ty::Dyn { out.push_str("    mov %rax, %rdx\n    xor %eax, %eax\n"); }
+                    }
+                    out.push_str("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+                    if db == Ty::F64 {
+                        cg_f64_load(b, env, sigs, strs, out, target);
+                        out.push_str("    movq %xmm0, %r8\n    mov %rdi, %rcx\n    and $65535, %ecx\n    shl $8, %rcx\n    or $5, %cl\n");
+                    } else {
+                        cg_expr(b, env, sigs, strs, out, target);
+                        if db == Ty::Dyn { out.push_str("    mov %rax, %rcx\n    mov %rdx, %r8\n"); }
+                        else { out.push_str("    mov %rax, %r8\n    xor %ecx, %ecx\n"); }
+                    }
+                    out.push_str(&format!("    mov (%rsp), %rsi\n    mov 8(%rsp), %rdx\n    mov ${}, %edi\n    call hrdbf_app_arith\n    add $32, %rsp\n", *op as u32));
+                    return;
+                }
+            }
             // Operands are i64 or Dyn (checked in analysis): a Dyn operand
             // is extracted with the runtime tag check (NIL payload -> clean
             // type error, Harbour's dialog is the registered difference).
@@ -16778,6 +16831,14 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
 
             if matches!(ta, Ty::Str | Ty::StrOwn) || matches!(tb, Ty::Str | Ty::StrOwn) {
                 Ty::StrOwn
+            } else if matches!(*op, '+' | '-' | '*' | '/')
+                && (ta == Ty::Dyn || tb == Ty::Dyn)
+                && matches!(ta, Ty::I64 | Ty::F64 | Ty::Dyn)
+                && matches!(tb, Ty::I64 | Ty::F64 | Ty::Dyn)
+                && DBF_USED.with(|v| v.get()) {
+                // Mirror of type_expr: D3 DBF decimal arithmetic via the
+                // runtime cell helper; the static result is a Dyn cell.
+                Ty::Dyn
             } else if *op == '%' {
                 // Mirror of type_expr: runtime modulus is always F64.
                 Ty::F64

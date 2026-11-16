@@ -279,4 +279,15 @@ uint64_t hrdbf_app_empty(uint64_t t,uint64_t p){
  if(k==HRV_BLOCK)return 0;
  e=hrv_empty(c,&yes);if(e)hrdbf_app_fail("hbc: DBF scalar Empty rejected\n");return (uint64_t)yes;
 }
+/* D3: Dyn numeric arithmetic entry point. The compiler emits this call for
+ * +,-,*,/ with a Dyn operand while DBF is active; the result rides back as
+ * the (tag,pay) pair in rax:rdx (SysV struct return), an integer cell on the
+ * fast path or a legacy inline float cell after widening. */
+hrv_cell hrdbf_app_arith(uint64_t op,uint64_t ta,uint64_t pa,uint64_t tb,uint64_t pb){
+ hrv_cell a={ta,pa},b={tb,pb},r;hrv_error e=hrv_arith((unsigned)op,a,b,&r);
+ if(e==HRV_ZERODIV)hrdbf_app_fail("hbc: DBF arithmetic division by zero\n");
+ if(e==HRV_TYPE)hrdbf_app_fail("hbc: DBF arithmetic on a NIL or non-numeric operand\n");
+ if(e)hrdbf_app_fail("hbc: DBF arithmetic rejected\n");
+ return r;
+}
 void hrdbf_app_unsupported(void){hrdbf_app_fail("hbc: DBF-active dynamic scalar consumer is outside the admitted subset\n");}

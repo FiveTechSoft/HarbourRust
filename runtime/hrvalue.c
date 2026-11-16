@@ -61,4 +61,45 @@ hrv_error hrv_render(hrv_cell v,unsigned char *out,size_t cap,size_t *len){
  if(d){out[pad++]='.';for(i=0;i<d;i++){unsigned index=d-1-i;out[pad++]=index<n?digits[index]:'0';}}
  return HRV_OK;
 }
-const char *hrv_error_name(hrv_error e){switch(e){case HRV_OK:return "ok";case HRV_TYPE:return "DBF value type outside admitted operation";case HRV_DECIMAL_I64:return "DBF decimal numeric cannot enter I64 operation";case HRV_BUFFER:return "DBF value output buffer too short";case HRV_TAG_INVALID:return "DBF value tag or metadata invalid";}return "DBF unknown value error";}
+/* D3: numeric cell -> (double, dec). Field numerics carry the scaled
+ * integer, so value = payload / 10^dec (correctly rounded, matching the
+ * ASCII read); legacy inline floats take their bits and the tag dec with
+ * the established 0-means-2 convention; heap floats read the owned item. */
+static hrv_error hrv_to_double(hrv_cell v,double *out,unsigned *dec){
+ unsigned k=hrv_kind(v);int64_t n;double d;unsigned c,i;
+ if(k==HRV_I64||k==HRV_I64_LITERAL){*out=(double)(int64_t)v.payload;*dec=0;return HRV_OK;}
+ if(k==HRV_FIELD_NUMERIC){c=hrv_decimals(v);n=(int64_t)v.payload;d=(double)n;for(i=0;i<c;i++)d/=10.0;*out=d;*dec=c;return HRV_OK;}
+ if(k==HRV_DOUBLE){union{uint64_t u;double d;}b;
+  if(v.tag&HR_DYN_FLOAT_HEAP){const uint64_t *p=(const uint64_t *)v.payload;b.u=p[0];c=(unsigned)(p[1]&0xffff);}
+  else{b.u=v.payload;c=(unsigned)(v.tag>>8);if(!c)c=2;}
+  *out=b.d;*dec=c;return HRV_OK;}
+ return HRV_TYPE;
+}
+hrv_error hrv_arith(unsigned op,hrv_cell a,hrv_cell b,hrv_cell *out){
+ hrv_error e=hrv_validate(a);if(e)return e;e=hrv_validate(b);if(e)return e;
+ if(op=='+'||op=='-'||op=='*'){
+  int64_t na,nb;
+  if(hrv_i64(a,&na)==HRV_OK&&hrv_i64(b,&nb)==HRV_OK){
+   /* Unsigned arithmetic: defined two's-complement wrap, mirroring the
+    * compiler's emitted add/sub/imul (and Harbour's wrapping LONGs). */
+   out->tag=HRV_I64;
+   if(op=='+')out->payload=(uint64_t)na+(uint64_t)nb;
+   else if(op=='-')out->payload=(uint64_t)na-(uint64_t)nb;
+   else out->payload=(uint64_t)na*(uint64_t)nb;
+   return HRV_OK;
+  }
+ }
+ if(op=='+'||op=='-'||op=='*'||op=='/'){
+  double da,db,r;unsigned ca,cb,dec;union{double d;uint64_t u;}bits;
+  e=hrv_to_double(a,&da,&ca);if(e)return e;
+  e=hrv_to_double(b,&db,&cb);if(e)return e;
+  if(op=='+'){r=da+db;dec=ca>cb?ca:cb;}
+  else if(op=='-'){r=da-db;dec=ca>cb?ca:cb;}
+  else if(op=='*'){r=da*db;dec=ca+cb;if(dec>255)dec=255;}
+  else{if(db==0.0)return HRV_ZERODIV;r=da/db;dec=2;}
+  bits.d=r;out->tag=HRV_DOUBLE|((uint64_t)dec<<8);out->payload=bits.u;
+  return HRV_OK;
+ }
+ return HRV_TYPE;
+}
+const char *hrv_error_name(hrv_error e){switch(e){case HRV_OK:return "ok";case HRV_TYPE:return "DBF value type outside admitted operation";case HRV_DECIMAL_I64:return "DBF decimal numeric cannot enter I64 operation";case HRV_BUFFER:return "DBF value output buffer too short";case HRV_TAG_INVALID:return "DBF value tag or metadata invalid";case HRV_ZERODIV:return "DBF arithmetic division by zero";}return "DBF unknown value error";}

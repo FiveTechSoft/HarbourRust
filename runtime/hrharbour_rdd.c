@@ -372,4 +372,14 @@ HR_SYSV uint64_t hrdbf_app_empty( uint64_t t, uint64_t p )
    if( hrv_empty( c, &yes ) ) hr_fail( "hbc: DBF scalar Empty rejected\n" );
    return ( uint64_t ) yes;
 }
+/* D3: Dyn numeric arithmetic entry point - identical semantics to the
+ * native adapter (shared hrv_arith), so both adapters agree cell for cell. */
+HR_SYSV hrv_cell hrdbf_app_arith( uint64_t op, uint64_t ta, uint64_t pa, uint64_t tb, uint64_t pb )
+{
+   hrv_cell a = { ta, pa }, b = { tb, pb }, r; hrv_error e = hrv_arith( ( unsigned ) op, a, b, &r );
+   if( e == HRV_ZERODIV ) hr_fail( "hbc: DBF arithmetic division by zero\n" );
+   if( e == HRV_TYPE ) hr_fail( "hbc: DBF arithmetic on a NIL or non-numeric operand\n" );
+   if( e ) hr_fail( "hbc: DBF arithmetic rejected\n" );
+   return r;
+}
 HR_SYSV void hrdbf_app_unsupported( void ) { hr_fail( "hbc: DBF-active dynamic scalar consumer is outside the admitted subset\n" ); }

@@ -6,7 +6,7 @@ typedef struct { uint64_t tag,payload; } hrv_cell;
 enum { HRV_I64=0,HRV_NIL=1,HRV_STR_BORROW=2,HRV_LOGICAL=3,HRV_STR_OWN=4,
        HRV_DOUBLE=5,HRV_SUBARRAY=6,HRV_BLOCK=7,HRV_ARRAY=8,HRV_I64_LITERAL=9,
        HRV_BYREF=10,HRV_DATE=11,HRV_FIELD_NUMERIC=12 };
-typedef enum { HRV_OK,HRV_TYPE,HRV_DECIMAL_I64,HRV_BUFFER,HRV_TAG_INVALID } hrv_error;
+typedef enum { HRV_OK,HRV_TYPE,HRV_DECIMAL_I64,HRV_BUFFER,HRV_TAG_INVALID,HRV_ZERODIV } hrv_error;
 /* Every consumer reads kind through this accessor, never whole-tag equality.
  * Raw-tag copying/return and extracting numeric metadata are not classification. */
 static inline unsigned hrv_kind(hrv_cell v){return (unsigned)(v.tag&255u);}
@@ -19,6 +19,15 @@ char hrv_valtype(hrv_cell);
 hrv_error hrv_i64(hrv_cell,int64_t *);
 hrv_error hrv_equal(hrv_cell,hrv_cell,int *);
 hrv_error hrv_empty(hrv_cell,int *);
+/* D3: numeric Dyn arithmetic on +,-,*,/ (Harbour hb_vmPlus/Minus/Mult/Divide
+ * measured behaviour). Integer fast path when both operands extract to i64
+ * (wrapping two's complement, mirroring the compiler's emitted add/sub/imul);
+ * never for '/', which is always a double with dec = SET DECIMALS (2 here).
+ * Otherwise both operands convert to double; the result is a legacy inline
+ * float cell (tag HRV_DOUBLE|(dec<<8), payload = IEEE-754 bits) with dec =
+ * max(+,-), sum(*), 2(/). A real zero divisor (+-0.0) is HRV_ZERODIV; NaN
+ * divides through. NIL and non-numeric operands are HRV_TYPE. */
+hrv_error hrv_arith(unsigned,hrv_cell,hrv_cell,hrv_cell *);
 /* New scalar types only; returns exact field/string byte length, no NUL contract.
  * Date format is mm/dd/yy matching current default Date render, blank='  /  /  '. */
 hrv_error hrv_render(hrv_cell,unsigned char *,size_t,size_t *);

@@ -46,5 +46,6 @@
 #define hrdbf_app_equal hrdbfw_app_equal
 #define hrdbf_app_compare hrdbfw_app_compare
 #define hrdbf_app_empty hrdbfw_app_empty
+#define hrdbf_app_arith hrdbfw_app_arith
 #define hrdbf_app_unsupported hrdbfw_app_unsupported
 #include "hrdbf_app.c"

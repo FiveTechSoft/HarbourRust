@@ -67,6 +67,21 @@ hrdbf_app_get_name:
     mov 40(%rsp), %rdx
     leave
     ret
+hrdbf_app_arith:
+    push %rbp
+    mov %rsp, %rbp
+    sub $64, %rsp
+    mov %rcx, 32(%rsp)
+    mov %r8, 40(%rsp)
+    mov %rdx, %r9
+    mov %rsi, %r8
+    mov %rdi, %rdx
+    lea 48(%rsp), %rcx
+    call hrdbfw_app_arith
+    mov 48(%rsp), %rax
+    mov 56(%rsp), %rdx
+    leave
+    ret
 hrdbfw_copy_callback:
     push %rbp
     mov %rsp, %rbp
