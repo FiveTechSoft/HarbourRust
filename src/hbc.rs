@@ -30,6 +30,12 @@ use std::fs;
 use std::process;
 
 thread_local! {
+    // Literal aliases of the program's dbUseArea calls (upper case) and a
+    // per-program counter for field-reference labels.
+    static DBF_ALIASES: std::cell::RefCell<Vec<String>> = std::cell::RefCell::new(Vec::new());
+    static DBF_FIELD_SITE: std::cell::Cell<usize> = std::cell::Cell::new(0);
+}
+thread_local! {
     static CG_MEMVAR_NAMES: std::cell::RefCell<std::collections::HashSet<String>> = std::cell::RefCell::new(std::collections::HashSet::new());
     static MACRO_CONTEXT: std::cell::Cell<bool> = const {std::cell::Cell::new(false)};
     // I2 (Goose hybrid): true while emit_asm must carry the scope arena.
@@ -1235,6 +1241,16 @@ impl P {
                 }
             }
             Some(Tok::Ident(id)) => {
+                // alias->field / FIELD->field: `->` lexes as `-` `>`. A
+                // run-time field read by name (dbffieldref, optional alias).
+                if self.peek() == Some(&Tok::Minus) && self.toks.get(self.pos + 1) == Some(&Tok::Gt) && !id.eq_ignore_ascii_case("m") && !id.eq_ignore_ascii_case("memvar") {
+                    if let Some(Tok::Ident(f)) = self.toks.get(self.pos + 2).cloned() {
+                        self.pos += 3;
+                        let mut args = vec![Expr::Str(f)];
+                        if !id.eq_ignore_ascii_case("field") && !id.eq_ignore_ascii_case("_field") { args.push(Expr::Str(id.to_ascii_uppercase())); }
+                        return Ok(Expr::Call("dbffieldref".to_string(), args));
+                    }
+                }
                 if self.peek() == Some(&Tok::LParen) {
                     self.pos += 1;
                     let mut args: Vec<Expr> = Vec::new();
@@ -5437,6 +5453,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                         return Err(format!("line {}: DBF supports one alias, literal DBFNTX/DBFCDX, shared=.F. and a literal readonly flag; shared access, other drivers and field writes are not supported",n));
                     }
                     if !matches!(type_expr(&args[2],env,sigs,n)?,Ty::Str|Ty::StrOwn){return Err(format!("line {}: DBF filename must be a string",n));}
+                    if let Expr::Str(a)=&args[3] {DBF_ALIASES.with(|v|{let mut v=v.borrow_mut();let a=a.to_ascii_uppercase();if !v.contains(&a){v.push(a);}});}
                 } else if id=="ordlistadd" || id=="dbseek" {
                     if (id=="ordlistadd"&&args.len()!=1)||(id=="dbseek"&&(args.is_empty()||args.len()>3)){return Err(format!("line {}: {} expects {}",n,id,if id=="ordlistadd"{"one filename string"}else{"one key string and up to two logical flags"}));}
                     if !matches!(type_expr(&args[0],env,sigs,n)?,Ty::Str|Ty::StrOwn){return Err(format!("line {}: NTX {} expects a statically typed string (Dyn queries are outside this increment)",n,id));}
@@ -5445,7 +5462,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                     if args.len()>1 || (id=="fieldget"&&args.is_empty()) {return Err(format!("line {}: {} expects {} integer argument",n,id,if id=="dbskip" {"zero or one"} else {"one"}));}
                     for a in args {if !matches!(type_expr(a,env,sigs,n)?,Ty::I64|Ty::Dyn){return Err(format!("line {}: {} expects integer position",n,id));}}
                 } else if id=="dbffieldref" {
-                    if args.len()!=1 || !matches!(&args[0],Expr::Str(_)) {return Err(format!("line {}: internal field reference expects one literal field name",n));}
+                    if args.is_empty() || args.len()>2 || !args.iter().all(|a|matches!(a,Expr::Str(_))) {return Err(format!("line {}: internal field reference expects a literal field name and optional alias",n));}
                 } else if !args.is_empty(){return Err(format!("line {}: {} takes no arguments",n,id));}
                 return Ok(ty);
             }
@@ -12631,13 +12648,26 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                     else{out.push_str("    call hrdbf_app_skip\n    mov $1, %eax\n    xor %edx, %edx\n");}
                 },
                 "dbffieldref" => {
-                    // Bare field identifier: runtime name lookup in the open
-                    // workarea, same result channel as FieldGet.
-                    if let Expr::Str(nm)=&args[0] {
-                        let ix=strs.len();strs.push(nm.clone());
-                        out.push_str(&format!("    lea .Lstr{}(%rip), %rdi\n    mov ${}, %esi\n",ix,nm.len()));
-                        out.push_str("    lea hbc_strcpy(%rip), %rdx\n    call hrdbf_app_get_name\n");
-                    } else { unreachable!("checked") }
+                    // Field by name (bare identifier, alias->name, FIELD->name):
+                    // run-time lookup in the open workarea, then the ordinal read
+                    // FieldGet uses. hrdbf_app_fieldpos: -1 no workarea, 0 no
+                    // such field. Failures raise Harbour's run-time errors with
+                    // the Called-from frames (hrm_fail, terminal profile).
+                    let name=match &args[0] {Expr::Str(f)=>f.clone(),_=>unreachable!("checked")};
+                    let alias=match args.get(1) {Some(Expr::Str(a))=>a.to_ascii_uppercase(),_=>String::new()};
+                    let known=alias.is_empty()||DBF_ALIASES.with(|v|v.borrow().contains(&alias));
+                    let alias_msg=format!("Error BASE/1002  Alias does not exist: {}\n",alias);
+                    let field_msg=format!("Error BASE/1003  Variable does not exist: {}\n",name.to_ascii_uppercase());
+                    let (ia,ifd,iname)=(strs.len(),strs.len()+1,strs.len()+2);
+                    strs.push(alias_msg.clone());strs.push(field_msg.clone());strs.push(name.clone());
+                    let k=DBF_FIELD_SITE.with(|c|{let k=c.get();c.set(k+1);k});
+                    if !known {
+                        out.push_str(&format!("    lea .Lstr{}(%rip), %rdi\n    mov ${}, %esi\n    call hrm_fail\n",ia,alias_msg.len()));
+                    } else {
+                        out.push_str(&format!("    lea .Lstr{}(%rip), %rdi\n    mov ${}, %esi\n    call hrdbf_app_fieldpos\n    test %rax, %rax\n    jg .Ldbffield_ok{}\n",iname,name.len(),k));
+                        if !alias.is_empty() {out.push_str(&format!("    jz .Ldbffield_nofield{}\n    lea .Lstr{}(%rip), %rdi\n    mov ${}, %esi\n    call hrm_fail\n.Ldbffield_nofield{}:\n",k,ia,alias_msg.len(),k));}
+                        out.push_str(&format!("    lea .Lstr{}(%rip), %rdi\n    mov ${}, %esi\n    call hrm_fail\n.Ldbffield_ok{}:\n    mov %rax, %rdi\n    lea hbc_strcpy(%rip), %rsi\n    call hrdbf_app_get\n",ifd,field_msg.len(),k));
+                    }
                 },
                 _ => {
                     let helper=match id.as_str(){"dbclosearea"=>"close","dbgotop"=>"top","dbgobottom"=>"bottom","ordlistclear"=>"order_clear","found"=>"found","recno"=>"recno","lastrec"=>"lastrec","bof"=>"bof","eof"=>"eof","deleted"=>"deleted",_=>unreachable!()};
@@ -25211,6 +25241,10 @@ hbc_dbf_eprint:
 "#);
             }
             result.push_str(include_str!("../generated/hrdbf_windows.s"));
+            if result.contains("call hrdbf_app_fieldpos") || (result.contains("call hrm_fail") && !MACRO_CONTEXT.with(|c|c.get())) {
+                result.push_str(include_str!("../generated/hrdbf_fieldpos.s"));
+                if !MACRO_CONTEXT.with(|c|c.get()) {result.push_str(MACRO_FAIL_WINDOWS);}
+            }
         }
         finalize_tag_kind_accessors(result,active)
     };
@@ -27148,6 +27182,10 @@ hbc_dbf_eprint:
 "#);
             }
             result.push_str(include_str!("../generated/hrdbf_linux.s"));
+            if result.contains("call hrdbf_app_fieldpos") || (result.contains("call hrm_fail") && !MACRO_CONTEXT.with(|c|c.get())) {
+                result.push_str(include_str!("../generated/hrdbf_fieldpos.s"));
+                if !MACRO_CONTEXT.with(|c|c.get()) {result.push_str(MACRO_FAIL_LINUX);}
+            }
         }
         finalize_tag_kind_accessors(result,active)
     }
