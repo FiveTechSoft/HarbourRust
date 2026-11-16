@@ -21,11 +21,15 @@ return nil
 ```
 
 `dbUseArea` requires six explicit arguments: a literal new-area logical,
-literal `"DBFNTX"`, filename string, nonempty literal alias, `.F.` for shared,
-and `.T.` for read-only. Only one workarea may be open; alias selection is not
-implemented. The driver name does not imply NTX support.
+literal `"DBFNTX"` (or `"DBFCDX"`), filename string, nonempty literal alias,
+`.F.` for shared, and a literal read-only flag. `readonly=.F.` opens
+read-write at the OS level under Harbour's exclusive contract; field write
+operations still do not exist. See [D1: write-mode open and field-name
+access](DBF-WRITE-OPEN-D1.md). Only one workarea may be open; alias
+selection is not implemented. The driver name does not imply NTX support.
 
-Calls: `dbUseArea`, `dbCloseArea`, `dbGoTop`, `dbSkip`, `RecNo`, `LastRec`,
+Bare field identifiers (for example `? CLIENTE`) resolve against the open
+workarea at runtime; declared variables keep precedence. Calls: `dbUseArea`, `dbCloseArea`, `dbGoTop`, `dbSkip`, `RecNo`, `LastRec`,
 `Bof`, `Eof`, `Deleted`, `FieldGet`. `dbSkip()` defaults to one record and
 accepts positive, zero and negative skips. `dbUseArea` returns a logical;
 close/top/skip return NIL. Deleted records remain visible in physical order.

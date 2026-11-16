@@ -37,7 +37,7 @@ def main():
 
     fixtures = output / 'fixtures'
     fixtures.mkdir()
-    for name in ['fixtures', 'widths']:
+    for name in ['fixtures', 'widths', 'mclie']:
         shutil.copyfile(inputs / (name + '.prg'), fixtures / (name + '.prg'))
         require([hbmk2, name + '.prg', '-gtstd', '-o' + name], fixtures, name + '-build')
         require([fixtures / name], fixtures, name + '-run')
@@ -46,7 +46,7 @@ def main():
         case = output / source.stem
         case.mkdir()
         shutil.copyfile(source, case / 'probe.prg')
-        for dbf in fixtures.glob('*.dbf'):
+        for dbf in list(fixtures.glob('*.dbf')) + list(fixtures.glob('*.DBF')):
             shutil.copyfile(dbf, case / dbf.name)
         require([hbmk2, 'probe.prg', '-gtstd', '-ooracle'], case, 'oracle-build')
         oracle = require([case / 'oracle'], case, 'oracle')

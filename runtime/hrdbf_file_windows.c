@@ -1,5 +1,8 @@
-/* Own MIT Windows x86-64 read-only private snapshots. Handles remain exclusive
- * until close, measured against official Harbour PE shared=.F./readonly=.T.
+/* Own MIT Windows x86-64 private snapshots. Handles remain exclusive
+ * until close, measured against official Harbour PE shared=.F. opens.
+ * readonly=.F. requests GENERIC_READ|GENERIC_WRITE with share mode 0, the
+ * Harbour exclusive read-write contract; no field write operations exist
+ * in this increment and the snapshot is never flushed back.
  * No RDD locking or multi-file atomicity is claimed. */
 #include <windows.h>
 #include "hrdbf_file.h"
@@ -25,10 +28,10 @@ static int hrdbfw_path(const char*p,WCHAR*w){
 }
 static void* allocate(size_t n){return VirtualAlloc(0,n,MEM_RESERVE|MEM_COMMIT,PAGE_READWRITE);}
 static int hrdbfw_release(void*p){return VirtualFree(p,0,MEM_RELEASE)!=0;}
-static hrdbf_error hrdbfw_snapshot(const char*path,unsigned char**bytes,size_t*size,void**handle,size_t min,unsigned page){
+static hrdbf_error hrdbfw_snapshot(const char*path,unsigned char**bytes,size_t*size,void**handle,size_t min,unsigned page,int writable){
  WCHAR wide[260];HANDLE h;LARGE_INTEGER n,after;DWORD got;size_t pos=0;unsigned char extra;
  if(!hrdbfw_path(path,wide))return HRDBF_IO;
- h=CreateFileW(wide,GENERIC_READ,0,0,OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL,0);if(h==INVALID_HANDLE_VALUE)return HRDBF_IO;
+ h=CreateFileW(wide,GENERIC_READ|(writable?GENERIC_WRITE:0),0,0,OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL,0);if(h==INVALID_HANDLE_VALUE)return HRDBF_IO;
  *handle=h;
  if(!GetFileSizeEx(h,&n))return HRDBF_IO;
  if(n.QuadPart<(LONGLONG)min||n.QuadPart>HRDBF_MAX_BYTES||(page&&n.QuadPart%page))return HRDBF_FORMAT;
@@ -43,9 +46,9 @@ hrdbf_error hrdbf_file_close(hrdbf_file*f){
  if(f->owned){if(!hrdbfw_release(f->owned))e=HRDBF_IO;else{f->owned=0;f->size=0;}}
  return e;
 }
-hrdbf_error hrdbf_file_open(hrdbf_file*f,const char*path){
+hrdbf_error hrdbf_file_open(hrdbf_file*f,const char*path,int writable){
  hrdbf_error e=hrdbf_file_close(f);if(e)return e;
- e=hrdbfw_snapshot(path,&f->owned,&f->size,&f->handle,33,0);
+ e=hrdbfw_snapshot(path,&f->owned,&f->size,&f->handle,33,0,writable);
  if(!e)e=hrdbf_open(&f->area,f->owned,f->size);
  if(e){hrdbf_error c=hrdbf_file_close(f);if(c)return c;}return e;
 }

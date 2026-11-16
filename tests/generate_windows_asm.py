@@ -26,11 +26,14 @@ for label in re.findall(r'^([A-Za-z_.$][A-Za-z0-9_.$]*):',s,re.M):
   s=re.sub(r'(?<![A-Za-z0-9_.$])'+re.escape(label)+r'(?![A-Za-z0-9_.$])','hrdbfw_local_'+label,s)
 assert not re.search(r'__chkstk|__stack_chk|GOT|PLT|\.seh|\.cfi|\.eh_frame',s)
 # Export compiler-facing internal ABI wrappers. The C bodies use Win64.
-arity={'close':0,'open':4,'top':0,'bottom':0,'skip':1,'order_add':2,'order_clear':0,'found':0,'seek':4,'recno':0,'lastrec':0,'bof':0,'eof':0,'deleted':0,'render':3,'integer':2,'equal':4,'compare':4,'empty':2,'unsupported':0}
+arity={'close':0,'open':5,'top':0,'bottom':0,'skip':1,'order_add':2,'order_clear':0,'found':0,'seek':4,'recno':0,'lastrec':0,'bof':0,'eof':0,'deleted':0,'render':3,'integer':2,'equal':4,'compare':4,'empty':2,'unsupported':0}
 s+='\n.text\n'
 for name,n in arity.items():
- s+='\nhrdbf_app_'+name+':\n    push %rbp\n    mov %rsp, %rbp\n    sub $32, %rsp\n'
+ s+='\nhrdbf_app_'+name+':\n    push %rbp\n    mov %rsp, %rbp\n    sub $'+str(48 if n>=5 else 32)+', %rsp\n'
  # Copy from the last source first, so rcx/rdx inputs survive reassignment.
+ # The fifth argument arrives in r8 and moves to the Win64 stack slot before
+ # r8 is reassigned; 32-byte shadow space plus one 8-byte outgoing slot.
+ if n>=5:s+='    mov %r8, 32(%rsp)\n'
  if n>=4:s+='    mov %rcx, %r9\n'
  if n>=3:s+='    mov %rdx, %r8\n'
  if n>=2:s+='    mov %rsi, %rdx\n'
@@ -46,6 +49,20 @@ hrdbf_app_get:
     lea 32(%rsp), %rcx
     lea hrdbfw_copy_callback(%rip), %r8
     call hrdbfw_app_get
+    mov 32(%rsp), %rax
+    mov 40(%rsp), %rdx
+    leave
+    ret
+hrdbf_app_get_name:
+    push %rbp
+    mov %rsp, %rbp
+    sub $64, %rsp
+    mov %rdx, 48(%rsp)
+    mov %rsi, %r8
+    mov %rdi, %rdx
+    lea 32(%rsp), %rcx
+    lea hrdbfw_copy_callback(%rip), %r9
+    call hrdbfw_app_get_name
     mov 32(%rsp), %rax
     mov 40(%rsp), %rdx
     leave

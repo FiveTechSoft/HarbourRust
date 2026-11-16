@@ -13,7 +13,7 @@ static hrdbf_error hrntx_file_close(hrntx_file*f){
 static hrdbf_error hrntx_file_open(hrntx_file*f,const char*path,const hrdbf_area*d,unsigned cdx){
  long fd,n,r;size_t pos=0,cap,np,nr;unsigned char extra;hrdbf_error err=hrntx_file_close(f);
  if(err)return err;
- fd=open_ro(path);if(fd<0)return HRDBF_IO;
+ fd=open_dbf(path,0);if(fd<0)return HRDBF_IO;
  n=syscall3(8,fd,0,2);if(n<0){err=HRDBF_IO;goto finish;}
  if(n<2048||n>HRNTX_MAX_BYTES||n%(cdx?512:1024)){err=HRDBF_FORMAT;goto finish;}
  if(syscall3(8,fd,0,0)<0){err=HRDBF_IO;goto finish;}

@@ -34,6 +34,9 @@
 #define hrdbf_app_eof hrdbfw_app_eof
 #define hrdbf_app_deleted hrdbfw_app_deleted
 #define hrdbf_app_get hrdbfw_app_get
+#define hrdbf_app_get_ord hrdbfw_app_get_ord
+#define hrdbf_app_get_name hrdbfw_app_get_name
+#define hrdbf_app_field_missing hrdbfw_app_field_missing
 #define hrdbf_app_render hrdbfw_app_render
 #define hrdbf_app_integer hrdbfw_app_integer
 #define hrdbf_app_equal hrdbfw_app_equal

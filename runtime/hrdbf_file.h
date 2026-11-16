@@ -1,4 +1,4 @@
-/* Own MIT read-only file adapter. Linux/Windows x86-64 snapshot adapters. */
+/* Own MIT file adapter. Linux/Windows x86-64 snapshot adapters. */
 #ifndef HRDBF_FILE_H
 #define HRDBF_FILE_H
 #include "hrdbf.h"
@@ -9,7 +9,12 @@ typedef struct { hrdbf_area area; unsigned char *owned; size_t size;
 #endif
 } hrdbf_file;
 /* No concurrent writer or snapshot-consistency guarantee. The caller supplies
- * an offline/quiescent file. Decoder never keeps a live mapping of file pages. */
-hrdbf_error hrdbf_file_open(hrdbf_file *,const char *);
+ * an offline/quiescent file. Decoder never keeps a live mapping of file pages.
+ * writable=0 opens read-only. writable=1 requests an OS read-write open
+ * (exclusive on Windows, O_RDWR on Linux), matching Harbour's exclusive
+ * shared=.F./readonly=.F. open contract: it fails on read-only storage.
+ * No field write operations exist in this increment and the snapshot is
+ * never flushed back, so the open mode carries no persistence semantics. */
+hrdbf_error hrdbf_file_open(hrdbf_file *,const char *,int writable);
 hrdbf_error hrdbf_file_close(hrdbf_file *);
 #endif

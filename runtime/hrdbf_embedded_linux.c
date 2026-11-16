@@ -10,7 +10,7 @@
 /* function-only date rename is performed in the decoder source to avoid
  * rewriting the hrdbf_value.date field identifier through a macro. */
 #define syscall3 hrdbf_os_syscall3
-#define open_ro hrdbf_os_open_ro
+#define open_dbf hrdbf_os_open_dbf
 #define allocate hrdbf_os_allocate
 #include "hrdbf.c"
 #include "hrvalue.c"

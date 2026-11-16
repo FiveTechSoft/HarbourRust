@@ -8,14 +8,14 @@
 #endif
 #ifndef HRDBF_TEST_SEAMS
 static long syscall3(long n,long a,long b,long c){long r;__asm__ volatile("syscall":"=a"(r):"0"(n),"D"(a),"S"(b),"d"(c):"rcx","r11","memory");return r;}
-static long open_ro(const char *p){long r;register long r10 __asm__("r10")=0;do{__asm__ volatile("syscall":"=a"(r):"0"(257L),"D"(-100L),"S"(p),"d"(0x80000L),"r"(r10):"rcx","r11","memory");}while(r==-4);return r;}
+static long open_dbf(const char *p,int writable){long r;register long r10 __asm__("r10")=0;do{__asm__ volatile("syscall":"=a"(r):"0"(257L),"D"(-100L),"S"(p),"d"(0x80000L|(writable?2L:0L)),"r"(r10):"rcx","r11","memory");}while(r==-4);return r;}
 static void *allocate(size_t n){long r;register long r10 __asm__("r10")=0x22;register long r8 __asm__("r8")=-1;register long r9 __asm__("r9")=0;__asm__ volatile("syscall":"=a"(r):"0"(9L),"D"(0L),"S"(n),"d"(3L),"r"(r10),"r"(r8),"r"(r9):"rcx","r11","memory");return r<0&&r>=-4095?0:(void*)r;}
 #else
 extern long hrdbf_test_syscall3(long,long,long,long);
-extern long hrdbf_test_open_ro(const char *);
+extern long hrdbf_test_open_dbf(const char *,int);
 extern void *hrdbf_test_allocate(size_t);
 #define syscall3 hrdbf_test_syscall3
-#define open_ro hrdbf_test_open_ro
+#define open_dbf hrdbf_test_open_dbf
 #define allocate hrdbf_test_allocate
 #endif
 hrdbf_error hrdbf_file_close(hrdbf_file *f){
@@ -24,11 +24,11 @@ hrdbf_error hrdbf_file_close(hrdbf_file *f){
  /* Do not silently abandon ownership when munmap fails; caller can retry. */
  if(r<0)return HRDBF_IO;f->owned=0;f->size=0;return HRDBF_OK;
 }
-hrdbf_error hrdbf_file_open(hrdbf_file *f,const char *path){
+hrdbf_error hrdbf_file_open(hrdbf_file *f,const char *path,int writable){
  long fd,n,r;size_t pos=0;unsigned char extra;hrdbf_error err=HRDBF_OK;
  /* Caller zero-initializes the file. Reopen closes its previous owned buffer. */
  err=hrdbf_file_close(f);if(err)return err;
- fd=open_ro(path);if(fd<0)return HRDBF_IO;
+ fd=open_dbf(path,writable);if(fd<0)return HRDBF_IO;
  n=syscall3(8,fd,0,2);if(n<0){err=HRDBF_IO;goto closefd;}
  if(n<33){err=HRDBF_FORMAT;goto closefd;}
  if(n>HRDBF_MAX_BYTES){err=HRDBF_LIMIT;goto closefd;}

@@ -9,8 +9,11 @@ such as M_CLIE.DBF falls within the supported on-disk subset.
 ## Same admitted subset, not a new RDD
 
 One workarea, six explicit DBUSEAREA arguments, literal DBFNTX/DBFCDX,
-shared=.F. and readonly=.T. Existing C/N/L/D dBASE III rules, scalar-consumer
-limits and size limits stay in force. NTX and CDX must be opened explicitly
+shared=.F. and a literal readonly flag; readonly=.F. retains the exclusive
+handle with GENERIC_READ|GENERIC_WRITE (Harbour's exclusive contract), while
+field writes remain outside the subset. Existing C/N/L/D dBASE III rules,
+scalar-consumer limits and size limits stay in force.
+See [D1](DBF-WRITE-OPEN-D1.md). NTX and CDX must be opened explicitly
 with OrdListAdd. CDX is one ascending, nonunique, unconditional tag over one
 direct C field of 1..240 bytes, with complete matching physical-record coverage.
 See [DBF](DBF-READONLY.md), [NTX](NTX-READONLY.md) and [CDX](CDX-READONLY.md).

@@ -33,7 +33,7 @@ static void hrdbf_app_fail(const char *msg){
 }
 static void hrdbf_app_require(void){if(!hrdbf_app_state.area.open)hrdbf_app_fail("hbc: DBF no workarea is open\n");}
 void hrdbf_app_close(void){hrdbf_error a=hrntx_file_close(&hrdbf_app_order),b=hrdbf_file_close(&hrdbf_app_state);hrdbf_app_found_flag=0;hrdbf_app_pos=0;if(a||b)hrdbf_app_fail("hbc: DBF/NTX close failed\n");}
-void hrdbf_app_open(const unsigned char *p,size_t len,uint64_t new_area,uint64_t cdx){
+void hrdbf_app_open(const unsigned char *p,size_t len,uint64_t new_area,uint64_t cdx,uint64_t writable){
  char path[HRDBF_APP_PATH_MAX];size_t i,start=0,end;hrdbf_error e;
  if(new_area&&hrdbf_app_state.area.open)hrdbf_app_fail("hbc: DBF only one workarea is supported\n");
  if(!len||len>=sizeof path)hrdbf_app_fail("hbc: DBF filename length outside supported range\n");
@@ -49,8 +49,8 @@ void hrdbf_app_open(const unsigned char *p,size_t len,uint64_t new_area,uint64_t
  end=len;for(i=start;i<len;i++)if(p[i]=='.')end=i;
  hrdbf_app_baselen=end-start;
  for(i=0;i<hrdbf_app_baselen;i++)hrdbf_app_basename[i]=cxupper(p[start+i]);
- e=hrdbf_file_open(&hrdbf_app_state,path);
- if(e)hrdbf_app_fail("hbc: DBF read-only open rejected (format, data, size or I/O)\n");
+ e=hrdbf_file_open(&hrdbf_app_state,path,writable!=0);
+ if(e)hrdbf_app_fail("hbc: DBF open rejected (format, data, size, access mode or I/O)\n");
 }
 static void hrdbf_app_order_sync(void){
  hrdbf_area*d=&hrdbf_app_state.area;hrntx_index*x=&hrdbf_app_order.index;
@@ -110,7 +110,29 @@ uint64_t hrdbf_app_lastrec(void){hrdbf_app_require();return hrdbf_app_state.area
 uint64_t hrdbf_app_bof(void){hrdbf_app_require();return hrdbf_app_state.area.bof;}
 uint64_t hrdbf_app_eof(void){hrdbf_app_require();return hrdbf_app_state.area.eof;}
 uint64_t hrdbf_app_deleted(void){unsigned char d;hrdbf_app_require();hrdbf_deleted(&hrdbf_app_state.area,&d);return d;}
-hrv_cell hrdbf_app_get(int64_t n,void *(*copy)(const void*,size_t)){
+/* Harbour BASE/1003 equivalent for a bare field identifier: explicit
+ * fail-fast naming the missing field, never a silent NIL. */
+static const char hrdbf_app_pre_field[]="hbc: DBF field not found in the open area: ";
+static void hrdbf_app_field_missing(const unsigned char *p,size_t len){
+#ifdef _WIN32
+ {DWORD w;WriteFile(GetStdHandle(STD_ERROR_HANDLE),hrdbf_app_pre_field,(DWORD)(sizeof hrdbf_app_pre_field-1),&w,0);
+  WriteFile(GetStdHandle(STD_ERROR_HANDLE),p,(DWORD)len,&w,0);
+  WriteFile(GetStdHandle(STD_ERROR_HANDLE),"\n",1,&w,0);}
+#else
+ syscall3(1,2,(long)hrdbf_app_pre_field,sizeof hrdbf_app_pre_field-1);
+ syscall3(1,2,(long)p,len);
+ syscall3(1,2,(long)"\n",1);
+#endif
+ hrntx_file_close(&hrdbf_app_order);
+ hrdbf_file_close(&hrdbf_app_state);
+#ifdef _WIN32
+ ExitProcess(1);
+#else
+ syscall3(60,1,0,0);
+#endif
+ __builtin_unreachable();
+}
+static hrv_cell hrdbf_app_get_ord(int64_t n,void *(*copy)(const void*,size_t)){
  hrdbf_value v;hrv_cell c={HRV_NIL,0};unsigned char spaces[255];size_t i;
  hrdbf_app_require();
  if(n<1||n>hrdbf_app_state.area.nfields)return c;
@@ -122,6 +144,25 @@ hrv_cell hrdbf_app_get(int64_t n,void *(*copy)(const void*,size_t)){
  if(v.type=='N')return hrv_number(v.scaled,v.width,v.decimals);
  if(v.type=='D')return hrv_date(v.date);
  c.tag=HRV_LOGICAL;c.payload=v.logical;return c;
+}
+hrv_cell hrdbf_app_get(int64_t n,void *(*copy)(const void*,size_t)){
+ return hrdbf_app_get_ord(n,copy);
+}
+/* Bare field identifier: case-insensitive name lookup against the open
+ * workarea, then the ordinary ordinal path. Field names are NUL-padded in
+ * the header; the source identifier carries no padding. */
+hrv_cell hrdbf_app_get_name(const unsigned char *p,size_t len,void *(*copy)(const void*,size_t)){
+ const hrdbf_area *a=&hrdbf_app_state.area;unsigned i;size_t j;
+ hrdbf_app_require();
+ for(i=0;i<a->nfields;i++){
+  const unsigned char *nm=a->fields[i].name;size_t nl=0;
+  while(nl<sizeof a->fields[i].name&&nm[nl])nl++;
+  if(nl!=len)continue;
+  for(j=0;j<len;j++)if(cxupper(p[j])!=cxupper(nm[j]))break;
+  if(j==len)return hrdbf_app_get_ord((int64_t)i+1,copy);
+ }
+ hrdbf_app_field_missing(p,len);
+ __builtin_unreachable();
 }
 size_t hrdbf_app_render(uint64_t tag,uint64_t pay,unsigned char *out){
  hrv_cell c={tag,pay};size_t n=0;hrv_error e=hrv_render(c,out,256,&n);

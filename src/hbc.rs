@@ -1682,7 +1682,7 @@ const ASM_RESERVED: &[&str] = &[
 ];
 
 fn dbf_result(id: &str) -> Option<Ty> {
-    match id { "fieldget" | "dbclosearea" | "dbgotop" | "dbgobottom" | "ordlistclear" | "dbskip" => Some(Ty::Dyn),
+    match id { "fieldget" | "dbclosearea" | "dbgotop" | "dbgobottom" | "ordlistclear" | "dbskip" | "dbffieldref" => Some(Ty::Dyn),
         "recno" | "lastrec" => Some(Ty::I64), "bof" | "eof" | "deleted" | "dbusearea" | "ordlistadd" | "dbseek" | "found" => Some(Ty::Bool), _ => None }
 }
 
@@ -4946,6 +4946,136 @@ fn expr_mentions(e: &Expr, name: &str) -> bool {
     }
 }
 
+
+// ---------------------------------------------------------------------------
+// DBF field-name access (D1b). In a program that calls the DBF adapter, an
+// identifier the function never declares follows Harbour's dynamic field
+// resolution: it rewrites here to an internal dbffieldref("name") call,
+// typed Dyn and resolved against the open workarea at runtime
+// (hrdbf_app_get_name). Declared names (parameters, LOCAL/STATIC/MEMVAR,
+// FOR/FOR EACH counters, CATCH variables) keep the static model and win
+// over fields; code-block parameters shadow fields inside the block body.
+// A name that is neither declared nor a field fails explicitly at runtime
+// (Harbour raises BASE/1003; this compiler fails fast naming the field).
+fn expr_uses_dbf(e: &Expr) -> bool {
+    match e {
+        Expr::Call(id, args) => dbf_result(id).is_some() || args.iter().any(expr_uses_dbf),
+        Expr::Seq(es) | Expr::ArrLit(es) => es.iter().any(expr_uses_dbf),
+        Expr::Bin(_, a, b) | Expr::Cmp(_, a, b) | Expr::LAnd(a, b) | Expr::LOr(a, b) => expr_uses_dbf(a) || expr_uses_dbf(b),
+        Expr::LNot(a) => expr_uses_dbf(a),
+        Expr::Index(_, a) => expr_uses_dbf(a),
+        Expr::Index2(_, a, b) => expr_uses_dbf(a) || expr_uses_dbf(b),
+        Expr::Index3(_, a, b, c) => expr_uses_dbf(a) || expr_uses_dbf(b) || expr_uses_dbf(c),
+        Expr::Index4(_, a, b, c, d) => expr_uses_dbf(a) || expr_uses_dbf(b) || expr_uses_dbf(c) || expr_uses_dbf(d),
+        Expr::IdxCompound(_, a, _, r) => expr_uses_dbf(a) || expr_uses_dbf(r),
+        Expr::Set(_, r) => expr_uses_dbf(r),
+        Expr::HashLit(ps) => ps.iter().any(|(k, v)| expr_uses_dbf(k) || expr_uses_dbf(v)),
+        Expr::BlockLit(_, _, es) => es.iter().any(expr_uses_dbf),
+        Expr::Send(o, _, args) => expr_uses_dbf(o) || args.iter().any(expr_uses_dbf),
+        Expr::FloatV(..) | Expr::Float(..) | Expr::Int(_) | Expr::Str(_) | Expr::Var(_) | Expr::Inc(..)
+        | Expr::ByRef(_) | Expr::FuncRef(_) | Expr::DArrNew | Expr::SelfObj | Expr::SelfGet(_)
+        | Expr::Nil | Expr::Log(_) => false,
+    }
+}
+fn stmts_use_dbf(stmts: &[Stmt]) -> bool {
+    stmts.iter().any(|s| match s {
+        Stmt::Local(_, _, e) | Stmt::Static(_, _, e) | Stmt::Assign(_, _, e) | Stmt::MemvarSet(_, _, _, e)
+        | Stmt::CallStmt(_, e) | Stmt::SendStmt(_, e) | Stmt::Break(_, e) | Stmt::HDel(_, _, e) | Stmt::HDelAt(_, _, e)
+        | Stmt::HFill(_, _, e) | Stmt::HSetCaseMatch(_, _, e) | Stmt::SelfSet(_, _, e) | Stmt::AIns(_, _, e)
+        | Stmt::ADel(_, _, e) | Stmt::AAdd(_, _, e) | Stmt::ASize(_, _, e) => expr_uses_dbf(e),
+        Stmt::Ret(_, e) => e.as_ref().is_some_and(expr_uses_dbf),
+        Stmt::Print(_, es, _) => es.iter().any(expr_uses_dbf),
+        Stmt::HCopy(_, _, _, a, b) | Stmt::AFill(_, _, _, a, b) => [a, b].into_iter().flatten().any(expr_uses_dbf),
+        Stmt::HSet(_, _, a, b) | Stmt::ArrSet(_, _, a, b) | Stmt::AAddSub(_, _, a, b) | Stmt::ASizeSub(_, _, a, b)
+        | Stmt::SendSet(_, a, _, b) => expr_uses_dbf(a) || expr_uses_dbf(b),
+        Stmt::ArrSet2(_, _, a, b, e) | Stmt::AAddSub2(_, _, a, b, e) | Stmt::ASizeSub2(_, _, a, b, e) => expr_uses_dbf(a) || expr_uses_dbf(b) || expr_uses_dbf(e),
+        Stmt::ArrSet3(_, _, a, b, c, e) | Stmt::AAddSub3(_, _, a, b, c, e) | Stmt::ASizeSub3(_, _, a, b, c, e) => expr_uses_dbf(a) || expr_uses_dbf(b) || expr_uses_dbf(c) || expr_uses_dbf(e),
+        Stmt::ArrSet4(_, _, a, b, c, d, e) => expr_uses_dbf(a) || expr_uses_dbf(b) || expr_uses_dbf(c) || expr_uses_dbf(d) || expr_uses_dbf(e),
+        Stmt::If(_, c, t, el) => expr_uses_dbf(c) || stmts_use_dbf(t) || stmts_use_dbf(el),
+        Stmt::While(_, c, b) => expr_uses_dbf(c) || stmts_use_dbf(b),
+        Stmt::For(_, _, a, b, _, body) => expr_uses_dbf(a) || expr_uses_dbf(b) || stmts_use_dbf(body),
+        Stmt::ForEach(_, _, c, body) => expr_uses_dbf(c) || stmts_use_dbf(body),
+        Stmt::Switch(_, sel, arms, otherwise) => expr_uses_dbf(sel) || arms.iter().any(|(_, _, b)| stmts_use_dbf(b)) || otherwise.as_ref().is_some_and(|(_, b)| stmts_use_dbf(b)),
+        Stmt::Try(_, body, catch, finally) => stmts_use_dbf(body) || catch.as_ref().is_some_and(|(_, b)| stmts_use_dbf(b)) || finally.as_ref().is_some_and(|b| stmts_use_dbf(b)),
+        Stmt::HMerge(..) | Stmt::HClear(..) | Stmt::MemvarDecl(..) | Stmt::Exit(_) | Stmt::Loop(_) | Stmt::CatchBind(..) => false,
+    })
+}
+fn collect_declared(stmts: &[Stmt], out: &mut std::collections::HashSet<String>) {
+    for s in stmts {
+        match s {
+            Stmt::Local(_, id, _) | Stmt::Static(_, id, _) | Stmt::MemvarSet(_, _, id, _) | Stmt::MemvarDecl(_, _, id)
+            | Stmt::For(_, id, ..) | Stmt::ForEach(_, id, _, _) | Stmt::CatchBind(_, id) => { out.insert(id.clone()); }
+            _ => {}
+        }
+        match s {
+            Stmt::If(_, _, t, el) => { collect_declared(t, out); collect_declared(el, out); }
+            Stmt::While(_, _, b) | Stmt::For(_, _, _, _, _, b) | Stmt::ForEach(_, _, _, b) => collect_declared(b, out),
+            Stmt::Switch(_, _, arms, otherwise) => { for (_, _, b) in arms { collect_declared(b, out); } if let Some((_, b)) = otherwise { collect_declared(b, out); } }
+            Stmt::Try(_, body, catch, finally) => {
+                collect_declared(body, out);
+                if let Some((var, b)) = catch { if let Some(id) = var { out.insert(id.clone()); } collect_declared(b, out); }
+                if let Some(b) = finally { collect_declared(b, out); }
+            }
+            _ => {}
+        }
+    }
+}
+fn rewrite_field_expr(e: &mut Expr, declared: &std::collections::HashSet<String>, shadows: &mut Vec<String>) {
+    match e {
+        Expr::Var(id) => {
+            if !declared.contains(id) && !shadows.iter().any(|x| x == id) {
+                *e = Expr::Call("dbffieldref".to_string(), vec![Expr::Str(id.clone())]);
+            }
+        }
+        Expr::BlockLit(_, ps, es) => {
+            let base = shadows.len();
+            shadows.extend(ps.iter().cloned());
+            for x in es { rewrite_field_expr(x, declared, shadows); }
+            shadows.truncate(base);
+        }
+        Expr::Seq(es) | Expr::ArrLit(es) => { for x in es { rewrite_field_expr(x, declared, shadows); } }
+        Expr::Bin(_, a, b) | Expr::Cmp(_, a, b) | Expr::LAnd(a, b) | Expr::LOr(a, b) => { rewrite_field_expr(a, declared, shadows); rewrite_field_expr(b, declared, shadows); }
+        Expr::LNot(a) => rewrite_field_expr(a, declared, shadows),
+        Expr::Call(_, args) => { for a in args { rewrite_field_expr(a, declared, shadows); } }
+        Expr::Index(_, a) => rewrite_field_expr(a, declared, shadows),
+        Expr::Index2(_, a, b) => { rewrite_field_expr(a, declared, shadows); rewrite_field_expr(b, declared, shadows); }
+        Expr::Index3(_, a, b, c) => { rewrite_field_expr(a, declared, shadows); rewrite_field_expr(b, declared, shadows); rewrite_field_expr(c, declared, shadows); }
+        Expr::Index4(_, a, b, c, d) => { rewrite_field_expr(a, declared, shadows); rewrite_field_expr(b, declared, shadows); rewrite_field_expr(c, declared, shadows); rewrite_field_expr(d, declared, shadows); }
+        Expr::IdxCompound(_, a, _, r) => { rewrite_field_expr(a, declared, shadows); rewrite_field_expr(r, declared, shadows); }
+        Expr::Set(_, r) => rewrite_field_expr(r, declared, shadows),
+        Expr::HashLit(ps) => { for (k, v) in ps { rewrite_field_expr(k, declared, shadows); rewrite_field_expr(v, declared, shadows); } }
+        Expr::Send(o, _, args) => { rewrite_field_expr(o, declared, shadows); for a in args { rewrite_field_expr(a, declared, shadows); } }
+        Expr::FloatV(..) | Expr::Float(..) | Expr::Int(_) | Expr::Str(_) | Expr::Inc(..)
+        | Expr::ByRef(_) | Expr::FuncRef(_) | Expr::DArrNew | Expr::SelfObj | Expr::SelfGet(_)
+        | Expr::Nil | Expr::Log(_) => {}
+    }
+}
+fn rewrite_field_stmts(stmts: &mut [Stmt], declared: &std::collections::HashSet<String>, shadows: &mut Vec<String>) {
+    for s in stmts {
+        match s {
+            Stmt::Local(_, _, e) | Stmt::Static(_, _, e) | Stmt::Assign(_, _, e) | Stmt::MemvarSet(_, _, _, e)
+            | Stmt::CallStmt(_, e) | Stmt::SendStmt(_, e) | Stmt::Break(_, e) | Stmt::HDel(_, _, e) | Stmt::HDelAt(_, _, e)
+            | Stmt::HFill(_, _, e) | Stmt::HSetCaseMatch(_, _, e) | Stmt::SelfSet(_, _, e) | Stmt::AIns(_, _, e)
+            | Stmt::ADel(_, _, e) | Stmt::AAdd(_, _, e) | Stmt::ASize(_, _, e) => rewrite_field_expr(e, declared, shadows),
+            Stmt::Ret(_, e) => { if let Some(e) = e { rewrite_field_expr(e, declared, shadows); } }
+            Stmt::Print(_, es, _) => { for e in es { rewrite_field_expr(e, declared, shadows); } }
+            Stmt::HCopy(_, _, _, a, b) | Stmt::AFill(_, _, _, a, b) => { for e in [a, b].into_iter().flatten() { rewrite_field_expr(e, declared, shadows); } }
+            Stmt::HSet(_, _, a, b) | Stmt::ArrSet(_, _, a, b) | Stmt::AAddSub(_, _, a, b) | Stmt::ASizeSub(_, _, a, b)
+            | Stmt::SendSet(_, a, _, b) => { rewrite_field_expr(a, declared, shadows); rewrite_field_expr(b, declared, shadows); }
+            Stmt::ArrSet2(_, _, a, b, e) | Stmt::AAddSub2(_, _, a, b, e) | Stmt::ASizeSub2(_, _, a, b, e) => { rewrite_field_expr(a, declared, shadows); rewrite_field_expr(b, declared, shadows); rewrite_field_expr(e, declared, shadows); }
+            Stmt::ArrSet3(_, _, a, b, c, e) | Stmt::AAddSub3(_, _, a, b, c, e) | Stmt::ASizeSub3(_, _, a, b, c, e) => { rewrite_field_expr(a, declared, shadows); rewrite_field_expr(b, declared, shadows); rewrite_field_expr(c, declared, shadows); rewrite_field_expr(e, declared, shadows); }
+            Stmt::ArrSet4(_, _, a, b, c, d, e) => { rewrite_field_expr(a, declared, shadows); rewrite_field_expr(b, declared, shadows); rewrite_field_expr(c, declared, shadows); rewrite_field_expr(d, declared, shadows); rewrite_field_expr(e, declared, shadows); }
+            Stmt::If(_, c, t, el) => { rewrite_field_expr(c, declared, shadows); rewrite_field_stmts(t, declared, shadows); rewrite_field_stmts(el, declared, shadows); }
+            Stmt::While(_, c, b) => { rewrite_field_expr(c, declared, shadows); rewrite_field_stmts(b, declared, shadows); }
+            Stmt::For(_, _, a, b, _, body) => { rewrite_field_expr(a, declared, shadows); rewrite_field_expr(b, declared, shadows); rewrite_field_stmts(body, declared, shadows); }
+            Stmt::ForEach(_, _, c, body) => { rewrite_field_expr(c, declared, shadows); rewrite_field_stmts(body, declared, shadows); }
+            Stmt::Switch(_, sel, arms, otherwise) => { rewrite_field_expr(sel, declared, shadows); for (_, _, b) in arms { rewrite_field_stmts(b, declared, shadows); } if let Some((_, b)) = otherwise { rewrite_field_stmts(b, declared, shadows); } }
+            Stmt::Try(_, body, catch, finally) => { rewrite_field_stmts(body, declared, shadows); if let Some((_, b)) = catch { rewrite_field_stmts(b, declared, shadows); } if let Some(b) = finally { rewrite_field_stmts(b, declared, shadows); } }
+            Stmt::HMerge(..) | Stmt::HClear(..) | Stmt::MemvarDecl(..) | Stmt::Exit(_) | Stmt::Loop(_) | Stmt::CatchBind(..) => {}
+        }
+    }
+}
+
 // Borrowed-parameter escape post-pass (iteration 33i). A parameter that
 // some call site feeds as `a[i]` is BORROWED: the callee holds the child
 // cell's address only for the duration of the call. It may be read
@@ -5301,9 +5431,9 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                     if let Some(Expr::Str(p))=path {if !dbf_windows_literal_path(p) {return Err(format!("line {}: Windows DBF path requires bounded ASCII ordinary relative/drive-absolute form; NUL, devices, UNC, namespaces and long paths are unsupported",n));}}
                 }
                 if id=="dbusearea" {
-                    if args.len()!=6 {return Err(format!("line {}: dbUseArea requires six explicit arguments: new, DBFNTX/DBFCDX, filename, alias, shared=.F., readonly=.T.",n));}
-                    if !matches!(&args[0],Expr::Log(_)) || !matches!(&args[1],Expr::Str(v) if v.eq_ignore_ascii_case("DBFNTX")||v.eq_ignore_ascii_case("DBFCDX")) || !matches!(&args[3],Expr::Str(v) if !v.is_empty()) || !matches!(&args[4],Expr::Log(false)) || !matches!(&args[5],Expr::Log(true)) {
-                        return Err(format!("line {}: DBF supports one alias, literal DBFNTX/DBFCDX, shared=.F. and readonly=.T.; writes, shared access and other drivers are not supported",n));
+                    if args.len()!=6 {return Err(format!("line {}: dbUseArea requires six explicit arguments: new, DBFNTX/DBFCDX, filename, alias, shared=.F., readonly literal",n));}
+                    if !matches!(&args[0],Expr::Log(_)) || !matches!(&args[1],Expr::Str(v) if v.eq_ignore_ascii_case("DBFNTX")||v.eq_ignore_ascii_case("DBFCDX")) || !matches!(&args[3],Expr::Str(v) if !v.is_empty()) || !matches!(&args[4],Expr::Log(false)) || !matches!(&args[5],Expr::Log(_)) {
+                        return Err(format!("line {}: DBF supports one alias, literal DBFNTX/DBFCDX, shared=.F. and a literal readonly flag; shared access, other drivers and field writes are not supported",n));
                     }
                     if !matches!(type_expr(&args[2],env,sigs,n)?,Ty::Str|Ty::StrOwn){return Err(format!("line {}: DBF filename must be a string",n));}
                 } else if id=="ordlistadd" || id=="dbseek" {
@@ -5313,6 +5443,8 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 } else if id=="dbskip" || id=="fieldget" {
                     if args.len()>1 || (id=="fieldget"&&args.is_empty()) {return Err(format!("line {}: {} expects {} integer argument",n,id,if id=="dbskip" {"zero or one"} else {"one"}));}
                     for a in args {if !matches!(type_expr(a,env,sigs,n)?,Ty::I64|Ty::Dyn){return Err(format!("line {}: {} expects integer position",n,id));}}
+                } else if id=="dbffieldref" {
+                    if args.len()!=1 || !matches!(&args[0],Expr::Str(_)) {return Err(format!("line {}: internal field reference expects one literal field name",n));}
                 } else if !args.is_empty(){return Err(format!("line {}: {} takes no arguments",n,id));}
                 return Ok(ty);
             }
@@ -12473,6 +12605,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                     out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rax, %rdi\n    mov %rdx, %rsi\n");
                     out.push_str(if matches!(args[0],Expr::Log(true)){"    mov $1, %edx\n"}else{"    xor %edx, %edx\n"});
                     out.push_str(if matches!(&args[1],Expr::Str(v) if v.eq_ignore_ascii_case("DBFCDX")){"    mov $1, %ecx\n"}else{"    xor %ecx, %ecx\n"});
+                    out.push_str(if matches!(&args[5],Expr::Log(false)){"    mov $1, %r8d\n"}else{"    xor %r8d, %r8d\n"});
                     out.push_str("    call hrdbf_app_open\n");
                     if expr_ty(&args[2],env,sigs)==Ty::StrOwn && !matches!(&args[2],Expr::Var(_)) {out.push_str("    mov (%rsp), %rdi\n    call hbc_freestr\n");}
                     out.push_str("    add $16, %rsp\n    mov $1, %eax\n    xor %edx, %edx\n");
@@ -12495,6 +12628,15 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                     out.push_str("    mov %rax, %rdi\n");
                     if id=="fieldget"{out.push_str("    lea hbc_strcpy(%rip), %rsi\n    call hrdbf_app_get\n");}
                     else{out.push_str("    call hrdbf_app_skip\n    mov $1, %eax\n    xor %edx, %edx\n");}
+                },
+                "dbffieldref" => {
+                    // Bare field identifier: runtime name lookup in the open
+                    // workarea, same result channel as FieldGet.
+                    if let Expr::Str(nm)=&args[0] {
+                        let ix=strs.len();strs.push(nm.clone());
+                        out.push_str(&format!("    lea .Lstr{}(%rip), %rdi\n    mov ${}, %esi\n",ix,nm.len()));
+                        out.push_str("    lea hbc_strcpy(%rip), %rdx\n    call hrdbf_app_get_name\n");
+                    } else { unreachable!("checked") }
                 },
                 _ => {
                     let helper=match id.as_str(){"dbclosearea"=>"close","dbgotop"=>"top","dbgobottom"=>"bottom","ordlistclear"=>"order_clear","found"=>"found","recno"=>"recno","lastrec"=>"lastrec","bof"=>"bof","eof"=>"eof","deleted"=>"deleted",_=>unreachable!()};
@@ -30142,6 +30284,16 @@ fn main() {
         funcs.push(f);
     }
     funcs.extend(synth_new_funcs);
+
+    // DBF field-name access (D1b): bare undeclared identifiers in a
+    // DBF-using program lower to dbffieldref calls before analysis.
+    if funcs.iter().any(|f| stmts_use_dbf(&f.stmts)) {
+        for f in &mut funcs {
+            let mut declared: std::collections::HashSet<String> = f.params.iter().cloned().collect();
+            collect_declared(&f.stmts, &mut declared);
+            rewrite_field_stmts(&mut f.stmts, &declared, &mut Vec::new());
+        }
+    }
 
     // `@x` prescan (hk216 family), syntactic over the whole program: which
     // parameter positions each function receives by reference (call sites

@@ -10,7 +10,7 @@ static hrdbf_error hrntx_file_close(hrntx_file*f){
 }
 static hrdbf_error hrntx_file_open(hrntx_file*f,const char*path,const hrdbf_area*d,unsigned cdx){
  size_t cap,np,nr;hrdbf_error e=hrntx_file_close(f);if(e)return e;
- e=hrdbfw_snapshot(path,&f->bytes,&f->size,&f->handle,2048,cdx?512:1024);if(e)goto done;
+ e=hrdbfw_snapshot(path,&f->bytes,&f->size,&f->handle,2048,cdx?512:1024,0);if(e)goto done;
  cap=(size_t)d->count*sizeof(hrntx_entry);np=(f->size/(cdx?512:1024)+7)/8;nr=((size_t)d->count+7)/8;
  if(cap>HRNTX_MAX_BYTES){e=HRDBF_LIMIT;goto done;}
  f->work_size=cap+np+nr;f->work=allocate(f->work_size);if(!f->work){e=HRDBF_MEMORY;goto done;}
