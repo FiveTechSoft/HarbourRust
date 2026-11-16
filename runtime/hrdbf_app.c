@@ -179,6 +179,79 @@ hrv_cell hrdbf_app_get_name(const unsigned char *p,size_t len,void *(*copy)(cons
  hrdbf_app_field_missing(p,len);
  __builtin_unreachable();
 }
+/* D2: field writes (encoders ported from OpenADS dbf_common.cpp, MIT).
+ * Writes mutate the owned snapshot through hrdbf_write_* and commit back
+ * immediately (hrdbf_file_write_record), matching Harbour exclusive-mode
+ * visibility. Admitted value matrix is same-type only: C<-string,
+ * N<-numeric kinds, D<-Date, L<-logical; anything else fails fast naming
+ * the mismatch, never a silent conversion. A write with an open index is
+ * outside this increment (indexes stay read-only snapshots). */
+#include "hrdbf_write.h"
+static void hrdbf_app_require_writable(void){
+ hrdbf_app_require();
+ if(!hrdbf_app_state.writable)hrdbf_app_fail("hbc: DBF field write requires a readonly=.F. open\n");
+ if(hrdbf_app_order.index.bytes)hrdbf_app_fail("hbc: DBF field write with an open index is outside this increment\n");
+ if(hrdbf_app_state.area.recno>hrdbf_app_state.area.count)hrdbf_app_fail("hbc: DBF field write with no record positioned\n");
+}
+void hrdbf_app_set_ord(int64_t n,uint64_t tag,uint64_t pay){
+ hrdbf_file *f=&hrdbf_app_state;const hrdbf_field *fd;unsigned char *rec;
+ unsigned k;hrdbf_error e=HRDBF_OK;hrv_cell c={tag,pay};
+ hrdbf_app_require_writable();
+ if(n<1||n>f->area.nfields)hrdbf_app_fail("hbc: DBF field ordinal outside the open area\n");
+ fd=&f->area.fields[n-1];
+ rec=f->owned+f->area.header+(size_t)(f->area.recno-1)*f->area.record;
+ k=hrv_kind(c);
+ switch(fd->type){
+ case 'C':
+  if(k==HRV_STR_OWN||k==HRV_STR_BORROW)e=hrdbf_write_char(rec,fd,(const unsigned char*)pay,((const uint64_t*)pay)[-1]);
+  else if(k==HRV_NIL)e=hrdbf_write_blank(rec,fd);
+  else e=HRDBF_TYPE;
+  break;
+ case 'N':
+  if(k==HRV_FIELD_NUMERIC)e=hrdbf_write_number_scaled(rec,fd,(int64_t)pay,hrv_decimals(c));
+  else if(k==HRV_I64||k==HRV_I64_LITERAL)e=hrdbf_write_number_scaled(rec,fd,(int64_t)pay,0);
+  else if(k==HRV_DOUBLE){union{uint64_t u;double d;}v;v.u=(tag&HR_DYN_FLOAT_HEAP)?((const uint64_t*)pay)[0]:pay;e=hrdbf_write_number_double(rec,fd,v.d);}
+  else if(k==HRV_NIL)e=hrdbf_write_blank(rec,fd);
+  else e=HRDBF_TYPE;
+  break;
+ case 'D':
+  if(k==HRV_DATE)e=hrdbf_write_date(rec,fd,(uint32_t)pay);
+  else if(k==HRV_NIL)e=hrdbf_write_blank(rec,fd);
+  else e=HRDBF_TYPE;
+  break;
+ case 'L':
+  if(k==HRV_LOGICAL)e=hrdbf_write_logical(rec,fd,(unsigned char)(pay!=0));
+  else if(k==HRV_NIL)e=hrdbf_write_blank(rec,fd);
+  else e=HRDBF_TYPE;
+  break;
+ default:e=HRDBF_TYPE;break;
+ }
+ if(e==HRDBF_TYPE)hrdbf_app_fail("hbc: DBF field write type mismatch\n");
+ if(e)hrdbf_app_fail("hbc: DBF field write encoding rejected\n");
+ if(hrdbf_file_write_record(f,f->area.recno))hrdbf_app_fail("hbc: DBF field write commit failed\n");
+}
+/* Bare field identifier write: same case-insensitive lookup as get_name. */
+void hrdbf_app_set_name(const unsigned char *p,size_t len,uint64_t tag,uint64_t pay){
+ const hrdbf_area *a=&hrdbf_app_state.area;unsigned i;size_t j;
+ hrdbf_app_require_writable();
+ for(i=0;i<a->nfields;i++){
+  const unsigned char *nm=a->fields[i].name;size_t nl=0;
+  while(nl<sizeof a->fields[i].name&&nm[nl])nl++;
+  if(nl!=len)continue;
+  for(j=0;j<len;j++)if(cxupper(p[j])!=cxupper(nm[j]))break;
+  if(j==len){hrdbf_app_set_ord((int64_t)i+1,tag,pay);return;}
+ }
+ hrdbf_app_field_missing(p,len);
+}
+/* D2: APPEND BLANK primitive: blank record, EOF marker, header count and
+ * UTC date rewrite; the cursor moves to the new record. */
+uint64_t hrdbf_app_append(void){
+ uint32_t recno;
+ hrdbf_app_require_writable();
+ if(hrdbf_file_append(&hrdbf_app_state,&recno))hrdbf_app_fail("hbc: DBF append failed\n");
+ hrdbf_app_found_flag=0;
+ return recno;
+}
 size_t hrdbf_app_render(uint64_t tag,uint64_t pay,unsigned char *out){
  hrv_cell c={tag,pay};size_t n=0;hrv_error e=hrv_render(c,out,256,&n);
  if(e)hrdbf_app_fail("hbc: DBF scalar render rejected\n");return n;

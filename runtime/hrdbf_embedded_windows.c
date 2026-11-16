@@ -14,6 +14,7 @@
 #define allocate hrdbf_os_allocate
 #include "hrdbf.c"
 #include "hrvalue.c"
+#include "hrdbf_write.c"
 #include "hrdbf_file_windows.c"
 
 #include "hrntx.c"
@@ -36,6 +37,9 @@
 #define hrdbf_app_get hrdbfw_app_get
 #define hrdbf_app_get_ord hrdbfw_app_get_ord
 #define hrdbf_app_get_name hrdbfw_app_get_name
+#define hrdbf_app_set_ord hrdbfw_app_set_ord
+#define hrdbf_app_set_name hrdbfw_app_set_name
+#define hrdbf_app_append hrdbfw_app_append
 #define hrdbf_app_field_missing hrdbfw_app_field_missing
 #define hrdbf_app_render hrdbfw_app_render
 #define hrdbf_app_integer hrdbfw_app_integer

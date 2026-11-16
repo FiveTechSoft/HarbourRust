@@ -11,7 +11,8 @@ flags=['-std=c99','-O2','-S','-ffreestanding','-fno-builtin','-fno-stack-protect
 # keep ordinary integer/floating ABI conventions, with no architecture tuning.
 out=root/'generated/hrdbf_linux.s';raw=root/'generated/hrdbf_linux.raw.s'
 p=subprocess.run(['gcc',*flags,'runtime/hrdbf_embedded_linux.c','-o',str(raw)],cwd=root,capture_output=True);assert p.returncode==0,p.stderr
-s=raw.read_text();s=re.sub(r'\.L([A-Za-z0-9_.$]+)',r'.Lhrdbf_\1',s);s=re.sub(r'^\s*\.file\s+.*\n','',s,flags=re.M)
+s=raw.read_text();s=re.sub(r'\.section[^\n]*\.rodata\.str1\.[18][^\n]*', '.section\t.rodata', s)
+s=re.sub(r'\.L([A-Za-z0-9_.$]+)',r'.Lhrdbf_\1',s);s=re.sub(r'^\s*\.file\s+.*\n','',s,flags=re.M)
 assert not re.search(r'\.cfi|\.eh_frame|@GOT|@PLT|\.got|\.plt',s)
 # GCC may emit unprefixed static switch/date tables, not just .L labels.
 for label in re.findall(r'^([A-Za-z_.$][A-Za-z0-9_.$]*):',s,re.M):

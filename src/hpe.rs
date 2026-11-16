@@ -45,9 +45,12 @@ fn hint_of(name: &str) -> u16 {
         "GetFileSizeEx" => 610,
         "CloseHandle" => 141,
         // D1.1: exact open-rejection diagnostics report the raw Win32 error.
-        // Hint is advisory (loader resolves by name on a miss); interpolated
-        // between GetFileSizeEx and GetLocalTime in the Win10 export order.
+        // D2 write-back: record commits and the UTC header date on appends.
+        // Hints are advisory (loader resolves by name on a miss);
+        // interpolated in the Win10 export order.
         "GetLastError" => 613,
+        "SetFilePointerEx" => 1255,
+        "GetSystemTime" => 775,
         _ => unreachable!("import fuera de lista blanca"),
     }
 }

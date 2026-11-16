@@ -14,6 +14,7 @@
 #define allocate hrdbf_os_allocate
 #include "hrdbf.c"
 #include "hrvalue.c"
+#include "hrdbf_write.c"
 #include "hrdbf_file_linux.c"
 
 #include "hrntx.c"

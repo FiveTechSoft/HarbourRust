@@ -1,0 +1,27 @@
+
+put          1 ok
+put          2 ok
+put          3 ok
+put          4 ok
+put          5 ok
+put          6 ok
+put          7 ok
+put          1 ok
+put          2 ok
+put          3 ok
+put          4 ok
+put          5 ok
+put          6 ok
+put          7 ok
+put          1 ok
+put          2 ok
+put          3 ok
+put          4 ERR         34       1021
+put          5 ERR         34       1021
+put          6 ok
+put          7 ok
+put          2 ok
+put          2 ok
+put          2 ok
+put          4 ok
+put          3 ok

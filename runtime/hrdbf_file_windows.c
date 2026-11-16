@@ -1,8 +1,10 @@
 /* Own MIT Windows x86-64 private snapshots. Handles remain exclusive
  * until close, measured against official Harbour PE shared=.F. opens.
  * readonly=.F. requests GENERIC_READ|GENERIC_WRITE with share mode 0, the
- * Harbour exclusive read-write contract; no field write operations exist
- * in this increment and the snapshot is never flushed back.
+ * Harbour exclusive read-write contract.
+ * D2: writable opens keep the exclusive handle and write record commits
+ * back immediately with WriteFile (no FlushFileBuffers per commit, the
+ * Harbour DBFCDX default, as OpenADS documents for ADSCDX).
  * No RDD locking or multi-file atomicity is claimed. */
 #include <windows.h>
 #include "hrdbf_file.h"
@@ -59,7 +61,7 @@ static hrdbf_error hrdbfw_snapshot(const char*path,unsigned char**bytes,size_t*s
  return HRDBF_OK;
 }
 hrdbf_error hrdbf_file_close(hrdbf_file*f){
- hrdbf_error e=HRDBF_OK;hrdbf_close(&f->area);
+ hrdbf_error e=HRDBF_OK;hrdbf_close(&f->area);f->writable=0;
  if(f->handle){HANDLE h=f->handle;f->handle=0;if(!CloseHandle(h))e=HRDBF_IO;}
  if(f->owned){if(!hrdbfw_release(f->owned))e=HRDBF_IO;else{f->owned=0;f->size=0;}}
  return e;
@@ -69,8 +71,64 @@ hrdbf_error hrdbf_file_open(hrdbf_file*f,const char*path,int writable){
  f->diag[0]=0;fsink[0]=0;
  e=hrdbf_file_close(f);if(e)return e;
  f->diag[0]=0;fsink[0]=0;fsink_len=0;
+ f->writable=writable!=0;
  e=hrdbfw_snapshot(path,&f->owned,&f->size,&f->handle,33,0,writable);
  if(e){char *d=f->diag;const char *q=fsink;while(d<f->diag+159&&*q){*d=*q;d++;q++;}*d=0;}
  if(!e)e=hrdbf_open(&f->area,f->owned,f->size);
  if(e){hrdbf_error c=hrdbf_file_close(f);if(c)return c;}return e;
+}
+/* D2: exact-length write-back of one record through the exclusive handle
+ * (OpenADS write_record_raw port, MIT: offset = header + (recno-1)*record,
+ * short write is an error). */
+static hrdbf_error write_at(hrdbf_file*f,uint64_t off,const unsigned char*p,size_t n){
+ LARGE_INTEGER at;at.QuadPart=(LONGLONG)off;
+ if(!SetFilePointerEx(f->handle,at,0,FILE_BEGIN))return HRDBF_IO;
+ while(n){DWORD done=0;
+  if(!WriteFile(f->handle,p,(DWORD)n,&done,0)||done>n)return HRDBF_IO;
+  if(!done)return HRDBF_IO;
+  p+=done;n-=done;
+ }
+ return HRDBF_OK;
+}
+hrdbf_error hrdbf_file_write_record(hrdbf_file*f,uint64_t recno){
+ uint64_t off;
+ if(!f->writable||!f->handle||!f->area.open)return HRDBF_CLOSED;
+ if(!recno||recno>f->area.count)return HRDBF_FORMAT;
+ off=(uint64_t)f->area.header+(recno-1)*f->area.record;
+ return write_at(f,off,f->owned+off,f->area.record);
+}
+/* D2: blank-record append (OpenADS append_record_raw + rewrite_header_
+ * port, MIT): record bytes, 0x1A EOF marker, header record count and UTC
+ * header date (year-1900, month, day at bytes 1-3). */
+hrdbf_error hrdbf_file_append(hrdbf_file*f,uint32_t*recno){
+ uint64_t off,newsize;unsigned i;unsigned char *grown,*p;hrdbf_error e;
+ SYSTEMTIME st;
+ if(!f->writable||!f->handle||!f->area.open)return HRDBF_CLOSED;
+ off=(uint64_t)f->area.header+(uint64_t)f->area.record*f->area.count;
+ newsize=off+f->area.record+1;
+ if(newsize>HRDBF_MAX_BYTES)return HRDBF_LIMIT;
+ grown=allocate(newsize);if(!grown)return HRDBF_MEMORY;
+ for(i=0;i<f->size;i++)grown[i]=f->owned[i];
+ p=grown+off;
+ for(i=0;i<f->area.record;i++)p[i]=' ';
+ p[f->area.record]=26;
+ GetSystemTime(&st); /* UTC, matching the OpenADS rewrite_header_ choice */
+ grown[1]=(unsigned char)(st.wYear-1900);grown[2]=(unsigned char)st.wMonth;
+ grown[3]=(unsigned char)st.wDay;
+ {
+  uint32_t c=f->area.count+1;
+  grown[4]=(unsigned char)c;grown[5]=(unsigned char)(c>>8);
+  grown[6]=(unsigned char)(c>>16);grown[7]=(unsigned char)(c>>24);
+ }
+ e=write_at(f,1,grown+1,7);if(e)goto fail;
+ e=write_at(f,off,grown+off,(size_t)(newsize-off));if(e)goto fail;
+ if(!hrdbfw_release(f->owned)){e=HRDBF_IO;goto fail;}
+ f->owned=grown;f->size=(size_t)newsize;
+ f->area.bytes=f->owned;f->area.size=f->size;
+ f->area.count++;f->area.recno=f->area.count;f->area.bof=f->area.eof=0;
+ *recno=f->area.count;
+ return HRDBF_OK;
+fail:
+ hrdbfw_release(grown);
+ return e;
 }

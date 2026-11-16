@@ -16,7 +16,6 @@ typedef struct {
  void *fatal_user;
  size_t scratch_live,lookups;
  hrmacro_raw_pool raw_pool;
- unsigned char *error_sink; /* active top-level evaluation stack, never retained */
 } hrmacro_context;
 hrmv_status hrmacro_init(hrmacro_context*,hrmv_alloc_fn,hrmv_free_fn,void*,hrmb_string_fn,hrmb_float_fn,void*,hrmacro_fatal_fn,void*);
 void hrmacro_destroy(hrmacro_context*);
