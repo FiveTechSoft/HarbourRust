@@ -14,6 +14,7 @@ static void faults(void);
 static void m2(void);
 static void n1(void);
 static void p1(void);
+static void p1b(void);
 unsigned char*hrm_alloc(size_t n){hrv_cell v;unsigned char*s=malloc(n?n:1);assert(s);memset(s,0,n);hrmv_status rc=strcopy(&compiler_pool,s,n,&v);free(s);return rc?0:(unsigned char*)(uintptr_t)v.payload;}
 void hrm_free(unsigned char*p){if(p){uint64_t*base=(uint64_t*)p-2;block*b=compiler_pool.head;while(b&&b->p!=base)b=b->next;assert(b);hrv_cell v={b->n==32?(HR_DYN_FLOAT_HEAP|5):4,(uint64_t)(uintptr_t)p};drop(&compiler_pool,v);}}
 double hrm_exp(double x){return exp(x);}
@@ -36,7 +37,7 @@ failure("s+' temp'+missing","Error BASE/1003  Variable does not exist: MISSING\n
 failure("('owned'+' temp') + missing + later","Error BASE/1003  Variable does not exist: MISSING\n");
 failure("left + ('owned'+' temp') + right","Error BASE/1003  Variable does not exist: LEFT\n");puts("fatal.order.raw_compiler_arena_zero_before_callback=PASS");
 failure("missing + )","Error BASE/1449  Syntax error: &\n");assert(ctx.lookups==0);failure("M->absent","Error BASE/1003  Variable does not exist: ABSENT\n");puts("parse.syntax_before_lookup.deferred_first_error=PASS");
-assert(fatal_count==5&&raw_pool.count==raw_pool.freed&&compiler_pool.count==compiler_pool.freed);puts("raw.compiler.frames.bindings.scratch=0");faults();m2();n1();p1();return 0;}
+assert(fatal_count==5&&raw_pool.count==raw_pool.freed&&compiler_pool.count==compiler_pool.freed);puts("raw.compiler.frames.bindings.scratch=0");faults();m2();n1();p1();p1b();return 0;}
 void*hrm_raw_alloc(void*u,size_t n){return alloc(u?u:&raw_pool,n);}
 void hrm_raw_free(void*u,void*p,size_t n){release(u?u:&raw_pool,p,n);}
 hrmv_status hrm_export_string(void*u,const unsigned char*s,size_t n,hrv_cell*out){return strcopy(u?u:&compiler_pool,s,n,out);}
@@ -114,4 +115,15 @@ static void p1(void){
  assert(ctx.raw_pool.retained<=262144&&ctx.scratch_live==0);hrmacro_destroy(&ctx);hrmacro_destroy(&ctx);assert(!raw_pool.live&&!compiler_pool.live&&!ctx.raw_pool.all&&!ctx.raw_pool.retained);
  failure("Upper(&('s+missing'))","Error BASE/1003  Variable does not exist: MISSING\n");
  assert(!ctx.raw_pool.all&&!ctx.raw_pool.retained&&!ctx.raw_pool.live_blocks&&!ctx.raw_pool.live_bytes);puts("P1.reuse.text_mutation.nested.outer_lifetime.no_new_backing.destroy_twice.fatal_flush=PASS");
+}
+
+static void p1b(void){
+ char expr[800],want[512];const char*pre="Error BASE/1003  Variable does not exist: ";size_t n=strlen(pre);
+ memset(expr,'a',700);expr[700]=0;memcpy(want,pre,n);memset(want+n,'A',510-n);want[510]='\n';want[511]=0;failure(expr,want);assert(!ctx.error_sink);
+ failure("&('Upper(s)+missing')","Error BASE/1003  Variable does not exist: MISSING\n");assert(!ctx.error_sink);
+ failure("&('&(\"s+missing\")')","Error BASE/1003  Variable does not exist: MISSING\n");assert(!ctx.error_sink);
+ failure("Upper(&('missing'))","Error BASE/1003  Variable does not exist: MISSING\n");
+ failure("&('Upper(1)')","Error BASE/1102  Argument error: UPPER\n");
+ init();hrv_cell v=run(".T. .OR. &('missing')");assert(v.tag==3&&v.payload==1&&!ctx.error_sink);hrmacro_destroy(&ctx);
+ puts("P1b.error.long_truncation.nested_owned_source.frames.no_sink_escape=PASS");
 }
