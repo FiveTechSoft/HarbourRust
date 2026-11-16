@@ -31,16 +31,39 @@ check_memory.py emits instrumented unpruned assembly, inserts a test-only hb_mem
 
 13 non-class programs x two targets pass that final zero assertion, including local copy/replacement, alias copy, by-value/@calls, INIT, repeated replacement and a caught exception. The class method program is intentionally not included in the zero assertion: its object runtime retains the existing chunk/template pool. Measured Linux controls with the S1 compiler and S2 compiler, both without persistent payloads, end with balance 2; the S2 owned-module method case also ends with balance 2 after persistent cleanup. These controls support no added balance for this case, not a zero-allocation claim or a proof of every class lifecycle. All class-method output bytes still compare to Harbour on both targets.
 
+## Review repair: exhaustive effect scan (51a4ac95, 6b63e308)
+
+Static review found that `may_mutate` in `src/module_static.rs` ended in a
+wildcard `_ => false`, classifying `Index2`, `Index3`, `Index4` and `HashLit`
+as pure. A statement borrowing the persistent string while one of those forms
+called a mutating function was admitted (`? text, a[Change(),1]` compiled and
+could release the owner behind the pending print item). Both scans in
+`check_payload_uses` now classify every `Expr` form on its own arm with no
+wildcard, so a form added later stops the build until classified.
+
+Scope of the claim, deliberately narrow: `expr()` does not walk inside
+`Index2/3/4`; it admits those forms only when they do not lexically mention
+the slot. The hidden-mutation protection comes from `may_mutate` at the
+statement level (`Print` item lists and `Call` argument lists) and from
+`expr_has_call` on binary expressions. Exhaustiveness means a new expression
+form cannot silently fall through a permissive default; it is not a proof of
+safety for every possible expression semantics. New probes: 8 Harbour-valid
+negatives (Index2/3/4 items, hash literal value, nested index, method send,
+block body, call argument) rejected with the named diagnostic, and 5
+sequenced positives (effect split into its own statement) compared
+byte-exact to Harbour on both targets. `sequenced_method` joins `methods` in
+the final-memory exclusion for the documented object-pool reason.
+
 ## Gates on the final compiler
 
-SHA256: d2b6fc7d31bf00a32245a6d6103836f5f5b2b591a260a55cd894446eff6bf775.
-- S2: 14 positive sources x two targets = 28 exact oracle comparisons; 10 Harbour-valid negatives x two = 20 named rejections.
-- Final whole-process memory zero: 13 sources x two targets = 26 assertions, as scoped above.
+SHA256: bd15f74f17605b0197ba057fdd287864810b75e994a4db670c2c07a12862d50c.
+- S2: 19 positive sources x two targets = 38 exact oracle comparisons; 18 Harbour-valid negatives x two = 36 named rejections.
+- Final whole-process memory zero: 17 sources x two targets = 34 assertions, as scoped above.
 - S1: 32 exact positive comparisons plus 26 remaining negative checks.
 - FILE: 56/56, fresh Linux/PE-Wine, internal/external engines.
 - Classes: 42/42 fresh Linux; PE object separators: 3/3 fixtures.
 - Names/Date: 28 exact positives plus 10 negative checks.
-- Unit tests: 51 passed, no failures.
+- Unit tests: 53 passed, no failures.
 - Compile-only PE manifest CI: 1783 PASS, 21 unchanged known mismatches, no unexpected failures.
 
 No full root runtime battery, native Windows executor, concurrency test or Mach-O execution was run here. The original failed/intermediate candidates are not the final gates. Any change to compiler code requires new gates on its exact hash.
