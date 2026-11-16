@@ -3566,8 +3566,8 @@ fn parse(src: &str) -> Result<Prog, String> {
                 parse_stmts(&[(n, declaration)], &mut 0, &mut parsed, 0)?;
                 for st in parsed {
                     if let Stmt::Local(line, name, value) = st {
-                        if !matches!(&value, Expr::Int(v) if v.parse::<i64>().is_ok()) {
-                            return Err(format!("line {}: module STATIC currently requires a folded i64 constant initializer; NIL, logical, Date and owned payloads are not in this increment", line));
+                        if !matches!(&value, Expr::Log(_) | Expr::Str(_)) && !matches!(&value, Expr::Int(v) if v.parse::<i64>().is_ok()) {
+                            return Err(format!("line {}: module STATIC requires a folded i64, logical or string constant initializer; NIL, Date, arrays and hashes are not in this increment", line));
                         }
                         if module_slots.iter().any(|(_, id, _)| id == &name) {
                             return Err(format!("line {}: duplicate module STATIC `{}`", line, name));
@@ -7759,12 +7759,12 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 // side of a `+`) is rejected like any other use-after-move.
                 if ta == Ty::Str || ta == Ty::StrOwn {
                     if let Expr::Var(v) = a {
-                        if let Some(x) = env.iter().find(|x| x.name == *v && x.byref && matches!(x.ty, Ty::Str | Ty::StrOwn)) {
+                        if let Some(x) = env.iter().find(|x| x.name == *v && x.byref && matches!(x.ty, Ty::Str | Ty::StrOwn) && module_static::current(&x.name) != Some(Ty::StrOwn)) {
                             return Err(format!("line {}: passing borrowed parameter `{}` by value moves it out of its owner - not Harbour semantics; derive a value instead (for example a concatenation)", n, v));
                         }
                         // A Dyn target CLONES at the boundary (the
                         // caller keeps its value), so no move is marked.
-                        if sig_params[i] != Ty::Dyn && !sig_string_copy[i] {
+                        if sig_params[i] != Ty::Dyn && !sig_string_copy[i] && module_static::current(v) != Some(Ty::StrOwn) {
                             if let Some(x) = env.iter_mut().find(|x| x.name == *v && matches!(x.ty, Ty::Str | Ty::StrOwn)) { x.moved = true; }
                         }
                     }
@@ -9147,6 +9147,13 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 apply_moves(e, env, sigs, true);
             }
             Stmt::Local(n, id, e) | Stmt::Static(n, id, e) => {
+                if matches!(s, Stmt::Static(..)) {
+                    if let Some(t @ (Ty::Bool | Ty::StrOwn)) = module_static::current(id) {
+                        if env.iter().any(|v| v.name == *id) { return Err(format!("line {}: duplicate local `{}`", n, id)); }
+                        env.push(Local { name:id.clone(), ty:t, moved:false, ro:false, byref:t == Ty::StrOwn });
+                        continue;
+                    }
+                }
                 if matches!(s, Stmt::Static(..)) && !static_dyn(id) && (dyn_names.contains(id) || mixed_local(id)) {
                     return Err(format!("line {}: local STATIC cannot widen from integer storage in this increment", n));
                 }
@@ -9168,7 +9175,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                     return Err(format!("line {}: dynamic logical cells are not in this increment (tag-L Dyn cells land separately)", n));
                 }
                 if let Expr::Var(v) = e {
-                    if let Some(x) = env.iter().find(|x| x.name == *v && x.byref && matches!(x.ty, Ty::Str | Ty::StrOwn)) {
+                    if let Some(x) = env.iter().find(|x| x.name == *v && x.byref && matches!(x.ty, Ty::Str | Ty::StrOwn) && module_static::current(&x.name) != Some(Ty::StrOwn)) {
                         return Err(format!("line {}: initializing from borrowed parameter `{}` moves it out of its owner - not Harbour semantics; derive a value instead (for example a concatenation)", n, v));
                     }
                 }
@@ -10556,7 +10563,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 let t = type_expr(e, env, sigs, *n)?;
                 if let Expr::Var(v) = e {
                     if *v != *id {
-                        if let Some(x) = env.iter().find(|x| x.name == *v && x.byref && matches!(x.ty, Ty::Str | Ty::StrOwn)) {
+                        if let Some(x) = env.iter().find(|x| x.name == *v && x.byref && matches!(x.ty, Ty::Str | Ty::StrOwn) && module_static::current(&x.name) != Some(Ty::StrOwn)) {
                             return Err(format!("line {}: copying borrowed parameter `{}` by move is not Harbour semantics; derive a value instead (for example a concatenation)", n, v));
                         }
                     }
@@ -11203,6 +11210,7 @@ impl<'a> EscPass<'a> {
                     self.decl.insert(id.clone(), (depth, in_loop));
                     if in_loop { self.loop_decl.insert(id.clone()); }
                     self.ensure_scratch(id);
+                    if module_static::string_value(e) { self.esc(id, "heap copy of persistent module string"); }
                     self.process_expr(e, &EscCtx::Transfer(id.clone()), true, depth);
                 }
                 Stmt::Static(_, id, e) => {
@@ -11214,6 +11222,7 @@ impl<'a> EscPass<'a> {
                 }
                 Stmt::Assign(_, id, e) | Stmt::MemvarSet(_, _, id, e) => {
                     self.note(id);
+                    if module_static::string_value(e) { self.esc(id, "heap copy of persistent module string"); }
                     if static_dyn(id) {
                         // Persistent tagged slot: values are stored per
                         // element without moving (the checker's static_dyn
@@ -16271,7 +16280,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                     out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
                     continue;
                 }
-                if (ta == Ty::Str && pty == Some(Ty::StrOwn)) || pcopied.as_ref().and_then(|p| p.get(ai)).copied() == Some(true) {
+                if (module_static::string_value(a) && pty != Some(Ty::Dyn)) || (ta == Ty::Str && pty == Some(Ty::StrOwn)) || pcopied.as_ref().and_then(|p| p.get(ai)).copied() == Some(true) {
                     // Copy into the owned observer parameter; a named input
                     // keeps its owner. A computed input is freed AFTER copy.
                     let temp = ta == Ty::StrOwn && !matches!(a, Expr::Var(_));
@@ -17592,13 +17601,13 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
         Expr::Str(_) => Ty::Str,
         Expr::Var(id) => match env.iter().find(|v| v.name == *id).expect("checked").ty {
             // A by-reference parameter reads as its pointee type (hk216).
-            Ty::RefI64 => Ty::I64,
+            Ty::RefI64 => if module_static::current(id) == Some(Ty::Bool) {Ty::Bool}else{Ty::I64},
             Ty::RefDyn => Ty::Dyn,
             Ty::RefStrOwn => Ty::StrOwn,
             t => t,
         },
         Expr::ByRef(id) => match env.iter().find(|v| v.name == *id).expect("checked").ty {
-            Ty::RefI64 => Ty::I64,
+            Ty::RefI64 => if module_static::current(id) == Some(Ty::Bool) {Ty::Bool}else{Ty::I64},
             Ty::RefDyn => Ty::Dyn,
             Ty::RefStrOwn => Ty::StrOwn,
             t => t,
@@ -17968,7 +17977,7 @@ fn layout_locals(stmts: &[Stmt], env: &mut Vec<CgLocal>, sigs: &[Sig], frame: &m
             }
             Stmt::Static(_, id, _) => {
                 *frame += 8;
-                env.push(CgLocal { name: id.clone(), ty: if static_dyn(id) {Ty::RefDyn}else{Ty::RefI64}, off: *frame });
+                env.push(CgLocal { name: id.clone(), ty: if module_static::current(id) == Some(Ty::StrOwn) {Ty::RefStrOwn} else if static_dyn(id) {Ty::RefDyn}else{Ty::RefI64}, off: *frame });
             }
             Stmt::Local(_, id, e) => {
                 let mut t = expr_ty(e, env, sigs);
@@ -19202,7 +19211,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 let off = *frame;
                 let owner = CUR_FN.with(|c| c.borrow().clone());
                 out.push_str(&format!("    lea {}(%rip), %rax\n    mov %rax, -{}(%rbp)\n", module_static::storage(&owner, id), off));
-                env.push(CgLocal { name: id.clone(), ty: if static_dyn(id) {Ty::RefDyn}else{Ty::RefI64}, off });
+                env.push(CgLocal { name: id.clone(), ty: if module_static::current(id) == Some(Ty::StrOwn) {Ty::RefStrOwn} else if static_dyn(id) {Ty::RefDyn}else{Ty::RefI64}, off });
             }
             Stmt::Local(_, id, e) => {
                 let mut t = expr_ty(e, env, sigs);
@@ -19300,6 +19309,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                         let arena_stmt = t == Ty::StrOwn && arena_routed(id);
                         if arena_stmt { CG_ARENA_ROOT.with(|c| c.set(true)); }
                         cg_value(e, env, sigs, strs, out, target);
+                        if module_static::string_value(e) { out.push_str("    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_strcpy\n"); }
                         if arena_stmt { CG_ARENA_ROOT.with(|c| c.set(false)); }
                         if i64_init {
                             cg_i64_tagged(out);
@@ -20232,8 +20242,8 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                     // moved value, never the borrow itself.
                     if let Expr::Var(src) = e { if src == id { continue; } }
                     cg_value(e, env, sigs, strs, out, target);
-                    if expr_ty(e, env, sigs) == Ty::Str {
-                        // rodata RHS: the owner's slot must own a copy.
+                    if expr_ty(e, env, sigs) == Ty::Str || module_static::string_value(e) {
+                        // rodata or persistent RHS: the owner's slot must own a copy.
                         out.push_str("    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_strcpy\n");
                     }
                     if let Expr::Var(src) = e {
@@ -20354,6 +20364,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                         let arena_stmt = lty == Ty::StrOwn && t == Ty::StrOwn && arena_routed(id);
                         if arena_stmt { CG_ARENA_ROOT.with(|c| c.set(true)); }
                         cg_value(e, env, sigs, strs, out, target);
+                        if module_static::string_value(e) { out.push_str("    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_strcpy\n"); }
                         if arena_stmt { CG_ARENA_ROOT.with(|c| c.set(false)); }
                         // Null a moved-out DArr source AFTER the RHS was
                         // fully evaluated (parent rule: move transfers; the
@@ -21922,6 +21933,8 @@ fn cg_func(f: &Func, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, tar
                 let words = match value {
                     Expr::Int(n) => format!("{}, 1", n),
                     Expr::Nil => "1, 0".to_string(),
+                    Expr::Log(v) => format!("{}, 0", if *v {1}else{0}),
+                    Expr::Str(_) => "0, 0".to_string(),
                     _ => unreachable!("checked STATIC"),
                 };
                 let storage = module_static::storage(&f.name, id);
@@ -26216,6 +26229,9 @@ fn emit_asm(funcs: &[Func], sigs: &[Sig], externs: &[String], target: Target, in
         eprintln!("error: classes support Linux and Windows targets in this increment (Mach-O pending)");
         process::exit(1);
     }
+    if THREADS.with(|c| c.get()) && funcs.iter().any(|f| f.stmts.iter().any(|s| matches!(s, Stmt::Static(_,_,Expr::Str(_) | Expr::Log(_))))) {
+        eprintln!("error: module STATIC logical/string storage with threads is outside this increment"); process::exit(1);
+    }
     if THREADS.with(|c| c.get()) && instrument {
         eprintln!("error: --instrument is not supported with threads in this increment (the allocation registry is process-global)");
         process::exit(1);
@@ -26238,6 +26254,7 @@ fn emit_asm(funcs: &[Func], sigs: &[Sig], externs: &[String], target: Target, in
         Target::Linux => {
             out.push_str("    .text\n    .globl _start\n_start:\n");
             if MACRO_CONTEXT.with(|c|c.get()){out.push_str("    mov %rsp, %rbp\n    and $-16, %rsp\n    sub $256, %rsp\n    mov %rsp, %rdi\n    call hrmacro_start\n");}
+            if funcs.iter().any(|f| f.stmts.iter().any(|st| matches!(st, Stmt::Static(_,_,Expr::Str(_))))) { out.push_str("    call hbc_module_strings_init\n"); }
             // Pinned oracle: INIT hooks run in reverse source order, once
             // before Main. Ordinary symbols cannot spell the '$' suffix.
             for f in funcs.iter().rev().filter(|f| f.init) {
@@ -26260,6 +26277,7 @@ fn emit_asm(funcs: &[Func], sigs: &[Sig], externs: &[String], target: Target, in
             // the entry point; align explicitly instead of assuming.
             out.push_str("    and $-16, %rsp\n    sub $48, %rsp\n");
             if MACRO_CONTEXT.with(|c|c.get()){out.push_str("    sub $256, %rsp\n    mov %rsp, %rdi\n    call hrmacro_start\n");}
+            if funcs.iter().any(|f| f.stmts.iter().any(|st| matches!(st, Stmt::Static(_,_,Expr::Str(_))))) { out.push_str("    call hbc_module_strings_init\n"); }
             // Pinned oracle: INIT hooks run in reverse source order, once
             // before Main. Ordinary symbols cannot spell the '$' suffix.
             for f in funcs.iter().rev().filter(|f| f.init) {
@@ -26319,6 +26337,18 @@ fn emit_asm(funcs: &[Func], sigs: &[Sig], externs: &[String], target: Target, in
         out.push_str("    .globl hbc_strcpy\n    .globl hbc_freestr\n");
     }
 
+    if funcs.iter().any(|f| f.stmts.iter().any(|st| matches!(st, Stmt::Static(_,_,Expr::Str(_))))) {
+        out.push_str("hbc_module_strings_init:\n    push %rbp\n    mov %rsp, %rbp\n    sub $32, %rsp\n");
+        let mut seen = std::collections::HashSet::new();
+        for f in funcs { for st in &f.stmts { if let Stmt::Static(_,id,Expr::Str(text)) = st {
+            let label = module_static::storage(&f.name,id);
+            if seen.insert(label.clone()) {
+                let ix = strs.len(); strs.push(text.clone());
+                out.push_str(&format!("    lea .Lstr{}(%rip), %rdi\n    mov ${}, %rsi\n    call hbc_strcpy\n    mov %rax, {}(%rip)\n    mov %rdx, {}+8(%rip)\n", ix,text.len(),label,label));
+            }
+        }}}
+        out.push_str("    leave\n    ret\n");
+    }
     out.push_str(r"
 hbc_persistent_release:
     push %rbp
@@ -26354,6 +26384,13 @@ hbc_persistent_payload_release:
     out.push_str("hbc_persistent_cleanup:\n    push %rbp\n    mov %rsp, %rbp\n    sub $32, %rsp\n");
     for f in funcs {for st in &f.stmts {if let Stmt::Static(_,id,Expr::Nil)=st {
         out.push_str(&format!("    lea hbc_static_{}_{}_{}(%rip), %rdi\n    call hbc_persistent_release\n",f.name.len(),f.name,id));
+    }}}
+    let mut module_strings = std::collections::HashSet::new();
+    for f in funcs { for st in &f.stmts { if let Stmt::Static(_,id,Expr::Str(_)) = st {
+        let label = module_static::storage(&f.name,id);
+        if module_strings.insert(label.clone()) {
+            out.push_str(&format!("    mov {}(%rip), %rdi\n    movq $0, {}(%rip)\n    movq $0, {}+8(%rip)\n    test %rdi, %rdi\n    je 83f\n    call hbc_freestr\n83:\n",label,label,label));
+        }
     }}}
     out.push_str("    leave\n    ret\n");
     // Thread thunks (one per hb_threadStart target) and the clone+futex

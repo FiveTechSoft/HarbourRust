@@ -1,0 +1,18 @@
+#ifdef HARBOUR_ORACLE
+#define TRY BEGIN SEQUENCE
+#define CATCH RECOVER USING
+#define ENDTRY END SEQUENCE
+#else
+#define ENDTRY END
+#endif
+STATIC n := 0
+PROCEDURE Main()
+LOCAL err
+TRY
+FOR n := 1 TO 3
+? n
+NEXT
+CATCH err
+? "err"
+ENDTRY
+RETURN

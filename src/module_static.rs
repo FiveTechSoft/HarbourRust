@@ -1,16 +1,18 @@
-//! Single-source module storage. No owned payload or runtime initializer here.
+//! Single-source fixed-type module storage and persistent string ownership.
 use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
-use crate::{Expr, Func, Stmt};
+use crate::{Expr, Func, Stmt, Ty};
 
 thread_local! {
     // Function-local spelling -> canonical module slot; local shadows are absent.
     static ALIASES: RefCell<HashMap<(String, String), usize>> = RefCell::new(HashMap::new());
+    static KINDS: RefCell<HashMap<(String, String), Ty>> = RefCell::new(HashMap::new());
     static EMITTED: RefCell<HashSet<String>> = RefCell::new(HashSet::new());
 }
 
 pub fn reset() {
     ALIASES.with(|v| v.borrow_mut().clear());
+    KINDS.with(|v| v.borrow_mut().clear());
     EMITTED.with(|v| v.borrow_mut().clear());
 }
 
@@ -19,6 +21,16 @@ pub fn storage(owner: &str, name: &str) -> String {
         Some(index) => format!("hbc_module_i64_{}", index),
         None => format!("hbc_static_{}_{}_{}", owner.len(), owner, name),
     })
+}
+
+pub fn kind(owner: &str, name: &str) -> Option<Ty> {
+    KINDS.with(|v| v.borrow().get(&(owner.to_owned(), name.to_owned())).copied())
+}
+pub fn current(name: &str) -> Option<Ty> {
+    crate::CUR_FN.with(|f| kind(&f.borrow(), name))
+}
+pub fn string_value(e: &Expr) -> bool {
+    matches!(e, Expr::Var(v) if current(v) == Some(Ty::StrOwn))
 }
 
 pub fn first_emission(label: &str) -> bool {
@@ -86,6 +98,61 @@ fn check_counters(ss: &[Stmt], name: &str) -> Result<(), String> {
     Ok(())
 }
 
+// New owned storage must not enter old move/container/inline-write routes.
+// Simple expression borrows, explicit ownership copies, and @string calls have
+// measured lowering. Dynamic containers and compound call effects remain held.
+fn check_payload_uses(f: &Func, name: &str, ty: Ty) -> Result<(), String> {
+    fn may_mutate(e: &Expr) -> bool {
+        match e {
+            Expr::Call(id,es) => !["len","asc","left","right","substr","upper","lower","trim","ltrim","rtrim","alltrim","valtype","hb_isnumeric","hb_isstring","hb_isarray","chr","space","replicate"].iter().any(|b|crate::is_builtin(id,b)) || es.iter().any(may_mutate),
+            Expr::Set(..)|Expr::Inc(..)|Expr::Send(..)=>true,
+            Expr::Bin(_,a,b)|Expr::Cmp(_,a,b)|Expr::LAnd(a,b)|Expr::LOr(a,b)=>may_mutate(a)||may_mutate(b),
+            Expr::Seq(es)|Expr::ArrLit(es)|Expr::BlockLit(_,_,es)=>es.iter().any(may_mutate),
+            Expr::LNot(e)|Expr::Index(_,e)=>may_mutate(e),
+            _=>false,
+        }
+    }
+    fn expr(e: &Expr, name: &str, ty: Ty) -> bool {
+        match e {
+            Expr::ByRef(v) if v == name => ty != Ty::Bool,
+            Expr::Set(v, _) | Expr::Inc(v, ..) if v == name => false,
+            Expr::ArrLit(es) => !es.iter().any(|e| crate::expr_mentions(e,name)),
+            Expr::HashLit(es) => !es.iter().any(|(k,v)| crate::expr_mentions(k,name)||crate::expr_mentions(v,name)),
+            Expr::Bin(_,a,b) | Expr::Cmp(_,a,b) | Expr::LAnd(a,b) | Expr::LOr(a,b) => {
+                if ty == Ty::StrOwn && crate::expr_mentions(e,name) && crate::expr_has_call(e) {return false;}
+                expr(a,name,ty) && expr(b,name,ty)
+            }
+            Expr::Seq(es) => !(ty == Ty::StrOwn && es.iter().any(|e|crate::expr_mentions(e,name))) && es.iter().all(|e|expr(e,name,ty)),
+            Expr::Call(id,es) => {
+                if ty == Ty::StrOwn && ["iif","eval"].iter().any(|b|crate::is_builtin(id,b)) && es.iter().any(|e|crate::expr_mentions(e,name)) {return false;}
+                if ty == Ty::StrOwn && es.iter().any(|e|crate::expr_mentions(e,name)) && es.iter().any(may_mutate) {return false;}
+                es.iter().all(|e|expr(e,name,ty))
+            }
+            Expr::BlockLit(_,_,es) => es.iter().all(|e|expr(e,name,ty)),
+            Expr::Set(_,e) | Expr::LNot(e) | Expr::Index(_,e) => expr(e,name,ty),
+            Expr::Send(o,_,es) => !(ty == Ty::StrOwn && crate::expr_mentions(e,name)) && expr(o,name,ty)&&es.iter().all(|e|expr(e,name,ty)),
+            Expr::Var(_) | Expr::ByRef(_) => true,
+            _ => !crate::expr_mentions(e,name),
+        }
+    }
+    fn walk(ss: &[Stmt], name:&str,ty:Ty)->bool {
+        ss.iter().all(|s|match s {
+            Stmt::Local(_,_,e)|Stmt::Assign(_,_,e)|Stmt::Ret(_,Some(e))|Stmt::CallStmt(_,e)|Stmt::SendStmt(_,e)=>expr(e,name,ty),
+            Stmt::Print(_,es,_)=>!(ty == Ty::StrOwn && es.iter().any(|e|crate::expr_mentions(e,name)) && es.iter().any(may_mutate)) && es.iter().all(|e|expr(e,name,ty)),
+            Stmt::If(_,e,a,b)=>expr(e,name,ty)&&walk(a,name,ty)&&walk(b,name,ty),
+            Stmt::While(_,e,b)=>expr(e,name,ty)&&walk(b,name,ty),
+            Stmt::Try(_,b,c,f)=>walk(b,name,ty)&&c.as_ref().map_or(true,|(_,b)|walk(b,name,ty))&&f.as_ref().map_or(true,|b|walk(b,name,ty)),
+            Stmt::For(_,_,a,b,_,body)=>expr(a,name,ty)&&expr(b,name,ty)&&walk(body,name,ty),
+            Stmt::ForEach(_,_,e,body)=>expr(e,name,ty)&&walk(body,name,ty),
+            Stmt::Switch(_,e,arms,other)=>expr(e,name,ty)&&arms.iter().all(|(_,_,b)|walk(b,name,ty))&&other.as_ref().map_or(true,|(_,b)|walk(b,name,ty)),
+            Stmt::Static(..)|Stmt::Ret(_,None)|Stmt::Exit(_)|Stmt::Loop(_)=>true,
+            _ => !crate::stmt_mentions(s,name),
+        })
+    }
+    if !walk(&f.stmts,name,ty) {return Err(format!("module STATIC `{}`: owned/container/inline-effect or logical by-reference use is outside this increment",name));}
+    Ok(())
+}
+
 pub fn bind(f: &mut Func, slots: &[(usize, String, Expr)]) -> Result<(), String> {
     let mut prefix = Vec::new();
     for (index, (line, name, init)) in slots.iter().enumerate() {
@@ -93,6 +160,9 @@ pub fn bind(f: &mut Func, slots: &[(usize, String, Expr)]) -> Result<(), String>
         if !crate::stmts_mention(&f.stmts, name) { continue; }
         check_counters(&f.stmts, name)?;
         ALIASES.with(|v| v.borrow_mut().insert((f.name.clone(), name.clone()), index));
+        let ty = match init { Expr::Log(_) => Ty::Bool, Expr::Str(_) => Ty::StrOwn, _ => Ty::I64 };
+        if matches!(ty,Ty::Bool|Ty::StrOwn) {check_payload_uses(f,name,ty)?;}
+        KINDS.with(|v| v.borrow_mut().insert((f.name.clone(), name.clone()), ty));
         prefix.push(Stmt::Static(*line, name.clone(), init.clone()));
     }
     prefix.append(&mut f.stmts);
@@ -126,5 +196,23 @@ mod tests {
         crate::parse("FUNCTION Main()\nSTATIC n := 2\n? n\nRETURN NIL\n").unwrap_or_else(|e| panic!("{}", e));
         assert_ne!(old, storage("main", "n"));
         assert!(first_emission(&old));
+    }
+}
+
+#[cfg(test)]
+mod owned_tests {
+    use super::*;
+    #[test]
+    fn distinct_fixed_payloads_and_reset() {
+        crate::parse("STATIC flag := .T., text := \"seed\"\nFUNCTION Main()\n? flag,text\nRETURN NIL\n").unwrap_or_else(|e|panic!("{}",e));
+        assert_eq!(kind("main","flag"),Some(Ty::Bool));
+        assert_eq!(kind("main","text"),Some(Ty::StrOwn));
+        crate::parse("FUNCTION Main()\nRETURN NIL\n").unwrap_or_else(|e|panic!("{}",e));
+        assert_eq!(kind("main","text"),None);
+    }
+    #[test]
+    fn guard_nested_counter_and_catch_without_losing_i64() {
+        assert!(crate::parse("STATIC n := 0\nFUNCTION Main()\nTRY\nFOR n := 1 TO 3\n? n\nNEXT\nCATCH\n? 1\nEND\nRETURN NIL\n").err().unwrap().contains("STATIC loop counters"));
+        assert!(crate::parse("STATIC s := \"x\"\nFUNCTION Main()\nTRY\nBreak(1)\nCATCH s\n? s\nEND\nRETURN NIL\n").err().unwrap().contains("catch binding shadow"));
     }
 }
