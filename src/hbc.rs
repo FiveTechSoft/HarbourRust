@@ -12263,6 +12263,406 @@ hbc_thread_once_claim:
     ret
 ";
 
+// Threads on Windows: the Linux clone(2)+futex runtime above is reused
+// as text. win_thread_helpers() rewrites each `syscall` into a call to a
+// small kernel32 shim that keeps the syscall's register contract (only
+// rax, rcx and r11 change; result in rax, negative errno on failure):
+//   9 mmap -> VirtualAlloc (zeroed), 11 munmap -> VirtualFree,
+//   56 clone -> CreateThread on hbc_wthr_entry (block in rbx),
+//   60 exit -> ExitThread, 158 arch_prctl(SET_FS) -> TEB TLS slots,
+//   186 gettid -> GetCurrentThreadId, 202 futex -> WaitOnAddress /
+//   WakeByAddress* (resolved at run time from the synch API set),
+//   1 write -> WriteFile (stdout writes the held console spaces first).
+// The per-thread block lives in the TEB's TlsSlots 48..63 (gs:0x1600):
+// startup reserves exactly those indices with TlsAlloc, so `%fs:N`
+// becomes `%gs:(0x1600+N)` with no register.
+const WTHR_TLS_BASE: usize = 0x1600;
+const WIN_THREAD_EMU: &str = r#"
+.text
+hbc_wthr_entry:
+    mov %rcx, %rdi
+    jmp hbc_thread_boot
+
+# hbc_wthr_zalloc(rdi=size) -> rax: hbc_alloc, zero-filled (the Linux
+# runtime relies on mmap's zero pages; HeapAlloc does not zero).
+hbc_wthr_zalloc:
+    push %rdi
+    call hbc_alloc
+    pop %rcx
+    mov %rax, %rdx
+    mov %rax, %rdi
+    xor %eax, %eax
+    rep stosb
+    mov %rdx, %rax
+    ret
+
+# hbc_wthr_setup: reserve TLS indices 48..63 and resolve WaitOnAddress,
+# WakeByAddressSingle and WakeByAddressAll. Runs once, on the main
+# thread, before any other thread exists. Preserves rsi and rdi.
+hbc_wthr_setup:
+    push %rbp
+    mov %rsp, %rbp
+    push %rbx
+    push %r12
+    push %rsi
+    push %rdi
+    and $-16, %rsp
+    sub $48, %rsp
+    xor %r12d, %r12d
+    mov $48, %ebx
+.Lwts_alloc:
+    call TlsAlloc
+    cmp $48, %eax
+    jae .Lwts_high
+    mov %eax, %ecx
+    mov $1, %edx
+    shl %cl, %rdx
+    or %rdx, %r12
+    jmp .Lwts_alloc
+.Lwts_high:
+    cmp %ebx, %eax
+    jne .Lwts_tls_fail
+    inc %ebx
+    cmp $64, %ebx
+    jb .Lwts_alloc
+    xor %ebx, %ebx
+.Lwts_free:
+    mov %r12, %rax
+    mov %ebx, %ecx
+    shr %cl, %rax
+    test $1, %al
+    jz .Lwts_free_next
+    mov %ebx, %ecx
+    call TlsFree
+.Lwts_free_next:
+    inc %ebx
+    cmp $48, %ebx
+    jb .Lwts_free
+    lea .Lwts_dll(%rip), %rcx
+    call LoadLibraryA
+    test %rax, %rax
+    jz .Lwts_sync_fail
+    mov %rax, %rbx
+    mov %rbx, %rcx
+    lea .Lwts_n_wait(%rip), %rdx
+    call GetProcAddress
+    test %rax, %rax
+    jz .Lwts_sync_fail
+    mov %rax, hbc_wthr_wait(%rip)
+    mov %rbx, %rcx
+    lea .Lwts_n_wake1(%rip), %rdx
+    call GetProcAddress
+    test %rax, %rax
+    jz .Lwts_sync_fail
+    mov %rax, hbc_wthr_wake1(%rip)
+    mov %rbx, %rcx
+    lea .Lwts_n_wakeall(%rip), %rdx
+    call GetProcAddress
+    test %rax, %rax
+    jz .Lwts_sync_fail
+    mov %rax, hbc_wthr_wakeall(%rip)
+    movb $1, hbc_wthr_ready(%rip)
+    lea -32(%rbp), %rsp
+    pop %rdi
+    pop %rsi
+    pop %r12
+    pop %rbx
+    pop %rbp
+    ret
+.Lwts_tls_fail:
+    lea .Lwts_tls_msg(%rip), %rbx
+    mov $(.Lwts_tls_msg_end - .Lwts_tls_msg), %r12d
+    jmp .Lwts_die
+.Lwts_sync_fail:
+    lea .Lwts_sync_msg(%rip), %rbx
+    mov $(.Lwts_sync_msg_end - .Lwts_sync_msg), %r12d
+.Lwts_die:
+    mov $-12, %ecx
+    call GetStdHandle
+    mov %rax, %rcx
+    mov %rbx, %rdx
+    mov %r12d, %r8d
+    lea 40(%rsp), %r9
+    movq $0, 32(%rsp)
+    call WriteFile
+    mov $1, %ecx
+    call ExitProcess
+
+# Syscall shims. Frame: rbp, then rdx r8 r9 r10 rsi rdi saved at
+# -8..-48(%rbp), one local qword at -56(%rbp), 16-aligned rsp with
+# shadow space (+16 for a 5th/6th argument).
+hbc_wsys_9:
+    push %rbp
+    mov %rsp, %rbp
+    push %rdx
+    push %r8
+    push %r9
+    push %r10
+    push %rsi
+    push %rdi
+    sub $8, %rsp
+    and $-16, %rsp
+    sub $48, %rsp
+    xor %ecx, %ecx
+    mov %rsi, %rdx
+    mov $0x3000, %r8d
+    mov $4, %r9d
+    call VirtualAlloc
+    test %rax, %rax
+    jnz .Lwsys_out
+    mov $-12, %rax
+    jmp .Lwsys_out
+
+hbc_wsys_11:
+    push %rbp
+    mov %rsp, %rbp
+    push %rdx
+    push %r8
+    push %r9
+    push %r10
+    push %rsi
+    push %rdi
+    sub $8, %rsp
+    and $-16, %rsp
+    sub $48, %rsp
+    mov %rdi, %rcx
+    xor %edx, %edx
+    mov $0x8000, %r8d
+    call VirtualFree
+    xor %eax, %eax
+    jmp .Lwsys_out
+
+hbc_wsys_56:
+    push %rbp
+    mov %rsp, %rbp
+    push %rdx
+    push %r8
+    push %r9
+    push %r10
+    push %rsi
+    push %rdi
+    sub $8, %rsp
+    and $-16, %rsp
+    sub $48, %rsp
+    xor %ecx, %ecx
+    xor %edx, %edx
+    lea hbc_wthr_entry(%rip), %r8
+    mov %rbx, %r9
+    movq $0, 32(%rsp)
+    movq $0, 40(%rsp)
+    call CreateThread
+    test %rax, %rax
+    jz .Lwsys56_fail
+    mov %rax, %rcx
+    call CloseHandle
+    mov $1, %eax
+    jmp .Lwsys_out
+.Lwsys56_fail:
+    mov $-11, %rax
+    jmp .Lwsys_out
+
+hbc_wsys_60:
+    and $-16, %rsp
+    sub $32, %rsp
+    mov %edi, %ecx
+    call ExitThread
+
+hbc_wsys_158:
+    push %rbp
+    mov %rsp, %rbp
+    push %rdx
+    push %r8
+    push %r9
+    push %r10
+    push %rsi
+    push %rdi
+    sub $8, %rsp
+    and $-16, %rsp
+    sub $48, %rsp
+    cmpb $0, hbc_wthr_ready(%rip)
+    jne .Lwsys158_copy
+    call hbc_wthr_setup
+.Lwsys158_copy:
+@WTHR_COPY@    xor %eax, %eax
+    jmp .Lwsys_out
+
+hbc_wsys_186:
+    push %rbp
+    mov %rsp, %rbp
+    push %rdx
+    push %r8
+    push %r9
+    push %r10
+    push %rsi
+    push %rdi
+    sub $8, %rsp
+    and $-16, %rsp
+    sub $48, %rsp
+    call GetCurrentThreadId
+    mov %eax, %eax
+    jmp .Lwsys_out
+
+# futex(rdi=addr, esi=op, edx=val, r10=relative timespec or 0):
+# op 0 WAIT -> 0 woken/changed, -110 timeout; op 1 WAKE (edx=1 one waiter,
+# otherwise all).
+hbc_wsys_202:
+    push %rbp
+    mov %rsp, %rbp
+    push %rdx
+    push %r8
+    push %r9
+    push %r10
+    push %rsi
+    push %rdi
+    sub $8, %rsp
+    and $-16, %rsp
+    sub $48, %rsp
+    mov %esi, %eax
+    and $127, %eax
+    cmp $1, %eax
+    je .Lwsys202_wake
+    mov %edx, -56(%rbp)
+    mov $-1, %r9d
+    test %r10, %r10
+    jz .Lwsys202_wait
+    mov (%r10), %r9
+    imul $1000, %r9, %r9
+    mov 8(%r10), %rax
+    add $999999, %rax
+    xor %edx, %edx
+    mov $1000000, %ecx
+    div %rcx
+    add %rax, %r9
+    mov $0xfffffffe, %eax
+    cmp %rax, %r9
+    jbe .Lwsys202_wait
+    mov %rax, %r9
+.Lwsys202_wait:
+    mov %rdi, %rcx
+    lea -56(%rbp), %rdx
+    mov $4, %r8d
+    call *hbc_wthr_wait(%rip)
+    test %eax, %eax
+    jnz .Lwsys202_zero
+    call GetLastError
+    cmp $1460, %eax
+    jne .Lwsys202_zero
+    mov $-110, %rax
+    jmp .Lwsys_out
+.Lwsys202_wake:
+    mov %rdi, %rcx
+    cmp $1, %edx
+    je .Lwsys202_one
+    call *hbc_wthr_wakeall(%rip)
+    jmp .Lwsys202_zero
+.Lwsys202_one:
+    call *hbc_wthr_wake1(%rip)
+.Lwsys202_zero:
+    xor %eax, %eax
+    jmp .Lwsys_out
+
+# write(edi=fd 1/2, rsi=buf, edx=len): stdout writes the held console
+# spaces first (Windows console rule, docs/WINDOWS-CONSOLE-SPACES-*.md).
+hbc_wsys_1:
+    push %rbp
+    mov %rsp, %rbp
+    push %rdx
+    push %r8
+    push %r9
+    push %r10
+    push %rsi
+    push %rdi
+    sub $8, %rsp
+    and $-16, %rsp
+    sub $48, %rsp
+    cmp $1, %edi
+    jne .Lwsys1_err
+    call hbc_pflush
+    mov $-11, %ecx
+    jmp .Lwsys1_h
+.Lwsys1_err:
+    mov $-12, %ecx
+.Lwsys1_h:
+    call GetStdHandle
+    mov %rax, %rcx
+    mov -40(%rbp), %rdx
+    mov -8(%rbp), %r8
+    lea -56(%rbp), %r9
+    movq $0, 32(%rsp)
+    call WriteFile
+    mov -8(%rbp), %rax
+.Lwsys_out:
+    lea -48(%rbp), %rsp
+    pop %rdi
+    pop %rsi
+    pop %r10
+    pop %r9
+    pop %r8
+    pop %rdx
+    pop %rbp
+    ret
+
+    .section .rdata,"r"
+.Lwts_dll: .asciz "api-ms-win-core-synch-l1-2-0.dll"
+.Lwts_n_wait: .asciz "WaitOnAddress"
+.Lwts_n_wake1: .asciz "WakeByAddressSingle"
+.Lwts_n_wakeall: .asciz "WakeByAddressAll"
+.Lwts_tls_msg: .ascii "error: threads need TLS slots 48-63 free (TlsAlloc)"
+    .byte 10
+.Lwts_tls_msg_end:
+.Lwts_sync_msg: .ascii "error: threads need Windows 8 or later (WaitOnAddress)"
+    .byte 10
+.Lwts_sync_msg_end:
+.data
+.align 8
+hbc_wthr_wait: .quad 0
+hbc_wthr_wake1: .quad 0
+hbc_wthr_wakeall: .quad 0
+hbc_wthr_ready: .quad 0
+.text
+"#;
+
+// Windows text of the Linux thread/mutex runtime: every `syscall` calls
+// the shim named after the syscall number loaded into eax just before it
+// (verified: each one has its own `mov $N, %eax` in the same helper),
+// allocations are zero-filled, and the worker writes its held console
+// spaces before it reports done.
+fn win_thread_helpers(linux: &str) -> String {
+    let mut out = String::new();
+    let mut nr: Option<u32> = None;
+    for line in linux.lines() {
+        let t = line.trim();
+        if t.ends_with(':') && !t.starts_with('.') { nr = None; }
+        if let Some(v) = t.strip_prefix("mov $").and_then(|r| r.strip_suffix(", %eax")) {
+            nr = v.parse().ok();
+        }
+        if t == "syscall" {
+            let n = nr.expect("win threads: syscall without a number");
+            assert!([1, 9, 11, 56, 60, 158, 186, 202].contains(&n), "win threads: syscall {}", n);
+            out.push_str(&format!("    call hbc_wsys_{}\n", n));
+            continue;
+        }
+        if t == "call hbc_alloc" { out.push_str("    call hbc_wthr_zalloc\n"); continue; }
+        if t == ".section .rodata" { out.push_str("    .section .rdata,\"r\"\n"); continue; }
+        out.push_str(line);
+        out.push('\n');
+    }
+    let boot = "    call *32(%rbx)\n    mov %rax, 8(%rbx)\n    mov %rdx, 16(%rbx)\n";
+    if out.contains(boot) {
+        assert_eq!(out.matches(boot).count(), 1);
+        out = out.replace(boot, &format!("{}    call hbc_pflush\n", boot));
+    }
+    out
+}
+
+fn win_thread_emu() -> String {
+    let mut copy = String::new();
+    for i in 0..16 {
+        copy.push_str(&format!("    mov {}(%rsi), %rax\n    mov %rax, %gs:{}\n", 8 * i, WTHR_TLS_BASE + 8 * i));
+    }
+    WIN_THREAD_EMU.replace("@WTHR_COPY@", &copy)
+}
+
 // Threads F2: mutex runtime (own design, same clone(2)+futex family as F1;
 // Harbour's GPL implementation never consulted). MutexBlock layout
 // (hbc_alloc'd, zeroed at creation, lives until process exit - declared F2
@@ -25493,10 +25893,6 @@ fn emit_asm(funcs: &[Func], sigs: &[Sig], externs: &[String], target: Target, in
         eprintln!("error: classes are Linux-only in this increment (the Windows runtime blob is pending)");
         process::exit(1);
     }
-    if THREADS.with(|c| c.get()) && !matches!(target, Target::Linux) {
-        eprintln!("error: threads are Linux-only in this increment (clone(2) + futex runtime)");
-        process::exit(1);
-    }
     if THREADS.with(|c| c.get()) && instrument {
         eprintln!("error: --instrument is not supported with threads in this increment (the allocation registry is process-global)");
         process::exit(1);
@@ -25634,11 +26030,20 @@ hbc_persistent_payload_release:
     // runtime. Emitted BEFORE the helper-selection contains-checks below
     // so e.g. the thunk's `call hbc_dyn_to_i64` pulls that helper in.
     THUNK_TEXT.with(|t| for (_, th) in t.borrow().iter() { out.push_str(th); });
-    if THREADS.with(|c| c.get()) && matches!(target, Target::Linux) {
-        out.push_str(THREAD_HELPERS_LINUX);
+    if THREADS.with(|c| c.get()) {
+        match target {
+            Target::Linux => out.push_str(THREAD_HELPERS_LINUX),
+            Target::Windows => {
+                out.push_str(&win_thread_helpers(THREAD_HELPERS_LINUX));
+                out.push_str(&win_thread_emu());
+            }
+        }
     }
-    if MUTEX.with(|c| c.get()) && matches!(target, Target::Linux) {
-        out.push_str(MUTEX_HELPERS_LINUX);
+    if MUTEX.with(|c| c.get()) {
+        match target {
+            Target::Linux => out.push_str(MUTEX_HELPERS_LINUX),
+            Target::Windows => out.push_str(&win_thread_helpers(MUTEX_HELPERS_LINUX)),
+        }
     }
     // Runtime helpers (ours, hand-written; syscall-only on linux, three
     // kernel32 calls on windows).
@@ -25673,7 +26078,7 @@ hbc_persistent_payload_release:
                 out = out.replace("@REG_ARENA_ALLOC@", "    decq hbc_mem_allocs(%rip)\n");
             }
         let mut result=finalize_trace(out,target);
-        if THREADS.with(|c| c.get()) { result = finalize_threads(result); }
+        if THREADS.with(|c| c.get()) { result = finalize_threads(result, target); }
         if active {
             result=result.replace("    call hbc_fn_main\n", "    call hbc_fn_main\n    call hrdbf_app_close\n");
             result=result.replace("hbc_panic_exit:\n", "hbc_panic_exit:\n    and $-16, %rsp\n    call hrdbf_app_close\n");
@@ -27627,7 +28032,7 @@ hbc_seq_exc: .skip 4096
         out = out.replace("@REG_ARENA_ALLOC@", "    decq hbc_mem_allocs(%rip)\n");
     }
         let mut result=finalize_trace(out,target);
-        if THREADS.with(|c| c.get()) { result = finalize_threads(result); }
+        if THREADS.with(|c| c.get()) { result = finalize_threads(result, target); }
         if active {
             result=result.replace("    call hbc_fn_main\n", "    call hbc_fn_main\n    call hrdbf_app_close\n");
             result=result.replace("hbc_panic_exit:\n", "hbc_panic_exit:\n    and $-16, %rsp\n    call hrdbf_app_close\n");
@@ -27740,7 +28145,8 @@ hbc_dbf_eprint:
 // a panicking worker as just that worker (result NIL for the joiner),
 // and render PTR handles (tag 14) as 0x + uppercase hex. Only runs when
 // the program used a thread builtin; every replace is verified present.
-fn finalize_threads(out: String) -> String {
+fn finalize_threads(out: String, target: Target) -> String {
+    if target == Target::Windows { return finalize_threads_windows(out); }
     let mut r = out;
     for (sym, off) in [("hbc_trace_top", 0), ("hbc_pending", 8), ("hbc_console_mode", 16)] {
         r = r.replace(&format!("{}(%rip)", sym), &format!("%fs:{}", off));
@@ -27756,6 +28162,35 @@ fn finalize_threads(out: String) -> String {
     let panic_tail = "    call hbc_print_trace\n    mov $60, %eax\n    mov $1, %edi\n    syscall\n";
     assert!(r.contains(panic_tail), "threads: panic tail shape changed");
     r = r.replace(panic_tail, "    call hbc_print_trace\n    mov %fs:120, %rbx\n    lea hbc_thr_main_block(%rip), %rax\n    cmp %rax, %rbx\n    je .Lthr_panic_main\n    movq $1, 8(%rbx)\n    movq $0, 16(%rbx)\n    mov $1, %eax\n    xchg %eax, (%rbx)\n    mov %rbx, %rdi\n    mov $1, %esi\n    call hbc_thr_wake\n    call hbc_str_cache_flush\n    mov 56(%rbx), %rdi\n    mov $256, %esi\n    mov $11, %eax\n    syscall\n    mov 40(%rbx), %rdi\n    mov $1048576, %esi\n    mov $11, %eax\n    syscall\n    mov $60, %eax\n    mov $1, %edi\n    syscall\n.Lthr_panic_main:\n    mov $231, %eax\n    mov $1, %edi\n    syscall\n");
+    assert!(r.contains("hbc_print_dyn:\n"), "threads: print_dyn shape changed");
+    r = r.replace("hbc_print_dyn:\n", "hbc_print_dyn:\n    cmpb $14, %al\n    je hbc_thr_print\n");
+    if r.contains("hbc_eprint_dyn:\n") {
+        r = r.replace("hbc_eprint_dyn:\n", "hbc_eprint_dyn:\n    cmpb $14, %al\n    je hbc_thr_eprint\n");
+    }
+    r
+}
+
+// Windows leg of finalize_threads: the same TLS retargeting through the
+// TEB slots (gs), the main thread's TLS at _start, a panicking worker
+// ends only itself (result NIL for the joiner), PTR handles print as hex.
+// Main's normal exit is ExitProcess already (ends every thread).
+fn finalize_threads_windows(out: String) -> String {
+    let mut r = out;
+    for (sym, off) in [("hbc_trace_top", 0), ("hbc_pending", 8), ("hbc_console_mode", 16)] {
+        r = r.replace(&format!("{}(%rip)", sym), &format!("%fs:{}", off));
+    }
+    for reg in ["%r10", "%r11", "%r13"] {
+        r = r.replace(&format!("lea hbc_str_cache(%rip), {}", reg), &format!("mov %fs:48, {}", reg));
+    }
+    for off in [120usize, 48, 16, 8, 0] {
+        r = r.replace(&format!("%fs:{}", off), &format!("%gs:{}", WTHR_TLS_BASE + off));
+    }
+    assert!(!r.contains("%fs:"), "threads(windows): unmapped %fs offset");
+    assert!(r.contains("    .globl _start\n_start:\n"), "threads: _start shape changed");
+    r = r.replacen("    .globl _start\n_start:\n", "    .globl _start\n_start:\n    call hbc_tls_init\n", 1);
+    let panic_tail = "    call hbc_print_trace\n    call hbc_pflush\n    mov $1, %ecx\n    call ExitProcess\n";
+    assert!(r.contains(panic_tail), "threads(windows): panic tail shape changed");
+    r = r.replace(panic_tail, &format!("    call hbc_print_trace\n    mov %gs:{}, %rbx\n    lea hbc_thr_main_block(%rip), %rax\n    cmp %rax, %rbx\n    je .Lthr_panic_main\n    call hbc_pflush\n    movq $1, 8(%rbx)\n    movq $0, 16(%rbx)\n    mov $1, %eax\n    xchg %eax, (%rbx)\n    mov %rbx, %rdi\n    mov $1, %esi\n    call hbc_thr_wake\n    call hbc_str_cache_flush\n    mov 56(%rbx), %rdi\n    call hbc_wsys_11\n    mov 40(%rbx), %rdi\n    call hbc_wsys_11\n    mov $1, %edi\n    call hbc_wsys_60\n.Lthr_panic_main:\n    call hbc_pflush\n    mov $1, %ecx\n    call ExitProcess\n", WTHR_TLS_BASE + 120));
     assert!(r.contains("hbc_print_dyn:\n"), "threads: print_dyn shape changed");
     r = r.replace("hbc_print_dyn:\n", "hbc_print_dyn:\n    cmpb $14, %al\n    je hbc_thr_print\n");
     if r.contains("hbc_eprint_dyn:\n") {

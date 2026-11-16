@@ -60,7 +60,7 @@ hb_threadWaitForAll()                 // block until every worker finishes
   exit (80 + 16 bytes per argument per thread): the second-join .F.
   reads the consumed state instead of faulting. Harbour reclaims through
   its GC; HarbourRust's raw-mmap allocator reclaims at exit.
-- Windows is a named rejection (the runtime is Linux clone+futex only).
+- Windows: see "Windows runtime" below. macOS has no thread runtime yet.
 - `--instrument` with threads is a named rejection (the allocation
   registry is process-global).
 - `hb_memcheck` counters are approximate while threads run.
@@ -268,8 +268,8 @@ through the existing terminal thread panic route after its arguments run.
 This is not Harbour's substitutable BASE/1001 error profile. No general
 symbol table or error-recovery machinery is added.
 
-Inherited limits stay visible: Linux x86-64 only, no Windows/macOS thread
-runtime, no capturing or block-variable start target, and no general
+Inherited limits stay visible: Linux and Windows x86-64 only (no macOS
+thread runtime), no capturing or block-variable start target, and no general
 closure ABI. Literal blocks still use the published AST lifting, whose
 normal function inference can admit string parameters/results; the older
 integer-only block-value restrictions do not describe that lifted path.
@@ -280,3 +280,52 @@ performance claim is made.
 
 Reproducible raw differential, baseline-limit and regression checks are in
 `tests/threads-start/README.md`.
+
+
+## Windows runtime (2026-11-16)
+
+`--target=windows` now runs the same thread, mutex and once runtime. The
+Linux helper text is reused: `win_thread_helpers()` turns each `syscall`
+into a call to a kernel32 shim that keeps the syscall register contract
+(only rax, rcx and r11 change; negative errno in rax on failure):
+
+| Linux syscall | Windows shim |
+|---|---|
+| mmap / munmap | VirtualAlloc (zeroed) / VirtualFree |
+| clone | CreateThread on `hbc_wthr_entry` (handle closed at once) |
+| exit (worker) | ExitThread |
+| arch_prctl(SET_FS) | copy the 128-byte TLS head into TEB TlsSlots 48..63 |
+| gettid | GetCurrentThreadId |
+| futex wait / wake | WaitOnAddress / WakeByAddressSingle or All |
+| write | WriteFile (stdout writes the held console spaces first) |
+
+- TLS: `%fs:N` becomes `%gs:(0x1600+N)`, i.e. the TEB's TlsSlots 48..63.
+  Startup reserves exactly those indices with TlsAlloc (and frees the
+  lower ones it had to take). If another module already holds one of them
+  the program stops with `error: threads need TLS slots 48-63 free`.
+- WaitOnAddress and the wakes come from `api-ms-win-core-synch-l1-2-0.dll`
+  through LoadLibraryA/GetProcAddress (kernel32 does not export them):
+  Windows 8 or later.
+- `hasm` encodes the `%gs:` segment prefix (0x65); the PE import list
+  gains CreateThread, ExitThread, GetCurrentThreadId, TlsAlloc, TlsFree,
+  LoadLibraryA, GetProcAddress and Sleep.
+- hbc_alloc (HeapAlloc) does not zero; the runtime's own allocations go
+  through `hbc_wthr_zalloc`.
+- Console: a worker writes its held trailing spaces before it reports
+  done, and a worker that panics writes them before its error ends it
+  (Windows console rule, WINDOWS-CONSOLE-SPACES-2026-11-16.md).
+
+Evidence (native Windows 11, Harbour 3.2 mingw64 MT build as oracle,
+`tests/threads/check_oracle_windows.py`):
+- `tests/threads`: 30 of 37 identical. The 7 others:
+  - th25b uses classes, which are Linux-only;
+  - mt05, mt06 and mt13 name a local `val`, rejected by the current
+    compiler on every target (open, not threads);
+  - mt20, mt21 and mt22: Harbour 3.2 on Windows times out in
+    `hb_mutexSubscribeNow` even when a later notify arrives (mt21 waits the
+    full 2 s and returns .F.). hbc keeps the Linux-measured result (.T.).
+- `tests/threads-start`: 33 of 36 identical. The 3 others are the
+  declared compile-time limits that `check_oracle.py` also lists
+  (block_variable, stress, name_literal_missing).
+- Every manifest program generates the same assembly as before on both
+  targets (3488 of 3488).

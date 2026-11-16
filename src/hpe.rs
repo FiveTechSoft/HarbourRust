@@ -51,6 +51,16 @@ fn hint_of(name: &str) -> u16 {
         "GetLastError" => 613,
         "SetFilePointerEx" => 1255,
         "GetSystemTime" => 775,
+        // Threads on Windows (measured from mingw-w64 libkernel32.a of the
+        // bundled toolchain; advisory like the rest).
+        "CreateThread" => 263,
+        "ExitThread" => 381,
+        "GetCurrentThreadId" => 573,
+        "GetProcAddress" => 730,
+        "LoadLibraryA" => 1016,
+        "Sleep" => 1449,
+        "TlsAlloc" => 1483,
+        "TlsFree" => 1484,
         _ => unreachable!("import fuera de lista blanca"),
     }
 }

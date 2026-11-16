@@ -20,7 +20,7 @@ enum Op {
     Xmm(u8),
     St(u8),
     Imm(Expr),
-    Mem { disp: Option<Expr>, base: Option<u8>, index: Option<(u8, u8)>, riplab: Option<String>, fs: bool },
+    Mem { disp: Option<Expr>, base: Option<u8>, index: Option<(u8, u8)>, riplab: Option<String>, seg: u8 },
     Star(Box<Op>),
 }
 
@@ -175,17 +175,15 @@ impl Parser {
         Err(format!("operando no reconocido: {:?}", s))
     }
 
-    // memoria con o sin prefijo de segmento (%fs: ya extraído; gs no soportado aún)
+    // memoria con o sin prefijo de segmento (seg: 0 ninguno, 1 %fs:, 2 %gs:)
     fn parse_mem_seg(&self, t: &str, seg: u8) -> Result<Op, String> {
-        if seg == 2 { return Err("%gs: no soportado".into()); }
-        let fs = seg == 1;
         if t.ends_with(')') && t.contains('(') {
             let lp = t.rfind('(').unwrap();
             let inner = &t[lp + 1..t.len() - 1];
             let disp_s = t[..lp].trim();
             let parts: Vec<&str> = inner.split(',').map(|x| x.trim()).collect();
             if parts.len() == 1 && parts[0] == "%rip" {
-                return Ok(Op::Mem { disp: Some(self.parse_expr(disp_s)?), base: None, index: None, riplab: Some(disp_s.to_string()), fs });
+                return Ok(Op::Mem { disp: Some(self.parse_expr(disp_s)?), base: None, index: None, riplab: Some(disp_s.to_string()), seg });
             }
             let base = if parts[0].is_empty() { None } else {
                 let (c, w, _) = parse_reg(parts[0]).ok_or_else(|| format!("base no reg64: {}", parts[0]))?;
@@ -201,11 +199,11 @@ impl Parser {
                 Some((c, scale))
             } else { None };
             let disp = if disp_s.is_empty() { None } else { Some(self.parse_expr(disp_s)?) };
-            return Ok(Op::Mem { disp, base, index, riplab: None, fs });
+            return Ok(Op::Mem { disp, base, index, riplab: None, seg });
         }
         // absoluto: %fs:N
         let disp = Some(self.parse_expr(t)?);
-        Ok(Op::Mem { disp, base: None, index: None, riplab: None, fs })
+        Ok(Op::Mem { disp, base: None, index: None, riplab: None, seg })
     }
 }
 
@@ -730,7 +728,8 @@ fn encode_ins(e: &Enc, mnem: &str, ops: &[Op], lock: bool, cur_va: u64, near: bo
     let mut out: Vec<u8> = Vec::with_capacity(16);
     let mut ripp: RipPatches = Vec::new();
     if lock { out.push(0xF0); }
-    if ops.iter().any(|o| matches!(o, Op::Mem { fs: true, .. })) { out.push(0x64); }
+    if ops.iter().any(|o| matches!(o, Op::Mem { seg: 1, .. })) { out.push(0x64); }
+    if ops.iter().any(|o| matches!(o, Op::Mem { seg: 2, .. })) { out.push(0x65); }
     encode_into(e, &mut out, &mut ripp, mnem, ops, cur_va, near)?;
     // parches RIP-relativos: disp32 = target - fin_instrucción
     for (pos, lab) in ripp {
@@ -1802,9 +1801,12 @@ impl Asm {
         // D1.1: GetLastError feeds exact open-rejection diagnostics on PE.
         // D2: SetFilePointerEx + GetSystemTime feed record write-back and
         // the UTC header date on appends.
-        const WHITELIST: [&str; 18] = ["VirtualAlloc", "VirtualFree", "GetSystemInfo", "ExitProcess", "GetEnvironmentVariableA", "GetLocalTime", "GetProcessHeap",
+        const WHITELIST: [&str; 26] = ["VirtualAlloc", "VirtualFree", "GetSystemInfo", "ExitProcess", "GetEnvironmentVariableA", "GetLocalTime", "GetProcessHeap",
             "GetStdHandle", "HeapAlloc", "HeapFree", "WriteFile", "CreateFileW", "ReadFile", "GetFileSizeEx", "CloseHandle",
-            "GetLastError", "SetFilePointerEx", "GetSystemTime"];
+            "GetLastError", "SetFilePointerEx", "GetSystemTime",
+            // Threads on Windows (CreateThread runtime, TEB TLS slots,
+            // WaitOnAddress resolved at run time from the synch API set).
+            "CreateThread", "ExitThread", "GetCurrentThreadId", "TlsAlloc", "TlsFree", "LoadLibraryA", "GetProcAddress", "Sleep"];
         fn scan_expr(p: &Parser, e: &Expr, names: &mut Vec<String>) {
             for (_, t) in &e.0 {
                 if let Term::Sym(n) = t {
