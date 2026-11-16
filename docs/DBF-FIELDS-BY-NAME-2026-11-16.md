@@ -74,10 +74,9 @@ records. Its first version passed 10/10 against an empty table, because
   - no string concatenation with a field (`"[" + NOMBRE + "]"` is rejected,
     exactly like `FieldGet(1)`);
   - decimal numeric fields print but do not take part in arithmetic.
-- **Console trailing spaces.** A `?` line ending in a padded character
-  field loses its trailing spaces. That is the console's existing
-  trailing-space rule ([BASELINE-2026-11-13.md](BASELINE-2026-11-13.md));
-  Harbour's Windows CGI terminal keeps them.
+- **Console trailing spaces.** Fixed on Windows by
+  [WINDOWS-CONSOLE-SPACES-2026-11-16.md](WINDOWS-CONSOLE-SPACES-2026-11-16.md):
+  a padded field at the end of a `?` line keeps its spaces, as in Harbour.
 - **Linux.** DBF programs do not assemble for Linux with the internal
   assembler (`.rodata.str1.1` in generated/hrdbf_linux.s). This predates
   this change: the same error appears with `FieldGet` and the previous

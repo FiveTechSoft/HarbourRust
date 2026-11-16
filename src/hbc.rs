@@ -16256,6 +16256,8 @@ hrm_contract_write:
     leave
     ret
 hrm_contract_exit:
+    # Windows console: held trailing spaces still reach stdout.
+    call hbc_pflush
     xor %ecx, %ecx
     inc %ecx
     call ExitProcess
@@ -17678,6 +17680,7 @@ fn cg_print_items(es: &[Expr], inline: bool, raw: bool, stderr: bool, env: &[CgL
                 // widths are identical to `?`.
                 // Arguments (including nested output) have already evaluated.
                 let render_start = out.len();
+                if raw && !stderr && target == Target::Windows { out.push_str("    call hbc_pflush\n"); }
                 // GTSTD presentation replaces NUL with '.', but raw output
                 // verbs preserve it. Arguments (and their output effects)
                 // have already completed, so this mode covers only rendering.
@@ -17693,7 +17696,10 @@ fn cg_print_items(es: &[Expr], inline: bool, raw: bool, stderr: bool, env: &[CgL
                 // program exit an unresolved hold is simply never
                 // emitted (q9/q10), which matches the EOF trim.
                 if !inline {
-                    if !stderr { out.push_str("    movq $0, hbc_pending(%rip)\n"); }
+                    // Windows (Harbour 3.2 GTCGI): every separator and
+                    // trailing space reaches stdout, so the hold is written
+                    // instead of dropped. Linux keeps the measured drop.
+                    if !stderr { out.push_str(if target == Target::Windows { "    call hbc_pflush\n" } else { "    movq $0, hbc_pending(%rip)\n" }); }
                     out.push_str("    call hbc_print_nl\n");
                 }
                 // A `??` emits NOTHING at fragment start: the held spaces
@@ -25121,6 +25127,7 @@ fn emit_asm(funcs: &[Func], sigs: &[Sig], externs: &[String], target: Target, in
             if MACRO_CONTEXT.with(|c|c.get()){out.push_str("    mov %rsp, %r10\n");}
             out.push_str("    call hbc_fn_main\n");
             if MACRO_CONTEXT.with(|c|c.get()){out.push_str("    mov %rsp, %rdi\n    call hrmacro_destroy\n");}
+            out.push_str("    call hbc_pflush\n");
             out.push_str("    call hbc_persistent_cleanup\n    call hbc_str_cache_flush\n");
             out.push_str("    xor %ecx, %ecx\n");
             out.push_str("    call ExitProcess\n\n");
@@ -27465,7 +27472,7 @@ hbc_panic_exit:
 "#);
     match target {
         Target::Linux => out.push_str("    mov $60, %eax\n    mov $1, %edi\n    syscall\n    .section .rodata\n"),
-        Target::Windows => out.push_str("    mov $1, %ecx\n    call ExitProcess\n    .section .rdata,\"r\"\n"),
+        Target::Windows => out.push_str("    call hbc_pflush\n    mov $1, %ecx\n    call ExitProcess\n    .section .rdata,\"r\"\n"),
     }
     out.push_str(".Ltrace_header:\n    .byte 67,97,108,108,115,116,97,99,107,58,10\n");
     if target == Target::Windows {
@@ -28404,37 +28411,20 @@ hbc_pstrt:
     inc %r8
     jmp .Lpseg_scan
 .Lpseg_lf:
+    # Windows (Harbour GTCGI): write the earlier hold, then the segment
+    # through its LF byte for byte; continue after the LF.
     lea 1(%rax,%r8), %rcx
     mov %rcx, (%rsp)
     sub %r8, %rdx
     dec %rdx
     mov %rdx, 8(%rsp)
-    mov %r8, %rdx
-    test %rdx, %rdx
-    jz .Lpseg_trim_lf
-    cmpb $13, -1(%rax,%rdx)
-    jne .Lpseg_trim_lf
-    dec %rdx
-.Lpseg_trim_lf:
-    test %rdx, %rdx
-    jz .Lpseg_emit_lf
-    cmpb $32, -1(%rax,%rdx)
-    jne .Lpseg_emit_lf
-    dec %rdx
-    jmp .Lpseg_trim_lf
-.Lpseg_emit_lf:
-    # A visible prefix makes earlier held spaces interior. Otherwise drop.
-    test %rdx, %rdx
-    jz .Lpseg_newline
+    lea 1(%r8), %rdx
     mov %rax, 24(%rsp)
     mov %rdx, 32(%rsp)
     call hbc_pflush
     mov 24(%rsp), %rax
     mov 32(%rsp), %rdx
     call hbc_print_str
-.Lpseg_newline:
-    movq $0, hbc_pending(%rip)
-    call hbc_print_nl
     mov (%rsp), %rax
     mov 8(%rsp), %rdx
     jmp .Lpseg_begin

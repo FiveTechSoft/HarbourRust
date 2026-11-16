@@ -15,11 +15,11 @@ a              1]
 a     .T.]
 [
 a     NIL]
-a
+a    
 next
-a
+a      
 next
-
+   
 next
 [a    ]
 [a      ]
@@ -28,9 +28,9 @@ next
 [a     b]
 [a              1]
 [a     .T.]
-[a     NIL]a
-nexta
-next
+[a     NIL]a    
+nexta      
+next   
 next
 [
 a    ]
@@ -48,11 +48,11 @@ a              1]
 a     .T.]
 [
 a     NIL]
-a
+a    
 next
-a
+a      
 next
-
+   
 next
 [a    ]
 [a      ]
@@ -61,9 +61,9 @@ next
 [a     b]
 [a              1]
 [a     .T.]
-[a     NIL]a
-nexta
+[a     NIL]a    
+nexta      
+next   
 next
-next
-a
+a      
 end

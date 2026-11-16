@@ -38,3 +38,5 @@ tests/macro/error-contract/fixtures/windows/m1-conditional-err.terminal.stderr -
 tests/macro/error-contract/fixtures/windows/m1-conditional-err.terminal.stdout -text
 tests/macro/error-contract/fixtures/windows/m1-precedence-err.terminal.stderr -text
 tests/macro/error-contract/fixtures/windows/m1-precedence-err.terminal.stdout -text
+# Windows console output (Harbour GTCGI writes trailing spaces and raw LF)
+tests/procmeta/newline-oracle/raw.windows.stdout -text

@@ -1682,7 +1682,7 @@ streams2 tests/procmeta/newline-oracle/internal_crlf.prg tests/expectations/qout
 streams2 tests/procmeta/newline-oracle/lf.prg tests/expectations/qout/lf.linux.out tests/expectations/qout/lf.windows.out tests/procmeta/newline-oracle/lf.stderr
 streams2 tests/procmeta/newline-oracle/lfend.prg tests/expectations/qout/lfend.linux.out tests/expectations/qout/lfend.windows.out tests/procmeta/newline-oracle/lfend.stderr
 streams2 tests/procmeta/newline-oracle/lfspaces.prg tests/expectations/qout/lfspaces.linux.out tests/expectations/qout/lfspaces.windows.out tests/procmeta/newline-oracle/lfspaces.stderr
-streams tests/procmeta/newline-oracle/raw.prg tests/procmeta/newline-oracle/raw.stdout tests/procmeta/newline-oracle/raw.stderr
+streams2 tests/procmeta/newline-oracle/raw.prg tests/procmeta/newline-oracle/raw.stdout tests/procmeta/newline-oracle/raw.windows.stdout tests/procmeta/newline-oracle/raw.stderr
 streams2 tests/procmeta/newline-oracle/trailing_lf.prg tests/expectations/qout/trailing_lf.linux.out tests/expectations/qout/trailing_lf.windows.out tests/procmeta/newline-oracle/trailing_lf.stderr
 streams2 tests/procmeta/procname-oracle/blocks.prg tests/expectations/qout/blocks.linux.out tests/expectations/qout/blocks.windows.out tests/procmeta/procname-oracle/blocks.stderr
 streams2 tests/procmeta/procname-oracle/depth.prg tests/expectations/qout/depth.linux.out tests/expectations/qout/depth.windows.out tests/procmeta/procname-oracle/depth.stderr

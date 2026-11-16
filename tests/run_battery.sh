@@ -138,6 +138,30 @@ while IFS= read -r line; do
          cmp -s "$sexp" "gen/${base}_l.stdout" && cmp -s "$sexp" "gen/${base}_w.stdout" &&
          cmp -s "$eexp" "gen/${base}_l.stderr" && cmp -s "$eexp" "gen/${base}_w.stderr"; then
         echo "PASS $file"; else echo "FAIL $file (separate stdout/stderr bytes)"; fail=1; fi;;
+    streams2)
+      # streams2 file linux.out windows.out shared.stderr: raw stdout per
+      # target (Windows console output differs: CRLF QOut newlines, kept
+      # trailing spaces), one stderr file for both targets.
+      base=$(basename "$file" .prg)
+      lexp=$(echo "$line"|awk '{print $3}'); wexp=$(echo "$line"|awk '{print $4}'); eexp=$(echo "$line"|awk '{print $5}')
+      if build_linux "$file" && build_win "$file" &&
+         timeout 15 "./gen/$base" >"gen/${base}_l.stdout" 2>"gen/${base}_l.stderr" &&
+         timeout 20 "$WINE" "gen/$base.exe" >"gen/${base}_w.stdout" 2>"gen/${base}_w.stderr" &&
+         cmp -s "$lexp" "gen/${base}_l.stdout" && cmp -s "$wexp" "gen/${base}_w.stdout" &&
+         cmp -s "$eexp" "gen/${base}_l.stderr" && cmp -s "$eexp" "gen/${base}_w.stderr"; then
+        echo "PASS $file"; else echo "FAIL $file (separate stdout/stderr bytes)"; fail=1; fi;;
+    posx2)
+      # posx2 file rc linux.out windows.out: exit code plus raw combined
+      # stdout/stderr bytes against each target's file.
+      base=$(basename "$file" .prg)
+      want_rc=$(echo "$line"|awk '{print $3}'); lexp=$(echo "$line"|awk '{print $4}'); wexp=$(echo "$line"|awk '{print $5}')
+      if build_linux "$file" && build_win "$file"; then
+        timeout 15 "./gen/$base" > "gen/${base}_l.actual" 2>&1; rc_l=$?
+        timeout 20 "$WINE" "gen/$base.exe" > "gen/${base}_w.actual" 2>&1; rc_w=$?
+        if [ "$rc_l" = "$want_rc" ] && [ "$rc_w" = "$want_rc" ] &&
+           cmp -s "$lexp" "gen/${base}_l.actual" && cmp -s "$wexp" "gen/${base}_w.actual"; then echo "PASS $file"
+        else echo "FAIL $file (posx2 rc lin=$rc_l win=$rc_w want=$want_rc / exact bytes)"; fail=1; fi
+      else echo "FAIL $file (build)"; fail=1; fi;;
     neg)  run_neg "$file" "$(echo "$line"|cut -d' ' -f3-)";;
     '') ;;
     *) echo "FAIL unknown manifest kind: $line"; fail=1;;
