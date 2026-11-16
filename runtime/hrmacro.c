@@ -382,7 +382,7 @@ static node *newnode(parser*p,int kind,node*a,node*b){
  if(p->count>=4096){lex_fail(&p->L,"Error: macro node budget limit (M0)");return &p->emergency;}
  n=p->ctx->bridge.storage.alloc(p->ctx->bridge.storage.user,sizeof(*n));
  if(!n){lex_fail(&p->L,"Error: macro allocation failure (M0)");return &p->emergency;}
- *n=(node){0};n->kind=kind;n->a=a;n->b=b;n->allocated=p->allocated;p->allocated=n;p->count++;p->ctx->scratch_live++;return n;
+ /* Context raw allocator guarantees requested bytes are zero. */n->kind=kind;n->a=a;n->b=b;n->allocated=p->allocated;p->allocated=n;p->count++;p->ctx->scratch_live++;return n;
 }
 static node *binary(parser*p,int kind,int op,node*a,node*b){node*n=newnode(p,kind,a,b);n->op=op;return n;}
 static node *primary(parser*p){
@@ -597,10 +597,43 @@ static val eval_text(hrmacro_context*c,const unsigned char*src,size_t len,unsign
  while(p.allocated){node*q=p.allocated;p.allocated=q->allocated;drop(&q->value);c->bridge.storage.free(c->bridge.storage.user,q,sizeof(*q));c->scratch_live--;}
  return v;
 }
-hrmv_status hrmacro_init(hrmacro_context*c,hrmv_alloc_fn a,hrmv_free_fn f,void*raw,hrmb_string_fn s,hrmb_float_fn d,void*compiler,hrmacro_fatal_fn fatal,void*user){
- if(!c||!fatal)return HRMV_BAD_ARGUMENT;hrmv_status rc=hrmb_init(&c->bridge,a,f,raw,s,d,compiler);if(rc)return rc;c->fatal=fatal;c->fatal_user=user;c->scratch_live=0;c->lookups=0;return HRMV_OK;
+/* Raw allocations keep exact original backing sizes; no block here enters a
+ * compiler string destructor. The bounded bins retain bytes, never AST state. */
+typedef struct hrm_raw_block {
+ hrmacro_raw_pool *owner;
+ struct hrm_raw_block *next,*previous,*cached;
+ size_t capacity,requested; uint64_t state;
+} hrm_raw_block;
+#define HRM_POOL_ACTIVE UINT64_C(0x48524d504f4f4c31)
+#define HRM_POOL_CACHED UINT64_C(0x48524d504f4f4c32)
+#define HRM_POOL_CAP ((size_t)262144)
+static int raw_class(size_t n){return n<=64?0:n<=256?1:n<=1024?2:n<=4096?3:-1;}
+static size_t raw_capacity(int bin,size_t n){return bin==0?64:bin==1?256:bin==2?1024:bin==3?4096:n;}
+static void *raw_reuse_alloc(void *user,size_t n){
+ hrmacro_raw_pool*p=user;int bin=raw_class(n);size_t cap=raw_capacity(bin,n);hrm_raw_block*b=0;
+ if(cap>SIZE_MAX-sizeof(*b))return 0;
+ if(bin>=0&&p->bins[bin]){b=p->bins[bin];p->bins[bin]=b->cached;p->retained-=sizeof(*b)+b->capacity;}
+ else{b=p->alloc(p->user,sizeof(*b)+cap);if(!b)return 0;b->owner=p;b->capacity=cap;b->previous=0;b->next=p->all;if(b->next)b->next->previous=b;p->all=b;}
+ b->requested=n;b->state=HRM_POOL_ACTIVE;b->cached=0;p->live_blocks++;p->live_bytes+=n;
+ unsigned char*out=(unsigned char*)(b+1);for(size_t j=0;j<n;j++)out[j]=0;return out;
 }
-void hrmacro_destroy(hrmacro_context*c){if(c)hrmb_destroy(&c->bridge);}
+static void raw_reuse_free(void *user,void *ptr,size_t n){
+ hrmacro_raw_pool*p=user;hrm_raw_block*b=(hrm_raw_block*)ptr-1;
+ if(b->owner!=p||b->state!=HRM_POOL_ACTIVE||b->requested!=n){static const unsigned char msg[]="Error: macro raw allocator ownership mismatch (P1)";hrm_fail(msg,sizeof(msg)-1);}
+ p->live_blocks--;p->live_bytes-=n;int bin=raw_class(b->capacity);
+ if(bin>=0&&sizeof(*b)+b->capacity<=HRM_POOL_CAP-p->retained){b->state=HRM_POOL_CACHED;b->requested=0;b->cached=p->bins[bin];p->bins[bin]=b;p->retained+=sizeof(*b)+b->capacity;return;}
+ if(b->previous)b->previous->next=b->next;else p->all=b->next;if(b->next)b->next->previous=b->previous;
+ p->free(p->user,b,sizeof(*b)+b->capacity);
+}
+static void raw_reuse_destroy(hrmacro_raw_pool*p){
+ while(p->all){hrm_raw_block*b=p->all;p->all=b->next;p->free(p->user,b,sizeof(*b)+b->capacity);}
+ for(unsigned j=0;j<4;j++)p->bins[j]=0;p->retained=0;p->live_blocks=0;p->live_bytes=0;
+}
+hrmv_status hrmacro_init(hrmacro_context*c,hrmv_alloc_fn a,hrmv_free_fn f,void*raw,hrmb_string_fn s,hrmb_float_fn d,void*compiler,hrmacro_fatal_fn fatal,void*user){
+ if(!c||!fatal||!a||!f)return HRMV_BAD_ARGUMENT;c->raw_pool=(hrmacro_raw_pool){0};c->raw_pool.alloc=a;c->raw_pool.free=f;c->raw_pool.user=raw;
+ hrmv_status rc=hrmb_init(&c->bridge,raw_reuse_alloc,raw_reuse_free,&c->raw_pool,s,d,compiler);if(rc)return rc;c->fatal=fatal;c->fatal_user=user;c->scratch_live=0;c->lookups=0;return HRMV_OK;
+}
+void hrmacro_destroy(hrmacro_context*c){if(c){hrmb_destroy(&c->bridge);raw_reuse_destroy(&c->raw_pool);}}
 hrm_cell hrmacro_eval(hrmacro_context*c,const unsigned char*src,size_t len){
  val v=eval_text(c,src,len,0);hrm_cell out={1,0};hrmv_status rc=HRMV_OK;
  switch(v.kind){
