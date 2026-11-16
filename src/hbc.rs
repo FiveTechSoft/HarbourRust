@@ -62,6 +62,7 @@ mod hpe;
 mod hmacho;
 mod vas;
 mod macro_m1;
+mod prune;
 
 #[derive(Clone, Copy, PartialEq, Debug)]
 enum Ty { NumLocal, F64, I64, Str, Bool, Date, Arr(usize), Block(usize, BRet), DArr, DArrU, DArr2, DArr3, DArr4, DArrS, StrOwn, Dyn, Hash, DArrRef, DArrRef2, RefI64, RefDyn, RefStrOwn, DArrDyn, AView, Obj(u32) }
@@ -30124,6 +30125,7 @@ fn main() {
     let mut llvm = false;
     let mut no_escape = false;
     let mut no_arena = false;
+    let mut no_prune = false;
     let mut no_vas = false;
     let mut external_as = false;
     let mut llvm_trace = true;
@@ -30139,6 +30141,7 @@ fn main() {
             "--instrument" => instrument = true,
             "--no-escape-analysis" => no_escape = true,
             "--no-arena" => no_arena = true,
+            "--no-prune" => no_prune = true,
             "--no-vas-arrays" => no_vas = true,
             "--experimental-llvm" => llvm = true,
             "--experimental-llvm-no-trace" => {llvm = true; llvm_trace = false;},
@@ -30149,7 +30152,7 @@ fn main() {
   --target overrides it; macho-arm64 currently rejects (native ARM64 backend pending)
   omitted output uses the input stem in the current directory (.exe on Windows target), preserving case
   output ending in .s writes assembly; any other name writes the selected target executable directly
-  flag --external-as keeps the external as/ld path; --instrument, --no-arena, --no-escape-analysis, --experimental-llvm[-no-trace]"); process::exit(2); }
+  flag --external-as keeps the external as/ld path; --instrument, --no-arena, --no-prune, --no-escape-analysis, --experimental-llvm[-no-trace]"); process::exit(2); }
             _ => pos.push(a),
         }
         ai += 1;
@@ -30160,7 +30163,7 @@ fn main() {
   --target overrides it; macho-arm64 currently rejects (native ARM64 backend pending)
   omitted output uses the input stem in the current directory (.exe on Windows target), preserving case
   output ending in .s writes assembly; any other name writes the selected target executable directly
-  flag --external-as keeps the external as/ld path; --instrument, --no-arena, --no-escape-analysis, --experimental-llvm[-no-trace]");
+  flag --external-as keeps the external as/ld path; --instrument, --no-arena, --no-prune, --no-escape-analysis, --experimental-llvm[-no-trace]");
         process::exit(2);
     }
     // Keep argv strings unchanged. The optional derived output owns storage
@@ -30754,6 +30757,8 @@ hbc_aclone_alloc:
     jmp hbc_alloc
 "
     });
+    // Drop runtime helpers the program never reaches (src/prune.rs).
+    let out = if no_prune { out } else { prune::prune(&out) };
     let out = if macho { hmacho::darwin_asm(&out).unwrap_or_else(|e| {eprintln!("error: {}",e);process::exit(1);}) } else {out};
 
     if explicit_output && pos[1].ends_with(".s") {
