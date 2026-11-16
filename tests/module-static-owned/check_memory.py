@@ -11,7 +11,7 @@ def run(cmd,w,label):
  for k,v in [('stdout',r.stdout),('stderr',r.stderr),('rc',str(r.returncode).encode())]:(w/(label+'.'+k)).write_bytes(v)
  return r
 for src in sorted((root/'programs').glob('*.prg')):
- if src.stem == 'methods': continue # object runtime retains its existing chunk/template pool; not a zero-balance assertion
+ if src.stem in ('methods','sequenced_method'): continue # object runtime retains its existing chunk/template pool; not a zero-balance assertion
  for target in ['linux']+(['windows']if a.wine else[]):
   w=out/src.stem/target;w.mkdir(parents=True);s=w/'checked.s';r=run([a.compiler,src,s,'--target='+target,'--instrument','--no-prune'],w,'emit');assert r.returncode==0,(src,r.stderr)
   text=s.read_text();anchor='    call hbc_persistent_cleanup\n    call hbc_str_cache_flush\n';assert text.count(anchor)==1

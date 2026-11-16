@@ -8,7 +8,7 @@ def run(cmd,work,label,e=env):
  r=subprocess.run(list(map(str,cmd)),cwd=work,env=e,capture_output=True,stdin=subprocess.DEVNULL,timeout=60)
  for k,v in [('stdout',r.stdout),('stderr',r.stderr),('rc',str(r.returncode).encode())]:(work/(label+'.'+k)).write_bytes(v)
  return r
-expect={'print_mutation':'inline-effect','argument_mutation':'inline-effect','bool_byref':'logical by-reference use is outside','inline_write':'inline-effect','array_escape':'owned/container','compound_call':'inline-effect','logical_widen':'type mismatch in assignment','string_widen':'type mismatch in assignment','catch_shadow':'module STATIC catch binding shadow','counter_try':'STATIC loop counters require'}
+expect={'print_mutation':'inline-effect','argument_mutation':'inline-effect','bool_byref':'logical by-reference use is outside','inline_write':'inline-effect','array_escape':'owned/container','compound_call':'inline-effect','logical_widen':'type mismatch in assignment','string_widen':'type mismatch in assignment','catch_shadow':'module STATIC catch binding shadow','counter_try':'STATIC loop counters require','print_index2_mutation':'inline-effect','print_index3_mutation':'inline-effect','print_index4_mutation':'inline-effect','hash_mutation':'inline-effect','nested_index_mutation':'inline-effect','block_mutation':'inline-effect','call_index_mutation':'inline-effect','method_mutation':'inline-effect'}
 for group in ['programs','negative']:
  for src in sorted((root/group).glob('*.prg')):
   for target in ['linux']+(['windows']if a.wine else[]):
