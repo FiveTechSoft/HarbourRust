@@ -1,0 +1,174 @@
+{
+  "recorded_base": "f70407f1d3aa34953c3829912355996f9dc4c0cd",
+  "scope": "Compile-only Windows-target mismatches, not skips or successful runtime tests. Exact source and diagnostic are pinned; fixed or changed mismatches fail until reviewed.",
+  "cases": [
+    {
+      "kind": "neg",
+      "source": "tests/t110_pp_include_angle_neg.prg",
+      "rc": 0,
+      "stderr": "",
+      "source_sha256": "e28bcb57b399427ecb0ea3cfd2b97d5a53209d3b2d8cf37d184f06c59ab6447c",
+      "reason": "Inherited include-angle negative is admitted (not a runtime pass)."
+    },
+    {
+      "kind": "pos",
+      "source": "tests/t1619_curdir_basic.prg",
+      "rc": 1,
+      "stderr": "error: line 2: CurDir is measured only on the ordinary Linux backend in this increment\n",
+      "source_sha256": "0e0cfc10ca148c23c23a79ffd7de97af3a0b8024bef236b94f10638bde6bf9fc",
+      "reason": "CurDir is outside the PE backend; includes diagnostic precedence differences."
+    },
+    {
+      "kind": "pos",
+      "source": "tests/t1620_curdir_drives.prg",
+      "rc": 1,
+      "stderr": "error: line 2: CurDir is measured only on the ordinary Linux backend in this increment\n",
+      "source_sha256": "d7479daa5b1073a3135f6dcf1ebe0c74ba1834dabee65e357ccf5313da356300",
+      "reason": "CurDir is outside the PE backend; includes diagnostic precedence differences."
+    },
+    {
+      "kind": "pos",
+      "source": "tests/t1621_curdir_nil.prg",
+      "rc": 1,
+      "stderr": "error: line 2: CurDir is measured only on the ordinary Linux backend in this increment\n",
+      "source_sha256": "d30ece02bd07ef0fb864416b6c5584fa6193ea2b178c32ff1b66f0008d6e4f5b",
+      "reason": "CurDir is outside the PE backend; includes diagnostic precedence differences."
+    },
+    {
+      "kind": "pos",
+      "source": "tests/t1622_curdir_save.prg",
+      "rc": 1,
+      "stderr": "error: line 2: CurDir is measured only on the ordinary Linux backend in this increment\n",
+      "source_sha256": "6af2104c27f9c1e9ffad52272893561ac6302e280b7658fcdb77b8556a77483c",
+      "reason": "CurDir is outside the PE backend; includes diagnostic precedence differences."
+    },
+    {
+      "kind": "pos",
+      "source": "tests/t1623_curdir_concat.prg",
+      "rc": 1,
+      "stderr": "error: line 2: CurDir is measured only on the ordinary Linux backend in this increment\n",
+      "source_sha256": "b319da8e1e9687d9d2c21503de127822590effb1ff6505e077d2532aacc06c55",
+      "reason": "CurDir is outside the PE backend; includes diagnostic precedence differences."
+    },
+    {
+      "kind": "pos",
+      "source": "tests/t1624_curdir_loop.prg",
+      "rc": 1,
+      "stderr": "error: line 4: CurDir is measured only on the ordinary Linux backend in this increment\n",
+      "source_sha256": "ffbd505ac2fae331d3058ed2b5c3e6dc351fd7e9cf68a793fdaad733227771ba",
+      "reason": "CurDir is outside the PE backend; includes diagnostic precedence differences."
+    },
+    {
+      "kind": "pos",
+      "source": "tests/t1625_curdir_return.prg",
+      "rc": 1,
+      "stderr": "error: line 2: `place` never returns a value; its result cannot be used in an expression in this PoC\n",
+      "source_sha256": "05d8d8406e4a42e81e3418e036757b773f5f18b17eec30730de283862576a78a",
+      "reason": "CurDir is outside the PE backend; includes diagnostic precedence differences."
+    },
+    {
+      "kind": "pos",
+      "source": "tests/t1626_curdir_branch.prg",
+      "rc": 1,
+      "stderr": "error: line 2: CurDir is measured only on the ordinary Linux backend in this increment\n",
+      "source_sha256": "d14ce3d1a16f9a66a53f152d1a00fb16ecebaaab5aeaceca9efdead9ba95f514",
+      "reason": "CurDir is outside the PE backend; includes diagnostic precedence differences."
+    },
+    {
+      "kind": "pos",
+      "source": "tests/t1627_curdir_raw_temp.prg",
+      "rc": 1,
+      "stderr": "error: line 2: CurDir is measured only on the ordinary Linux backend in this increment\n",
+      "source_sha256": "139d00a28184111dab980459de0cd142a6013095f5a7dc156446bdea64715146",
+      "reason": "CurDir is outside the PE backend; includes diagnostic precedence differences."
+    },
+    {
+      "kind": "pos",
+      "source": "tests/t1628_curdir_dead.prg",
+      "rc": 1,
+      "stderr": "error: line 3: CurDir is measured only on the ordinary Linux backend in this increment\n",
+      "source_sha256": "0fb9bcf6465aa1ce4507af2e1fdc50a4b29e8adba21b5d3278bd46eb96352a4e",
+      "reason": "CurDir is outside the PE backend; includes diagnostic precedence differences."
+    },
+    {
+      "kind": "neg",
+      "source": "tests/t1634_curdir_neg_extra.prg",
+      "rc": 1,
+      "stderr": "error: line 2: CurDir is measured only on the ordinary Linux backend in this increment\n",
+      "source_sha256": "d9694d222a2120bd095d49ef12a0b337eed5eed314d0a0033eda3567a2dffcff",
+      "reason": "CurDir is outside the PE backend; includes diagnostic precedence differences."
+    },
+    {
+      "kind": "neg",
+      "source": "tests/t1635_curdir_neg_number.prg",
+      "rc": 1,
+      "stderr": "error: line 2: CurDir is measured only on the ordinary Linux backend in this increment\n",
+      "source_sha256": "1be0e1f543c895cb0155864af868f959d0776733a14b7d89b39ef7e49e736ab1",
+      "reason": "CurDir is outside the PE backend; includes diagnostic precedence differences."
+    },
+    {
+      "kind": "neg",
+      "source": "tests/t1636_curdir_neg_logical.prg",
+      "rc": 1,
+      "stderr": "error: line 2: CurDir is measured only on the ordinary Linux backend in this increment\n",
+      "source_sha256": "33ac252e6c63f91541693dc490afe9c3b2e013da3446687222c92c5128385b22",
+      "reason": "CurDir is outside the PE backend; includes diagnostic precedence differences."
+    },
+    {
+      "kind": "neg",
+      "source": "tests/t1637_curdir_neg_variable.prg",
+      "rc": 1,
+      "stderr": "error: line 3: CurDir is measured only on the ordinary Linux backend in this increment\n",
+      "source_sha256": "25156faf54c635c5ec2e23bec062da2515233fcc9502fdfe5cb76bcca0a3819d",
+      "reason": "CurDir is outside the PE backend; includes diagnostic precedence differences."
+    },
+    {
+      "kind": "neg",
+      "source": "tests/t1638_curdir_neg_effect.prg",
+      "rc": 1,
+      "stderr": "error: line 3: CurDir is measured only on the ordinary Linux backend in this increment\n",
+      "source_sha256": "ef498c769bae60b938d4a045b6c28e525571f1cdc6253ae6e7de696697f24046",
+      "reason": "CurDir is outside the PE backend; includes diagnostic precedence differences."
+    },
+    {
+      "kind": "neg",
+      "source": "tests/t1639_curdir_neg_array.prg",
+      "rc": 1,
+      "stderr": "error: line 2: CurDir is measured only on the ordinary Linux backend in this increment\n",
+      "source_sha256": "74a9ba9bf8569ae5799446f4b49280b7fac56a3ed62c2864ab4c48127f22e8af",
+      "reason": "CurDir is outside the PE backend; includes diagnostic precedence differences."
+    },
+    {
+      "kind": "neg",
+      "source": "tests/t1640_curdir_neg_function.prg",
+      "rc": 1,
+      "stderr": "error: line 2: CurDir is measured only on the ordinary Linux backend in this increment\n",
+      "source_sha256": "f3a24c4ba2f16505425e70e6ccd05d85a0baaa831c43e1d76a2f39d0da25fd4a",
+      "reason": "CurDir is outside the PE backend; includes diagnostic precedence differences."
+    },
+    {
+      "kind": "neg",
+      "source": "tests/t1641_curdir_neg_dead.prg",
+      "rc": 1,
+      "stderr": "error: line 3: CurDir is measured only on the ordinary Linux backend in this increment\n",
+      "source_sha256": "61940615604b3f52c61145cc419b74cdae86e7ab7e1de305519b1373546ef3e0",
+      "reason": "CurDir is outside the PE backend; includes diagnostic precedence differences."
+    },
+    {
+      "kind": "neg",
+      "source": "tests/t1642_curdir_neg_byref.prg",
+      "rc": 1,
+      "stderr": "error: line 3: CurDir is measured only on the ordinary Linux backend in this increment\n",
+      "source_sha256": "35b56e87f840bb7901ac757c743caa5ef5b13df4fb8cdb33e1769d40e75cb8a8",
+      "reason": "CurDir is outside the PE backend; includes diagnostic precedence differences."
+    },
+    {
+      "kind": "pos",
+      "source": "tests/t1643_curdir_balance.prg",
+      "rc": 1,
+      "stderr": "error: line 5: CurDir is measured only on the ordinary Linux backend in this increment\n",
+      "source_sha256": "6ad1c510d73361b22883837187df421894496c6da4f1e6ecce306b910b5174ef",
+      "reason": "CurDir is outside the PE backend; includes diagnostic precedence differences."
+    }
+  ]
+}

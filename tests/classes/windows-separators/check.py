@@ -45,5 +45,7 @@ for name in ['p_sep','matrix','mixed']:
         ok=p.returncode==0 and p.stdout==(root/(name+'.windows.stdout')).read_bytes() and p.stderr==(root/(name+'.windows.stderr')).read_bytes()
         records.append({'case':label,'pass':ok,'rc':p.returncode})
         print(('PASS ' if ok else 'FAIL ')+label,flush=True)
+        if not ok:
+            print(f'actual rc={p.returncode} stdout={p.stdout!r} stderr={p.stderr!r}', flush=True)
         (work/'result.json').write_text(json.dumps({'compiler_sha256':hashlib.sha256(hbc.read_bytes()).hexdigest(),'records':records},indent=2))
 assert all(r['pass'] for r in records),'stream or exit mismatch; inspect evidence'

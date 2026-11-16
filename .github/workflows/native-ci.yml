@@ -1,0 +1,62 @@
+name: Native compiler gates (Linux and Windows)
+
+'on':
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: native-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  native:
+    name: Native gates (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2022]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    steps:
+      - name: Check out this revision without saved credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Set up the pinned Rust toolchain
+        shell: bash
+        run: |
+          set -euo pipefail
+          rustup toolchain install 1.100.0 --profile minimal --no-self-update
+          rustup run 1.100.0 rustc --version
+          python --version
+      - name: Build the native compiler with the release recipe
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$RUNNER_OS" == "Windows" ]]; then output=hbc.exe; else output=hbc; fi
+          rustup run 1.100.0 rustc --edition=2021 -C opt-level=1 -C debuginfo=0 -C strip=symbols src/hbc.rs -o "$output"
+      - name: Compile-only PE manifest and exact CLI fixture
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$RUNNER_OS" == "Windows" ]]; then compiler=./hbc.exe; else compiler=./hbc; fi
+          python tests/ci/compile_pe.py --compiler "$compiler" --output work/ci-pe
+      - name: FILE native Linux fixtures (no Harbour or Wine)
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          set -euo pipefail
+          command -v as
+          command -v ld
+          python tests/file-compat/check.py --compiler ./hbc --output work/ci-file
+      - name: Object separators on native Windows (versioned GTSTD fixtures)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python tests/classes/windows-separators/check.py --compiler ./hbc.exe
