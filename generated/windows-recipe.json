@@ -31,9 +31,9 @@
     "runtime/hrntx.c": "2aa645be8faba3a3dceca7d09a3993605fd9b846e5764e9d49541cf54a36bbb9",
     "runtime/hrntx.h": "6ea7588085846c416a72db9ae2fda9c39adfc080e3a20a5426b1d5412fb4f8ed",
     "runtime/hrntx_file_windows.c": "e059022a499827830fb3d927a22fedcb8fd343a296f710dfba3b48b7f30cc4b0",
-    "runtime/hrvalue.c": "ab28e6086f9ca5be4fa284b0cd38cc71757e083f84b56910508f87866648ed19",
+    "runtime/hrvalue.c": "bc4970cd86c7a2ac71ad8bd974908c4302aaa1b870fbaa3cba6ebaa5d83999d1",
     "runtime/hrvalue.h": "962dee2ca2d6f75dc45d4d6597a1e84e62568b869a897911c496501fdc8a4dfe"
   },
-  "asm_sha256": "779460edb70b41562ac8af64a03115ad8353107640cdaa2dd0cfbc68014cd6e4",
+  "asm_sha256": "65fb680745a597e4917f9d62bb505a6a4911e267d200b51e861f4820422522db",
   "notes": "Win64 C bodies; explicit internal ABI and copy callback bridges; DLL import pointer references normalised to named thunks"
 }

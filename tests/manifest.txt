@@ -1745,6 +1745,7 @@ neg tests/try-catch/try_exit_neg.prg E0025: invalid EXIT from within of SEQUENCE
 streams2 tests/hash-logical/haskey.prg tests/expectations/qout/haskey.linux.out tests/expectations/qout/haskey.windows.out tests/hash-logical/haskey.stderr
 neg tests/hash-logical/haskey-int-neg.prg arithmetic
 pos2 tests/t1678_acc_owned_seed.prg tests/expectations/qout/t1678_acc_owned_seed.linux.out tests/expectations/qout/t1678_acc_owned_seed.windows.out
+pos2 tests/t1679_mod_pow_dyn_assign.prg tests/expectations/qout/t1679_mod_pow_dyn_assign.linux.out tests/expectations/qout/t1679_mod_pow_dyn_assign.windows.out
 pos2 tests/array-extra/atail.prg tests/expectations/qout/atail.linux.out tests/expectations/qout/atail.windows.out
 pos2 tests/array-extra/aclon.prg tests/expectations/qout/aclon.linux.out tests/expectations/qout/aclon.windows.out
 pos2 tests/array-extra/asort.prg tests/expectations/qout/asort.linux.out tests/expectations/qout/asort.windows.out

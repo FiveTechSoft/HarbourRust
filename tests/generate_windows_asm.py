@@ -15,6 +15,22 @@ s=re.sub(r'call\s+\*__imp_(\w+)\(%rip\)',r'call \1',s)
 s=re.sub(r'movq\s+__imp_(\w+)\(%rip\),\s*(%\w+)',r'leaq \1(%rip), \2',s)
 s=re.sub(r'(?<![A-Za-z0-9_.$])(\d+)\+([A-Za-z_.$][A-Za-z0-9_.$]*)',r'\2+\1',s)
 s=re.sub(r'^(\s*(?:sal|sar|shl|shr|rol|ror)[bwlq]?)\s+(%\w+)\s*$',r'\1 $1, \2',s,flags=re.M)
+
+# D5: gcc may label the second half of a 16-byte constant pool entry with
+# `.set A,B+8` (rodata.cst16); hbc's assembler takes integer .set only.
+# Plant the alias label at its real offset inside the 4x .long body.
+def _resolve_set8(s):
+    pat=re.compile(r'^\t\.set\t(\.[A-Za-z0-9_.$]+),(\.[A-Za-z0-9_.$]+)\+8\n((?:^\t\.section\t\.rodata\n)?^\t\.align 16\n)(\2:\n(?:\t\.long\t[^\n]+\n){2})((?:\t\.long\t[^\n]+\n){2})',re.M)
+    def repl(m):
+        return m.group(3)+m.group(4)+m.group(1)+':\n'+m.group(5)
+    s2=pat.sub(repl,s)
+    leftover=re.findall(r'^\t\.set\t(\.[A-Za-z0-9_.$]+),(.+)$',s2,re.M)
+    bad=[(a,b) for a,b in leftover if not re.fullmatch(r'-?\d+',b.strip())]
+    assert not bad,f"unresolved .set expressions: {bad}"
+    return s2
+s=_resolve_set8(s)
+s=re.sub(r'^\s*#?\s*/?(?:NO_)?APP\s*\n','',s,flags=re.M)  # D5: GAS (linux) / GAS-PE (mingw) inline-asm markers
+s=re.sub(r'^\s*# \d+ "[^\n]*" \d+\s*\n','',s,flags=re.M)  # and their cpp line markers
 s=s.replace('movabsq','movabs')
 assert '__imp_' not in s
 # Normalise BSS and escaped literal bytes without changing bytes/alignments.

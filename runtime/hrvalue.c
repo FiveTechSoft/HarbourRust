@@ -92,6 +92,22 @@ static hrv_error hrv_to_double(hrv_cell v,double *out,unsigned *dec){
   *out=b.d;*dec=c;return HRV_OK;}
  return HRV_TYPE;
 }
+/* D5: fmod via x87 FPREM (exact partial remainder loop, sign of the
+ * dividend, same algorithm as the compiler's published hrm_fmod) and
+ * pow via the hrm_powf core (2^(y*log2 x): FYL2X, F2XM1 + FSCALE).
+ * Inline asm keeps the runtime freestanding (no libm). */
+static double hrv_fmod87(double x,double y){
+ double r;
+ __asm__ volatile("fldl %2\n\tfldl %1\n\t1: fprem\n\tfnstsw %%ax\n\ttest $4,%%ah\n\tjnz 1b\n\tfstpl %0\n\tfstp %%st(0)"
+  :"=m"(r):"m"(x),"m"(y):"ax","st","st(1)");
+ return r;
+}
+static double hrv_pow87(double x,double y){
+ double r;
+ __asm__ volatile("fldl %2\n\tfldl %1\n\tfyl2x\n\tfld %%st(0)\n\tfrndint\n\tfxch %%st(1)\n\tfsub %%st(1),%%st(0)\n\tf2xm1\n\tfld1\n\tfaddp %%st(0),%%st(1)\n\tfscale\n\tfstp %%st(1)\n\tfstpl %0"
+  :"=m"(r):"m"(x),"m"(y):"st","st(1)");
+ return r;
+}
 hrv_error hrv_arith(unsigned op,hrv_cell a,hrv_cell b,hrv_cell *out){
  hrv_error e=hrv_validate(a);if(e)return e;e=hrv_validate(b);if(e)return e;
  if(op=='+'||op=='-'||op=='*'){
@@ -115,6 +131,52 @@ hrv_error hrv_arith(unsigned op,hrv_cell a,hrv_cell b,hrv_cell *out){
   else if(op=='*'){r=da*db;dec=ca+cb;if(dec>255)dec=255;}
   else{if(db==0.0)return HRV_ZERODIV;r=da/db;dec=2;}
   bits.d=r;out->tag=HRV_DOUBLE|((uint64_t)dec<<8);out->payload=bits.u;
+  return HRV_OK;
+ }
+ if(op=='%'||op=='^'){
+  double da,db,r;unsigned ca,cb;union{double d;uint64_t u;}bits;
+  e=hrv_to_double(a,&da,&ca);if(e)return e;
+  e=hrv_to_double(b,&db,&cb);if(e)return e;
+  if(op=='%'){
+   /* hb_vmModulus: C fmod, sign of the DIVIDEND (test7 oracle:
+    * -1000.05%3 = -1.05, 1000.05%-3 = 1.05); the result is ALWAYS a
+    * double with dec = SET DECIMALS (2) - even for integer operands
+    * (hk348, oracle: LIMITE%7 prints 5.00). A zero divisor yields the
+    * integer-image 0 (hk343/hk344, oracle: `x % 0` prints 0). */
+   if(db==0.0){out->tag=HRV_I64;out->payload=0;return HRV_OK;}
+   r=hrv_fmod87(da,db);
+  }else{
+   /* hb_vmPower: C pow (test7 oracle: 1000.05^2 = 1000100.00 with the
+    * glibc rounding, ^0 = 1.00, ^1 = 1000.05, always dec = SET(2)).
+    * glibc edge arms measured: base < 0 with an INTEGRAL exponent is
+    * exact (pow(-2,3) = -8.00); fractional exponent of a negative base
+    * is NaN (t809 prints it as asterisks, like the static path); 0^0 =
+    * 1; 0^negative = +Inf (Harbour's recoverable dialog stays the
+    * registered failure-mode difference). Doubles >= 2^53 are always
+    * integral; their parity is undecidable, treated even (same as the
+    * published static helper). */
+   {
+    /* Ordered double compares go through BIT manipulation (union
+     * uint64): the internal assembler does not take cmpltsd. For
+     * positive doubles the IEEE bit pattern orders like the value;
+     * sign/magnitude extraction and negation are xor/and on bits. */
+    union{double d;uint64_t u;}ba,bb,be,t;
+    uint64_t maga,magb;double ae;
+    ba.d=da;bb.d=db;maga=ba.u&0x7FFFFFFFFFFFFFFFULL;magb=bb.u&0x7FFFFFFFFFFFFFFFULL;
+    if((ba.u>>63)!=0&&maga!=0){
+     /* base < 0 (a real negative; -0.0 falls to the zero arm below) */
+     be.u=magb;ae=be.d;
+     if(magb>=0x4330000000000000ULL||ae==(double)(int64_t)ae){
+      t.u=maga;r=hrv_pow87(t.d,db);
+      if(magb<0x4330000000000000ULL&&(((int64_t)ae)&1))r=0.0-r; /* exact sign flip: subsd, no btcq/mask constants */
+     }else{bits.u=0x7FF8000000000000ULL;r=bits.d;}
+    }else if(maga==0){
+     /* base +-0: 0^0 = 1, 0^positive = +0, 0^negative = +Inf */
+     if(magb==0)r=1.0;else if((bb.u>>63)==0)r=0.0;else{bits.u=0x7FF0000000000000ULL;r=bits.d;}
+    }else r=hrv_pow87(da,db);
+   }
+  }
+  bits.d=r;out->tag=HRV_DOUBLE|((uint64_t)2<<8);out->payload=bits.u;
   return HRV_OK;
  }
  return HRV_TYPE;

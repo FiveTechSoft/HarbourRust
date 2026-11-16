@@ -522,6 +522,15 @@ fn cg_f64_operand(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String
         out.push_str("    mov %rdi, %rcx\n    movzwl %cx, %ecx\n");
     } else {
         cg_expr(e, env, sigs, strs, out, target);
+        // D5 fix: a Dyn casilla carries the tag in %rax and the PAYLOAD in
+        // %rdx; without the extraction the conversion read the tag (9 for
+        // an integer casilla) as the value - `local x` / `x := 100` /
+        // `? x ^ 2` printed 81.00 instead of 10000.00 ( Harbour runs the
+        // payload; regression t1675). NIL payload -> clean type error,
+        // Harbour's dialog is the registered difference.
+        if expr_ty(e, env, sigs) == Ty::Dyn {
+            out.push_str("    call hbc_dyn_to_i64\n");
+        }
         out.push_str("    cvtsi2sd %rax, %xmm0\n    xor %ecx, %ecx\n");
     }
 }
@@ -7634,12 +7643,17 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
             // the static result is a Dyn cell. Without DBF the
             // integer-only extraction below is unchanged (Dyn division
             // and Dyn/float mixes stay rejected by name there).
-            if matches!(*op, '+' | '-' | '*' | '/')
+            if matches!(*op, '+' | '-' | '*' | '/' | '%' | '^')
                 && (ta == Ty::Dyn || tb == Ty::Dyn)
                 && matches!(ta, Ty::I64 | Ty::F64 | Ty::Dyn)
                 && matches!(tb, Ty::I64 | Ty::F64 | Ty::Dyn)
                 && DBF_USED.with(|v| v.get())
             {
+                // D5: `%` and `^` join the DBF decimal arithmetic (both
+                // always widen to double, dec = SET DECIMALS = 2;
+                // oracle test7). Without DBF the existing `%`/`^` arms
+                // below are unchanged (static extraction via
+                // cg_f64_operand, with the D5 payload fix).
                 return Ok(Ty::Dyn);
             }
             // `%` (hb_vmModulus; oracles hk340-hk348): any numeric mix
@@ -16012,7 +16026,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             {
                 let da = expr_ty(a, env, sigs);
                 let db = expr_ty(b, env, sigs);
-                if matches!(*op, '+' | '-' | '*' | '/')
+                if matches!(*op, '+' | '-' | '*' | '/' | '%' | '^')
                     && DBF_USED.with(|v| v.get())
                     && (da == Ty::Dyn || db == Ty::Dyn)
                     && matches!(da, Ty::I64 | Ty::F64 | Ty::Dyn)
@@ -16840,13 +16854,13 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
 
             if matches!(ta, Ty::Str | Ty::StrOwn) || matches!(tb, Ty::Str | Ty::StrOwn) {
                 Ty::StrOwn
-            } else if matches!(*op, '+' | '-' | '*' | '/')
+            } else if matches!(*op, '+' | '-' | '*' | '/' | '%' | '^')
                 && (ta == Ty::Dyn || tb == Ty::Dyn)
                 && matches!(ta, Ty::I64 | Ty::F64 | Ty::Dyn)
                 && matches!(tb, Ty::I64 | Ty::F64 | Ty::Dyn)
                 && DBF_USED.with(|v| v.get()) {
-                // Mirror of type_expr: D3 DBF decimal arithmetic via the
-                // runtime cell helper; the static result is a Dyn cell.
+                // Mirror of type_expr: D3/D5 DBF decimal arithmetic via
+                // the runtime cell helper; the static result is a Dyn cell.
                 Ty::Dyn
             } else if *op == '%' {
                 // Mirror of type_expr: runtime modulus is always F64.
