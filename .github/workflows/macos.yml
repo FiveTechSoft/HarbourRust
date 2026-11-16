@@ -53,3 +53,29 @@ jobs:
           actual=Path('smoke.stdout').read_bytes()
           assert actual == expected, (actual, expected)
           PY
+  native-arm64:
+    runs-on: macos-15
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Build the compiler
+        run: |
+          set -eu
+          test "$(uname -m)" = arm64
+          sw_vers
+          rustc --version
+          rustc --edition=2021 -O src/hbc.rs -o hbc
+      - name: Native Mach-O ARM64 smoke (loader, signature, dyld)
+        run: |
+          set -eu
+          printf 'function Main()\n? "hello", 2^10, Log(100)\nreturn nil\n' > smoke.prg
+          ./hbc smoke.prg smoke --target=macho-arm64
+          file smoke
+          otool -hl smoke | head -60
+          codesign -v -vvv smoke || true
+          ./smoke; echo "exit=$?"
+      - name: Native Mach-O ARM64 battery
+        if: always()
+        run: python3 tests/run_macho_arm64.py --hbc ./hbc
