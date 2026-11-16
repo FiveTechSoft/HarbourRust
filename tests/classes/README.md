@@ -41,3 +41,29 @@ gate prints.
 
 See [docs/CLASSES.md](../../docs/CLASSES.md) for the supported scope,
 the object model, and the full declared-limit list.
+
+## Mach-O Intel battery (`check_macho.sh`)
+
+Run on a real Mac with Python 3 installed:
+
+    sh tests/classes/check_macho.sh /absolute/path/to/current/hbc
+
+Build hbc from the current checkout first. The tracked Mac binary may
+predate the shared string-copy fix. An ARM64 hbc runs natively on Apple
+Silicon, but its emitted x86-64 programs require Rosetta 2. An Intel Mac
+needs an Intel build of hbc. This is not native ARM64 code generation.
+
+The runner compiles the 26 runnable class probes with `--target=macho`
+and checks exit status, empty stderr and exact stdout against `expected/`.
+These files are Linux baseline captures from the post-fix compiler at
+`f31d99dccabd020c654d15a6bda22041454153d1`, not a fresh Harbour oracle run.
+They test Linux-equivalent LF and QOut trailing-space semantics. The
+other 16 cases must produce their recorded named compile rejection,
+not an unrelated target error. `p03_readwrite` and `p07_self_chain` currently use a generic syntax rejection. Compilation and execution have timeouts;
+logs, return codes, compiler/source hashes and machine details remain
+in the printed evidence directory.
+
+Real-Mac execution and a fresh differential run against Harbour are
+PENDING. On Linux, the 26 runnable probes emitted Mach-O x86-64 and
+the other 16 produced named rejections. This is emission evidence,
+not proof of loading or execution on a Mac.

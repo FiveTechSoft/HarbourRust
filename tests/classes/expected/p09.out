@@ -1,0 +1,4 @@
+
+after T(), x =          7
+NEW-RAN
+after New(), x =          7

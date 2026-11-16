@@ -1,0 +1,16 @@
+neg1	error: line 8: class `a` has no member `new2`
+neg2	error: line 9: cannot assign to METHOD `m` of class `a` (methods are not assignable)
+neg3	error: line 10: DATA `x` holding an object is not in this increment (reference-cycle management pending)
+neg5	error: class `a`: DATA `x` INIT is scalar-only in this increment (no arrays, hashes, codeblocks or message sends)
+neg6	error: class `a`: duplicate DATA `x`
+neg7	error: class `a`: METHOD `m` declared but never defined
+neg8	error: class `b` inherits from unknown class `nosuch` (declare the parent before the child in this increment)
+neg9	error: line 5: `a(...)` with arguments is not in this increment (call `:New(...)` on the instance)
+neg10	error: line 9: type mismatch in assignment to `b` (a `a` is not a `b`)
+neg11	error: line 6: `:x` on a non-object value (an integer)
+neg12	error: line 10: `!=`/`#` on objects is not in this increment (Harbour raises BASE/1072)
+neg13	error: line 6: comparing an object with a dynamic value is not in this increment
+neg14_ambig_member	error: line 14: `:x` is ambiguous in this increment: the hierarchies rooted at `a` and `b` both own it (Harbour resolves the member at runtime; pin the receiver to one hierarchy first)
+p03_readwrite	error: line 15: unexpected token Eq in expression
+p07_self_chain	error: line 10: unexpected token Eq in expression
+p21_multi_inherit	error: line 13: multiple inheritance is not in this increment (oracle cl21: Harbour accepts it)
