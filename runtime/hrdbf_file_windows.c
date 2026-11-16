@@ -120,7 +120,12 @@ hrdbf_error hrdbf_file_append(hrdbf_file*f,uint32_t*recno){
   grown[4]=(unsigned char)c;grown[5]=(unsigned char)(c>>8);
   grown[6]=(unsigned char)(c>>16);grown[7]=(unsigned char)(c>>24);
  }
+ /* Harbour DBFCDX append flush also clears the production-index flag
+  * (byte 28): measured on M_CLIE (flag set, no structural index opened).
+  * Record writes never touch the header (measured the same way). */
+ grown[28]=0;
  e=write_at(f,1,grown+1,7);if(e)goto fail;
+ e=write_at(f,28,grown+28,1);if(e)goto fail;
  e=write_at(f,off,grown+off,(size_t)(newsize-off));if(e)goto fail;
  if(!hrdbfw_release(f->owned)){e=HRDBF_IO;goto fail;}
  f->owned=grown;f->size=(size_t)newsize;

@@ -193,7 +193,7 @@ static void hrdbf_app_require_writable(void){
  if(hrdbf_app_order.index.bytes)hrdbf_app_fail("hbc: DBF field write with an open index is outside this increment\n");
  if(hrdbf_app_state.area.recno>hrdbf_app_state.area.count)hrdbf_app_fail("hbc: DBF field write with no record positioned\n");
 }
-void hrdbf_app_set_ord(int64_t n,uint64_t tag,uint64_t pay){
+void hrdbf_app_fieldput(int64_t n,uint64_t tag,uint64_t pay){
  hrdbf_file *f=&hrdbf_app_state;const hrdbf_field *fd;unsigned char *rec;
  unsigned k;hrdbf_error e=HRDBF_OK;hrv_cell c={tag,pay};
  hrdbf_app_require_writable();
@@ -239,7 +239,7 @@ void hrdbf_app_set_name(const unsigned char *p,size_t len,uint64_t tag,uint64_t 
   while(nl<sizeof a->fields[i].name&&nm[nl])nl++;
   if(nl!=len)continue;
   for(j=0;j<len;j++)if(cxupper(p[j])!=cxupper(nm[j]))break;
-  if(j==len){hrdbf_app_set_ord((int64_t)i+1,tag,pay);return;}
+  if(j==len){hrdbf_app_fieldput((int64_t)i+1,tag,pay);return;}
  }
  hrdbf_app_field_missing(p,len);
 }

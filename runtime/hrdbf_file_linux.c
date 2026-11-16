@@ -111,10 +111,16 @@ hrdbf_error hrdbf_file_append(hrdbf_file *f,uint32_t *recno){
   grown[4]=(unsigned char)c;grown[5]=(unsigned char)(c>>8);
   grown[6]=(unsigned char)(c>>16);grown[7]=(unsigned char)(c>>24);
  }
+ /* Harbour DBFCDX append flush also clears the production-index flag
+  * (byte 28): measured on M_CLIE (flag set, no structural index opened).
+  * Record writes never touch the header (measured the same way). */
+ grown[28]=0;
  /* write-back: header bytes 1..7, then record + EOF marker */
  {
   size_t left;long w;uint64_t at;
   p=grown+1;left=7;at=1;
+  while(left){w=syscall4(18,f->fd,(long)p,left,(long)at);if(w==-4)continue;if(w<=0||(size_t)w>left){e=HRDBF_IO;goto fail;}p+=w;at+=w;left-=(size_t)w;}
+  p=grown+28;left=1;at=28;
   while(left){w=syscall4(18,f->fd,(long)p,left,(long)at);if(w==-4)continue;if(w<=0||(size_t)w>left){e=HRDBF_IO;goto fail;}p+=w;at+=w;left-=(size_t)w;}
   p=grown+off;left=(size_t)(newsize-off);at=off;
   while(left){w=syscall4(18,f->fd,(long)p,left,(long)at);if(w==-4)continue;if(w<=0||(size_t)w>left){e=HRDBF_IO;goto fail;}p+=w;at+=w;left-=(size_t)w;}

@@ -974,6 +974,17 @@ fn encode_into(e: &Enc, out: &mut Vec<u8>, ripp: &mut RipPatches, mnem0: &str, o
         }
         return Err("lea forma".into());
     }
+    // imul de un operando (F7 /5): rdx:rax = rax * r/m; el grupo de abajo
+    // no lo cubre y las formas de 2/3 operandos viven en el bloque imul.
+    if m == "imul" && ops.len() == 1 {
+        let wd = sfx.or_else(|| reg_width(ops)).ok_or("imul sin ancho")?;
+        let rm = &ops[0];
+        if wd == 16 { out.push(0x66); }
+        if let Some(r) = rex_for(wd == 64, 5, rm, false) { out.push(r); }
+        out.push(if wd == 8 { 0xF6 } else { 0xF7 });
+        emit_modrm(out, ripp, e, 5, rm)?;
+        return Ok(());
+    }
     // inc/dec/neg/not/div: FF/F7 grupos
     if let Some((op1, digit)) = match m { "inc" => Some((0xFFu8, 0u8)), "dec" => Some((0xFF, 1)), "neg" => Some((0xF7, 3)), "not" => Some((0xF7, 2)), "div" => Some((0xF7, 6)), "mul" => Some((0xF7, 4)), "idiv" => Some((0xF7, 7)), _ => None } {
         let wd = sfx.or_else(|| reg_width(ops)).ok_or(format!("{} sin ancho", m))?;

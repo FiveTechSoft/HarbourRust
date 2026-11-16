@@ -37,7 +37,7 @@
 #define hrdbf_app_get hrdbfw_app_get
 #define hrdbf_app_get_ord hrdbfw_app_get_ord
 #define hrdbf_app_get_name hrdbfw_app_get_name
-#define hrdbf_app_set_ord hrdbfw_app_set_ord
+#define hrdbf_app_fieldput hrdbfw_app_fieldput
 #define hrdbf_app_set_name hrdbfw_app_set_name
 #define hrdbf_app_append hrdbfw_app_append
 #define hrdbf_app_field_missing hrdbfw_app_field_missing

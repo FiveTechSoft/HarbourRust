@@ -12,7 +12,12 @@ flags=['-std=c99','-O2','-S','-ffreestanding','-fno-builtin','-fno-stack-protect
 out=root/'generated/hrdbf_linux.s';raw=root/'generated/hrdbf_linux.raw.s'
 p=subprocess.run(['gcc',*flags,'runtime/hrdbf_embedded_linux.c','-o',str(raw)],cwd=root,capture_output=True);assert p.returncode==0,p.stderr
 s=raw.read_text();s=re.sub(r'\.section[^\n]*\.rodata\.str1\.[18][^\n]*', '.section\t.rodata', s)
-s=re.sub(r'\.L([A-Za-z0-9_.$]+)',r'.Lhrdbf_\1',s);s=re.sub(r'^\s*\.file\s+.*\n','',s,flags=re.M)
+s=re.sub(r'\.section[^\n]*\.rodata\.[A-Za-z0-9]+[^\n]*', '.section\t.rodata', s)  # cst8/stra pools: hbc's assembler knows plain .rodata only
+s=re.sub(r'\.L([A-Za-z0-9_.$]+)',r'.Lhrdbf_\1',s);s=s.replace('movabsq','movabs')
+s=re.sub(r'^(\s*(?:sal|sar|shl|shr|rol|ror)[bwlq]?)\s+(%\w+)\s*$',r'\1 $1, \2',s,flags=re.M)  # one-operand shift -> explicit $1 (same as the Windows blob step)
+s=re.sub(r'^\s*\.file\s+.*\n','',s,flags=re.M)
+s=re.sub(r'^\s*\.local\s+.*\n','',s,flags=re.M)
+s=re.sub(r'^\s*\.comm\s+(\S+),(\d+),(\d+)\s*$',lambda m: '\n.bss\n.balign '+m[3]+'\n'+m[1]+':\n.zero '+m[2]+'\n.text',s,flags=re.M)  # hbc's assembler takes no .comm; emit ordinary BSS storage  # gcc may declare new statics .local; hbc's assembler takes no .local
 assert not re.search(r'\.cfi|\.eh_frame|@GOT|@PLT|\.got|\.plt',s)
 # GCC may emit unprefixed static switch/date tables, not just .L labels.
 for label in re.findall(r'^([A-Za-z_.$][A-Za-z0-9_.$]*):',s,re.M):
@@ -27,6 +32,17 @@ for label in labels:
  if label.startswith(('hrdbf_','hrv_','hrntx_','hrcdx_')):
   s=s.replace(label+':',label+':\n.Lhrdbf_entry_'+label+':')
   s=re.sub(r'\b(call|jmp)\s+'+re.escape(label)+r'(?![A-Za-z0-9_.$])',r'\1 .Lhrdbf_entry_'+label,s)
+# hbc's internal assembler takes no escape sequences inside string
+# directives: rewrite .string/.ascii payloads with escapes as .byte lists
+# (.string keeps its terminating NUL).
+import ast as _ast
+def _deescape(m):
+    directive, payload = m.group(1), m.group(2)
+    bs = _ast.literal_eval('b' + payload)
+    if directive == 'string': bs = bs + b'\0'
+    return '\t.byte ' + ','.join(str(b) for b in bs)
+s = re.sub(r'^\s*\.(string|ascii)\s+("(?:[^"\\]|\\.)*")\s*$', lambda m: _deescape(m) if '\\' in m.group(2) else m.group(0), s, flags=re.M)
+assert not re.search(r'^\s*\.(string|ascii)\s+".*\\', s, flags=re.M)
 out.write_text(s)
 obj=root/'generated/hrdbf_linux.o';subprocess.run(['as',str(out),'-o',str(obj)],check=True)
 u=subprocess.check_output(['nm','-u',str(obj)],text=True);assert not u,u

@@ -1711,7 +1711,7 @@ fn dbf_result(id: &str) -> Option<Ty> {
             _ => {}
         }
     }
-    match id { "fieldget" | "dbclosearea" | "dbgotop" | "dbgobottom" | "ordlistclear" | "dbskip" | "dbffieldref" => Some(Ty::Dyn),
+    match id { "fieldget" | "dbclosearea" | "dbgotop" | "dbgobottom" | "ordlistclear" | "dbskip" | "dbffieldref" | "dbappend" | "fieldput" | "dbffieldput" | "dbcommit" | "dbdelete" | "dbrecall" | "dbgoto" | "ordcreate" | "ordsetfocus" => Some(Ty::Dyn),
         "recno" | "lastrec" => Some(Ty::I64), "bof" | "eof" | "deleted" | "dbusearea" | "ordlistadd" | "dbseek" | "found" => Some(Ty::Bool), _ => None }
 }
 
@@ -2473,7 +2473,32 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                 *i += 1;
                 out.push(Stmt::Try(n, body, catch, finally));
             }
-            Tok::Ident(id) if hb_rdd() && toks.len() >= 6 && toks[1] == Tok::Minus && toks[2] == Tok::Gt
+            Tok::Ident(id) if id.eq_ignore_ascii_case("replace") => {
+                // REPLACE field WITH expr (D2 write increment): the unscoped
+                // single-field form over the current record, lowered to the
+                // same dbffieldput(name, alias, expr) call the assignment
+                // lowering emits. The multi-field form and the FOR/WHILE/
+                // NEXT/REST/ALL/RECORD scopes are outside this increment.
+                let rest=&toks[1..];
+                if rest.iter().any(|t| matches!(t, Tok::Comma)) {
+                    return Err(format!("line {}: REPLACE with several fields is outside this increment (one REPLACE per field)", n));
+                }
+                let (f,alias,et) = if rest.len() >= 6 && matches!(&rest[1],Tok::Minus) && matches!(&rest[2],Tok::Gt) {
+                    let a=match &rest[0] {Tok::Ident(a)=>a.clone(),_=>return Err(format!("line {}: REPLACE expects a field or alias->field name",n))};
+                    let f=match &rest[3] {Tok::Ident(f)=>f.clone(),_=>return Err(format!("line {}: REPLACE expects a field name after ->",n))};
+                    if !matches!(&rest[4],Tok::Ident(w) if w.eq_ignore_ascii_case("with")) {return Err(format!("line {}: REPLACE expects WITH",n));}
+                    (f, if a.eq_ignore_ascii_case("field")||a.eq_ignore_ascii_case("_field") {String::new()} else {a.to_ascii_uppercase()}, &rest[5..])
+                } else {
+                    let f=match rest.first() {Some(Tok::Ident(f))=>f.clone(),_=>return Err(format!("line {}: REPLACE expects a field or alias->field name",n))};
+                    if !matches!(rest.get(1),Some(Tok::Ident(w)) if w.eq_ignore_ascii_case("with")) {return Err(format!("line {}: REPLACE expects WITH",n));}
+                    (f, String::new(), &rest[2..])
+                };
+                let e = parse_expr_tokens(et.to_vec(), n)?;
+                out.push(Stmt::CallStmt(n, Expr::Call("dbffieldput".to_string(), vec![Expr::Str(f), Expr::Str(alias), e])));
+                *i += 1;
+                continue;
+            }
+            Tok::Ident(id) if toks.len() >= 6 && toks[1] == Tok::Minus && toks[2] == Tok::Gt
                 && matches!(&toks[3], Tok::Ident(_)) && matches!(toks[4], Tok::Assign | Tok::Eq)
                 && !id.eq_ignore_ascii_case("m") && !id.eq_ignore_ascii_case("memvar") => {
                 // --harbour-rdd field store: alias->name := e (FIELD-> / _FIELD-> mean
@@ -5650,6 +5675,18 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                     for a in args {if !matches!(type_expr(a,env,sigs,n)?,Ty::I64|Ty::Dyn){return Err(format!("line {}: {} expects integer position",n,id));}}
                 } else if id=="dbffieldref" {
                     if args.is_empty() || args.len()>2 || !args.iter().all(|a|matches!(a,Expr::Str(_))) {return Err(format!("line {}: internal field reference expects a literal field name and optional alias",n));}
+                } else if id=="fieldput" {
+                    if args.len()!=2 || !matches!(type_expr(&args[0],env,sigs,n)?,Ty::I64) {return Err(format!("line {}: FieldPut expects an integer field position and a C/N/D/L value",n));}
+                    if !matches!(type_expr(&args[1],env,sigs,n)?,Ty::I64|Ty::F64|Ty::Str|Ty::StrOwn|Ty::Bool|Ty::Date|Ty::Dyn) {return Err(format!("line {}: FieldPut value must be a C/N/D/L scalar",n));}
+                } else if id=="dbffieldput" {
+                    if args.len()!=3 || !matches!(&args[0],Expr::Str(_)) || !matches!(&args[1],Expr::Str(_)) {return Err(format!("line {}: internal field store expects a literal field name, alias and value",n));}
+                    if matches!(&args[1], Expr::Str(m) if m=="\u{1}bare") {
+                        let f=match &args[0] {Expr::Str(f)=>f.to_ascii_uppercase(),_=>String::new()};
+                        return Err(format!("line {}: `{} := ...` assigns an undeclared name; Harbour 3.2 stores that in a memvar, not in the field (measured), and hbc does not create memvars implicitly: write FIELD->{} := ... or ALIAS->{} := ... to store the field",n,f,f,f));
+                    }
+                    if !matches!(type_expr(&args[2],env,sigs,n)?,Ty::I64|Ty::F64|Ty::Str|Ty::StrOwn|Ty::Bool|Ty::Date|Ty::Dyn) {return Err(format!("line {}: DBF field store expects a C/N/D/L value",n));}
+                } else if matches!(id.as_str(),"dbcommit"|"dbdelete"|"dbrecall"|"dbgoto"|"ordcreate"|"ordsetfocus") {
+                    return Err(format!("line {}: {} is outside this DBF increment",n,id));
                 } else if !args.is_empty(){return Err(format!("line {}: {} takes no arguments",n,id));}
                 return Ok(ty);
             }
@@ -12879,7 +12916,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                     let it=strs.len();strs.push(v.clone());
                     out.push_str(&format!("    lea .Lstr{}(%rip), %rdi\n    mov ${}, %esi\n    lea hbc_strcpy(%rip), %rdx\n    call hrdbf_app_ordsetfocus\n", it, v.len()));
                 },
-                "dbffieldput" => {
+                "dbffieldput" if hb_rdd() => {
                     // ALIAS->NAME := e / FIELD->NAME := e (flag only): the value as an
                     // owned Dyn cell, the field by name like dbffieldref, then
                     // the RDD's direct field store.
@@ -12899,6 +12936,31 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                     if !alias.is_empty() { out.push_str("    mov 16(%rsp), %rdi\n    call hrdbf_app_area_restore\n"); }
                     cg_dyn_stack_release(out,0,false);
                     out.push_str("    add $32, %rsp\n    mov $1, %eax\n    xor %edx, %edx\n");
+                },
+                "dbffieldput" => {
+                    // Native single-workarea store: same Dyn value marshaling,
+                    // the run-time fieldpos lookup dbffieldref uses, then the
+                    // direct ordinal store. An alias never opened in the
+                    // program fails at compile time like the read path.
+                    let name=match &args[0] {Expr::Str(f)=>f.clone(),_=>unreachable!("checked")};
+                    let alias=match &args[1] {Expr::Str(a)=>a.to_ascii_uppercase(),_=>unreachable!("checked")};
+                    let known=alias.is_empty()||DBF_ALIASES.with(|v|v.borrow().contains(&alias));
+                    let alias_msg=format!("Error BASE/1002  Alias does not exist: {}\n",alias);
+                    let field_msg=format!("Error BASE/1003  Variable does not exist: {}\n",name.to_ascii_uppercase());
+                    let (ia,ifd,iname)=(strs.len(),strs.len()+1,strs.len()+2);
+                    strs.push(alias_msg.clone());strs.push(field_msg.clone());strs.push(name.clone());
+                    let k=DBF_FIELD_SITE.with(|c|{let k=c.get();c.set(k+1);k});
+                    if !known {
+                        out.push_str(&format!("    lea .Lstr{}(%rip), %rdi\n    mov ${}, %esi\n    call hrm_fail\n",ia,alias_msg.len()));
+                    } else {
+                        cg_data_value(&args[2],env,sigs,strs,out,target);
+                        out.push_str(&format!("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n    lea .Lstr{}(%rip), %rdi\n    mov ${}, %esi\n    call hrdbf_app_fieldpos\n    test %rax, %rax\n    jg .Ldbfput_ok{}\n",iname,name.len(),k));
+                        if !alias.is_empty() {out.push_str(&format!("    jz .Ldbfput_nofield{}\n    lea .Lstr{}(%rip), %rdi\n    mov ${}, %esi\n    call hrm_fail\n.Ldbfput_nofield{}:\n",k,ia,alias_msg.len(),k));}
+                        out.push_str(&format!("    lea .Lstr{}(%rip), %rdi\n    mov ${}, %esi\n    call hrm_fail\n.Ldbfput_ok{}:\n    mov %rax, %rdi\n    mov (%rsp), %rsi\n    mov 8(%rsp), %rdx\n    call hrdbf_app_fieldput\n",ifd,field_msg.len(),k));
+                        cg_dyn_stack_release(out,0,false);
+                        out.push_str("    add $32, %rsp\n");
+                    }
+                    out.push_str("    mov $1, %eax\n    xor %edx, %edx\n");
                 },
                 "dbffieldref" if hb_rdd() => {
                     // Same contract as the default lowering below, with real
