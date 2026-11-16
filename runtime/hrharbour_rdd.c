@@ -350,12 +350,14 @@ HR_SYSV uint64_t hrdbf_app_equal( uint64_t ta, uint64_t pa, uint64_t tb, uint64_
    if( hrv_equal( a, b, &yes ) ) hr_fail( "hbc: DBF scalar comparison is outside this increment\n" );
    return ( uint64_t ) yes;
 }
+/* D4: ordering comparisons widen numerics by value (hrv_compare) -
+ * identical semantics to the native adapter. */
 HR_SYSV int64_t hrdbf_app_compare( uint64_t ta, uint64_t pa, uint64_t tb, uint64_t pb )
 {
-   hrv_cell a = { ta, pa }, b = { tb, pb }; int64_t x, y;
+   hrv_cell a = { ta, pa }, b = { tb, pb }; int64_t r; hrv_error e;
    if( hrv_kind( a ) == HRV_DATE && hrv_kind( b ) == HRV_DATE ) return pa < pb ? -1 : pa > pb;
-   x = hrdbf_app_integer( ta, pa ); y = hrdbf_app_integer( tb, pb );
-   return x < y ? -1 : x > y;
+   e = hrv_compare( a, b, &r ); if( e ) hr_fail( "hbc: DBF scalar comparison is outside this increment\n" );
+   return r;
 }
 HR_SYSV uint64_t hrdbf_app_empty( uint64_t t, uint64_t p )
 {

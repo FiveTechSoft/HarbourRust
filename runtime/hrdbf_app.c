@@ -263,13 +263,16 @@ int64_t hrdbf_app_integer(uint64_t tag,uint64_t pay){
 }
 uint64_t hrdbf_app_equal(uint64_t ta,uint64_t pa,uint64_t tb,uint64_t pb){
  hrv_cell a={ta,pa},b={tb,pb};int yes;hrv_error e=hrv_equal(a,b,&yes);
- if(e==HRV_DECIMAL_I64)hrdbf_app_fail("hbc: DBF decimal numeric cannot enter I64 operation\n");
  if(e)hrdbf_app_fail("hbc: DBF scalar comparison is outside this increment\n");return (uint64_t)yes;
 }
+/* D4: ordering comparisons widen numerics by value (hrv_compare); the
+ * DATE x DATE arm stays here. A decimal field or a float cell against a
+ * non-numeric is the same clean typed failure as before (Harbour's
+ * BASE/1073-1076 dialog is the registered failure-mode difference). */
 int64_t hrdbf_app_compare(uint64_t ta,uint64_t pa,uint64_t tb,uint64_t pb){
- hrv_cell a={ta,pa},b={tb,pb};int64_t x,y;
+ hrv_cell a={ta,pa},b={tb,pb};int64_t r;hrv_error e;
  if(hrv_kind(a)==HRV_DATE&&hrv_kind(b)==HRV_DATE){if(hrv_validate(a)||hrv_validate(b))hrdbf_app_fail("hbc: DBF invalid Date comparison\n");return pa<pb?-1:pa>pb;}
- x=hrdbf_app_integer(ta,pa);y=hrdbf_app_integer(tb,pb);return x<y?-1:x>y;
+ e=hrv_compare(a,b,&r);if(e)hrdbf_app_fail("hbc: DBF scalar comparison is outside this increment\n");return r;
 }
 uint64_t hrdbf_app_empty(uint64_t t,uint64_t p){
  hrv_cell c={t,p};unsigned k=hrv_kind(c);int yes;hrv_error e;

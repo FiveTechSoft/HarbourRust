@@ -28,6 +28,12 @@ hrv_error hrv_empty(hrv_cell,int *);
  * max(+,-), sum(*), 2(/). A real zero divisor (+-0.0) is HRV_ZERODIV; NaN
  * divides through. NIL and non-numeric operands are HRV_TYPE. */
 hrv_error hrv_arith(unsigned,hrv_cell,hrv_cell,hrv_cell *);
+/* D4: ordering comparison with the same numeric widening as hrv_equal:
+ * both operands numeric (i64-extractable or decimal/double) compare BY
+ * VALUE; the i64 x i64 fast path stays integer-exact. -1/0/1 out.
+ * Non-numeric mixes are HRV_TYPE (NIL ordering is a Harbour type error;
+ * the adapters report it clean). Dates stay in the app layer. */
+hrv_error hrv_compare(hrv_cell,hrv_cell,int64_t *);
 /* New scalar types only; returns exact field/string byte length, no NUL contract.
  * Date format is mm/dd/yy matching current default Date render, blank='  /  /  '. */
 hrv_error hrv_render(hrv_cell,unsigned char *,size_t,size_t *);

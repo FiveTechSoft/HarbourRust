@@ -1,6 +1,7 @@
 #include "hrdyn.h"
 /* Own MIT. No libc or allocation. Scalar tags11/12 keep the16-byte ABI. */
 #include "hrvalue.h"
+static hrv_error hrv_to_double(hrv_cell,double *,unsigned *);
 hrv_cell hrv_date(uint32_t p){hrv_cell v={HRV_DATE,p};return v;}
 hrv_cell hrv_number(int64_t p,unsigned width,unsigned decimals){hrv_cell v={HRV_FIELD_NUMERIC|((uint64_t)decimals<<8)|((uint64_t)width<<16),(uint64_t)p};return v;}
 hrv_error hrv_validate(hrv_cell v){
@@ -32,7 +33,23 @@ hrv_error hrv_equal(hrv_cell a,hrv_cell b,int *out){
  if(ka==HRV_DATE&&kb==HRV_DATE){*out=a.payload==b.payload;return HRV_OK;}
  if(ka==HRV_NIL||kb==HRV_NIL){*out=ka==kb;return HRV_OK;}
  if(ka==HRV_LOGICAL&&kb==HRV_LOGICAL){*out=!!a.payload==!!b.payload;return HRV_OK;}
- e=hrv_i64(a,&na);if(e)return e;e=hrv_i64(b,&nb);if(e)return e;*out=na==nb;return HRV_OK;
+ /* D4: numerics compare BY VALUE (Harbour hb_vmEqual measured: SALDO =
+ * 1000.050 is .T. though the decimals differ). Fast path i64 x i64 is
+ * integer-exact; otherwise both widen to double (field N: payload/10^dec,
+ * matching the ASCII read). A numeric against a non-numeric stays the
+ * typed failure (Harbour's BASE/1071 dialog is the registered
+ * failure-mode difference). IEEE rule: NaN compares unequal. */
+ if(hrv_i64(a,&na)==HRV_OK&&hrv_i64(b,&nb)==HRV_OK){*out=na==nb;return HRV_OK;}
+ {double da,db;unsigned ca,cb;
+  if(hrv_to_double(a,&da,&ca)==HRV_OK&&hrv_to_double(b,&db,&cb)==HRV_OK){*out=da==db;return HRV_OK;}}
+ return HRV_TYPE;
+}
+hrv_error hrv_compare(hrv_cell a,hrv_cell b,int64_t *out){
+ int64_t na,nb;hrv_error e=hrv_validate(a);if(e)return e;e=hrv_validate(b);if(e)return e;
+ if(hrv_i64(a,&na)==HRV_OK&&hrv_i64(b,&nb)==HRV_OK){*out=na<nb?-1:na>nb;return HRV_OK;}
+ {double da,db;unsigned ca,cb;
+  if(hrv_to_double(a,&da,&ca)==HRV_OK&&hrv_to_double(b,&db,&cb)==HRV_OK){*out=da<db?-1:da>db?1:0;return HRV_OK;}}
+ return HRV_TYPE;
 }
 hrv_error hrv_empty(hrv_cell v,int *out){
  hrv_error e=hrv_validate(v);if(e)return e;

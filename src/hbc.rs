@@ -7939,10 +7939,19 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 return Ok(Ty::Bool);
             }
             if (ta == Ty::Dyn && tb == Ty::F64) || (ta == Ty::F64 && tb == Ty::Dyn) {
-                // Covered LIMIT (same reason as arithmetic): a number-
-                // holding Dyn compares fine in Harbour; this PoC's Dyn
-                // has no float payload tag - named rejection instead of
-                // a silent i64 extraction (63zc).
+                // D4 DBF decimal comparisons: with DBF active a Dyn
+                // operand against a float compares BY VALUE at runtime
+                // through the hooked helpers (hrdbf_app_equal/compare
+                // widen numerics via hrv_equal/hrv_compare; oracle test6,
+                // 20/20). Dyn x I64 and Dyn x Dyn already pass above.
+                if DBF_USED.with(|v| v.get()) {
+                    return Ok(Ty::Bool);
+                }
+                // Covered LIMIT outside DBF (same reason as arithmetic):
+                // a number-holding Dyn compares fine in Harbour; without
+                // the DBF hooks this PoC's Dyn compares floats only
+                // through the registered rejection, not a silent i64
+                // extraction (63zc).
                 return Err(format!("line {}: comparing a NIL-able (Dyn) value with a float is a covered LIMIT of this increment (Harbour runs it when the Dyn holds a number; this PoC's Dyn has no float payload - registered divergence)", n));
             }
             if ta != tb {
@@ -17643,6 +17652,57 @@ fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<Strin
                 }
                 out.push_str(&format!(".Ldye{}:\n", lid));
             } else {
+                // D4 DBF decimal comparisons: with DBF active, a Dyn
+                // operand over numeric mixes (I64/F64/Dyn, checked in
+                // analysis) boxes BOTH operands as Dyn cells and
+                // dispatches through the hooked helpers (hbc_dyn_eq /
+                // hbc_dynxeq_dd / hbc_dynxcmp): field tags 11/12 and
+                // float tag 5 route to hrdbf_app_equal/compare, which
+                // widen numerics and compare BY VALUE (test6 oracle).
+                // Boxing mirrors the D3 arithmetic path: Dyn as-is;
+                // I64 -> tag 0; F64 -> legacy inline float cell (tag
+                // 5|(dec<<8), payload the IEEE-754 bits). Runtime NIL
+                // and string casillas fall through the hooks to the
+                // helpers' original logic, identical to the paths below.
+                if DBF_USED.with(|v| v.get())
+                    && matches!(ta, Ty::I64 | Ty::F64 | Ty::Dyn)
+                    && matches!(tb, Ty::I64 | Ty::F64 | Ty::Dyn)
+                {
+                    if ta == Ty::F64 {
+                        cg_f64_load(a, env, sigs, strs, out, target);
+                        out.push_str("    movq %xmm0, %rdx\n    mov %rdi, %rax\n    and $65535, %eax\n    shl $8, %rax\n    or $5, %al\n");
+                    } else {
+                        cg_expr(a, env, sigs, strs, out, target);
+                        if ta != Ty::Dyn { out.push_str("    mov %rax, %rdx\n    xor %eax, %eax\n"); }
+                    }
+                    out.push_str("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+                    if tb == Ty::F64 {
+                        cg_f64_load(b, env, sigs, strs, out, target);
+                        out.push_str("    movq %xmm0, %r8\n    mov %rdi, %rcx\n    and $65535, %ecx\n    shl $8, %rcx\n    or $5, %cl\n");
+                    } else {
+                        cg_expr(b, env, sigs, strs, out, target);
+                        if tb == Ty::Dyn { out.push_str("    mov %rax, %rcx\n    mov %rdx, %r8\n"); }
+                        else { out.push_str("    mov %rax, %r8\n    xor %ecx, %ecx\n"); }
+                    }
+                    out.push_str("    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    add $32, %rsp\n");
+                    match op {
+                        CmpOp::Eq | CmpOp::Ne | CmpOp::EqEq => {
+                            match op {
+                                CmpOp::EqEq => out.push_str("    call hbc_dynxeq_dd\n"),
+                                _ => out.push_str("    call hbc_dyn_eq\n"),
+                            }
+                            out.push_str("    test %rax, %rax\n");
+                            let j = match op { CmpOp::Eq | CmpOp::EqEq => "jnz", _ => "jz" };
+                            out.push_str(&format!("    {} {}\n", j, true_label));
+                        }
+                        _ => {
+                            let sel = match op { CmpOp::Lt => 1, CmpOp::Gt => 2, CmpOp::Le => 3, CmpOp::Ge => 4, _ => unreachable!("CmpOp variants") };
+                            out.push_str(&format!("    mov ${}, %r9d\n    call hbc_dynxcmp\n    test %rax, %rax\n", sel));
+                            let j = match op { CmpOp::Lt => "js", CmpOp::Le => "jle", CmpOp::Gt => "jg", CmpOp::Ge => "jns", _ => unreachable!() };
+                            out.push_str(&format!("    {} {}\n", j, true_label));
+                        }
+                    }
+                } else {
                 match op {
                     CmpOp::Eq | CmpOp::Ne | CmpOp::EqEq => {
                         // Tag-dispatch equality: NIL = NIL is .T., NIL
@@ -17727,6 +17787,7 @@ fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<Strin
                         };
                         out.push_str(&format!("    {} {}\n", j, true_label));
                     }
+                }
                 }
             }
         }
@@ -25607,9 +25668,12 @@ hbc_persistent_payload_release:
                 result=result.replace(&label,&format!("{}    cmpb $11, %al\n    je hbc_dbf_print\n    cmpb $12, %al\n    je hbc_dbf_print\n",label));
             }
             result=result.replace("hbc_dyn_to_i64:\n", "hbc_dyn_to_i64:\n    cmpb $12, %al\n    jne .Ldbfi64old\n    mov %rax, %rdi\n    mov %rdx, %rsi\n    sub $8, %rsp\n    call hrdbf_app_integer\n    add $8, %rsp\n    xor %edx, %edx\n    ret\n.Ldbfi64old:\n");
+            // D4: kind-5 Dyn float cells (D3 arithmetic results) route to
+            // the DBF comparison wrappers exactly like field tags 11/12:
+            // numerics widen and compare BY VALUE (hrv_equal/hrv_compare).
             for (helper,wrapper) in [("hbc_dyn_eq","hbc_dbf_equal"),("hbc_dynxeq_dd","hbc_dbf_equal"),("hbc_dynxcmp","hbc_dbf_compare")] {
                 let label=format!("{}:\n",helper);
-                result=result.replace(&label,&format!("{}    cmpb $5, %al\n    je hbc_dbf_unsupported\n    cmpb $5, %cl\n    je hbc_dbf_unsupported\n    cmpb $11, %al\n    je {}\n    cmpb $12, %al\n    je {}\n    cmpb $11, %cl\n    je {}\n    cmpb $12, %cl\n    je {}\n",label,wrapper,wrapper,wrapper,wrapper));
+                result=result.replace(&label,&format!("{}    cmpb $5, %al\n    je {}\n    cmpb $5, %cl\n    je {}\n    cmpb $11, %al\n    je {}\n    cmpb $12, %al\n    je {}\n    cmpb $11, %cl\n    je {}\n    cmpb $12, %cl\n    je {}\n",label,wrapper,wrapper,wrapper,wrapper,wrapper,wrapper));
             }
             if result.contains("hbc_eprint_dyn:") {
                 for helper in ["hbc_eprint_dyn","hbc_eprint_dyncell"] {let label=format!("{}:\n",helper);result=result.replace(&label,&format!("{}    cmpb $11, %al\n    je hbc_dbf_eprint\n    cmpb $12, %al\n    je hbc_dbf_eprint\n",label));}
@@ -27558,9 +27622,12 @@ hbc_seq_exc: .skip 4096
                 result=result.replace(&label,&format!("{}    cmpb $11, %al\n    je hbc_dbf_print\n    cmpb $12, %al\n    je hbc_dbf_print\n",label));
             }
             result=result.replace("hbc_dyn_to_i64:\n", "hbc_dyn_to_i64:\n    cmpb $12, %al\n    jne .Ldbfi64old\n    mov %rax, %rdi\n    mov %rdx, %rsi\n    sub $8, %rsp\n    call hrdbf_app_integer\n    add $8, %rsp\n    xor %edx, %edx\n    ret\n.Ldbfi64old:\n");
+            // D4: kind-5 Dyn float cells (D3 arithmetic results) route to
+            // the DBF comparison wrappers exactly like field tags 11/12:
+            // numerics widen and compare BY VALUE (hrv_equal/hrv_compare).
             for (helper,wrapper) in [("hbc_dyn_eq","hbc_dbf_equal"),("hbc_dynxeq_dd","hbc_dbf_equal"),("hbc_dynxcmp","hbc_dbf_compare")] {
                 let label=format!("{}:\n",helper);
-                result=result.replace(&label,&format!("{}    cmpb $5, %al\n    je hbc_dbf_unsupported\n    cmpb $5, %cl\n    je hbc_dbf_unsupported\n    cmpb $11, %al\n    je {}\n    cmpb $12, %al\n    je {}\n    cmpb $11, %cl\n    je {}\n    cmpb $12, %cl\n    je {}\n",label,wrapper,wrapper,wrapper,wrapper));
+                result=result.replace(&label,&format!("{}    cmpb $5, %al\n    je {}\n    cmpb $5, %cl\n    je {}\n    cmpb $11, %al\n    je {}\n    cmpb $12, %al\n    je {}\n    cmpb $11, %cl\n    je {}\n    cmpb $12, %cl\n    je {}\n",label,wrapper,wrapper,wrapper,wrapper,wrapper,wrapper));
             }
             if result.contains("hbc_eprint_dyn:") {
                 for helper in ["hbc_eprint_dyn","hbc_eprint_dyncell"] {let label=format!("{}:\n",helper);result=result.replace(&label,&format!("{}    cmpb $11, %al\n    je hbc_dbf_eprint\n    cmpb $12, %al\n    je hbc_dbf_eprint\n",label));}
