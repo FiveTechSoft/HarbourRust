@@ -4198,12 +4198,26 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
             _ => false,
         }
     }
+    // Date producers/locals supply assignment evidence without treating a
+    // packed date as an integer. Unknown calls still provide no evidence.
+    fn date_typed(e: &Expr, lit: &[(String, Ty)], sigs: &[Sig], f: &Func, pin: &[Option<Ty>]) -> bool {
+        match e {
+            Expr::Var(v) => lit.iter().any(|(x,t)| x == v && *t == Ty::Date)
+                || is_param(f,v).map(|i|pin[i] == Some(Ty::Date)).unwrap_or(false),
+            Expr::Call(id,_) => ["date","stod","ctod"].iter().any(|b|is_builtin(id,b))
+                || sigs.iter().any(|s|s.name == *id && s.ret == Some(Ty::Date)),
+            Expr::Seq(es) => es.last().map_or(false,|e|date_typed(e,lit,sigs,f,pin)),
+            Expr::Set(_,r) => date_typed(r,lit,sigs,f,pin),
+            _ => false,
+        }
+    }
     fn setpin(pin: &mut Vec<Option<Ty>>, idx: usize, ty: Ty, n: usize) -> Result<(), String> {
         fn tname(t: Ty) -> &'static str {
             match t {
                 Ty::I64 => "an integer",
                 Ty::NumLocal => "a runtime I64/F64 LOCAL",
-        Ty::F64 => "a float",
+                Ty::F64 => "a float",
+                Ty::Date => "a date",
                 Ty::Str => "a string",
                 Ty::Dyn => "a NIL-capable value",
                 Ty::StrOwn => "a string",
@@ -4278,8 +4292,9 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
         // Float evidence pins a VARIABLE only (63zd): the operands of a
         // float-typed compound expression may legitimately stay integers
         // (Harbour promotes them inside float arithmetic), so there is
-        // nothing to pin through.
-        if ty == Ty::F64 {
+        // nothing to pin through. The same applies to a Date consumer:
+        // a compound Date expression can contain integer day offsets.
+        if matches!(ty, Ty::F64 | Ty::Date) {
             return match e {
                 Expr::Seq(es) => pin_vars(f, es.last().expect("nonempty"), ty, pin, n),
                 Expr::Var(id) => { if let Some(i) = is_param(f, id) { setpin(pin, i, ty, n)?; } Ok(()) }
@@ -4763,6 +4778,7 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
                 Stmt::MemvarDecl(..)=>{},
                 Stmt::Local(n, name, e) | Stmt::Static(n, name, e) => {
                     walk(f, e, sigs, lit, pin, printed, *n)?;
+                    if date_typed(e, lit, sigs, f, pin) { lit.push((name.clone(), Ty::Date)); }
                     match e {
                         Expr::Str(_) => lit.push((name.clone(), Ty::Str)),
                         Expr::Int(_) => lit.push((name.clone(), Ty::I64)),
@@ -4774,6 +4790,9 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
                     // `x := NIL` pins a parameter to the tagged union.
                     if matches!(e, Expr::Nil) {
                         pin_vars(f, &Expr::Var(id.clone()), Ty::Dyn, pin, *n)?;
+                    }
+                    if date_typed(e, lit, sigs, f, pin) {
+                        pin_vars(f, &Expr::Var(id.clone()), Ty::Date, pin, *n)?;
                     }
                     // `x := <float-typed>` pins a parameter F64 (63zd).
                     if f64_typed(e, lit, sigs, f, pin) {
@@ -7421,9 +7440,9 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 }
                 // Float-argument evidence for the NEXT inference round
                 // (63zd): recorded even against a placeholder parameter,
-                // ahead of every per-argument check below. Only F64 is
-                // tracked - every other type already has body evidence
-                // or an established boundary contract. A mid-round error
+                // ahead of every per-argument check below. Date scalar
+                // evidence is also carried through forwarding/identity calls.
+                // Other non-literal types retain their existing contract. A mid-round error
                 // here is swallowed on purpose: the placeholder path
                 // skips checks anyway, and the inferred path re-runs
                 // type_expr below, where the same error propagates.
@@ -7439,7 +7458,11 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                         Expr::Int(_) => Some(Ty::I64),
                         Expr::Str(_) => Some(Ty::Str),
                         Expr::Log(_) => Some(Ty::Bool),
-                        _ => match type_expr(a, env, sigs, n) { Ok(Ty::F64) => Some(Ty::F64), _ => None },
+                        _ => match type_expr(a, env, sigs, n) {
+                            Ok(Ty::F64) => Some(Ty::F64),
+                            Ok(Ty::Date) => Some(Ty::Date),
+                            _ => None,
+                        },
                     };
                     if let Some(e) = ev {
                         sigs[si].arg_ev[i] = match (sigs[si].arg_ev[i], e) {

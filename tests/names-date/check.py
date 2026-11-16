@@ -22,5 +22,14 @@ for src in sorted((root/'programs').glob('*.prg')):
    r=run(cmd,work,kind+'-build',local);assert r.returncode==0,(src.name,target,kind,r.stdout,r.stderr)
    r=run(([a.wine]if target=='windows'else[])+[exe],work,kind+'-run');results[kind]=(r.returncode,r.stdout,r.stderr)
   okay=results['harbour']==results['hbc'];rows.append({'source':src.name,'source_sha256':hashlib.sha256(src.read_bytes()).hexdigest(),'target':target,'exact':okay,'harbour':repr(results['harbour']),'hbc':repr(results['hbc'])});print(('PASS 'if okay else'FAIL ')+src.stem+' '+target,flush=True)
+expect={'date_wrong_type':'must be a date, got an integer','date_omitted':'call site omits it','date_polymorphic':'must be a date, got a string','names_global':'reserved by the code generator'}
+for src in sorted((root/'negative').glob('*.prg')):
+ if a.group!='all' and not src.stem.startswith(a.group+'_'):continue
+ for target in ['linux']+(['windows']if a.wine else[]):
+  work=out/src.stem/target;work.mkdir(parents=True)
+  r=run([compiler,src,work/'rejected.s','--target='+target],work,'hbc-negative')
+  okay=r.returncode==1 and expect[src.stem].encode() in r.stderr and b'panicked'not in r.stderr
+  rows.append({'source':src.name,'source_sha256':hashlib.sha256(src.read_bytes()).hexdigest(),'target':target,'exact':okay,'kind':'named rejection','diagnostic':r.stderr.decode(errors='replace')})
+  print(('PASS 'if okay else'FAIL ')+src.stem+' '+target+' rejection',flush=True)
 (out/'results.json').write_text(json.dumps({'compiler_sha256':hashlib.sha256(P(compiler).read_bytes()).hexdigest(),'rows':rows},indent=2)+'\n')
 assert all(x['exact']for x in rows),'byte mismatch, see evidence'
