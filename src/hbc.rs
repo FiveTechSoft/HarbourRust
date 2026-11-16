@@ -1768,6 +1768,113 @@ fn visit_stmts_mut(ss: &mut [Stmt], f: &mut dyn FnMut(&mut Expr, usize)) {
         }
     }
 }
+// Read-only twins of the visitors above: every statement (pre-order, fs)
+// and every expression (post-order, f) of a statement list.
+fn visit_expr_ref(e: &Expr, f: &mut dyn FnMut(&Expr)) {
+    match e {
+        Expr::Seq(v) | Expr::ArrLit(v) | Expr::Call(_, v) => for x in v.iter() { visit_expr_ref(x, f); },
+        Expr::Bin(_, a, b) | Expr::Cmp(_, a, b) | Expr::LAnd(a, b) | Expr::LOr(a, b) => { visit_expr_ref(a, f); visit_expr_ref(b, f); }
+        Expr::Index(_, a) | Expr::Set(_, a) | Expr::LNot(a) => visit_expr_ref(a, f),
+        Expr::Index2(_, a, b) | Expr::IdxCompound(_, a, _, b) => { visit_expr_ref(a, f); visit_expr_ref(b, f); }
+        Expr::Index3(_, a, b, c) => { visit_expr_ref(a, f); visit_expr_ref(b, f); visit_expr_ref(c, f); }
+        Expr::Index4(_, a, b, c, d) => { visit_expr_ref(a, f); visit_expr_ref(b, f); visit_expr_ref(c, f); visit_expr_ref(d, f); }
+        Expr::Send(r, _, args) => { visit_expr_ref(r, f); for x in args.iter() { visit_expr_ref(x, f); } }
+        Expr::HashLit(kv) => for (k, v) in kv.iter() { visit_expr_ref(k, f); visit_expr_ref(v, f); },
+        Expr::BlockLit(_, _, body) => for x in body.iter() { visit_expr_ref(x, f); },
+        _ => {}
+    }
+    f(e);
+}
+fn visit_stmts_ref(ss: &[Stmt], fs: &mut dyn FnMut(&Stmt), f: &mut dyn FnMut(&Expr)) {
+    for s in ss.iter() {
+        fs(s);
+        match s {
+            Stmt::Local(_, _, e) | Stmt::Static(_, _, e) | Stmt::Assign(_, _, e) | Stmt::MemvarSet(_, _, _, e)
+            | Stmt::HDel(_, _, e) | Stmt::HDelAt(_, _, e) | Stmt::HFill(_, _, e) | Stmt::HSetCaseMatch(_, _, e)
+            | Stmt::SelfSet(_, _, e) | Stmt::SendStmt(_, e) | Stmt::CallStmt(_, e) | Stmt::AIns(_, _, e) | Stmt::ADel(_, _, e)
+            | Stmt::AAdd(_, _, e) | Stmt::ASize(_, _, e) | Stmt::Break(_, e) => visit_expr_ref(e, f),
+            Stmt::Print(_, v, _) => for e in v.iter() { visit_expr_ref(e, f); },
+            Stmt::Ret(_, Some(e)) => visit_expr_ref(e, f),
+            Stmt::If(_, c, a, b) => { visit_expr_ref(c, f); visit_stmts_ref(a, fs, f); visit_stmts_ref(b, fs, f); }
+            Stmt::While(_, c, b) => { visit_expr_ref(c, f); visit_stmts_ref(b, fs, f); }
+            Stmt::HCopy(_, _, _, a, b) => { if let Some(a) = a { visit_expr_ref(a, f); } if let Some(b) = b { visit_expr_ref(b, f); } }
+            Stmt::HSet(_, _, a, b) | Stmt::ArrSet(_, _, a, b) | Stmt::AAddSub(_, _, a, b) | Stmt::ASizeSub(_, _, a, b) => { visit_expr_ref(a, f); visit_expr_ref(b, f); }
+            Stmt::SendSet(_, r, _, v) => { visit_expr_ref(r, f); visit_expr_ref(v, f); }
+            Stmt::ArrSet2(_, _, a, b, c) | Stmt::AAddSub2(_, _, a, b, c) | Stmt::ASizeSub2(_, _, a, b, c) => { visit_expr_ref(a, f); visit_expr_ref(b, f); visit_expr_ref(c, f); }
+            Stmt::ArrSet3(_, _, a, b, c, d) | Stmt::AAddSub3(_, _, a, b, c, d) | Stmt::ASizeSub3(_, _, a, b, c, d) => { visit_expr_ref(a, f); visit_expr_ref(b, f); visit_expr_ref(c, f); visit_expr_ref(d, f); }
+            Stmt::ArrSet4(_, _, a, b, c, d, g) => { visit_expr_ref(a, f); visit_expr_ref(b, f); visit_expr_ref(c, f); visit_expr_ref(d, f); visit_expr_ref(g, f); }
+            Stmt::AFill(_, _, v, a, b) => { visit_expr_ref(v, f); if let Some(a) = a { visit_expr_ref(a, f); } if let Some(b) = b { visit_expr_ref(b, f); } }
+            Stmt::For(_, _, a, b, _, body) => { visit_expr_ref(a, f); visit_expr_ref(b, f); visit_stmts_ref(body, fs, f); }
+            Stmt::ForEach(_, _, c, body) => { visit_expr_ref(c, f); visit_stmts_ref(body, fs, f); }
+            Stmt::Switch(_, sel, arms, other) => { visit_expr_ref(sel, f); for (_, _, b) in arms.iter() { visit_stmts_ref(b, fs, f); } if let Some((_, b)) = other { visit_stmts_ref(b, fs, f); } }
+            Stmt::Try(_, b, c, fin) => { visit_stmts_ref(b, fs, f); if let Some((_, cb)) = c { visit_stmts_ref(cb, fs, f); } if let Some(fb) = fin { visit_stmts_ref(fb, fs, f); } }
+            _ => {}
+        }
+    }
+}
+// Issue #1 (3.1): a fixed-size local array (Ty::Arr) crosses a call as a
+// boundary COPY, while Harbour passes arrays by reference. When the callee
+// can change that parameter's elements, the caller would silently keep the
+// old values, so such a call is a named compile-time rejection instead.
+// (callee, parameter index) pairs whose parameter the callee may modify:
+// element stores, in-place array statements, mutating builtins, aliasing
+// into another variable, and passing it on to a parameter that is itself
+// modified (fixed point over the call graph). Conservative by design.
+thread_local! {
+    static PARAM_MUT: std::cell::RefCell<std::collections::HashSet<(String, usize)>> = std::cell::RefCell::new(std::collections::HashSet::new());
+}
+fn compute_param_mut(funcs: &[Func]) {
+    let mut set: std::collections::HashSet<(String, usize)> = std::collections::HashSet::new();
+    let user: std::collections::HashSet<String> = funcs.iter().map(|f| f.name.clone()).collect();
+    const MUT_BUILTINS: [&str; 8] = ["asort", "afill", "ains", "adel", "asize", "aadd", "aeval", "acopy"];
+    loop {
+        let before = set.len();
+        for f in funcs {
+            for (i, p) in f.params.iter().enumerate() {
+                if set.contains(&(f.name.clone(), i)) { continue; }
+                let hit = std::cell::Cell::new(false);
+                let is_p = |e: &Expr| matches!(e, Expr::Var(v) | Expr::ByRef(v) if v.eq_ignore_ascii_case(p));
+                visit_stmts_ref(&f.stmts, &mut |st: &Stmt| {
+                    let name = match st {
+                        Stmt::ArrSet(_, n, ..) | Stmt::ArrSet2(_, n, ..) | Stmt::ArrSet3(_, n, ..) | Stmt::ArrSet4(_, n, ..)
+                        | Stmt::AIns(_, n, _) | Stmt::ADel(_, n, _) | Stmt::AFill(_, n, ..) | Stmt::AAdd(_, n, _) | Stmt::ASize(_, n, _)
+                        | Stmt::AAddSub(_, n, ..) | Stmt::ASizeSub(_, n, ..) | Stmt::AAddSub2(_, n, ..) | Stmt::ASizeSub2(_, n, ..)
+                        | Stmt::AAddSub3(_, n, ..) | Stmt::ASizeSub3(_, n, ..) => Some(n),
+                        Stmt::Local(_, _, e) | Stmt::Static(_, _, e) | Stmt::Assign(_, _, e) if is_p(e) => { hit.set(true); None }
+                        _ => None,
+                    };
+                    if name.map(|n| n.eq_ignore_ascii_case(p)).unwrap_or(false) { hit.set(true); }
+                }, &mut |e: &Expr| match e {
+                    Expr::IdxCompound(n, ..) if n.eq_ignore_ascii_case(p) => hit.set(true),
+                    Expr::Set(_, v) if is_p(v) => hit.set(true),
+                    Expr::Send(_, _, args) if args.iter().any(|a| is_p(a)) => hit.set(true),
+                    Expr::Call(id, args) => {
+                        for (j, a) in args.iter().enumerate() {
+                            if !is_p(a) { continue; }
+                            let lid = id.to_ascii_lowercase();
+                            if MUT_BUILTINS.contains(&lid.as_str()) { hit.set(true); }
+                            if user.contains(&lid) && set.contains(&(lid.clone(), j)) { hit.set(true); }
+                            if lid == "hb_threadstart" || lid == "eval" { hit.set(true); }
+                        }
+                    }
+                    Expr::BlockLit(_, _, body) => {
+                        let mut names = Vec::new();
+                        for x in body { expr_names(x, &mut names); }
+                        if names.iter().any(|n| n.eq_ignore_ascii_case(p)) { hit.set(true); }
+                    }
+                    _ => {}
+                });
+                if hit.get() { set.insert((f.name.clone(), i)); }
+            }
+        }
+        if set.len() == before { break; }
+    }
+    PARAM_MUT.with(|m| *m.borrow_mut() = set);
+}
+fn param_mutated(callee: &str, i: usize) -> bool {
+    PARAM_MUT.with(|m| m.borrow().contains(&(callee.to_ascii_lowercase(), i)))
+}
+
 // Every variable name an expression touches (reads, writes, array roots,
 // by-reference), or None when it needs an enclosing context it cannot
 // carry to another function (Self, nested codeblocks).
@@ -15887,6 +15994,14 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                     out.push_str("    sub $16, %rsp\n    movsd %xmm0, (%rsp)\n    mov %rdi, 8(%rsp)\n");
                     continue;
                 }
+                if let (Ty::Arr(_), Expr::Var(src)) = (ta, a) {
+                    if param_mutated(id, ai) {
+                        let line = TRACE_LINE.with(|v| v.get());
+                        let at = if line > 0 { format!("line {}: ", line) } else { String::new() };
+                        eprintln!("error: {}array `{}` is passed to `{}`, which can change its elements; Harbour passes arrays by reference, and this increment passes a fixed-size local array as a copy, so the change would be lost (arrays passed by reference are not in this increment)", at, src, id);
+                        process::exit(1);
+                    }
+                }
                 if let Ty::Arr(k) = ta {
                     // Static array argument: materialize the boundary
                     // COPY as a dynamic array (header + tagged cells,
@@ -25888,6 +26003,7 @@ fn finalize_tag_kind_accessors(out: String, dbf: bool) -> String {
 }
 
 fn emit_asm(funcs: &[Func], sigs: &[Sig], externs: &[String], target: Target, instrument: bool) -> String {
+    compute_param_mut(funcs);
     let nclasses = CLASSES.with(|c| c.borrow().len());
     if nclasses > 0 && !matches!(target, Target::Linux) {
         eprintln!("error: classes are Linux-only in this increment (the Windows runtime blob is pending)");

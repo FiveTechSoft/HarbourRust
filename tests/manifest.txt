@@ -418,9 +418,9 @@ posx tests/t423_borrow3_nil_cell.prg 1 Argument error: PARAM\nCallstack:\n  at m
 neg tests/t421_neg_borrow3_return.prg is borrowed from its caller
 neg tests/t422_neg_borrow3_overlap.prg no other argument of the same call may mention it
 pos2 tests/t424_static_arg_read.prg tests/expectations/qout/t424_static_arg_read.linux.out tests/expectations/qout/t424_static_arg_read.windows.out
-pos2 tests/t425_static_arg_writecopy.prg tests/expectations/qout/t425_static_arg_writecopy.linux.out tests/expectations/qout/t425_static_arg_writecopy.windows.out
-pos2 tests/t426_static_arg_growcopy.prg tests/expectations/qout/t426_static_arg_growcopy.linux.out tests/expectations/qout/t426_static_arg_growcopy.windows.out
-pos2 tests/t427_static_arg_shrinkcopy.prg tests/expectations/qout/t427_static_arg_shrinkcopy.linux.out tests/expectations/qout/t427_static_arg_shrinkcopy.windows.out
+neg tests/t425_static_arg_writecopy.prg line 7: array `a` is passed to `setit`, which can change its elements
+neg tests/t426_static_arg_growcopy.prg line 8: array `a` is passed to `growit`, which can change its elements
+neg tests/t427_static_arg_shrinkcopy.prg line 7: array `a` is passed to `shrinkit`, which can change its elements
 neg tests/t428_neg_static_arg_deep.prg is copied at the boundary only into a flat dynamic-array parameter
 neg tests/t429_neg_static_arg_literal.prg is copied at the boundary only into a flat dynamic-array parameter
 pos2 tests/t430_static_return_basic.prg tests/expectations/qout/t430_static_return_basic.linux.out tests/expectations/qout/t430_static_return_basic.windows.out
@@ -1763,3 +1763,6 @@ pos2 tests/macro/m1-values.prg tests/expectations/qout/m1-values.linux.out tests
 # Run the same gate with --target windows --wine WINE as well; see docs/MACRO-ERROR-CONTRACT.md.
 pos2 tests/print-f64/negzero.prg tests/expectations/qout/negzero.linux.out tests/expectations/qout/negzero.windows.out
 pos2 tests/macro/m0-memvars.prg tests/expectations/qout/m0-memvars.linux.out tests/expectations/qout/m0-memvars.windows.out
+neg tests/issue1/a1_array_param_mut.prg line 3: array `v` is passed to `f`, which can change its elements
+neg tests/issue1/a2_array_param_mut_return.prg line 3: array `v` is passed to `f`, which can change its elements
+neg tests/issue1/a3_array_param_mut_case.prg line 3: array `v` is passed to `f`, which can change its elements
