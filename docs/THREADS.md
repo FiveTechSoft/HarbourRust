@@ -238,3 +238,45 @@ both, and stdout+stderr compare byte for byte (10 F1 thread probes +
 (mt20_subnow_flush) gates as a prefix oracle because Harbour hits its
 declared BASE/1302 destructor artifact after a flushed SubscribeNow;
 the other 36 compare byte for byte.
+
+
+## Runtime function-name targets (delta after the AST lifting increment)
+
+The existing AST lifting of parameter-only block literals and known literal
+function names is unchanged. This extension handles typed string values
+left by that pass: `hb_threadStart(name, ...)`, including string expressions
+and owned temporary strings. It selects a compatible user-function thunk
+at runtime, using the existing copied-string/retained-object argument ABI.
+The static/lifted route keeps its existing code generation.
+
+Runtime names use ASCII case folding, stop at NUL/space/tab, and use at most
+63 bytes, matching the measured Harbour name lookup. The evaluated name is
+kept alive before later arguments run, even if they mutate its source by
+reference. All argument expressions run left to right before lookup;
+ignored extras are still evaluated and owned values use existing cleanup.
+
+Only ABI-compatible compiled user functions are runtime candidates, not
+Main, methods, builtins or C Extend entry points. Parameters must use the
+existing integer/Dyn/object thread ABI; a separate string/float/array/hash
+parameter ABI is not introduced. Otherwise unpinned identity parameters
+can be Dyn in programs that use runtime-name targets. A function with an
+incompatible ABI stays outside the name table. Numeric attribute prefixes
+and Dyn target values remain outside this increment.
+
+A name left unresolved by lifting, including an unknown literal, now fails
+through the existing terminal thread panic route after its arguments run.
+This is not Harbour's substitutable BASE/1001 error profile. No general
+symbol table or error-recovery machinery is added.
+
+Inherited limits stay visible: Linux x86-64 only, no Windows/macOS thread
+runtime, no capturing or block-variable start target, and no general
+closure ABI. Literal blocks still use the published AST lifting, whose
+normal function inference can admit string parameters/results; the older
+integer-only block-value restrictions do not describe that lifted path.
+Some omitted-parameter shapes still fail inference. Thread handle control
+blocks remain retained until process exit. `--instrument`/threads and
+MEMVAR/macro/threads restrictions are unchanged; no exact leak-counter or
+performance claim is made.
+
+Reproducible raw differential, baseline-limit and regression checks are in
+`tests/threads-start/README.md`.

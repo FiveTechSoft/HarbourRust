@@ -3624,6 +3624,17 @@ struct Sig {
     nil_ev: Vec<bool>,
 }
 
+thread_local! {
+    // Set only by a checked runtime-string target, not by ordinary calls.
+    static THREAD_RUNTIME_NAMES: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+}
+// F5 runtime-name table admits only the already supported thread ABI.
+fn thread_sig_supported(s: &Sig) -> bool {
+    s.name != "main" && !METHOD_CLASS.with(|m| m.borrow().contains_key(&s.name))
+        && s.params.iter().all(|t| matches!(t, Ty::I64 | Ty::Dyn | Ty::Obj(_)))
+        && (s.nil_ret_only || matches!(s.ret, None | Some(Ty::I64) | Some(Ty::Bool) | Some(Ty::Dyn) | Some(Ty::Str) | Some(Ty::StrOwn) | Some(Ty::Obj(_))))
+}
+
 // Semantic analysis: types + ownership/move tracking. This pass is OURS:
 // nothing here is delegated to another compiler.
 //
@@ -4946,6 +4957,14 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
                     pin[i]
                 }
             };
+        }
+        // A runtime thread name may select an otherwise uncalled identity
+        // function. Only fill truly unpinned scalar-ABI parameters; never
+        // write sticky argument evidence into unrelated array/float bodies.
+        if pin[i].is_none() && THREAD_RUNTIME_NAMES.with(|v|v.get())
+            && f.name != "main" && !METHOD_CLASS.with(|m|m.borrow().contains_key(&f.name))
+            && pin.iter().all(|t|matches!(t, None | Some(Ty::I64) | Some(Ty::Dyn) | Some(Ty::Obj(_)))) {
+            pin[i] = Some(Ty::Dyn);
         }
         if pin[i].is_none() && pin_err.is_none() {
             pin_err = Some(format!("cannot infer the type of parameter `{}` of function `{}` (returning or copying it is not enough; print it, use it in arithmetic, or compare it against a value of known type)", p, f.name));
@@ -6689,6 +6708,16 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 }
                 let fname = match &args[0] {
                     Expr::FuncRef(f) => f.clone(),
+                    e if matches!(type_expr(e,env,sigs,n)?,Ty::Str | Ty::StrOwn) => {
+                        for a in &args[1..] {
+                            let ta=type_expr(a,env,sigs,n)?;
+                            if !matches!(ta,Ty::I64 | Ty::Bool | Ty::Dyn | Ty::Str | Ty::StrOwn | Ty::Obj(_)) {
+                                return Err(format!("line {}: thread name arguments use the same scalar/string/object ABI as `@f()`",n));
+                            }
+                        }
+                        THREAD_RUNTIME_NAMES.with(|v|v.set(true));
+                        return Ok(Ty::Dyn);
+                    }
                     _ => return Err(format!("line {}: `hb_threadStart`'s first argument must be `@f()`, the name of a function of this program, or a codeblock that only uses its own parameters (a block that captures enclosing locals is not in this increment)", n)),
                 };
                 if fname.eq_ignore_ascii_case("main") {
@@ -13977,21 +14006,34 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             // Each argument becomes a Dyn casilla (strings deep-copied,
             // objects retained); the thunk converts to the callee's
             // convention on the new thread.
-            let fname = if let Expr::FuncRef(f) = &args[0] { f.clone() } else { unreachable!("checked") };
-            let sig = sigs.iter().find(|s| s.name == fname).expect("checked").clone();
-            let nparams = sig.params.len();
-            let provided = args.len() - 1;
-            let cells = provided.max(nparams);
-            let bsz = 88 + 16 * cells;
             let l = fresh_lbl();
-            out.push_str(&format!("    mov ${}, %rdi
-    call hbc_alloc
-    sub $16, %rsp
-    mov %rax, (%rsp)
-    movq ${}, 24(%rax)
-    lea hbc_thunk_{}(%rip), %r11
-    mov %r11, 32(%rax)
-", bsz, cells, fname));
+            // AST lifting remains authoritative for blocks and known
+            // literal names. Only the string expressions it leaves intact
+            // enter this runtime-name path; no new block ABI is introduced.
+            let static_name = match &args[0] {
+                Expr::FuncRef(f) => Some(f.clone()), _ => None,
+            };
+            let dynamic_name = static_name.is_none();
+            let targets: Vec<(String, Vec<Ty>, Option<Ty>, bool)> = sigs.iter()
+                .filter(|sg|static_name.as_ref().map(|n|n==&sg.name).unwrap_or_else(||thread_sig_supported(sg)))
+                .map(|sg|(sg.name.clone(),sg.params.clone(),sg.ret,sg.nil_ret_only)).collect();
+            let provided = args.len() - 1;
+            let cells = provided.max(targets.iter().map(|t|t.1.len()).max().unwrap_or(0));
+            let bsz = 88 + 16 * cells;
+            if dynamic_name {
+                out.push_str("    sub $32, %rsp\n");
+                cg_value(&args[0], env, sigs, strs, out, target);
+                out.push_str("    mov %rdx, 24(%rsp)\n");
+                if !(expr_ty(&args[0],env,sigs)==Ty::StrOwn && !matches!(&args[0],Expr::Var(_))) {
+                    // Snapshot before later arguments can free its source.
+                    out.push_str("    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_strcpy\n");
+                }
+                out.push_str("    mov %rax, 16(%rsp)\n");
+                out.push_str(&format!("    mov ${}, %rdi\n    call hbc_alloc\n    mov %rax, (%rsp)\n    movq ${}, 24(%rax)\n",bsz,cells));
+            } else {
+                // Preserve the published static/lifted path byte for byte.
+                out.push_str(&format!("    mov ${}, %rdi\n    call hbc_alloc\n    sub $16, %rsp\n    mov %rax, (%rsp)\n    movq ${}, 24(%rax)\n    lea hbc_thunk_{}(%rip), %r11\n    mov %r11, 32(%rax)\n",bsz,cells,targets[0].0));
+            }
             for (i, a) in args[1..].iter().enumerate() {
                 let ta = expr_ty(a, env, sigs);
                 // F3 (a): literal arguments marshal as explicit Dyn
@@ -14076,9 +14118,32 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
     movq $0, {}(%r11)
 ", 88 + 16 * i, 96 + 16 * i));
             }
+            if dynamic_name {
+                // All actual arguments have now run, before name lookup, as
+                // in Harbour. ASCII case-fold without modifying the source.
+                // hb_dynsymFindName stops at NUL/space/tab or 63 bytes.
+                out.push_str(&format!("    mov 16(%rsp), %r10\n    xor %ecx, %ecx\n.Lthnamelen_{}:\n    cmp 24(%rsp), %rcx\n    jae .Lthnamelen_done_{}\n    cmp $63, %rcx\n    jae .Lthnamelen_done_{}\n    movzbq (%r10,%rcx), %r11\n    test %r11, %r11\n    jz .Lthnamelen_done_{}\n    cmp $32, %r11\n    je .Lthnamelen_done_{}\n    cmp $9, %r11\n    je .Lthnamelen_done_{}\n    inc %rcx\n    jmp .Lthnamelen_{}\n.Lthnamelen_done_{}:\n    mov %rcx, 24(%rsp)\n",l,l,l,l,l,l,l,l));
+                for (j, (name, _, _, _)) in targets.iter().enumerate() {
+                    out.push_str(&format!("    mov 16(%rsp), %r10\n    cmpq ${}, 24(%rsp)\n    jne .Lthname_{}_{}\n",name.len(),l,j));
+                    for (i,ch) in name.bytes().enumerate() {
+                        out.push_str(&format!("    movzbq {}(%r10), %r11\n",i));
+                        if ch.is_ascii_lowercase() {
+                            out.push_str(&format!("    cmp $65, %r11\n    jb .Lthcase_{}_{}_{}\n    cmp $90, %r11\n    ja .Lthcase_{}_{}_{}\n    add $32, %r11\n.Lthcase_{}_{}_{}:\n",l,j,i,l,j,i,l,j,i));
+                        }
+                        out.push_str(&format!("    cmp ${}, %r11\n    jne .Lthname_{}_{}\n",ch,l,j));
+                    }
+                    out.push_str(&format!("    mov (%rsp), %r10\n    lea hbc_thunk_{}(%rip), %r11\n    mov %r11, 32(%r10)\n    jmp .Lthselected_{}\n.Lthname_{}_{}:\n",name,l,l,j));
+                }
+                // Unknown/incompatible names fail closed. Full Harbour
+                // substitution/recovery is not part of the thread ABI.
+                let msg = "hb_threadStart: unknown or unsupported function name\n";
+                let idx=strs.len(); strs.push(msg.to_string());
+                out.push_str(&format!("    lea .Lstr{}(%rip), %rax\n    mov ${}, %edx\n    call hbc_eprint_str\n    jmp hbc_panic_exit\n.Lthselected_{}:\n",idx,msg.len(),l));
+                out.push_str("    mov 16(%rsp), %rdi\n    call hbc_freestr\n");
+            }
             out.push_str(&format!("    mov (%rsp), %rdi
     call hbc_thread_start
-    add $16, %rsp
+    add ${}, %rsp
     test %rax, %rax
     jz .Lthf{}
     mov %rax, %rdx
@@ -14088,13 +14153,15 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
     mov $1, %eax
     xor %edx, %edx
 .Lthd{}:
-", l, l, l, l));
+", if dynamic_name {32} else {16}, l, l, l, l));
             // Thunk (generated once per referenced function): converts the
             // marshaled Dyn casillas to the callee's parameter convention
             // and normalizes its return to a Dyn casilla for the joiner.
+            for (fname, params, ret, nil_ret_only) in &targets {
+            let nparams=params.len();
             THUNK_TEXT.with(|t| {
                 let mut v = t.borrow_mut();
-                if !v.iter().any(|(n, _)| n == &fname) {
+                if !v.iter().any(|(n, _)| n == fname) {
                     let mut th = String::new();
                     th.push_str(&format!(".text\nhbc_thunk_{}:
     push %rbp
@@ -14103,7 +14170,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
     push %r12
     mov %rdi, %rbx
 ", fname));
-                    for (i, pt) in sig.params.iter().enumerate() {
+                    for (i, pt) in params.iter().enumerate() {
                         match pt {
                             Ty::Dyn => th.push_str(&format!("    mov {}(%rbx), %rax
     mov {}(%rbx), %rdx
@@ -14126,15 +14193,14 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                             _ => unreachable!("checked"),
                         }
                     }
-                    th.push_str(&format!("    call hbc_fn_{}
-", fname));
+                    th.push_str(&format!("    call hbc_fn_{}\n",fname));
                     if nparams > 0 { th.push_str(&format!("    add ${}, %rsp
 ", 16 * nparams)); }
-                    if sig.nil_ret_only || sig.ret.is_none() { th.push_str("    mov $1, %eax
+                    if *nil_ret_only || (*ret).is_none() { th.push_str("    mov $1, %eax
     xor %edx, %edx
 "); }
                     else {
-                        match sig.ret.unwrap() {
+                        match (*ret).unwrap() {
                             Ty::I64 => th.push_str("    mov %rax, %r11
     imul $9, %rdx, %rax
     mov %r11, %rdx
@@ -14176,6 +14242,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                     v.push((fname.clone(), th));
                 }
             });
+            }
         }
         Expr::Call(id, args) if is_builtin(id, "hb_threadjoin") => {
             // hbc_thread_join_grab: rdi=handle -> rax=ok, rdx=result tag,

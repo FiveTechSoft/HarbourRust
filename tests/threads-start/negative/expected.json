@@ -1,0 +1,10 @@
+{
+  "capture": "codeblock captures",
+  "block_float": "arguments are scalar",
+  "main_literal": "cannot start the program's Main",
+  "invalid_target": "first argument must be",
+  "no_target": "needs at least",
+  "name_float_arg": "arguments are scalar",
+  "name_array_arg": "arguments are scalar",
+  "name_float_return": "target returns integer"
+}
