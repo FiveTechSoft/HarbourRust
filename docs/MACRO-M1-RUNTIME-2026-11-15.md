@@ -170,10 +170,12 @@ The M0 memvar path from 6f3927f was checked against Harbour with
 rules. After the shared evaluator fixes below it is byte-identical. A
 memvar is a run-time value, so `x % 3` with `x := 10` is `1.00`.
 
-## Limits## Limits
+## Limits
 
-- **M0 is not here.** hbc has no PRIVATE/PUBLIC storage, so `&name`
-  resolving a memvar needs that subsystem first.
+- **M0 is partial.** Since 6f3927f, `&name` and names inside `&(...)`
+  resolve PRIVATE/PUBLIC memvars of the current function (fixture
+  `tests/macro/m0-memvars.prg`). Only integer, logical and NIL values are
+  read back; a string or float memvar ends in a named limit.
 - **No calls or assignments.** Function calls inside the text (M2),
   assignments with `:=` and array, hash or codeblock literals (M4) end
   with a named run-time error. That message is not a Harbour message.
