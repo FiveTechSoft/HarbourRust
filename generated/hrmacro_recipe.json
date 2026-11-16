@@ -31,7 +31,7 @@
   "source_dependencies_sha256": {
     "runtime/hrdbf.h": "86f2b78f5e0c215d5a7edf3005c79d326e966eef13477879f25c6385cf2771c0",
     "runtime/hrdyn.h": "d09ac5d22d93f07f9e67435b7cb9ef60e57ce9a41ba872be6e62cdd34593ac9d",
-    "runtime/hrmacro.c": "9d7b21dc94785a36be6d7aeffe594a649cf6ed4e6b6b201af127b48966789427",
+    "runtime/hrmacro.c": "9d226920d2bcbd268191571182be50037d669496fd9b4f97e8fccbb7100f60ab",
     "runtime/hrmacro.h": "259d8a959237b430a96821d151a012957720846d1324ad9e43732c9c6f696e62",
     "runtime/hrmacro_embedded.c": "e5673233da8c1d55e7c6933fba302cc78966242a414716eacc4f1b9a89e4c2b6",
     "runtime/hrmembridge.c": "e2b2a440e667f9c11c83d1c81d76d62f4bd2466a4f1706a50e077d4f6e04cda4",
@@ -40,7 +40,7 @@
     "runtime/hrmemvar.h": "d291fe0c4260f150842f83ffc90a495909048a3bd016e6f109946554027b7e1c",
     "runtime/hrvalue.h": "a00bad363533877e846aa43084d727441f016972aa7439c10d0733abedf20a32"
   },
-  "asm_sha256": "2e16431ec89c7f62edf309189af6b298e7457a523f288233452829188b2e1c06",
+  "asm_sha256": "8296a2f8cdf8a7c1ab488cca21940c58e3e8782a157d9e8df4f401c6c649335d",
   "external_calls": [
     "hrm_alloc",
     "hrm_builtin_fail",

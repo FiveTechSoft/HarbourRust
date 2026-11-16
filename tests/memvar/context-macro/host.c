@@ -12,6 +12,7 @@ static unsigned fatal_count;
 static unsigned fault_kind,fault_step;
 static void faults(void);
 static void m2(void);
+static void n1(void);
 unsigned char*hrm_alloc(size_t n){hrv_cell v;unsigned char*s=malloc(n?n:1);assert(s);memset(s,0,n);hrmv_status rc=strcopy(&compiler_pool,s,n,&v);free(s);return rc?0:(unsigned char*)(uintptr_t)v.payload;}
 void hrm_free(unsigned char*p){if(p){uint64_t*base=(uint64_t*)p-2;block*b=compiler_pool.head;while(b&&b->p!=base)b=b->next;assert(b);hrv_cell v={b->n==32?(HR_DYN_FLOAT_HEAP|5):4,(uint64_t)(uintptr_t)p};drop(&compiler_pool,v);}}
 double hrm_exp(double x){return exp(x);}
@@ -34,7 +35,7 @@ failure("s+' temp'+missing","Error BASE/1003  Variable does not exist: MISSING\n
 failure("('owned'+' temp') + missing + later","Error BASE/1003  Variable does not exist: MISSING\n");
 failure("left + ('owned'+' temp') + right","Error BASE/1003  Variable does not exist: LEFT\n");puts("fatal.order.raw_compiler_arena_zero_before_callback=PASS");
 failure("missing + )","Error BASE/1449  Syntax error: &\n");assert(ctx.lookups==0);failure("M->absent","Error BASE/1003  Variable does not exist: ABSENT\n");puts("parse.syntax_before_lookup.deferred_first_error=PASS");
-assert(fatal_count==5&&raw_pool.count==raw_pool.freed&&compiler_pool.count==compiler_pool.freed);puts("raw.compiler.frames.bindings.scratch=0");faults();m2();return 0;}
+assert(fatal_count==5&&raw_pool.count==raw_pool.freed&&compiler_pool.count==compiler_pool.freed);puts("raw.compiler.frames.bindings.scratch=0");faults();m2();n1();return 0;}
 void*hrm_raw_alloc(void*u,size_t n){return alloc(u?u:&raw_pool,n);}
 void hrm_raw_free(void*u,void*p,size_t n){release(u?u:&raw_pool,p,n);}
 hrmv_status hrm_export_string(void*u,const unsigned char*s,size_t n,hrv_cell*out){return strcopy(u?u:&compiler_pool,s,n,out);}
@@ -88,4 +89,16 @@ static void m2(void){
   raw_pool.fail=compiler_pool.fail=0;assert(!raw_pool.live&&!compiler_pool.live&&!ctx.scratch_live);assert(raw_pool.count==raw_pool.freed&&compiler_pool.count==compiler_pool.freed);
  }
  puts("M2.args.nested.fold.extras10.syntax.types.range.faults96x2.cleanup=PASS");
+}
+
+/* N1 checks exact parser classification independently of large-float Str width. */
+static void n1(void){
+ init();char text[64];
+ for(int64_t offset=0;offset<=80;offset++){
+  int64_t want=INT64_MAX-offset;snprintf(text,sizeof text,"%lld",(long long)want);hrv_cell v=run(text);assert(v.tag==9&&(int64_t)v.payload==want);
+  snprintf(text,sizeof text,"-%lld",(long long)want);v=run(text);assert(v.tag==9&&(int64_t)v.payload==-want);
+ }
+ hrv_cell v=run("9223372036854775808");check_heap(v,UINT64_C(0x43e0000000000000),655360);drop(&compiler_pool,v);
+ v=run("-9223372036854775808");check_heap(v,UINT64_C(0xc3e0000000000000),655360);drop(&compiler_pool,v);
+ hrmacro_destroy(&ctx);assert(!raw_pool.live&&!compiler_pool.live);puts("N1.exact_i64_boundaries.overflow_double.cleanup=PASS");
 }

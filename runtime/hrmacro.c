@@ -91,7 +91,7 @@ static void number(lex *L) {
     int c = *q;
     if (is_digit(c)) {
       if (dbl) dv = dv * 10.0 + (c - '0');
-      else if (iv < (INT64_MAX - 9) / 10) iv = iv * 10 + (c - '0');
+      else if (iv <= (INT64_MAX - (c - '0')) / 10) iv = iv * 10 + (c - '0');
       else { dv = (double)iv * 10.0 + (c - '0'); dbl = 1; }
       if (frac) dec++;
     } else if (c == '.' && !frac) {
