@@ -138,6 +138,12 @@ enum CmpOp { Eq, EqEq, Ne, Lt, Le, Gt, Ge, Contains } // EqEq: == measured for i
 
 static BLOCK_ID: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
 
+// Compiler version. Bumped to the release tag's version (without the "v")
+// just before each release is published - a step of the release pipeline;
+// between releases it carries the next version with a "-dev" suffix.
+// `hbc --version` prints "hbc <HBC_VERSION>" on stdout and exits 0.
+const HBC_VERSION: &str = "0.11.5-dev";
+
 // Set only while a bare call STATEMENT is type-checked: a procedure-style
 // call (no return value) is legal in statement position (hk216) even
 // though its result cannot be USED in an expression. Single-threaded
@@ -31266,6 +31272,7 @@ fn main() {
             "--experimental-llvm-no-trace" => {llvm = true; llvm_trace = false;},
             "-I" => { ai += 1; incdirs.push(args.get(ai).expect("-I needs a directory").clone()); }
             _ if a.starts_with("-I") => incdirs.push(a[2..].to_string()),
+            "--version" => { println!("hbc {}", HBC_VERSION); process::exit(0); }
             _ if a.starts_with("--") => { eprintln!("usage: hbc <input.prg> [output] [--target=linux|windows|macho|macho-arm64] [-I dir]...
   target defaults to the compiler host (Linux: ELF, Windows: PE32+, Mac Intel: Mach-O)
   --target overrides it; macho-arm64 currently rejects (native ARM64 backend pending)

@@ -12,6 +12,8 @@
 #   pos2 <file> <linux expected file> <windows expected file> exact target bytes
 #   neg  <file> <error substring>       compile must FAIL with that message
 #                                       on both targets
+#   cli  <expected stdout file> <args>  run ./hbc with args (Linux);
+#                                       rc 0, empty stderr, exact stdout
 cd "$(dirname "$0")/.." || exit 2
 fail=0
 # Run identity + tool/source hash capture (31Oct, t528 + binary-anchor
@@ -163,6 +165,11 @@ while IFS= read -r line; do
         else echo "FAIL $file (posx2 rc lin=$rc_l win=$rc_w want=$want_rc / exact bytes)"; fail=1; fi
       else echo "FAIL $file (build)"; fail=1; fi;;
     neg)  run_neg "$file" "$(echo "$line"|cut -d' ' -f3-)";;
+    cli)
+      efile=$(echo "$line"|awk '{print $2}'); cargs=$(echo "$line"|cut -d' ' -f3-)
+      if ./hbc $cargs > gen/cli.actual 2>gen/cli.err && [ ! -s gen/cli.err ] &&
+         cmp -s "$efile" gen/cli.actual; then echo "PASS $line"
+      else echo "FAIL $line (cli: rc/stderr/stdout bytes)"; fail=1; fi;;
     '') ;;
     *) echo "FAIL unknown manifest kind: $line"; fail=1;;
   esac

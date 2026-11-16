@@ -120,6 +120,10 @@ while IFS= read -r line; do
     neg)  run_neg "$file" "$(echo "$line"|cut -d' ' -f3-)";;
     '') ;;
     \#*) ;;
+    cli)
+      efile=$(echo "$line"|awk '{print $2}'); cargs=$(echo "$line"|cut -d' ' -f3-)
+      if ./hbc $cargs > "$GENDIR"/cli.actual 2>"$GENDIR"/cli.err && [ ! -s "$GENDIR"/cli.err ] &&
+         cmp -s "$efile" "$GENDIR"/cli.actual; then echo "PASS $line"; else echo "FAIL $line (cli: rc/stderr/stdout bytes)"; fail=1; fi;;
     *) echo "FAIL unknown manifest kind: $line"; fail=1;;
   esac
 done < "$MANIFEST_FILE"
