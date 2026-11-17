@@ -64,11 +64,13 @@ for shape in ['typed','dyn','multi','mixed']:
    add(w.name,'oracle-runtime',ok)
 # These invalid shapes must not reach nested dispatch or abandon earlier
 # string owners while a later argument throws. They are Harbour-valid.
-neg=[('fresh-call','fresh()','return Space(7)\n'),('later-call','Space(7), fresh()','return 1\n'),('later-divide','Space(7), 1 / zero()','return 0\n'),('index','xs[1]','return 0\n'),('nested-send','a:Echo("x")','return 0\n'),('dyn-input','e','return 0\n'),('float-input','1.5','return 0\n'),('duplicate-local','x,x,x','return 0\n'),('constructor-receiver','CONSTRUCTOR_RECEIVER','return 0\n'),('unsupported-builtin','Trim("x")','return 0\n')]
+neg=[('fresh-call','fresh()','return Space(7)\n'),('later-call','Space(7), fresh()','return 1\n'),('later-divide','Space(7), 1 / zero()','return 0\n'),('index','xs[1]','return 0\n'),('nested-send','a:Echo("x")','return 0\n'),('dyn-input','e','return 0\n'),('float-input','1.5','return 0\n'),('duplicate-local','x,x,x','return 0\n'),('constructor-receiver','CONSTRUCTOR_RECEIVER','return 0\n'),('unsupported-builtin','Trim("x")','return 0\n'),('dyn-left-count','Left("abcdefghi",d)','return 0\n'),('dyn-left-nested','Upper(Left("abcdefghi",d))','return 0\n'),('dyn-left-arithmetic','Left("abcdefghi",d+1)','return 0\n'),('dyn-space-arithmetic','Space(d+1)','return 0\n'),('dyn-later-nil','Space(7),d+1','return 0\n')]
 for name,args,body in neg:
  if a.stage not in ['all','negative']:continue
  for receiver in ['live','null']:
   w=out/('reject-'+receiver+'-'+name);w.mkdir();src=w/'probe.prg';s=source('typed',receiver,'"x"',1).replace('   local i,e,x := Space(7), a := o, catches := 0','   local i,e,x := Space(7), a := o, catches := 0, xs := {"x"}').replace('a:Echo("x")','? T():New():Echo("x")' if name=='constructor-receiver' else 'a:Echo('+args+')')+'function fresh()\n'+body+'function zero()\nreturn 0\n';src.write_text(s)
+  if name.startswith('dyn-') and name!='dyn-input':
+   s=s.replace('catches := 0, xs :=', 'catches := 0, d := NIL, xs :=').replace('   for i :=',('   d := 2\n' if name!='dyn-later-nil' else '')+'   for i :=',1);src.write_text(s)
   oracle=w/'oracle.prg';oracle.write_text(s.replace('      try\n','      begin sequence\n').replace('      catch e\n','      recover using e\n').replace('      end\n','      end sequence\n'));p=raw([compiler,src,w/'reject.s'],w,'reject');o=raw([a.hbmk2,'-quiet','-gtstd','-w0','-o'+str(w/'oracle'),oracle],w,'oracle-build',oe)
   diag=b'moved value' if name=='duplicate-local' else b'increment'
   add(w.name,'named-rejection',p.returncode==1 and diag in p.stderr and o.returncode==0,diagnostic=p.stderr.decode(errors='replace'))

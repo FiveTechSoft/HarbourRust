@@ -5423,11 +5423,12 @@ fn expr_has_call(e: &Expr) -> bool {
 // marshalled owners before the receiver's explicit NIL cleanup point. This
 // whitelist intentionally excludes user calls (including fresh()), sends,
 // indexing, division, inline effects and unknown future expression shapes.
-fn nil_method_arg_nothrow(e: &Expr) -> bool {
+fn nil_method_arg_nothrow(e: &Expr, env: &[Local]) -> bool {
     match e {
-        Expr::Var(_) | Expr::Str(_) | Expr::Int(_) | Expr::Log(_) => true,
-        Expr::Bin(op,a,b) if matches!(op, '+' | '-' | '*') => nil_method_arg_nothrow(a) && nil_method_arg_nothrow(b),
-        Expr::Call(id,args) if ["space","upper","lower","left"].iter().any(|n|is_builtin(id,n)) => args.iter().all(nil_method_arg_nothrow),
+        Expr::Var(name) => env.iter().rev().find(|v|v.name==*name).map_or(false,|v|matches!(v.ty,Ty::I64|Ty::Bool|Ty::Date|Ty::Str|Ty::StrOwn)),
+        Expr::Str(_) | Expr::Int(_) | Expr::Log(_) => true,
+        Expr::Bin(op,a,b) if matches!(op, '+' | '-' | '*') => nil_method_arg_nothrow(a,env) && nil_method_arg_nothrow(b,env),
+        Expr::Call(id,args) if ["space","upper","lower","left"].iter().any(|n|is_builtin(id,n)) => args.iter().all(|e|nil_method_arg_nothrow(e,env)),
         _ => false,
     }
 }
@@ -8720,7 +8721,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 if strings && !matches!(recv.as_ref(),Expr::Var(_)|Expr::SelfObj) {
                     return Err(format!("line {}: NIL-aware string method receiver must be a variable or Self; nested receiver dispatch is not in this increment",n));
                 }
-                if strings && !args.iter().all(nil_method_arg_nothrow) {
+                if strings && !args.iter().all(|e|nil_method_arg_nothrow(e,env)) {
                     return Err(format!("line {}: NIL-aware string method arguments require non-throwing expressions; user calls (including fresh), nested dispatch, indexing, division and inline effects are not in this increment",n));
                 }
             }
@@ -35503,11 +35504,12 @@ mod nullable_method_string_tests {
             Expr::Call("upper".into(), vec![Expr::Str("abc".into())]),
             Expr::Int("2".into()),
         ]);
-        assert!(nil_method_arg_nothrow(&nested));
+        assert!(nil_method_arg_nothrow(&nested,&[]));
         assert!(nil_method_arg_nothrow(&Expr::Call("space".into(), vec![
             Expr::Bin('*', Box::new(Expr::Int("2".into())), Box::new(Expr::Int("3".into())))
-        ])));
-        assert!(nil_method_arg_nothrow(&Expr::Call("lower".into(), vec![Expr::Var("s".into())])));
+        ]),&[]));
+        let env = vec![Local{name:"s".into(),ty:Ty::StrOwn,moved:false,ro:false,byref:false}];
+        assert!(nil_method_arg_nothrow(&Expr::Call("lower".into(), vec![Expr::Var("s".into())]),&env));
     }
     #[test]
     fn rejects_throwing_nested_and_unmeasured_argument_shapes() {
@@ -35519,6 +35521,21 @@ mod nullable_method_string_tests {
             Expr::Send(Box::new(Expr::Var("o".into())),"echo".into(),vec![]),
             Expr::Call("trim".into(),vec![Expr::Str("x".into())]),
             Expr::Seq(vec![Expr::Str("x".into())]),
-        ] { assert!(!nil_method_arg_nothrow(&e)); }
+        ] { assert!(!nil_method_arg_nothrow(&e,&[])); }
+    }
+}
+
+#[cfg(test)]
+mod nullable_method_dyn_leaf_tests {
+    use super::*;
+    #[test]
+    fn every_nested_dyn_leaf_is_rejected() {
+        let env=vec![Local{name:"d".into(),ty:Ty::Dyn,moved:false,ro:false,byref:false}];
+        for e in [
+            Expr::Var("d".into()),
+            Expr::Call("left".into(),vec![Expr::Str("abc".into()),Expr::Var("d".into())]),
+            Expr::Call("upper".into(),vec![Expr::Call("left".into(),vec![Expr::Str("abc".into()),Expr::Var("d".into())])]),
+            Expr::Bin('+',Box::new(Expr::Var("d".into())),Box::new(Expr::Int("1".into()))),
+        ] {assert!(!nil_method_arg_nothrow(&e,&env));}
     }
 }

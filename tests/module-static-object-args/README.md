@@ -24,7 +24,7 @@ live receiver, the ordinary callee ownership and virtual dispatch remain.
 No string error is substituted for evaluated arguments. The NIL error still
 uses the declared description-string catch model, not a Harbour Error object.
 
-`check.py` has 244 assertions, runnable in independent --stage shards:
+`check.py` has 254 assertions, runnable in independent --stage shards:
 
 - memory: 168 assertions, each with an actual and a separate control run.
   Four method parameter shapes (typed string, Dyn destination, three strings,
@@ -36,7 +36,7 @@ uses the declared description-string catch model, not a Harbour Error object.
   call/catch counts prove the method entered only on live receivers. Windows
   expected bytes use the target's CRLF contract. This translation does not
   claim equivalence of Harbour Error objects and compiler description strings.
-- negative: 20 real compiler rejections, all with Harbour-valid sources.
+- negative: 30 real compiler rejections, all with Harbour-valid sources.
   They cover fresh calls, later throwing arguments, nested sends, indexing,
   Dyn/float input, duplicate moved locals, constructor receiver chains and an
   unmeasured builtin. Both NIL/live source forms are checked.
@@ -57,3 +57,5 @@ throw before evaluating fresh). The production route rejects those forms;
 it does not claim the dispatch bug fixed. Separate method-body-throw probes
 showed delta4 at N1 and1501 at N500. Those are retained as an open general
 frame-unwind limit, not counted among the balanced assertions above.
+
+Reviewer boundary correction: the recursive whitelist checks every variable leaf against its static type, rejecting Dyn even when nested in Left counts, arithmetic, Space counts or later scalar arguments. Typed input alone is not a proof: Dyn arithmetic can return I64 while still throwing during extraction. Five extra negative shapes, each NIL/live, prevent both wrong Left payload and previously marshalled string leaks.
