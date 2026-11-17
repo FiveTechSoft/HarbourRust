@@ -93,6 +93,17 @@ def classify_compile_failure(f, rc, err_text):
     return 'FAIL', 'named-limit row rejected with the wrong diagnostic (expected substring %r): %s' % (EXPECTED_REJ[f], last)
 
 
+def stale_named_rejections(res):
+    """Named EXPECTED_REJ rows missing a strict REJ in the results (the
+    row compiled and ran, crashed, or rejected with the wrong diagnostic
+    - classify_compile_failure only produces REJ for the registered
+    rc-1-with-diagnostic shape). EXPECTED_REJ is a dict row ->
+    diagnostic; iterate its keys. Run 44039075657: `EXPECTED_REJ - set`
+    on the dict itself raised TypeError after a PASS 1273 + REJ 5
+    battery."""
+    return sorted(set(EXPECTED_REJ) - {r[1] for r in res if r[0] == 'REJ'})
+
+
 def run_case(line, hbc, outdir):
     p = line.split(' ')
     kind, f = p[0], p[1]
@@ -319,9 +330,9 @@ def main():
         print('FAIL runner: %d unexpected REJ row(s)' % len(unexpected_rej))
         bad = 1
     if not a.pattern and EXPECTED_REJ:
-        stale_rej = sorted(EXPECTED_REJ - {r[1] for r in res if r[0] == 'REJ'})
+        stale_rej = stale_named_rejections(res)
         if stale_rej:
-            print('FAIL runner: %d named REJ row(s) did not reject (stale EXPECTED_REJ): %s' % (len(stale_rej), stale_rej[0]))
+            print('FAIL runner: %d named REJ row(s) did not reject with their diagnostic (stale EXPECTED_REJ): %s' % (len(stale_rej), stale_rej[0]))
             bad = 1
     if len(res) != expected:
         print('FAIL runner: suite total %d != expected %d' % (len(res), expected))

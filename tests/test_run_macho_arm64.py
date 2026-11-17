@@ -63,8 +63,19 @@ class ClassifyCompileFailureTests(unittest.TestCase):
         rc, _ = run_fake('#!/bin/sh\nexit 0\n')
         self.assertEqual(rc, 0)  # classify_compile_failure is never called on rc 0
         res = [('PASS', ROW, '')]  # the named row ran instead of rejecting
-        stale = sorted(m.EXPECTED_REJ.keys() - {r[1] for r in res if r[0] == 'REJ'})
-        self.assertIn(ROW, stale)  # main() fails the battery on a stale named REJ
+        self.assertIn(ROW, m.stale_named_rejections(res))  # main() fails the battery on it
+
+    def test_stale_guard_end_to_end_with_real_dict(self):
+        # The exact main() path over the real EXPECTED_REJ dict
+        # (run 44039075657 crashed here with TypeError: dict - set).
+        rows = sorted(m.EXPECTED_REJ)
+        all_rej = [('REJ', f, 'error: line 2: named limit') for f in rows]
+        self.assertEqual(m.stale_named_rejections(all_rej), [])
+        one_pass = [('REJ', f, 'x') for f in rows[1:]] + [('PASS', rows[0], '')]
+        self.assertEqual(m.stale_named_rejections(one_pass), [rows[0]])
+        crash_row = [('FAIL', rows[0], 'named-limit row killed by signal 11: ?')] + [('REJ', f, 'x') for f in rows[1:]]
+        self.assertEqual(m.stale_named_rejections(crash_row), [rows[0]])
+        self.assertEqual(m.stale_named_rejections([]), rows)
 
 
 @unittest.skipUnless(os.environ.get('HBC'), 'set HBC to a real hbc to classify its actual rejection')
