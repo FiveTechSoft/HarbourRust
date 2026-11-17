@@ -9,11 +9,31 @@ rules as tests/run_battery.sh. Rows the backend rejects at compile time are
 reported separately (REJ), never counted as passes.
 
 Usage: python3 tests/run_macho_arm64.py [--hbc ./hbc] [--jobs N] [regex]
-Exit status 0 only when no row FAILs.
+Exit status 0 only when no row FAILs, no row REJs unexpectedly, the suite
+total equals the expected total and (full battery) --thread-ref is given.
 """
 import argparse, codecs, collections, concurrent.futures as cf, os, re, subprocess, sys, tempfile
 
 KINDS = ('pos', 'posx', 'pos2', 'posx2', 'streams', 'streams2')
+
+# Expected suite shape (docs/ARM64-NATIVE-2026-11-16.md, run 43985696680):
+# no row may be rejected by the backend, and the totals are fixed.
+EXPECTED_REJ = set()  # named rows the backend may reject; empty today
+FILE_POSITIVES = 6
+DBF_TESTS = 4
+THREAD_PROGRAMS = 37
+EXT_DEMOS = 8
+# Post-run m_clie.dbf SHA-256 per DBF acceptance test, identical on Linux,
+# native Windows and the arm64 emulator (generated on Linux, stdout checked
+# against the committed expectations).
+DBF_SHA256 = {
+    4: 'cba93cb3b2b4b9caaa84a31f9824895793fcc760184a881c71f99c74d9e44237',
+    5: '3b86d2f4fbf391f928194364cd2440d7ee46668e5c4033aff5517fecc29b64de',
+    6: 'b53d75f1ace2b6573cd0f23c4a2ec99ac675dd9d912eb5b5999080b4f83e13b6',
+    7: 'b53d75f1ace2b6573cd0f23c4a2ec99ac675dd9d912eb5b5999080b4f83e13b6',
+}
+SMOKE_SOURCE = 'FUNCTION Main()\n   ? "arm64 smoke ok"\n   RETURN NIL\n'
+SMOKE_STDOUT = b'arm64 smoke ok\n'
 
 
 def unesc(s):
@@ -52,9 +72,9 @@ def run_case(line, hbc, outdir):
     elif kind == 'posx2':
         exp = rd(p[3]); ok = o == exp and code == int(p[2])
     elif kind == 'streams':
-        exp = rd(p[2]); ok = o == exp and e == rd(p[3])
+        exp = rd(p[2]); ok = o == exp and e == rd(p[3]) and code == 0
     else:
-        exp = rd(p[2]); ok = o == exp and e == rd(p[4])
+        exp = rd(p[2]); ok = o == exp and e == rd(p[4]) and code == 0
     if ok:
         return 'PASS', f, ''
     return 'FAIL', f, 'rc=%s stdout=%r stderr=%r expected=%r' % (code, o[:160], e[:160], exp[:160])
@@ -110,6 +130,8 @@ def dbf_suite(hbc, d):
         res.append(('PASS' if ok else 'FAIL', 'dbf/test%d' % t, '' if ok else 'rc=%s stdout=%r stderr=%r' % (r.returncode, r.stdout[:300], r.stderr[:200])))
         h = __import__('hashlib').sha256((work / 'm_clie.dbf').read_bytes()).hexdigest()
         print('dbf/test%d m_clie.dbf sha256 %s' % (t, h))
+        if h != DBF_SHA256[t]:
+            res[-1] = ('FAIL', 'dbf/test%d' % t, 'm_clie.dbf sha256 %s != reference %s' % (h, DBF_SHA256[t]))
     return res
 
 
@@ -177,22 +199,54 @@ def main():
     ap.add_argument('pattern', nargs='?')
     a = ap.parse_args()
     hbc = os.path.abspath(a.hbc)
+    if not a.pattern and not a.thread_ref:
+        print('FAIL runner: the full battery needs --thread-ref (threads + EXTERNAL reference outputs); refusing to report a partial suite as green')
+        return 1
     rows = [l.rstrip('\n') for l in open('tests/manifest.txt', encoding='latin-1')]
     rows = [l for l in rows if l.split(' ')[0] in KINDS]
     if a.pattern:
         rows = [l for l in rows if re.search(a.pattern, l.split(' ')[1])]
     with tempfile.TemporaryDirectory() as d, cf.ThreadPoolExecutor(a.jobs) as ex:
+        # (3) smoke: one compile+run with a known stdout before the battery,
+        # so a broken compiler or host can never look like zero rows to run.
+        smoke_prg = os.path.join(d, 'smoke.prg')
+        open(smoke_prg, 'w').write(SMOKE_SOURCE)
+        c0 = subprocess.run([hbc, smoke_prg, os.path.join(d, 'smoke'), '--target=macho-arm64'], capture_output=True)
+        if c0.returncode != 0:
+            print('FAIL smoke: compile rc=%s %s' % (c0.returncode, c0.stderr.decode('latin-1')[-200:]))
+            return 1
+        try:
+            r0 = subprocess.run([os.path.join(d, 'smoke')], capture_output=True, stdin=subprocess.DEVNULL, timeout=60)
+            got0 = (r0.stdout, r0.stderr, r0.returncode)
+        except (OSError, subprocess.TimeoutExpired) as e0:
+            got0 = (b'', str(e0).encode('latin-1'), 'exec-error')
+        if got0 != (SMOKE_STDOUT, b'', 0):
+            print('FAIL smoke: rc=%s stdout=%r stderr=%r' % (got0[2], got0[0], got0[1]))
+            return 1
+        print('PASS smoke')
         res = list(ex.map(lambda l: run_case(l, hbc, d), rows))
+        expected = len(rows)
         if not a.pattern:
             res += file_suite(hbc, d) + dbf_suite(hbc, d)
-            if a.thread_ref:
-                res += thread_suite(hbc, d, a.thread_ref) + ext_suite(hbc, d, a.thread_ref)
+            expected += FILE_POSITIVES + DBF_TESTS
+            res += thread_suite(hbc, d, a.thread_ref) + ext_suite(hbc, d, a.thread_ref)
+            expected += THREAD_PROGRAMS + EXT_DEMOS
     for r in res:
         if r[0] != 'PASS':
             print('%s %s %s' % r)
     c = collections.Counter(r[0] for r in res)
     print('SUMMARY', dict(c))
-    return 1 if c.get('FAIL') else 0
+    bad = 0
+    if c.get('FAIL'):
+        bad = 1
+    unexpected_rej = [r for r in res if r[0] == 'REJ' and r[1] not in EXPECTED_REJ]
+    if unexpected_rej:
+        print('FAIL runner: %d unexpected REJ row(s)' % len(unexpected_rej))
+        bad = 1
+    if len(res) != expected:
+        print('FAIL runner: suite total %d != expected %d' % (len(res), expected))
+        bad = 1
+    return bad
 
 
 if __name__ == '__main__':
