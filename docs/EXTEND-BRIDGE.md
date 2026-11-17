@@ -354,3 +354,17 @@ New heap-producing objects require the rebuilt bridge. New-object/old-
 bridge linkage is unsupported. No proxy casillas or copy-back pass is used.
 Nested thunks and callbacks preserve argc/capability, argv, return and
 scratch scopes. See [the representation and limits](DYN-HEAP-FLOAT-2026-11-15.md).
+
+## macOS Apple Silicon (--target=macho-arm64)
+
+hbc writes the executable itself, so the C side is a dylib loaded next
+to it (see docs/ARM64-NATIVE-2026-11-16.md):
+
+    clang -O2 -dynamiclib -undefined dynamic_lookup -Iextend \
+          extend/hbhbr.c myext.c -o libhbext.dylib
+    hbc extdemo.prg extdemo --target=macho-arm64
+    ./extdemo
+
+`--ext-dylib=NAME` changes the install name (default
+`@executable_path/libhbext.dylib`). EXTERNAL with threads is a named
+rejection on this target.
