@@ -20568,6 +20568,48 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                             env.push(CgLocal { name: v.clone(), ty: Ty::Dyn, off: *frame });
                         }
                     }
+                    if var.is_none() {
+                        // A CATCH without a variable still CONSUMES the
+                        // pending exception (Harbour RECOVER without USING):
+                        // pop it and release it exactly like a Dyn slot at
+                        // scope exit (float payload, owned string, owned
+                        // Dyn-cell array, object reference). Without the pop
+                        // the entry stayed on the exception stack and 256
+                        // bare catches overflowed it (oracle pCATCH6 vs
+                        // pCATCH7; Harbour survives 300 bare RECOVERs).
+                        let xk = fresh_lbl();
+                        out.push_str(&format!("    call hbc_seq_exc_take
+    call hbc_float_release
+    @HBC_TAG_KIND@cmp $4, %rax@HBC_TAG_END@
+    jne .Lxda{}
+    mov %rdx, %rdi
+    test %rdi, %rdi
+    jz .Lxdx{}
+    call hbc_freestr
+    jmp .Lxdx{}
+.Lxda{}:
+    @HBC_TAG_KIND@cmp $8, %rax@HBC_TAG_END@
+    jne .Lxdb{}
+    mov %rdx, %rdi
+    test %rdi, %rdi
+    jz .Lxdx{}
+    mov -8(%rdi), %rsi
+    call hbc_dfree
+    jmp .Lxdx{}
+.Lxdb{}:
+", xk, xk, xk, xk, xk, xk, xk, xk));
+                        if CLASSES.with(|c| !c.borrow().is_empty()) {
+                            out.push_str(&format!("    @HBC_TAG_KIND@cmp $13, %rax@HBC_TAG_END@
+    jne .Lxdx{}
+    mov %rdx, %rdi
+    test %rdi, %rdi
+    jz .Lxdx{}
+    call hrobj_release
+", xk, xk));
+                        }
+                        out.push_str(&format!(".Lxdx{}:
+", xk));
+                    }
                     cg_stmts(cbody, env, frame, sigs, strs, out, target, fname, label, flow, slots, dyn_names, byref_names);
                     env.truncate(mark);
                     if finally.is_some() {
@@ -20599,6 +20641,52 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 match expr_ty(e, env, sigs) {
                     Ty::Dyn => {
                         cg_value(e, env, sigs, strs, out, target);
+                        // The pending exception is the SOLE owner of its
+                        // value: CatchBind hands it to the catch slot and a
+                        // bare CATCH discards it, and the Dyn-slot epilogue
+                        // releases owned payloads too. A Dyn pair SHARES the
+                        // source slot's owned payload, so copy it like the
+                        // string path below: owned floats (hbc_float_clone),
+                        // owned strings (hbc_strcpy), owned Dyn-cell arrays
+                        // (hbc_darrclone), objects (retain). Scalars and
+                        // borrowed/shared views carry no ownership.
+                        // (oracle pCATCH9/pCATCH10: double-free segfault at
+                        // function exit before this copy)
+                        let brk = fresh_lbl();
+                        out.push_str(&format!("    call hbc_float_clone
+    @HBC_TAG_KIND@cmp $4, %rax@HBC_TAG_END@
+    jne .Lbrka{}
+    mov %rdx, %rdi
+    mov -8(%rdx), %rsi
+    call hbc_strcpy
+    mov %rax, %rdx
+    mov $4, %eax
+    jmp .Lbrkd{}
+.Lbrka{}:
+    @HBC_TAG_KIND@cmp $8, %rax@HBC_TAG_END@
+    jne .Lbrkb{}
+    mov %rdx, %rdi
+    call hbc_darrclone
+    mov %rax, %rdx
+    mov $8, %eax
+    jmp .Lbrkd{}
+.Lbrkb{}:
+", brk, brk, brk, brk, brk, brk));
+                        if CLASSES.with(|c| !c.borrow().is_empty()) {
+                            out.push_str(&format!("    @HBC_TAG_KIND@cmp $13, %rax@HBC_TAG_END@
+    jne .Lbrkd{}
+    sub $32, %rsp
+    mov %rax, 8(%rsp)
+    mov %rdx, 16(%rsp)
+    mov %rdx, %rdi
+    call hrobj_retain
+    mov 8(%rsp), %rax
+    mov 16(%rsp), %rdx
+    add $32, %rsp
+", brk));
+                        }
+                        out.push_str(&format!(".Lbrkd{}:
+", brk));
                     }
                     Ty::I64 => {
                         cg_value(e, env, sigs, strs, out, target);
@@ -28927,6 +29015,61 @@ hbc_dfree:
     pop %rbx
     ret
 
+# hbc_darrclone: rdi = Dyn-cell array DATA pointer (tag-8 payload, live
+# count at -8). Deep clone of the literal-only cell shape (the checker
+# guarantees scalar/string cells): scalar cells copy verbatim, owned
+# string cells (tag 4) and owned float cells are re-created so the clone
+# owns its payloads independently. Returns rax = new data pointer; the
+# caller owns it. Used by Break(Dyn) so the exception entry never shares
+# the source slot's array.
+hbc_darrclone:
+    push %rbp
+    push %rbx
+    push %r12
+    push %r13
+    push %r14
+    mov %rdi, %rbx
+    mov -8(%rbx), %r12
+    mov %r12, %rdi
+    shl $4, %rdi
+    add $8, %rdi
+    call hbc_alloc
+    mov %r12, (%rax)
+    add $8, %rax
+    mov %rax, %r13
+    xor %r14, %r14
+.Ldacl_loop:
+    cmp %r12, %r14
+    jge .Ldacl_done
+    mov %r14, %rax
+    shl $4, %rax
+    mov (%rbx,%rax), %rcx
+    mov 8(%rbx,%rax), %rdx
+    mov %rcx, %rax
+    call hbc_float_clone
+    @HBC_TAG_KIND@cmp $4, %rax@HBC_TAG_END@
+    jne .Ldacl_store
+    mov %rdx, %rdi
+    mov -8(%rdx), %rsi
+    call hbc_strcpy
+    mov %rax, %rdx
+    mov $4, %eax
+.Ldacl_store:
+    mov %r14, %rcx
+    shl $4, %rcx
+    mov %rax, (%r13,%rcx)
+    mov %rdx, 8(%r13,%rcx)
+    inc %r14
+    jmp .Ldacl_loop
+.Ldacl_done:
+    mov %r13, %rax
+    pop %r14
+    pop %r13
+    pop %r12
+    pop %rbx
+    pop %rbp
+    ret
+
 # hbc_rfree: rdi = block of (ptr,len) pairs, rsi = pair count, rdx =
 # pair-levels (>= 2). Generic recursive free: a child of a block with
 # more than two pair-levels is freed by hbc_rfree at one level less; a
@@ -31968,6 +32111,61 @@ hbc_dfree:
     pop %r13
     pop %r12
     pop %rbx
+    ret
+
+# hbc_darrclone: rdi = Dyn-cell array DATA pointer (tag-8 payload, live
+# count at -8). Deep clone of the literal-only cell shape (the checker
+# guarantees scalar/string cells): scalar cells copy verbatim, owned
+# string cells (tag 4) and owned float cells are re-created so the clone
+# owns its payloads independently. Returns rax = new data pointer; the
+# caller owns it. Used by Break(Dyn) so the exception entry never shares
+# the source slot's array.
+hbc_darrclone:
+    push %rbp
+    push %rbx
+    push %r12
+    push %r13
+    push %r14
+    mov %rdi, %rbx
+    mov -8(%rbx), %r12
+    mov %r12, %rdi
+    shl $4, %rdi
+    add $8, %rdi
+    call hbc_alloc
+    mov %r12, (%rax)
+    add $8, %rax
+    mov %rax, %r13
+    xor %r14, %r14
+.Ldacl_loop:
+    cmp %r12, %r14
+    jge .Ldacl_done
+    mov %r14, %rax
+    shl $4, %rax
+    mov (%rbx,%rax), %rcx
+    mov 8(%rbx,%rax), %rdx
+    mov %rcx, %rax
+    call hbc_float_clone
+    @HBC_TAG_KIND@cmp $4, %rax@HBC_TAG_END@
+    jne .Ldacl_store
+    mov %rdx, %rdi
+    mov -8(%rdx), %rsi
+    call hbc_strcpy
+    mov %rax, %rdx
+    mov $4, %eax
+.Ldacl_store:
+    mov %r14, %rcx
+    shl $4, %rcx
+    mov %rax, (%r13,%rcx)
+    mov %rdx, 8(%r13,%rcx)
+    inc %r14
+    jmp .Ldacl_loop
+.Ldacl_done:
+    mov %r13, %rax
+    pop %r14
+    pop %r13
+    pop %r12
+    pop %rbx
+    pop %rbp
     ret
 
 # hbc_rfree: rdi = block of (ptr,len) pairs, rsi = pair count, rdx =
