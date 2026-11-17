@@ -19,9 +19,10 @@ B. Timing windows on the LINUX runs (wall clock, monotonic): positive
    immediately. The WINDOWS (wine) side asserts BYTES ONLY: wine startup
    dominates and masks the sleep span. As a startup-independent duration
    check, the gate asserts the DIFFERENCE wall_win(idlesleep_loop) -
-   wall_win(idlesleep_noarg) >= 0.9s (both rows share the same wine
-   startup; loop sleeps 1.2s, noarg sleeps nothing). The oracle binary's
-   wall time is recorded for reference.
+   wall_win(idlesleep_noarg) >= 0.9s. Both rows pay the same wine startup,
+   so the difference isolates the Sleep span, but it remains an INDICATION
+   carrying wine startup jitter, not an independent clock. The oracle
+   binary's wall time is recorded for reference.
 
 C. Ownership of the Dyn argument (S5 v2): an owned Dyn temporary
    (Call/Send/SelfGet/memvar/Seq tail) is released by kind after the
@@ -29,14 +30,15 @@ C. Ownership of the Dyn argument (S5 v2): an owned Dyn temporary
    via hbc_freestr, tag-8 owned Dyn array via hbc_dfree, tag-13 object via
    hrobj_release - while a borrowed local Var is never released. Probes
    idown_call_float (Call Dyn heap float), idown_call_string (Call Dyn
-   owned string), idown_send (Send returning Dyn float, object route),
-   idown_memvar (PRIVATE memvar) run 500 iterations under the instrumented
-   DELTA counter (memdelta_guard.emit_delta, shared with trycatch-linux)
-   against per-route controls; idown_borrowed reuses a borrowed Dyn local
-   500 times and prints it afterwards. PASS requires the fail-closed
-   two-state parser (state_ok), stdout match, and delta_probe ==
-   delta_control (0 for the non-object routes; the object routes share the
-   constant template-pool baseline, N-invariant at N=500).
+   owned string), idown_send (Send returning Dyn float, object route) and
+   idown_memvar (PRIVATE memvar read) run 500 iterations under the
+   instrumented DELTA counter (memdelta_guard.emit_delta, shared with
+   trycatch-linux) against per-route controls; idown_borrowed reuses a
+   borrowed Dyn local 500 times and prints it afterwards. PASS requires
+   the fail-closed two-state parser (state_ok), stdout match, and explicit
+   per-route bounds: non-object routes probe == control == 0; the Send
+   route probe == control and both <= 2 (the object runtime's constant
+   template-pool baseline, N-invariant at N=500).
 
 Every run records rc + stderr in results.json; PASS requires rc 0 and
 EMPTY stderr on both ours and the oracle.
@@ -55,14 +57,17 @@ ROWS = {
     "idlesleep_dyn":      (0.15, 2.0),   # Dyn local x := 0.2
 }
 
-# Ownership probes (section C): stem -> control stem (same shape, typed
-# literal argument or local-bound temp, so its delta is the baseline).
+# Ownership probes (section C): stem -> (control stem, max delta). The
+# control runs the same shape with a typed literal argument or a
+# local-bound temp, so its delta is the baseline. Bounds are explicit per
+# route: the non-object routes must balance to ZERO; the Send route carries
+# the object runtime's constant template-pool baseline (<=2, N-invariant).
 OWNERSHIP = {
-    "idown_call_float":  "idown_call_float_c",
-    "idown_call_string": "idown_call_string_c",
-    "idown_send":        "idown_send_c",
-    "idown_memvar":      "idown_memvar_c",
-    "idown_borrowed":    None,
+    "idown_call_float":  ("idown_call_float_c", 0),
+    "idown_call_string": ("idown_call_string_c", 0),
+    "idown_send":        ("idown_send_c", 2),
+    "idown_memvar":      ("idown_memvar_c", 0),
+    "idown_borrowed":    (None, 0),
 }
 
 ap = argparse.ArgumentParser()
@@ -137,21 +142,23 @@ if a.wine:
           f'diff={wl - wn:.3f}s' if wl is not None and wn is not None else 'n/a')
 
 # C. ownership of the Dyn argument: instrumented DELTA counter vs control.
-for stem, ctrl in OWNERSHIP.items():
+for stem, (ctrl, bound) in OWNERSHIP.items():
     expected = (gate / 'expected' / (stem + '.linux.out')).read_bytes()
     (out / stem).mkdir()
     rec = emit_delta(compiler, env, gate / 'programs' / (stem + '.prg'), out / stem, expected)
-    ok = rec['state_ok'] and rec['stdout_match'] and rec['delta'] == 0
-    row = {'test': stem, 'kind': 'ownership-delta', 'probe': rec}
+    ok = rec['state_ok'] and rec['stdout_match'] and rec['delta'] <= bound
+    row = {'test': stem, 'kind': 'ownership-delta', 'probe': rec, 'delta_bound': bound}
     if ctrl is not None:
         (out / ctrl).mkdir()
         crec = emit_delta(compiler, env, gate / 'programs' / (ctrl + '.prg'), out / ctrl, expected)
-        ok = rec['state_ok'] and rec['stdout_match'] and crec['state_ok'] and crec['stdout_match'] and rec['delta'] == crec['delta']
+        ok = (ok and crec['state_ok'] and crec['stdout_match']
+              and crec['delta'] <= bound and rec['delta'] == crec['delta'])
         row['control'] = crec
     row['pass'] = ok
     rows.append(row)
     print(('PASS' if ok else 'FAIL'), stem, 'delta=', rec['delta'],
-          ('control=' + str(row['control']['delta'])) if ctrl else '(no control)')
+          ('control=' + str(row['control']['delta'])) if ctrl else '(no control)',
+          'bound=', bound)
 
 result = {
     'gate': 'idlesleep-linux',
