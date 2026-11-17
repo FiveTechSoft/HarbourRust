@@ -39,7 +39,8 @@ try:
   for entry in manifest['negative']:
    label=entry['name']+'-'+target;r=run([compiler,entry['name']+'.prg',build/(label+ext),'--target='+target],label);okay=r.returncode==1 and entry['contains'].encode()in r.stderr
    records.append({'id':label,'pass':okay});assert okay,(label,r.returncode,r.stdout,r.stderr)
-  for flags in [['--target=macho'],['--experimental-llvm']]:
+  # Mach-O (ARM64 and Intel) runs FILE since 17 November; LLVM still rejects.
+  for flags in [['--experimental-llvm']]:
    label='unsupported-'+target+'-'+flags[0].split('=')[-1].removeprefix('--');r=run([compiler,'file_basic.prg',build/(label+'.s'),*flags],label);assert r.returncode==1 and b'FILE/SET DEFAULT/PATH'in r.stderr,(label,r.stdout,r.stderr);records.append({'id':label,'pass':True})
   # Optional output: case-preserving stem, .exe only for Windows, explicit output unchanged.
   (cwd/'MixedTest.prg').write_text('procedure Main()\n? "ok"\nreturn\n');exe=cwd/('MixedTest'+ext)
