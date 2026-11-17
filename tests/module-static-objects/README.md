@@ -1,0 +1,44 @@
+# Module STATIC objects, first increment
+
+This increment admits `STATIC o := NIL`, then assignments fixing one class
+through a direct constructor (`o := T()` or `o := T():New()`). It does NOT
+close scalar retagging: `STATIC o := 0; o := T():New()` keeps its named
+rejection. Effectful constructor initializers are not valid Harbour STATIC
+initializers, so they are not invented here.
+
+Every function reads the canonical module pointer, not a frame snapshot.
+Rebind retains the new object before releasing the old object. Local aliases,
+parameters and returns use ordinary object ownership. Module cleanup releases
+the canonical owner once. Null is an observable NIL, including ValType U;
+a live instance is ValType O. The first class is fixed syntactically, not
+guessed from member names. Multiple constructor classes are a named limit.
+
+Run check.py with --compiler, --hbmk2, --tree, --output and optional --wine.
+The gate has61 assertions:7 fresh oracle/raw target-pin comparisons,
+11 named rejections (valid Harbour),6 measured memory comparisons at
+N=1/500/1000, 3 explicit null-receiver catch paths, one DATA RHS order check and3 DATA RHS memory checks, plus30 source/receiver/N memory assertions. Each memory comparison
+executes the real constructor/alias/selfassign/return/NIL-release/DATA path
+and its control. Exact integer bound2 is the object pool. String DATA bound3
+includes the retained string template. These are measured controls, not a
+zero-leak claim or an exemption. Failures before the counter, missing DELTA,
+unexpected rc/stderr or wrong stdout all fail closed.
+
+Null DATA read/write and method sends fail with the description string
+`Object access on NIL`, not a crash. This is the runtime's declared string
+error model, not Harbour's Error object or its genCode/subCode interface.
+Uncaught forms exit1; caught forms continue. @ borrows, object container/block
+captures, effectful receiver arguments/DATA RHS and threads are named limits.
+Existing function-local STATIC and module scalar/string/array paths retain
+their own contracts. Alias-based calls or other object patterns outside this
+measured subset retain the compiler's prior object limits.
+
+Five meaningful positive programs join the native manifest. The Linux/Wine
+pins are copied from actual target output and protected with -text. The native
+runner inventory is1235+56=1291; ARM64 has no named rejection, Intel keeps5.
+Local Mac checks are emission-only unless a report explicitly says native.
+
+In programs using this feature, method arguments admit typed integer/logical/date values and a measured non-throwing string-expression subset. Dyn, float and container input arguments remain named rejections, including when the receiver is non-null. User function calls, nested sends, indexing, division and inline effects in string-bearing sends are also named rejections. This fail-closed boundary prevents argument-owner leaks when a null receiver fails after arguments were marshalled. A measured N500 owned-string failure (delta502 vs pool2) is carried as pre-fix evidence, followed by boundary cleanup in the next string-argument increment. Full frame unwind after a method-body throw is still outside scope, not a balanced runtime result. DATA assignment evaluates its RHS before null failure and releases that scalar temporary before throwing.
+
+The extra30 checks cover Space, fresh function return, computed concat, owned local source and borrowed literal, each on live/null receiver and N1/500/1000. A fresh StrOwn expression is copied into DATA and its original temporary freed; an owned variable keeps its source-slot cleanup. The local-source loop explicitly refreshes the moved local before the next iteration. The earlier unrefreshed form is a compile-time move rejection, never counted as runtime memory coverage. Pre-fix owned RHS N500 leaked500 blocks (delta502); post-fix both sources and both receivers match the exact pool bound2.
+
+Empty(object) is a named rejection before code generation, for NIL/live module slots and ordinary local objects. Four compiler-real negative cases cover NIL-first, live-first, both calls in one program, and a local object without the module feature. No Empty NIL/live semantics are claimed.

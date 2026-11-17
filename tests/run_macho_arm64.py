@@ -54,14 +54,13 @@ DBF_TESTS = 4
 THREAD_PROGRAMS = 37
 EXT_DEMOS = 9
 TARGET = '--target=macho-arm64'  # --target=macho runs the same battery on Intel
-# Executable-row inventory of the committed tests/manifest.txt on main
-# (1223 rows, all (kind, source) identities unique; S4 added 9 over the
-# original 1209, S5 added the 5 idlesleep pos2 rows above). The full
-# battery refuses a truncated/empty manifest or a runner constant gone
-# stale; bump this only with the manifest change that explains it.
-# Full total: 1223+6+4+37+9 = 1279, 0 REJ on both targets.
-
-EXPECTED_MANIFEST_ROWS = 1223
+# Executable-row inventory of the committed tests/manifest.txt:
+# 1235 through STATIC-NIL (0edc3e89), then two nullable-string method
+# programs added by cd9d6884: nullable_strings and multiple_strings.
+# The full battery refuses truncated/empty manifests and stale constants.
+# Bump this only with the manifest change that explains it.
+# Full total: 1237+6+4+37+9 = 1293, 0 REJ on both targets.
+EXPECTED_MANIFEST_ROWS = 1237
 # Post-run m_clie.dbf SHA-256 per DBF acceptance test (generated on Linux,
 # stdout checked against the committed expectations). t4 appends records:
 # dbAppend rewrites the header last-update date (bytes 1-3, YY MM DD of the

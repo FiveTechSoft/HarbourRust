@@ -59,3 +59,9 @@ tests/module-static-array/expected/** -text
 
 # hb_idleSleep windows pins carry intentional CRLF.
 tests/idlesleep-linux/expected/** -text
+
+# Raw Linux/Wine bytes for module STATIC object probes.
+tests/module-static-objects/expected/** -text
+
+# Raw nullable method string boundary pins.
+tests/module-static-object-args/expected/** -text

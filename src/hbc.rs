@@ -347,6 +347,34 @@ fn fold_num_bin(op: char, a: &Expr, b: &Expr) -> Option<Expr> {
 // for variable 10/2 while the compiler fold prints 5 for literal 10/2,
 // expropt2.c hb_compExprReduceDiv + oracle hk291). Everything else is
 // rejected by the checker before codegen.
+// Dyn division extracts a double by kind. Owned temporaries must be
+// released on BOTH success and caught-error paths; borrowed locals stay
+// untouched. Caught runtime errors remain description strings in this
+// increment, not Harbour Error objects (registered runtime divergence).
+fn cg_div_operand(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target) {
+    if expr_ty(e, env, sigs) != Ty::Dyn {
+        cg_f64_operand(e, env, sigs, strs, out, target);
+        out.push_str("    xor %eax, %eax\n");
+        return;
+    }
+    cg_expr(e, env, sigs, strs, out, target);
+    let k=fresh_lbl();
+    let owned=dyn_expr_owned(e);
+    out.push_str("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n    movq $0, 24(%rsp)\n");
+    out.push_str(&format!("    cmp $5, %al\n    je .Ldivfloat{k}\n    test %rax, %rax\n    je .Ldivint{k}\n    cmp $9, %rax\n    je .Ldivint{k}\n    movq $1, 24(%rsp)\n    xorpd %xmm0, %xmm0\n    jmp .Ldivsave{k}\n.Ldivfloat{k}:\n    call hbc_float_unpack\n    jmp .Ldivsave{k}\n.Ldivint{k}:\n    cvtsi2sd %rdx, %xmm0\n.Ldivsave{k}:\n    movsd %xmm0, 16(%rsp)\n"));
+    if owned {
+        out.push_str("    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    call hbc_float_release\n");
+        out.push_str(&format!("    @HBC_TAG_KIND@cmpq $4, (%rsp)@HBC_TAG_END@\n    jne .Ldivarr{k}\n    mov 8(%rsp), %rdi\n    call hbc_freestr\n    jmp .Ldivfreed{k}\n.Ldivarr{k}:\n    @HBC_TAG_KIND@cmpq $8, (%rsp)@HBC_TAG_END@\n    jne .Ldivobj{k}\n    mov 8(%rsp), %rdi\n    test %rdi, %rdi\n    je .Ldivfreed{k}\n    mov -8(%rdi), %rsi\n    call hbc_dfree\n    jmp .Ldivfreed{k}\n.Ldivobj{k}:\n"));
+        if CLASSES.with(|c| !c.borrow().is_empty()) {
+            out.push_str(&format!("    @HBC_TAG_KIND@cmpq $13, (%rsp)@HBC_TAG_END@\n    jne .Ldivfreed{k}\n    mov 8(%rsp), %rdi\n    test %rdi, %rdi\n    je .Ldivfreed{k}\n    call hrobj_release\n"));
+        }
+        out.push_str(&format!(".Ldivfreed{k}:\n"));
+    }
+    // Return invalid-kind flag in RAX, not an early throw: the caller
+    // must evaluate BOTH operands before reporting the argument error.
+    out.push_str("    mov 24(%rsp), %rax\n    movsd 16(%rsp), %xmm0\n    add $32, %rsp\n    mov $2, %ecx\n");
+}
+
 fn cg_f64_load(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target) {
     match e {
         Expr::Set(..) => unreachable!("inline `:=` is restricted to integer/logical values in this increment (checked)"),
@@ -396,9 +424,15 @@ fn cg_f64_load(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, 
             // zero (ucomisd sets PF on unordered) and divides through to
             // NaN. The packed metadata carries the asymmetric
             // HB_DBL_LENGTH of the RESULT (hbdefs.h:570, 63zb).
-            cg_f64_operand(a, env, sigs, strs, out, target);
+            let dyn_div = *op=='/' && (expr_ty(a, env, sigs)==Ty::Dyn || expr_ty(b, env, sigs)==Ty::Dyn);
+            if dyn_div { cg_div_operand(a, env, sigs, strs, out, target); } else { cg_f64_operand(a, env, sigs, strs, out, target); }
             out.push_str("    sub $32, %rsp\n    movsd %xmm0, (%rsp)\n    mov %rcx, 8(%rsp)\n");
-            cg_f64_operand(b, env, sigs, strs, out, target);
+            if dyn_div { out.push_str("    mov %rax, 16(%rsp)\n"); }
+            if dyn_div { cg_div_operand(b, env, sigs, strs, out, target); } else { cg_f64_operand(b, env, sigs, strs, out, target); }
+            if dyn_div {
+                let argok = fresh_lbl();
+                out.push_str(&format!("    or 16(%rsp), %rax\n    je .Ldivargok{argok}\n    call hbc_divarg_error\n.Ldivargok{argok}:\n"));
+            }
             if *op == '/' {
                 let l = fresh_lbl();
                 out.push_str(&format!("    xorpd %xmm2, %xmm2\n    ucomisd %xmm2, %xmm0\n    jp .Ldivok{}\n    jne .Ldivok{}\n    call hbc_div0_error\n.Ldivok{}:\n", l, l, l));
@@ -477,7 +511,7 @@ fn cg_f64_load(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, 
             let lb = fresh_lbl();
             out.push_str(&format!("    mov $10, %eax\n    movsd .Lf64c{}(%rip), %xmm2\n    ucomisd %xmm2, %xmm1\n    ja .Lf64la{}\n    xorpd %xmm2, %xmm2\n    subsd %xmm1, %xmm2\n    movsd .Lf64c{}(%rip), %xmm3\n    ucomisd %xmm3, %xmm2\n    jbe .Lf64lb{}\n.Lf64la{}:\n    mov $20, %eax\n.Lf64lb{}:\n    shl $16, %rax\n    or %rax, %rdi\n    movsd %xmm1, %xmm0\n", kc, la, kn, lb, la, lb));
         }
-        Expr::Call(..) => {
+        Expr::Call(..) | Expr::Send(..) => {
             // A float-returning call (63zd): the declared F64 return
             // convention IS the cg_f64_load pair - xmm0 = value bits,
             // rdi = packed metadata - so the ordinary call emission
@@ -3572,7 +3606,7 @@ fn parse(src: &str) -> Result<Prog, String> {
                             Expr::DArrNew => true,
                             _ => false,
                         };
-                        if !matches!(&value, Expr::Log(_) | Expr::Str(_)) && !matches!(&value, Expr::Int(v) if v.parse::<i64>().is_ok()) && !array_init {
+                        if !matches!(&value, Expr::Nil | Expr::Log(_) | Expr::Str(_)) && !matches!(&value, Expr::Int(v) if v.parse::<i64>().is_ok()) && !array_init {
                             return Err(format!("line {}: module STATIC requires a folded i64, logical or string scalar or a constant array initializer (i64/logical/string/NIL cells, nested and empty arrays admitted); NIL, Date, float and hash initializers are not in this increment", line));
                         }
                         if module_slots.iter().any(|(_, id, _)| id == &name) {
@@ -3782,6 +3816,7 @@ fn parse(src: &str) -> Result<Prog, String> {
             return Err(format!("line {}: REQUEST `{}` cannot be honored: the subset has no module linking; only functions defined in this file may be requested", ln, sym));
         }
     }
+    module_static::discover_objects(&funcs,&methods,&classes,&module_slots)?;
     for f in &mut funcs { module_static::bind(f, &module_slots)?; }
     for m in &mut methods { module_static::bind(&mut m.f, &module_slots)?; }
     Ok(Prog { funcs, classes, methods, externs })
@@ -4070,7 +4105,7 @@ fn cg_sarr_index(id: &str, var_off: usize, ies: &[&Expr], env: &[CgLocal], sigs:
 fn set_numeric(f: &Func) {
     NUM_LOCALS.with(|s| *s.borrow_mut()=prescan_numeric(f));
     STATIC_DYN.with(|s|{
-        let mut roots:std::collections::HashSet<String>=f.stmts.iter().filter_map(|s|if let Stmt::Static(_,id,Expr::Nil)=s {Some(id.clone())}else{None}).collect();
+        let mut roots:std::collections::HashSet<String>=f.stmts.iter().filter_map(|s|if let Stmt::Static(_,id,Expr::Nil)=s {if !matches!(module_static::kind(&f.name,id),Some(Ty::Obj(_))){Some(id.clone())}else{None}}else{None}).collect();
         for p in &f.params {if root_param(&f.name,p){roots.insert(p.clone());}}
         *s.borrow_mut()=roots;
     });
@@ -5384,6 +5419,20 @@ fn expr_has_call(e: &Expr) -> bool {
     }
 }
 
+// Nullable method string boundary: arguments must not abandon previously
+// marshalled owners before the receiver's explicit NIL cleanup point. This
+// whitelist intentionally excludes user calls (including fresh()), sends,
+// indexing, division, inline effects and unknown future expression shapes.
+fn nil_method_arg_nothrow(e: &Expr, env: &[Local]) -> bool {
+    match e {
+        Expr::Var(name) => env.iter().rev().find(|v|v.name==*name).map_or(false,|v|matches!(v.ty,Ty::I64|Ty::Bool|Ty::Date|Ty::Str|Ty::StrOwn)),
+        Expr::Str(_) | Expr::Int(_) | Expr::Log(_) => true,
+        Expr::Bin(op,a,b) if matches!(op, '+' | '-' | '*') => nil_method_arg_nothrow(a,env) && nil_method_arg_nothrow(b,env),
+        Expr::Call(id,args) if ["space","upper","lower","left"].iter().any(|n|is_builtin(id,n)) => args.iter().all(|e|nil_method_arg_nothrow(e,env)),
+        _ => false,
+    }
+}
+
 // Arena eligibility guard: hbc_strcat FREES its owned operands, so a
 // routed slot may never be a direct concat operand (t648: `s = s + s`
 // munmapped the arena block). collect_concat_operands finds every `+`
@@ -6097,6 +6146,12 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
             if is_builtin(id, "empty") {
                 if args.len() != 1 { return Err(format!("line {}: `Empty` takes one argument in this increment", n)); }
                 let t = type_expr(&args[0], env, sigs, n)?;
+                // Object slots may be nullable (module STATIC). Empty has
+                // no measured object lowering, so reject before codegen,
+                // including ordinary objects rather than preserving a panic.
+                if matches!(t, Ty::Obj(_)) {
+                    return Err(format!("line {}: `Empty` on an object is not in this increment", n));
+                }
                 let arr = matches!(t, Ty::Arr(_) | Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::Hash);
                 if arr && !matches!(&args[0], Expr::Var(_)) {
                     return Err(format!("line {}: `Empty` on an array/hash needs a variable in this increment", n));
@@ -6324,7 +6379,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                         }
                     }
                     e => match type_expr(e, env, sigs, n)? {
-                        Ty::I64 | Ty::Str | Ty::StrOwn | Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::DArrRef | Ty::Arr(_) | Ty::Dyn | Ty::Bool | Ty::Date => {}
+                        Ty::I64 | Ty::Str | Ty::StrOwn | Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::DArrRef | Ty::Arr(_) | Ty::Dyn | Ty::Bool | Ty::Date | Ty::Obj(_) => {}
                         _ => return Err(format!("line {}: `ValType` is not measured for this type in this PoC", n)),
                     },
                 }
@@ -8035,8 +8090,8 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
             // path preserved, decimal/double widening with Harbour dec
             // rules (max for +,-, sum for *, SET DECIMALS = 2 for /);
             // the static result is a Dyn cell. Without DBF the
-            // integer-only extraction below is unchanged (Dyn division
-            // and Dyn/float mixes stay rejected by name there).
+            // integer-only extraction for +,-,* below is unchanged; division
+            // has a separate by-kind double path outside DBF.
             if matches!(*op, '+' | '-' | '*' | '/' | '%' | '^')
                 && (ta == Ty::Dyn || tb == Ty::Dyn)
                 && matches!(ta, Ty::I64 | Ty::F64 | Ty::Dyn)
@@ -8083,27 +8138,38 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 // division folded at parse (oracle hk291).
                 return Ok(Ty::F64);
             }
-            if *op == '/' && matches!(ta, Ty::Dyn) || *op == '/' && matches!(tb, Ty::Dyn) {
-                // A Dyn payload extracts to i64 in this PoC, so a Dyn
-                // division would TRUNCATE (10/3 -> 3) where Harbour
-                // produces a double (hb_vmDivide) - a silent semantic bug
-                // on valid programs. Rejected by name until Dyn carries
-                // F64 payloads (no Dyn float tag in this increment).
-                return Err(format!("line {}: division with a NIL-able (Dyn) operand is not in this increment (Harbour always divides as doubles; an i64 payload path would silently truncate)", n));
+            if *op == '/' && (matches!(ta, Ty::Dyn) || matches!(tb, Ty::Dyn)) {
+                // hb_vmDivide always divides as doubles, so a Dyn operand
+                // unpacks BY KIND at runtime (oracles pD1-pD6): int tags
+                // convert, a kind-5 float payload unpacks through
+                // hbc_float_unpack, and a NIL/string/logical payload is
+                // Harbour's BASE/1084 "Argument error: /" - routed to the
+                // division-specific description failure mode (clean exit 1,
+                // no dialog). Catch exposes a description string, not an Error
+                // object. A zero divisor is
+                // EG_ZERODIV through hbc_div0_error, like any division.
+                // The static result is F64 with dec = SET DECIMALS = 2,
+                // identical to a typed division (oracle hk292).
+                if !matches!(ta, Ty::I64 | Ty::F64 | Ty::Dyn | Ty::NumLocal) || !matches!(tb, Ty::I64 | Ty::F64 | Ty::Dyn | Ty::NumLocal) {
+                    return Err(format!("line {}: `/` needs numeric operands (strings, logicals and arrays are a Harbour type error, EG_ARG 1084)", n));
+                }
+                return Ok(Ty::F64);
             }
             if ta == Ty::F64 || tb == Ty::F64 {
                 // Float arithmetic on values (oracles hk279/hk292/hk296:
                 // +,- keep dec = max; * sums the decs; / takes SET
                 // DECIMALS = 2; integer operands promote with dec 0).
                 // Mixed float/string, float/logical, float/array and
-                // float/Dyn stay Harbour type errors (BASE/1081+); Dyn
-                // has no float payload tag in this increment.
+                // float/Dyn stay Harbour type errors (BASE/1081+).
                 if matches!(ta, Ty::Dyn) || matches!(tb, Ty::Dyn) {
-                    // Covered LIMIT, not a Harbour error: Harbour runs a
-                    // float op with a number-holding Dyn fine; this PoC's
-                    // Dyn has no float payload tag, so the op is rejected
-                    // by name instead of silently truncating (63zc).
-                    return Err(format!("line {}: arithmetic between a NIL-able (Dyn) value and a float is a covered LIMIT of this increment (Harbour runs it when the Dyn holds a number; this PoC's Dyn has no float payload - registered divergence, no silent truncation)", n));
+                    // Covered LIMIT for +,-,* (not a Harbour error):
+                    // Harbour runs a float op with a number-holding Dyn
+                    // fine, and this PoC's Dyn does carry float payloads
+                    // (S5), but only `/` unpacks a Dyn operand by kind
+                    // (D-I2); +,-,* still extract to i64, so a float
+                    // payload would silently truncate. Rejected by name
+                    // instead (63zc).
+                    return Err(format!("line {}: arithmetic between a NIL-able (Dyn) value and a float is a covered LIMIT of this increment (Harbour runs it when the Dyn holds a number; +,-,* on a Dyn float payload are not unpacked by kind yet - registered divergence, no silent truncation)", n));
                 }
                 if !matches!(ta, Ty::I64 | Ty::F64) || !matches!(tb, Ty::I64 | Ty::F64) {
                     return Err(format!("line {}: arithmetic needs numeric operands (float mixed with strings, logicals or arrays is a Harbour type error)", n));
@@ -8638,6 +8704,22 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                     return Err(format!("line {}: `:{}` on a non-object value ({})", n, name, ty_name(rt)));
                 }
             };
+            if module_static::has_objects() {
+                let mut strings = false;
+                for arg in args {
+                    let t = type_expr(arg,env,sigs,n)?;
+                    strings |= matches!(t,Ty::Str|Ty::StrOwn);
+                    if !matches!(t,Ty::I64|Ty::Bool|Ty::Date|Ty::Str|Ty::StrOwn) {
+                        return Err(format!("line {}: NIL-aware module STATIC object methods support only typed integer/logical/date arguments or measured strings; Dyn, float and container argument unwind is outside this increment",n));
+                    }
+                }
+                if strings && !matches!(recv.as_ref(),Expr::Var(_)|Expr::SelfObj) {
+                    return Err(format!("line {}: NIL-aware string method receiver must be a variable or Self; nested receiver dispatch is not in this increment",n));
+                }
+                if strings && !args.iter().all(|e|nil_method_arg_nothrow(e,env)) {
+                    return Err(format!("line {}: NIL-aware string method arguments require non-throwing expressions; user calls (including fresh), nested dispatch, indexing, division and inline effects are not in this increment",n));
+                }
+            }
             let lname = name.to_lowercase();
             if let Some((_, fname)) = method_lookup(ci, &lname) {
                 if args.iter().any(|a| matches!(a, Expr::ByRef(_))) {
@@ -9342,7 +9424,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                     }
                 }
                 if matches!(s, Stmt::Static(..)) {
-                    if let Some(t @ (Ty::Bool | Ty::StrOwn)) = module_static::current(id) {
+                    if let Some(t @ (Ty::Bool | Ty::StrOwn | Ty::Obj(_))) = module_static::current(id) {
                         if env.iter().any(|v| v.name == *id) { return Err(format!("line {}: duplicate local `{}`", n, id)); }
                         env.push(Local { name:id.clone(), ty:t, moved:false, ro:false, byref:t == Ty::StrOwn });
                         continue;
@@ -13705,7 +13787,14 @@ fn cg_data_value(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
         }
         Ty::Str | Ty::StrOwn => {
             cg_value(e, env, sigs, strs, out, target);
-            out.push_str("    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_strcpy\n    mov %rax, %rdx\n    mov $4, %eax\n");
+            let fresh_owned = module_static::has_objects() && expr_ty(e,env,sigs)==Ty::StrOwn && !matches!(e,Expr::Var(_));
+            // DATA owns its independent copy. A computed owned source has
+            // no source slot to clean it up later; dispose of that temporary
+            // after copying, preserving the new DATA payload across free.
+            if fresh_owned {out.push_str("    sub $32, %rsp\n    mov %rax, (%rsp)\n");}
+            out.push_str("    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_strcpy\n");
+            if fresh_owned {out.push_str("    mov %rax, 8(%rsp)\n    mov (%rsp), %rdi\n    call hbc_freestr\n    mov 8(%rsp), %rax\n    add $32, %rsp\n");}
+            out.push_str("    mov %rax, %rdx\n    mov $4, %eax\n");
         }
         Ty::Bool => { cg_value(e, env, sigs, strs, out, target); out.push_str("    mov %rax, %rdx\n    mov $3, %eax\n"); }
         Ty::Date => { cg_value(e, env, sigs, strs, out, target); out.push_str("    mov %rax, %rdx\n    mov $11, %eax\n"); }
@@ -13846,6 +13935,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             // DATA casilla read: compile-time offset, borrowed Dyn pair.
             let off = data_lookup(ci, &lname).expect("checked");
             cg_value(recv, env, sigs, strs, out, target);
+            if module_static::has_objects(){out.push_str("    test %rax, %rax\n    je hbc_objnil_error\n");}
             out.push_str(&format!("    mov {}(%rax), %rdx\n    mov {}(%rax), %rax\n    call hbc_float_clone\n\n    cmp $4, %rax\n    jne 83f\n    mov %rdx, %rdi\n    mov -8(%rdx), %rsi\n    call hbc_strcpy\n    mov %rax, %rdx\n    mov $4, %eax\n83:\n", 16 + off * 16 + 8, 16 + off * 16));
         }
         Expr::ByRef(_) => unreachable!("`@` arguments are emitted at the call site"),
@@ -13918,6 +14008,10 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                 // post-pass, so the second word never matters.
                 Ty::DArrRef | Ty::DArrRef2 => out.push_str(&format!("    mov -{}(%rbp), %rax\n    xor %edx, %edx\n", v.off)),
                 Ty::Arr(_) => unreachable!("whole-array values are emitted via cg_array_value"),
+                Ty::Obj(_) if module_static::is_module_binding(id) => {
+                    let label=module_static::storage(&CUR_FN.with(|c|c.borrow().clone()),id);
+                    out.push_str(&format!("    mov {}(%rip), %rax\n",label));
+                }
                 Ty::Obj(_) => out.push_str(&format!("    mov -{}(%rbp), %rax\n", v.off)),
             }
         }
@@ -14374,6 +14468,11 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                         Ty::Bool => vt_letter(strs, out, "L"), // hk197
                         Ty::Str | Ty::StrOwn => vt_letter(strs, out, "C"),
                         Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::DArrRef | Ty::DArrRef2 | Ty::AView | Ty::Arr(_) => vt_letter(strs, out, "A"),
+                        Ty::Obj(_) => {
+                            cg_value(&args[0],env,sigs,strs,out,target);
+                            let k=fresh_lbl();out.push_str(&format!("    test %rax, %rax\n    je .Lvtobjnil{k}\n"));
+                            vt_letter(strs,out,"O");out.push_str(&format!("    jmp .Lvtobjend{k}\n.Lvtobjnil{k}:\n"));vt_letter(strs,out,"U");out.push_str(&format!(".Lvtobjend{k}:\n"));
+                        },
                         Ty::Dyn => {
                             // tag word of the stack pair (tag at -(off))
                             out.push_str(&format!("    mov -{}(%rbp), %r10\n", var.off));
@@ -16704,7 +16803,13 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                     if !obj_fresh(a, env, sigs) {
                         out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rax, %rdi\n    call hrobj_retain\n    mov (%rsp), %rax\n    add $16, %rsp\n");
                     }
-                    out.push_str("    sub $16, %rsp\n    movq $13, (%rsp)\n    mov %rax, 8(%rsp)\n");
+                    if module_static::has_objects() {
+                        // A fixed-class slot may currently hold NIL. Preserve
+                        // that value at a Dyn boundary, not a fake tag13/null.
+                        out.push_str("    test %rax, %rax\n    mov $1, %r11d\n    mov $13, %r10d\n    cmovne %r10, %r11\n    sub $16, %rsp\n    mov %r11, (%rsp)\n    mov %rax, 8(%rsp)\n");
+                    } else {
+                        out.push_str("    sub $16, %rsp\n    movq $13, (%rsp)\n    mov %rax, 8(%rsp)\n");
+                    }
                     continue;
                 }
                 if matches!(ta, Ty::Obj(_)) && matches!(pty, Some(Ty::Obj(_))) {
@@ -16781,7 +16886,27 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             if dslot >= 0 {
                 // Virtual send: Self is the FIRST (deepest) casilla, its
                 // pointer at casilla+0. Two loads + indirect call.
-                out.push_str(&format!("    mov {}(%rsp), %rax\n    mov (%rax), %rax\n    mov 32(%rax), %rax\n    call *{}(%rax)\n", 16 * (total - 1), dslot * 8));
+                out.push_str(&format!("    mov {}(%rsp), %rax\n",16*(total-1)));
+                if module_static::has_objects(){
+                    let k = fresh_lbl();
+                    out.push_str(&format!("    test %rax, %rax\n    jne .Lobjcallok{k}\n"));
+                    // The callee never starts on NIL. Release exactly its
+                    // owned boundary casillas, after all arguments evaluated
+                    // and moved sources were nulled, then throw. Borrowed
+                    // Str parameters keep their caller-owned allocation.
+                    if let Some(params) = &psig {
+                        for (i,t) in params.iter().enumerate().skip(1) {
+                            let off = 16 * (total - 1 - i);
+                            match t {
+                                Ty::StrOwn => out.push_str(&format!("    mov {}(%rsp), %rdi\n    test %rdi, %rdi\n    je 81f\n    call hbc_freestr\n81:\n",off)),
+                                Ty::Dyn => cg_dyn_stack_release(out,off,false),
+                                _ => {}, // typed scalar or borrowed string
+                            }
+                        }
+                    }
+                    out.push_str(&format!("    call hbc_objnil_error\n.Lobjcallok{k}:\n"));
+                }
+                out.push_str(&format!("    mov (%rax), %rax\n    mov 32(%rax), %rax\n    call *{}(%rax)\n",dslot*8));
             } else {
                 out.push_str(&format!("    call hbc_fn_{}\n", call_lbl));
             }
@@ -18065,6 +18190,11 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             } else if *op == '/' && ta == Ty::I64 && tb == Ty::I64 {
                 // Mirror of type_expr: runtime int/int division is F64.
                 Ty::F64
+            } else if *op == '/' && (ta == Ty::Dyn || tb == Ty::Dyn) {
+                // Mirror of type_expr: Dyn division unpacks each operand
+                // by kind at runtime and is always F64 (D-I2). The DBF
+                // route above keeps its own Dyn cell arithmetic.
+                Ty::F64
             } else if ta == Ty::F64 || tb == Ty::F64 {
                 // Mirror of type_expr: float arithmetic is F64.
                 Ty::F64
@@ -18489,6 +18619,7 @@ fn layout_locals(stmts: &[Stmt], env: &mut Vec<CgLocal>, sigs: &[Sig], frame: &m
                 // the shared .data label (module_static::array_base). A
                 // dynamic module array binds as a genuine Dyn local.
                 let ty = match k {
+                    Some(t @ Ty::Obj(_)) => t,
                     Some(Ty::Arr(n)) => Ty::Arr(n),
                     Some(Ty::StrOwn) => Ty::RefStrOwn,
                     Some(Ty::Dyn) => Ty::Dyn,
@@ -19498,6 +19629,20 @@ fn cg_print_items(es: &[Expr], inline: bool, raw: bool, stderr: bool, env: &[CgL
                         }
                         continue;
                     }
+                    if t == Ty::I64 {
+                        // Harbour date parts print in their own field
+                        // (oracle pdate): Year 5, Month/Day/DoW 3 — a
+                        // direct call in a ? item keeps that width; any
+                        // other expression follows the integer macro.
+                        if let Expr::Call(id, _) = e {
+                            let w = match id.as_str() { "year" => Some(5u32), "month" | "day" | "dow" => Some(3u32), _ => None };
+                            if let Some(w) = w {
+                                if !stderr && !raw { out.push_str("    call hbc_pflush\n"); }
+                                out.push_str(&format!("    mov {}(%rsp), %rax\n    mov ${}, %edi\n    call hbc_print_i64w\n", off, w));
+                                continue;
+                            }
+                        }
+                    }
                     if t==Ty::NumLocal {
                         if !stderr && !raw {out.push_str("    call hbc_pflush\n");}
                         let l=fresh_lbl();let d=fresh_lbl();
@@ -19710,6 +19855,12 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n");
                 cg_data_value(e, env, sigs, strs, out, target);
                 out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+                if module_static::has_objects(){
+                    let k=fresh_lbl();
+                    out.push_str(&format!("    cmpq $0, 16(%rsp)\n    jne .Lobjwriteok{k}\n"));
+                    cg_dyn_stack_release(out,0,false);
+                    out.push_str(&format!("    call hbc_objnil_error\n.Lobjwriteok{k}:\n"));
+                }
                 out.push_str(&format!("    mov 16(%rsp), %rax\n    mov {}(%rax), %rdx\n    mov {}(%rax), %rax\n    call hbc_float_release\n",16+off*16+8,16+off*16));
                 out.push_str(&format!("    mov 16(%rsp), %rax\n    cmpq $4, {}(%rax)\n    jne 84f\n    mov {}(%rax), %rdi\n    test %rdi, %rdi\n    je 84f\n    call hbc_freestr\n84:\n", 16 + off * 16, 16 + off * 16 + 8));
                 out.push_str(&format!("    mov 16(%rsp), %rax\n    mov (%rsp), %rcx\n    mov %rcx, {}(%rax)\n    mov 8(%rsp), %rcx\n    mov %rcx, {}(%rax)\n    add $32, %rsp\n", 16 + off * 16, 16 + off * 16 + 8));
@@ -19754,7 +19905,9 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 let off = *frame;
                 let owner = CUR_FN.with(|c| c.borrow().clone());
                 let arr_ty = module_static::current(id);
-                if arr_ty == Some(Ty::Dyn) {
+                if matches!(arr_ty,Some(Ty::Obj(_))) {
+                    out.push_str(&format!("    movq $0, -{}(%rbp)\n",off));
+                } else if arr_ty == Some(Ty::Dyn) {
                     // Dynamic shared-reference array: load the canonical Dyn
                     // casilla {tag 16, object pointer} into the local slot.
                     let label = module_static::storage(&owner, id);
@@ -19763,6 +19916,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                     out.push_str(&format!("    lea {}(%rip), %rax\n    mov %rax, -{}(%rbp)\n", module_static::storage(&owner, id), off));
                 }
                 let ty = match arr_ty {
+                    Some(t @ Ty::Obj(_)) => t,
                     Some(Ty::Arr(n)) => Ty::Arr(n),
                     Some(Ty::StrOwn) => Ty::RefStrOwn,
                     Some(Ty::Dyn) => Ty::Dyn,
@@ -20846,6 +21000,17 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 if let Stmt::MemvarSet(_,_,_,e)=s {cg_memvar_put(id,e,env,sigs,strs,out,target);}
             }
             Stmt::Assign(_, id, e) => {
+                if module_static::object(id).is_some() && module_static::is_module_binding(id) {
+                    let label=module_static::storage(&CUR_FN.with(|c|c.borrow().clone()),id);
+                    if matches!(e,Expr::Nil){out.push_str("    xor %eax, %eax\n");}
+                    else {
+                        cg_value(e,env,sigs,strs,out,target);
+                        if !obj_fresh(e,env,sigs){out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rax, %rdi\n    call hrobj_retain\n    mov (%rsp), %rax\n    add $16, %rsp\n");}
+                    }
+                    out.push_str(&format!("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov {}(%rip), %rdi\n    call hrobj_release\n    mov (%rsp), %rax\n    add $16, %rsp\n    mov %rax, {}(%rip)\n",label,label));
+                    continue;
+                }
+
                 if env.iter().rev().any(|v|v.name==*id&&v.off==0){cg_memvar_put(id,e,env,sigs,strs,out,target);continue;}
                 if matches!(e, Expr::ArrLit(..) | Expr::DArrNew) && is_sarr(id) {
                     // S4 rebuild: fresh descriptor-built object replaces
@@ -22698,6 +22863,7 @@ fn cg_func(f: &Func, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, tar
             if let Stmt::Static(_, id, value) = st {
                 let words = match value {
                     Expr::Int(n) => format!("{}, 1", n),
+                    Expr::Nil if matches!(module_static::kind(&f.name,id),Some(Ty::Obj(_))) => "0, 0".to_string(),
                     Expr::Nil => "1, 0".to_string(),
                     Expr::Log(v) => format!("{}, 0", if *v {1}else{0}),
                     Expr::Str(_) => "0, 0".to_string(),
@@ -27039,6 +27205,9 @@ fn emit_asm(funcs: &[Func], sigs: &[Sig], externs: &[String], target: Target, in
         eprintln!("error: classes support Linux and Windows targets in this increment (Mach-O pending)");
         process::exit(1);
     }
+    if THREADS.with(|c| c.get()) && module_static::has_objects() {
+        eprintln!("error: module STATIC object storage with threads is outside this increment");process::exit(1);
+    }
     if THREADS.with(|c| c.get()) && funcs.iter().any(|f| f.stmts.iter().any(|s| matches!(s, Stmt::Static(_,_,Expr::Str(_) | Expr::Log(_) | Expr::ArrLit(_) | Expr::DArrNew)))) {
         eprintln!("error: module STATIC logical/string/array storage with threads is outside this increment"); process::exit(1);
     }
@@ -27550,7 +27719,13 @@ hbc_persistent_payload_release:
 ");
     out.push_str("hbc_persistent_cleanup:\n    push %rbp\n    mov %rsp, %rbp\n    sub $32, %rsp\n");
     if funcs_have_shared_arrays(funcs) { out.push_str("    call hbc_sarr_sweep\n"); }
+    let mut object_cleaned=std::collections::HashSet::new();
     for f in funcs {for st in &f.stmts {if let Stmt::Static(_,id,Expr::Nil)=st {
+        if matches!(module_static::kind(&f.name,id),Some(Ty::Obj(_))) {
+            let label=module_static::storage(&f.name,id);
+            if object_cleaned.insert(label.clone()){out.push_str(&format!("    mov {}(%rip), %rdi\n    movq $0, {}(%rip)\n    call hrobj_release\n",label,label));}
+            continue;
+        }
         out.push_str(&format!("    lea hbc_static_{}_{}_{}(%rip), %rdi\n    call hbc_persistent_release\n",f.name.len(),f.name,id));
     }}}
     let mut module_strings = std::collections::HashSet::new();
@@ -28090,6 +28265,61 @@ hbc_print_i64c:
     jbe 6f
     mov $20, %rax
 6:
+    sub %r10, %rax
+    jle 7f
+    mov %rax, %rdx
+    lea .Lpad20(%rip), %rsi
+    mov $1, %eax
+    mov $1, %edi
+    syscall
+7:
+    mov %r9, %rsi
+    mov %r10, %rdx
+    mov $1, %eax
+    mov $1, %edi
+    syscall
+    leave
+    ret
+
+# hbc_print_i64w: %rax = signed value, %edi = fixed field width. Harbour
+# date parts print with their own field (oracle pdate: Year 5, Month/Day/
+# DoW 3), not the integer 10/20 macro. Values wider than the field keep
+# the digits (Harbour overflows the field).
+hbc_print_i64w:
+    push %rbp
+    mov %rsp, %rbp
+    sub $64, %rsp
+    mov %edi, -48(%rbp)
+    xor %r9d, %r9d
+    test %rax, %rax
+    jns 1f
+    mov $1, %r9d
+    neg %rax
+1:
+    lea -1(%rbp), %rsi
+    mov $10, %r8
+2:
+    xor %edx, %edx
+    div %r8
+    add $48, %dl
+    mov %dl, (%rsi)
+    dec %rsi
+    test %rax, %rax
+    jnz 2b
+    test %r9d, %r9d
+    jz 3f
+    movb $45, (%rsi)
+    dec %rsi
+3:
+    lea 1(%rsi), %r9
+    lea -1(%rbp), %r10
+    sub %r9, %r10
+    inc %r10
+    mov -48(%rbp), %eax
+    cmp %r10, %rax
+    jae 4f
+    mov %r10, %rax
+4:
     sub %r10, %rax
     jle 7f
     mov %rax, %rdx
@@ -28693,6 +28923,30 @@ hbc_round_range_error:
 # array indexing). Harbour raises a type-error dialog; headless probes
 # cannot capture it, so this PoC prints and exits 1 (registered failure
 # mode, same error condition).
+hbc_objnil_error:
+    cmpq $0, hbc_seq_depth(%rip)
+    jne .Lseqt_objnil
+    lea .Lobjnilmsg(%rip), %rsi
+    mov $21, %edx
+    mov $1, %eax
+    mov $1, %edi
+    syscall
+    mov $60, %eax
+    mov $1, %edi
+    syscall
+
+hbc_divarg_error:
+    cmpq $0, hbc_seq_depth(%rip)
+    jne .Lseqt_divarg
+    lea .Ldivargmsg(%rip), %rsi
+    mov $18, %edx
+    mov $1, %eax
+    mov $1, %edi
+    syscall
+    mov $60, %eax
+    mov $1, %edi
+    syscall
+
 hbc_type_error:
     cmpq $0, hbc_seq_depth(%rip)
     jne .Lseqt_type
@@ -29567,6 +29821,12 @@ hbc_seq_unwind:
 .Lseqt_type:
     lea .LseqD_type(%rip), %rsi
     jmp hbc_seq_throw_error
+.Lseqt_objnil:
+    lea .LseqD_objnil(%rip), %rsi
+    jmp hbc_seq_throw_error
+.Lseqt_divarg:
+    lea .LseqD_divarg(%rip), %rsi
+    jmp hbc_seq_throw_error
 .Lseqt_round:
     lea .LseqD_round(%rip), %rsi
     jmp hbc_seq_throw_error
@@ -29871,7 +30131,7 @@ fn finalize_trace(mut out: String, target: Target) -> String {
         out.push_str("\n    .text\n");
         // The raw writer, not the console wrapper, owns stderr's byte
         // route. dynlit is obsolete; numeric-local F64 has its own entry.
-        for name in ["str", "sep", "i64", "i64c", "dyn", "dyncell", "num_f64", "f64"] {
+        for name in ["str", "sep", "i64", "i64c", "i64w", "dyn", "dyncell", "num_f64", "f64"] {
             let label = if name == "str" { "\nhbc_write_bytes:".to_string() }
                 else { format!("\nhbc_print_{}:", name) };
             let start = original.find(&label).expect("print helper exists") + 1;
@@ -30049,6 +30309,10 @@ fn emit_strings(out: &mut String, strs: &[String]) {
     // "Type error: NIL used as a number\n" (33 bytes; registered failure mode)
     out.push_str(".Losbadmsg:\n    .byte 73,110,116,101,114,110,97,108,32,101,114,114,111,114,58,32,79,83,32,102,114,101,101,32,102,97,105,108,101,100,10\n");
     out.push_str(".Lregbadmsg:\n    .byte 73,110,116,101,114,110,97,108,32,101,114,114,111,114,58,32,97,108,108,111,99,97,116,105,111,110,32,114,101,103,105,115,116,114,121,32,109,105,115,109,97,116,99,104,10\n");
+    out.push_str(".Lobjnilmsg:\n    .byte 79,98,106,101,99,116,32,97,99,99,101,115,115,32,111,110,32,78,73,76,10\n");
+    out.push_str(".quad 20\n.LseqD_objnil:\n    .byte 79,98,106,101,99,116,32,97,99,99,101,115,115,32,111,110,32,78,73,76\n");
+    out.push_str(".Ldivargmsg:\n    .byte 65,114,103,117,109,101,110,116,32,101,114,114,111,114,58,32,47,10\n");
+    out.push_str(".quad 17\n.LseqD_divarg:\n    .byte 65,114,103,117,109,101,110,116,32,101,114,114,111,114,58,32,47\n");
     out.push_str(".Ltypemsg:\n    .byte 84,121,112,101,32,101,114,114,111,114,58,32,78,73,76,32,117,115,101,100,32,97,115,32,97,32,110,117,109,98,101,114,10\n");
     out.push_str(".Ldbfstrmsg:\n    .byte 84,121,112,101,32,101,114,114,111,114,58,32,102,105,101,108,100,32,105,115,32,110,111,116,32,97,32,99,104,97,114,97,99,116,101,114,32,118,97,108,117,101,10\n");
     out.push_str(".Llogmsg:\n    .byte 84,121,112,101,32,101,114,114,111,114,58,32,99,111,110,100,105,116,105,111,110,32,105,115,32,110,111,116,32,97,32,108,111,103,105,99,97,108,10\n");
@@ -31192,6 +31456,58 @@ hbc_print_i64:
     leave
     ret
 
+# hbc_print_i64w: %rax = signed value, %edi = fixed field width. Harbour
+# date parts print with their own field (oracle pdate: Year 5, Month/Day/
+# DoW 3). Values wider than the field keep the digits.
+hbc_print_i64w:
+    push %rbp
+    mov %rsp, %rbp
+    sub $64, %rsp
+    mov %edi, -48(%rbp)
+    xor %r9d, %r9d
+    test %rax, %rax
+    jns 1f
+    mov $1, %r9d
+    neg %rax
+1:
+    lea -1(%rbp), %r10
+    mov $10, %r8
+2:
+    xor %edx, %edx
+    div %r8
+    add $48, %dl
+    mov %dl, (%r10)
+    dec %r10
+    test %rax, %rax
+    jnz 2b
+    test %r9d, %r9d
+    jz 3f
+    movb $45, (%r10)
+    dec %r10
+3:
+    lea 1(%r10), %rax
+    mov %rbp, %rdx
+    sub %r10, %rdx
+    dec %rdx
+    mov -48(%rbp), %r11d
+    cmp %rdx, %r11
+    jae 4f
+    mov %rdx, %r11
+4:
+    sub %rdx, %r11
+    jle 7f
+    mov %rax, -32(%rbp)
+    mov %rdx, -40(%rbp)
+    lea .Lpad20(%rip), %rax
+    mov %r11, %rdx
+    call hbc_print_str
+    mov -32(%rbp), %rax
+    mov -40(%rbp), %rdx
+7:
+    call hbc_print_str
+    leave
+    ret
+
 # hbc_print_i64c: computed (runtime) i64 field (hk327/hk328). Harbour
 # stamps runtime integers with the 10/20 macro length (hbdefs.h; oracle
 # w_var, 31Oct): 10 for -999999999..9999999999, else 20. Literal/folded
@@ -31665,6 +31981,32 @@ hbc_dynxeq_dd:
 
 # hbc_type_error: NIL used as a number at runtime. Reached via a JUMP from
 # hbc_dyn_to_i64, so force 16-byte alignment before calling out (noreturn).
+hbc_objnil_error:
+    cmpq $0, hbc_seq_depth(%rip)
+    jne .Lseqt_objnil
+    push %rbp
+    mov %rsp, %rbp
+    and $-16, %rsp
+    sub $48, %rsp
+    lea .Lobjnilmsg(%rip), %rax
+    mov $21, %edx
+    call hbc_print_str
+    mov $1, %ecx
+    call ExitProcess
+
+hbc_divarg_error:
+    cmpq $0, hbc_seq_depth(%rip)
+    jne .Lseqt_divarg
+    push %rbp
+    mov %rsp, %rbp
+    and $-16, %rsp
+    sub $48, %rsp
+    lea .Ldivargmsg(%rip), %rax
+    mov $18, %edx
+    call hbc_print_str
+    mov $1, %ecx
+    call ExitProcess
+
 hbc_type_error:
     cmpq $0, hbc_seq_depth(%rip)
     jne .Lseqt_type
@@ -32719,6 +33061,12 @@ hbc_seq_unwind:
 .Lseqt_type:
     lea .LseqD_type(%rip), %rsi
     jmp hbc_seq_throw_error
+.Lseqt_objnil:
+    lea .LseqD_objnil(%rip), %rsi
+    jmp hbc_seq_throw_error
+.Lseqt_divarg:
+    lea .LseqD_divarg(%rip), %rsi
+    jmp hbc_seq_throw_error
 .Lseqt_round:
     lea .LseqD_round(%rip), %rsi
     jmp hbc_seq_throw_error
@@ -32847,7 +33195,7 @@ fn discover_root_params(fs:&[Func]) {
 
 fn validate_persistent(f:&Func)->Result<(),String> {
     use std::collections::HashSet;
-    let mut roots:HashSet<String>=f.stmts.iter().filter_map(|s|if let Stmt::Static(_,id,Expr::Nil)=s {Some(id.clone())}else{None}).collect();
+    let mut roots:HashSet<String>=f.stmts.iter().filter_map(|s|if let Stmt::Static(_,id,Expr::Nil)=s {if matches!(module_static::kind(&f.name,id),Some(Ty::Obj(_))){None}else{Some(id.clone())}}else{None}).collect();
     for p in &f.params {if root_param(&f.name,p){roots.insert(p.clone());}}
     fn ex(e:&Expr,roots:&HashSet<String>,whole:bool)->bool {match e {
         Expr::Var(v)=>!roots.contains(v)||whole,
@@ -35138,6 +35486,67 @@ mod cpp_directive_comment_tests {
                         "line {}: comment starts with cpp directive {:?}: {}", i + 1, word, t);
                 }
             }
+        }
+    }
+}
+
+#[cfg(test)]
+mod nullable_method_string_tests {
+    use super::*;
+    #[test]
+    fn accepts_only_measured_nothrow_string_argument_shapes() {
+        let nested = Expr::Call("left".into(), vec![
+            Expr::Call("upper".into(), vec![Expr::Str("abc".into())]),
+            Expr::Int("2".into()),
+        ]);
+        assert!(nil_method_arg_nothrow(&nested,&[]));
+        assert!(nil_method_arg_nothrow(&Expr::Call("space".into(), vec![
+            Expr::Bin('*', Box::new(Expr::Int("2".into())), Box::new(Expr::Int("3".into())))
+        ]),&[]));
+        let env = vec![Local{name:"s".into(),ty:Ty::StrOwn,moved:false,ro:false,byref:false}];
+        assert!(nil_method_arg_nothrow(&Expr::Call("lower".into(), vec![Expr::Var("s".into())]),&env));
+    }
+    #[test]
+    fn rejects_throwing_nested_and_unmeasured_argument_shapes() {
+        for e in [
+            Expr::Call("fresh".into(), vec![]),
+            Expr::Call("space".into(), vec![Expr::Call("zero".into(),vec![])]),
+            Expr::Bin('/', Box::new(Expr::Int("1".into())), Box::new(Expr::Int("0".into()))),
+            Expr::Index("a".into(),Box::new(Expr::Int("1".into()))),
+            Expr::Send(Box::new(Expr::Var("o".into())),"echo".into(),vec![]),
+            Expr::Call("trim".into(),vec![Expr::Str("x".into())]),
+            Expr::Seq(vec![Expr::Str("x".into())]),
+        ] { assert!(!nil_method_arg_nothrow(&e,&[])); }
+    }
+}
+
+#[cfg(test)]
+mod nullable_method_dyn_leaf_tests {
+    use super::*;
+    #[test]
+    fn every_nested_dyn_leaf_is_rejected() {
+        let env=vec![Local{name:"d".into(),ty:Ty::Dyn,moved:false,ro:false,byref:false}];
+        for e in [
+            Expr::Var("d".into()),
+            Expr::Call("left".into(),vec![Expr::Str("abc".into()),Expr::Var("d".into())]),
+            Expr::Call("upper".into(),vec![Expr::Call("left".into(),vec![Expr::Str("abc".into()),Expr::Var("d".into())])]),
+            Expr::Bin('+',Box::new(Expr::Var("d".into())),Box::new(Expr::Int("1".into()))),
+        ] {assert!(!nil_method_arg_nothrow(&e,&env));}
+    }
+}
+
+#[cfg(test)]
+mod datepart_width_storage_tests {
+    use super::*;
+    #[test]
+    fn fixed_width_helpers_keep_the_width_outside_digit_storage() {
+        for target in [Target::Linux,Target::Windows] {
+            let runtime=emit_asm(&[],&[],&[],target,false);
+            let helper=runtime.split("hbc_print_i64w:\n").nth(1).expect("width helper").split("\nhbc_").next().unwrap();
+            assert!(helper.contains("mov %edi, -48(%rbp)"));
+            assert!(!helper.contains("mov -12(%rbp), %rax"));
+            assert!(!helper.contains("mov -48(%rbp), %r11\n"));
+            assert!(helper.contains("mov -48(%rbp), %eax") || helper.contains("mov -48(%rbp), %r11d"));
         }
     }
 }

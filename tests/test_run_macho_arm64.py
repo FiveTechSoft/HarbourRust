@@ -9,7 +9,7 @@ successful compile (which must leave the named row to the stale-REJ
 guard). With HBC=<path to a real hbc> the five idlesleep rows are
 checked to compile for both Mach-O targets.
 """
-import importlib.util, os, subprocess, tempfile, unittest
+import importlib.util, os, subprocess, tempfile, unittest, io, contextlib, sys
 from unittest.mock import patch
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -132,6 +132,42 @@ class TimingTests(unittest.TestCase):
                     self.assertEqual(m.run_case(line,'fake','/tmp')[0],'FAIL')
 
 
+
+
+class ManifestInventoryTests(unittest.TestCase):
+    def manifest_rows(self):
+        with open(os.path.join(HERE,'manifest.txt'),encoding='latin-1') as f:
+            return [l.rstrip('\n') for l in f if l.split(' ')[0] in m.KINDS]
+
+    def test_committed_manifest_inventory_and_total(self):
+        rows=self.manifest_rows()
+        self.assertEqual(len(rows),m.EXPECTED_MANIFEST_ROWS)
+        self.assertEqual(len({tuple(l.split(' ')[:2]) for l in rows}),len(rows))
+        self.assertEqual(len(rows)+m.FILE_POSITIVES+m.DBF_TESTS+m.THREAD_PROGRAMS+m.EXT_DEMOS,1293)
+
+    def test_real_main_preflight_reaches_smoke_for_both_targets(self):
+        # Exercise main(), not a second implementation of its count guard.
+        # Stop at a deliberate smoke compile failure; this is NOT a native run.
+        for target in ['macho-arm64','macho']:
+            output=io.StringIO()
+            with self.subTest(target=target), patch.object(sys,'argv',['runner','--hbc','fake','--thread-ref','reference','--target',target]), patch.object(m.subprocess,'run',return_value=subprocess.CompletedProcess([],7,b'',b'inventory-test-stop')) as run, contextlib.redirect_stdout(output):
+                self.assertEqual(m.main(),1)
+                self.assertEqual(run.call_count,1)
+                self.assertIn('FAIL smoke: compile rc=7',output.getvalue())
+                self.assertNotIn('FAIL runner:',output.getvalue())
+                self.assertIn('--target='+target,run.call_args.args[0])
+        m.configure_target('macho-arm64')
+
+    def test_real_main_still_rejects_truncated_manifest(self):
+        text='\n'.join(self.manifest_rows()[:-1])+'\n'
+        for target in ['macho-arm64','macho']:
+            output=io.StringIO()
+            with self.subTest(target=target), patch.object(sys,'argv',['runner','--hbc','fake','--thread-ref','reference','--target',target]), patch('builtins.open',return_value=io.StringIO(text)), patch.object(m.subprocess,'run') as run, contextlib.redirect_stdout(output):
+                self.assertEqual(m.main(),1)
+                run.assert_not_called()
+                self.assertIn('FAIL runner: manifest has',output.getvalue())
+                self.assertIn('expected inventory 1237',output.getvalue())
+        m.configure_target('macho-arm64')
 
 if __name__ == '__main__':
     unittest.main()
