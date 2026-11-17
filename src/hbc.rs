@@ -6905,6 +6905,20 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 }
                 return Ok(Ty::F64);
             }
+            if is_builtin(id, "hb_idlesleep") {
+                // hb_idleSleep([nSeconds]) (rtl/idle.c:133): negative is a
+                // no-op, zero serves the idle queue once (no idle tasks in
+                // this runtime, so an immediate return), positive sleeps.
+                // Returns NIL. Dyn args follow hb_parnd: numeric payloads
+                // convert, NIL/other tags default to 0.
+                if args.len() > 1 { return Err(format!("line {}: `hb_idleSleep` takes at most one numeric argument in this increment",n)); }
+                if let Some(a) = args.first() {
+                    if !matches!(type_expr(a,env,sigs,n)?, Ty::I64 | Ty::F64 | Ty::NumLocal | Ty::Dyn) {
+                        return Err(format!("line {}: `hb_idleSleep` expects a numeric argument",n));
+                    }
+                }
+                return Ok(Ty::Dyn);
+            }
             if is_builtin(id, "mod") {
                 if args.len()!=2 { return Err(format!("line {}: `Mod` takes two numeric arguments in this increment",n)); }
                 for a in args {
@@ -11225,6 +11239,11 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
                 for a in args { apply_moves(a, env, sigs, false); }
                 return;
             }
+            if is_builtin(id, "hb_idlesleep") {
+                // The numeric seconds argument is READ only; nothing moves.
+                for a in args { apply_moves(a, env, sigs, false); }
+                return;
+            }
             let sig = match sigs.iter().find(|v| v.name == *id) {
                 Some(s) => s,
                 None => {
@@ -14949,6 +14968,20 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             out.push_str(&format!("    call hbc_math_{}
 ", id.to_lowercase()));
         }
+        Expr::Call(id,args) if is_builtin(id,"hb_idlesleep") => {
+            // Both dispatch sides: a typed numeric feeds xmm0 directly; a
+            // Dyn unpacks by kind (float pair through hbc_float_unpack,
+            // int tags convert, NIL/other tags default to 0 like hb_parnd).
+            match args.first() {
+                None => out.push_str("    xorpd %xmm0, %xmm0\n"),
+                Some(a) if expr_ty(a,env,sigs)==Ty::Dyn => {
+                    cg_value(a,env,sigs,strs,out,target);
+                    out.push_str("    mov %rax, %rcx\n    and $255, %rcx\n    cmp $5, %rcx\n    jne 660f\n    call hbc_float_unpack\n    jmp 662f\n660:\n    test %rax, %rax\n    je 661f\n    cmp $9, %rax\n    je 661f\n    xorpd %xmm0, %xmm0\n    jmp 662f\n661:\n    cvtsi2sd %rdx, %xmm0\n662:\n");
+                }
+                Some(a) => cg_f64_operand(a,env,sigs,strs,out,target),
+            }
+            out.push_str("    call hbc_idlesleep\n    mov $1, %eax\n    xor %edx, %edx\n");
+        }
         Expr::Call(id,args) if is_builtin(id,"mod") => {
             cg_f64_operand(&args[0],env,sigs,strs,out,target);
             out.push_str("    mov $10, %eax
@@ -18107,6 +18140,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             if is_builtin(id, "hb_mutexcreate") || is_builtin(id, "hb_mutexnotify") || is_builtin(id, "hb_mutexnotifyall") { return Ty::Dyn; }
             if is_builtin(id, "hb_mutexlock") || is_builtin(id, "hb_mutexunlock") || is_builtin(id, "hb_mutexsubscribe") || is_builtin(id, "hb_mutexsubscribenow") || is_builtin(id, "hb_mutexqueueinfo") || is_builtin(id, "hb_threadonce") { return Ty::Bool; }
             if is_builtin(id, "hb_mutexeval") { return Ty::I64; }
+                        if is_builtin(id, "hb_idlesleep") { return Ty::Dyn; }
             match sigs.iter().find(|v| v.name == *id) {
                 Some(s) => s.ret.expect("checked"),
                 // Extend-System C boundary: every EXTERNAL returns a Dyn
@@ -27532,6 +27566,7 @@ hbc_obj_drop_pending:
                 out.push_str(WIN_HELPERS);
             }
             out.push_str(F64_HELPER);
+            out.push_str(IDLESLEEP_WIN);
             out.push_str(CTOR_HELPERS);
             out.push_str(ARRAY3_HELPER);
             out.push_str(HASH_HELPERS);
@@ -29542,6 +29577,7 @@ hbc_seq_exc: .skip 4096
     out.push_str(ARRAY3_HELPER);
     out.push_str(HASH_HELPERS);
     out.push_str(F64_HELPER);
+    out.push_str(IDLESLEEP_LINUX);
     out.push_str("\n    .section .rodata\n");
     emit_strings(&mut out, &strs);
     emit_f64_consts(&mut out);
@@ -30735,6 +30771,55 @@ hbc_math_mod:
 // then use the target's existing raw writer. Source bytes, lengths, ownership
 // and allocation counters are untouched. Other GTSTD controls stay outside
 // this increment; OutStd/OutErr bypass conversion entirely.
+const IDLESLEEP_LINUX: &str = r#"
+# --- hb_idleSleep ([nSeconds]) ---
+# hbc_idlesleep: xmm0 = seconds. Negative is a no-op (rtl/idle.c:133).
+# A single nanosleep covers the whole span: Harbour's per-slice
+# hb_idleState loop serves idle tasks, and none exist in this runtime.
+hbc_idlesleep:
+    xorpd %xmm1, %xmm1
+    ucomisd %xmm1, %xmm0
+    jp .Lidl_ret
+    jbe .Lidl_ret
+    cvttsd2si %xmm0, %rax
+    cvtsi2sd %rax, %xmm2
+    subsd %xmm2, %xmm0
+    mov $1000000000, %ecx
+    cvtsi2sd %rcx, %xmm3
+    mulsd %xmm3, %xmm0
+    cvttsd2si %xmm0, %rdx
+    sub $24, %rsp
+    mov %rax, (%rsp)
+    mov %rdx, 8(%rsp)
+    mov $35, %eax
+    mov %rsp, %rdi
+    xor %esi, %esi
+    syscall
+    add $24, %rsp
+.Lidl_ret:
+    ret
+"#;
+
+const IDLESLEEP_WIN: &str = r#"
+# --- hb_idleSleep ([nSeconds]) ---
+# hbc_idlesleep: xmm0 = seconds. Negative is a no-op (rtl/idle.c:133);
+# positive sleeps via kernel32 Sleep (no idle tasks to serve here).
+hbc_idlesleep:
+    xorpd %xmm1, %xmm1
+    ucomisd %xmm1, %xmm0
+    jp .Lidlw_ret
+    jbe .Lidlw_ret
+    mov $1000, %ecx
+    cvtsi2sd %rcx, %xmm2
+    mulsd %xmm2, %xmm0
+    cvttsd2si %xmm0, %rcx
+    sub $40, %rsp
+    call Sleep
+    add $40, %rsp
+.Lidlw_ret:
+    ret
+"#;
+
 const CONSOLE_NUL_HELPER: &str = r#"
     .bss
     .balign 8

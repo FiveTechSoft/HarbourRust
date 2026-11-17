@@ -1852,3 +1852,8 @@ neg tests/module-static-array/negative/compound.prg shared-array use is outside 
 neg tests/module-static-array/negative/container.prg shared-array use is outside the dynamic increment
 neg tests/module-static-array/negative/if_whole.prg shared-array use is outside the dynamic increment
 neg tests/module-static-array/negative/obj_cell.prg storing into a cell of the shared module array
+pos2 tests/idlesleep-linux/programs/idlesleep_basic.prg tests/idlesleep-linux/expected/idlesleep_basic.linux.out tests/idlesleep-linux/expected/idlesleep_basic.windows.out
+pos2 tests/idlesleep-linux/programs/idlesleep_negative.prg tests/idlesleep-linux/expected/idlesleep_negative.linux.out tests/idlesleep-linux/expected/idlesleep_negative.windows.out
+pos2 tests/idlesleep-linux/programs/idlesleep_loop.prg tests/idlesleep-linux/expected/idlesleep_loop.linux.out tests/idlesleep-linux/expected/idlesleep_loop.windows.out
+pos2 tests/idlesleep-linux/programs/idlesleep_noarg.prg tests/idlesleep-linux/expected/idlesleep_noarg.linux.out tests/idlesleep-linux/expected/idlesleep_noarg.windows.out
+pos2 tests/idlesleep-linux/programs/idlesleep_dyn.prg tests/idlesleep-linux/expected/idlesleep_dyn.linux.out tests/idlesleep-linux/expected/idlesleep_dyn.windows.out
