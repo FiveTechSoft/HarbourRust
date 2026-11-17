@@ -19,7 +19,7 @@ for src in sorted((gate/'programs').glob('*.prg')):
   ok=ok and (gate/'expected'/(src.stem+'.linux.out')).read_bytes()==oracle_expected
   ok=ok and r is not None and r.returncode==0 and r.stderr==b'' and r.stdout==expected
  add(src.stem,'byte-exact-oracle',ok)
-neg={'nil_owned_argument_neg':'only typed integer/logical/date arguments','array_capture_neg':'owned/container/inline-effect','byref_neg':'logical by-reference','rebind_data_rhs_neg':'inline-effect','rebind_method_arg_neg':'inline-effect','scalar_retag':'keeps the scalar type','thread_neg':'module STATIC object storage with threads'}
+neg={**{name:'`Empty` on an object is not in this increment' for name in ['empty_nil_neg','empty_live_neg','empty_both_neg','empty_local_neg']},'nil_owned_argument_neg':'only typed integer/logical/date arguments','array_capture_neg':'owned/container/inline-effect','byref_neg':'logical by-reference','rebind_data_rhs_neg':'inline-effect','rebind_method_arg_neg':'inline-effect','scalar_retag':'keeps the scalar type','thread_neg':'module STATIC object storage with threads'}
 for name,diag in neg.items():
  src=gate/'negative'/(name+'.prg');w=out/name;w.mkdir();b=run([compiler,src,w/'reject.s'],w,'reject');o=run([a.hbmk2,'-quiet','-gtstd','-w0','-o'+str(w/'oracle'),src],w,'oracle-build',oe)
  add(name,'named-limit',b.returncode==1 and diag.encode() in b.stderr and o.returncode==0,diagnostic=b.stderr.decode())

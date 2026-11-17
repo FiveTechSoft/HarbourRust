@@ -6132,6 +6132,12 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
             if is_builtin(id, "empty") {
                 if args.len() != 1 { return Err(format!("line {}: `Empty` takes one argument in this increment", n)); }
                 let t = type_expr(&args[0], env, sigs, n)?;
+                // Object slots may be nullable (module STATIC). Empty has
+                // no measured object lowering, so reject before codegen,
+                // including ordinary objects rather than preserving a panic.
+                if matches!(t, Ty::Obj(_)) {
+                    return Err(format!("line {}: `Empty` on an object is not in this increment", n));
+                }
                 let arr = matches!(t, Ty::Arr(_) | Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::Hash);
                 if arr && !matches!(&args[0], Expr::Var(_)) {
                     return Err(format!("line {}: `Empty` on an array/hash needs a variable in this increment", n));

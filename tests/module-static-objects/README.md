@@ -14,8 +14,8 @@ a live instance is ValType O. The first class is fixed syntactically, not
 guessed from member names. Multiple constructor classes are a named limit.
 
 Run check.py with --compiler, --hbmk2, --tree, --output and optional --wine.
-The gate has57 assertions:7 fresh oracle/raw target-pin comparisons,
-7 named rejections (valid Harbour),6 measured memory comparisons at
+The gate has61 assertions:7 fresh oracle/raw target-pin comparisons,
+11 named rejections (valid Harbour),6 measured memory comparisons at
 N=1/500/1000, 3 explicit null-receiver catch paths, one DATA RHS order check and3 DATA RHS memory checks, plus30 source/receiver/N memory assertions. Each memory comparison
 executes the real constructor/alias/selfassign/return/NIL-release/DATA path
 and its control. Exact integer bound2 is the object pool. String DATA bound3
@@ -40,3 +40,5 @@ Local Mac checks are emission-only unless a report explicitly says native.
 In programs using this feature, method arguments are currently limited to typed integer/logical/date values. Owned, Dyn, float and container method arguments are named rejections, including when the receiver is non-null. This fail-closed boundary prevents argument-owner leaks when a null receiver fails after arguments were marshalled. A measured N500 owned-string failure (delta502 vs pool2) is carried as pre-fix evidence, followed by the named rejection, not a false balanced runtime result. DATA assignment evaluates its RHS before null failure and releases that scalar temporary before throwing.
 
 The extra30 checks cover Space, fresh function return, computed concat, owned local source and borrowed literal, each on live/null receiver and N1/500/1000. A fresh StrOwn expression is copied into DATA and its original temporary freed; an owned variable keeps its source-slot cleanup. The local-source loop explicitly refreshes the moved local before the next iteration. The earlier unrefreshed form is a compile-time move rejection, never counted as runtime memory coverage. Pre-fix owned RHS N500 leaked500 blocks (delta502); post-fix both sources and both receivers match the exact pool bound2.
+
+Empty(object) is a named rejection before code generation, for NIL/live module slots and ordinary local objects. Four compiler-real negative cases cover NIL-first, live-first, both calls in one program, and a local object without the module feature. No Empty NIL/live semantics are claimed.
