@@ -4406,6 +4406,18 @@ fn receiver_pin_class(member: &str) -> Result<Option<u32>, String> {
 // body only returns or copies is NOT pinnable: report it honestly instead
 // of guessing.
 // ---------------------------------------------------------------------------
+thread_local! {
+    // Parameters some caller passes with @: the slot belongs to the caller.
+    static BYREF_PARAMS: std::cell::RefCell<std::collections::HashMap<String, Vec<usize>>> = std::cell::RefCell::new(std::collections::HashMap::new());
+    // Parameters that already received the tagged slot for lack of evidence.
+    static DEFAULT_DYN: std::cell::RefCell<std::collections::HashSet<(String,usize)>> = std::cell::RefCell::new(std::collections::HashSet::new());
+    // Late phase: enabled only after the ordinary fixpoint converged with the
+    // no-evidence parameter error. A program that compiles today is unchanged.
+    static DEFAULT_ENABLED: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+}
+fn byref_param(function: &str, index: usize) -> bool {
+    BYREF_PARAMS.with(|m|m.borrow().get(function).map_or(false,|v|v.contains(&index)))
+}
 fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>), String> {
     let n = f.params.len();
     let mut pin: Vec<Option<Ty>> = vec![None; n];
@@ -4414,6 +4426,9 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
     // Root-reference parameters keep tagged storage regardless of how their
     // current value is used. Their full body still passes ordinary checking.
     for(i,p)in f.params.iter().enumerate(){if root_param(&f.name,p){pin[i]=Some(Ty::Dyn);}}
+    // Once defaulted, a parameter keeps the tagged slot in later rounds, so the
+    // fixpoint stays monotone (mutual recursion without evidence, t694).
+    DEFAULT_DYN.with(|m|for (name,i) in m.borrow().iter(){if *name==f.name && *i<n {pin[*i]=Some(Ty::Dyn);}});
     // Method functions: the implicit leading `Self` parameter is pinned
     // to the defining class (no body evidence needed).
     if let Some(ci) = METHOD_CLASS.with(|m| m.borrow().get(&f.name).copied()) {
@@ -5462,6 +5477,13 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
             && f.name != "main" && !METHOD_CLASS.with(|m|m.borrow().contains_key(&f.name))
             && pin.iter().all(|t|matches!(t, None | Some(Ty::I64) | Some(Ty::Dyn) | Some(Ty::Obj(_)))) {
             pin[i] = Some(Ty::Dyn);
+        }
+        // No evidence in the body nor at any call site: the parameter travels in a
+        // tagged slot and accepts any value, as in Harbour. By-reference parameters
+        // keep the rejection: their slot is the caller's.
+        if pin[i].is_none() && DEFAULT_ENABLED.with(|v|v.get()) && !byref_param(&f.name,i) {
+            pin[i] = Some(Ty::Dyn);
+            DEFAULT_DYN.with(|m|{m.borrow_mut().insert((f.name.clone(),i));});
         }
         if pin[i].is_none() && pin_err.is_none() {
             pin_err = Some(format!("cannot infer the type of parameter `{}` of function `{}` (returning or copying it is not enough; print it, use it in arithmetic, or compare it against a value of known type)", p, f.name));
@@ -7793,7 +7815,16 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                     sigs[si].nil_ev[i] = true;
                 }
             }
+            // A call with a defaulted-Dyn parameter is screened at runtime for a tag-13 argument (see the call
+            // codegen). That screen releases only flat owned casillas (string, float, Dyn), so in the same call no
+            // other argument may be `@` (its casilla is a slot ADDRESS) or object-typed (its casilla holds a moved or
+            // retained reference): named rejection, a conscious cut of this increment. The checks run INSIDE the
+            // argument loop below, reusing the type already computed there (no second type_expr, no extra moves).
+            let dd_call = CLASSES.with(|c| !c.borrow().is_empty()) && DEFAULT_DYN.with(|m| m.borrow().iter().any(|(nm, j)| *nm == sigs[si].name && *j < args.len()));
             for (i, a) in args.iter().enumerate() {
+                if dd_call && matches!(a, Expr::ByRef(_)) {
+                    return Err(format!("line {}: a `@` argument (argument {}) in a call to `{}`, which has a parameter without type evidence, is outside the dynamic increment in this increment (the boundary screen for object values could not release it)", n, i + 1, id));
+                }
                 // An EXPLICIT NIL argument (an empty Argument in the
                 // source or a literal NIL) is the same boundary event as
                 // a trailing omission: the parameter must carry NIL, so
@@ -8057,6 +8088,9 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                     }
                 }
                 let ta = type_expr(a, env, sigs, n)?;
+                if dd_call && matches!(ta, Ty::Obj(_)) && !DEFAULT_DYN.with(|m| m.borrow().contains(&(sigs[si].name.clone(), i))) {
+                    return Err(format!("line {}: an object argument (argument {}) in a call to `{}`, which has a parameter without type evidence, is outside the dynamic increment in this increment (the boundary screen for object values could not release its reference)", n, i + 1, id));
+                }
                 if ta == Ty::AView && !sig_aview[i] {
                     // ains piece 1b (transitive fixpoint): passing a view
                     // parameter whole forces the callee position into the
@@ -8114,6 +8148,25 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 // unreachable.
                 if ta == Ty::Hash && !matches!(a, Expr::Var(_)) {
                     return Err(format!("line {}: a hash argument is a variable in this increment (assign the literal first)", n));
+                }
+                // A parameter that only reached the tagged slot because no evidence
+                // existed (DEFAULT_DYN) must never receive the shared module array or
+                // an alias of it: Harbour would alias the one object (probe p6), and
+                // the defaulted slot would accept it silently because the types agree.
+                // Checked before the acceptance test so inference converging to Dyn
+                // cannot skip it.
+                if let Expr::Var(v) = a {
+                    if module_static::current(v) == Some(Ty::Dyn) && DEFAULT_DYN.with(|m| m.borrow().contains(&(sigs[si].name.clone(), i))) {
+                        return Err(format!("line {}: passing the shared module array `{}` as argument {} of `{}` is outside the dynamic increment in this increment (Harbour would alias the one object; measured in probe p6, deferred)", n, v, i + 1, id));
+                    }
+                }
+                // A defaulted-Dyn parameter (no body evidence of its type) never receives an
+                // object: Harbour shares the one object, and every consumer of the returned
+                // tagged reference (print, FILE, SET, sequence temporaries, ...) would need its
+                // own tag-13 release (probed: print item, LOCAL init in a loop, FILE, SET, multi-item print and a
+// discarded call each leaked one reference per turn). Named rejection, not an ownership claim.
+                if matches!(ta, Ty::Obj(_)) && DEFAULT_DYN.with(|m| m.borrow().contains(&(sigs[si].name.clone(), i))) {
+                    return Err(format!("line {}: passing an object as argument {} of `{}` is outside the dynamic increment in this increment (the parameter has no type evidence and defaults to the tagged slot, whose returned object reference would need a per-consumer release)", n, i + 1, id));
                 }
                 let ok = ta == sig_params[i]
                     || (ta == Ty::Dyn && sig_params[i] == Ty::I64)  // runtime extract (nil -> clean type error)
@@ -16806,6 +16859,8 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             // against the pre-move environment, so `len(a)` there is a
             // legal read of the still-live value.
             let mut moved_nulls: Vec<(usize, usize)> = Vec::new();
+            // Dyn arguments into a defaulted-Dyn parameter that must be screened for a tag-13 object at runtime: (argument index, owned temporary?).
+            let mut dd_checks: Vec<(usize, bool)> = Vec::new();
             for (ai, a) in args.iter().enumerate() {
                 if psig.as_ref().and_then(|p|p.get(ai)) == Some(&Ty::AView) {
                     match a {
@@ -16990,8 +17045,13 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                     continue;
                 }
                 if ta == Ty::Dyn {
-                    // The callee OWNS its Dyn parameter (freed at its
-                    // epilogue like any owned param): a string payload is
+                    if pty == Some(Ty::Dyn) && CLASSES.with(|c| !c.borrow().is_empty()) && DEFAULT_DYN.with(|m| m.borrow().contains(&(id.clone(), ai))) {
+                        // Defaulted-Dyn parameter (no body evidence): an object held by a
+                        // Dyn value is never transferred to it. The check runs after ALL
+                        // arguments are materialized (the screen below), before the call.
+                        dd_checks.push((ai, dyn_expr_owned(a)));
+                    }
+                    // The callee OWNS its Dyn parameter (freed at its epilogue like any owned param): a string payload is
                     // cloned at the boundary so caller and callee never
                     // share an allocation.
                     if !dyn_expr_owned(a) { cg_dyn_clone_if_str(out); }
@@ -17044,6 +17104,48 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             let total = psig.as_ref().map(|p| p.len()).unwrap_or(args.len());
             for _ in args.len()..total {
                 out.push_str("    sub $16, %rsp\n    movq $1, (%rsp)\n    movq $0, 8(%rsp)\n");
+            }
+            if !dd_checks.is_empty() {
+                // Runtime screen of defaulted-Dyn parameters. A tag-13 casilla is NOT handed over: after every
+                // argument has been evaluated and pushed (same order as the existing NIL-object protocol), the
+                // owned casillas are released (a borrowed object is never released; an owned temporary object is),
+                // then the named error is raised. The callee never starts.
+                if let Some(params) = &psig {
+                    if params.iter().any(|t| matches!(t, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::Hash)) {
+                        let line = TRACE_LINE.with(|v| v.get());
+                        let at = if line > 0 { format!("line {}: ", line) } else { String::new() };
+                        eprintln!("error: {}an owned array or hash argument cannot be combined with a Dyn argument to an untyped parameter of `{}` in the same call in this increment (the boundary screen could not release it)", at, id);
+                        process::exit(1);
+                    }
+                }
+                let k = fresh_lbl();
+                let ok_l = format!(".Lddok{k}");
+                let bad_l = format!(".Lddbad{k}");
+                for (ai, _) in &dd_checks {
+                    let off = 16 * (total - 1 - ai);
+                    out.push_str(&format!("    @HBC_TAG_KIND@cmpq $13, {off}(%rsp)@HBC_TAG_END@\n    je {bad_l}\n"));
+                }
+                out.push_str(&format!("    jmp {ok_l}\n{bad_l}:\n"));
+                if let Some(params) = &psig {
+                    for (i, t) in params.iter().enumerate().take(args.len()) {
+                        let off = 16 * (total - 1 - i);
+                        // defensive: a `@` casilla is a slot ADDRESS and an object casilla holds a reference; both are rejected at compile time in such a call
+                        if matches!(args[i], Expr::ByRef(_)) || matches!(t, Ty::Obj(_)) { continue; }
+                        match t {
+                            Ty::StrOwn => out.push_str(&format!("    mov {}(%rsp), %rdi\n    test %rdi, %rdi\n    je 81f\n    call hbc_freestr\n81:\n", off)),
+                            Ty::Dyn => {
+                                cg_dyn_stack_release(out, off, false);
+                                // tag 13: only an owned temporary releases its object
+                                if dyn_expr_owned(&args[i]) {
+                                    let kk = fresh_lbl();
+                                    out.push_str(&format!("    @HBC_TAG_KIND@cmpq $13, {off}(%rsp)@HBC_TAG_END@\n    jne .Lddn{kk}\n    mov {}(%rsp), %rdi\n    test %rdi, %rdi\n    je .Lddn{kk}\n    call hrobj_release\n.Lddn{kk}:\n", off + 8));
+                                }
+                            }
+                            _ => {}
+                        }
+                    }
+                }
+                out.push_str(&format!("    call hbc_objdyn_error\n{ok_l}:\n"));
             }
             let brmask: Vec<bool> = args.iter().map(|a| matches!(a, Expr::ByRef(_))).collect();
             let call_lbl = if brmask.iter().any(|b| *b) {
@@ -29292,6 +29394,18 @@ hbc_objnil_error:
     mov $1, %edi
     syscall
 
+hbc_objdyn_error:
+    cmpq $0, hbc_seq_depth(%rip)
+    jne .Lseqt_objdyn
+    lea .Lobjdymsg(%rip), %rsi
+    mov $28, %edx
+    mov $1, %eax
+    mov $1, %edi
+    syscall
+    mov $60, %eax
+    mov $1, %edi
+    syscall
+
 hbc_divarg_error:
     cmpq $0, hbc_seq_depth(%rip)
     jne .Lseqt_divarg
@@ -30193,6 +30307,9 @@ hbc_seq_unwind:
 .Lseqt_objnil:
     lea .LseqD_objnil(%rip), %rsi
     jmp hbc_seq_throw_error
+.Lseqt_objdyn:
+    lea .LseqD_objdyn(%rip), %rsi
+    jmp hbc_seq_throw_error
 .Lseqt_divarg:
     lea .LseqD_divarg(%rip), %rsi
     jmp hbc_seq_throw_error
@@ -30688,7 +30805,9 @@ fn emit_strings(out: &mut String, strs: &[String]) {
     out.push_str(".Losbadmsg:\n    .byte 73,110,116,101,114,110,97,108,32,101,114,114,111,114,58,32,79,83,32,102,114,101,101,32,102,97,105,108,101,100,10\n");
     out.push_str(".Lregbadmsg:\n    .byte 73,110,116,101,114,110,97,108,32,101,114,114,111,114,58,32,97,108,108,111,99,97,116,105,111,110,32,114,101,103,105,115,116,114,121,32,109,105,115,109,97,116,99,104,10\n");
     out.push_str(".Lobjnilmsg:\n    .byte 79,98,106,101,99,116,32,97,99,99,101,115,115,32,111,110,32,78,73,76,10\n");
+    out.push_str(".Lobjdymsg:\n    .byte 79,98,106,101,99,116,32,105,110,32,117,110,116,121,112,101,100,32,112,97,114,97,109,101,116,101,114,10\n");
     out.push_str(".quad 20\n.LseqD_objnil:\n    .byte 79,98,106,101,99,116,32,97,99,99,101,115,115,32,111,110,32,78,73,76\n");
+    out.push_str(".quad 27\n.LseqD_objdyn:\n    .byte 79,98,106,101,99,116,32,105,110,32,117,110,116,121,112,101,100,32,112,97,114,97,109,101,116,101,114\n");
     out.push_str(".Ldivargmsg:\n    .byte 65,114,103,117,109,101,110,116,32,101,114,114,111,114,58,32,47,10\n");
     out.push_str(".quad 17\n.LseqD_divarg:\n    .byte 65,114,103,117,109,101,110,116,32,101,114,114,111,114,58,32,47\n");
     out.push_str(".Lstrargmsg:\n    .byte 65,114,103,117,109,101,110,116,32,101,114,114,111,114,58,32,43,10\n");
@@ -32374,6 +32493,19 @@ hbc_objnil_error:
     mov $1, %ecx
     call ExitProcess
 
+hbc_objdyn_error:
+    cmpq $0, hbc_seq_depth(%rip)
+    jne .Lseqt_objdyn
+    push %rbp
+    mov %rsp, %rbp
+    and $-16, %rsp
+    sub $48, %rsp
+    lea .Lobjdymsg(%rip), %rax
+    mov $28, %edx
+    call hbc_print_str
+    mov $1, %ecx
+    call ExitProcess
+
 hbc_divarg_error:
     cmpq $0, hbc_seq_depth(%rip)
     jne .Lseqt_divarg
@@ -33457,6 +33589,9 @@ hbc_seq_unwind:
 .Lseqt_objnil:
     lea .LseqD_objnil(%rip), %rsi
     jmp hbc_seq_throw_error
+.Lseqt_objdyn:
+    lea .LseqD_objdyn(%rip), %rsi
+    jmp hbc_seq_throw_error
 .Lseqt_divarg:
     lea .LseqD_divarg(%rip), %rsi
     jmp hbc_seq_throw_error
@@ -33887,6 +34022,7 @@ fn main() {
     for f in &funcs {
         scan_byref_stmts(&f.stmts, &f.name, &mut byref_params, &mut byref_locals, &mut byref_variants);
     }
+    BYREF_PARAMS.with(|m|*m.borrow_mut()=byref_params.clone());
 
     // Pass 1: semantic analysis - types, ownership/move, signatures.
     // ORDER-INDEPENDENT inference (oracle hk253: Harbour resolves calls
@@ -34001,6 +34137,7 @@ fn main() {
         // recording cannot rest on a stale mid-convergence reading.
         let mut first_err: Option<String> = None;
         let mut first_pin_err: Option<String> = None;
+        let mut uninferred_parameter = false;
         for (fi, f) in funcs.iter_mut().enumerate() {
             if f.name == "main" { has_main = true; }
             // Pin parameter types. On failure, keep the PREVIOUS view entry
@@ -34129,6 +34266,7 @@ fn main() {
                 if std::env::var("HBC_INFER_TRACE").is_ok() {
                     eprintln!("infer round {}: {} pin_err: {}", round, f.name, m);
                 }
+                if m.starts_with("cannot infer the type of parameter") { uninferred_parameter = true; }
                 if first_pin_err.is_none() { first_pin_err = Some(m); }
             }
             cur.push(Sig { name: f.name.clone(), string_iter_copy: view[fi].string_iter_copy.clone(), nil_ret_only: view[fi].nil_ret_only, borrowed: vec![false; ptys.len()], arr_moved: vec![false; ptys.len()], aview: vec![false; ptys.len()], params: ptys.clone(), ret, inferred, arg_ev: view[fi].arg_ev.clone(), nil_ev: view[fi].nil_ev.clone() });
@@ -34168,6 +34306,12 @@ fn main() {
             // body errors because call-site checks against uninferred
             // parameters are skipped, so a body error that survives to
             // the converged round never rests on a placeholder.
+            if !DEFAULT_ENABLED.with(|v|v.get()) && uninferred_parameter {
+                // Run the fixpoint again with the tagged slot for those parameters.
+                DEFAULT_ENABLED.with(|v|v.set(true));
+                round = 0;
+                continue;
+            }
             if let Some(m) = first_err.or(first_pin_err) {
                 eprintln!("error: {}", m);
                 process::exit(1);

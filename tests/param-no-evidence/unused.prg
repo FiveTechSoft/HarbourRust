@@ -1,0 +1,5 @@
+FUNCTION Unused(p)
+RETURN p
+PROCEDURE Main()
+ ? "ok"
+RETURN

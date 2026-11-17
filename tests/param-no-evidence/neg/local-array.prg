@@ -1,0 +1,6 @@
+PROCEDURE Main()
+LOCAL l := {1,2}
+? Show(l)
+RETURN
+FUNCTION Show(x)
+RETURN x

@@ -1846,7 +1846,7 @@ neg tests/module-static-array/negative/aadd_lit.prg shared-array use is outside 
 neg tests/module-static-array/negative/afill.prg shared-array use is outside the dynamic increment
 neg tests/module-static-array/negative/assign_nonconst.prg takes a literal of constants
 neg tests/module-static-array/negative/byref.prg shared-array use is outside the dynamic increment
-neg tests/module-static-array/negative/call_arg.prg cannot infer the type of parameter
+neg tests/module-static-array/negative/call_arg.prg passing the shared module array
 neg tests/module-static-array/negative/cmp_whole.prg shared-array use is outside the dynamic increment
 neg tests/module-static-array/negative/compound.prg shared-array use is outside the dynamic increment
 neg tests/module-static-array/negative/container.prg shared-array use is outside the dynamic increment
