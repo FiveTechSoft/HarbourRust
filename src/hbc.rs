@@ -424,13 +424,16 @@ fn cg_f64_load(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, 
             // zero (ucomisd sets PF on unordered) and divides through to
             // NaN. The packed metadata carries the asymmetric
             // HB_DBL_LENGTH of the RESULT (hbdefs.h:570, 63zb).
-            if *op=='/' { cg_div_operand(a, env, sigs, strs, out, target); } else { cg_f64_operand(a, env, sigs, strs, out, target); }
+            let dyn_div = *op=='/' && (expr_ty(a, env, sigs)==Ty::Dyn || expr_ty(b, env, sigs)==Ty::Dyn);
+            if dyn_div { cg_div_operand(a, env, sigs, strs, out, target); } else { cg_f64_operand(a, env, sigs, strs, out, target); }
             out.push_str("    sub $32, %rsp\n    movsd %xmm0, (%rsp)\n    mov %rcx, 8(%rsp)\n");
-            if *op=='/' { out.push_str("    mov %rax, 16(%rsp)\n"); }
-            if *op=='/' { cg_div_operand(b, env, sigs, strs, out, target); } else { cg_f64_operand(b, env, sigs, strs, out, target); }
-            if *op == '/' {
+            if dyn_div { out.push_str("    mov %rax, 16(%rsp)\n"); }
+            if dyn_div { cg_div_operand(b, env, sigs, strs, out, target); } else { cg_f64_operand(b, env, sigs, strs, out, target); }
+            if dyn_div {
                 let argok = fresh_lbl();
                 out.push_str(&format!("    or 16(%rsp), %rax\n    je .Ldivargok{argok}\n    call hbc_divarg_error\n.Ldivargok{argok}:\n"));
+            }
+            if *op == '/' {
                 let l = fresh_lbl();
                 out.push_str(&format!("    xorpd %xmm2, %xmm2\n    ucomisd %xmm2, %xmm0\n    jp .Ldivok{}\n    jne .Ldivok{}\n    call hbc_div0_error\n.Ldivok{}:\n", l, l, l));
             }
