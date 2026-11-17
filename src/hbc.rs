@@ -22522,6 +22522,13 @@ fn cg_func(f: &Func, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, tar
     let mut darr_slots: Vec<(usize, u8)> = Vec::new();
     let byref_names_layout = byref_names_in(&f.stmts);
     let mut slot_names: std::collections::HashMap<usize, String> = std::collections::HashMap::new();
+    // module_static::current() inside layout_locals resolves through
+    // CUR_FN: it must name THIS function before the walk, or a module
+    // STATIC bound here is sized from another function's binding table
+    // (8-byte RefI64 vs 16-byte Dyn casilla) and the frame layout
+    // diverges from the codegen walk below (probe pB22: segfault when a
+    // second function exists).
+    CUR_FN.with(|c| *c.borrow_mut() = f.name.clone());
     layout_locals(&f.stmts, &mut lenv, sigs, &mut frame, &mut darr_slots, &f.dyn_names, &byref_names_layout, &mut slot_names);
     CG_MEMVAR_NAMES.with(|c|*c.borrow_mut()=lenv.iter().filter(|v|v.off==0).map(|v|v.name.clone()).collect());
     // Dynamic-array parameters are owned by this function: their slots are
@@ -33194,7 +33201,7 @@ hbc_aclone_alloc:
             let st = cmd.arg("-lkernel32").status()
                 .unwrap_or_else(|e| { eprintln!("error: cannot run x86_64-w64-mingw32-ld: {} (mingw-w64 no esta en PATH; quita --external-as para el escritor interno)", e); process::exit(2); });
             if !st.success() { eprintln!("error: x86_64-w64-mingw32-ld failed"); process::exit(1); }
-            let _ = fs::remove_file(&s_path); let _ = fs::remove_file(&o_path);
+            let _ = fs::remove_file(&o_path); eprintln!("KEPT {:?}", &s_path);
             println!("{} -> {} ({} functions, external mingw as/ld)", pos[0], pos[1], funcs.len());
             return;
         }
@@ -33225,7 +33232,7 @@ hbc_aclone_alloc:
         let st = process::Command::new("ld").arg("-s").arg("-o").arg(pos[1]).arg(&o_path).status()
             .unwrap_or_else(|e| { eprintln!("cannot run ld: {}", e); process::exit(2); });
         if !st.success() { eprintln!("error: ld failed"); process::exit(1); }
-        let _ = fs::remove_file(&s_path); let _ = fs::remove_file(&o_path);
+        let _ = fs::remove_file(&o_path); eprintln!("KEPT {:?}", &s_path);
         println!("{} -> {} ({} functions, external as/ld)", pos[0], pos[1], funcs.len());
         return;
     }
