@@ -59,4 +59,27 @@ for n in [1,500,1000]:
  try:r=emit_delta(compiler,env,ms,mw,b'\nrhs\ncaught'*n+b'\n         3\n         8')
  except Exception as e:r=dict(state_ok=False,delta=None,error=str(e))
  add('nil-data-rhs-memory-'+str(n),'memory-bound',r['state_ok'] and r['delta']==2,bound=2,state=r)
+# Fresh owned vs borrowed DATA sources, live and null receiver lifecycles.
+header='''#include "hbclass.ch"
+STATIC o := NIL
+CREATE CLASS T
+   DATA n
+   METHOD New() CONSTRUCTOR
+ENDCLASS
+METHOD New() CLASS T
+return Self
+function fresh()
+return Space(7)
+'''
+for receiver in ['valid','null']:
+ for kind,expr in [('space','Space(7)'),('call','fresh()'),('concat','x + "!"'),('variable','x'),('literal','"borrowed"')]:
+  for n in [1,500,1000]:
+   w=out/('rhs-'+receiver+'-'+kind+'-'+str(n));w.mkdir();p=w/'probe.prg'
+   s=header+'function main()\n   local a := o\n   local i,e,x := Space(7)\n   o := T():New()\n'
+   if receiver=='valid':s+='   a := o\n'
+   s+='   for i := 1 to '+str(n)+'\n'+('      x := Space(7)\n' if kind=='variable' else '')+'      try\n         a:n := '+expr+'\n      catch e\n      end\n'+('      x := Space(7)\n' if kind=='variable' else '')+'   next\n   ? "done"\nreturn nil\n'
+   p.write_text(s)
+   try:r=emit_delta(compiler,env,p,w,b'\ndone')
+   except Exception as e:r=dict(state_ok=False,error=str(e),delta=None)
+   add('rhs-'+receiver+'-'+kind+'-'+str(n),'memory-bound',r['state_ok'] and r['delta']==2,bound=2,state=r)
 ident=dict(compiler_tree=a.tree,compiler_sha256=hashlib.sha256(P(compiler).read_bytes()).hexdigest(),scope='Linux runtime; Wine if supplied; not Mac native',total=len(rows),passed=sum(x['pass_'] for x in rows),rows=rows);(out/'results.json').write_text(json.dumps(ident,indent=2));sys.exit(0 if ident['total']==ident['passed'] else 1)

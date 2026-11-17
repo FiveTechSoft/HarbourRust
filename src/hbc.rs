@@ -13763,7 +13763,14 @@ fn cg_data_value(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
         }
         Ty::Str | Ty::StrOwn => {
             cg_value(e, env, sigs, strs, out, target);
-            out.push_str("    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_strcpy\n    mov %rax, %rdx\n    mov $4, %eax\n");
+            let fresh_owned = module_static::has_objects() && expr_ty(e,env,sigs)==Ty::StrOwn && !matches!(e,Expr::Var(_));
+            // DATA owns its independent copy. A computed owned source has
+            // no source slot to clean it up later; dispose of that temporary
+            // after copying, preserving the new DATA payload across free.
+            if fresh_owned {out.push_str("    sub $32, %rsp\n    mov %rax, (%rsp)\n");}
+            out.push_str("    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_strcpy\n");
+            if fresh_owned {out.push_str("    mov %rax, 8(%rsp)\n    mov (%rsp), %rdi\n    call hbc_freestr\n    mov 8(%rsp), %rax\n    add $32, %rsp\n");}
+            out.push_str("    mov %rax, %rdx\n    mov $4, %eax\n");
         }
         Ty::Bool => { cg_value(e, env, sigs, strs, out, target); out.push_str("    mov %rax, %rdx\n    mov $3, %eax\n"); }
         Ty::Date => { cg_value(e, env, sigs, strs, out, target); out.push_str("    mov %rax, %rdx\n    mov $11, %eax\n"); }
