@@ -5419,6 +5419,19 @@ fn expr_has_call(e: &Expr) -> bool {
     }
 }
 
+// Nullable method string boundary: arguments must not abandon previously
+// marshalled owners before the receiver's explicit NIL cleanup point. This
+// whitelist intentionally excludes user calls (including fresh()), sends,
+// indexing, division, inline effects and unknown future expression shapes.
+fn nil_method_arg_nothrow(e: &Expr) -> bool {
+    match e {
+        Expr::Var(_) | Expr::Str(_) | Expr::Int(_) | Expr::Log(_) => true,
+        Expr::Bin(op,a,b) if matches!(op, '+' | '-' | '*') => nil_method_arg_nothrow(a) && nil_method_arg_nothrow(b),
+        Expr::Call(id,args) if ["space","upper","lower","trim","ltrim","rtrim","alltrim","left","right","substr","replicate"].iter().any(|n|is_builtin(id,n)) => args.iter().all(nil_method_arg_nothrow),
+        _ => false,
+    }
+}
+
 // Arena eligibility guard: hbc_strcat FREES its owned operands, so a
 // routed slot may never be a direct concat operand (t648: `s = s + s`
 // munmapped the arena block). collect_concat_operands finds every `+`
@@ -8696,10 +8709,16 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 }
             };
             if module_static::has_objects() {
+                let mut strings = false;
                 for arg in args {
-                    if !matches!(type_expr(arg,env,sigs,n)?,Ty::I64|Ty::Bool|Ty::Date) {
-                        return Err(format!("line {}: NIL-aware module STATIC object methods currently support only typed integer/logical/date arguments; owned, Dyn, float and container argument unwind is outside this increment",n));
+                    let t = type_expr(arg,env,sigs,n)?;
+                    strings |= matches!(t,Ty::Str|Ty::StrOwn);
+                    if !matches!(t,Ty::I64|Ty::Bool|Ty::Date|Ty::Str|Ty::StrOwn) {
+                        return Err(format!("line {}: NIL-aware module STATIC object methods support only typed integer/logical/date arguments or measured strings; Dyn, float and container argument unwind is outside this increment",n));
                     }
+                }
+                if strings && !args.iter().all(nil_method_arg_nothrow) {
+                    return Err(format!("line {}: NIL-aware string method arguments require non-throwing expressions; user calls (including fresh), nested dispatch, indexing, division and inline effects are not in this increment",n));
                 }
             }
             let lname = name.to_lowercase();
@@ -16869,7 +16888,25 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                 // Virtual send: Self is the FIRST (deepest) casilla, its
                 // pointer at casilla+0. Two loads + indirect call.
                 out.push_str(&format!("    mov {}(%rsp), %rax\n",16*(total-1)));
-                if module_static::has_objects(){out.push_str("    test %rax, %rax\n    je hbc_objnil_error\n");}
+                if module_static::has_objects(){
+                    let k = fresh_lbl();
+                    out.push_str(&format!("    test %rax, %rax\n    jne .Lobjcallok{k}\n"));
+                    // The callee never starts on NIL. Release exactly its
+                    // owned boundary casillas, after all arguments evaluated
+                    // and moved sources were nulled, then throw. Borrowed
+                    // Str parameters keep their caller-owned allocation.
+                    if let Some(params) = &psig {
+                        for (i,t) in params.iter().enumerate().skip(1) {
+                            let off = 16 * (total - 1 - i);
+                            match t {
+                                Ty::StrOwn => out.push_str(&format!("    mov {}(%rsp), %rdi\n    test %rdi, %rdi\n    je 81f\n    call hbc_freestr\n81:\n",off)),
+                                Ty::Dyn => cg_dyn_stack_release(out,off,false),
+                                _ => {}, // typed scalar or borrowed string
+                            }
+                        }
+                    }
+                    out.push_str(&format!("    call hbc_objnil_error\n.Lobjcallok{k}:\n"));
+                }
                 out.push_str(&format!("    mov (%rax), %rax\n    mov 32(%rax), %rax\n    call *{}(%rax)\n",dslot*8));
             } else {
                 out.push_str(&format!("    call hbc_fn_{}\n", call_lbl));
