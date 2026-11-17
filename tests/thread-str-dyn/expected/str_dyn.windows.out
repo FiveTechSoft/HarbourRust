@@ -1,0 +1,12 @@
+
+thread          1 [         1]
+thread          2 [         0.50]
+Error BASE/1099  Argument error: STR
+Called from STR(0)  
+Called from WORK(26)  
+thread          3 NIL
+main [         1]
+Error BASE/1099  Argument error: STR
+Called from STR(0)  
+Called from WORK(26)  
+Called from MAIN(13)  

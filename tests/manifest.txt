@@ -1894,3 +1894,4 @@ pos2 tests/dyn-string-concat/programs/rhs_bound.prg tests/dyn-string-concat/expe
 pos2 tests/dyn-string-concat/programs/rhs_break.prg tests/dyn-string-concat/expected/rhs_break.linux.out tests/dyn-string-concat/expected/rhs_break.windows.out
 pos2 tests/dyn-string-concat/programs/string_snapshot.prg tests/dyn-string-concat/expected/string_snapshot.linux.out tests/dyn-string-concat/expected/string_snapshot.windows.out
 pos2 tests/dyn-string-concat/programs/break_result.prg tests/dyn-string-concat/expected/break_result.linux.out tests/dyn-string-concat/expected/break_result.windows.out
+posx2 tests/thread-str-dyn/programs/str_dyn.prg 1 tests/thread-str-dyn/expected/str_dyn.linux.out tests/thread-str-dyn/expected/str_dyn.windows.out

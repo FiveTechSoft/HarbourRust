@@ -143,7 +143,7 @@ class ManifestInventoryTests(unittest.TestCase):
         rows=self.manifest_rows()
         self.assertEqual(len(rows),m.EXPECTED_MANIFEST_ROWS)
         self.assertEqual(len({tuple(l.split(' ')[:2]) for l in rows}),len(rows))
-        self.assertEqual(len(rows)+m.FILE_POSITIVES+m.DBF_TESTS+m.THREAD_PROGRAMS+m.EXT_DEMOS,1313)
+        self.assertEqual(len(rows)+m.FILE_POSITIVES+m.DBF_TESTS+m.THREAD_PROGRAMS+m.EXT_DEMOS,1314)
 
     def test_real_main_preflight_reaches_smoke_for_both_targets(self):
         # Exercise main(), not a second implementation of its count guard.
@@ -166,7 +166,7 @@ class ManifestInventoryTests(unittest.TestCase):
                 self.assertEqual(m.main(),1)
                 run.assert_not_called()
                 self.assertIn('FAIL runner: manifest has',output.getvalue())
-                self.assertIn('expected inventory 1257',output.getvalue())
+                self.assertIn('expected inventory %d'%m.EXPECTED_MANIFEST_ROWS,output.getvalue())
         m.configure_target('macho-arm64')
 
 if __name__ == '__main__':
