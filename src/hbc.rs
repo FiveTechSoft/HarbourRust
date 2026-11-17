@@ -8689,6 +8689,13 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                     return Err(format!("line {}: `:{}` on a non-object value ({})", n, name, ty_name(rt)));
                 }
             };
+            if module_static::has_objects() {
+                for arg in args {
+                    if !matches!(type_expr(arg,env,sigs,n)?,Ty::I64|Ty::Bool|Ty::Date) {
+                        return Err(format!("line {}: NIL-aware module STATIC object methods currently support only typed integer/logical/date arguments; owned, Dyn, float and container argument unwind is outside this increment",n));
+                    }
+                }
+            }
             let lname = name.to_lowercase();
             if let Some((_, fname)) = method_lookup(ci, &lname) {
                 if args.iter().any(|a| matches!(a, Expr::ByRef(_))) {
@@ -19782,10 +19789,15 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 let ci = match expr_ty(recv, env, sigs) { Ty::Obj(ci) => ci, _ => unreachable!("checked") };
                 let off = data_lookup(ci, &name.to_lowercase()).expect("checked");
                 cg_value(recv, env, sigs, strs, out, target);
-                if module_static::has_objects(){out.push_str("    test %rax, %rax\n    je hbc_objnil_error\n");}
                 out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n");
                 cg_data_value(e, env, sigs, strs, out, target);
                 out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+                if module_static::has_objects(){
+                    let k=fresh_lbl();
+                    out.push_str(&format!("    cmpq $0, 16(%rsp)\n    jne .Lobjwriteok{k}\n"));
+                    cg_dyn_stack_release(out,0,false);
+                    out.push_str(&format!("    call hbc_objnil_error\n.Lobjwriteok{k}:\n"));
+                }
                 out.push_str(&format!("    mov 16(%rsp), %rax\n    mov {}(%rax), %rdx\n    mov {}(%rax), %rax\n    call hbc_float_release\n",16+off*16+8,16+off*16));
                 out.push_str(&format!("    mov 16(%rsp), %rax\n    cmpq $4, {}(%rax)\n    jne 84f\n    mov {}(%rax), %rdi\n    test %rdi, %rdi\n    je 84f\n    call hbc_freestr\n84:\n", 16 + off * 16, 16 + off * 16 + 8));
                 out.push_str(&format!("    mov 16(%rsp), %rax\n    mov (%rsp), %rcx\n    mov %rcx, {}(%rax)\n    mov 8(%rsp), %rcx\n    mov %rcx, {}(%rax)\n    add $32, %rsp\n", 16 + off * 16, 16 + off * 16 + 8));

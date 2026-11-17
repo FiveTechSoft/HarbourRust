@@ -14,9 +14,9 @@ a live instance is ValType O. The first class is fixed syntactically, not
 guessed from member names. Multiple constructor classes are a named limit.
 
 Run check.py with --compiler, --hbmk2, --tree, --output and optional --wine.
-The gate has22 assertions:7 fresh oracle/raw target-pin comparisons,
-6 named rejections (valid Harbour),6 measured memory comparisons at
-N=1/500/1000, and3 explicit null-receiver catch paths. Each memory comparison
+The gate has27 assertions:7 fresh oracle/raw target-pin comparisons,
+7 named rejections (valid Harbour),6 measured memory comparisons at
+N=1/500/1000, 3 explicit null-receiver catch paths, one DATA RHS order check and3 DATA RHS memory checks. Each memory comparison
 executes the real constructor/alias/selfassign/return/NIL-release/DATA path
 and its control. Exact integer bound2 is the object pool. String DATA bound3
 includes the retained string template. These are measured controls, not a
@@ -36,3 +36,5 @@ Five meaningful positive programs join the native manifest. The Linux/Wine
 pins are copied from actual target output and protected with -text. The native
 runner inventory is1235+56=1291; ARM64 has no named rejection, Intel keeps5.
 Local Mac checks are emission-only unless a report explicitly says native.
+
+In programs using this feature, method arguments are currently limited to typed integer/logical/date values. Owned, Dyn, float and container method arguments are named rejections, including when the receiver is non-null. This fail-closed boundary prevents argument-owner leaks when a null receiver fails after arguments were marshalled. A measured N500 owned-string failure (delta502 vs pool2) is carried as pre-fix evidence, followed by the named rejection, not a false balanced runtime result. DATA assignment evaluates its RHS before null failure and releases that scalar temporary before throwing.

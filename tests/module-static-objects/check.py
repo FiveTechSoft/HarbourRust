@@ -19,7 +19,7 @@ for src in sorted((gate/'programs').glob('*.prg')):
   ok=ok and (gate/'expected'/(src.stem+'.linux.out')).read_bytes()==oracle_expected
   ok=ok and r is not None and r.returncode==0 and r.stderr==b'' and r.stdout==expected
  add(src.stem,'byte-exact-oracle',ok)
-neg={'array_capture_neg':'owned/container/inline-effect','byref_neg':'logical by-reference','rebind_data_rhs_neg':'inline-effect','rebind_method_arg_neg':'inline-effect','scalar_retag':'keeps the scalar type','thread_neg':'module STATIC object storage with threads'}
+neg={'nil_owned_argument_neg':'only typed integer/logical/date arguments','array_capture_neg':'owned/container/inline-effect','byref_neg':'logical by-reference','rebind_data_rhs_neg':'inline-effect','rebind_method_arg_neg':'inline-effect','scalar_retag':'keeps the scalar type','thread_neg':'module STATIC object storage with threads'}
 for name,diag in neg.items():
  src=gate/'negative'/(name+'.prg');w=out/name;w.mkdir();b=run([compiler,src,w/'reject.s'],w,'reject');o=run([a.hbmk2,'-quiet','-gtstd','-w0','-o'+str(w/'oracle'),src],w,'oracle-build',oe)
  add(name,'named-limit',b.returncode==1 and diag.encode() in b.stderr and o.returncode==0,diagnostic=b.stderr.decode())
@@ -44,4 +44,19 @@ for kind,expr in [('read','? o:n'),('write','o:n := 4'),('method','? o:Echo(1)')
   exe=w/target;b=run([compiler,src,exe,'--target='+target],w,target+'-build');p=run(([a.wine] if target=='windows' else [])+[exe],w,target) if b.returncode==0 else None;expected=b'\nObject access on NIL\n         3\n         8';expected=expected.replace(b'\n',b'\r\n') if target=='windows' else expected
   ok=ok and p is not None and p.returncode==0 and p.stdout==expected and p.stderr==b''
  add('nil-receiver-'+kind,'declared-error-model',ok)
+w=out/'nil-data-rhs-order';w.mkdir();src=w/'probe.prg'
+text=(gate/'programs/callee_rebind.prg').read_text().replace('   o := T():New()\n   ? hold(o)','   local a := o\n   local e\n   try\n      a:n := rhs()\n   catch e\n      ? "caught"\n   end\n   o := T():New()\n   ? hold(o)')+'function rhs()\n   ? "rhs"\nreturn "owned"\n'
+src.write_text(text);expected=b'\nrhs\ncaught\n         3\n         8';ok=True
+for target in ['linux']+(['windows'] if a.wine else []):
+ exe=w/target;b=run([compiler,src,exe,'--target='+target],w,target+'-build');p=run(([a.wine] if target=='windows' else [])+[exe],w,target) if b.returncode==0 else None
+ ok=ok and p is not None and p.returncode==0 and p.stderr==b'' and p.stdout==(expected.replace(b'\n',b'\r\n') if target=='windows' else expected)
+add('nil-data-rhs-order','evaluation-order',ok)
+for n in [1,500,1000]:
+ mw=out/('nil-data-rhs-memory-'+str(n));mw.mkdir();ms=mw/'probe.prg'
+ start='   try\n      a:n := rhs()\n   catch e\n      ? "caught"\n   end'
+ mt=text.replace('   local e','   local e,i').replace(start,'   for i := 1 to '+str(n)+'\n'+start+'\n   next')
+ ms.write_text(mt)
+ try:r=emit_delta(compiler,env,ms,mw,b'\nrhs\ncaught'*n+b'\n         3\n         8')
+ except Exception as e:r=dict(state_ok=False,delta=None,error=str(e))
+ add('nil-data-rhs-memory-'+str(n),'memory-bound',r['state_ok'] and r['delta']==2,bound=2,state=r)
 ident=dict(compiler_tree=a.tree,compiler_sha256=hashlib.sha256(P(compiler).read_bytes()).hexdigest(),scope='Linux runtime; Wine if supplied; not Mac native',total=len(rows),passed=sum(x['pass_'] for x in rows),rows=rows);(out/'results.json').write_text(json.dumps(ident,indent=2));sys.exit(0 if ident['total']==ident['passed'] else 1)
