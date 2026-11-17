@@ -63,4 +63,21 @@ if a.stage in ['all','memory']:
     except Exception as e:r=dict(state_ok=False,delta=None,error=str(e))
     vals['control' if control else 'actual']=r
    add(name+'-'+str(n),'memory-control',all(v['state_ok'] and v['delta']==0 for v in vals.values()),bound=0,states=vals)
+# DATA always clones; a computed owned source has no local slot that
+# could free it. Exercise actual stores, not merely DATA reads in QOut.
+if a.stage in ['all','memory']:
+ header='#include "hbclass.ch"\nCREATE CLASS T\nDATA s INIT "ab"\nMETHOD New() CONSTRUCTOR\nENDCLASS\nMETHOD New() CLASS T\nreturn Self\n'
+ forms={'self-left':'o:s+"cd"','self-right':'"cd"+o:s','nested':'o:s+"-"+o:s','local':'d+"!"','call':'fresh()+"!"','array':'xs[1]+"!"','variable':'v','static-concat':'"a"+Space(2)','builtin':'Space(7)'}
+ for name,expr in forms.items():
+  for n in [1,500,1000]:
+   vals={}
+   for control in [False,True]:
+    w=out/('data-store-'+name+'-'+str(n)+('-control' if control else '-actual'));w.mkdir();src=w/'probe.prg'
+    # Reset DATA each iteration to keep payload bounded and allocator
+    # behavior comparable. Keep v live across stores to prove borrowing.
+    s=header+'function exercise()\nlocal o := T():New(),i,d,v := Space(7),xs := {"cell",NIL}\nd := "owned"\nfor i:=1 to '+str(n)+'\no:s := "ab"\no:s := '+('"control"' if control else expr)+'\nnext\n? Len(v)\nreturn nil\nfunction main()\nexercise()\n? "done"\nreturn nil\nfunction fresh()\nlocal d\nd := "owned"\nreturn d\n';src.write_text(s)
+    try:r=emit_delta(compiler,env,src,w,b'\n         7\ndone')
+    except Exception as e:r=dict(state_ok=False,delta=None,error=str(e))
+    vals['control' if control else 'actual']=r
+   add('data-store-'+name+'-'+str(n),'data-store-memory-control',all(v['state_ok'] and v['delta']==3 for v in vals.values()),bound=3,states=vals)
 ident=dict(compiler_tree=a.tree,compiler_sha256=hashlib.sha256(P(compiler).read_bytes()).hexdigest(),scope='Linux runtime, external Harbour3.2 oracle, Wine if supplied; Mac emission is separate',total=len(rows),passed=sum(x['pass_'] for x in rows),rows=rows);(out/'results.json').write_text(json.dumps(ident,indent=2));sys.exit(0 if ident['total']==ident['passed'] else 1)

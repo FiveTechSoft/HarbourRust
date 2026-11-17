@@ -13783,7 +13783,7 @@ fn cg_data_value(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
         }
         Ty::Str | Ty::StrOwn => {
             cg_value(e, env, sigs, strs, out, target);
-            let fresh_owned = module_static::has_objects() && expr_ty(e,env,sigs)==Ty::StrOwn && !matches!(e,Expr::Var(_));
+            let fresh_owned = expr_ty(e,env,sigs)==Ty::StrOwn && !matches!(e,Expr::Var(_));
             // DATA owns its independent copy. A computed owned source has
             // no source slot to clean it up later; dispose of that temporary
             // after copying, preserving the new DATA payload across free.
