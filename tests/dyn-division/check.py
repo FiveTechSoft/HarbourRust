@@ -17,20 +17,20 @@ def run(cmd,w,label,envx=None):
  return r
 def add(test,kind,ok,**details):
  rows.append(dict(test=test,kind=kind,pass_=bool(ok),**details));print('PASS' if ok else 'FAIL',test,flush=True)
-def execute(src,w,expected,oracle=False):
+def execute(src,w,expected,oracle=False,expected_win=None):
  b=run([compiler,src,w/'linux','--target=linux'],w,'build');r=run([w/'linux'],w,'linux') if b.returncode==0 else None
  ok=r is not None and r.returncode==0 and r.stdout==expected and r.stderr==b''
  if a.wine:
   b=run([compiler,src,w/'windows.exe','--target=windows'],w,'win-build');r=run([a.wine,w/'windows.exe'],w,'windows') if b.returncode==0 else None
-  ok=ok and r is not None and r.returncode==0 and r.stdout==expected.replace(b'\n',b'\r\n') and r.stderr==b''
+  ok=ok and r is not None and r.returncode==0 and r.stdout==(expected_win if expected_win is not None else expected.replace(b'\n',b'\r\n')) and r.stderr==b''
  if oracle:
   oracle_src=w/'oracle.prg'; oracle_src.write_text('#include "hbclass.ch"\n'+P(src).read_text())
   b=run([a.hbmk2,oracle_src,'-quiet','-gtstd','-w0','-o'+str(w/'oracle')],w,'oracle-build',oe);r=run([w/'oracle'],w,'oracle',oe) if b.returncode==0 else None
   ok=ok and r is not None and r.returncode==0 and r.stdout==expected and r.stderr==b''
  return ok
 for n in range(1680,1684):
- src=next(root.glob('t'+str(n)+'_*.prg'));w=out/src.stem;w.mkdir();pin=(root/'expectations/qout'/(src.stem+'.linux.out')).read_bytes();add(src.stem,'oracle-byte-exact',execute(src,w,pin,True))
-src=root/'t1684_dyn_div_seq_catch.prg';w=out/src.stem;w.mkdir();pin=(root/'expectations/qout'/(src.stem+'.linux.out')).read_bytes();add(src.stem,'catch-string-pinned',execute(src,w,pin))
+ src=next(root.glob('t'+str(n)+'_*.prg'));w=out/src.stem;w.mkdir();pin=(root/'expectations/qout'/(src.stem+'.linux.out')).read_bytes();add(src.stem,'oracle-byte-exact',execute(src,w,pin,True,(root/'expectations/qout'/(src.stem+'.windows.out')).read_bytes()))
+src=root/'t1684_dyn_div_seq_catch.prg';w=out/src.stem;w.mkdir();pin=(root/'expectations/qout'/(src.stem+'.linux.out')).read_bytes();add(src.stem,'catch-string-pinned',execute(src,w,pin,expected_win=(root/'expectations/qout'/(src.stem+'.windows.out')).read_bytes()))
 # Invalid-kind dispatch must wait for BOTH operands, including rhs zero.
 base=(gate/'programs/order_error.prg').read_text()
 for name,s in [('order_error',base),('order_rhs_zero',base.replace('d := 2','d := 0')),('order_rhs_bad',base.replace('d := 2','d := .T.'))]:
