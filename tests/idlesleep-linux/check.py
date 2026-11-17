@@ -13,16 +13,38 @@ A. Manifest pos2 rows (programs/idlesleep_*): ours linux AND windows runs
    of the SAME program whose stdout must equal the pinned linux
    expectation. Print bytes are byte-exact both sides; the sleep duration
    is NOT part of the print contract.
-B. Timing windows on the linux runs (wall clock, monotonic): positive
+B. Timing windows on the LINUX runs (wall clock, monotonic): positive
    sleeps must actually consume the requested span (lower bound just under
    the request to absorb clock granularity), no-op forms must return
-   immediately. The oracle binary's wall time is recorded for reference.
+   immediately. The WINDOWS (wine) side asserts BYTES ONLY: wine startup
+   dominates and masks the sleep span. As a startup-independent duration
+   check, the gate asserts the DIFFERENCE wall_win(idlesleep_loop) -
+   wall_win(idlesleep_noarg) >= 0.9s (both rows share the same wine
+   startup; loop sleeps 1.2s, noarg sleeps nothing). The oracle binary's
+   wall time is recorded for reference.
+
+C. Ownership of the Dyn argument (S5 v2): an owned Dyn temporary
+   (Call/Send/SelfGet/memvar/Seq tail) is released by kind after the
+   seconds are extracted - heap float via hbc_float_release, tag-4 string
+   via hbc_freestr, tag-8 owned Dyn array via hbc_dfree, tag-13 object via
+   hrobj_release - while a borrowed local Var is never released. Probes
+   idown_call_float (Call Dyn heap float), idown_call_string (Call Dyn
+   owned string), idown_send (Send returning Dyn float, object route),
+   idown_memvar (PRIVATE memvar) run 500 iterations under the instrumented
+   DELTA counter (memdelta_guard.emit_delta, shared with trycatch-linux)
+   against per-route controls; idown_borrowed reuses a borrowed Dyn local
+   500 times and prints it afterwards. PASS requires the fail-closed
+   two-state parser (state_ok), stdout match, and delta_probe ==
+   delta_control (0 for the non-object routes; the object routes share the
+   constant template-pool baseline, N-invariant at N=500).
 
 Every run records rc + stderr in results.json; PASS requires rc 0 and
 EMPTY stderr on both ours and the oracle.
 """
-import argparse, hashlib, json, os, pathlib, subprocess, time
+import argparse, hashlib, json, os, pathlib, subprocess, sys, time
 P = pathlib.Path
+sys.path.insert(0, str(P(__file__).resolve().parent.parent / 'trycatch-linux'))
+from memdelta_guard import emit_delta  # shared fail-closed DELTA classifier
 
 # stem -> (min_seconds, max_seconds) for the linux wall-clock window.
 ROWS = {
@@ -31,6 +53,16 @@ ROWS = {
     "idlesleep_loop":     (1.1, 4.0),    # 3 x hb_idleSleep(0.4)
     "idlesleep_noarg":    (0.0, 0.5),    # hb_idleSleep() + hb_idleSleep(0)
     "idlesleep_dyn":      (0.15, 2.0),   # Dyn local x := 0.2
+}
+
+# Ownership probes (section C): stem -> control stem (same shape, typed
+# literal argument or local-bound temp, so its delta is the baseline).
+OWNERSHIP = {
+    "idown_call_float":  "idown_call_float_c",
+    "idown_call_string": "idown_call_string_c",
+    "idown_send":        "idown_send_c",
+    "idown_memvar":      "idown_memvar_c",
+    "idown_borrowed":    None,
 }
 
 ap = argparse.ArgumentParser()
@@ -92,6 +124,34 @@ for stem, (lo, hi) in ROWS.items():
     row['pass'] = ok
     rows.append(row); print(('PASS' if ok else 'FAIL'), stem,
                             f'linux={dt_l:.3f}s' if dt_l is not None else 'linux=n/a')
+
+# B (windows): startup-independent duration check - both rows pay the same
+# wine startup, so the difference isolates the Sleep span.
+if a.wine:
+    wl = next((r.get('ours_windows', {}).get('wall_s') for r in rows if r['test'] == 'idlesleep_loop'), None)
+    wn = next((r.get('ours_windows', {}).get('wall_s') for r in rows if r['test'] == 'idlesleep_noarg'), None)
+    ok = wl is not None and wn is not None and (wl - wn) >= 0.9
+    rows.append({'test': 'idlesleep_windows_duration', 'kind': 'timing-window-wine',
+                 'wall_loop_s': wl, 'wall_noarg_s': wn, 'min_diff_s': 0.9, 'pass': ok})
+    print(('PASS' if ok else 'FAIL'), 'idlesleep_windows_duration',
+          f'diff={wl - wn:.3f}s' if wl is not None and wn is not None else 'n/a')
+
+# C. ownership of the Dyn argument: instrumented DELTA counter vs control.
+for stem, ctrl in OWNERSHIP.items():
+    expected = (gate / 'expected' / (stem + '.linux.out')).read_bytes()
+    (out / stem).mkdir()
+    rec = emit_delta(compiler, env, gate / 'programs' / (stem + '.prg'), out / stem, expected)
+    ok = rec['state_ok'] and rec['stdout_match'] and rec['delta'] == 0
+    row = {'test': stem, 'kind': 'ownership-delta', 'probe': rec}
+    if ctrl is not None:
+        (out / ctrl).mkdir()
+        crec = emit_delta(compiler, env, gate / 'programs' / (ctrl + '.prg'), out / ctrl, expected)
+        ok = rec['state_ok'] and rec['stdout_match'] and crec['state_ok'] and crec['stdout_match'] and rec['delta'] == crec['delta']
+        row['control'] = crec
+    row['pass'] = ok
+    rows.append(row)
+    print(('PASS' if ok else 'FAIL'), stem, 'delta=', rec['delta'],
+          ('control=' + str(row['control']['delta'])) if ctrl else '(no control)')
 
 result = {
     'gate': 'idlesleep-linux',

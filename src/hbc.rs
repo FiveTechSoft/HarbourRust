@@ -14972,8 +14972,31 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             // Both dispatch sides: a typed numeric feeds xmm0 directly; a
             // Dyn unpacks by kind (float pair through hbc_float_unpack,
             // int tags convert, NIL/other tags default to 0 like hb_parnd).
+            // An OWNED Dyn temporary (Call/Send/SelfGet/memvar/Seq tail)
+            // is released by the standard protocol after the seconds are
+            // extracted: hbc_float_release for heap floats, hbc_freestr
+            // for tag-4 owned strings. Borrowed Vars never release.
             match args.first() {
                 None => out.push_str("    xorpd %xmm0, %xmm0\n"),
+                Some(a) if expr_ty(a,env,sigs)==Ty::Dyn && dyn_expr_owned(a) => {
+                    cg_value(a,env,sigs,strs,out,target);
+                    out.push_str("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+                    out.push_str("    mov %rax, %rcx\n    and $255, %rcx\n    cmp $5, %rcx\n    jne 660f\n    call hbc_float_unpack\n    jmp 662f\n660:\n    test %rax, %rax\n    je 661f\n    cmp $9, %rax\n    je 661f\n    xorpd %xmm0, %xmm0\n    jmp 662f\n661:\n    cvtsi2sd %rdx, %xmm0\n662:\n");
+                    out.push_str("    movsd %xmm0, 16(%rsp)\n");
+                    // Full-kind release of the owned temporary, mirroring
+                    // cg_dyn_free_old: heap floats via hbc_float_release,
+                    // tag 4 string via hbc_freestr, tag 8 owned Dyn array
+                    // via hbc_dfree (count header), tag 13 object via
+                    // hrobj_release when classes are in the program.
+                    out.push_str("    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    call hbc_float_release\n");
+                    let k = fresh_lbl();
+                    if CLASSES.with(|c| !c.borrow().is_empty()) {
+                        out.push_str(&format!("    @HBC_TAG_KIND@cmpq $4, (%rsp)@HBC_TAG_END@\n    jne .Lida{}\n    mov 8(%rsp), %rdi\n    test %rdi, %rdi\n    je .Lidz{}\n    call hbc_freestr\n    jmp .Lidz{}\n.Lida{}:\n    @HBC_TAG_KIND@cmpq $8, (%rsp)@HBC_TAG_END@\n    jne .Lidb{}\n    mov 8(%rsp), %rdi\n    test %rdi, %rdi\n    je .Lidz{}\n    mov -8(%rdi), %rsi\n    call hbc_dfree\n    jmp .Lidz{}\n.Lidb{}:\n    @HBC_TAG_KIND@cmpq $13, (%rsp)@HBC_TAG_END@\n    jne .Lidz{}\n    mov 8(%rsp), %rdi\n    test %rdi, %rdi\n    je .Lidz{}\n    call hrobj_release\n.Lidz{}:\n", k, k, k, k, k, k, k, k, k, k, k));
+                    } else {
+                        out.push_str(&format!("    @HBC_TAG_KIND@cmpq $4, (%rsp)@HBC_TAG_END@\n    jne .Lida{}\n    mov 8(%rsp), %rdi\n    test %rdi, %rdi\n    je .Lidz{}\n    call hbc_freestr\n    jmp .Lidz{}\n.Lida{}:\n    @HBC_TAG_KIND@cmpq $8, (%rsp)@HBC_TAG_END@\n    jne .Lidz{}\n    mov 8(%rsp), %rdi\n    test %rdi, %rdi\n    je .Lidz{}\n    mov -8(%rdi), %rsi\n    call hbc_dfree\n.Lidz{}:\n", k, k, k, k, k, k, k));
+                    }
+                    out.push_str("    movsd 16(%rsp), %xmm0\n    add $32, %rsp\n");
+                }
                 Some(a) if expr_ty(a,env,sigs)==Ty::Dyn => {
                     cg_value(a,env,sigs,strs,out,target);
                     out.push_str("    mov %rax, %rcx\n    and $255, %rcx\n    cmp $5, %rcx\n    jne 660f\n    call hbc_float_unpack\n    jmp 662f\n660:\n    test %rax, %rax\n    je 661f\n    cmp $9, %rax\n    je 661f\n    xorpd %xmm0, %xmm0\n    jmp 662f\n661:\n    cvtsi2sd %rdx, %xmm0\n662:\n");
