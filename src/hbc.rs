@@ -20641,17 +20641,25 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 match expr_ty(e, env, sigs) {
                     Ty::Dyn => {
                         cg_value(e, env, sigs, strs, out, target);
+                        if !dyn_expr_owned(e) {
                         // The pending exception is the SOLE owner of its
                         // value: CatchBind hands it to the catch slot and a
                         // bare CATCH discards it, and the Dyn-slot epilogue
-                        // releases owned payloads too. A Dyn pair SHARES the
-                        // source slot's owned payload, so copy it like the
-                        // string path below: owned floats (hbc_float_clone),
-                        // owned strings (hbc_strcpy), owned Dyn-cell arrays
-                        // (hbc_darrclone), objects (retain). Scalars and
-                        // borrowed/shared views carry no ownership.
+                        // releases owned payloads too. A Dyn pair from a Var
+                        // or borrowed cell SHARES the source slot's owned
+                        // payload, so copy it: owned floats
+                        // (hbc_float_clone), owned strings (hbc_strcpy),
+                        // owned Dyn-cell arrays (hbc_darrclone), objects
+                        // (retain). Scalars and borrowed/shared views carry
+                        // no ownership.
                         // (oracle pCATCH9/pCATCH10: double-free segfault at
                         // function exit before this copy)
+                        // An OWNED temporary (Call/Send/SelfGet/memvar/Seq
+                        // tail, per dyn_expr_owned) is TRANSFERRED instead:
+                        // the exception slot takes over the fresh payload,
+                        // no clone and no release (reviewer CATCH v1:
+                        // unconditional clone leaked the temporary - probes
+                        // pCATCH12/13/14 balance-guard rc=99 pre-fix).
                         let brk = fresh_lbl();
                         out.push_str(&format!("    call hbc_float_clone
     @HBC_TAG_KIND@cmp $4, %rax@HBC_TAG_END@
@@ -20687,6 +20695,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                         }
                         out.push_str(&format!(".Lbrkd{}:
 ", brk));
+                        }
                     }
                     Ty::I64 => {
                         cg_value(e, env, sigs, strs, out, target);
