@@ -984,5 +984,5 @@ HB_BOOL hb_evalRelease( PHB_EVALINFO pEvalInfo )
 /* Sentinel so the hbhbr_funcs section (and the __start_/__stop_ bounds
  * the dispatcher walks) exists even when no other object registers a
  * function; the empty name never matches a real call. */
-__attribute__( ( used, section( "hbhbr_funcs" ), aligned( 8 ) ) )
+__attribute__( ( used, section( HBHBR_SECTION ), aligned( 8 ) ) )
 static const HBC_EXT_ENTRY hbc_ext_sentinel = { "", (HBC_EXT_FN) 0 };
