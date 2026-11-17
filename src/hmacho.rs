@@ -564,8 +564,8 @@ pub fn darwin_dyld_asm(src: &str, threaded: bool, ext: bool) -> Result<(String, 
                 dw_raw(&mut out, &mut serial, 0x200_0000 + 197);
                 out.push_str("    pop %r10\n");
             }
-            Some(l) if [0, 1, 3, 8, 11, 18, 60, 72, 186, 231].contains(&l) => {
-                let mac = match l { 0 => 3, 1 => 4, 3 => 6, 8 => 199, 11 => 73, 18 => 154, 60 => 1, 72 => 92, 186 => 372, _ => 1 };
+            Some(l) if [0, 1, 3, 8, 11, 18, 60, 72, 83, 186, 231].contains(&l) => {
+                let mac = match l { 0 => 3, 1 => 4, 3 => 6, 8 => 199, 11 => 73, 18 => 154, 60 => 1, 72 => 92, 83 => 136, 186 => 372, _ => 1 };
                 dw_raw(&mut out, &mut serial, 0x200_0000 + mac);
             }
             _ => dw_call(&mut out, "__a64_linux_syscall"),

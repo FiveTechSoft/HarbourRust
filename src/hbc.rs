@@ -30,6 +30,7 @@ use std::fs;
 use std::process;
 
 thread_local! {
+    static DIRMAKE_USED: std::cell::Cell<bool> = const {std::cell::Cell::new(false)};
     static FILE_USED: std::cell::Cell<bool> = const {std::cell::Cell::new(false)};
     static FILE_PATH_LINE: std::cell::Cell<Option<usize>> = const {std::cell::Cell::new(None)};
 }
@@ -1775,7 +1776,7 @@ const ASM_RESERVED: &[&str] = &[
     // hbc itself emits; a user function with one of these names would
     // collide with a helper symbol.
     "dtos", "stod", "year", "day", "month", "dow", "cdow", "cmonth", "dtoc", "sqrt", "exp", "log", "mod", "padc", "rat", "stuff", "isdigit", "isalpha", "isupper", "islower", "strzero", "ischar", "strzero_fix", "str_f64", "fmt_f64", "date_add", "date_diff", "date_days", "date_from_days",
-    "strtran", "space", "substr", "date", "ctod", "date_pack", "date_render", "date_today", "curdir", "file", "hrfile_setdefault", "hrfile_setpath", "qout", "qqout", "outstd", "outerr", "empty", "procname", "min", "max", "str", "padr", "hb_ntos", "replicate", "aeval", "hb_isnumeric", "hb_isarray", "hb_isstring", "dfree", "upper", "lower", "left", "right", "at", "int", "abs", "padl", "val", "ascan", "aclone", "atail", "asort", "hb_bitand", "hb_bitor", "hb_bitxor", "hb_bitnot", "hb_bittest", "hb_bitset", "hb_bitreset", "eprint_str", "eprint_sep", "eprint_i64", "eprint_i64c", "eprint_dyn", "eprint_dynlit", "print_dynlit", "eprint_f64", "hb_eol", "procline", "asc", "trim", "ltrim", "rtrim", "alltrim", "chr", "trace_top", "print_trace", "panic_exit", "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_range_error", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
+    "strtran", "space", "substr", "date", "ctod", "date_pack", "date_render", "date_today", "curdir", "dirmake", "file", "hrfile_setdefault", "hrfile_setpath", "qout", "qqout", "outstd", "outerr", "empty", "procname", "min", "max", "str", "padr", "hb_ntos", "replicate", "aeval", "hb_isnumeric", "hb_isarray", "hb_isstring", "dfree", "upper", "lower", "left", "right", "at", "int", "abs", "padl", "val", "ascan", "aclone", "atail", "asort", "hb_bitand", "hb_bitor", "hb_bitxor", "hb_bitnot", "hb_bittest", "hb_bitset", "hb_bitreset", "eprint_str", "eprint_sep", "eprint_i64", "eprint_i64c", "eprint_dyn", "eprint_dynlit", "print_dynlit", "eprint_f64", "hb_eol", "procline", "asc", "trim", "ltrim", "rtrim", "alltrim", "chr", "trace_top", "print_trace", "panic_exit", "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_range_error", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
 ];
 
 fn dbf_result(id: &str) -> Option<Ty> {
@@ -3500,6 +3501,7 @@ struct Prog {
 fn parse(src: &str) -> Result<Prog, String> {
     module_static::reset();
     MACRO_CONTEXT.with(|c|c.set(false));
+    DIRMAKE_USED.with(|v|v.set(false));
     FILE_USED.with(|v|v.set(false));
     FILE_PATH_LINE.with(|v|v.set(None));
     SET_CONSOLE_LINE.with(|v|v.set(None));
@@ -7072,6 +7074,19 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                     return Err(format!("line {}: `ctod` expects a string",n));
                 }
                 return Ok(Ty::Date);
+            }
+            if is_builtin(id,"dirmake") {
+                if !CURDIR_LINUX_NATIVE.with(|v|v.get()) && !MACHO_MODE.with(|v|v.get()) {
+                    return Err(format!("line {}: DIRMAKE supports ordinary Linux and Darwin only in this increment; Windows/LLVM are not measured",n));
+                }
+                if args.len()>1 {return Err(format!("line {}: DIRMAKE supports zero or one scalar argument in this increment; extra argument evaluation is not covered",n));}
+                for a in args {
+                    if !matches!(type_expr(a,env,sigs,n)?,Ty::Str|Ty::StrOwn|Ty::Dyn|Ty::I64|Ty::Bool|Ty::F64|Ty::Date) {
+                        return Err(format!("line {}: DIRMAKE supports zero or one scalar argument in this increment; static aggregates are not covered",n));
+                    }
+                }
+                DIRMAKE_USED.with(|v|v.set(true));
+                return Ok(Ty::I64);
             }
             if is_builtin(id,"file") || id=="hrfile_setdefault" || id=="hrfile_setpath" {
                 if args.len()!=1 {return Err(format!("line {}: {} expects exactly one argument",n,id));}
@@ -11203,6 +11218,7 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
             }
             if is_builtin(id,"date") { return; }
             if is_builtin(id,"ctod") { apply_moves(&args[0],env,sigs,false); return; }
+            if is_builtin(id,"dirmake") {for a in args {apply_moves(a,env,sigs,false);}return;}
             if is_builtin(id,"file") || id=="hrfile_setdefault" || id=="hrfile_setpath" {
                 for a in args {apply_moves(a,env,sigs,false);}return;
             }
@@ -14755,6 +14771,32 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             if temp { out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n"); }
             out.push_str("    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_ctod\n");
             if temp { out.push_str("    mov %rax, 8(%rsp)\n    mov (%rsp), %rdi\n    call hbc_freestr\n    mov 8(%rsp), %rax\n    add $16, %rsp\n"); }
+        }
+        Expr::Call(id,args) if is_builtin(id,"dirmake") => {
+            if args.is_empty() {out.push_str("    mov $-2, %rax\n");}
+            else {
+                let a=&args[0];let t=expr_ty(a,env,sigs);
+                if matches!(t,Ty::Str|Ty::StrOwn) {
+                    let temp=t==Ty::StrOwn&&!matches!(a,Expr::Var(_));
+                    cg_value(a,env,sigs,strs,out,target);
+                    out.push_str("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_dirmake\n    mov %rax, 16(%rsp)\n");
+                    if temp {out.push_str("    mov (%rsp), %rdi\n    call hbc_freestr\n");}
+                    out.push_str("    mov 16(%rsp), %rax\n    add $32, %rsp\n");
+                } else if t==Ty::Dyn {
+                    cg_data_value(a,env,sigs,strs,out,target);let k=fresh_lbl();
+                    out.push_str(&format!("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n    @HBC_TAG_KIND@cmp $2, %rax@HBC_TAG_END@\n    je .Ldirmake_str{}\n    @HBC_TAG_KIND@cmp $4, %rax@HBC_TAG_END@\n    je .Ldirmake_str{}\n    mov $-2, %rax\n    jmp .Ldirmake_done{}\n.Ldirmake_str{}:\n    mov %rdx, %rdi\n    mov -8(%rdx), %rsi\n    call hbc_dirmake\n.Ldirmake_done{}:\n    mov %rax, 16(%rsp)\n",k,k,k,k,k));
+                    // cg_data_value owns materialized strings/floats. Other
+                    // owned call results also carry aggregate/object owners;
+                    // borrowed Dyn nonstrings must NOT be released.
+                    if dyn_expr_owned(a) {cg_concat_drop(out,0);}
+                    else {cg_dyn_stack_release(out,0,false);}
+                    out.push_str("    mov 16(%rsp), %rax\n    add $32, %rsp\n");
+                } else {
+                    if t==Ty::F64 {cg_f64_load(a,env,sigs,strs,out,target);}else{cg_value(a,env,sigs,strs,out,target);}
+                    out.push_str("    mov $-2, %rax\n");
+                }
+            }
+            out.push_str("    xor %edx, %edx\n");
         }
         Expr::Call(id,args) if is_builtin(id,"file") || id=="hrfile_setdefault" || id=="hrfile_setpath" => {
             let a=&args[0];let t=expr_ty(a,env,sigs);let setter=id!="file";
@@ -18313,6 +18355,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
                 let t = expr_ty(&args[0], env, sigs);
                 return t;
             }
+            if is_builtin(id,"dirmake") {return Ty::I64;}
             if is_builtin(id,"file") {return Ty::Bool;}
             if id=="hrfile_setdefault"||id=="hrfile_setpath" {return Ty::Dyn;}
             if is_builtin(id, "curdir") || is_builtin(id, "chr") || is_builtin(id, "str") || is_builtin(id, "hb_ntos") || is_builtin(id, "padr") || is_builtin(id, "replicate") { return Ty::StrOwn; }
@@ -27305,6 +27348,11 @@ fn emit_asm(funcs: &[Func], sigs: &[Sig], externs: &[String], target: Target, in
     }
     out.push_str("# generated by hbc (PoC: Harbour syntax -> x86-64 assembly)\n");
     out.push_str(CONSOLE_NUL_HELPER);
+    if DIRMAKE_USED.with(|v|v.get()) {
+        // Original MIT implementation. Compiler strings are counted, not
+        // necessarily terminated. Make one owned NUL-terminated OS snapshot.
+        out.push_str("    .text\nhbc_dirmake:\n    push %rbp\n    mov %rsp, %rbp\n    sub $32, %rsp\n    mov %rdi, -8(%rbp)\n    mov %rsi, -16(%rbp)\n    add $1, %rsi\n    jc hbc_oom\n    call hbc_stralloc\n    mov %rax, -24(%rbp)\n    mov -8(%rbp), %rsi\n    mov %rax, %rdi\n    mov -16(%rbp), %rcx\n    rep movsb\n    movb $0, (%rdi)\n    mov %rax, %rdi\n    mov $511, %esi\n    mov $83, %eax\n    syscall\n    mov %rax, -16(%rbp)\n    mov -24(%rbp), %rdi\n    call hbc_freestr\n    mov -16(%rbp), %rax\n    leave\n    ret\n");
+    }
     match target {
         Target::Linux => out.push_str("# target: linux - no libc, I/O via own syscall helpers at the end\n"),
         Target::Windows => out.push_str("# target: windows - no CRT, I/O via own helpers calling kernel32 at the end\n"),

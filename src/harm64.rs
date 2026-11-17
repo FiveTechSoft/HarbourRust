@@ -572,7 +572,7 @@ impl<'a> Tr<'a> {
             _ => {}
         }
         let mac = match n { Some(1) => 4, Some(231) => 1, Some(186) => 372, Some(2) => 5, Some(3) => 6, Some(9) => 197, Some(11) => 73, Some(60) => 1, Some(72) => 92, Some(96) => 116,
-            Some(0) => 3, Some(8) => 199, Some(18) => 154,
+            Some(0) => 3, Some(8) => 199, Some(18) => 154, Some(83) => 136,
             _ => {
                 // dynamic number or a call that needs argument/structure
                 // conversion: the run-time dispatcher (x9 = Linux number)
