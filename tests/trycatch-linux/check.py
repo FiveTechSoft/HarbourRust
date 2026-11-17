@@ -31,7 +31,7 @@ D. Declared divergence (programs/break_array_deepcopy): catch-bound Dyn
 Every run records rc + stderr in results.json; PASS requires rc 0 and
 EMPTY stderr on both ours and the oracle shim.
 """
-import argparse, hashlib, json, os, pathlib, subprocess, sys
+import argparse, hashlib, json, os, pathlib, re, subprocess, sys
 P = pathlib.Path
 
 MANIFEST = ["try_basic", "try_noerror_finally", "try_break_value", "try_nested_crossfn"]
@@ -88,6 +88,55 @@ def emit_balance(exe_src, work):
     r = run(['as', '--64', '-o', work / 'checked.o', s], work, 'as'); assert r.returncode == 0, r.stderr
     r = run(['ld', '-s', '-o', work / 'checked', work / 'checked.o'], work, 'ld'); assert r.returncode == 0, r.stderr
     return work / 'checked'
+
+DELTA_GUARD = ('    mov hbc_mem_allocs(%rip), %rax\n'
+               '    sub hbc_mem_frees(%rip), %rax\n'
+               '    test %rax, %rax\n'
+               '    je .Lprobe_zero\n'
+               '    lea -1(%rsp), %rsi\n'
+               '    movb $10, (%rsi)\n'
+               '    mov $10, %r9\n'
+               '.Ldgt_loop:\n'
+               '    xor %rdx, %rdx\n'
+               '    div %r9\n'
+               '    add $48, %dl\n'
+               '    dec %rsi\n'
+               '    mov %dl, (%rsi)\n'
+               '    test %rax, %rax\n'
+               '    jne .Ldgt_loop\n'
+               '    dec %rsi\n    movb $61, (%rsi)\n'
+               '    dec %rsi\n    movb $65, (%rsi)\n'
+               '    dec %rsi\n    movb $84, (%rsi)\n'
+               '    dec %rsi\n    movb $76, (%rsi)\n'
+               '    dec %rsi\n    movb $69, (%rsi)\n'
+               '    dec %rsi\n    movb $68, (%rsi)\n'
+               '    mov %rsp, %rdx\n'
+               '    sub %rsi, %rdx\n'
+               '    mov $2, %edi\n'
+               '    mov $1, %eax\n'
+               '    syscall\n'
+               '    mov $60, %eax\n'
+               '    mov $99, %edi\n'
+               '    syscall\n'
+               '.Lprobe_zero:\n')
+
+def emit_delta(exe_src, work):
+    """Instrumented emit + DELTA-printing guard; returns run record with
+    the measured balance delta parsed from stderr (0 when balanced)."""
+    s = work / 'checked.s'
+    r = run([compiler, exe_src, s, '--target=linux', '--instrument', '--no-prune'], work, 'emit')
+    assert r.returncode == 0, (exe_src, r.stderr)
+    text = s.read_text()
+    anchor = '    call hbc_persistent_cleanup\n    call hbc_str_cache_flush\n'
+    assert text.count(anchor) == 1, 'anchor not unique'
+    if '    call hbc_arena_flush\n' in text[text.index(anchor):text.index(anchor) + 200]:
+        anchor += '    call hbc_arena_flush\n'
+    s.write_text(text.replace(anchor, anchor + DELTA_GUARD))
+    r = run(['as', '--64', '-o', work / 'checked.o', s], work, 'as'); assert r.returncode == 0, r.stderr
+    r = run(['ld', '-s', '-o', work / 'checked', work / 'checked.o'], work, 'ld'); assert r.returncode == 0, r.stderr
+    r = run([work / 'checked'], work, 'memdelta')
+    m = re.search(rb'DELTA=(\d+)', r.stderr)
+    return r, (int(m.group(1)) if m else 0)
 
 # A. manifest rows
 for stem in MANIFEST:
@@ -157,8 +206,22 @@ for stem in OWN + ['break_array_deepcopy']:
             row['memcheck'] = rec(mr)
             ok = ok and mr.returncode == 0 and mr.stderr == b'' and mr.stdout == exp
         else:
-            row['memcheck'] = ('exempt: object runtime retains its chunk/template pool; '
-                               'per-iteration delta proven N-invariant (1 at N=1/500/1000)')
+            # Send row: MEASURED bound/baseline, not an exemption. The
+            # object runtime retains a constant baseline (template pool);
+            # measured delta = 2 at N=1, 500 and 1000 iterations, with AND
+            # without Break (control program break_send_control: same class,
+            # same method calls, no try/Break). Assert the Break run adds no
+            # retention over the control and stays within the measured
+            # constant bound; a per-iteration leak breaks both at N=500.
+            SEND_BOUND = 2  # measured constant maximum (N=1/500/1000, break and control)
+            br, bdelta = emit_delta(src, work)
+            ctl_src = gate / 'programs' / 'break_send_control.prg'
+            (work / 'control').mkdir()
+            cr, cdelta = emit_delta(ctl_src, work / 'control')
+            row['memdelta_break'] = {'delta': bdelta, 'rc': br.returncode}
+            row['memdelta_control'] = {'delta': cdelta, 'rc': cr.returncode}
+            row['memdelta_bound'] = SEND_BOUND
+            ok = ok and bdelta <= SEND_BOUND and bdelta == cdelta
     row['pass'] = ok
     rows.append(row); print(('PASS' if ok else 'FAIL'), stem, row['kind'])
 
