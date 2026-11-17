@@ -347,6 +347,40 @@ fn fold_num_bin(op: char, a: &Expr, b: &Expr) -> Option<Expr> {
 // for variable 10/2 while the compiler fold prints 5 for literal 10/2,
 // expropt2.c hb_compExprReduceDiv + oracle hk291). Everything else is
 // rejected by the checker before codegen.
+// D-I2 (Dyn division, hb_vmDivide; oracles pD1-pD6): one operand of `/`
+// as a double. A typed numeric takes cg_f64_operand unchanged. A Dyn
+// operand unpacks BY KIND at runtime, because Harbour always divides as
+// doubles: int tags (0 runtime / 9 literal-provenance) convert, a kind-5
+// float payload goes through hbc_float_unpack, and every other payload
+// kind (NIL, string, logical, array, object) is Harbour's BASE/1084
+// "Argument error: /" - routed to hbc_type_error, the registered failure
+// mode shared with +,-,*,%,^ (clean exit 1 outside BEGIN SEQUENCE, the
+// standard error object inside one). The zero-divisor check stays in the
+// caller (hbc_div0_error on the double divisor, EG_ZERODIV). An OWNED
+// Dyn temporary (memvar Var/Call/Send/SelfGet/Seq tail) is released
+// after the value is extracted: only int and float tags can reach the
+// release (every other kind errors first), so the self-dispatching
+// hbc_float_release is the whole protocol. Borrowed Vars never release.
+fn cg_div_operand(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target) {
+    if expr_ty(e, env, sigs) != Ty::Dyn {
+        cg_f64_operand(e, env, sigs, strs, out, target);
+        return;
+    }
+    if dyn_expr_owned(e) {
+        cg_expr(e, env, sigs, strs, out, target);
+        out.push_str("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+        out.push_str("    mov %rax, %rcx\n    and $255, %rcx\n    cmp $5, %rcx\n    jne 660f\n    call hbc_float_unpack\n    jmp 662f\n660:\n    test %rax, %rax\n    je 661f\n    cmp $9, %rax\n    je 661f\n    jmp hbc_type_error\n661:\n    cvtsi2sd %rdx, %xmm0\n662:\n");
+        out.push_str("    movsd %xmm0, 16(%rsp)\n");
+        out.push_str("    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    call hbc_float_release\n");
+        out.push_str("    movsd 16(%rsp), %xmm0\n    add $32, %rsp\n");
+    } else {
+        cg_expr(e, env, sigs, strs, out, target);
+        out.push_str("    mov %rax, %rcx\n    and $255, %rcx\n    cmp $5, %rcx\n    jne 660f\n    call hbc_float_unpack\n    jmp 662f\n660:\n    test %rax, %rax\n    je 661f\n    cmp $9, %rax\n    je 661f\n    jmp hbc_type_error\n661:\n    cvtsi2sd %rdx, %xmm0\n662:\n");
+    }
+    // The dec slot is ignored for `/` (result dec is SET DECIMALS = 2).
+    out.push_str("    mov $2, %ecx\n");
+}
+
 fn cg_f64_load(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target) {
     match e {
         Expr::Set(..) => unreachable!("inline `:=` is restricted to integer/logical values in this increment (checked)"),
@@ -396,9 +430,9 @@ fn cg_f64_load(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, 
             // zero (ucomisd sets PF on unordered) and divides through to
             // NaN. The packed metadata carries the asymmetric
             // HB_DBL_LENGTH of the RESULT (hbdefs.h:570, 63zb).
-            cg_f64_operand(a, env, sigs, strs, out, target);
+            if *op=='/' { cg_div_operand(a, env, sigs, strs, out, target); } else { cg_f64_operand(a, env, sigs, strs, out, target); }
             out.push_str("    sub $32, %rsp\n    movsd %xmm0, (%rsp)\n    mov %rcx, 8(%rsp)\n");
-            cg_f64_operand(b, env, sigs, strs, out, target);
+            if *op=='/' { cg_div_operand(b, env, sigs, strs, out, target); } else { cg_f64_operand(b, env, sigs, strs, out, target); }
             if *op == '/' {
                 let l = fresh_lbl();
                 out.push_str(&format!("    xorpd %xmm2, %xmm2\n    ucomisd %xmm2, %xmm0\n    jp .Ldivok{}\n    jne .Ldivok{}\n    call hbc_div0_error\n.Ldivok{}:\n", l, l, l));
@@ -8088,27 +8122,37 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 // division folded at parse (oracle hk291).
                 return Ok(Ty::F64);
             }
-            if *op == '/' && matches!(ta, Ty::Dyn) || *op == '/' && matches!(tb, Ty::Dyn) {
-                // A Dyn payload extracts to i64 in this PoC, so a Dyn
-                // division would TRUNCATE (10/3 -> 3) where Harbour
-                // produces a double (hb_vmDivide) - a silent semantic bug
-                // on valid programs. Rejected by name until Dyn carries
-                // F64 payloads (no Dyn float tag in this increment).
-                return Err(format!("line {}: division with a NIL-able (Dyn) operand is not in this increment (Harbour always divides as doubles; an i64 payload path would silently truncate)", n));
+            if *op == '/' && (matches!(ta, Ty::Dyn) || matches!(tb, Ty::Dyn)) {
+                // hb_vmDivide always divides as doubles, so a Dyn operand
+                // unpacks BY KIND at runtime (oracles pD1-pD6): int tags
+                // convert, a kind-5 float payload unpacks through
+                // hbc_float_unpack, and a NIL/string/logical payload is
+                // Harbour's BASE/1084 "Argument error: /" - routed to the
+                // registered hbc_type_error failure mode (clean exit 1,
+                // no dialog), exactly like +,-,*,%,^. A zero divisor is
+                // EG_ZERODIV through hbc_div0_error, like any division.
+                // The static result is F64 with dec = SET DECIMALS = 2,
+                // identical to a typed division (oracle hk292).
+                if !matches!(ta, Ty::I64 | Ty::F64 | Ty::Dyn | Ty::NumLocal) || !matches!(tb, Ty::I64 | Ty::F64 | Ty::Dyn | Ty::NumLocal) {
+                    return Err(format!("line {}: `/` needs numeric operands (strings, logicals and arrays are a Harbour type error, EG_ARG 1084)", n));
+                }
+                return Ok(Ty::F64);
             }
             if ta == Ty::F64 || tb == Ty::F64 {
                 // Float arithmetic on values (oracles hk279/hk292/hk296:
                 // +,- keep dec = max; * sums the decs; / takes SET
                 // DECIMALS = 2; integer operands promote with dec 0).
                 // Mixed float/string, float/logical, float/array and
-                // float/Dyn stay Harbour type errors (BASE/1081+); Dyn
-                // has no float payload tag in this increment.
+                // float/Dyn stay Harbour type errors (BASE/1081+).
                 if matches!(ta, Ty::Dyn) || matches!(tb, Ty::Dyn) {
-                    // Covered LIMIT, not a Harbour error: Harbour runs a
-                    // float op with a number-holding Dyn fine; this PoC's
-                    // Dyn has no float payload tag, so the op is rejected
-                    // by name instead of silently truncating (63zc).
-                    return Err(format!("line {}: arithmetic between a NIL-able (Dyn) value and a float is a covered LIMIT of this increment (Harbour runs it when the Dyn holds a number; this PoC's Dyn has no float payload - registered divergence, no silent truncation)", n));
+                    // Covered LIMIT for +,-,* (not a Harbour error):
+                    // Harbour runs a float op with a number-holding Dyn
+                    // fine, and this PoC's Dyn does carry float payloads
+                    // (S5), but only `/` unpacks a Dyn operand by kind
+                    // (D-I2); +,-,* still extract to i64, so a float
+                    // payload would silently truncate. Rejected by name
+                    // instead (63zc).
+                    return Err(format!("line {}: arithmetic between a NIL-able (Dyn) value and a float is a covered LIMIT of this increment (Harbour runs it when the Dyn holds a number; +,-,* on a Dyn float payload are not unpacked by kind yet - registered divergence, no silent truncation)", n));
                 }
                 if !matches!(ta, Ty::I64 | Ty::F64) || !matches!(tb, Ty::I64 | Ty::F64) {
                     return Err(format!("line {}: arithmetic needs numeric operands (float mixed with strings, logicals or arrays is a Harbour type error)", n));
@@ -18069,6 +18113,11 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
                 Ty::F64
             } else if *op == '/' && ta == Ty::I64 && tb == Ty::I64 {
                 // Mirror of type_expr: runtime int/int division is F64.
+                Ty::F64
+            } else if *op == '/' && (ta == Ty::Dyn || tb == Ty::Dyn) {
+                // Mirror of type_expr: Dyn division unpacks each operand
+                // by kind at runtime and is always F64 (D-I2). The DBF
+                // route above keeps its own Dyn cell arithmetic.
                 Ty::F64
             } else if ta == Ty::F64 || tb == Ty::F64 {
                 // Mirror of type_expr: float arithmetic is F64.
