@@ -65,3 +65,6 @@ tests/module-static-objects/expected/** -text
 
 # Raw nullable method string boundary pins.
 tests/module-static-object-args/expected/** -text
+
+# Byte-exact bounded Dyn/string concat pins.
+tests/dyn-string-concat/expected/** -text

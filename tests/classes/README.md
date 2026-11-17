@@ -53,7 +53,8 @@ predate the shared string-copy fix. An ARM64 hbc runs natively on Apple
 Silicon, but its emitted x86-64 programs require Rosetta 2. An Intel Mac
 needs an Intel build of hbc. This is not native ARM64 code generation.
 
-The runner compiles the 26 runnable class probes with `--target=macho`
+The runner compiles 27 runnable class probes (including the former
+`neg15_dyn_concat`, now a fresh Harbour differential positive) with `--target=macho`
 and checks exit status, empty stderr and exact stdout against `expected/`.
 These files are Linux baseline captures from the post-fix compiler at
 `f31d99dccabd020c654d15a6bda22041454153d1`, not a fresh Harbour oracle run.
@@ -67,3 +68,7 @@ Real-Mac execution and a fresh differential run against Harbour are
 PENDING. On Linux, the 26 runnable probes emitted Mach-O x86-64 and
 the other 16 produced named rejections. This is emission evidence,
 not proof of loading or execution on a Mac.
+
+Bounded Dyn/string update: the former concat negative now has a fresh
+Harbour3.2 GTSTD pin. The current inventory is27 runnable +16 rejected.
+The historical counts above describe the original baseline, not this update.

@@ -18,8 +18,8 @@ expected = root / 'tests/classes/expected'
 positive = {p.stem for p in expected.glob('*.out')}
 negative = dict(line.split('\t', 1) for line in (expected / 'rejections.tsv').read_text().splitlines())
 actual = {p.stem for p in inputs.glob('*.prg')}
-if len(positive) != 26 or len(negative) != 16 or positive & set(negative) or positive | set(negative) != actual:
-    sys.exit('STOP: suite inventory mismatch (expected 26 runnable + 16 rejection cases).')
+if len(positive) != 27 or len(negative) != 16 or positive & set(negative) or positive | set(negative) != actual:
+    sys.exit('STOP: suite inventory mismatch (expected 27 runnable + 16 rejection cases).')
 paths = [hbc, root/'src/hbc.rs', root/'src/hrobj_blob.s'] + sorted(inputs.glob('*.prg')) + sorted(expected.iterdir())
 manifest = {str(p): hashlib.sha256(p.read_bytes()).hexdigest() for p in paths}
 (work/'identity.json').write_text(json.dumps({'machine':platform.platform(),'compiler':str(hbc),'sha256':manifest}, indent=2))
@@ -52,7 +52,7 @@ for name in sorted(actual):
     print(('PASS ' if ok else 'FAIL ')+name, flush=True)
     if not ok:
         failed.append(name)
-print(f'macho class battery: {42-len(failed)} pass, {len(failed)} fail (of 42)')
+print(f'macho class battery: {43-len(failed)} pass, {len(failed)} fail (of 43)')
 if failed:
     print('FAILED:', ', '.join(failed))
 sys.exit(bool(failed))

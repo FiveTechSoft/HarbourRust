@@ -8071,15 +8071,11 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
             if *op == '+' && matches!(ta, Ty::Str | Ty::StrOwn) && matches!(tb, Ty::Str | Ty::StrOwn) {
                 return Ok(Ty::StrOwn);
             }
-            // String `+` with a NIL-able (Dyn) operand (probe pOBJ2:
-            // `o:s := o:s + "cd"` over a DATA casilla read, or a Dyn
-            // local): Harbour dispatches at runtime - concatenates when
-            // the Dyn holds a string, BASE/1081 type error otherwise.
-            // This PoC cannot dispatch on the runtime payload, so it
-            // names the limit instead of falling through to the integer
-            // arithmetic diagnostic, which misdescribed the construct.
-            if *op == '+' && ((matches!(ta, Ty::Dyn) && matches!(tb, Ty::Str | Ty::StrOwn)) || (matches!(tb, Ty::Dyn) && matches!(ta, Ty::Str | Ty::StrOwn))) {
-                return Err(format!("line {}: string concatenation with a NIL-able (Dyn) operand is not in this increment (Harbour dispatches at runtime: concatenates when the Dyn holds a string, type error otherwise) - registered limit, no silent fallback", n));
+            // Bounded runtime string concatenation: one statically string
+            // operand fixes the result as StrOwn; only string Dyn payloads
+            // (kinds 2/4) are valid. Dyn+Dyn remains on its numeric route.
+            if *op == '+' && ((ta == Ty::Dyn && matches!(tb, Ty::Str | Ty::StrOwn)) || (tb == Ty::Dyn && matches!(ta, Ty::Str | Ty::StrOwn))) {
+                return Ok(Ty::StrOwn);
             }
             // Dyn operands are extracted at runtime: a NIL payload is a
             // clean type error (Harbour's interactive dialog is the
@@ -17282,6 +17278,10 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                 out.push_str("    mov %rax, %rdi\n    mov (%rsp), %rsi\n    call hbc_date_add\n    add $16, %rsp\n");
                 return;
             }
+            if *op == '+' && ((expr_ty(a,env,sigs)==Ty::Dyn && matches!(expr_ty(b,env,sigs),Ty::Str|Ty::StrOwn)) || (expr_ty(b,env,sigs)==Ty::Dyn && matches!(expr_ty(a,env,sigs),Ty::Str|Ty::StrOwn))) {
+                cg_string_dyn_concat(a,b,env,sigs,strs,out,target);
+                return;
+            }
             // String `+` (oracle hk215): hbc_strcat copies BOTH operands
             // into a fresh owned buffer; owned temporaries (a nested
             // concat) are freed right after the copy, variables keep
@@ -18593,6 +18593,66 @@ fn hash_cell_borrow(e: &Expr, env: &[CgLocal]) -> bool {
 fn cg_dyn_clone_if_str(out: &mut String) {
     out.push_str("    call hbc_float_clone\n");
     out.push_str("    @HBC_TAG_KIND@cmp $2, %rax@HBC_TAG_END@\n    je 88f\n    @HBC_TAG_KIND@cmp $4, %rax@HBC_TAG_END@\n    jne 89f\n88:\n    mov %rdx, %rdi\n    mov -8(%rdx), %rsi\n    call hbc_strcpy\n    mov %rax, %rdx\n    mov $4, %eax\n89:\n");
+}
+
+// Each admitted operand is normalized to an exclusively owned snapshot.
+// Borrowed nonstrings become NIL: dispatch will reject them after BOTH
+// operands have evaluated, and no borrowed payload reaches the release path.
+fn cg_concat_snapshot(e:&Expr,env:&[CgLocal],sigs:&[Sig],strs:&mut Vec<String>,out:&mut String,target:Target) {
+    let ty=expr_ty(e,env,sigs);
+    cg_value(e,env,sigs,strs,out,target);
+    if ty!=Ty::Dyn {
+        if ty!=Ty::StrOwn || matches!(e,Expr::Var(_)) {
+            out.push_str("    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_strcpy\n");
+        }
+        out.push_str("    mov %rax, %rdx\n    mov $4, %eax\n");
+    } else {
+        let k=fresh_lbl();
+        out.push_str(&format!("    @HBC_TAG_KIND@cmp $2, %rax@HBC_TAG_END@\n    je .Lcscopy{k}\n    @HBC_TAG_KIND@cmp $4, %rax@HBC_TAG_END@\n"));
+        if dyn_expr_owned(e) {
+            out.push_str(&format!("    jmp .Lcsdone{k}\n"));
+        } else {
+            out.push_str(&format!("    je .Lcscopy{k}\n    mov $1, %eax\n    xor %edx, %edx\n    jmp .Lcsdone{k}\n"));
+        }
+        out.push_str(&format!(".Lcscopy{k}:\n    mov %rdx, %rdi\n    mov -8(%rdx), %rsi\n    call hbc_strcpy\n    mov %rax, %rdx\n    mov $4, %eax\n.Lcsdone{k}:\n"));
+    }
+}
+
+// Full-kind drop for an OWNED snapshot, including invalid nonstring call
+// returns. Mirrors Dyn slot cleanup, not the borrowed source's lifetime.
+fn cg_concat_drop(out:&mut String,off:usize) {
+    cg_dyn_stack_release(out,off,false);
+    let k=fresh_lbl();
+    out.push_str(&format!("    @HBC_TAG_KIND@cmpq $8, {off}(%rsp)@HBC_TAG_END@\n    jne .Lcsobj{k}\n    mov {}(%rsp), %rdi\n    test %rdi, %rdi\n    je .Lcsdrop{k}\n    mov -8(%rdi), %rsi\n    call hbc_dfree\n    jmp .Lcsdrop{k}\n.Lcsobj{k}:\n",off+8));
+    if CLASSES.with(|c|!c.borrow().is_empty()) {
+        out.push_str(&format!("    @HBC_TAG_KIND@cmpq $13, {off}(%rsp)@HBC_TAG_END@\n    jne .Lcsdrop{k}\n    mov {}(%rsp), %rdi\n    test %rdi, %rdi\n    je .Lcsdrop{k}\n    call hrobj_release\n",off+8));
+    }
+    out.push_str(&format!(".Lcsdrop{k}:\n"));
+}
+
+fn cg_string_dyn_concat(a:&Expr,b:&Expr,env:&[CgLocal],sigs:&[Sig],strs:&mut Vec<String>,out:&mut String,target:Target) {
+    let k=fresh_lbl();
+    let arena_root=CG_ARENA_ROOT.with(|c|c.replace(false));
+    // Stack: two owned {kind,payload} snapshots, result ptr/len, guard
+    // flag, padding. No local or array borrow survives RHS evaluation.
+    cg_concat_snapshot(a,env,sigs,strs,out,target);
+    out.push_str(&format!("    sub $64, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n    movq $1, 16(%rsp)\n    movq $0, 24(%rsp)\n    movq $0, 48(%rsp)\n    cmpq $0, hbc_seq_depth(%rip)\n    je .Lcseval{k}\n    lea .Lcscatch{k}(%rip), %rdi\n    call hbc_seq_push\n    movq $1, 48(%rsp)\n.Lcseval{k}:\n"));
+    // An internal landing pad exists only under an already active user
+    // TRY. It releases the left snapshot when RHS raises/Breaks, then
+    // propagates the unchanged pending exception. No new sequence stack
+    // usage is introduced into non-TRY/thread programs.
+    cg_concat_snapshot(b,env,sigs,strs,out,target);
+    out.push_str(&format!("    mov %rax, 16(%rsp)\n    mov %rdx, 24(%rsp)\n    cmpq $0, 48(%rsp)\n    je .Lcscheck{k}\n    call hbc_seq_pop\n.Lcscheck{k}:\n    @HBC_TAG_KIND@cmpq $4, (%rsp)@HBC_TAG_END@\n    jne .Lcserror{k}\n    @HBC_TAG_KIND@cmpq $4, 16(%rsp)@HBC_TAG_END@\n    jne .Lcserror{k}\n    mov 8(%rsp), %rdi\n    mov -8(%rdi), %rsi\n    mov 24(%rsp), %rdx\n    mov -8(%rdx), %rcx\n"));
+    if arena_root {out.push_str("    movb $1, hbc_arena_ok(%rip)\n");}
+    out.push_str("    call hbc_strcat\n");
+    if arena_root {out.push_str("    movb $0, hbc_arena_ok(%rip)\n");}
+    out.push_str("    mov %rax, 32(%rsp)\n    mov %rdx, 40(%rsp)\n");
+    cg_concat_drop(out,0);cg_concat_drop(out,16);
+    out.push_str(&format!("    mov 32(%rsp), %rax\n    mov 40(%rsp), %rdx\n    add $64, %rsp\n    jmp .Lcsend{k}\n.Lcserror{k}:\n"));
+    cg_concat_drop(out,0);cg_concat_drop(out,16);
+    out.push_str(&format!("    add $64, %rsp\n    jmp hbc_strarg_error\n.Lcscatch{k}:\n"));
+    cg_concat_drop(out,0);cg_concat_drop(out,16);
+    out.push_str(&format!("    add $64, %rsp\n    jmp hbc_seq_unwind\n.Lcsend{k}:\n"));
 }
 
 // Module STATIC array cells: folded constants only, nested arrays admitted.
@@ -21053,7 +21113,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 // (expr_mentions guard); every other shape keeps hbc_strcat.
                 if lty == Ty::StrOwn {
                     if let Expr::Bin('+', a, b) = e {
-                        if matches!(**a, Expr::Var(ref v) if *v == *id) && !expr_mentions(b, id) && !expr_has_call(b) {
+                        if matches!(**a, Expr::Var(ref v) if *v == *id) && matches!(expr_ty(b,env,sigs),Ty::Str|Ty::StrOwn) && !expr_mentions(b, id) && !expr_has_call(b) {
                             cg_value(b, env, sigs, strs, out, target);
                             out.push_str(&format!("    mov %rax, %rsi\n    mov -{}(%rbp), %rdi\n    call hbc_strgrow\n    mov %rax, -{}(%rbp)\n    mov %rdx, -{}(%rbp)\n", off, off, off - 8));
                             continue;
@@ -28947,6 +29007,18 @@ hbc_divarg_error:
     mov $1, %edi
     syscall
 
+hbc_strarg_error:
+    cmpq $0, hbc_seq_depth(%rip)
+    jne .Lseqt_strarg
+    lea .Lstrargmsg(%rip), %rsi
+    mov $18, %edx
+    mov $1, %eax
+    mov $1, %edi
+    syscall
+    mov $60, %eax
+    mov $1, %edi
+    syscall
+
 hbc_type_error:
     cmpq $0, hbc_seq_depth(%rip)
     jne .Lseqt_type
@@ -29827,6 +29899,9 @@ hbc_seq_unwind:
 .Lseqt_divarg:
     lea .LseqD_divarg(%rip), %rsi
     jmp hbc_seq_throw_error
+.Lseqt_strarg:
+    lea .LseqD_strarg(%rip), %rsi
+    jmp hbc_seq_throw_error
 .Lseqt_round:
     lea .LseqD_round(%rip), %rsi
     jmp hbc_seq_throw_error
@@ -30313,6 +30388,8 @@ fn emit_strings(out: &mut String, strs: &[String]) {
     out.push_str(".quad 20\n.LseqD_objnil:\n    .byte 79,98,106,101,99,116,32,97,99,99,101,115,115,32,111,110,32,78,73,76\n");
     out.push_str(".Ldivargmsg:\n    .byte 65,114,103,117,109,101,110,116,32,101,114,114,111,114,58,32,47,10\n");
     out.push_str(".quad 17\n.LseqD_divarg:\n    .byte 65,114,103,117,109,101,110,116,32,101,114,114,111,114,58,32,47\n");
+    out.push_str(".Lstrargmsg:\n    .byte 65,114,103,117,109,101,110,116,32,101,114,114,111,114,58,32,43,10\n");
+    out.push_str(".quad 17\n.LseqD_strarg:\n    .byte 65,114,103,117,109,101,110,116,32,101,114,114,111,114,58,32,43\n");
     out.push_str(".Ltypemsg:\n    .byte 84,121,112,101,32,101,114,114,111,114,58,32,78,73,76,32,117,115,101,100,32,97,115,32,97,32,110,117,109,98,101,114,10\n");
     out.push_str(".Ldbfstrmsg:\n    .byte 84,121,112,101,32,101,114,114,111,114,58,32,102,105,101,108,100,32,105,115,32,110,111,116,32,97,32,99,104,97,114,97,99,116,101,114,32,118,97,108,117,101,10\n");
     out.push_str(".Llogmsg:\n    .byte 84,121,112,101,32,101,114,114,111,114,58,32,99,111,110,100,105,116,105,111,110,32,105,115,32,110,111,116,32,97,32,108,111,103,105,99,97,108,10\n");
@@ -32007,6 +32084,19 @@ hbc_divarg_error:
     mov $1, %ecx
     call ExitProcess
 
+hbc_strarg_error:
+    cmpq $0, hbc_seq_depth(%rip)
+    jne .Lseqt_strarg
+    push %rbp
+    mov %rsp, %rbp
+    and $-16, %rsp
+    sub $48, %rsp
+    lea .Lstrargmsg(%rip), %rax
+    mov $18, %edx
+    call hbc_print_str
+    mov $1, %ecx
+    call ExitProcess
+
 hbc_type_error:
     cmpq $0, hbc_seq_depth(%rip)
     jne .Lseqt_type
@@ -33066,6 +33156,9 @@ hbc_seq_unwind:
     jmp hbc_seq_throw_error
 .Lseqt_divarg:
     lea .LseqD_divarg(%rip), %rsi
+    jmp hbc_seq_throw_error
+.Lseqt_strarg:
+    lea .LseqD_strarg(%rip), %rsi
     jmp hbc_seq_throw_error
 .Lseqt_round:
     lea .LseqD_round(%rip), %rsi
@@ -35547,6 +35640,36 @@ mod datepart_width_storage_tests {
             assert!(!helper.contains("mov -12(%rbp), %rax"));
             assert!(!helper.contains("mov -48(%rbp), %r11\n"));
             assert!(helper.contains("mov -48(%rbp), %eax") || helper.contains("mov -48(%rbp), %r11d"));
+        }
+    }
+}
+
+#[cfg(test)]
+mod dyn_string_concat_tests {
+    use super::*;
+    #[test]
+    fn static_string_anchor_returns_owned_in_either_order() {
+        for ty in [Ty::Str,Ty::StrOwn] {
+            let mut env=vec![Local{name:"d".into(),ty:Ty::Dyn,moved:false,ro:false,byref:false},Local{name:"s".into(),ty,moved:false,ro:false,byref:false}];
+            for (a,b) in [("d","s"),("s","d")] {
+                let e=Expr::Bin('+',Box::new(Expr::Var(a.into())),Box::new(Expr::Var(b.into())));
+                assert_eq!(type_expr(&e,&mut env,&mut vec![],1).unwrap(),Ty::StrOwn);
+            }
+        }
+    }
+    #[test]
+    fn dyn_dyn_keeps_existing_numeric_type() {
+        let mut env=vec![Local{name:"d".into(),ty:Ty::Dyn,moved:false,ro:false,byref:false}];
+        let e=Expr::Bin('+',Box::new(Expr::Var("d".into())),Box::new(Expr::Var("d".into())));
+        assert_eq!(type_expr(&e,&mut env,&mut vec![],1).unwrap(),Ty::I64);
+    }
+    #[test]
+    fn both_runtime_profiles_name_the_plus_error() {
+        for t in [Target::Linux,Target::Windows] {
+            let r=emit_asm(&[],&[],&[],t,false);
+            assert!(r.contains("hbc_strarg_error:"));
+            assert!(r.contains(".Lseqt_strarg:"));
+            assert!(r.contains(".LseqD_strarg:"));
         }
     }
 }

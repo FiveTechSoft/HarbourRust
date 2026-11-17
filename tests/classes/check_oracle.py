@@ -13,14 +13,14 @@ POSITIVE = ["p01_defaults","p02_nil_default","p04_method_ret","p05_method_over_d
     "p09","p10_init_per_inst","p10b_init_rerun","p11_sharing_assign","p12_sharing_param",
     "p13_virtual","p14_inherit_data","p15_inherit_method","p16","p17_arity","p18_identity",
     "p22_nodata","p23_print_obj","p24_param_virtual","p25_stress","p_sep","neg4",
-    "t1","t1b","t2","t3","t4"]
+    "t1","t1b","t2","t3","t4","neg15_dyn_concat"]
 DECLARED_LIMITS = {
     "p03_readwrite":     "compound assignment `+=` is outside the supported expression subset",
     "p07_self_chain":    "compound assignment `+=` is outside the supported expression subset",
     "p21_multi_inherit": "multiple inheritance is a named compile-time rejection",
 }
 NEGATIVES = ["neg1","neg2","neg3","neg5","neg6","neg7","neg8","neg9","neg10",
-    "neg11","neg12","neg13","neg14_ambig_member","neg15_dyn_concat"]
+    "neg11","neg12","neg13","neg14_ambig_member"]
 
 def run(cmd, cwd, label, timeout=120):
     p = subprocess.run([str(v) for v in cmd], cwd=cwd, capture_output=True, timeout=timeout)

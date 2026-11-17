@@ -1857,7 +1857,7 @@ pos2 tests/idlesleep-linux/programs/idlesleep_negative.prg tests/idlesleep-linux
 pos2 tests/idlesleep-linux/programs/idlesleep_loop.prg tests/idlesleep-linux/expected/idlesleep_loop.linux.out tests/idlesleep-linux/expected/idlesleep_loop.windows.out
 pos2 tests/idlesleep-linux/programs/idlesleep_noarg.prg tests/idlesleep-linux/expected/idlesleep_noarg.linux.out tests/idlesleep-linux/expected/idlesleep_noarg.windows.out
 pos2 tests/idlesleep-linux/programs/idlesleep_dyn.prg tests/idlesleep-linux/expected/idlesleep_dyn.linux.out tests/idlesleep-linux/expected/idlesleep_dyn.windows.out
-neg tests/t_dyn_str_concat.prg string concatenation with a NIL-able (Dyn) operand is not in this increment
+pos2 tests/t_dyn_str_concat.prg tests/dyn-string-concat/expected/legacy.linux.out tests/dyn-string-concat/expected/legacy.windows.out
 neg tests/t_static_obj_store.prg module STATIC `o` keeps the scalar type of its folded initializer in this increment
 pos2 tests/t1680_dyn_div_int.prg tests/expectations/qout/t1680_dyn_div_int.linux.out tests/expectations/qout/t1680_dyn_div_int.windows.out
 pos2 tests/t1681_dyn_div_float.prg tests/expectations/qout/t1681_dyn_div_float.linux.out tests/expectations/qout/t1681_dyn_div_float.windows.out
@@ -1873,3 +1873,23 @@ pos2 tests/module-static-objects/programs/nil_observable.prg tests/module-static
 pos2 tests/module-static-objects/programs/nil_dyn_boundary.prg tests/module-static-objects/expected/nil_dyn_boundary.linux.out tests/module-static-objects/expected/nil_dyn_boundary.windows.out
 pos2 tests/module-static-object-args/programs/nullable_strings.prg tests/module-static-object-args/expected/nullable_strings.linux.out tests/module-static-object-args/expected/nullable_strings.windows.out
 pos2 tests/module-static-object-args/programs/multiple_strings.prg tests/module-static-object-args/expected/multiple_strings.linux.out tests/module-static-object-args/expected/multiple_strings.windows.out
+
+# Runtime string + with one static string anchor and one Dyn operand.
+pos2 tests/dyn-string-concat/programs/array.prg tests/dyn-string-concat/expected/array.linux.out tests/dyn-string-concat/expected/array.windows.out
+pos2 tests/dyn-string-concat/programs/array_snapshot.prg tests/dyn-string-concat/expected/array_snapshot.linux.out tests/dyn-string-concat/expected/array_snapshot.windows.out
+pos2 tests/dyn-string-concat/programs/calls.prg tests/dyn-string-concat/expected/calls.linux.out tests/dyn-string-concat/expected/calls.windows.out
+pos2 tests/dyn-string-concat/programs/catch_order.prg tests/dyn-string-concat/expected/catch_order.linux.out tests/dyn-string-concat/expected/catch_order.windows.out
+pos2 tests/dyn-string-concat/programs/data.prg tests/dyn-string-concat/expected/data.linux.out tests/dyn-string-concat/expected/data.windows.out
+pos2 tests/dyn-string-concat/programs/data_snapshot.prg tests/dyn-string-concat/expected/data_snapshot.linux.out tests/dyn-string-concat/expected/data_snapshot.windows.out
+pos2 tests/dyn-string-concat/programs/description.prg tests/dyn-string-concat/expected/description.linux.out tests/dyn-string-concat/expected/description.windows.out
+pos2 tests/dyn-string-concat/programs/embedded_nul.prg tests/dyn-string-concat/expected/embedded_nul.linux.out tests/dyn-string-concat/expected/embedded_nul.windows.out
+pos2 tests/dyn-string-concat/programs/foreach_borrow.prg tests/dyn-string-concat/expected/foreach_borrow.linux.out tests/dyn-string-concat/expected/foreach_borrow.windows.out
+pos2 tests/dyn-string-concat/programs/forum_paths.prg tests/dyn-string-concat/expected/forum_paths.linux.out tests/dyn-string-concat/expected/forum_paths.windows.out
+pos2 tests/dyn-string-concat/programs/hash_borrow.prg tests/dyn-string-concat/expected/hash_borrow.linux.out tests/dyn-string-concat/expected/hash_borrow.windows.out
+pos2 tests/dyn-string-concat/programs/locals.prg tests/dyn-string-concat/expected/locals.linux.out tests/dyn-string-concat/expected/locals.windows.out
+pos2 tests/dyn-string-concat/programs/nested_rhs_error.prg tests/dyn-string-concat/expected/nested_rhs_error.linux.out tests/dyn-string-concat/expected/nested_rhs_error.windows.out
+pos2 tests/dyn-string-concat/programs/owned_float_error.prg tests/dyn-string-concat/expected/owned_float_error.linux.out tests/dyn-string-concat/expected/owned_float_error.windows.out
+pos2 tests/dyn-string-concat/programs/retag_snapshot.prg tests/dyn-string-concat/expected/retag_snapshot.linux.out tests/dyn-string-concat/expected/retag_snapshot.windows.out
+pos2 tests/dyn-string-concat/programs/rhs_bound.prg tests/dyn-string-concat/expected/rhs_bound.linux.out tests/dyn-string-concat/expected/rhs_bound.windows.out
+pos2 tests/dyn-string-concat/programs/rhs_break.prg tests/dyn-string-concat/expected/rhs_break.linux.out tests/dyn-string-concat/expected/rhs_break.windows.out
+pos2 tests/dyn-string-concat/programs/string_snapshot.prg tests/dyn-string-concat/expected/string_snapshot.linux.out tests/dyn-string-concat/expected/string_snapshot.windows.out

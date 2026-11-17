@@ -59,8 +59,8 @@ TARGET = '--target=macho-arm64'  # --target=macho runs the same battery on Intel
 # programs added by cd9d6884: nullable_strings and multiple_strings.
 # The full battery refuses truncated/empty manifests and stale constants.
 # Bump this only with the manifest change that explains it.
-# Full total: 1237+6+4+37+9 = 1293, 0 REJ on both targets.
-EXPECTED_MANIFEST_ROWS = 1237
+# Full total:1256+6+4+37+9 =1312,0 REJ on both targets.
+EXPECTED_MANIFEST_ROWS = 1256
 # Post-run m_clie.dbf SHA-256 per DBF acceptance test (generated on Linux,
 # stdout checked against the committed expectations). t4 appends records:
 # dbAppend rewrites the header last-update date (bytes 1-3, YY MM DD of the
