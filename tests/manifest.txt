@@ -742,7 +742,7 @@ pos2 tests/t744_div_fold.prg tests/expectations/qout/t744_div_fold.linux.out tes
 pos2 tests/t745_div_runtime.prg tests/expectations/qout/t745_div_runtime.linux.out tests/expectations/qout/t745_div_runtime.windows.out
 posx tests/t746_div_zero.prg 1 Error: division by zero\nCallstack:\n  at main (tests/t746_div_zero.prg:3)
 neg tests/t747_set_decimals.prg SET commands are not in this increment
-neg tests/t748_dyn_div.prg division with a NIL-able (Dyn) operand is not in this increment
+posx tests/t748_dyn_div.prg 1 Type error: NIL used as a number\nCallstack:\n  at main (tests/t748_dyn_div.prg:6)
 pos2 tests/t749_div_length.prg tests/expectations/qout/t749_div_length.linux.out tests/expectations/qout/t749_div_length.windows.out
 pos2 tests/t750_float_arith_mixed.prg tests/expectations/qout/t750_float_arith_mixed.linux.out tests/expectations/qout/t750_float_arith_mixed.windows.out
 pos2 tests/t751_float_compare.prg tests/expectations/qout/t751_float_compare.linux.out tests/expectations/qout/t751_float_compare.windows.out
@@ -1859,3 +1859,10 @@ pos2 tests/idlesleep-linux/programs/idlesleep_noarg.prg tests/idlesleep-linux/ex
 pos2 tests/idlesleep-linux/programs/idlesleep_dyn.prg tests/idlesleep-linux/expected/idlesleep_dyn.linux.out tests/idlesleep-linux/expected/idlesleep_dyn.windows.out
 neg tests/t_dyn_str_concat.prg string concatenation with a NIL-able (Dyn) operand is not in this increment
 neg tests/t_static_obj_store.prg module STATIC `o` keeps the scalar type of its folded initializer in this increment
+pos2 tests/t1680_dyn_div_int.prg tests/expectations/qout/t1680_dyn_div_int.linux.out tests/expectations/qout/t1680_dyn_div_int.windows.out
+pos2 tests/t1681_dyn_div_float.prg tests/expectations/qout/t1681_dyn_div_float.linux.out tests/expectations/qout/t1681_dyn_div_float.windows.out
+pos2 tests/t1682_dyn_div_assign.prg tests/expectations/qout/t1682_dyn_div_assign.linux.out tests/expectations/qout/t1682_dyn_div_assign.windows.out
+pos2 tests/t1683_dyn_div_objdata.prg tests/expectations/qout/t1683_dyn_div_objdata.linux.out tests/expectations/qout/t1683_dyn_div_objdata.windows.out
+pos2 tests/t1684_dyn_div_seq_catch.prg tests/expectations/qout/t1684_dyn_div_seq_catch.linux.out tests/expectations/qout/t1684_dyn_div_seq_catch.windows.out
+posx tests/t1685_dyn_div_zero.prg 1 Error: division by zero\nCallstack:\n  at main (tests/t1685_dyn_div_zero.prg:8)
+neg tests/t1686_dyn_float_arith_limit.prg arithmetic between a NIL-able (Dyn) value and a float is a covered LIMIT
