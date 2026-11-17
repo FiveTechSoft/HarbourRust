@@ -42,13 +42,12 @@ IDLESLEEP_WINDOWS = {
     'tests/idlesleep-linux/programs/idlesleep_noarg.prg': (0.0, 0.5),
 
 }
-# Target-specific policy: Intel retains its five named rejections.
-IDLESLEEP_INTEL_REJ = {f: 'hb_idleSleep` is not implemented by the Mach-O Intel backend' for f in IDLESLEEP_WINDOWS}
+# Intel lowers Linux 35 to libSystem nanosleep too (hbc_dw_nanosleep),
+# so both targets run the rows with the same windows and no named REJ.
 
 def configure_target(target):
-    global TARGET, EXPECTED_REJ
+    global TARGET
     TARGET = '--target=' + target
-    EXPECTED_REJ = dict(IDLESLEEP_INTEL_REJ) if target == 'macho' else {}
 
 FILE_POSITIVES = 6
 DBF_TESTS = 4
@@ -60,7 +59,7 @@ TARGET = '--target=macho-arm64'  # --target=macho runs the same battery on Intel
 # programs added by cd9d6884: nullable_strings and multiple_strings.
 # The full battery refuses truncated/empty manifests and stale constants.
 # Bump this only with the manifest change that explains it.
-# Full total: 1237+6+4+37+9 = 1293. ARM64: 0 REJ; Intel: 5 REJ.
+# Full total: 1237+6+4+37+9 = 1293, 0 REJ on both targets.
 EXPECTED_MANIFEST_ROWS = 1237
 # Post-run m_clie.dbf SHA-256 per DBF acceptance test (generated on Linux,
 # stdout checked against the committed expectations). t4 appends records:

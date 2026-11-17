@@ -6959,11 +6959,6 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 }
                 return Ok(Ty::F64);
             }
-            if is_builtin(id, "hb_idlesleep") && MACHO_MODE.with(|v| v.get()) && !MACHO_ARM64.with(|v| v.get()) {
-                // Intel's Darwin dispatcher has no nanosleep route yet.
-                // ARM64 uses its own preserving libSystem wrapper.
-                return Err(format!("line {}: `hb_idleSleep` is not implemented by the Mach-O Intel backend in this increment (no nanosleep lowering; registered limit, no silent no-op)",n));
-            }
             if is_builtin(id, "hb_idlesleep") {
                 // hb_idleSleep([nSeconds]) (rtl/idle.c:133): negative is a
                 // no-op, zero serves the idle queue once (no idle tasks in
