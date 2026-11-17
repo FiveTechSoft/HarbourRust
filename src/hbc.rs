@@ -13839,6 +13839,14 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                 Ty::NumLocal => unreachable!("numeric locals load through cg_num"),
                 Ty::F64 => unreachable!("floats load through cg_f64_load (xmm0/rdi), never the rax/rdx channel"),
                 Ty::I64 | Ty::Block(..) | Ty::Bool | Ty::Date | Ty::AView => out.push_str(&format!("    mov -{}(%rbp), %rax\n", v.off)),
+                Ty::Dyn if is_sarr(id) && module_static::is_module_binding(id) => {
+                    // S4 shared module array: the name has no stable frame
+                    // copy - a rebuild in ANY frame replaces the canonical
+                    // .data casilla, so every bare-name read loads it fresh
+                    // (probe: len(a)/LOCAL b:=a after a callee rebuild).
+                    let label = module_static::storage(&CUR_FN.with(|c| c.borrow().clone()), id);
+                    out.push_str(&format!("    mov {}+8(%rip), %rax\n    mov {}(%rip), %rdx\n", label, label));
+                }
                 Ty::Str | Ty::StrOwn | Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::Dyn | Ty::Hash | Ty::DArrDyn => {
                     // ptr at -(off), len at -(off-8) - same layout as the store
                     out.push_str(&format!("    mov -{}(%rbp), %rax\n", v.off));
@@ -16606,7 +16614,8 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                     // would free the caller's owner. Registered clean
                     // error, caller keeps the value (the AView bridge is
                     // the only array crossing and guards separately).
-                    out.push_str("    @HBC_TAG_KIND@cmp $16, %rax@HBC_TAG_END@\n    je .Lsarrsh1\n    @HBC_TAG_KIND@cmp $8, %rax@HBC_TAG_END@\n    je hbc_type_error\n.Lsarrsh1:\n");
+                    let ksh = fresh_lbl();
+                    out.push_str(&format!("    @HBC_TAG_KIND@cmp $16, %rax@HBC_TAG_END@\n    je .Lsarrsh{}\n    @HBC_TAG_KIND@cmp $8, %rax@HBC_TAG_END@\n    je hbc_type_error\n.Lsarrsh{}:\n", ksh, ksh));
                     out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
                     continue;
                 }
@@ -19746,7 +19755,8 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                                     cg_dyn_clone_if_str(out);
                                     // ains P2 stage 1: a tag-8 (array) copy
                                     // would alias the owner - clean error.
-                                    out.push_str("    @HBC_TAG_KIND@cmp $16, %rax@HBC_TAG_END@\n    je .Lsarrsh2\n    @HBC_TAG_KIND@cmp $8, %rax@HBC_TAG_END@\n    je hbc_type_error\n.Lsarrsh2:\n");
+                                    let ksh = fresh_lbl();
+                    out.push_str(&format!("    @HBC_TAG_KIND@cmp $16, %rax@HBC_TAG_END@\n    je .Lsarrsh{}\n    @HBC_TAG_KIND@cmp $8, %rax@HBC_TAG_END@\n    je hbc_type_error\n.Lsarrsh{}:\n", ksh, ksh));
                                 }
                                 // The slot can hold a live value when a
                                 // `local` re-declares inside a loop body:
@@ -19874,7 +19884,8 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                     // Registered clean error (alias-differential
                     // pattern); Dyn array params/returns stay out of
                     // scope. Scalar Dyn returns pass the guard unchanged.
-                    out.push_str("    @HBC_TAG_KIND@cmp $16, %rax@HBC_TAG_END@\n    je .Lsarrsh3\n    @HBC_TAG_KIND@cmp $8, %rax@HBC_TAG_END@\n    je hbc_type_error\n.Lsarrsh3:\n");
+                    let ksh = fresh_lbl();
+                    out.push_str(&format!("    @HBC_TAG_KIND@cmp $16, %rax@HBC_TAG_END@\n    je .Lsarrsh{}\n    @HBC_TAG_KIND@cmp $8, %rax@HBC_TAG_END@\n    je hbc_type_error\n.Lsarrsh{}:\n", ksh, ksh));
                 }
                 // Returning a dynamic array MOVES it to the caller: the
                 // source slot is nulled BEFORE the shared epilogue runs, so
@@ -20961,7 +20972,14 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                         Ty::I64 => cg_i64_tagged(out),
                         Ty::Bool => out.push_str("    mov %rax, %rdx\n    mov $3, %eax\n"),
                         Ty::Str => out.push_str("    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_strcpy\n    mov %rax, %rdx\n    mov $4, %eax\n"),
-                        Ty::Dyn => { if !dyn_expr_owned(e) { cg_dyn_clone_if_str(out); } },
+                        Ty::Dyn => { if !dyn_expr_owned(e) { cg_dyn_clone_if_str(out); }
+                            // G: a Dyn value can carry ANY tag (owned tag-8
+                            // array, object, heap float) that the registry
+                            // sweep does not own. Admit only the verified
+                            // family {0 i64, 1 NIL, 3 logical, 4 owned
+                            // string, 16 shared array ref} at the boundary.
+                            out.push_str("    test %rax, %rax\n    jz 1f\n    cmp $1, %rax\n    je 1f\n    cmp $3, %rax\n    je 1f\n    cmp $4, %rax\n    je 1f\n    cmp $16, %rax\n    je 1f\n    jmp hbc_type_error\n1:\n");
+                        },
                         _ => unreachable!("checked"),
                     }
                     cg_sarr_root(id, v.off, "%rdi", out);
@@ -22019,7 +22037,13 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                         Ty::I64 => cg_i64_tagged(out),
                         Ty::Bool => out.push_str("    mov %rax, %rdx\n    mov $3, %eax\n"),
                         Ty::Str => out.push_str("    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_strcpy\n    mov %rax, %rdx\n    mov $4, %eax\n"),
-                        Ty::Dyn => { if !dyn_expr_owned(e) { cg_dyn_clone_if_str(out); } },
+                        Ty::Dyn => { if !dyn_expr_owned(e) { cg_dyn_clone_if_str(out); }
+                            // G: same verified tag family as AAdd - a Dyn
+                            // RHS carrying an owned tag-8 array, object or
+                            // heap float is rejected at the boundary (the
+                            // registry sweep only owns tag-4 payloads).
+                            out.push_str("    test %rax, %rax\n    jz 1f\n    cmp $1, %rax\n    je 1f\n    cmp $3, %rax\n    je 1f\n    cmp $4, %rax\n    je 1f\n    cmp $16, %rax\n    je 1f\n    jmp hbc_type_error\n1:\n");
+                        },
                         _ => unreachable!("checked"),
                     }
                     out.push_str("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
@@ -26743,7 +26767,7 @@ fn emit_sarr_desc(out: &mut String, strs: &mut Vec<String>, expr: &Expr) -> Stri
     for e in &es {
         match e {
             Expr::Int(v) => body.push_str(&format!("    .quad 0, {}\n", v)),
-            Expr::Log(v) => body.push_str(&format!("    .quad 2, {}\n", if *v {1} else {0})),
+            Expr::Log(v) => body.push_str(&format!("    .quad 3, {}\n", if *v {1} else {0})),
             Expr::Nil => body.push_str("    .quad 1, 0\n"),
             Expr::Str(text) => {
                 let ix = strs.len(); strs.push(text.clone());
@@ -26768,8 +26792,8 @@ fn emit_asm(funcs: &[Func], sigs: &[Sig], externs: &[String], target: Target, in
         eprintln!("error: classes support Linux and Windows targets in this increment (Mach-O pending)");
         process::exit(1);
     }
-    if THREADS.with(|c| c.get()) && funcs.iter().any(|f| f.stmts.iter().any(|s| matches!(s, Stmt::Static(_,_,Expr::Str(_) | Expr::Log(_))))) {
-        eprintln!("error: module STATIC logical/string storage with threads is outside this increment"); process::exit(1);
+    if THREADS.with(|c| c.get()) && funcs.iter().any(|f| f.stmts.iter().any(|s| matches!(s, Stmt::Static(_,_,Expr::Str(_) | Expr::Log(_) | Expr::ArrLit(_) | Expr::DArrNew)))) {
+        eprintln!("error: module STATIC logical/string/array storage with threads is outside this increment"); process::exit(1);
     }
     if THREADS.with(|c| c.get()) && instrument {
         eprintln!("error: --instrument is not supported with threads in this increment (the allocation registry is process-global)");
@@ -27082,6 +27106,9 @@ hbc_sarr_aadd:
     cmp 8(%rbx), %r14
     jb 10f
     mov 8(%rbx), %rdi
+    mov $0x0800000000000000, %rcx
+    cmp %rcx, %rdi
+    jae hbc_oom
     add %rdi, %rdi
     mov $8, %eax
     cmp %rax, %rdi
@@ -27146,6 +27173,9 @@ hbc_sarr_asize:
     test %rax, %rax
     cmovs %rcx, %rax
     mov %rax, %r12
+    mov $0x0800000000000000, %rcx
+    cmp %rcx, %r12
+    jae hbc_oom
     mov (%rbx), %r13
     cmp %r13, %r12
     jae 20f
