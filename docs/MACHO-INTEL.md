@@ -1,4 +1,45 @@
-# Experimental Intel Mach-O, 14 November 2026
+# Mach-O Intel
+
+## Through dyld, 17 November 2026 (current)
+
+`--target=macho` now writes a dyld executable instead of the static
+LC_UNIXTHREAD image described below: `LC_MAIN`, `LC_LOAD_DYLINKER`,
+libSystem (plus the EXTERNAL extension dylib when used), fixed addresses
+(no PIE, `__PAGEZERO` 4 MiB), binds by name into GOT slots and an export
+trie. The x86-64 code is still the Linux runtime as text, run natively:
+
+- Constant Linux system calls become raw Darwin calls (carry flag ->
+  negative errno, rdx preserved). The rest - getdents64, newfstatat,
+  openat, clock_gettime, futex - go through the run-time dispatcher
+  shared with the ARM64 backend (`LINUX_SYSCALL_DISPATCH`). open(2)
+  flags are converted; gettimeofday passes rdx = 0 (Darwin's third
+  argument is a `mach_absolute_time` pointer).
+- Entry `__hbc_dw_main` builds the Linux initial stack (argc, argv,
+  envp, AT_NULL) from dyld's arguments and enters `_start`.
+- Threads: clone -> `pthread_create` (2 MiB stack) of
+  `hbc_thread_boot`, exit -> `pthread_exit` (process exit on the main
+  thread). The `%fs` thread block lives in pthread TSD slots 512..527,
+  reserved at start-up (dynamic keys are handed out lowest first; any
+  other outcome is a clean exit 111), so `%fs:N` becomes `%gs:(4096+N)`.
+- EXTERNAL: `call HBHBR_FN_*`/`hbc_ext_end` go through GOT slots bound
+  to the extension dylib; the bridge channel words and `hbc_strcpy`,
+  `hbc_freestr`, `hbc_blk_launch` are exported by the executable.
+
+DBF, FILE/SET DEFAULT/PATH, threads, EXTERNAL and the macro operator are
+no longer rejected on Intel.
+
+Evidence on Intel hardware (GitHub Actions macos-15-intel, run
+44032525274, job `native-intel`): `tests/run_macho_arm64.py --target
+macho` reports `SUMMARY {'PASS': 1274} (FULL battery)`: 1218 manifest
+rows, 6 FILE, 4 DBF (same `m_clie.dbf` SHA-256 as on Apple Silicon), 37
+thread programs and 9 EXTERNAL demos, against the committed expectations
+and same-workflow Linux runs. An emulated Intel battery (unicorn) gave
+1214/1218 before that; its 4 differences are emulator gaps (`roundsd`,
+x87 log/exp), and the hardware run passes them.
+
+The rest of this document describes the earlier static increment.
+
+## Experimental static Intel Mach-O, 14 November 2026
 
 Review increment after the separate Linux/Windows host-default patch, based on
 `947e7d1831e9870d610074db5b938db5c89bfee7`. No publication is part of this work.
