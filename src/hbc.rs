@@ -28294,7 +28294,7 @@ hbc_print_i64w:
     push %rbp
     mov %rsp, %rbp
     sub $64, %rsp
-    mov %edi, -12(%rbp)
+    mov %edi, -48(%rbp)
     xor %r9d, %r9d
     test %rax, %rax
     jns 1f
@@ -28320,7 +28320,7 @@ hbc_print_i64w:
     lea -1(%rbp), %r10
     sub %r9, %r10
     inc %r10
-    mov -12(%rbp), %rax
+    mov -48(%rbp), %eax
     cmp %r10, %rax
     jae 4f
     mov %r10, %rax
@@ -30136,7 +30136,7 @@ fn finalize_trace(mut out: String, target: Target) -> String {
         out.push_str("\n    .text\n");
         // The raw writer, not the console wrapper, owns stderr's byte
         // route. dynlit is obsolete; numeric-local F64 has its own entry.
-        for name in ["str", "sep", "i64", "i64c", "dyn", "dyncell", "num_f64", "f64"] {
+        for name in ["str", "sep", "i64", "i64c", "i64w", "dyn", "dyncell", "num_f64", "f64"] {
             let label = if name == "str" { "\nhbc_write_bytes:".to_string() }
                 else { format!("\nhbc_print_{}:", name) };
             let start = original.find(&label).expect("print helper exists") + 1;
@@ -31494,7 +31494,7 @@ hbc_print_i64w:
     mov %rbp, %rdx
     sub %r10, %rdx
     dec %rdx
-    mov -48(%rbp), %r11
+    mov -48(%rbp), %r11d
     cmp %rdx, %r11
     jae 4f
     mov %rdx, %r11
@@ -35537,5 +35537,21 @@ mod nullable_method_dyn_leaf_tests {
             Expr::Call("upper".into(),vec![Expr::Call("left".into(),vec![Expr::Str("abc".into()),Expr::Var("d".into())])]),
             Expr::Bin('+',Box::new(Expr::Var("d".into())),Box::new(Expr::Int("1".into()))),
         ] {assert!(!nil_method_arg_nothrow(&e,&env));}
+    }
+}
+
+#[cfg(test)]
+mod datepart_width_storage_tests {
+    use super::*;
+    #[test]
+    fn fixed_width_helpers_keep_the_width_outside_digit_storage() {
+        for target in [Target::Linux,Target::Windows] {
+            let runtime=emit_asm(&[],&[],&[],target,false);
+            let helper=runtime.split("hbc_print_i64w:\n").nth(1).expect("width helper").split("\nhbc_").next().unwrap();
+            assert!(helper.contains("mov %edi, -48(%rbp)"));
+            assert!(!helper.contains("mov -12(%rbp), %rax"));
+            assert!(!helper.contains("mov -48(%rbp), %r11\n"));
+            assert!(helper.contains("mov -48(%rbp), %eax") || helper.contains("mov -48(%rbp), %r11d"));
+        }
     }
 }
