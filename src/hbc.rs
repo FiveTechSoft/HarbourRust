@@ -20854,7 +20854,8 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                                     // holding an ARRAY (tag 8) would alias
                                     // the single owner - registered clean
                                     // error until a later stage adds AClone.
-                                    out.push_str("    @HBC_TAG_KIND@cmp $16, %rax@HBC_TAG_END@\n    je .Lsarrsh4\n    @HBC_TAG_KIND@cmp $8, %rax@HBC_TAG_END@\n    je hbc_type_error\n.Lsarrsh4:\n");
+                                    let ksh = fresh_lbl();
+                                    out.push_str(&format!("    @HBC_TAG_KIND@cmp $16, %rax@HBC_TAG_END@\n    je .Lsarrsh{}\n    @HBC_TAG_KIND@cmp $8, %rax@HBC_TAG_END@\n    je hbc_type_error\n.Lsarrsh{}:\n", ksh, ksh));
                                 }
                                 out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
                                 cg_dyn_free_old(out, off);
