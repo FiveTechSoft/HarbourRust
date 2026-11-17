@@ -3954,7 +3954,15 @@ fn cg_sarr_store(id: &str, var_off: usize, ies: &[&Expr], e: &Expr, env: &[CgLoc
         Ty::I64 => cg_i64_tagged(out),
         Ty::Bool => out.push_str("    mov %rax, %rdx\n    mov $3, %eax\n"),
         Ty::Str => out.push_str("    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_strcpy\n    mov %rax, %rdx\n    mov $4, %eax\n"),
-        Ty::Dyn => { if !dyn_expr_owned(e) { cg_dyn_clone_if_str(out); } },
+        Ty::Dyn => {
+            if !dyn_expr_owned(e) { cg_dyn_clone_if_str(out); }
+            // S4 review 2: the same runtime family check as the
+            // one-level ArrSet/AAdd boundary (0 i64, 1 NIL, 3 logical,
+            // 4 owned string, 9 literal-provenance i64, 16 shared ref);
+            // anything else (float, hash, block, ...) is a clean
+            // hbc_type_error, never a cell the exit sweep cannot read.
+            out.push_str("    test %rax, %rax\n    jz 1f\n    cmp $1, %rax\n    je 1f\n    cmp $3, %rax\n    je 1f\n    cmp $4, %rax\n    je 1f\n    cmp $9, %rax\n    je 1f\n    cmp $16, %rax\n    je 1f\n    jmp hbc_type_error\n1:\n");
+        },
         _ => unreachable!("checked"),
     }
     // Frame: value pair at (%rsp)/8(%rsp), a 16-byte scratch pair at
@@ -6211,7 +6219,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                         match env.iter().rev().find(|x| x.name == *v) {
                             Some(x) if x.moved => return Err(format!("line {}: use of moved value `{}`", n, v)),
                             Some(x) => match x.ty {
-                                Ty::Dyn if static_dyn(v) => {}
+                                Ty::Dyn if static_dyn(v) || is_sarr(v) => {}
                                 Ty::AView | Ty::DArr | Ty::DArrDyn | Ty::DArr2 | Ty::DArrS | Ty::DArr4 => {}
                                 _ => return Err(format!("line {}: `{}` over this array depth is not measured in this PoC", n, id)),
                             },
@@ -14234,8 +14242,16 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                             // the root tag (8 = DArrDyn layout, 16 =
                             // shared module array layout), then classify
                             // the cell tag like any other Dyn value.
+                            if is_sarr(v) {
+                                // S4 review 1: canonical casilla, never
+                                // the stale frame copy - a callee rebuild
+                                // must be visible here (probe pR1b).
+                                cg_sarr_root(v, var.off, "%r11", out);
+                                out.push_str("    cmp $1, %rax\n    jl 70f\n    cmp (%r11), %rax\n    jg 70f\n    mov 24(%r11), %r11\n    dec %rax\n    shl $4, %rax\n    add %r11, %rax\n    mov (%rax), %r10\n    jmp 71f\n70:\n    call hbc_bound_error\n71:\n");
+                            } else {
                             out.push_str(&format!("    mov -{}(%rbp), %r11\n    @HBC_TAG_KIND@cmpq $8, -{}(%rbp)@HBC_TAG_END@\n    je 73f\n    @HBC_TAG_KIND@cmpq $16, -{}(%rbp)@HBC_TAG_END@\n    jne hbc_type_error\n    cmp $1, %rax\n    jl 70f\n    cmp (%r11), %rax\n    jg 70f\n    mov 24(%r11), %r11\n    jmp 74f\n73:\n    cmp $1, %rax\n    jl 70f\n    cmp -8(%r11), %rax\n    jg 70f\n74:\n", var.off - 8, var.off - 8, var.off));
                             out.push_str("    dec %rax\n    shl $4, %rax\n    add %r11, %rax\n    mov (%rax), %r10\n    jmp 71f\n70:\n    call hbc_bound_error\n71:\n");
+                            }
                             classify_tag(out, want_num);
                         }
                         _ => unreachable!("checked"),
@@ -14400,8 +14416,15 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                             // array (tag-8 guard before the count deref).
                             // S4: a tag-16 shared module array (or alias)
                             // takes its length at O+0, cells at O+24.
+                            if is_sarr(v) {
+                                // S4 review 1: canonical casilla, never
+                                // the stale frame copy (probe pR1b).
+                                cg_sarr_root(v, var.off, "%r11", out);
+                                out.push_str("    cmp $1, %rax\n    jl 87f\n    cmp (%r11), %rax\n    jg 87f\n    mov 24(%r11), %r11\n    dec %rax\n    shl $4, %rax\n    add %r11, %rax\n    mov (%rax), %r10\n    jmp 88f\n87:\n    call hbc_bound_error\n88:\n");
+                            } else {
                             out.push_str(&format!("    mov -{}(%rbp), %r11\n    @HBC_TAG_KIND@cmpq $8, -{}(%rbp)@HBC_TAG_END@\n    je 84f\n    @HBC_TAG_KIND@cmpq $16, -{}(%rbp)@HBC_TAG_END@\n    jne hbc_type_error\n    cmp $1, %rax\n    jl 87f\n    cmp (%r11), %rax\n    jg 87f\n    mov 24(%r11), %r11\n    jmp 83f\n84:\n    cmp $1, %rax\n    jl 87f\n    cmp -8(%r11), %rax\n    jg 87f\n83:\n", var.off - 8, var.off - 8, var.off));
                             out.push_str("    dec %rax\n    shl $4, %rax\n    add %r11, %rax\n    mov (%rax), %r10\n    jmp 88f\n87:\n    call hbc_bound_error\n88:\n");
+                            }
                             vt_classify_scalar(strs, out);
                         }
                         _ => unreachable!("checked"),
@@ -20995,7 +21018,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                             // sweep does not own. Admit only the verified
                             // family {0 i64, 1 NIL, 3 logical, 4 owned
                             // string, 16 shared array ref} at the boundary.
-                            out.push_str("    test %rax, %rax\n    jz 1f\n    cmp $1, %rax\n    je 1f\n    cmp $3, %rax\n    je 1f\n    cmp $4, %rax\n    je 1f\n    cmp $16, %rax\n    je 1f\n    jmp hbc_type_error\n1:\n");
+                            out.push_str("    test %rax, %rax\n    jz 1f\n    cmp $1, %rax\n    je 1f\n    cmp $3, %rax\n    je 1f\n    cmp $4, %rax\n    je 1f\n    cmp $9, %rax\n    je 1f\n    cmp $16, %rax\n    je 1f\n    jmp hbc_type_error\n1:\n");
                         },
                         _ => unreachable!("checked"),
                     }
@@ -22059,7 +22082,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                             // RHS carrying an owned tag-8 array, object or
                             // heap float is rejected at the boundary (the
                             // registry sweep only owns tag-4 payloads).
-                            out.push_str("    test %rax, %rax\n    jz 1f\n    cmp $1, %rax\n    je 1f\n    cmp $3, %rax\n    je 1f\n    cmp $4, %rax\n    je 1f\n    cmp $16, %rax\n    je 1f\n    jmp hbc_type_error\n1:\n");
+                            out.push_str("    test %rax, %rax\n    jz 1f\n    cmp $1, %rax\n    je 1f\n    cmp $3, %rax\n    je 1f\n    cmp $4, %rax\n    je 1f\n    cmp $9, %rax\n    je 1f\n    cmp $16, %rax\n    je 1f\n    jmp hbc_type_error\n1:\n");
                         },
                         _ => unreachable!("checked"),
                     }
