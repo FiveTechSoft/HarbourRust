@@ -742,7 +742,7 @@ pos2 tests/t744_div_fold.prg tests/expectations/qout/t744_div_fold.linux.out tes
 pos2 tests/t745_div_runtime.prg tests/expectations/qout/t745_div_runtime.linux.out tests/expectations/qout/t745_div_runtime.windows.out
 posx tests/t746_div_zero.prg 1 Error: division by zero\nCallstack:\n  at main (tests/t746_div_zero.prg:3)
 neg tests/t747_set_decimals.prg SET commands are not in this increment
-posx tests/t748_dyn_div.prg 1 Type error: NIL used as a number\nCallstack:\n  at main (tests/t748_dyn_div.prg:6)
+posx tests/t748_dyn_div.prg 1 Argument error: /\nCallstack:\n  at main (tests/t748_dyn_div.prg:6)
 pos2 tests/t749_div_length.prg tests/expectations/qout/t749_div_length.linux.out tests/expectations/qout/t749_div_length.windows.out
 pos2 tests/t750_float_arith_mixed.prg tests/expectations/qout/t750_float_arith_mixed.linux.out tests/expectations/qout/t750_float_arith_mixed.windows.out
 pos2 tests/t751_float_compare.prg tests/expectations/qout/t751_float_compare.linux.out tests/expectations/qout/t751_float_compare.windows.out

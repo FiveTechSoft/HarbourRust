@@ -347,38 +347,32 @@ fn fold_num_bin(op: char, a: &Expr, b: &Expr) -> Option<Expr> {
 // for variable 10/2 while the compiler fold prints 5 for literal 10/2,
 // expropt2.c hb_compExprReduceDiv + oracle hk291). Everything else is
 // rejected by the checker before codegen.
-// D-I2 (Dyn division, hb_vmDivide; oracles pD1-pD6): one operand of `/`
-// as a double. A typed numeric takes cg_f64_operand unchanged. A Dyn
-// operand unpacks BY KIND at runtime, because Harbour always divides as
-// doubles: int tags (0 runtime / 9 literal-provenance) convert, a kind-5
-// float payload goes through hbc_float_unpack, and every other payload
-// kind (NIL, string, logical, array, object) is Harbour's BASE/1084
-// "Argument error: /" - routed to hbc_type_error, the registered failure
-// mode shared with +,-,*,%,^ (clean exit 1 outside BEGIN SEQUENCE, the
-// standard error object inside one). The zero-divisor check stays in the
-// caller (hbc_div0_error on the double divisor, EG_ZERODIV). An OWNED
-// Dyn temporary (memvar Var/Call/Send/SelfGet/Seq tail) is released
-// after the value is extracted: only int and float tags can reach the
-// release (every other kind errors first), so the self-dispatching
-// hbc_float_release is the whole protocol. Borrowed Vars never release.
+// Dyn division extracts a double by kind. Owned temporaries must be
+// released on BOTH success and caught-error paths; borrowed locals stay
+// untouched. Caught runtime errors remain description strings in this
+// increment, not Harbour Error objects (registered runtime divergence).
 fn cg_div_operand(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target) {
     if expr_ty(e, env, sigs) != Ty::Dyn {
         cg_f64_operand(e, env, sigs, strs, out, target);
+        out.push_str("    xor %eax, %eax\n");
         return;
     }
-    if dyn_expr_owned(e) {
-        cg_expr(e, env, sigs, strs, out, target);
-        out.push_str("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
-        out.push_str("    mov %rax, %rcx\n    and $255, %rcx\n    cmp $5, %rcx\n    jne 660f\n    call hbc_float_unpack\n    jmp 662f\n660:\n    test %rax, %rax\n    je 661f\n    cmp $9, %rax\n    je 661f\n    jmp hbc_type_error\n661:\n    cvtsi2sd %rdx, %xmm0\n662:\n");
-        out.push_str("    movsd %xmm0, 16(%rsp)\n");
+    cg_expr(e, env, sigs, strs, out, target);
+    let k=fresh_lbl();
+    let owned=dyn_expr_owned(e);
+    out.push_str("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n    movq $0, 24(%rsp)\n");
+    out.push_str(&format!("    cmp $5, %al\n    je .Ldivfloat{k}\n    test %rax, %rax\n    je .Ldivint{k}\n    cmp $9, %rax\n    je .Ldivint{k}\n    movq $1, 24(%rsp)\n    xorpd %xmm0, %xmm0\n    jmp .Ldivsave{k}\n.Ldivfloat{k}:\n    call hbc_float_unpack\n    jmp .Ldivsave{k}\n.Ldivint{k}:\n    cvtsi2sd %rdx, %xmm0\n.Ldivsave{k}:\n    movsd %xmm0, 16(%rsp)\n"));
+    if owned {
         out.push_str("    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    call hbc_float_release\n");
-        out.push_str("    movsd 16(%rsp), %xmm0\n    add $32, %rsp\n");
-    } else {
-        cg_expr(e, env, sigs, strs, out, target);
-        out.push_str("    mov %rax, %rcx\n    and $255, %rcx\n    cmp $5, %rcx\n    jne 660f\n    call hbc_float_unpack\n    jmp 662f\n660:\n    test %rax, %rax\n    je 661f\n    cmp $9, %rax\n    je 661f\n    jmp hbc_type_error\n661:\n    cvtsi2sd %rdx, %xmm0\n662:\n");
+        out.push_str(&format!("    @HBC_TAG_KIND@cmpq $4, (%rsp)@HBC_TAG_END@\n    jne .Ldivarr{k}\n    mov 8(%rsp), %rdi\n    call hbc_freestr\n    jmp .Ldivfreed{k}\n.Ldivarr{k}:\n    @HBC_TAG_KIND@cmpq $8, (%rsp)@HBC_TAG_END@\n    jne .Ldivobj{k}\n    mov 8(%rsp), %rdi\n    test %rdi, %rdi\n    je .Ldivfreed{k}\n    mov -8(%rdi), %rsi\n    call hbc_dfree\n    jmp .Ldivfreed{k}\n.Ldivobj{k}:\n"));
+        if CLASSES.with(|c| !c.borrow().is_empty()) {
+            out.push_str(&format!("    @HBC_TAG_KIND@cmpq $13, (%rsp)@HBC_TAG_END@\n    jne .Ldivfreed{k}\n    mov 8(%rsp), %rdi\n    test %rdi, %rdi\n    je .Ldivfreed{k}\n    call hrobj_release\n"));
+        }
+        out.push_str(&format!(".Ldivfreed{k}:\n"));
     }
-    // The dec slot is ignored for `/` (result dec is SET DECIMALS = 2).
-    out.push_str("    mov $2, %ecx\n");
+    // Return invalid-kind flag in RAX, not an early throw: the caller
+    // must evaluate BOTH operands before reporting the argument error.
+    out.push_str("    mov 24(%rsp), %rax\n    movsd 16(%rsp), %xmm0\n    add $32, %rsp\n    mov $2, %ecx\n");
 }
 
 fn cg_f64_load(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target) {
@@ -432,8 +426,11 @@ fn cg_f64_load(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, 
             // HB_DBL_LENGTH of the RESULT (hbdefs.h:570, 63zb).
             if *op=='/' { cg_div_operand(a, env, sigs, strs, out, target); } else { cg_f64_operand(a, env, sigs, strs, out, target); }
             out.push_str("    sub $32, %rsp\n    movsd %xmm0, (%rsp)\n    mov %rcx, 8(%rsp)\n");
+            if *op=='/' { out.push_str("    mov %rax, 16(%rsp)\n"); }
             if *op=='/' { cg_div_operand(b, env, sigs, strs, out, target); } else { cg_f64_operand(b, env, sigs, strs, out, target); }
             if *op == '/' {
+                let argok = fresh_lbl();
+                out.push_str(&format!("    or 16(%rsp), %rax\n    je .Ldivargok{argok}\n    call hbc_divarg_error\n.Ldivargok{argok}:\n"));
                 let l = fresh_lbl();
                 out.push_str(&format!("    xorpd %xmm2, %xmm2\n    ucomisd %xmm2, %xmm0\n    jp .Ldivok{}\n    jne .Ldivok{}\n    call hbc_div0_error\n.Ldivok{}:\n", l, l, l));
             }
@@ -511,7 +508,7 @@ fn cg_f64_load(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, 
             let lb = fresh_lbl();
             out.push_str(&format!("    mov $10, %eax\n    movsd .Lf64c{}(%rip), %xmm2\n    ucomisd %xmm2, %xmm1\n    ja .Lf64la{}\n    xorpd %xmm2, %xmm2\n    subsd %xmm1, %xmm2\n    movsd .Lf64c{}(%rip), %xmm3\n    ucomisd %xmm3, %xmm2\n    jbe .Lf64lb{}\n.Lf64la{}:\n    mov $20, %eax\n.Lf64lb{}:\n    shl $16, %rax\n    or %rax, %rdi\n    movsd %xmm1, %xmm0\n", kc, la, kn, lb, la, lb));
         }
-        Expr::Call(..) => {
+        Expr::Call(..) | Expr::Send(..) => {
             // A float-returning call (63zd): the declared F64 return
             // convention IS the cg_f64_load pair - xmm0 = value bits,
             // rdi = packed metadata - so the ordinary call emission
@@ -8074,8 +8071,8 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
             // path preserved, decimal/double widening with Harbour dec
             // rules (max for +,-, sum for *, SET DECIMALS = 2 for /);
             // the static result is a Dyn cell. Without DBF the
-            // integer-only extraction below is unchanged (Dyn division
-            // and Dyn/float mixes stay rejected by name there).
+            // integer-only extraction for +,-,* below is unchanged; division
+            // has a separate by-kind double path outside DBF.
             if matches!(*op, '+' | '-' | '*' | '/' | '%' | '^')
                 && (ta == Ty::Dyn || tb == Ty::Dyn)
                 && matches!(ta, Ty::I64 | Ty::F64 | Ty::Dyn)
@@ -8128,8 +8125,9 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 // convert, a kind-5 float payload unpacks through
                 // hbc_float_unpack, and a NIL/string/logical payload is
                 // Harbour's BASE/1084 "Argument error: /" - routed to the
-                // registered hbc_type_error failure mode (clean exit 1,
-                // no dialog), exactly like +,-,*,%,^. A zero divisor is
+                // division-specific description failure mode (clean exit 1,
+                // no dialog). Catch exposes a description string, not an Error
+                // object. A zero divisor is
                 // EG_ZERODIV through hbc_div0_error, like any division.
                 // The static result is F64 with dec = SET DECIMALS = 2,
                 // identical to a typed division (oracle hk292).
@@ -28747,6 +28745,18 @@ hbc_round_range_error:
 # array indexing). Harbour raises a type-error dialog; headless probes
 # cannot capture it, so this PoC prints and exits 1 (registered failure
 # mode, same error condition).
+hbc_divarg_error:
+    cmpq $0, hbc_seq_depth(%rip)
+    jne .Lseqt_divarg
+    lea .Ldivargmsg(%rip), %rsi
+    mov $18, %edx
+    mov $1, %eax
+    mov $1, %edi
+    syscall
+    mov $60, %eax
+    mov $1, %edi
+    syscall
+
 hbc_type_error:
     cmpq $0, hbc_seq_depth(%rip)
     jne .Lseqt_type
@@ -29621,6 +29631,9 @@ hbc_seq_unwind:
 .Lseqt_type:
     lea .LseqD_type(%rip), %rsi
     jmp hbc_seq_throw_error
+.Lseqt_divarg:
+    lea .LseqD_divarg(%rip), %rsi
+    jmp hbc_seq_throw_error
 .Lseqt_round:
     lea .LseqD_round(%rip), %rsi
     jmp hbc_seq_throw_error
@@ -30103,6 +30116,8 @@ fn emit_strings(out: &mut String, strs: &[String]) {
     // "Type error: NIL used as a number\n" (33 bytes; registered failure mode)
     out.push_str(".Losbadmsg:\n    .byte 73,110,116,101,114,110,97,108,32,101,114,114,111,114,58,32,79,83,32,102,114,101,101,32,102,97,105,108,101,100,10\n");
     out.push_str(".Lregbadmsg:\n    .byte 73,110,116,101,114,110,97,108,32,101,114,114,111,114,58,32,97,108,108,111,99,97,116,105,111,110,32,114,101,103,105,115,116,114,121,32,109,105,115,109,97,116,99,104,10\n");
+    out.push_str(".Ldivargmsg:\n    .byte 65,114,103,117,109,101,110,116,32,101,114,114,111,114,58,32,47,10\n");
+    out.push_str(".quad 17\n.LseqD_divarg:\n    .byte 65,114,103,117,109,101,110,116,32,101,114,114,111,114,58,32,47\n");
     out.push_str(".Ltypemsg:\n    .byte 84,121,112,101,32,101,114,114,111,114,58,32,78,73,76,32,117,115,101,100,32,97,115,32,97,32,110,117,109,98,101,114,10\n");
     out.push_str(".Ldbfstrmsg:\n    .byte 84,121,112,101,32,101,114,114,111,114,58,32,102,105,101,108,100,32,105,115,32,110,111,116,32,97,32,99,104,97,114,97,99,116,101,114,32,118,97,108,117,101,10\n");
     out.push_str(".Llogmsg:\n    .byte 84,121,112,101,32,101,114,114,111,114,58,32,99,111,110,100,105,116,105,111,110,32,105,115,32,110,111,116,32,97,32,108,111,103,105,99,97,108,10\n");
@@ -31719,6 +31734,19 @@ hbc_dynxeq_dd:
 
 # hbc_type_error: NIL used as a number at runtime. Reached via a JUMP from
 # hbc_dyn_to_i64, so force 16-byte alignment before calling out (noreturn).
+hbc_divarg_error:
+    cmpq $0, hbc_seq_depth(%rip)
+    jne .Lseqt_divarg
+    push %rbp
+    mov %rsp, %rbp
+    and $-16, %rsp
+    sub $48, %rsp
+    lea .Ldivargmsg(%rip), %rax
+    mov $18, %edx
+    call hbc_print_str
+    mov $1, %ecx
+    call ExitProcess
+
 hbc_type_error:
     cmpq $0, hbc_seq_depth(%rip)
     jne .Lseqt_type
@@ -32772,6 +32800,9 @@ hbc_seq_unwind:
     jmp hbc_seq_throw_error
 .Lseqt_type:
     lea .LseqD_type(%rip), %rsi
+    jmp hbc_seq_throw_error
+.Lseqt_divarg:
+    lea .LseqD_divarg(%rip), %rsi
     jmp hbc_seq_throw_error
 .Lseqt_round:
     lea .LseqD_round(%rip), %rsi

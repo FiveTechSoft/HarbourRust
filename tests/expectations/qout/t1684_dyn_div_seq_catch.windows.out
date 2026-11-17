@@ -1,7 +1,7 @@
 
-caught: Type error: NIL used as a number
-caught: Type error: NIL used as a number
+caught: Argument error: /
+caught: Argument error: /
 caught: Error: division by zero
-caught: Type error: NIL used as a number
-caught: Type error: NIL used as a number
+caught: Argument error: /
+caught: Argument error: /
 after
