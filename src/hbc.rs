@@ -1448,6 +1448,21 @@ impl P {
                     } else {
                         self.pos += 1;
                     }
+                    // hb_Hash() with no arguments is the empty hash literal.
+                    if args.is_empty() && id.eq_ignore_ascii_case("hb_hash") {
+                        return Ok(Expr::HashLit(Vec::new()));
+                    }
+                    // Harbour type predicates: ValType(x) == letter, so they
+                    // reuse the measured ValType contract unchanged.
+                    if args.len() == 1 {
+                        let letter = match id.to_ascii_lowercase().as_str() {
+                            "hb_ishash" => "H", "hb_isobject" => "O", "hb_isnil" => "U", "hb_islogical" => "L",
+                            "hb_isdate" => "D", "hb_isblock" => "B", "hb_ischar" => "C", _ => "",
+                        };
+                        if !letter.is_empty() {
+                            return Ok(Expr::Cmp(CmpOp::EqEq, Box::new(Expr::Call("valtype".to_string(), args)), Box::new(Expr::Str(letter.to_string()))));
+                        }
+                    }
                     Ok(Expr::Call(id, args))
                 } else if self.peek() == Some(&Tok::LBracket) {
                     // a[i], a[i][j] and a[i,j] (probe m2: the comma form
@@ -6445,6 +6460,8 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                     }
                     e => match type_expr(e, env, sigs, n)? {
                         Ty::I64 | Ty::Str | Ty::StrOwn | Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::DArrRef | Ty::Arr(_) | Ty::Dyn | Ty::Bool | Ty::Date | Ty::Obj(_) => {}
+                        // A statically typed hash or codeblock variable.
+                        Ty::Hash | Ty::Block(..) if matches!(e, Expr::Var(_)) => {}
                         _ => return Err(format!("line {}: `ValType` is not measured for this type in this PoC", n)),
                     },
                 }
@@ -14571,6 +14588,8 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                         Ty::I64 | Ty::RefI64 => vt_letter(strs, out, "N"),
                         Ty::Date => vt_letter(strs,out,"D"),
                         Ty::Bool => vt_letter(strs, out, "L"), // hk197
+                        Ty::Hash => vt_letter(strs, out, "H"),
+                        Ty::Block(..) => vt_letter(strs, out, "B"),
                         Ty::Str | Ty::StrOwn => vt_letter(strs, out, "C"),
                         Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::DArrRef | Ty::DArrRef2 | Ty::AView | Ty::Arr(_) => vt_letter(strs, out, "A"),
                         Ty::Obj(_) => {

@@ -408,7 +408,7 @@ pos2 tests/t411_valtype_cells.prg tests/expectations/qout/t411_valtype_cells.lin
 pos2 tests/t412_valtype_borrow.prg tests/expectations/qout/t412_valtype_borrow.linux.out tests/expectations/qout/t412_valtype_borrow.windows.out
 neg tests/t413_valtype_deep3.prg not measured in this PoC
 neg tests/t414_valtype_usercall.prg not measured in this PoC
-neg tests/t415_valtype_hash.prg not measured for this type
+pos2 tests/t415_valtype_hash.prg tests/expectations/qout/t415_valtype_hash.linux.out tests/expectations/qout/t415_valtype_hash.windows.out
 pos2 tests/t416_borrow3_read.prg tests/expectations/qout/t416_borrow3_read.linux.out tests/expectations/qout/t416_borrow3_read.windows.out
 pos2 tests/t417_borrow3_grow.prg tests/expectations/qout/t417_borrow3_grow.linux.out tests/expectations/qout/t417_borrow3_grow.windows.out
 pos2 tests/t418_borrow3_write.prg tests/expectations/qout/t418_borrow3_write.linux.out tests/expectations/qout/t418_borrow3_write.windows.out

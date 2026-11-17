@@ -848,7 +848,7 @@ the existing canaried stub - so the ABI harness needed no new
 entries. Tests: t409 (hk88 mirror: static shapes plus a Dyn variable
 as NIL and as integer), t410 (hk89 mirror: effects order,
 byte-compared), t411 (hk92 shapes split by element type, balance 0),
-t412 (borrowed parameter, balance 0), t413-t415 (named rejections).
+t412 (borrowed parameter, balance 0), t413-t414 (named rejections), t415 (was a named rejection; ValType of a hash variable is now accepted and t415 is a positive row, see tests/type-predicates/README.md).
 Note: our dialect pins dynamic-array element types, so hk92's MIXED
 string+integer array runs here as one array per element type - the
 already-pinned AAdd pin limitation, not a ValType difference.
