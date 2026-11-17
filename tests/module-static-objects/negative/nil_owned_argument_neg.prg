@@ -13,7 +13,7 @@ return nil
 function main()
    local i,e
    for i := 1 to 500
-         o:Echo("owned")
+         o:Echo(e)
    next
    o := T():New()
    ? hold(o)

@@ -5427,7 +5427,7 @@ fn nil_method_arg_nothrow(e: &Expr) -> bool {
     match e {
         Expr::Var(_) | Expr::Str(_) | Expr::Int(_) | Expr::Log(_) => true,
         Expr::Bin(op,a,b) if matches!(op, '+' | '-' | '*') => nil_method_arg_nothrow(a) && nil_method_arg_nothrow(b),
-        Expr::Call(id,args) if ["space","upper","lower","trim","ltrim","rtrim","alltrim","left","right","substr","replicate"].iter().any(|n|is_builtin(id,n)) => args.iter().all(nil_method_arg_nothrow),
+        Expr::Call(id,args) if ["space","upper","lower","left"].iter().any(|n|is_builtin(id,n)) => args.iter().all(nil_method_arg_nothrow),
         _ => false,
     }
 }
@@ -8716,6 +8716,9 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                     if !matches!(t,Ty::I64|Ty::Bool|Ty::Date|Ty::Str|Ty::StrOwn) {
                         return Err(format!("line {}: NIL-aware module STATIC object methods support only typed integer/logical/date arguments or measured strings; Dyn, float and container argument unwind is outside this increment",n));
                     }
+                }
+                if strings && !matches!(recv.as_ref(),Expr::Var(_)|Expr::SelfObj) {
+                    return Err(format!("line {}: NIL-aware string method receiver must be a variable or Self; nested receiver dispatch is not in this increment",n));
                 }
                 if strings && !args.iter().all(nil_method_arg_nothrow) {
                     return Err(format!("line {}: NIL-aware string method arguments require non-throwing expressions; user calls (including fresh), nested dispatch, indexing, division and inline effects are not in this increment",n));
@@ -35488,5 +35491,34 @@ mod cpp_directive_comment_tests {
                 }
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod nullable_method_string_tests {
+    use super::*;
+    #[test]
+    fn accepts_only_measured_nothrow_string_argument_shapes() {
+        let nested = Expr::Call("left".into(), vec![
+            Expr::Call("upper".into(), vec![Expr::Str("abc".into())]),
+            Expr::Int("2".into()),
+        ]);
+        assert!(nil_method_arg_nothrow(&nested));
+        assert!(nil_method_arg_nothrow(&Expr::Call("space".into(), vec![
+            Expr::Bin('*', Box::new(Expr::Int("2".into())), Box::new(Expr::Int("3".into())))
+        ])));
+        assert!(nil_method_arg_nothrow(&Expr::Call("lower".into(), vec![Expr::Var("s".into())])));
+    }
+    #[test]
+    fn rejects_throwing_nested_and_unmeasured_argument_shapes() {
+        for e in [
+            Expr::Call("fresh".into(), vec![]),
+            Expr::Call("space".into(), vec![Expr::Call("zero".into(),vec![])]),
+            Expr::Bin('/', Box::new(Expr::Int("1".into())), Box::new(Expr::Int("0".into()))),
+            Expr::Index("a".into(),Box::new(Expr::Int("1".into()))),
+            Expr::Send(Box::new(Expr::Var("o".into())),"echo".into(),vec![]),
+            Expr::Call("trim".into(),vec![Expr::Str("x".into())]),
+            Expr::Seq(vec![Expr::Str("x".into())]),
+        ] { assert!(!nil_method_arg_nothrow(&e)); }
     }
 }
