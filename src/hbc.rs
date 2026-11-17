@@ -5423,6 +5423,18 @@ fn expr_has_call(e: &Expr) -> bool {
 // marshalled owners before the receiver's explicit NIL cleanup point. This
 // whitelist intentionally excludes user calls (including fresh()), sends,
 // indexing, division, inline effects and unknown future expression shapes.
+// A new Dyn/string producer must not enter an unmeasured owner boundary.
+// Locals can still materialize the result before an existing boundary.
+fn has_dyn_string_concat(e:&Expr,env:&[Local],sigs:&[Sig])->bool {
+    let cg:Vec<CgLocal>=env.iter().map(|v|CgLocal{name:v.name.clone(),ty:v.ty,off:0}).collect();
+    let mut hit=false;
+    visit_expr_ref(e,&mut |x|if let Expr::Bin('+',a,b)=x {
+        let ta=expr_ty(a,&cg,sigs);let tb=expr_ty(b,&cg,sigs);
+        if (ta==Ty::Dyn && matches!(tb,Ty::Str|Ty::StrOwn)) || (tb==Ty::Dyn && matches!(ta,Ty::Str|Ty::StrOwn)){hit=true;}
+    });
+    hit
+}
+
 fn nil_method_arg_nothrow(e: &Expr, env: &[Local]) -> bool {
     match e {
         Expr::Var(name) => env.iter().rev().find(|v|v.name==*name).map_or(false,|v|matches!(v.ty,Ty::I64|Ty::Bool|Ty::Date|Ty::Str|Ty::StrOwn)),
@@ -7603,6 +7615,11 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                     // during the call.
                     if args.len() as u64 > dyn_float::MAX_ARGC {
                         return Err(format!("line {}: Extend argument count exceeds INT_MAX",n));
+                    }
+                    for a in args.iter() {
+                        if has_dyn_string_concat(a,env,sigs) {
+                            return Err(format!("line {}: Dyn/string concat temporary across C Extend is not in this increment; materialize into a local first",n));
+                        }
                     }
                     for a in args.iter() {
                         if let Expr::ByRef(vn) = a {
@@ -21000,7 +21017,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                             env.iter().rev().find(|x| x.name == *src && x.ty == Ty::StrOwn).map(|x| x.off)
                         } else { None };
                         cg_value(e, env, sigs, strs, out, target);
-                        if src_var.is_none() {
+                        if expr_ty(e,env,sigs)==Ty::Str {
                             out.push_str("    mov %rax, %rdi
     mov %rdx, %rsi
     call hbc_strcpy
@@ -35672,4 +35689,16 @@ mod dyn_string_concat_tests {
             assert!(r.contains(".LseqD_strarg:"));
         }
     }
+}
+
+#[cfg(test)]
+mod dyn_concat_boundary_tests {
+ use super::*;
+ #[test] fn nested_dyn_producer_is_visible_at_extend_boundary(){
+  let env=vec![Local{name:"d".into(),ty:Ty::Dyn,moved:false,ro:false,byref:false}];
+  let concat=Expr::Bin('+',Box::new(Expr::Var("d".into())),Box::new(Expr::Str("!".into())));
+  assert!(has_dyn_string_concat(&concat,&env,&[]));
+  assert!(has_dyn_string_concat(&Expr::Call("upper".into(),vec![concat]),&env,&[]));
+  assert!(!has_dyn_string_concat(&Expr::Var("d".into()),&env,&[]));
+ }
 }

@@ -41,10 +41,10 @@ de QOut, workflows, ni las funciones de filesystem/input.
     python3 tests/dyn-string-concat/check.py --compiler /path/hbc \
       --hbmk2 /path/hbmk2 --wine /path/wine --tree SHA --output NEW_DIRECTORY
 
-18 programas,36comparaciones byte-exact con oracle fresco en Linux/Wine.
-20 formas de memoria por N1/500/1000:60controles actual/control,120ejecuciones
-con contadores reales y parser fail-closed. Cada medicion de este gate exige
-delta0, salida y retorno exactos. `e := NIL` despues de cada catch evita medir
+19 programas,38comparaciones byte-exact con oracle fresco en Linux/Wine.
+22 formas simples mas9stores DATA por N1/500/1000:93controles actual/control,186ejecuciones
+con contadores reales y parser fail-closed. Las66mediciones simples exigen delta0; las27deDATA exigen delta3 constante
+igual al control (pool/template de clase), nunca crecimiento porN. Todas exigen, salida y retorno exactos. `e := NIL` despues de cada catch evita medir
 el limite previo de overwrite de CatchBind en vez del snapshot de +.
 El rebind string por @ se mide fuera de TRY: la especializacion de llamadas
 por referencia dentro de TRY tiene un fallo de inventario previo, no reparado
@@ -57,7 +57,7 @@ no de una captura usada para esconder diferencias.
 
 La anterior negativa `t_dyn_str_concat` pasa a positiva. Tambien el probe de
 clases `neg15_dyn_concat`, cuyo nombre se conserva por trazabilidad. Inventario
-root1256ejecutables; total nativo esperado1312. Clases27ejecutables+16rechazos.
+root1257ejecutables; total nativo esperado1313. Clases27ejecutables+16rechazos.
 El runner se actualiza en el mismo corte y mantiene los tests de inventario
 real/truncado para ambos targets.
 
@@ -101,3 +101,10 @@ macOS nativa siguen siendo necesarios antes de publicar.
 
 Son estimaciones de alcance, no compromisos de tiempo ni autorizacion para
 implementar esos cortes.
+
+Revision posterior al revisor: el paquete9b8d14e4 esta retirado. Se corrige
+la fuga real DATA sinSTATIC (cg_data_value no condiciona el drop a STATIC) y
+Break transfiere StrOwn fresco en vez de clonarlo y perderlo. Los dos se
+reprodujeron primero conN1/500/1000 y control. Ver CONSUMERS.md y consumers.py
+para inventario y gate ampliado. CExtend rechaza temporalDyn/string directo
+o anidado; materializar en local primero. No se cambia su marshalling general.
