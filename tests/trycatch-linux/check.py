@@ -18,10 +18,15 @@ B. Manifest negatives (try_return_neg, try_exit_neg): our compiler must
 C. Break ownership rows (programs/break_call_str, break_call_float,
    break_send_str): ours byte-exact vs the oracle shim; linux runs also
    patched with the zero-balance guard (hbc_mem_allocs - hbc_mem_frees == 0
-   after persistent cleanup + cache flush). break_send_str is exempt from
-   the zero-balance ASSERT (object runtime retains its chunk/template pool,
-   same exemption as module-static-owned 'methods'); its per-iteration
-   delta was proven N-invariant (1 alloc at N=1, 500 and 1000).
+   after persistent cleanup + cache flush). break_send_str runs under a
+   MEASURED bound/baseline assertion, not an exemption: the object runtime
+   retains a constant baseline of 2 allocations (template pool) at
+   N=1/500/1000, identical with and without Break (control program
+   break_send_control). The gate asserts delta_break <= 2 AND
+   delta_break == delta_control via emit_delta's strict two-state parser:
+   (rc 0, stderr empty, stdout expected) => delta 0; (rc 99, stderr
+   fullmatch 'DELTA=<n>\\n', stdout expected) => delta n; every other
+   state fails. Parser probes: tests/trycatch-linux/selftest_emit_delta.py.
 D. Declared divergence (programs/break_array_deepcopy): catch-bound Dyn
    arrays are DEEP COPIES under the single-owner model: e[1]:=99 after
    catch does NOT write back to the source (ours: '1 99'; the aliasing
@@ -89,54 +94,7 @@ def emit_balance(exe_src, work):
     r = run(['ld', '-s', '-o', work / 'checked', work / 'checked.o'], work, 'ld'); assert r.returncode == 0, r.stderr
     return work / 'checked'
 
-DELTA_GUARD = ('    mov hbc_mem_allocs(%rip), %rax\n'
-               '    sub hbc_mem_frees(%rip), %rax\n'
-               '    test %rax, %rax\n'
-               '    je .Lprobe_zero\n'
-               '    lea -1(%rsp), %rsi\n'
-               '    movb $10, (%rsi)\n'
-               '    mov $10, %r9\n'
-               '.Ldgt_loop:\n'
-               '    xor %rdx, %rdx\n'
-               '    div %r9\n'
-               '    add $48, %dl\n'
-               '    dec %rsi\n'
-               '    mov %dl, (%rsi)\n'
-               '    test %rax, %rax\n'
-               '    jne .Ldgt_loop\n'
-               '    dec %rsi\n    movb $61, (%rsi)\n'
-               '    dec %rsi\n    movb $65, (%rsi)\n'
-               '    dec %rsi\n    movb $84, (%rsi)\n'
-               '    dec %rsi\n    movb $76, (%rsi)\n'
-               '    dec %rsi\n    movb $69, (%rsi)\n'
-               '    dec %rsi\n    movb $68, (%rsi)\n'
-               '    mov %rsp, %rdx\n'
-               '    sub %rsi, %rdx\n'
-               '    mov $2, %edi\n'
-               '    mov $1, %eax\n'
-               '    syscall\n'
-               '    mov $60, %eax\n'
-               '    mov $99, %edi\n'
-               '    syscall\n'
-               '.Lprobe_zero:\n')
-
-def emit_delta(exe_src, work):
-    """Instrumented emit + DELTA-printing guard; returns run record with
-    the measured balance delta parsed from stderr (0 when balanced)."""
-    s = work / 'checked.s'
-    r = run([compiler, exe_src, s, '--target=linux', '--instrument', '--no-prune'], work, 'emit')
-    assert r.returncode == 0, (exe_src, r.stderr)
-    text = s.read_text()
-    anchor = '    call hbc_persistent_cleanup\n    call hbc_str_cache_flush\n'
-    assert text.count(anchor) == 1, 'anchor not unique'
-    if '    call hbc_arena_flush\n' in text[text.index(anchor):text.index(anchor) + 200]:
-        anchor += '    call hbc_arena_flush\n'
-    s.write_text(text.replace(anchor, anchor + DELTA_GUARD))
-    r = run(['as', '--64', '-o', work / 'checked.o', s], work, 'as'); assert r.returncode == 0, r.stderr
-    r = run(['ld', '-s', '-o', work / 'checked', work / 'checked.o'], work, 'ld'); assert r.returncode == 0, r.stderr
-    r = run([work / 'checked'], work, 'memdelta')
-    m = re.search(rb'DELTA=(\d+)', r.stderr)
-    return r, (int(m.group(1)) if m else 0)
+from memdelta_guard import emit_delta  # shared with selftest_emit_delta.py
 
 # A. manifest rows
 for stem in MANIFEST:
@@ -214,14 +172,15 @@ for stem in OWN + ['break_array_deepcopy']:
             # retention over the control and stays within the measured
             # constant bound; a per-iteration leak breaks both at N=500.
             SEND_BOUND = 2  # measured constant maximum (N=1/500/1000, break and control)
-            br, bdelta = emit_delta(src, work)
+            br = emit_delta(compiler, env, src, work, exp)
             ctl_src = gate / 'programs' / 'break_send_control.prg'
             (work / 'control').mkdir()
-            cr, cdelta = emit_delta(ctl_src, work / 'control')
-            row['memdelta_break'] = {'delta': bdelta, 'rc': br.returncode}
-            row['memdelta_control'] = {'delta': cdelta, 'rc': cr.returncode}
+            cr = emit_delta(compiler, env, ctl_src, work / 'control', exp)
+            row['memdelta_break'] = br
+            row['memdelta_control'] = cr
             row['memdelta_bound'] = SEND_BOUND
-            ok = ok and bdelta <= SEND_BOUND and bdelta == cdelta
+            ok = (ok and br['state_ok'] and cr['state_ok']
+                  and br['delta'] <= SEND_BOUND and br['delta'] == cr['delta'])
     row['pass'] = ok
     rows.append(row); print(('PASS' if ok else 'FAIL'), stem, row['kind'])
 
