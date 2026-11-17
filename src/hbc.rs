@@ -3606,7 +3606,7 @@ fn parse(src: &str) -> Result<Prog, String> {
                             Expr::DArrNew => true,
                             _ => false,
                         };
-                        if !matches!(&value, Expr::Log(_) | Expr::Str(_)) && !matches!(&value, Expr::Int(v) if v.parse::<i64>().is_ok()) && !array_init {
+                        if !matches!(&value, Expr::Nil | Expr::Log(_) | Expr::Str(_)) && !matches!(&value, Expr::Int(v) if v.parse::<i64>().is_ok()) && !array_init {
                             return Err(format!("line {}: module STATIC requires a folded i64, logical or string scalar or a constant array initializer (i64/logical/string/NIL cells, nested and empty arrays admitted); NIL, Date, float and hash initializers are not in this increment", line));
                         }
                         if module_slots.iter().any(|(_, id, _)| id == &name) {
@@ -3816,6 +3816,7 @@ fn parse(src: &str) -> Result<Prog, String> {
             return Err(format!("line {}: REQUEST `{}` cannot be honored: the subset has no module linking; only functions defined in this file may be requested", ln, sym));
         }
     }
+    module_static::discover_objects(&funcs,&methods,&classes,&module_slots)?;
     for f in &mut funcs { module_static::bind(f, &module_slots)?; }
     for m in &mut methods { module_static::bind(&mut m.f, &module_slots)?; }
     Ok(Prog { funcs, classes, methods, externs })
@@ -4104,7 +4105,7 @@ fn cg_sarr_index(id: &str, var_off: usize, ies: &[&Expr], env: &[CgLocal], sigs:
 fn set_numeric(f: &Func) {
     NUM_LOCALS.with(|s| *s.borrow_mut()=prescan_numeric(f));
     STATIC_DYN.with(|s|{
-        let mut roots:std::collections::HashSet<String>=f.stmts.iter().filter_map(|s|if let Stmt::Static(_,id,Expr::Nil)=s {Some(id.clone())}else{None}).collect();
+        let mut roots:std::collections::HashSet<String>=f.stmts.iter().filter_map(|s|if let Stmt::Static(_,id,Expr::Nil)=s {if !matches!(module_static::kind(&f.name,id),Some(Ty::Obj(_))){Some(id.clone())}else{None}}else{None}).collect();
         for p in &f.params {if root_param(&f.name,p){roots.insert(p.clone());}}
         *s.borrow_mut()=roots;
     });
@@ -6358,7 +6359,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                         }
                     }
                     e => match type_expr(e, env, sigs, n)? {
-                        Ty::I64 | Ty::Str | Ty::StrOwn | Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::DArrRef | Ty::Arr(_) | Ty::Dyn | Ty::Bool | Ty::Date => {}
+                        Ty::I64 | Ty::Str | Ty::StrOwn | Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::DArrRef | Ty::Arr(_) | Ty::Dyn | Ty::Bool | Ty::Date | Ty::Obj(_) => {}
                         _ => return Err(format!("line {}: `ValType` is not measured for this type in this PoC", n)),
                     },
                 }
@@ -9392,7 +9393,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                     }
                 }
                 if matches!(s, Stmt::Static(..)) {
-                    if let Some(t @ (Ty::Bool | Ty::StrOwn)) = module_static::current(id) {
+                    if let Some(t @ (Ty::Bool | Ty::StrOwn | Ty::Obj(_))) = module_static::current(id) {
                         if env.iter().any(|v| v.name == *id) { return Err(format!("line {}: duplicate local `{}`", n, id)); }
                         env.push(Local { name:id.clone(), ty:t, moved:false, ro:false, byref:t == Ty::StrOwn });
                         continue;
@@ -13896,6 +13897,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             // DATA casilla read: compile-time offset, borrowed Dyn pair.
             let off = data_lookup(ci, &lname).expect("checked");
             cg_value(recv, env, sigs, strs, out, target);
+            if module_static::has_objects(){out.push_str("    test %rax, %rax\n    je hbc_objnil_error\n");}
             out.push_str(&format!("    mov {}(%rax), %rdx\n    mov {}(%rax), %rax\n    call hbc_float_clone\n\n    cmp $4, %rax\n    jne 83f\n    mov %rdx, %rdi\n    mov -8(%rdx), %rsi\n    call hbc_strcpy\n    mov %rax, %rdx\n    mov $4, %eax\n83:\n", 16 + off * 16 + 8, 16 + off * 16));
         }
         Expr::ByRef(_) => unreachable!("`@` arguments are emitted at the call site"),
@@ -13968,6 +13970,10 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                 // post-pass, so the second word never matters.
                 Ty::DArrRef | Ty::DArrRef2 => out.push_str(&format!("    mov -{}(%rbp), %rax\n    xor %edx, %edx\n", v.off)),
                 Ty::Arr(_) => unreachable!("whole-array values are emitted via cg_array_value"),
+                Ty::Obj(_) if module_static::is_module_binding(id) => {
+                    let label=module_static::storage(&CUR_FN.with(|c|c.borrow().clone()),id);
+                    out.push_str(&format!("    mov {}(%rip), %rax\n",label));
+                }
                 Ty::Obj(_) => out.push_str(&format!("    mov -{}(%rbp), %rax\n", v.off)),
             }
         }
@@ -14424,6 +14430,11 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                         Ty::Bool => vt_letter(strs, out, "L"), // hk197
                         Ty::Str | Ty::StrOwn => vt_letter(strs, out, "C"),
                         Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::DArrRef | Ty::DArrRef2 | Ty::AView | Ty::Arr(_) => vt_letter(strs, out, "A"),
+                        Ty::Obj(_) => {
+                            cg_value(&args[0],env,sigs,strs,out,target);
+                            let k=fresh_lbl();out.push_str(&format!("    test %rax, %rax\n    je .Lvtobjnil{k}\n"));
+                            vt_letter(strs,out,"O");out.push_str(&format!("    jmp .Lvtobjend{k}\n.Lvtobjnil{k}:\n"));vt_letter(strs,out,"U");out.push_str(&format!(".Lvtobjend{k}:\n"));
+                        },
                         Ty::Dyn => {
                             // tag word of the stack pair (tag at -(off))
                             out.push_str(&format!("    mov -{}(%rbp), %r10\n", var.off));
@@ -16831,7 +16842,9 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             if dslot >= 0 {
                 // Virtual send: Self is the FIRST (deepest) casilla, its
                 // pointer at casilla+0. Two loads + indirect call.
-                out.push_str(&format!("    mov {}(%rsp), %rax\n    mov (%rax), %rax\n    mov 32(%rax), %rax\n    call *{}(%rax)\n", 16 * (total - 1), dslot * 8));
+                out.push_str(&format!("    mov {}(%rsp), %rax\n",16*(total-1)));
+                if module_static::has_objects(){out.push_str("    test %rax, %rax\n    je hbc_objnil_error\n");}
+                out.push_str(&format!("    mov (%rax), %rax\n    mov 32(%rax), %rax\n    call *{}(%rax)\n",dslot*8));
             } else {
                 out.push_str(&format!("    call hbc_fn_{}\n", call_lbl));
             }
@@ -18544,6 +18557,7 @@ fn layout_locals(stmts: &[Stmt], env: &mut Vec<CgLocal>, sigs: &[Sig], frame: &m
                 // the shared .data label (module_static::array_base). A
                 // dynamic module array binds as a genuine Dyn local.
                 let ty = match k {
+                    Some(t @ Ty::Obj(_)) => t,
                     Some(Ty::Arr(n)) => Ty::Arr(n),
                     Some(Ty::StrOwn) => Ty::RefStrOwn,
                     Some(Ty::Dyn) => Ty::Dyn,
@@ -19762,6 +19776,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 let ci = match expr_ty(recv, env, sigs) { Ty::Obj(ci) => ci, _ => unreachable!("checked") };
                 let off = data_lookup(ci, &name.to_lowercase()).expect("checked");
                 cg_value(recv, env, sigs, strs, out, target);
+                if module_static::has_objects(){out.push_str("    test %rax, %rax\n    je hbc_objnil_error\n");}
                 out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n");
                 cg_data_value(e, env, sigs, strs, out, target);
                 out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
@@ -19809,7 +19824,9 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 let off = *frame;
                 let owner = CUR_FN.with(|c| c.borrow().clone());
                 let arr_ty = module_static::current(id);
-                if arr_ty == Some(Ty::Dyn) {
+                if matches!(arr_ty,Some(Ty::Obj(_))) {
+                    out.push_str(&format!("    movq $0, -{}(%rbp)\n",off));
+                } else if arr_ty == Some(Ty::Dyn) {
                     // Dynamic shared-reference array: load the canonical Dyn
                     // casilla {tag 16, object pointer} into the local slot.
                     let label = module_static::storage(&owner, id);
@@ -19818,6 +19835,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                     out.push_str(&format!("    lea {}(%rip), %rax\n    mov %rax, -{}(%rbp)\n", module_static::storage(&owner, id), off));
                 }
                 let ty = match arr_ty {
+                    Some(t @ Ty::Obj(_)) => t,
                     Some(Ty::Arr(n)) => Ty::Arr(n),
                     Some(Ty::StrOwn) => Ty::RefStrOwn,
                     Some(Ty::Dyn) => Ty::Dyn,
@@ -20901,6 +20919,17 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 if let Stmt::MemvarSet(_,_,_,e)=s {cg_memvar_put(id,e,env,sigs,strs,out,target);}
             }
             Stmt::Assign(_, id, e) => {
+                if module_static::object(id).is_some() && module_static::is_module_binding(id) {
+                    let label=module_static::storage(&CUR_FN.with(|c|c.borrow().clone()),id);
+                    if matches!(e,Expr::Nil){out.push_str("    xor %eax, %eax\n");}
+                    else {
+                        cg_value(e,env,sigs,strs,out,target);
+                        if !obj_fresh(e,env,sigs){out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rax, %rdi\n    call hrobj_retain\n    mov (%rsp), %rax\n    add $16, %rsp\n");}
+                    }
+                    out.push_str(&format!("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov {}(%rip), %rdi\n    call hrobj_release\n    mov (%rsp), %rax\n    add $16, %rsp\n    mov %rax, {}(%rip)\n",label,label));
+                    continue;
+                }
+
                 if env.iter().rev().any(|v|v.name==*id&&v.off==0){cg_memvar_put(id,e,env,sigs,strs,out,target);continue;}
                 if matches!(e, Expr::ArrLit(..) | Expr::DArrNew) && is_sarr(id) {
                     // S4 rebuild: fresh descriptor-built object replaces
@@ -22753,6 +22782,7 @@ fn cg_func(f: &Func, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, tar
             if let Stmt::Static(_, id, value) = st {
                 let words = match value {
                     Expr::Int(n) => format!("{}, 1", n),
+                    Expr::Nil if matches!(module_static::kind(&f.name,id),Some(Ty::Obj(_))) => "0, 0".to_string(),
                     Expr::Nil => "1, 0".to_string(),
                     Expr::Log(v) => format!("{}, 0", if *v {1}else{0}),
                     Expr::Str(_) => "0, 0".to_string(),
@@ -27094,6 +27124,9 @@ fn emit_asm(funcs: &[Func], sigs: &[Sig], externs: &[String], target: Target, in
         eprintln!("error: classes support Linux and Windows targets in this increment (Mach-O pending)");
         process::exit(1);
     }
+    if THREADS.with(|c| c.get()) && module_static::has_objects() {
+        eprintln!("error: module STATIC object storage with threads is outside this increment");process::exit(1);
+    }
     if THREADS.with(|c| c.get()) && funcs.iter().any(|f| f.stmts.iter().any(|s| matches!(s, Stmt::Static(_,_,Expr::Str(_) | Expr::Log(_) | Expr::ArrLit(_) | Expr::DArrNew)))) {
         eprintln!("error: module STATIC logical/string/array storage with threads is outside this increment"); process::exit(1);
     }
@@ -27605,7 +27638,13 @@ hbc_persistent_payload_release:
 ");
     out.push_str("hbc_persistent_cleanup:\n    push %rbp\n    mov %rsp, %rbp\n    sub $32, %rsp\n");
     if funcs_have_shared_arrays(funcs) { out.push_str("    call hbc_sarr_sweep\n"); }
+    let mut object_cleaned=std::collections::HashSet::new();
     for f in funcs {for st in &f.stmts {if let Stmt::Static(_,id,Expr::Nil)=st {
+        if matches!(module_static::kind(&f.name,id),Some(Ty::Obj(_))) {
+            let label=module_static::storage(&f.name,id);
+            if object_cleaned.insert(label.clone()){out.push_str(&format!("    mov {}(%rip), %rdi\n    movq $0, {}(%rip)\n    call hrobj_release\n",label,label));}
+            continue;
+        }
         out.push_str(&format!("    lea hbc_static_{}_{}_{}(%rip), %rdi\n    call hbc_persistent_release\n",f.name.len(),f.name,id));
     }}}
     let mut module_strings = std::collections::HashSet::new();
@@ -28748,6 +28787,18 @@ hbc_round_range_error:
 # array indexing). Harbour raises a type-error dialog; headless probes
 # cannot capture it, so this PoC prints and exits 1 (registered failure
 # mode, same error condition).
+hbc_objnil_error:
+    cmpq $0, hbc_seq_depth(%rip)
+    jne .Lseqt_objnil
+    lea .Lobjnilmsg(%rip), %rsi
+    mov $21, %edx
+    mov $1, %eax
+    mov $1, %edi
+    syscall
+    mov $60, %eax
+    mov $1, %edi
+    syscall
+
 hbc_divarg_error:
     cmpq $0, hbc_seq_depth(%rip)
     jne .Lseqt_divarg
@@ -29634,6 +29685,9 @@ hbc_seq_unwind:
 .Lseqt_type:
     lea .LseqD_type(%rip), %rsi
     jmp hbc_seq_throw_error
+.Lseqt_objnil:
+    lea .LseqD_objnil(%rip), %rsi
+    jmp hbc_seq_throw_error
 .Lseqt_divarg:
     lea .LseqD_divarg(%rip), %rsi
     jmp hbc_seq_throw_error
@@ -30119,6 +30173,8 @@ fn emit_strings(out: &mut String, strs: &[String]) {
     // "Type error: NIL used as a number\n" (33 bytes; registered failure mode)
     out.push_str(".Losbadmsg:\n    .byte 73,110,116,101,114,110,97,108,32,101,114,114,111,114,58,32,79,83,32,102,114,101,101,32,102,97,105,108,101,100,10\n");
     out.push_str(".Lregbadmsg:\n    .byte 73,110,116,101,114,110,97,108,32,101,114,114,111,114,58,32,97,108,108,111,99,97,116,105,111,110,32,114,101,103,105,115,116,114,121,32,109,105,115,109,97,116,99,104,10\n");
+    out.push_str(".Lobjnilmsg:\n    .byte 79,98,106,101,99,116,32,97,99,99,101,115,115,32,111,110,32,78,73,76,10\n");
+    out.push_str(".quad 20\n.LseqD_objnil:\n    .byte 79,98,106,101,99,116,32,97,99,99,101,115,115,32,111,110,32,78,73,76\n");
     out.push_str(".Ldivargmsg:\n    .byte 65,114,103,117,109,101,110,116,32,101,114,114,111,114,58,32,47,10\n");
     out.push_str(".quad 17\n.LseqD_divarg:\n    .byte 65,114,103,117,109,101,110,116,32,101,114,114,111,114,58,32,47\n");
     out.push_str(".Ltypemsg:\n    .byte 84,121,112,101,32,101,114,114,111,114,58,32,78,73,76,32,117,115,101,100,32,97,115,32,97,32,110,117,109,98,101,114,10\n");
@@ -31737,6 +31793,19 @@ hbc_dynxeq_dd:
 
 # hbc_type_error: NIL used as a number at runtime. Reached via a JUMP from
 # hbc_dyn_to_i64, so force 16-byte alignment before calling out (noreturn).
+hbc_objnil_error:
+    cmpq $0, hbc_seq_depth(%rip)
+    jne .Lseqt_objnil
+    push %rbp
+    mov %rsp, %rbp
+    and $-16, %rsp
+    sub $48, %rsp
+    lea .Lobjnilmsg(%rip), %rax
+    mov $21, %edx
+    call hbc_print_str
+    mov $1, %ecx
+    call ExitProcess
+
 hbc_divarg_error:
     cmpq $0, hbc_seq_depth(%rip)
     jne .Lseqt_divarg
@@ -32804,6 +32873,9 @@ hbc_seq_unwind:
 .Lseqt_type:
     lea .LseqD_type(%rip), %rsi
     jmp hbc_seq_throw_error
+.Lseqt_objnil:
+    lea .LseqD_objnil(%rip), %rsi
+    jmp hbc_seq_throw_error
 .Lseqt_divarg:
     lea .LseqD_divarg(%rip), %rsi
     jmp hbc_seq_throw_error
@@ -32935,7 +33007,7 @@ fn discover_root_params(fs:&[Func]) {
 
 fn validate_persistent(f:&Func)->Result<(),String> {
     use std::collections::HashSet;
-    let mut roots:HashSet<String>=f.stmts.iter().filter_map(|s|if let Stmt::Static(_,id,Expr::Nil)=s {Some(id.clone())}else{None}).collect();
+    let mut roots:HashSet<String>=f.stmts.iter().filter_map(|s|if let Stmt::Static(_,id,Expr::Nil)=s {if matches!(module_static::kind(&f.name,id),Some(Ty::Obj(_))){None}else{Some(id.clone())}}else{None}).collect();
     for p in &f.params {if root_param(&f.name,p){roots.insert(p.clone());}}
     fn ex(e:&Expr,roots:&HashSet<String>,whole:bool)->bool {match e {
         Expr::Var(v)=>!roots.contains(v)||whole,

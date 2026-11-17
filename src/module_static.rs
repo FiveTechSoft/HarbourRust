@@ -7,14 +7,54 @@ thread_local! {
     // Function-local spelling -> canonical module slot; local shadows are absent.
     static ALIASES: RefCell<HashMap<(String, String), usize>> = RefCell::new(HashMap::new());
     static KINDS: RefCell<HashMap<(String, String), Ty>> = RefCell::new(HashMap::new());
+    static OBJECTS: RefCell<HashMap<usize, u32>> = RefCell::new(HashMap::new());
     static EMITTED: RefCell<HashSet<String>> = RefCell::new(HashSet::new());
 }
 
 pub fn reset() {
+    OBJECTS.with(|v| v.borrow_mut().clear());
     ALIASES.with(|v| v.borrow_mut().clear());
     KINDS.with(|v| v.borrow_mut().clear());
     EMITTED.with(|v| v.borrow_mut().clear());
 }
+
+// Object slots are explicitly NIL-initialized. Infer one fixed class from
+// direct constructor assignments, never from a member-name guess. Scalar
+// initializers keep their prior type and named retag rejection.
+pub fn discover_objects(funcs: &[Func], methods: &[crate::MethodDef], classes: &[crate::ClassDecl], slots: &[(usize,String,Expr)]) -> Result<(),String> {
+    fn ctor(e:&Expr, classes:&[crate::ClassDecl])->Option<u32> {
+        match e {
+            Expr::Call(n,_)=>classes.iter().position(|c|c.name.eq_ignore_ascii_case(n)).map(|i|i as u32),
+            Expr::Send(o,n,_) if n.eq_ignore_ascii_case("new")=>ctor(o,classes),
+            _=>None,
+        }
+    }
+    fn scan(ss:&[Stmt],name:&str,classes:&[crate::ClassDecl],found:&mut Option<u32>)->Result<(),String> {
+        for st in ss {match st {
+            Stmt::Assign(line,id,e) if id==name=>if let Some(ci)=ctor(e,classes) {
+                if found.is_some() && *found!=Some(ci) {return Err(format!("line {}: module STATIC object `{}` has multiple constructor classes; fixed-class storage only in this increment",line,name));}
+                *found=Some(ci);
+            },
+            Stmt::If(_,_,a,b)=>{scan(a,name,classes,found)?;scan(b,name,classes,found)?;},
+            Stmt::While(_,_,b)|Stmt::For(_,_,_,_,_,b)|Stmt::ForEach(_,_,_,b)=>scan(b,name,classes,found)?,
+            Stmt::Try(_,b,c,f)=>{scan(b,name,classes,found)?;if let Some((_,b))=c{scan(b,name,classes,found)?;}if let Some(b)=f{scan(b,name,classes,found)?;}},
+            Stmt::Switch(_,_,arms,other)=>{for(_,_,b)in arms{scan(b,name,classes,found)?;}if let Some((_,b))=other{scan(b,name,classes,found)?;}},
+            _=>{}
+        }}Ok(())
+    }
+    for (index,(_,name,init)) in slots.iter().enumerate() {
+        if !matches!(init,Expr::Nil){continue;}
+        let mut found=None;
+        for f in funcs.iter().chain(methods.iter().map(|m|&m.f)) {
+            if f.params.contains(name)||declaration(&f.stmts,name,false)?{continue;}
+            scan(&f.stmts,name,classes,&mut found)?;
+        }
+        if let Some(ci)=found{OBJECTS.with(|v|v.borrow_mut().insert(index,ci));}
+    }
+    Ok(())
+}
+pub fn has_objects()->bool{OBJECTS.with(|v|!v.borrow().is_empty())}
+pub fn object(name:&str)->Option<u32>{match current(name){Some(Ty::Obj(ci))=>Some(ci),_=>None}}
 
 pub fn storage(owner: &str, name: &str) -> String {
     ALIASES.with(|v| match v.borrow().get(&(owner.to_owned(), name.to_owned())) {
@@ -168,24 +208,24 @@ fn check_payload_uses(f: &Func, name: &str, ty: Ty) -> Result<(), String> {
     // fall through to a permissive default.
     fn expr(e: &Expr, name: &str, ty: Ty) -> bool {
         match e {
-            Expr::ByRef(v) if v == name => ty != Ty::Bool,
+            Expr::ByRef(v) if v == name => ty != Ty::Bool && !matches!(ty,Ty::Obj(_)),
             Expr::Set(v, _) | Expr::Inc(v, ..) if v == name => false,
             Expr::ArrLit(es) => !es.iter().any(|e| crate::expr_mentions(e,name)),
             Expr::HashLit(es) => !es.iter().any(|(k,v)| crate::expr_mentions(k,name)||crate::expr_mentions(v,name)),
             Expr::Bin(_,a,b) | Expr::Cmp(_,a,b) | Expr::LAnd(a,b) | Expr::LOr(a,b) => {
-                if ty == Ty::StrOwn && crate::expr_mentions(e,name) && crate::expr_has_call(e) {return false;}
+                if matches!(ty,Ty::StrOwn|Ty::Obj(_)) && crate::expr_mentions(e,name) && crate::expr_has_call(e) {return false;}
                 expr(a,name,ty) && expr(b,name,ty)
             }
             Expr::Seq(es) => !(ty == Ty::StrOwn && es.iter().any(|e|crate::expr_mentions(e,name))) && es.iter().all(|e|expr(e,name,ty)),
             Expr::Call(id,es) => {
                 if ty == Ty::StrOwn && ["iif","eval"].iter().any(|b|crate::is_builtin(id,b)) && es.iter().any(|e|crate::expr_mentions(e,name)) {return false;}
-                if ty == Ty::StrOwn && es.iter().any(|e|crate::expr_mentions(e,name)) && es.iter().any(may_mutate) {return false;}
+                if matches!(ty,Ty::StrOwn|Ty::Obj(_)) && es.iter().any(|e|crate::expr_mentions(e,name)) && es.iter().any(may_mutate) {return false;}
                 es.iter().all(|e|expr(e,name,ty))
             }
-            Expr::BlockLit(_,_,es) => es.iter().all(|e|expr(e,name,ty)),
+            Expr::BlockLit(_,_,es) => !(matches!(ty,Ty::Obj(_)) && es.iter().any(|e|crate::expr_mentions(e,name))) && es.iter().all(|e|expr(e,name,ty)),
             Expr::Set(_,e) | Expr::LNot(e) | Expr::Index(_,e) => expr(e,name,ty),
             Expr::Inc(..) => true, // ++/-- on another variable holds no borrow of this slot
-            Expr::Send(o,_,es) => !(ty == Ty::StrOwn && crate::expr_mentions(e,name)) && expr(o,name,ty)&&es.iter().all(|e|expr(e,name,ty)),
+            Expr::Send(o,_,es) => !(matches!(ty,Ty::Obj(_)) && crate::expr_mentions(o,name) && es.iter().any(may_mutate)) && !(ty == Ty::StrOwn && crate::expr_mentions(e,name)) && expr(o,name,ty)&&es.iter().all(|e|expr(e,name,ty)),
             Expr::Var(_) | Expr::ByRef(_) => true,
             // Compound/multi-level forms with no lexical mention of the slot
             // are admitted; a mutating call hidden in their index or right
@@ -205,6 +245,7 @@ fn check_payload_uses(f: &Func, name: &str, ty: Ty) -> Result<(), String> {
             Stmt::For(_,_,a,b,_,body)=>expr(a,name,ty)&&expr(b,name,ty)&&walk(body,name,ty),
             Stmt::ForEach(_,_,e,body)=>expr(e,name,ty)&&walk(body,name,ty),
             Stmt::Switch(_,e,arms,other)=>expr(e,name,ty)&&arms.iter().all(|(_,_,b)|walk(b,name,ty))&&other.as_ref().map_or(true,|(_,b)|walk(b,name,ty)),
+            Stmt::SendSet(_,o,_,e) if matches!(ty,Ty::Obj(_)) => expr(o,name,ty) && expr(e,name,ty) && !(crate::expr_mentions(o,name) && may_mutate(e)),
             Stmt::Static(..)|Stmt::Ret(_,None)|Stmt::Exit(_)|Stmt::Loop(_)=>true,
             _ => !crate::stmt_mentions(s,name),
         })
@@ -366,7 +407,7 @@ pub fn bind(f: &mut Func, slots: &[(usize, String, Expr)]) -> Result<(), String>
         if !crate::stmts_mention(&f.stmts, name) { continue; }
         check_counters(&f.stmts, name)?;
         ALIASES.with(|v| v.borrow_mut().insert((f.name.clone(), name.clone()), index));
-        let ty = match init {
+        let ty = if let Some(ci)=OBJECTS.with(|v|v.borrow().get(&index).copied()) {Ty::Obj(ci)} else {match init {
             Expr::Log(_) => Ty::Bool,
             Expr::Str(_) => Ty::StrOwn,
             // S4 unify (doc: "every module STATIC array literal becomes a
@@ -375,8 +416,9 @@ pub fn bind(f: &mut Func, slots: &[(usize, String, Expr)]) -> Result<(), String>
             // object pointer}. The S3 fixed .data route is retired.
             Expr::ArrLit(_) | Expr::DArrNew => Ty::Dyn,
             _ => Ty::I64,
-        };
-        if matches!(ty,Ty::Bool|Ty::StrOwn) {check_payload_uses(f,name,ty)?;}
+        }};
+        if matches!(init,Expr::Nil) && !matches!(ty,Ty::Obj(_)) {return Err(format!("line {}: module STATIC requires a folded i64, logical or string scalar or a constant array initializer (i64/logical/string/NIL cells, nested and empty arrays admitted); NIL, Date, float and hash initializers are not in this increment",line));}
+        if matches!(ty,Ty::Bool|Ty::StrOwn|Ty::Obj(_)) {check_payload_uses(f,name,ty)?;}
         if matches!(ty,Ty::Arr(_)) {check_array_uses(f,name)?;}
         if ty == Ty::Dyn && matches!(init, Expr::ArrLit(_) | Expr::DArrNew) {check_shared_array_uses(f,name)?;}
         KINDS.with(|v| v.borrow_mut().insert((f.name.clone(), name.clone()), ty));
