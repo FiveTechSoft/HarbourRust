@@ -1870,3 +1870,4 @@ pos2 tests/module-static-objects/programs/borrowed_null.prg tests/module-static-
 pos2 tests/module-static-objects/programs/callee_rebind.prg tests/module-static-objects/expected/callee_rebind.linux.out tests/module-static-objects/expected/callee_rebind.windows.out
 pos2 tests/module-static-objects/programs/nil_assign.prg tests/module-static-objects/expected/nil_assign.linux.out tests/module-static-objects/expected/nil_assign.windows.out
 pos2 tests/module-static-objects/programs/nil_observable.prg tests/module-static-objects/expected/nil_observable.linux.out tests/module-static-objects/expected/nil_observable.windows.out
+pos2 tests/module-static-objects/programs/nil_dyn_boundary.prg tests/module-static-objects/expected/nil_dyn_boundary.linux.out tests/module-static-objects/expected/nil_dyn_boundary.windows.out

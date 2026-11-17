@@ -14,7 +14,7 @@ a live instance is ValType O. The first class is fixed syntactically, not
 guessed from member names. Multiple constructor classes are a named limit.
 
 Run check.py with --compiler, --hbmk2, --tree, --output and optional --wine.
-The gate has21 assertions:6 fresh oracle/raw target-pin comparisons,
+The gate has22 assertions:7 fresh oracle/raw target-pin comparisons,
 6 named rejections (valid Harbour),6 measured memory comparisons at
 N=1/500/1000, and3 explicit null-receiver catch paths. Each memory comparison
 executes the real constructor/alias/selfassign/return/NIL-release/DATA path
@@ -32,7 +32,7 @@ Existing function-local STATIC and module scalar/string/array paths retain
 their own contracts. Alias-based calls or other object patterns outside this
 measured subset retain the compiler's prior object limits.
 
-Four meaningful positive programs join the native manifest. The Linux/Wine
+Five meaningful positive programs join the native manifest. The Linux/Wine
 pins are copied from actual target output and protected with -text. The native
-runner inventory is1234+56=1290; ARM64 has no named rejection, Intel keeps5.
+runner inventory is1235+56=1291; ARM64 has no named rejection, Intel keeps5.
 Local Mac checks are emission-only unless a report explicitly says native.

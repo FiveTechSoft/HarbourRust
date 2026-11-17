@@ -16765,7 +16765,13 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                     if !obj_fresh(a, env, sigs) {
                         out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rax, %rdi\n    call hrobj_retain\n    mov (%rsp), %rax\n    add $16, %rsp\n");
                     }
-                    out.push_str("    sub $16, %rsp\n    movq $13, (%rsp)\n    mov %rax, 8(%rsp)\n");
+                    if module_static::has_objects() {
+                        // A fixed-class slot may currently hold NIL. Preserve
+                        // that value at a Dyn boundary, not a fake tag13/null.
+                        out.push_str("    test %rax, %rax\n    mov $1, %r11d\n    mov $13, %r10d\n    cmovne %r10, %r11\n    sub $16, %rsp\n    mov %r11, (%rsp)\n    mov %rax, 8(%rsp)\n");
+                    } else {
+                        out.push_str("    sub $16, %rsp\n    movq $13, (%rsp)\n    mov %rax, 8(%rsp)\n");
+                    }
                     continue;
                 }
                 if matches!(ta, Ty::Obj(_)) && matches!(pty, Some(Ty::Obj(_))) {
