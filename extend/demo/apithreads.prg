@@ -12,11 +12,15 @@ procedure Main()
       ? "thread", i, r
    next
    ? "main", Work()
+   ? "half", HBR_HALF(2000)
 return
 
 function Work()
-   local i, n := 0, b := {|x, y| x + y}
+   local i, n := 0, h, b := {|x, y| x + y}
    for i := 1 to 2000
-      n := n + HBR_HALF(i * 2) + HBR_EVAL(b)
+      if HBR_EVAL(b) == 13
+         n++
+      endif
+      h := HBR_HALF(i)
    next
 return n

@@ -247,6 +247,7 @@ hbc_dw_open:
 # gettimeofday: Darwin returns seconds in rax and microseconds in edx
 hbc_dw_gettimeofday:
     push %rdx
+    xor %edx, %edx
     mov $33554548, %eax
     syscall
     jnc .Ldwt1
@@ -446,7 +447,9 @@ pub fn darwin_dyld_asm(src: &str, threaded: bool, ext: bool) -> Result<(String, 
     let mut defined = std::collections::HashSet::new();
     for l in text.lines() {
         let t = l.trim();
-        if let Some(n) = t.strip_suffix(':') { if !n.contains(char::is_whitespace) { defined.insert(n.to_string()); } }
+        if let Some((n, _)) = t.split_once(':') {
+            if !n.is_empty() && n.chars().all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '.' || c == '$') { defined.insert(n.to_string()); }
+        }
         if let Some(r) = t.strip_prefix(".set ").or_else(|| t.strip_prefix(".equ ")) {
             if let Some((n, _)) = r.split_once(',') { defined.insert(n.trim().to_string()); }
         }
@@ -503,7 +506,10 @@ pub fn darwin_dyld_asm(src: &str, threaded: bool, ext: bool) -> Result<(String, 
     if threaded {
         let mut copy = String::new();
         for k in 0..16 { copy.push_str(&format!("    mov {}(%rsi), %rax\n    mov %rax, %gs:{}\n", 8 * k, DW_TLS_BASE + 8 * k)); }
-        out.push_str(&DW_THREAD_HELPERS.replace("@DW_COPY@", &copy));
+        let th = DW_THREAD_HELPERS.replace("@DW_COPY@", &copy);
+        // a program that only uses mutexes/TLS has no thread start (pruned)
+        let th = if defined.contains("hbc_thread_boot") { th } else { th.replace("    jmp hbc_thread_boot\n", "    ud2\n") };
+        out.push_str(&th);
         for s in ["pthread_key_create", "pthread_attr_init", "pthread_attr_setstacksize", "pthread_create", "pthread_detach", "pthread_main_np", "pthread_exit"] {
             imp(s, 1, &mut imports);
         }
