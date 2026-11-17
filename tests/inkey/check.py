@@ -13,7 +13,7 @@ def run(cmd,cwd,label,inp=None,timeout=60):
     return r
 def prg(expr):return 'function main()\nlocal k\nk:='+expr+'\n?? "K=",k,valtype(k)\nreturn nil\n'
 stdins={'empty':b'','Z':b'Z','AB':b'AB','esc':b'\x1b','crlf':b'\r\n','lf':b'\n','utf8':'\u00e9'.encode(),'bytes-ff-00':b'\xff\x00'}
-exprs=['inkey()','inkey(0.2)','inkey(1)','inkey(2.9)','inkey(0.01)','inkey(0.015)']
+exprs=['inkey()','inkey(0.2)','inkey(0.1+0.1)','inkey(1)','inkey(2.9)','inkey(0.01)','inkey(0.015)']
 def tm(stdout):
     # elapsed is compared in tenths of a second, both builds measure the same way
     return stdout

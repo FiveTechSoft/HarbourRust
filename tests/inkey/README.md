@@ -10,12 +10,12 @@ Codigo y pruebas propios MIT. Harbour se usa solo como ejecutable externo
   Darwin (ambos), Windows y LLVM se rechazan por nombre antes de emitir.
 - `INKEY()`: sondeo no bloqueante (poll de fd 0 con timeout 0) de un byte.
   Devuelve el byte 0..255 o 0 si no hay. Sin decodificar (UTF-8 es byte a byte).
-- `INKEY(n)` con n literal numerico de 0.01 a 86400 segundos: poll con timeout
+- `INKEY(n)` con n literal numerico o expresion constante plegada (p. ej. `0.5+0.5`, probado contra el oracle con `inkey(0.1+0.1)`) de 0.01 a 86400 segundos: poll con timeout
   en ms (redondeo al ms). Devuelve el byte o 0. Con EOF, /dev/null, stdin
   cerrado o hangup se duerme solo el tiempo RESTANTE hasta un deadline CLOCK_MONOTONIC fijado a la entrada (un pipe que cierra a 0.2 s con timeout 1 s devuelve a 1.0 s, no a 1.2 s) y devuelve 0, como el oracle. poll, read y nanosleep se reintentan en EINTR con el tiempo restante.
 - Retorno i64, sin ownership nuevo.
 - Rechazados por nombre: INKEY(0), cero/negativos, NIL, no numericos (string,
-  logico, array), timeout no literal (variable o expresion), literal < 0.01
+  logico, array), timeout no constante (variable local, `INKEY(n)`, rechazado por nombre; una expresion constante plegada si se admite), literal < 0.01
   (el oracle espera para siempre), > 86400, mascara (2o arg) y 3+ args.
   INKEY(0) y similares bloquean para siempre en el oracle con EOF; no se
   reproduce ese cuelgue.

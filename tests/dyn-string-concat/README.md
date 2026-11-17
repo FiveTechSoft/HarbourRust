@@ -36,7 +36,7 @@ no agrega entradas al stack de handlers. El resultado usa la ruta StrOwn
 normal de asignacion, return y consumidores. `s := s + Dyn` ya no puede
 saltar esta comprobacion pasando un tag a `hbc_strgrow` como si fuera puntero.
 
-No cambia Dyn+Dyn, la aritmetica numerica, el pin de fecha vacia, las politicas
+Dyn+Dyn lo cubre ahora `tests/dyn-dyn-plus/` (corte posterior). No cambia la aritmetica numerica, el pin de fecha vacia, las politicas
 de QOut, workflows, ni las funciones de filesystem/input.
 
 ## Gate reproducible
