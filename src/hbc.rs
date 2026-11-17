@@ -33209,7 +33209,7 @@ hbc_aclone_alloc:
             let st = cmd.arg("-lkernel32").status()
                 .unwrap_or_else(|e| { eprintln!("error: cannot run x86_64-w64-mingw32-ld: {} (mingw-w64 no esta en PATH; quita --external-as para el escritor interno)", e); process::exit(2); });
             if !st.success() { eprintln!("error: x86_64-w64-mingw32-ld failed"); process::exit(1); }
-            let _ = fs::remove_file(&o_path); eprintln!("KEPT {:?}", &s_path);
+            let _ = fs::remove_file(&s_path); let _ = fs::remove_file(&o_path);
             println!("{} -> {} ({} functions, external mingw as/ld)", pos[0], pos[1], funcs.len());
             return;
         }
@@ -33240,7 +33240,7 @@ hbc_aclone_alloc:
         let st = process::Command::new("ld").arg("-s").arg("-o").arg(pos[1]).arg(&o_path).status()
             .unwrap_or_else(|e| { eprintln!("cannot run ld: {}", e); process::exit(2); });
         if !st.success() { eprintln!("error: ld failed"); process::exit(1); }
-        let _ = fs::remove_file(&o_path); eprintln!("KEPT {:?}", &s_path);
+        let _ = fs::remove_file(&s_path); let _ = fs::remove_file(&o_path);
         println!("{} -> {} ({} functions, external as/ld)", pos[0], pos[1], funcs.len());
         return;
     }
