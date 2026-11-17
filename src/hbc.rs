@@ -27101,9 +27101,11 @@ hbc_sarr_aadd:
     mov %rax, 8(%rsp)
     rep movsb
     mov 24(%rbx), %rdi
+    test %rdi, %rdi
+    jz 8f
     mov $16, %esi
     call hbc_free
-    mov 8(%rsp), %rax
+8:  mov 8(%rsp), %rax
     mov %rax, 24(%rbx)
     mov (%rsp), %rcx
     mov %rcx, 8(%rbx)
@@ -27193,9 +27195,11 @@ hbc_sarr_asize:
     mov %rax, 8(%rsp)
     rep movsb
     mov 24(%rbx), %rdi
+    test %rdi, %rdi
+    jz 48f
     mov $16, %esi
     call hbc_free
-    mov 8(%rsp), %rax
+48: mov 8(%rsp), %rax
     mov %rax, 24(%rbx)
     mov (%rsp), %rcx
     mov %rcx, 8(%rbx)
