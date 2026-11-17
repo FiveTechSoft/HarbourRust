@@ -38,6 +38,9 @@ jobs:
           return IIF(n<=1,1,n*Factorial(n-1))
           PRG
           ./hbc macos.prg program.ll --experimental-llvm
+      - name: Assemble the bounded LLVM smoke sample
+        run: |
+          set -eu
           clang -target arm64-apple-macos14 -c program.ll -o program.o
       - name: Verify the current runtime boundary (expected to need a Darwin adapter)
         run: |
