@@ -14249,7 +14249,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                                 cg_sarr_root(v, var.off, "%r11", out);
                                 out.push_str("    cmp $1, %rax\n    jl 70f\n    cmp (%r11), %rax\n    jg 70f\n    mov 24(%r11), %r11\n    dec %rax\n    shl $4, %rax\n    add %r11, %rax\n    mov (%rax), %r10\n    jmp 71f\n70:\n    call hbc_bound_error\n71:\n");
                             } else {
-                            out.push_str(&format!("    mov -{}(%rbp), %r11\n    @HBC_TAG_KIND@cmpq $8, -{}(%rbp)@HBC_TAG_END@\n    je 73f\n    @HBC_TAG_KIND@cmpq $16, -{}(%rbp)@HBC_TAG_END@\n    jne hbc_type_error\n    cmp $1, %rax\n    jl 70f\n    cmp (%r11), %rax\n    jg 70f\n    mov 24(%r11), %r11\n    jmp 74f\n73:\n    cmp $1, %rax\n    jl 70f\n    cmp -8(%r11), %rax\n    jg 70f\n74:\n", var.off - 8, var.off - 8, var.off));
+                            out.push_str(&format!("    mov -{}(%rbp), %r11\n    @HBC_TAG_KIND@cmpq $8, -{}(%rbp)@HBC_TAG_END@\n    je 73f\n    @HBC_TAG_KIND@cmpq $16, -{}(%rbp)@HBC_TAG_END@\n    jne hbc_type_error\n    cmp $1, %rax\n    jl 70f\n    cmp (%r11), %rax\n    jg 70f\n    mov 24(%r11), %r11\n    jmp 74f\n73:\n    cmp $1, %rax\n    jl 70f\n    cmp -8(%r11), %rax\n    jg 70f\n74:\n", var.off - 8, var.off, var.off));
                             out.push_str("    dec %rax\n    shl $4, %rax\n    add %r11, %rax\n    mov (%rax), %r10\n    jmp 71f\n70:\n    call hbc_bound_error\n71:\n");
                             }
                             classify_tag(out, want_num);
@@ -14422,7 +14422,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                                 cg_sarr_root(v, var.off, "%r11", out);
                                 out.push_str("    cmp $1, %rax\n    jl 87f\n    cmp (%r11), %rax\n    jg 87f\n    mov 24(%r11), %r11\n    dec %rax\n    shl $4, %rax\n    add %r11, %rax\n    mov (%rax), %r10\n    jmp 88f\n87:\n    call hbc_bound_error\n88:\n");
                             } else {
-                            out.push_str(&format!("    mov -{}(%rbp), %r11\n    @HBC_TAG_KIND@cmpq $8, -{}(%rbp)@HBC_TAG_END@\n    je 84f\n    @HBC_TAG_KIND@cmpq $16, -{}(%rbp)@HBC_TAG_END@\n    jne hbc_type_error\n    cmp $1, %rax\n    jl 87f\n    cmp (%r11), %rax\n    jg 87f\n    mov 24(%r11), %r11\n    jmp 83f\n84:\n    cmp $1, %rax\n    jl 87f\n    cmp -8(%r11), %rax\n    jg 87f\n83:\n", var.off - 8, var.off - 8, var.off));
+                            out.push_str(&format!("    mov -{}(%rbp), %r11\n    @HBC_TAG_KIND@cmpq $8, -{}(%rbp)@HBC_TAG_END@\n    je 84f\n    @HBC_TAG_KIND@cmpq $16, -{}(%rbp)@HBC_TAG_END@\n    jne hbc_type_error\n    cmp $1, %rax\n    jl 87f\n    cmp (%r11), %rax\n    jg 87f\n    mov 24(%r11), %r11\n    jmp 83f\n84:\n    cmp $1, %rax\n    jl 87f\n    cmp -8(%r11), %rax\n    jg 87f\n83:\n", var.off - 8, var.off, var.off));
                             out.push_str("    dec %rax\n    shl $4, %rax\n    add %r11, %rax\n    mov (%rax), %r10\n    jmp 88f\n87:\n    call hbc_bound_error\n88:\n");
                             }
                             vt_classify_scalar(strs, out);
@@ -16848,7 +16848,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                 // reads through the same arm: dispatch on the root tag -
                 // tag 8 keeps the count-at--8 layout, tag 16 uses the
                 // object layout (len at O+0, cells at O+24).
-                out.push_str(&format!("    mov -{}(%rbp), %r11\n    @HBC_TAG_KIND@cmpq $8, -{}(%rbp)@HBC_TAG_END@\n    je 83f\n    @HBC_TAG_KIND@cmpq $16, -{}(%rbp)@HBC_TAG_END@\n    jne hbc_type_error\n    cmp $1, %rax\n    jl 81f\n    cmp (%r11), %rax\n    jg 81f\n    mov 24(%r11), %r11\n    jmp 84f\n83:\n    cmp $1, %rax\n    jl 81f\n    cmp -8(%r11), %rax\n    jg 81f\n84:\n", v.off - 8, v.off - 8, v.off));
+                out.push_str(&format!("    mov -{}(%rbp), %r11\n    @HBC_TAG_KIND@cmpq $8, -{}(%rbp)@HBC_TAG_END@\n    je 83f\n    @HBC_TAG_KIND@cmpq $16, -{}(%rbp)@HBC_TAG_END@\n    jne hbc_type_error\n    cmp $1, %rax\n    jl 81f\n    cmp (%r11), %rax\n    jg 81f\n    mov 24(%r11), %r11\n    jmp 84f\n83:\n    cmp $1, %rax\n    jl 81f\n    cmp -8(%r11), %rax\n    jg 81f\n84:\n", v.off - 8, v.off, v.off));
                 out.push_str("    dec %rax\n    shl $4, %rax\n    add %r11, %rax\n    mov (%rax), %r11\n    mov 8(%rax), %rdx\n    mov %r11, %rax\n    jmp 82f\n");
                 out.push_str("81:\n    call hbc_bound_error\n82:\n");
                 return;
