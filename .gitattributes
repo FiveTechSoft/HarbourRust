@@ -68,3 +68,4 @@ tests/module-static-object-args/expected/** -text
 
 # Byte-exact bounded Dyn/string concat pins.
 tests/dyn-string-concat/expected/** -text
+tests/file-native-windows/*.stdout -text

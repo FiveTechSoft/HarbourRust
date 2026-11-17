@@ -1,0 +1,15 @@
+
+exact .T. .T. .F. .F.
+dirs .F. .F. .F. .F.
+nested .T. .T. .F.
+glob .T. .F. .T. .T. .T.
+hidden .F. .F.
+type .F. .F. .F. .F. .F.
+owned .T. .T. .T. .F.
+dynstr .T.
+dynabsent .F.
+dynint .F.
+dynbool .F.
+dynfloat .F.
+dynnil .F.
+condition ok

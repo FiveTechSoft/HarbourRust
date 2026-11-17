@@ -1,0 +1,16 @@
+{
+  "upstream_commit": "a77bdd2208574739fe926fe4ced0dbba6691c02e",
+  "feature_commit": "2ff8e6ce",
+  "upstream_compiler_sha256": "802a677f69102d77cf4d39527bebd0ecf4eae398cf9e4e088894d00545af4cdf",
+  "host": "Windows 11 Pro x64 10.0.26300, NTFS",
+  "oracle": "Harbour 3.2.0dev (r2026-02-28), MSVC x64, -gtstd",
+  "source_sha256": "f8210a14afca31a9932aeaf6140853d174b4071143cc02ee4881bc74b584cc11",
+  "stdout_sha256": {
+    "harbour": "882f28ce53829e99fc798062e881a851d7cb5f503ed8800321774272f34a5b98",
+    "main_pe": "882f28ce53829e99fc798062e881a851d7cb5f503ed8800321774272f34a5b98",
+    "main_coff": "882f28ce53829e99fc798062e881a851d7cb5f503ed8800321774272f34a5b98"
+  },
+  "byte_exact": true,
+  "kind": "verificacion independiente; sin parche",
+  "not_covered": ["SET DEFAULT/PATH", "nombres no ASCII", "rutas limite", "suite file-compat", "memoria", "Linux", "Mach-O"]
+}

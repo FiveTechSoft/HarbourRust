@@ -61,7 +61,7 @@ en vez de interpretarlos como separadores de sentencias.
 - SET mediante macro `&` se rechaza; usar una expresión string entre paréntesis.
   No se añade la función genérica `Set()` ni selección dinámica de codepage.
 - Mach-O y el backend LLVM experimental tienen rechazo explícito.
-- Se han ejecutado los PE con Wine, no en un host Windows independiente.
+- Las pruebas ejecutadas aquí son Wine; hay un reporte externo acotado abajo.
   La publicación Windows necesita además ese segundo ejecutor.
 - El matcher Linux cubre el locale C de la referencia. No se añade semántica
   de colación multicaracter ni selección de locale del proceso Harbour.
@@ -79,6 +79,14 @@ HR_MINGW_CC=x86_64-w64-mingw32-gcc python3 tests/generate_file_asm.py
 Los adaptadores conservan la ABI interna y el shadow space Win64. Solo se
 emite el runtime cuando aparece FILE o un comando de rutas. Los ejecutables
 sin estas llamadas no cambian por la presencia de los blobs en el compilador.
+
+## Reporte nativo aportado por colaborador
+
+`tests/file-native-windows/` guarda un reporte de FILE() en Windows real: fecha 16-nov, base a77bdd22, NTFS, 35
+llamadas comparadas entre PE/COFF de hbc y Harbour, con salida identica byte a
+byte. Contribuido por Julio Ponce, licencia MIT. No es nuestra gate y no sustituye las pruebas
+Wine. Limites: no hay logs originales; no cubre SETDEFAULT, PATH ni CP437.
+Sin codigo de runtime.
 
 ## Pruebas
 
