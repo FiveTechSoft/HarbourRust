@@ -56,7 +56,7 @@ if a.stage in ['all','memory']:
     w=out/(name+'-'+str(n)+('-control' if control else '-actual'));w.mkdir();src=w/'probe.prg';caught=name.startswith('bad-') or name.startswith('rhs-');expected=b'\n'+f'{n if caught and not control else 0:10d}'.encode()
     s='function main()\nlocal d,e,i,s := Space(7),a := {"one",NIL},hits := 0\nfor i:=1 to '+str(n)+'\ns := Space(7)\n'+init+'\n'
     if control:s+='if .f.\n'
-    s+='try\n'+expr+'\ncatch e\nhits += 1\nend\n'
+    s+=(expr+'\n') if name=='string-rebind' else ('try\n'+expr+'\ncatch e\nhits += 1\nend\n')
     if control:s+='endif\n'
     s+='e := NIL\ns := Space(7)\nnext\n? hits\nreturn nil\n'+funcs;src.write_text(s)
     try:r=emit_delta(compiler,env,src,w,expected)
