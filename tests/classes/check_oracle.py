@@ -20,7 +20,7 @@ DECLARED_LIMITS = {
     "p21_multi_inherit": "multiple inheritance is a named compile-time rejection",
 }
 NEGATIVES = ["neg1","neg2","neg3","neg5","neg6","neg7","neg8","neg9","neg10",
-    "neg11","neg12","neg13","neg14_ambig_member"]
+    "neg11","neg12","neg13","neg14_ambig_member","neg15_dyn_concat"]
 
 def run(cmd, cwd, label, timeout=120):
     p = subprocess.run([str(v) for v in cmd], cwd=cwd, capture_output=True, timeout=timeout)

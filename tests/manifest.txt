@@ -1857,3 +1857,4 @@ pos2 tests/idlesleep-linux/programs/idlesleep_negative.prg tests/idlesleep-linux
 pos2 tests/idlesleep-linux/programs/idlesleep_loop.prg tests/idlesleep-linux/expected/idlesleep_loop.linux.out tests/idlesleep-linux/expected/idlesleep_loop.windows.out
 pos2 tests/idlesleep-linux/programs/idlesleep_noarg.prg tests/idlesleep-linux/expected/idlesleep_noarg.linux.out tests/idlesleep-linux/expected/idlesleep_noarg.windows.out
 pos2 tests/idlesleep-linux/programs/idlesleep_dyn.prg tests/idlesleep-linux/expected/idlesleep_dyn.linux.out tests/idlesleep-linux/expected/idlesleep_dyn.windows.out
+neg tests/t_dyn_str_concat.prg string concatenation with a NIL-able (Dyn) operand is not in this increment

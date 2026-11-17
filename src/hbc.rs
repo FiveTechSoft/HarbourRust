@@ -8018,6 +8018,16 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
             if *op == '+' && matches!(ta, Ty::Str | Ty::StrOwn) && matches!(tb, Ty::Str | Ty::StrOwn) {
                 return Ok(Ty::StrOwn);
             }
+            // String `+` with a NIL-able (Dyn) operand (probe pOBJ2:
+            // `o:s := o:s + "cd"` over a DATA casilla read, or a Dyn
+            // local): Harbour dispatches at runtime - concatenates when
+            // the Dyn holds a string, BASE/1081 type error otherwise.
+            // This PoC cannot dispatch on the runtime payload, so it
+            // names the limit instead of falling through to the integer
+            // arithmetic diagnostic, which misdescribed the construct.
+            if *op == '+' && ((matches!(ta, Ty::Dyn) && matches!(tb, Ty::Str | Ty::StrOwn)) || (matches!(tb, Ty::Dyn) && matches!(ta, Ty::Str | Ty::StrOwn))) {
+                return Err(format!("line {}: string concatenation with a NIL-able (Dyn) operand is not in this increment (Harbour dispatches at runtime: concatenates when the Dyn holds a string, type error otherwise) - registered limit, no silent fallback", n));
+            }
             // Dyn operands are extracted at runtime: a NIL payload is a
             // clean type error (Harbour's interactive dialog is the
             // registered failure-mode difference, same condition).
