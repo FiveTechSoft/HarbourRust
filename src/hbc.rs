@@ -66,6 +66,7 @@ thread_local! {
     static DBF_WINDOWS: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
     static DBF_USED: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
     static SET_CONSOLE_LINE: std::cell::Cell<Option<usize>> = const { std::cell::Cell::new(None) };
+    static DIRMAKE_WIN: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
     static CURDIR_LINUX_NATIVE: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
     static MACHO_MODE: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
     static MACHO_ARM64: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
@@ -7138,8 +7139,8 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 return Ok(Ty::I64);
             }
             if is_builtin(id,"dirmake") {
-                if !CURDIR_LINUX_NATIVE.with(|v|v.get()) && !MACHO_MODE.with(|v|v.get()) {
-                    return Err(format!("line {}: DIRMAKE supports ordinary Linux and Darwin only in this increment; Windows/LLVM are not measured",n));
+                if !CURDIR_LINUX_NATIVE.with(|v|v.get()) && !MACHO_MODE.with(|v|v.get()) && !DIRMAKE_WIN.with(|v|v.get()) {
+                    return Err(format!("line {}: DIRMAKE supports ordinary Linux, Darwin and Windows PE only in this increment; LLVM is not measured",n));
                 }
                 if args.len()>1 {return Err(format!("line {}: DIRMAKE supports zero or one scalar argument in this increment; extra argument evaluation is not covered",n));}
                 for a in args {
@@ -14848,7 +14849,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             out.push_str(&format!("    mov ${}, %rdi\n    call hbc_inkey\n    xor %edx, %edx\n",ms));
         }
         Expr::Call(id,args) if is_builtin(id,"dirmake") => {
-            if args.is_empty() {out.push_str("    mov $-2, %rax\n");}
+            if args.is_empty() {out.push_str(if matches!(target,Target::Windows){"    mov $-3, %rax\n"}else{"    mov $-2, %rax\n"});}
             else {
                 let a=&args[0];let t=expr_ty(a,env,sigs);
                 if matches!(t,Ty::Str|Ty::StrOwn) {
@@ -14859,7 +14860,8 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                     out.push_str("    mov 16(%rsp), %rax\n    add $32, %rsp\n");
                 } else if t==Ty::Dyn {
                     cg_data_value(a,env,sigs,strs,out,target);let k=fresh_lbl();
-                    out.push_str(&format!("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n    @HBC_TAG_KIND@cmp $2, %rax@HBC_TAG_END@\n    je .Ldirmake_str{}\n    @HBC_TAG_KIND@cmp $4, %rax@HBC_TAG_END@\n    je .Ldirmake_str{}\n    mov $-2, %rax\n    jmp .Ldirmake_done{}\n.Ldirmake_str{}:\n    mov %rdx, %rdi\n    mov -8(%rdx), %rsi\n    call hbc_dirmake\n.Ldirmake_done{}:\n    mov %rax, 16(%rsp)\n",k,k,k,k,k));
+                    let dm=format!("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n    @HBC_TAG_KIND@cmp $2, %rax@HBC_TAG_END@\n    je .Ldirmake_str{}\n    @HBC_TAG_KIND@cmp $4, %rax@HBC_TAG_END@\n    je .Ldirmake_str{}\n    mov $-2, %rax\n    jmp .Ldirmake_done{}\n.Ldirmake_str{}:\n    mov %rdx, %rdi\n    mov -8(%rdx), %rsi\n    call hbc_dirmake\n.Ldirmake_done{}:\n    mov %rax, 16(%rsp)\n",k,k,k,k,k);
+                    out.push_str(&if matches!(target,Target::Windows){dm.replace("mov $-2, %rax","mov $-3, %rax")}else{dm});
                     // cg_data_value owns materialized strings/floats. Other
                     // owned call results also carry aggregate/object owners;
                     // borrowed Dyn nonstrings must NOT be released.
@@ -14868,7 +14870,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                     out.push_str("    mov 16(%rsp), %rax\n    add $32, %rsp\n");
                 } else {
                     if t==Ty::F64 {cg_f64_load(a,env,sigs,strs,out,target);}else{cg_value(a,env,sigs,strs,out,target);}
-                    out.push_str("    mov $-2, %rax\n");
+                    out.push_str(if matches!(target,Target::Windows){"    mov $-3, %rax\n"}else{"    mov $-2, %rax\n"});
                 }
             }
             out.push_str("    xor %edx, %edx\n");
@@ -27463,7 +27465,18 @@ fn emit_asm(funcs: &[Func], sigs: &[Sig], externs: &[String], target: Target, in
     if DIRMAKE_USED.with(|v|v.get()) {
         // Original MIT implementation. Compiler strings are counted, not
         // necessarily terminated. Make one owned NUL-terminated OS snapshot.
-        out.push_str("    .text\nhbc_dirmake:\n    push %rbp\n    mov %rsp, %rbp\n    sub $32, %rsp\n    mov %rdi, -8(%rbp)\n    mov %rsi, -16(%rbp)\n    add $1, %rsi\n    jc hbc_oom\n    call hbc_stralloc\n    mov %rax, -24(%rbp)\n    mov -8(%rbp), %rsi\n    mov %rax, %rdi\n    mov -16(%rbp), %rcx\n    rep movsb\n    movb $0, (%rdi)\n    mov %rax, %rdi\n    mov $511, %esi\n    mov $83, %eax\n    syscall\n    mov %rax, -16(%rbp)\n    mov -24(%rbp), %rdi\n    call hbc_freestr\n    mov -16(%rbp), %rax\n    leave\n    ret\n");
+        if matches!(target, Target::Windows) {
+            // Windows PE: one CreateDirectoryW(path, NULL). The counted
+            // string is cut at the first NUL, widened with the OEM code page
+            // (the page the Harbour oracle measured) into an owned UTF-16
+            // snapshot; failure is -GetLastError, success 0.
+            // Counted length must fit the int32 cchWideChar/cbMultiByte of the API:
+            // longer is ERROR_FILENAME_EXCED_RANGE (-206, defined choice, not oracle-measured).
+            // A failed conversion of a non-empty path is -3 (ERROR_PATH_NOT_FOUND), no path created.
+            out.push_str("    .text\nhbc_dirmake:\n    push %rbp\n    mov %rsp, %rbp\n    sub $96, %rsp\n    mov $0x7ffffffe, %rax\n    cmp %rax, %rsi\n    jbe .Ldmw_len_ok\n    mov $-206, %rax\n    leave\n    ret\n.Ldmw_len_ok:\n    mov %rdi, -8(%rbp)\n    mov %rsi, -16(%rbp)\n    add $1, %rsi\n    jc hbc_oom\n    add %rsi, %rsi\n    jc hbc_oom\n    call hbc_stralloc\n    mov %rax, -24(%rbp)\n    mov -8(%rbp), %rsi\n    mov -16(%rbp), %rcx\n    xor %edx, %edx\n.Ldmw_nl:\n    cmp %rcx, %rdx\n    jae .Ldmw_nd\n    cmpb $0, (%rsi,%rdx)\n    je .Ldmw_nd\n    add $1, %rdx\n    jmp .Ldmw_nl\n.Ldmw_nd:\n    mov %rdx, -16(%rbp)\n    xor %eax, %eax\n    test %rdx, %rdx\n    jz .Ldmw_term\n    mov $1, %ecx\n    xor %edx, %edx\n    mov -8(%rbp), %r8\n    mov -16(%rbp), %r9\n    mov -24(%rbp), %rax\n    mov %rax, 32(%rsp)\n    mov %r9, 40(%rsp)\n    call MultiByteToWideChar\n    mov %eax, %eax\n    test %eax, %eax\n    jnz .Ldmw_term\n    movq $-3, -16(%rbp)\n    jmp .Ldmw_free\n.Ldmw_term:\n    mov %eax, %eax\n    mov -24(%rbp), %rcx\n    movw $0, (%rcx,%rax,2)\n    xor %edx, %edx\n    call CreateDirectoryW\n    test %eax, %eax\n    jnz .Ldmw_ok\n    call GetLastError\n    mov %eax, %eax\n    neg %rax\n    mov %rax, -16(%rbp)\n    jmp .Ldmw_free\n.Ldmw_ok:\n    movq $0, -16(%rbp)\n.Ldmw_free:\n    mov -24(%rbp), %rdi\n    call hbc_freestr\n    mov -16(%rbp), %rax\n    leave\n    ret\n");
+        } else {
+            out.push_str("    .text\nhbc_dirmake:\n    push %rbp\n    mov %rsp, %rbp\n    sub $32, %rsp\n    mov %rdi, -8(%rbp)\n    mov %rsi, -16(%rbp)\n    add $1, %rsi\n    jc hbc_oom\n    call hbc_stralloc\n    mov %rax, -24(%rbp)\n    mov -8(%rbp), %rsi\n    mov %rax, %rdi\n    mov -16(%rbp), %rcx\n    rep movsb\n    movb $0, (%rdi)\n    mov %rax, %rdi\n    mov $511, %esi\n    mov $83, %eax\n    syscall\n    mov %rax, -16(%rbp)\n    mov -24(%rbp), %rdi\n    call hbc_freestr\n    mov -16(%rbp), %rax\n    leave\n    ret\n");
+        }
     }
     if INKEY_USED.with(|v|v.get()) {
         // Original MIT implementation. rdi = timeout in ms (0 = no wait).
@@ -33596,6 +33609,7 @@ fn main() {
     MACHO_MODE.with(|v| v.set(macho));
     MACHO_ARM64.with(|v| v.set(macho_arm64));
     CURDIR_LINUX_NATIVE.with(|v| v.set(!macho && !llvm && matches!(target, Target::Linux)));
+    DIRMAKE_WIN.with(|v| v.set(!macho && !llvm && matches!(target, Target::Windows)));
     DBF_NATIVE.with(|v| v.set(!llvm));
     DBF_WINDOWS.with(|v| v.set(matches!(target, Target::Windows)));
     if llvm && instrument { eprintln!("error: LLVM scalar: --instrument is not supported; registry checks must not be silently omitted"); process::exit(1); }

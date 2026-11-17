@@ -7,8 +7,8 @@ revision externa `4a01714e17a75594f14b9678359c5bb6747fb0c9`, no Harbour 4.
 
 ## Contrato
 
-- Backend ordinario Linux y Darwin Intel/ARM64. Windows y LLVM se rechazan
-  por nombre antes de emitir codigo. No hay CreateDirectoryW ni gate PE nuevo.
+- Backend ordinario Linux, Darwin Intel/ARM64 y Windows PE (ver `tests/dirmake-win/`). LLVM se rechaza
+  por nombre antes de emitir codigo.
 - Cero o un argumento escalar: Str, StrOwn, Dyn, i64, logical, f64 y Date.
   No-argumento/NIL/no-string produce -2. El argumento se evalua una sola vez,
   incluso si no es string. Dyn admite strings runtime tags 2/4; otros tags
@@ -20,8 +20,8 @@ revision externa `4a01714e17a75594f14b9678359c5bb6747fb0c9`, no Harbour 4.
   pertenecen al sistema operativo. Embedded NUL termina el path.
 - No integra FError, SET DEFAULT ni SET PATH. No cambia Dyn+Dyn ni INKEY.
 
-El oracle Windows externo previo muestra errores diferentes (-183/-3), pero
-no se implementa Windows en este corte. En el oracle Linux se midieron, entre
+Windows (CreateDirectoryW, errores -GetLastError, sin argumento -3) se mide en `tests/dirmake-win/`.
+En el oracle Linux se midieron, entre
 otros, EEXIST -17, ENOENT -2, ENOTDIR -20 y ENAMETOOLONG -36.
 No se atribuyen esos numeros particulares a Darwin sin ejecucion nativa.
 
@@ -53,12 +53,12 @@ producer sin locales owned; no prueba unwind general de frames ajenos.
 `check.py` exige --hbmk2 y --hbct externos. Genera fixtures propios y usa
 cwd desechable separado por ejecutable. Compara stdout, stderr, exit y arbol
 filesystem (incluidos permisos) con el oracle Linux, sin normalizacion.
-Total 179 checks, desglose medido en results.json:
+Total 178 checks, desglose medido en results.json:
 
 - 16 casos filesystem contra oracle (incluye page-lengths y cache-poison).
 - 32 emisiones Darwin, NO ejecuciones nativas.
 - 11 rechazos: 7 de validacion (aridad, agregados, malformado/unknown/forward)
-  y 4 perfiles Windows/LLVM.
+  y 3 perfiles LLVM.
 - 114 rutas ownership: 19 formas x N=1/500/1000 x actual/control. Incluye
   literal, temp/nombre StrOwn, Dyn literal/owned/float/return, concat Dyn-string
   existente, input desde array/hash, module STATIC, IIF, DATA, object-identity

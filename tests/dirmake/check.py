@@ -54,8 +54,8 @@ for name,body in [('array','? DIRMAKE({1})'),('hash','? DIRMAKE({"a"=>1})'),('bl
  d=out/('reject-'+name);d.mkdir();src=d/'probe.prg';src.write_text(source(body));r=run([compiler,src,d/'exe'],d,'build');expected=b'DIRMAKE supports zero or one scalar'if name in ['array','hash','block','extra']else(b'unknown function'if name=='unknown'else(b'never returns'if name=='forward'else b'space'))
  assert r.returncode==1 and expected.lower()in r.stderr.lower(),(name,r.returncode,r.stderr)
  rows.append(dict(kind='rejection',name=name,passed=True))
-for target,mode in [('windows',None),('linux','--experimental-llvm'),('linux','--experimental-llvm-no-trace'),('windows','--experimental-llvm')]:
- d=out/('profile-'+target+'-'+str(mode));d.mkdir();src=d/'probe.prg';src.write_text(source('? DIRMAKE(".")'));r=run([compiler,src,d/'exe','--target='+target]+([mode]if mode else[]),d,'build');assert r.returncode==1 and b'DIRMAKE supports ordinary Linux and Darwin only'in r.stderr,(target,mode,r.stderr);rows.append(dict(kind='profile-rejection',target=target,mode=mode,passed=True))
+for target,mode in [('linux','--experimental-llvm'),('linux','--experimental-llvm-no-trace'),('windows','--experimental-llvm')]:
+ d=out/('profile-'+target+'-'+str(mode));d.mkdir();src=d/'probe.prg';src.write_text(source('? DIRMAKE(".")'));r=run([compiler,src,d/'exe','--target='+target]+([mode]if mode else[]),d,'build');assert r.returncode==1 and b'DIRMAKE supports ordinary Linux, Darwin and Windows PE only'in r.stderr,(target,mode,r.stderr);rows.append(dict(kind='profile-rejection',target=target,mode=mode,passed=True))
 forms={
 'literal':('','DIRMAKE(".")',''),
 'owned-temp':('','DIRMAKE(Lower("."))',''),
