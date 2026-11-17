@@ -32218,7 +32218,7 @@ fn main() {
     let arena_active = !macho && !no_arena && !THREADS.with(|c| c.get()) && ARENA_MAP.with(|m| m.borrow().values().any(|a| a.any()));
     ARENA_ACTIVE.with(|a| a.set(arena_active));
     if macho && !macho_arm64 && (DBF_USED.with(|v|v.get()) || THREADS.with(|v|v.get()) || !externs.is_empty()) { eprintln!("error: Mach-O Intel: DBF, threads and EXTERNAL are not ported in this increment"); process::exit(1); }
-    if macho_arm64 && (THREADS.with(|v|v.get()) || !externs.is_empty()) { eprintln!("error: Mach-O ARM64: threads and EXTERNAL are not ported in this increment"); process::exit(1); }
+    if macho_arm64 && !externs.is_empty() { eprintln!("error: Mach-O ARM64: EXTERNAL is not ported in this increment"); process::exit(1); }
     let mut out = vas::finish(emit_asm(&funcs, &sigs, &externs, target, instrument), target, instrument);
     out.push_str(if vas::active() {
         "

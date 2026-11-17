@@ -31,6 +31,9 @@ const T4: u8 = 27;
 const ZR: u8 = 31;
 const XSP: u8 = 28;
 const LR: u8 = 30;
+const FSR: u8 = 7; // x86 %fs base (thread-local block), per thread
+const AX: u8 = 6;  // address scratch for ordered/atomic accesses
+const DMB_ISH: u32 = 0xD503_3BBF;
 const FT0: u8 = 16;
 const FT1: u8 = 17;
 
@@ -68,6 +71,7 @@ fn e_log_imm(x: bool, opc: u32, rd: u8, rn: u8, enc: u32) -> u32 {
     sf(x) | opc << 29 | 0x1200_0000 | enc << 10 | r(rn) << 5 | r(rd)
 }
 fn e_mov(x: bool, rd: u8, rm: u8) -> u32 { e_log_reg(x, 1, false, rd, ZR, rm, 0, 0) }
+fn e_cmp_zero_w(rn: u8) -> u32 { e_addsub_imm(false, true, true, ZR, rn, 0, false) }
 // N:immr:imms packed as 13 bits, or None if not a bitmask immediate.
 fn bitmask_imm(v: u64, x: bool) -> Option<u32> {
     let v = if x { v } else {
@@ -172,6 +176,7 @@ fn e_fcmeq(dd: u8, dn: u8, dm: u8) -> u32 { 0x5E60_E400 | r(dm) << 16 | r(dn) <<
 // ------------------------------------------------------------------ IR
 
 #[derive(Clone)]
+#[derive(Debug)]
 enum Tg { E(Expr), H(&'static str), Got(usize), L(u32) }
 
 #[derive(Clone)]
@@ -218,7 +223,7 @@ fn map_cc(k: FK, cc: &str) -> Result<Cd, String> {
 
 fn setter_kind(base: &str) -> Option<FK> {
     Some(match base {
-        "cmp" | "sub" | "neg" | "sbb" => FK::Sub,
+        "cmp" | "sub" | "neg" | "sbb" | "cmpxchg" => FK::Sub,
         "add" => FK::Add,
         "and" | "or" | "xor" | "test" => FK::Logic,
         "inc" | "dec" => FK::IncDec,
@@ -256,6 +261,7 @@ struct Tr<'a> {
     ckind: Vec<Option<FK>>, // consumer i: producer kind
     imports: Vec<&'static str>,
     used_helpers: std::collections::HashSet<&'static str>,
+    threaded: bool,         // program uses the thread runtime: TSO-ordered memory, pthread clone
 }
 
 impl<'a> Tr<'a> {
@@ -263,13 +269,27 @@ impl<'a> Tr<'a> {
 
     fn cval(&self, e: &Expr) -> Option<i64> {
         let mut acc = 0i64;
+        let mut labs: Vec<(bool, Loc)> = Vec::new();
         for (neg, t) in &e.0 {
             let v = match t {
                 Term::Num(n) => *n,
-                Term::Sym(s) => *self.a.p.consts.get(s)?,
+                Term::Sym(s) => match self.a.p.consts.get(s) {
+                    Some(c) => *c,
+                    None => { labs.push((*neg, *self.a.p.labels.get(s)?)); 0 }
+                },
                 _ => return None,
             };
             acc = if *neg { acc.wrapping_sub(v) } else { acc.wrapping_add(v) };
+        }
+        if !labs.is_empty() {
+            // label differences inside one data section: data bytes are laid
+            // out unchanged, so the distance is the x86 one
+            let sec = labs[0].1.sec;
+            let net: i64 = labs.iter().map(|(n, _)| if *n { -1 } else { 1 }).sum();
+            if net != 0 || sec == Sec::Text || labs.iter().any(|(_, l)| l.sec != sec) { return None; }
+            let items = match sec { Sec::Rodata => &self.a.rodata, Sec::Data => &self.a.data, Sec::Bss => &self.a.bss, _ => return None };
+            let pre = prefix_sizes(items);
+            for (n, l) in labs { let v = pre[l.idx] as i64; acc = if n { acc.wrapping_sub(v) } else { acc.wrapping_add(v) }; }
         }
         Some(acc)
     }
@@ -325,7 +345,25 @@ impl<'a> Tr<'a> {
     fn maddr(&mut self, o: &Op, size: u64) -> Result<(u8, i64), String> {
         let (disp, base, index, riplab) = match o {
             Op::Mem { disp, base, index, riplab, seg } => {
-                if *seg != 0 { return Err("ARM64: segment-prefixed memory is not translated".into()); }
+                if *seg == 2 { return Err("ARM64: %gs memory is not translated".into()); }
+                if *seg == 1 {
+                    // %fs:disp(base,index,sc) -> FSR + disp + base + index<<sc
+                    let d = match disp { None => 0, Some(e) => self.cval(e).ok_or("ARM64: symbolic %fs displacement")? };
+                    let b = match (base, index) {
+                        (None, None) => FSR,
+                        _ => {
+                            self.w(e_mov(true, T2, FSR));
+                            if let Some(bb) = base { self.w(e_addsub_reg(true, false, false, T2, T2, RMAP[*bb as usize], 0, 0)); }
+                            if let Some((ix, sc)) = index { self.w(e_addsub_reg(true, false, false, T2, T2, RMAP[*ix as usize], 0, *sc)); }
+                            T2
+                        }
+                    };
+                    let ok = (-256..256).contains(&d) || (d >= 0 && d % size as i64 == 0 && d / (size as i64) < 4096);
+                    if ok { return Ok((b, d)); }
+                    self.mov_imm(true, T3, d as u64);
+                    self.w(e_addsub_reg(true, false, false, T2, b, T3, 0, 0));
+                    return Ok((T2, 0));
+                }
                 (disp, base, index, riplab)
             }
             _ => return Err("ARM64: memory operand expected".into()),
@@ -361,6 +399,22 @@ impl<'a> Tr<'a> {
 
     // size bytes 1,2,4,8 (16: q register); opc 0 st, 1 ld, 2 ldrs->64, 3 ldrs->32
     fn ldst(&mut self, size: u64, v: bool, opc: u32, rt: u8, b: u8, off: i64) {
+        if self.threaded && !v && b != XSP && b != RMAP[5] && b != FSR {
+            // x86 TSO on a weakly ordered machine: shared-memory loads are
+            // acquires and stores are releases (thread-private stack, frame
+            // and %fs accesses stay plain).
+            let sz = size.trailing_zeros();
+            let a = if off == 0 { b } else {
+                if (0..4096).contains(&off) { self.w(e_addsub_imm(true, false, false, AX, b, off as u32, false)); }
+                else if (-4095..0).contains(&off) { self.w(e_addsub_imm(true, true, false, AX, b, (-off) as u32, false)); }
+                else { self.mov_imm(true, AX, off as u64); self.w(e_addsub_reg(true, false, false, AX, AX, b, 0, 0)); }
+                AX
+            };
+            if opc == 0 { self.w(sz << 30 | 0x089F_FC00 | r(a) << 5 | r(rt)); return; }
+            self.w(sz << 30 | 0x08DF_FC00 | r(a) << 5 | r(rt));
+            if opc >= 2 && sz < 3 { self.w(e_sbfx(opc == 2, rt, rt, 0, 8 << sz)); }
+            return;
+        }
         let (sz, opc) = if v && size == 16 { (0u32, opc | 2) } else { (size.trailing_zeros(), opc) };
         if off >= 0 && off % size as i64 == 0 && off / (size as i64) < 4096 {
             self.w(e_ldst_u(sz, v, opc, rt, b, (off / size as i64) as u32));
@@ -478,7 +532,29 @@ impl<'a> Tr<'a> {
             if self.live[i] { self.w(e_msr_nzcv(T4)); }
             return Ok(());
         }
-        let mac = match n { Some(1) => 4, Some(2) => 5, Some(3) => 6, Some(9) => 197, Some(11) => 73, Some(60) => 1, Some(72) => 92, Some(96) => 116,
+        match n {
+            Some(158) => {
+                // arch_prctl(ARCH_SET_FS, rsi): the %fs base register
+                self.w(e_mov(true, FSR, 13));
+                self.w(e_movw(true, 2, 9, 0, 0));
+                return Ok(());
+            }
+            Some(56) => {
+                if !self.threaded { return Err("ARM64: clone outside the thread runtime".into()); }
+                self.used_helpers.insert("__a64_clone");
+                self.used_helpers.insert("__a64_thread_tramp");
+                self.out.push(AI::B { link: true, t: Tg::H("__a64_clone") });
+                return Ok(());
+            }
+            Some(60) if self.threaded => {
+                // Linux exit = this thread only; the stack may already be unmapped
+                self.used_helpers.insert("__a64_exit_thread");
+                self.out.push(AI::B { link: true, t: Tg::H("__a64_exit_thread") });
+                return Ok(());
+            }
+            _ => {}
+        }
+        let mac = match n { Some(1) => 4, Some(231) => 1, Some(186) => 372, Some(2) => 5, Some(3) => 6, Some(9) => 197, Some(11) => 73, Some(60) => 1, Some(72) => 92, Some(96) => 116,
             Some(0) => 3, Some(8) => 199, Some(18) => 154,
             _ => {
                 // dynamic number or a call that needs argument/structure
@@ -562,7 +638,84 @@ impl<'a> Tr<'a> {
         self.imports.len() - 1
     }
 
+    // Locked read-modify-write and xchg with memory: LL/SC loop + full barrier.
+    fn atomic(&mut self, i: usize, base: &str, ops: &[Op], w: u8) -> Result<(), String> {
+        let x = w == 64;
+        let need = self.need[i];
+        let sz = (w / 8).trailing_zeros();
+        let (mi, m) = match ops.iter().enumerate().find(|(_, o)| matches!(o, Op::Mem { .. })) { Some((k, m)) => (k, m.clone()), None => return Err("ARM64: atomic without memory".into()) };
+        let (b, off) = self.maddr(&m, (w / 8) as u64)?;
+        if off == 0 { if b != AX { self.w(e_mov(true, AX, b)); } }
+        else if (0..4096).contains(&off) { self.w(e_addsub_imm(true, false, false, AX, b, off as u32, false)); }
+        else { self.mov_imm(true, AX, off as u64); self.w(e_addsub_reg(true, false, false, AX, AX, b, 0, 0)); }
+        let ldaxr = |rt: u8| sz << 30 | 0x085F_FC00 | r(AX) << 5 | r(rt);
+        let stlxr = |rs: u8, rt: u8| sz << 30 | 0x0800_FC00 | r(rs) << 16 | r(AX) << 5 | r(rt);
+        match base {
+            "bts" | "btr" => {
+                let n = match &ops[0] { Op::Imm(e) => self.cval(e).ok_or("ARM64: bt index")? as u32, _ => return Err("ARM64: locked bt form".into()) } & (w as u32 - 1);
+                let bit = bitmask_imm(1u64 << n, x).unwrap();
+                let nbit = bitmask_imm(!(1u64 << n) & if x { u64::MAX } else { 0xffff_ffff }, x).unwrap();
+                self.w(ldaxr(T0));
+                if base == "bts" { self.w(e_log_imm(x, 1, T1, T0, bit)); } else { self.w(e_log_imm(x, 0, T1, T0, nbit)); }
+                self.w(stlxr(T3, T1));
+                self.w(e_cbz(false, true, T3, -12));
+                self.w(DMB_ISH);
+                if need { self.w(e_log_imm(x, 3, ZR, T0, bit)); }
+            }
+            "inc" | "dec" | "add" | "sub" => {
+                let sub = base == "dec" || base == "sub";
+                let v = if base == "inc" || base == "dec" { None } else { Some(&ops[0]) };
+                let imm = match v { None => Some(1i64), Some(Op::Imm(e)) => self.cval(e).filter(|c| (0..4096).contains(c)), _ => None };
+                let src = if imm.is_none() { Some(self.val(v.unwrap(), w, T4)?) } else { None };
+                self.w(ldaxr(T0));
+                match (imm, src) {
+                    (Some(c), _) => self.w(e_addsub_imm(x, sub, need, T1, T0, c as u32, false)),
+                    (_, Some(sr)) => self.w(e_addsub_reg(x, sub, need, T1, T0, sr, 0, 0)),
+                    _ => unreachable!(),
+                }
+                self.w(stlxr(T3, T1));
+                self.w(e_cbz(false, true, T3, -12));
+                self.w(DMB_ISH);
+            }
+            "xchg" => {
+                let rg = match &ops[1 - mi] { Op::Reg(c, _, false) => RMAP[*c as usize], _ => return Err("ARM64: xchg register".into()) };
+                self.w(ldaxr(T0));
+                self.w(stlxr(T3, rg));
+                self.w(e_cbz(false, true, T3, -8));
+                self.w(DMB_ISH);
+                self.w(e_mov(x, rg, T0));
+            }
+            "cmpxchg" => {
+                let rg = match &ops[0] { Op::Reg(c, _, false) => RMAP[*c as usize], _ => return Err("ARM64: cmpxchg register".into()) };
+                self.w(ldaxr(T0));
+                self.w(e_addsub_reg(x, true, true, ZR, T0, 9, 0, 0));
+                self.w(e_bc(NE, 16));
+                self.w(stlxr(T3, rg));
+                self.w(e_cbz(false, true, T3, -16));
+                self.w(e_b(8));
+                self.w(0xD503_305F); // clrex
+                self.w(DMB_ISH);
+                self.w(e_addsub_reg(x, true, true, ZR, 9, T0, 0, 0)); // ZF: rax == old
+                self.w(e_mov(x, 9, T0));
+            }
+            _ => return Err(format!("ARM64: locked {} is not translated", base)),
+        }
+        Ok(())
+    }
+
     fn ins(&mut self, i: usize, mnem: &str, ops: &[Op]) -> Result<usize, String> {
+        let locked = matches!(&self.a.text[i], TItem::Ins { lock: true, .. });
+        {
+            let (b0, sw0) = base_of(mnem);
+            let xmem = b0 == "xchg" && ops.iter().any(|o| matches!(o, Op::Mem { .. }));
+            if locked || xmem {
+                let w = sw0.or_else(|| reg_width(ops)).unwrap_or(64);
+                self.atomic(i, b0, ops, w)?;
+                return Ok(1);
+            }
+            if b0 == "pause" { self.w(0xD503_203F); return Ok(1); } // yield
+            if b0 == "mfence" { self.w(DMB_ISH); return Ok(1); }
+        }
         if mnem == "fldl" {
             let (n, f, a, b, d) = self.x87_idiom(i).ok_or("ARM64: x87 sequence is not a known idiom")?;
             // d = f(a, b) through libSystem
@@ -581,6 +734,13 @@ impl<'a> Tr<'a> {
             let (bd, od) = self.maddr(&d, 8)?; self.ldst(8, true, 0, FT0, bd, od);
             return Ok(n);
         }
+        let renamed;
+        let mnem = if (mnem == "movzx" || mnem == "movsx") && ops.len() == 2 {
+            let sw = match &ops[0] { Op::Reg(_, w, _) => *w, _ => return Err("ARM64: movzx/movsx memory source needs a suffix".into()) };
+            let dw = match &ops[1] { Op::Reg(_, w, _) => *w, _ => 64 };
+            renamed = format!("mov{}{}{}", if mnem == "movzx" { "z" } else { "s" }, if sw == 8 { "b" } else { "w" }, match dw { 64 => "q", 32 => "l", _ => "w" });
+            renamed.as_str()
+        } else { mnem };
         let (base, sw) = base_of(mnem);
         let w = sw.or_else(|| reg_width(ops)).unwrap_or(64);
         let x = w == 64;
@@ -732,6 +892,8 @@ impl<'a> Tr<'a> {
             "shl" | "sal" | "shr" | "sar" => {
                 if let (Op::Reg(1, 8, false), true) = (&ops[0], ops.len() == 2) {
                     // shift by %cl: ARM lslv/lsrv/asrv mask the count like x86 (mod 32/64)
+                    let w = match &ops[1] { Op::Reg(_, rw, _) => *rw, _ => sw.unwrap_or(64) };
+                    let x = w == 64;
                     if w < 32 { return Err("ARM64: narrow variable shift".into()); }
                     if need { return Err("ARM64: flags of a variable shift".into()); }
                     let a = self.val(&ops[1], w, T0)?;
@@ -1154,7 +1316,7 @@ fn helper(name: &'static str, tr: &mut Tr) -> Vec<AI> {
     if name == "__a64_fyl2x" {
         // d16 = d17 * log2(d16); exact libm log/log10 when d17 is ln2/log10(2)
         let (glog, glog10, glog2) = (tr.import("_log"), tr.import("_log10"), tr.import("_log2"));
-        let mut t = Tr { a: tr.a, out: Vec::new(), need: Vec::new(), live: Vec::new(), ckind: Vec::new(), imports: Vec::new(), used_helpers: Default::default() };
+        let mut t = Tr { a: tr.a, out: Vec::new(), need: Vec::new(), live: Vec::new(), ckind: Vec::new(), imports: Vec::new(), used_helpers: Default::default(), threaded: false };
         t.w(e_ldst_9(3, false, 0, LR, XSP, -8, 3));
         t.w(e_fmov_to_x(T0, FT1));
         for (bits, g, lab) in [(0x3FE6_2E42_FEFA_39EFu64, glog, 9001u32), (0x3FD3_4413_509F_79FF, glog10, 9002)] {
@@ -1174,6 +1336,73 @@ fn helper(name: &'static str, tr: &mut Tr) -> Vec<AI> {
         t.out.push(AI::Lab(9003));
         t.w(e_ldst_9(3, false, 1, LR, XSP, 8, 1));
         t.w(RET);
+        v.extend(t.out);
+        return v;
+    }
+    if name == "__a64_clone" || name == "__a64_exit_thread" || name == "__a64_thread_tramp" {
+        let mut t = Tr { a: tr.a, out: Vec::new(), need: Vec::new(), live: Vec::new(), ckind: Vec::new(), imports: Vec::new(), used_helpers: Default::default(), threaded: false };
+        let ctx_regs: [(u8, u8); 9] = [(FSR, 9), (10, 11), (12, 13), (14, 19), (20, 21), (22, 23), (24, 25), (26, 29), (LR, 13)];
+        match name {
+            "__a64_clone" => {
+                // Linux clone(flags, child_stack): the child resumes after the
+                // syscall with the parent's registers, rax = 0, rsp = child_stack.
+                // Context lives just below the child stack top; the child reads
+                // it before its first push.
+                let (gc, gd) = (tr.import("_pthread_create"), tr.import("_pthread_detach"));
+                t.w(e_addsub_imm(true, true, false, AX, 13, 256, false));
+                for (k, p) in ctx_regs.iter().enumerate() { t.w(e_stp(true, false, false, p.0, p.1, AX, 16 * k as i64)); }
+                t.w(e_addsub_imm(true, true, false, 31, 31, 96, false));
+                for (k, p) in [(9u8, 10u8), (11, 12), (13, 14), (15, LR), (FSR, AX)].iter().enumerate() { t.w(e_stp(true, false, false, p.0, p.1, 31, 16 * k as i64)); }
+                t.w(e_addsub_imm(true, false, false, 0, 31, 80, false));
+                t.w(e_mov(true, 1, ZR));
+                t.out.push(AI::Adr { rd: 2, t: Tg::H("__a64_thread_tramp") });
+                t.w(e_mov(true, 3, AX));
+                t.out.push(AI::Adr { rd: T1, t: Tg::Got(gc) });
+                t.w(e_ldst_u(3, false, 1, T1, T1, 0));
+                t.w(e_blr(T1));
+                t.w(e_ldst_u(3, false, 0, 0, 31, 11)); // rc -> [sp+88]
+                t.w(e_cbz(false, true, 0, 20));
+                t.w(e_ldst_u(3, false, 1, 0, 31, 10)); // tid
+                t.out.push(AI::Adr { rd: T1, t: Tg::Got(gd) });
+                t.w(e_ldst_u(3, false, 1, T1, T1, 0));
+                t.w(e_blr(T1));
+                for (k, p) in [(9u8, 10u8), (11, 12), (13, 14), (15, LR), (FSR, AX)].iter().enumerate() { t.w(e_stp(true, false, true, p.0, p.1, 31, 16 * k as i64)); }
+                t.w(e_ldst_u(3, false, 1, T0, 31, 11));
+                t.w(e_movw(true, 2, 9, 1, 0));
+                t.w(e_movw(true, 0, T1, 10, 0)); // -11 (EAGAIN)
+                t.w(e_cmp_zero_w(T0));
+                t.w(e_csel(true, 9, 9, T1, EQ));
+                t.w(e_addsub_imm(true, false, false, 31, 31, 96, false));
+                t.w(RET);
+            }
+            "__a64_thread_tramp" => {
+                // pthread start routine, x0 = context; never returns
+                t.w(e_mov(true, AX, 0));
+                for (k, p) in ctx_regs.iter().enumerate() {
+                    let (a0, a1) = if k == 8 { (T0, XSP) } else { *p };
+                    t.w(e_stp(true, false, true, a0, a1, AX, 16 * k as i64));
+                }
+                t.w(e_movw(true, 2, 9, 0, 0));
+                t.w(0xD61F_0000 | r(T0) << 5); // br
+            }
+            _ => {
+                // Linux exit(2) ends the calling thread; the process exit when it is the main thread
+                let (gm, ge) = (tr.import("_pthread_main_np"), tr.import("_pthread_exit"));
+                t.w(e_mov(true, 19, 14));
+                t.out.push(AI::Adr { rd: T1, t: Tg::Got(gm) });
+                t.w(e_ldst_u(3, false, 1, T1, T1, 0));
+                t.w(e_blr(T1));
+                t.w(e_cbz(false, false, 0, 16));
+                t.w(e_mov(true, 0, 19));
+                t.w(e_movw(true, 2, 16, 1, 0));
+                t.w(SVC80);
+                t.w(e_mov(true, 0, ZR));
+                t.out.push(AI::Adr { rd: T1, t: Tg::Got(ge) });
+                t.w(e_ldst_u(3, false, 1, T1, T1, 0));
+                t.w(e_blr(T1));
+                t.w(0xD420_0020);
+            }
+        }
         v.extend(t.out);
         return v;
     }
@@ -1197,7 +1426,8 @@ fn helper(name: &'static str, tr: &mut Tr) -> Vec<AI> {
         }
         "__a64_ccall2" => {
             // d16 = f(d16, d17), f = [x16]; preserves every mapped register
-            w(e_addsub_imm(true, true, false, 31, 31, 128, false));
+            w(e_addsub_imm(true, true, false, 31, 31, 144, false));
+            w(e_stp(true, false, false, FSR, AX, 31, 128));
             let mut off = 0;
             for p in [(9u8, 10u8), (11, 12), (13, 14), (15, 30)] { w(e_stp(true, false, false, p.0, p.1, 31, off)); off += 16; }
             for p in [(0u8, 1u8), (2, 3), (4, 5), (6, 7)] { w(e_stp(true, true, false, p.0, p.1, 31, off)); off += 16; }
@@ -1209,7 +1439,8 @@ fn helper(name: &'static str, tr: &mut Tr) -> Vec<AI> {
             let mut off = 0;
             for p in [(9u8, 10u8), (11, 12), (13, 14), (15, 30)] { w(e_stp(true, false, true, p.0, p.1, 31, off)); off += 16; }
             for p in [(0u8, 1u8), (2, 3), (4, 5), (6, 7)] { w(e_stp(true, true, true, p.0, p.1, 31, off)); off += 16; }
-            w(e_addsub_imm(true, false, false, 31, 31, 128, false));
+            w(e_stp(true, false, true, FSR, AX, 31, 128));
+            w(e_addsub_imm(true, false, false, 31, 31, 144, false));
             w(RET);
         }
         _ => unreachable!(),
@@ -1222,7 +1453,7 @@ fn helper(name: &'static str, tr: &mut Tr) -> Vec<AI> {
 // emulated stack and jumps to the translated _start.
 fn entry_stub(scratch: &Asm) -> Vec<AI> {
     let mut t = Tr { a: scratch, out: vec![AI::Hl("__a64_entry")], need: Vec::new(), live: Vec::new(), ckind: Vec::new(),
-        imports: Vec::new(), used_helpers: Default::default() };
+        imports: Vec::new(), used_helpers: Default::default(), threaded: false };
     t.w(e_mov(true, 19, 0)); t.w(e_mov(true, 20, 1)); t.w(e_mov(true, 21, 2));
     t.w(e_movw(true, 2, 0, 0, 0));
     t.mov_imm(true, 1, ESTACK);
@@ -1295,6 +1526,8 @@ __a64_linux_syscall:
     je .La64s_clock
     cmp $9, %rax
     je .La64s_mmap
+    cmp $202, %rax
+    je .La64s_futex
     cmp $0, %rax
     je .La64s_n0
     cmp $1, %rax
@@ -1554,6 +1787,67 @@ __a64_linux_syscall:
     pop %rax
 .La64s_gd9:
     ret
+.La64s_futex:
+    push %rdi
+    push %rsi
+    push %rdx
+    push %r10
+    mov %rsi, %rcx
+    and $127, %rcx
+    cmp $1, %rcx
+    je .La64s_fwake
+    test %rcx, %rcx
+    jne .La64s_fnosys
+    xor %ecx, %ecx
+    test %r10, %r10
+    je .La64s_fw1
+    mov 8(%r10), %rax
+    xor %edx, %edx
+    mov $1000, %r11
+    div %r11
+    mov (%r10), %rcx
+    imul $1000000, %rcx, %rcx
+    add %rax, %rcx
+    cmp $1, %rcx
+    jae .La64s_fw2
+    mov $1, %ecx
+.La64s_fw2:
+    mov $4294967295, %rax
+    cmp %rax, %rcx
+    jbe .La64s_fw1
+    mov %rax, %rcx
+.La64s_fw1:
+    mov 8(%rsp), %rdx
+    mov %rdi, %rsi
+    mov $1, %edi
+    mov %rcx, %r10
+    mov $33554947, %eax
+    syscall
+    cmp $-60, %rax
+    jne .La64s_fw3
+    mov $-110, %rax
+    jmp .La64s_fout
+.La64s_fw3:
+    test %rax, %rax
+    js .La64s_fout
+    xor %eax, %eax
+    jmp .La64s_fout
+.La64s_fwake:
+    mov %rdi, %rsi
+    mov $257, %edi
+    xor %edx, %edx
+    mov $33554948, %eax
+    syscall
+    xor %eax, %eax
+    jmp .La64s_fout
+.La64s_fnosys:
+    mov $-38, %rax
+.La64s_fout:
+    pop %r10
+    pop %rdx
+    pop %rsi
+    pop %rdi
+    ret
 .La64s_clock:
     push %rdi
     push %rsi
@@ -1588,7 +1882,8 @@ pub fn assemble_macho_arm64(src: &str) -> Result<Vec<u8>, String> {
         a.parse_line(raw).map_err(|e| format!("line {}: {}: {}", ln + 1, raw.trim(), e))?;
     }
     let (need, live, ckind) = analyze(&a)?;
-    let mut t = Tr { a: &a, out: Vec::new(), need, live, ckind, imports: Vec::new(), used_helpers: Default::default() };
+    let threaded = a.p.labels.contains_key("hbc_thread_start");
+    let mut t = Tr { a: &a, out: Vec::new(), need, live, ckind, imports: Vec::new(), used_helpers: Default::default(), threaded };
     let n = a.text.len();
     let mut starts = vec![0usize; n + 1];
     let mut i = 0;
@@ -1739,7 +2034,7 @@ pub fn assemble_macho_arm64(src: &str) -> Result<Vec<u8>, String> {
                 AI::Adr { rd, t: tg } => {
                     let v = tgt(tg)?;
                     let page = (v as i64 >> 12) - (pc >> 12);
-                    if !(-(1 << 20)..(1 << 20)).contains(&page) { return Err("ARM64: adrp out of range".into()); }
+                    if !(-(1 << 20)..(1 << 20)).contains(&page) { return Err(format!("ARM64: adrp out of range ({:?} = {:#x})", tg, v)); }
                     let p = page as u32;
                     put(0x9000_0000 | (p & 3) << 29 | ((p >> 2) & 0x7ffff) << 5 | r(*rd));
                     put(e_addsub_imm(true, false, false, *rd, *rd, (v & 0xfff) as u32, false));

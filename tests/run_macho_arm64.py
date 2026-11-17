@@ -113,10 +113,37 @@ def dbf_suite(hbc, d):
     return res
 
 
+def thread_suite(hbc, d, ref):
+    """tests/threads/programs against Linux outputs of the same programs
+    (stdout, stderr, exit code), each run three times."""
+    import pathlib
+    res = []
+    for src in sorted(pathlib.Path('tests/threads/programs').glob('*.prg')):
+        b = src.stem
+        exe = pathlib.Path(d) / ('thr_' + b)
+        c = subprocess.run([hbc, str(src), str(exe), '--target=macho-arm64'], capture_output=True)
+        if c.returncode:
+            res.append(('REJ', 'threads/' + b, c.stderr.decode('latin-1').strip()[-200:])); continue
+        r_ = pathlib.Path(ref)
+        exp = ((r_ / (b + '.stdout')).read_bytes(), (r_ / (b + '.stderr')).read_bytes(), int((r_ / (b + '.rc')).read_text()))
+        bad = ''
+        for k in range(3):
+            try:
+                r = subprocess.run([str(exe)], cwd=d, capture_output=True, stdin=subprocess.DEVNULL, timeout=60)
+                got = (r.stdout, r.stderr, r.returncode)
+            except subprocess.TimeoutExpired:
+                got = (b'', b'', 'timeout')
+            if got != exp:
+                bad = 'run %d: rc=%s stdout=%r stderr=%r expected rc=%s stdout=%r' % (k, got[2], got[0][:200], got[1][:200], exp[2], exp[0][:200]); break
+        res.append(('FAIL' if bad else 'PASS', 'threads/' + b, bad))
+    return res
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--hbc', default='./hbc')
     ap.add_argument('--jobs', type=int, default=os.cpu_count() or 4)
+    ap.add_argument('--thread-ref', help='directory with Linux <name>.stdout/.stderr/.rc of tests/threads/programs')
     ap.add_argument('pattern', nargs='?')
     a = ap.parse_args()
     hbc = os.path.abspath(a.hbc)
@@ -128,6 +155,8 @@ def main():
         res = list(ex.map(lambda l: run_case(l, hbc, d), rows))
         if not a.pattern:
             res += file_suite(hbc, d) + dbf_suite(hbc, d)
+            if a.thread_ref:
+                res += thread_suite(hbc, d, a.thread_ref)
     for r in res:
         if r[0] != 'PASS':
             print('%s %s %s' % r)

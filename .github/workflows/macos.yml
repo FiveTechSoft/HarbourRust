@@ -53,7 +53,30 @@ jobs:
           actual=Path('smoke.stdout').read_bytes()
           assert actual == expected, (actual, expected)
           PY
+  linux-thread-reference:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Linux outputs of the thread programs (reference for Mach-O ARM64)
+        run: |
+          set -eu
+          rustc --edition=2021 -O src/hbc.rs -o hbc
+          mkdir -p ref bin
+          for f in tests/threads/programs/*.prg; do
+            b=$(basename "$f" .prg)
+            ./hbc "$f" "bin/$b" --target=linux
+            (cd bin && set +e; timeout 60 "./$b" > "../ref/$b.stdout" 2> "../ref/$b.stderr" < /dev/null; echo $? > "../ref/$b.rc")
+          done
+          ls ref | wc -l
+      - uses: actions/upload-artifact@v4
+        with:
+          name: thread-reference
+          path: ref
   native-arm64:
+    needs: linux-thread-reference
     runs-on: macos-15
     timeout-minutes: 40
     steps:
@@ -76,6 +99,10 @@ jobs:
           otool -hl smoke | head -60
           codesign -v -vvv smoke || true
           ./smoke; echo "exit=$?"
+      - uses: actions/download-artifact@v4
+        with:
+          name: thread-reference
+          path: thread-ref
       - name: Native Mach-O ARM64 battery
         if: always()
-        run: python3 tests/run_macho_arm64.py --hbc ./hbc
+        run: python3 tests/run_macho_arm64.py --hbc ./hbc --thread-ref thread-ref
