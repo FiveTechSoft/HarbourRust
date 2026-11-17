@@ -8,7 +8,11 @@ def run(cmd,work,label,e=env):
  r=subprocess.run(list(map(str,cmd)),cwd=work,env=e,capture_output=True,stdin=subprocess.DEVNULL,timeout=60)
  for k,v in [('stdout',r.stdout),('stderr',r.stderr),('rc',str(r.returncode).encode())]:(work/(label+'.'+k)).write_bytes(v)
  return r
-expect={**{n:'module STATIC requires a folded i64, logical, string or flat integer-array constant initializer'for n in ['nested','mixed','empty']},**{n:'whole-array, structural, multi-level, compound-cell or by-reference use'for n in ['alias','print_whole','call_arg','byref','multilevel','aadd','afill','compound','container','assign_whole']}}
+# S4 unify: nested/mixed/empty/alias/print_whole moved to programs/;
+# multilevel on a flat literal is a RUNTIME failmode (Harbour dialog) and
+# left the suite (S4 probe battery covers it). The rest keep named
+# rejections with their post-flip texts until their arms land.
+expect={'call_arg':'cannot infer the type of parameter','assign_nonconst':'takes a literal of constants',**{n:'shared-array use is outside the dynamic increment' for n in ['cmp_whole','if_whole']},'obj_cell':'storing into a cell of the shared module array',**{n:'shared-array use is outside the dynamic increment'for n in ['byref','afill','compound','container']},**{n:'shared-array use is outside the dynamic increment' for n in ['aadd_lit']}}
 for group in ['programs','negative']:
  for src in sorted((root/group).glob('*.prg')):
   for target in ['linux']+(['windows']if a.wine else[]):

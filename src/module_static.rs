@@ -29,8 +29,35 @@ pub fn kind(owner: &str, name: &str) -> Option<Ty> {
 pub fn current(name: &str) -> Option<Ty> {
     crate::CUR_FN.with(|f| kind(&f.borrow(), name))
 }
+
+// True when `name` in the current function binds the module-level
+// static itself (as opposed to a local alias from note_alias): the
+// canonical casilla is the shared .data label, so every frame sees a
+// rebind (probe p17).
+pub fn is_module_binding(name: &str) -> bool {
+    crate::CUR_FN.with(|f| {
+        let owner = f.borrow().clone();
+        ALIASES.with(|v| v.borrow().contains_key(&(owner, name.to_owned())))
+    })
+}
+
+// A local Dyn copy of a shared module array aliases the same object.
+// Record the local under its own name so the shared-array checker arms
+// admit it (the runtime tag-16 guards stay the real array checks: a
+// later non-array assignment to the local fails there, as Harbour).
+pub fn note_alias(name: &str) {
+    crate::CUR_FN.with(|f| {
+        let owner = f.borrow().clone();
+        KINDS.with(|v| v.borrow_mut().insert((owner, name.to_owned()), Ty::Dyn));
+    });
+}
 pub fn string_value(e: &Expr) -> bool {
     matches!(e, Expr::Var(v) if current(v) == Some(Ty::StrOwn))
+}
+// A dynamic shared-reference module array binds as a Dyn local carrying
+// {tag 16, object pointer}; cell reads/writes route through the object.
+pub fn is_shared_array(owner: &str, name: &str) -> bool {
+    kind(owner, name) == Some(Ty::Dyn)
 }
 // Absolute .data base label when `name` binds to the persistent module array
 // in the function under codegen; None for every other local. Cell reads and
@@ -254,6 +281,84 @@ fn check_array_uses(f: &Func, name: &str) -> Result<(), String> {
     Ok(())
 }
 
+// Dynamic shared-reference module arrays (tag-16 Dyn). The name binds as
+// an ordinary Dyn local, so locals, parameters, returns and 16-byte copies
+// alias by construction; the guard only keeps out the routes that would
+// break the shared-heap model or are unmeasured in this increment: @
+// borrows, inline assign/inc on the name, compound cell ops (deferred
+// increment), AIns/ADel/AFill (deferred), literals as AAdd values
+// (descriptor materialization deferred), container/hash/block/send
+// captures, and structural whole-array builtins. Multi-level reads and
+// writes are admitted: nested arrays are the point of the increment.
+// The expression classifier is exhaustive over expression forms without a
+// wildcard, same rule as the owned-string and fixed-array guards.
+fn check_shared_array_uses(f: &Func, name: &str) -> Result<(), String> {
+    fn expr(e: &Expr, name: &str) -> bool {
+        match e {
+            Expr::Index(_, i) => expr(i, name),
+            Expr::Index2(_, a, b) => expr(a, name) && expr(b, name),
+            Expr::Index3(_, a, b, c) => expr(a, name) && expr(b, name) && expr(c, name),
+            Expr::Index4(_, a, b, c, d) => expr(a, name) && expr(b, name) && expr(c, name) && expr(d, name),
+            // A Dyn copy of the name aliases, which is the Harbour
+            // semantics this increment implements: Var is safe as a
+            // value (call args, alias copies, prints). A DIRECT Var as
+            // an operand of compare/arithmetic/logic or as an IF/WHILE/
+            // FOR EACH condition is a whole-array value use, unmeasured
+            // against Harbour here: rejected at the composite arms.
+            Expr::Var(_) => true,
+            Expr::ByRef(v) => v != name,
+            Expr::Set(v, e) => v != name && expr(e, name),
+            Expr::Inc(v, ..) => v != name,
+            Expr::IdxCompound(v, i, _, r) => v != name && expr(i, name) && expr(r, name),
+            Expr::Call(id, es) => {
+                if ["acopy","aeval","ascan","asort","aclone","adel","ains","afill"].iter().any(|b| crate::is_builtin(id, b)) && es.iter().any(|e| crate::expr_mentions(e, name)) {
+                    return false;
+                }
+                es.iter().all(|e| expr(e, name))
+            }
+            // A DIRECT Var(name) operand is a whole-array value use
+            // (compare, arithmetic, logic): unmeasured against Harbour
+            // in this increment, so it is rejected. Nested mentions
+            // (call args, indexes) still alias safely.
+            Expr::Bin(_, a, b) | Expr::Cmp(_, a, b) | Expr::LAnd(a, b) | Expr::LOr(a, b) =>
+                !matches!(&**a, Expr::Var(v) if v == name) && !matches!(&**b, Expr::Var(v) if v == name) && expr(a, name) && expr(b, name),
+            Expr::LNot(e) => !matches!(&**e, Expr::Var(v) if v == name) && expr(e, name),
+            Expr::Seq(es) => es.iter().all(|e| expr(e, name)),
+            Expr::ArrLit(..) | Expr::HashLit(..) | Expr::BlockLit(..) | Expr::Send(..) => !crate::expr_mentions(e, name),
+            Expr::FloatV(..) | Expr::Float(..) | Expr::Int(_) | Expr::Str(_) | Expr::Nil | Expr::Log(_) | Expr::DArrNew | Expr::SelfObj | Expr::SelfGet(_) | Expr::FuncRef(_) => true,
+        }
+    }
+    fn walk(ss: &[Stmt], name: &str) -> bool {
+        ss.iter().all(|s| match s {
+            Stmt::Local(_, _, e) | Stmt::Ret(_, Some(e)) | Stmt::CallStmt(_, e) | Stmt::SendStmt(_, e) => expr(e, name),
+            // Reassignment of the module name replaces the canonical
+            // reference; only literal rebuilds are admitted (a descriptor
+            // materializes the new object).
+            Stmt::Assign(_, v, e) => (v != name || matches!(e, Expr::ArrLit(..) | Expr::DArrNew)) && expr(e, name),
+            Stmt::Print(_, es, _) => es.iter().all(|e| expr(e, name)),
+            Stmt::ArrSet(_, v, ie, e) => (v != name || (expr(ie, name) && expr(e, name))) && (v == name || !crate::stmt_mentions(s, name) || matches!(e, Expr::Index(v2, _) | Expr::Index2(v2, ..) | Expr::Index3(v2, ..) | Expr::Index4(v2, ..) if v2 == name)),
+            Stmt::ArrSet2(_, v, a, b, e) => v != name && !crate::expr_mentions(a, name) && !crate::expr_mentions(b, name) && !crate::expr_mentions(e, name) || v == name && expr(a, name) && expr(b, name) && expr(e, name),
+            Stmt::ArrSet3(_, v, a, b, c, e) => v != name && !crate::expr_mentions(a, name) && !crate::expr_mentions(b, name) && !crate::expr_mentions(c, name) && !crate::expr_mentions(e, name) || v == name && expr(a, name) && expr(b, name) && expr(c, name) && expr(e, name),
+            Stmt::ArrSet4(_, v, a, b, c, d, e) => v != name && !crate::expr_mentions(a, name) && !crate::expr_mentions(b, name) && !crate::expr_mentions(c, name) && !crate::expr_mentions(d, name) && !crate::expr_mentions(e, name) || v == name && expr(a, name) && expr(b, name) && expr(c, name) && expr(d, name) && expr(e, name),
+            Stmt::AAdd(_, v, e) => v != name && !crate::expr_mentions(e, name) || v == name && expr(e, name) && !matches!(e, Expr::ArrLit(..) | Expr::DArrNew),
+            Stmt::ASize(_, v, e) => v != name && !crate::expr_mentions(e, name) || v == name && expr(e, name),
+            Stmt::AIns(_, v, _) | Stmt::ADel(_, v, _) | Stmt::AFill(_, v, ..) => v != name && !crate::stmt_mentions(s, name),
+            Stmt::If(_, e, a, b) => !matches!(e, Expr::Var(v) if v == name) && expr(e, name) && walk(a, name) && walk(b, name),
+            Stmt::While(_, e, b) => !matches!(e, Expr::Var(v) if v == name) && expr(e, name) && walk(b, name),
+            Stmt::Try(_, b, c, f) => walk(b, name) && c.as_ref().map_or(true, |(_, b)| walk(b, name)) && f.as_ref().map_or(true, |b| walk(b, name)),
+            Stmt::For(_, _, a, b, _, body) => expr(a, name) && expr(b, name) && walk(body, name),
+            Stmt::ForEach(_, _, e, body) => !matches!(e, Expr::Var(v) if v == name) && expr(e, name) && walk(body, name),
+            Stmt::Switch(_, e, arms, other) => expr(e, name) && arms.iter().all(|(_, _, b)| walk(b, name)) && other.as_ref().map_or(true, |(_, b)| walk(b, name)),
+            Stmt::Static(..) | Stmt::Ret(_, None) | Stmt::Exit(_) | Stmt::Loop(_) => true,
+            _ => !crate::stmt_mentions(s, name),
+        })
+    }
+    if !walk(&f.stmts, name) {
+        return Err(format!("module STATIC `{}`: this shared-array use is outside the dynamic increment (@ borrows, compound cell ops, AIns/ADel/AFill, literal AAdd values, container captures and whole-array builtins are deferred or rejected)", name));
+    }
+    Ok(())
+}
+
 pub fn bind(f: &mut Func, slots: &[(usize, String, Expr)]) -> Result<(), String> {
     let mut prefix = Vec::new();
     for (index, (line, name, init)) in slots.iter().enumerate() {
@@ -261,9 +366,19 @@ pub fn bind(f: &mut Func, slots: &[(usize, String, Expr)]) -> Result<(), String>
         if !crate::stmts_mention(&f.stmts, name) { continue; }
         check_counters(&f.stmts, name)?;
         ALIASES.with(|v| v.borrow_mut().insert((f.name.clone(), name.clone()), index));
-        let ty = match init { Expr::Log(_) => Ty::Bool, Expr::Str(_) => Ty::StrOwn, Expr::ArrLit(es) => Ty::Arr(es.len()), _ => Ty::I64 };
+        let ty = match init {
+            Expr::Log(_) => Ty::Bool,
+            Expr::Str(_) => Ty::StrOwn,
+            // S4 unify (doc: "every module STATIC array literal becomes a
+            // dynamic shared-reference array"; flat literals included):
+            // nested, mixed, flat or empty - all bind as Dyn {tag 16,
+            // object pointer}. The S3 fixed .data route is retired.
+            Expr::ArrLit(_) | Expr::DArrNew => Ty::Dyn,
+            _ => Ty::I64,
+        };
         if matches!(ty,Ty::Bool|Ty::StrOwn) {check_payload_uses(f,name,ty)?;}
         if matches!(ty,Ty::Arr(_)) {check_array_uses(f,name)?;}
+        if ty == Ty::Dyn && matches!(init, Expr::ArrLit(_) | Expr::DArrNew) {check_shared_array_uses(f,name)?;}
         KINDS.with(|v| v.borrow_mut().insert((f.name.clone(), name.clone()), ty));
         prefix.push(Stmt::Static(*line, name.clone(), init.clone()));
     }
@@ -361,14 +476,14 @@ mod owned_tests {
 mod array_tests {
     use super::*;
     #[test]
-    fn fixed_array_binds_with_shared_label_and_arity() {
+    fn flat_array_binds_dyn_after_the_unify_flip() {
+        // Post-flip: even the flat all-i64 literal binds as Dyn (tag-16
+        // shared reference); the fixed .data route is retired, so
+        // array_base never applies to a module literal array.
         crate::parse("STATIC a := {1,2,3}\nFUNCTION Main()\n? a[1]\nRETURN NIL\nFUNCTION ReadA()\nRETURN a[2]\n").unwrap_or_else(|e| panic!("{}", e));
-        assert_eq!(kind("main","a"), Some(Ty::Arr(3)));
-        let label = storage("main","a");
-        assert_eq!(label, storage("reada","a"));
+        assert_eq!(kind("main","a"), Some(Ty::Dyn));
+        assert_eq!(kind("reada","a"), Some(Ty::Dyn));
         crate::CUR_FN.with(|f| *f.borrow_mut() = "main".to_string());
-        assert_eq!(array_base("a"), Some(label.clone()));
-        crate::CUR_FN.with(|f| *f.borrow_mut() = "other".to_string());
         assert_eq!(array_base("a"), None);
     }
     #[test]
@@ -382,39 +497,109 @@ mod array_tests {
         }
     }
     #[test]
-    fn guard_rejects_whole_array_structural_multilevel_and_ref_forms() {
-        let cases = [
-            // Whole-array assignment would copy where Harbour aliases.
+    fn guard_admits_aliased_and_structural_forms_after_unify() {
+        // Post-flip admissions (doc "S4 SUBSUMES S3"): alias local, whole
+        // print (empty line), whole-array call argument, multi-level
+        // index. AAdd/ASize and literal rebuilds join once their codegen
+        // arms land (they still error today, named in the docs).
+        for src in [
             "STATIC a := {1,2,3}\nPROCEDURE Main()\nLOCAL b := a\n? b[1]\nRETURN\n",
             "STATIC a := {1,2,3}\nPROCEDURE Main()\n? a\nRETURN\n",
-            // Passing the whole array to a call.
             "STATIC a := {1,2,3}\nPROCEDURE Main()\n? Show(a)\nRETURN\nFUNCTION Show(x)\nRETURN x\n",
-            // @ borrow of the module array.
-            "STATIC a := {1,2,3}\nPROCEDURE Main()\nLOCAL x := 0\nMut(@a)\nRETURN\nFUNCTION Mut(p)\nRETURN p\n",
-            // Multi-level index on the module array.
-            "STATIC a := {1,2,3}\nPROCEDURE Main()\n? a[1,1]\nRETURN\n",
-            // Structural ops.
-            "STATIC a := {1,2,3}\nPROCEDURE Main()\nAAdd(a, 4)\n? a[1]\nRETURN\n",
-            "STATIC a := {1,2,3}\nPROCEDURE Main()\nAFill(a, 0)\n? a[1]\nRETURN\n",
-            // Compound cell op.
-            "STATIC a := {1,2,3}\nPROCEDURE Main()\na[1] += 5\n? a[1]\nRETURN\n",
-            // Whole array inside a container or send.
-            "STATIC a := {1,2,3}\nPROCEDURE Main()\nLOCAL c := {a}\n? c[1]\nRETURN\n",
-            // Assign to the array name itself.
-            "STATIC a := {1,2,3}\nPROCEDURE Main()\na := {9,9,9}\n? a[1]\nRETURN\n",
-        ];
-        for src in cases {
-            let err = crate::parse(src).err().unwrap_or_else(|| panic!("accepted an unsafe form: {}", src));
-            assert!(err.contains("whole-array"), "{}: {}", src, err);
+            "STATIC a := {{1,2},{3,4}}\nPROCEDURE Main()\n? a[1,1]\nRETURN\n",
+        ] {
+            crate::parse(src).unwrap_or_else(|e| panic!("{}: {}", src, e));
         }
     }
     #[test]
-    fn nested_or_mixed_array_initializers_stay_rejected() {
-        let nested = crate::parse("STATIC a := {{1,2},3}\nPROCEDURE Main()\n? a[1]\nRETURN\n").err().unwrap();
-        assert!(nested.contains("folded"), "{}", nested);
-        let mixed = crate::parse("STATIC a := {1,\"x\",3}\nPROCEDURE Main()\n? a[1]\nRETURN\n").err().unwrap();
-        assert!(mixed.contains("folded"), "{}", mixed);
-        let empty = crate::parse("STATIC a := {}\nPROCEDURE Main()\n? a[1]\nRETURN\n").err().unwrap();
-        assert!(empty.contains("folded"), "{}", empty);
+    fn guard_rejects_deferred_and_ref_forms_after_unify() {
+        let cases = [
+            // @ borrow of the module array.
+            "STATIC a := {1,2,3}\nPROCEDURE Main()\nLOCAL x := 0\nMut(@a)\nRETURN\nFUNCTION Mut(p)\nRETURN p\n",
+            // Deferred structural ops.
+            "STATIC a := {1,2,3}\nPROCEDURE Main()\nAFill(a, 0)\n? a[1]\nRETURN\n",
+            // Compound cell op (deferred increment).
+            "STATIC a := {1,2,3}\nPROCEDURE Main()\na[1] += 5\n? a[1]\nRETURN\n",
+            // Whole array inside a container or send.
+            "STATIC a := {1,2,3}\nPROCEDURE Main()\nLOCAL c := {a}\n? c[1]\nRETURN\n",
+        ];
+        for src in cases {
+            let err = crate::parse(src).err().unwrap_or_else(|| panic!("accepted an unsafe form: {}", src));
+            assert!(err.contains("outside the dynamic increment") || err.contains("outside this increment"), "{}: {}", src, err);
+        }
+    }
+    #[test]
+    fn all_module_array_literals_bind_dyn_after_unify() {
+        // The S4 dynamic route, post-flip: nested, mixed, empty AND flat
+        // all-i64 literals bind as Dyn (shared reference).
+        crate::parse("STATIC a := {{1,2},\"x\"}
+STATIC b := {}
+STATIC f := {1,2,3}
+PROCEDURE Main()
+? a[1][1], len(b), f[1]
+RETURN
+").unwrap_or_else(|e| panic!("{}", e));
+        assert_eq!(kind("main","a"), Some(Ty::Dyn));
+        assert_eq!(kind("main","b"), Some(Ty::Dyn));
+        assert_eq!(kind("main","f"), Some(Ty::Dyn));
+        // Float cells stay rejected on every route.
+        let float = crate::parse("STATIC a := {1.5}
+PROCEDURE Main()
+? a[1]
+RETURN
+").err().unwrap();
+        assert!(float.contains("folded"), "{}", float);
+    }
+    #[test]
+    fn shared_array_guard_rejects_deferred_and_unsafe_routes() {
+        let cases = [
+            "STATIC a := {1,\"x\"}
+PROCEDURE Main()
+Mut(@a)
+RETURN
+FUNCTION Mut(p)
+RETURN p
+",
+            "STATIC a := {1,\"x\"}
+PROCEDURE Main()
+AIns(a, 1)
+RETURN
+",
+            "STATIC a := {1,\"x\"}
+PROCEDURE Main()
+ADel(a, 1)
+RETURN
+",
+            "STATIC a := {1,\"x\"}
+PROCEDURE Main()
+AFill(a, 0)
+RETURN
+",
+            "STATIC a := {}
+PROCEDURE Main()
+AAdd(a, {1})
+RETURN
+",
+            "STATIC a := {1,\"x\"}
+PROCEDURE Main()
+LOCAL c := {a}
+RETURN
+",
+            "STATIC a := {1,\"x\"}
+PROCEDURE Main()
+? AScan(a, 1)
+RETURN
+",
+            "STATIC a := {1,\"x\"}
+PROCEDURE Main()
+LOCAL b := a
+a := b
+RETURN
+",
+        ];
+        for src in cases {
+            let err = crate::parse(src).err().unwrap_or_else(|| panic!("accepted an unsafe form: {}", src));
+            assert!(err.contains("shared-array use"), "{}: {}", src, err);
+        }
     }
 }

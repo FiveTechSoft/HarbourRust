@@ -1,4 +1,6 @@
 STATIC a := {1,2,3}
 PROCEDURE Main()
-? a[1,1]
+LOCAL x := 5
+a := {x,9}
+? a[1]
 RETURN

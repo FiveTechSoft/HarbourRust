@@ -54,3 +54,5 @@ tests/module-static/expected/** -text
 tests/module-static-owned/expected/** -text
 
 tests/module-static-array/expected/** -text
+
+tests/module-static-array/expected/** -text

@@ -1826,23 +1826,29 @@ neg tests/module-static-owned/negative/logical_widen.prg type mismatch in assign
 neg tests/module-static-owned/negative/string_widen.prg type mismatch in assignment
 neg tests/module-static-owned/negative/print_mutation.prg inline-effect
 neg tests/module-static-owned/negative/argument_mutation.prg inline-effect
-neg tests/module-static-array/negative/nested.prg module STATIC requires a folded i64, logical, string or flat integer-array constant initializer
-neg tests/module-static-array/negative/mixed.prg module STATIC requires a folded i64, logical, string or flat integer-array constant initializer
-neg tests/module-static-array/negative/empty.prg module STATIC requires a folded i64, logical, string or flat integer-array constant initializer
-neg tests/module-static-array/negative/alias.prg whole-array, structural, multi-level, compound-cell or by-reference use
-neg tests/module-static-array/negative/print_whole.prg whole-array, structural, multi-level, compound-cell or by-reference use
-neg tests/module-static-array/negative/call_arg.prg whole-array, structural, multi-level, compound-cell or by-reference use
-neg tests/module-static-array/negative/byref.prg whole-array, structural, multi-level, compound-cell or by-reference use
-neg tests/module-static-array/negative/multilevel.prg whole-array, structural, multi-level, compound-cell or by-reference use
-neg tests/module-static-array/negative/aadd.prg whole-array, structural, multi-level, compound-cell or by-reference use
-neg tests/module-static-array/negative/afill.prg whole-array, structural, multi-level, compound-cell or by-reference use
-neg tests/module-static-array/negative/compound.prg whole-array, structural, multi-level, compound-cell or by-reference use
-neg tests/module-static-array/negative/container.prg whole-array, structural, multi-level, compound-cell or by-reference use
-neg tests/module-static-array/negative/assign_whole.prg whole-array, structural, multi-level, compound-cell or by-reference use
-pos2 tests/module-static-array/programs/init_order.prg tests/module-static-array/expected/init_order.linux.out tests/module-static-array/expected/init_order.windows.out
-pos2 tests/module-static-array/programs/persist_calls.prg tests/module-static-array/expected/persist_calls.linux.out tests/module-static-array/expected/persist_calls.windows.out
+pos2 tests/module-static-array/programs/aadd.prg tests/module-static-array/expected/aadd.linux.out tests/module-static-array/expected/aadd.windows.out
+pos2 tests/module-static-array/programs/alias.prg tests/module-static-array/expected/alias.linux.out tests/module-static-array/expected/alias.windows.out
 pos2 tests/module-static-array/programs/alias_shared.prg tests/module-static-array/expected/alias_shared.linux.out tests/module-static-array/expected/alias_shared.windows.out
-pos2 tests/module-static-array/programs/index_expr.prg tests/module-static-array/expected/index_expr.linux.out tests/module-static-array/expected/index_expr.windows.out
+pos2 tests/module-static-array/programs/asize.prg tests/module-static-array/expected/asize.linux.out tests/module-static-array/expected/asize.windows.out
+pos2 tests/module-static-array/programs/assign_whole.prg tests/module-static-array/expected/assign_whole.linux.out tests/module-static-array/expected/assign_whole.windows.out
 pos2 tests/module-static-array/programs/cell_by_value.prg tests/module-static-array/expected/cell_by_value.linux.out tests/module-static-array/expected/cell_by_value.windows.out
-pos2 tests/module-static-array/programs/stmt_seq.prg tests/module-static-array/expected/stmt_seq.linux.out tests/module-static-array/expected/stmt_seq.windows.out
+pos2 tests/module-static-array/programs/empty.prg tests/module-static-array/expected/empty.linux.out tests/module-static-array/expected/empty.windows.out
+pos2 tests/module-static-array/programs/index_expr.prg tests/module-static-array/expected/index_expr.linux.out tests/module-static-array/expected/index_expr.windows.out
+pos2 tests/module-static-array/programs/init_order.prg tests/module-static-array/expected/init_order.linux.out tests/module-static-array/expected/init_order.windows.out
+pos2 tests/module-static-array/programs/mixed.prg tests/module-static-array/expected/mixed.linux.out tests/module-static-array/expected/mixed.windows.out
 pos2 tests/module-static-array/programs/mixed_statics.prg tests/module-static-array/expected/mixed_statics.linux.out tests/module-static-array/expected/mixed_statics.windows.out
+pos2 tests/module-static-array/programs/nested.prg tests/module-static-array/expected/nested.linux.out tests/module-static-array/expected/nested.windows.out
+pos2 tests/module-static-array/programs/nested_store.prg tests/module-static-array/expected/nested_store.linux.out tests/module-static-array/expected/nested_store.windows.out
+pos2 tests/module-static-array/programs/persist_calls.prg tests/module-static-array/expected/persist_calls.linux.out tests/module-static-array/expected/persist_calls.windows.out
+pos2 tests/module-static-array/programs/print_whole.prg tests/module-static-array/expected/print_whole.linux.out tests/module-static-array/expected/print_whole.windows.out
+pos2 tests/module-static-array/programs/stmt_seq.prg tests/module-static-array/expected/stmt_seq.linux.out tests/module-static-array/expected/stmt_seq.windows.out
+neg tests/module-static-array/negative/aadd_lit.prg shared-array use is outside the dynamic increment
+neg tests/module-static-array/negative/afill.prg shared-array use is outside the dynamic increment
+neg tests/module-static-array/negative/assign_nonconst.prg takes a literal of constants
+neg tests/module-static-array/negative/byref.prg shared-array use is outside the dynamic increment
+neg tests/module-static-array/negative/call_arg.prg cannot infer the type of parameter
+neg tests/module-static-array/negative/cmp_whole.prg shared-array use is outside the dynamic increment
+neg tests/module-static-array/negative/compound.prg shared-array use is outside the dynamic increment
+neg tests/module-static-array/negative/container.prg shared-array use is outside the dynamic increment
+neg tests/module-static-array/negative/if_whole.prg shared-array use is outside the dynamic increment
+neg tests/module-static-array/negative/obj_cell.prg storing into a cell of the shared module array

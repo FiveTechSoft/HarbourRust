@@ -1,0 +1,6 @@
+STATIC a := {1,2}
+PROCEDURE Main()
+IF a
+? 1
+ENDIF
+RETURN
