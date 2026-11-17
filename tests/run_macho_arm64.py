@@ -23,16 +23,31 @@ FILE_POSITIVES = 6
 DBF_TESTS = 4
 THREAD_PROGRAMS = 37
 EXT_DEMOS = 8
-# Post-run m_clie.dbf SHA-256 per DBF acceptance test, identical on Linux,
-# native Windows and the arm64 emulator (generated on Linux, stdout checked
-# against the committed expectations).
+# Executable-row inventory of the committed tests/manifest.txt on main
+# (1218 rows, all (kind, source) identities unique; S4 added 9 over the
+# original 1209). The full battery refuses a truncated/empty manifest or
+# a runner constant gone stale; bump this only with the manifest change
+# that explains it. Full-battery expected total: 1218+6+4+37+8 = 1273.
+EXPECTED_MANIFEST_ROWS = 1218
+# Post-run m_clie.dbf SHA-256 per DBF acceptance test (generated on Linux,
+# stdout checked against the committed expectations). t4 appends records:
+# dbAppend rewrites the header last-update date (bytes 1-3, YY MM DD of the
+# run's UTC day) on Linux AND Windows, so a whole-file hash can never be
+# stable across days. For t4 ONLY, those three bytes are checked against
+# the run's UTC date explicitly and zeroed before hashing; t5-t7 never
+# touch the header, their frozen 2024-01-03 bytes are fixture content and
+# stay inside the hash (a runtime that wrongly rewrote them fails here).
 DBF_SHA256 = {
-    4: 'cba93cb3b2b4b9caaa84a31f9824895793fcc760184a881c71f99c74d9e44237',
+    4: 'a2ae7bcd60ba8a68eecdf68a8e5593e03e868688288322b7094d639897017ec6',
     5: '3b86d2f4fbf391f928194364cd2440d7ee46668e5c4033aff5517fecc29b64de',
     6: 'b53d75f1ace2b6573cd0f23c4a2ec99ac675dd9d912eb5b5999080b4f83e13b6',
     7: 'b53d75f1ace2b6573cd0f23c4a2ec99ac675dd9d912eb5b5999080b4f83e13b6',
 }
-SMOKE_SOURCE = 'FUNCTION Main()\n   ? "arm64 smoke ok"\n   RETURN NIL\n'
+DBF_DATE_NORMALIZED = {4}
+# Real compiler bytes, verified on the Linux target (same runtime): QOut
+# (`? "arm64 smoke ok"`) emits a LEADING LF and no trailing one
+# (b'\narm64 smoke ok'), so the smoke uses explicit OutStd instead.
+SMOKE_SOURCE = 'FUNCTION Main()\n   OutStd("arm64 smoke ok" + hb_eol())\n   RETURN NIL\n'
 SMOKE_STDOUT = b'arm64 smoke ok\n'
 
 
@@ -124,11 +139,21 @@ def dbf_suite(hbc, d):
         c = subprocess.run([hbc, str(src / ('test%d.prg' % t)), str(exe), '--target=macho-arm64'], capture_output=True)
         if c.returncode:
             res.append(('REJ', 'dbf/test%d' % t, c.stderr.decode('latin-1').strip()[-200:])); continue
+        import datetime
+        pre_date = datetime.datetime.now(datetime.timezone.utc).date()
         r = subprocess.run([str(exe)], cwd=work, capture_output=True, stdin=subprocess.DEVNULL, timeout=60)
+        post_date = datetime.datetime.now(datetime.timezone.utc).date()
         exp = (src / ('test%d.linux.expected.txt' % t)).read_bytes()
         ok = r.stdout == exp and r.stderr == b'' and r.returncode == 0
         res.append(('PASS' if ok else 'FAIL', 'dbf/test%d' % t, '' if ok else 'rc=%s stdout=%r stderr=%r' % (r.returncode, r.stdout[:300], r.stderr[:200])))
-        h = __import__('hashlib').sha256((work / 'm_clie.dbf').read_bytes()).hexdigest()
+        raw = (work / 'm_clie.dbf').read_bytes()
+        if t in DBF_DATE_NORMALIZED:
+            stamp = (raw[1], raw[2], raw[3])
+            valid = {(d.year - 1900, d.month, d.day) for d in (pre_date, post_date)}
+            if stamp not in valid:
+                res[-1] = ('FAIL', 'dbf/test%d' % t, 'm_clie.dbf date bytes %s != run UTC date(s) %s' % (stamp, sorted(valid)))
+            raw = raw[:1] + b'\0\0\0' + raw[4:]
+        h = __import__('hashlib').sha256(raw).hexdigest()
         print('dbf/test%d m_clie.dbf sha256 %s' % (t, h))
         if h != DBF_SHA256[t]:
             res[-1] = ('FAIL', 'dbf/test%d' % t, 'm_clie.dbf sha256 %s != reference %s' % (h, DBF_SHA256[t]))
@@ -204,8 +229,20 @@ def main():
         return 1
     rows = [l.rstrip('\n') for l in open('tests/manifest.txt', encoding='latin-1')]
     rows = [l for l in rows if l.split(' ')[0] in KINDS]
+    ids = [(l.split(' ')[0], l.split(' ')[1]) for l in rows]
+    if len(set(ids)) != len(ids):
+        dup = [i for i in ids if ids.count(i) > 1][0]
+        print('FAIL runner: duplicate manifest identity %s' % (dup,))
+        return 1
     if a.pattern:
-        rows = [l for l in rows if re.search(a.pattern, l.split(' ')[1])]
+        all_rows, rows = rows, [l for l in rows if re.search(a.pattern, l.split(' ')[1])]
+        if not rows:
+            print('FAIL runner: pattern %r matched no manifest rows; refusing to report an empty selection as green' % a.pattern)
+            return 1
+        print('PARTIAL battery: pattern %r selected %d of %d manifest rows; FILE/DBF/threads/EXTERNAL suites are skipped - this is not a full-suite green' % (a.pattern, len(rows), len(all_rows)))
+    elif len(rows) != EXPECTED_MANIFEST_ROWS:
+        print('FAIL runner: manifest has %d executable rows, expected inventory %d (truncated/empty manifest or stale runner constant)' % (len(rows), EXPECTED_MANIFEST_ROWS))
+        return 1
     with tempfile.TemporaryDirectory() as d, cf.ThreadPoolExecutor(a.jobs) as ex:
         # (3) smoke: one compile+run with a known stdout before the battery,
         # so a broken compiler or host can never look like zero rows to run.
@@ -235,7 +272,7 @@ def main():
         if r[0] != 'PASS':
             print('%s %s %s' % r)
     c = collections.Counter(r[0] for r in res)
-    print('SUMMARY', dict(c))
+    print('SUMMARY', dict(c), '(PARTIAL pattern battery)' if a.pattern else '(FULL battery)')
     bad = 0
     if c.get('FAIL'):
         bad = 1
