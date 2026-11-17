@@ -12430,6 +12430,9 @@ hbc_thread_boot:
     mov $186, %eax
     syscall
     mov %rax, 80(%rbx)
+    # SysV call alignment for the thread function (C code, e.g. an
+    # EXTERNAL bridge, may use aligned SSE stores); boot never returns.
+    and $-16, %rsp
     mov %rbx, %rdi
     call *32(%rbx)
     mov %rax, 8(%rbx)
