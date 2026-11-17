@@ -59,6 +59,7 @@ TARGET = '--target=macho-arm64'  # --target=macho runs the same battery on Intel
 # programs added by cd9d6884: nullable_strings and multiple_strings.
 # The full battery refuses truncated/empty manifests and stale constants.
 # Bump this only with the manifest change that explains it.
+# Dyn/string concat adds20 runnable rows (19programs plus former negative).
 # Full total:1257+6+4+37+9 =1313,0 REJ on both targets.
 EXPECTED_MANIFEST_ROWS = 1257
 # Post-run m_clie.dbf SHA-256 per DBF acceptance test (generated on Linux,

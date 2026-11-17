@@ -1,6 +1,9 @@
 # Concatenacion con un operando Dyn
 
-Corte acotado sobre base `0ec46d86cc7361e5bd3655a96f1ce7a6b93ae793`.
+Corte acotado rebasado sobre base `b5ddc056b888d68e2786e99ec3771f11aaea5685`.
+La reproduccion original y probes previos usaron0ec46d86; no son ejecuciones
+del nuevoSHA. Main actual ya incorpora nanosleepIntel y elpinLinuxdatefns
+corregido. Este corte no vuelve a cambiar ninguno deellos.
 Codigo y pruebas propios MIT. Harbour se usa solo como ejecutable oracle externo;
 no se incorpora codigo GPL. El oracle disponible es Harbour3.2.1dev
 r2610242111, no Harbour4.
