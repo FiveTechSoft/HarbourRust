@@ -154,3 +154,6 @@ jobs:
       - name: Native Mach-O Intel battery
         if: always()
         run: python3 tests/run_macho_arm64.py --hbc ./hbc --target macho --thread-ref thread-ref
+      - name: Native Mach-O Intel class battery
+        if: always()
+        run: sh tests/classes/check_macho.sh ./hbc
