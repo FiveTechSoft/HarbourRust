@@ -19136,6 +19136,15 @@ fn cg_print_items(es: &[Expr], inline: bool, raw: bool, stderr: bool, env: &[CgL
                 // A whole array/hash VARIABLE renders empty
                 // (hk16/hk20/hk24): only borrowed, never consumed.
                 let renders_empty = |e: &Expr| matches!(expr_ty(e, env, sigs), Ty::Arr(_) | Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::Hash | Ty::DArrRef | Ty::DArrRef2);
+                // S4 review 3: a Dyn value BORROWED from its owner (a
+                // variable slot, a hash cell, a dynamic-array cell) can be
+                // invalidated by a LATER item of the same `?` statement
+                // (oracle pR5: `? a[1], Change()` with two same-length
+                // stores must still print the value as of evaluation).
+                // Such items are snapshotted at push time (clone of a
+                // tag-2/4 payload) and the clone is freed after printing;
+                // owned temporaries keep their existing release path.
+                let dyn_cell_borrow = |e: &Expr, env: &[CgLocal]| hash_cell_borrow(e,env) || matches!(e, Expr::Index(v, _) if env.iter().any(|x| x.name == *v && matches!(x.ty, Ty::DArrDyn | Ty::Dyn | Ty::RefDyn)));
                 for e in es {
                     if let Some((cond, arm1, arm2, cell1)) = cg_iif_out_rawdyn(e, env, sigs) {
                         // Evaluate the condition ONCE, then only the chosen
@@ -19225,6 +19234,15 @@ fn cg_print_items(es: &[Expr], inline: bool, raw: bool, stderr: bool, env: &[CgL
                         // consumer prints NIL for null, nothing otherwise.
                         cg_value(e, env, sigs, strs, out, target);
                         out.push_str("    push $0\n    push %rax\n");
+                        continue;
+                    }
+                    if expr_ty(e, env, sigs) == Ty::Dyn && !(dyn_expr_owned(e) && !dyn_cell_borrow(e, env)) {
+                        // S4 review 3: snapshot the borrowed/slot-owned Dyn
+                        // string so a later item cannot overwrite the bytes
+                        // this one prints (oracle pR5: `? a[1], Change()`).
+                        cg_value(e, env, sigs, strs, out, target);
+                        cg_dyn_clone_if_str(out);
+                        out.push_str("    push %rdx\n    push %rax\n");
                         continue;
                     }
                     cg_value(e, env, sigs, strs, out, target);
@@ -19464,9 +19482,17 @@ fn cg_print_items(es: &[Expr], inline: bool, raw: bool, stderr: bool, env: &[CgL
                             // owned by its slot, and a DArrDyn cell read stays
                             // owned by its CELL (ains piece 1a - the cell is
                             // borrowed, never moved out).
-                            let cell_borrow = hash_cell_borrow(e,env) || matches!(e, Expr::Index(v, _) if env.iter().any(|x| x.name == *v && matches!(x.ty, Ty::DArrDyn | Ty::Dyn | Ty::RefDyn)));
+                            let cell_borrow = dyn_cell_borrow(e, env);
                             if dyn_expr_owned(e) && !cell_borrow {
                                 cg_dyn_stack_release(out,off,false);
+                            } else {
+                                // S4 review 3: the pushed pair is a snapshot
+                                // clone; free a tag-4 clone (the cell/slot
+                                // keeps its own payload). Mirrors
+                                // cg_dyn_stack_release minus the owned case.
+                                let k = fresh_lbl();
+                                out.push_str(&format!("    mov {}(%rsp), %rax\n    mov {}(%rsp), %rdx\n    call hbc_float_release\n", off, off + 8));
+                                out.push_str(&format!("    @HBC_TAG_KIND@cmpq $4, {}(%rsp)@HBC_TAG_END@\n    jne .Lprclone{}\n    mov {}(%rsp), %rdi\n    call hbc_freestr\n.Lprclone{}:\n", off, k, off + 8, k));
                             }
                         }
                         Ty::Date => {
