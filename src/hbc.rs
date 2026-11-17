@@ -10884,6 +10884,12 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                     // widen it into a generic family; the slot keeps
                     // Ty::Dyn and the value installs as an OWNED tag-8
                     // Dyn-cell array (8-byte count header, DATA pointer).
+                } else if env[idx].ty == Ty::Dyn && is_sarr(id) && matches!(e, Expr::ArrLit(_) | Expr::DArrNew) {
+                    // S4 rebuild of a shared module array from a (possibly
+                    // NESTED) constant literal: the sarr arm above already
+                    // validated constness. The slot stays Dyn; codegen
+                    // emits the fresh descriptor and replaces the canonical
+                    // reference - never the tag-8 bare-local install.
                 } else if env[idx].ty == Ty::Dyn && matches!(e, Expr::ArrLit(_)) {
                     return Err(format!("line {}: an array assigned to a bare local holds scalar literals only in this stage (no nested arrays, computed items or calls)", n));
                 } else if env[idx].ty == Ty::I64 && t == Ty::Dyn {
@@ -13845,7 +13851,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                     // .data casilla, so every bare-name read loads it fresh
                     // (probe: len(a)/LOCAL b:=a after a callee rebuild).
                     let label = module_static::storage(&CUR_FN.with(|c| c.borrow().clone()), id);
-                    out.push_str(&format!("    mov {}+8(%rip), %rax\n    mov {}(%rip), %rdx\n", label, label));
+                    out.push_str(&format!("    mov {}(%rip), %rax\n    mov {}+8(%rip), %rdx\n", label, label));
                 }
                 Ty::Str | Ty::StrOwn | Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::Dyn | Ty::Hash | Ty::DArrDyn => {
                     // ptr at -(off), len at -(off-8) - same layout as the store
@@ -15007,7 +15013,10 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                             cg_expr(ie, env, sigs, strs, out, target);
                         }
                         let k9 = fresh_lbl();
-                        out.push_str(&format!("    mov -{}(%rbp), %r11\n    @HBC_TAG_KIND@cmpq $16, -{}(%rbp)@HBC_TAG_END@\n    jne hbc_type_error\n    cmp $1, %rax\n    jl 87f\n    cmp (%r11), %rax\n    jg 87f\n    mov 24(%r11), %r11\n    dec %rax\n    shl $4, %rax\n    add %r11, %rax\n    @HBC_TAG_KIND@cmpq $16, (%rax)@HBC_TAG_END@\n    je .Llenc16{}\n    @HBC_TAG_KIND@cmpq $2, (%rax)@HBC_TAG_END@\n    je .Llencs{}\n    @HBC_TAG_KIND@cmpq $4, (%rax)@HBC_TAG_END@\n    je .Llencs{}\n    jmp hbc_len_error\n.Llenc16{}:\n    mov 8(%rax), %r11\n    mov (%r11), %rax\n    jmp .Llencd{}\n.Llencs{}:\n    mov 8(%rax), %r11\n    mov -8(%r11), %rax\n.Llencd{}:\n    jmp 88f\n87:\n    call hbc_bound_error\n88:\n", var.off - 8, var.off, k9, k9, k9, k9, k9, k9, k9));
+                        // A: the cell read must see a callee rebind - load
+                        // the canonical casilla, never a stale frame copy.
+                        cg_sarr_root(v, var.off, "%r11", out);
+                        out.push_str(&format!("    cmp $1, %rax\n    jl 87f\n    cmp (%r11), %rax\n    jg 87f\n    mov 24(%r11), %r11\n    dec %rax\n    shl $4, %rax\n    add %r11, %rax\n    @HBC_TAG_KIND@cmpq $16, (%rax)@HBC_TAG_END@\n    je .Llenc16{}\n    @HBC_TAG_KIND@cmpq $2, (%rax)@HBC_TAG_END@\n    je .Llencs{}\n    @HBC_TAG_KIND@cmpq $4, (%rax)@HBC_TAG_END@\n    je .Llencs{}\n    jmp hbc_len_error\n.Llenc16{}:\n    mov 8(%rax), %r11\n    mov (%r11), %rax\n    jmp .Llencd{}\n.Llencs{}:\n    mov 8(%rax), %r11\n    mov -8(%r11), %rax\n.Llencd{}:\n    jmp 88f\n87:\n    call hbc_bound_error\n88:\n", k9, k9, k9, k9, k9, k9, k9));
                         return;
                     }
                     if var.ty == Ty::DArrRef2 {
