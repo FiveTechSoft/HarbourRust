@@ -26,10 +26,8 @@ trie. The x86-64 code is still the Linux runtime as text, run natively:
   `hbc_freestr`, `hbc_blk_launch` are exported by the executable.
 
 DBF, FILE/SET DEFAULT/PATH, threads, EXTERNAL and the macro operator are
-no longer rejected on Intel.
-`hb_idleSleep` is a named compile-time limit here, as on ARM64: it lowers
-to Linux nanosleep (syscall 35), which the shared dispatcher does not
-route.
+no longer rejected on Intel. `hb_idleSleep` (Linux nanosleep, 35)
+calls libSystem `nanosleep` through `hbc_dw_nanosleep`.
 
 Evidence on Intel hardware (GitHub Actions macos-15-intel, run
 44032525274, job `native-intel`): `tests/run_macho_arm64.py --target

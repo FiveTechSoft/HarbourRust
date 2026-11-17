@@ -436,6 +436,76 @@ hbc_ext_ret_pay: .quad 0
 "#;
 
 /// Lower the Linux x86-64 program text for Intel macOS through dyld.
+// Linux nanosleep (35): Darwin has no BSD nanosleep system call, so it
+// goes to libSystem's nanosleep, preserving every register the syscall
+// instruction preserves (all but rax, rcx, r11; xmm included). libc's
+// -1/errno becomes -errno (EINTR/EFAULT/EINVAL match Linux numbers).
+const DW_NANOSLEEP: &str = r#"
+    .text
+hbc_dw_nanosleep:
+    push %rbp
+    mov %rsp, %rbp
+    and $-16, %rsp
+    sub $320, %rsp
+    mov %rdi, (%rsp)
+    mov %rsi, 8(%rsp)
+    mov %rdx, 16(%rsp)
+    mov %r8, 24(%rsp)
+    mov %r9, 32(%rsp)
+    mov %r10, 40(%rsp)
+    movdqu %xmm0, 64(%rsp)
+    movdqu %xmm1, 80(%rsp)
+    movdqu %xmm2, 96(%rsp)
+    movdqu %xmm3, 112(%rsp)
+    movdqu %xmm4, 128(%rsp)
+    movdqu %xmm5, 144(%rsp)
+    movdqu %xmm6, 160(%rsp)
+    movdqu %xmm7, 176(%rsp)
+    movdqu %xmm8, 192(%rsp)
+    movdqu %xmm9, 208(%rsp)
+    movdqu %xmm10, 224(%rsp)
+    movdqu %xmm11, 240(%rsp)
+    movdqu %xmm12, 256(%rsp)
+    movdqu %xmm13, 272(%rsp)
+    movdqu %xmm14, 288(%rsp)
+    movdqu %xmm15, 304(%rsp)
+    call *__hbc_imp_nanosleep(%rip)
+    test %eax, %eax
+    jz .Ldwns1
+    call *__hbc_imp___error(%rip)
+    movslq (%rax), %rax
+    neg %rax
+    jmp .Ldwns2
+.Ldwns1:
+    xor %eax, %eax
+.Ldwns2:
+    movdqu 64(%rsp), %xmm0
+    movdqu 80(%rsp), %xmm1
+    movdqu 96(%rsp), %xmm2
+    movdqu 112(%rsp), %xmm3
+    movdqu 128(%rsp), %xmm4
+    movdqu 144(%rsp), %xmm5
+    movdqu 160(%rsp), %xmm6
+    movdqu 176(%rsp), %xmm7
+    movdqu 192(%rsp), %xmm8
+    movdqu 208(%rsp), %xmm9
+    movdqu 224(%rsp), %xmm10
+    movdqu 240(%rsp), %xmm11
+    movdqu 256(%rsp), %xmm12
+    movdqu 272(%rsp), %xmm13
+    movdqu 288(%rsp), %xmm14
+    movdqu 304(%rsp), %xmm15
+    mov (%rsp), %rdi
+    mov 8(%rsp), %rsi
+    mov 16(%rsp), %rdx
+    mov 24(%rsp), %r8
+    mov 32(%rsp), %r9
+    mov 40(%rsp), %r10
+    mov %rbp, %rsp
+    pop %rbp
+    ret
+"#;
+
 pub fn darwin_dyld_asm(src: &str, threaded: bool, ext: bool) -> Result<(String, Dyld), String> {
     let mut text = format!("{}\n{}", src, crate::hasm::arm64::LINUX_SYSCALL_DISPATCH);
     if ext {
@@ -462,6 +532,7 @@ pub fn darwin_dyld_asm(src: &str, threaded: bool, ext: bool) -> Result<(String, 
     let lines: Vec<&str> = text.lines().collect();
     let mut out = String::with_capacity(text.len() + 4096);
     let mut serial = 0u32;
+    let mut nanosleep = false;
     for (i, line) in lines.iter().enumerate() {
         let t = line.split('#').next().unwrap().trim();
         if ext {
@@ -487,6 +558,7 @@ pub fn darwin_dyld_asm(src: &str, threaded: bool, ext: bool) -> Result<(String, 
             Some(60) if threaded => dw_call(&mut out, "hbc_dw_exit"),
             Some(2) => dw_call(&mut out, "hbc_dw_open"),
             Some(96) => dw_call(&mut out, "hbc_dw_gettimeofday"),
+            Some(35) => { nanosleep = true; dw_call(&mut out, "hbc_dw_nanosleep") }
             Some(9) => {
                 out.push_str("    push %r10\n    mov $0x1002, %r10d\n");
                 dw_raw(&mut out, &mut serial, 0x200_0000 + 197);
@@ -513,6 +585,10 @@ pub fn darwin_dyld_asm(src: &str, threaded: bool, ext: bool) -> Result<(String, 
         for s in ["pthread_key_create", "pthread_attr_init", "pthread_attr_setstacksize", "pthread_create", "pthread_detach", "pthread_main_np", "pthread_exit"] {
             imp(s, 1, &mut imports);
         }
+    }
+    if nanosleep {
+        out.push_str(DW_NANOSLEEP);
+        for s in ["nanosleep", "__error"] { imp(s, 1, &mut imports); }
     }
     let mut exports = Vec::new();
     if ext {

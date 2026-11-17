@@ -6,8 +6,8 @@ normally (rc 1, never a signal) with the row's registered diagnostic
 substring. These probes use fake compiler scripts to distinguish an
 exact rejection from a crash, an abnormal rc, a different error and a
 successful compile (which must leave the named row to the stale-REJ
-guard). With HBC=<path to a real hbc> the real compiler's idlesleep
-rejection is classified end to end.
+guard). With HBC=<path to a real hbc> the five idlesleep rows are
+checked to compile for both Mach-O targets.
 """
 import importlib.util, os, subprocess, tempfile, unittest
 from unittest.mock import patch
@@ -96,29 +96,21 @@ class RealCompilerTest(unittest.TestCase):
                            capture_output=True)
         self.assertEqual(c.returncode, 0, c.stderr)
 
-    def test_real_intel_idlesleep_still_rejects_all_five(self):
-        for row, diag in m.IDLESLEEP_INTEL_REJ.items():
-            with tempfile.TemporaryDirectory() as d:
-                c = subprocess.run([os.environ['HBC'], row, os.path.join(d,'probe'), '--target=macho'],capture_output=True)
-                self.assertEqual(c.returncode,1,c.stderr)
-                self.assertIn(diag.encode(),c.stderr)
-
+    def test_real_both_targets_compile_all_five(self):
+        for target in ('--target=macho-arm64', '--target=macho'):
+            for row in m.IDLESLEEP_WINDOWS:
+                with tempfile.TemporaryDirectory() as d:
+                    c = subprocess.run([os.environ['HBC'], row, os.path.join(d, 'probe'), target], capture_output=True)
+                    self.assertEqual(c.returncode, 0, (target, row, c.stderr))
 
 
 class TimingTests(unittest.TestCase):
-    def test_target_policies_stay_separate(self):
+    def test_no_named_rejections_on_either_target(self):
         try:
-            m.configure_target('macho')
-            self.assertEqual(len(m.EXPECTED_REJ),5)
-            self.assertEqual(m.EXT_DEMOS,9)
-            for row,diag in m.IDLESLEEP_INTEL_REJ.items():
-                self.assertEqual(m.classify_compile_failure(row,1,diag)[0],'REJ')
-            self.assertEqual(m.stale_named_rejections([('REJ',f,'') for f in m.IDLESLEEP_INTEL_REJ]),[])
-            m.configure_target('macho-arm64')
-            self.assertEqual(m.EXPECTED_REJ,{})
-            for row,diag in m.IDLESLEEP_INTEL_REJ.items():
-                # Unnamed REJ is caught by main's unexpected-REJ guard.
-                self.assertNotIn(row,m.EXPECTED_REJ)
+            for target in ('macho', 'macho-arm64'):
+                m.configure_target(target)
+                self.assertEqual(m.EXPECTED_REJ, {})
+                self.assertEqual(m.TARGET, '--target=' + target)
         finally:
             m.configure_target('macho-arm64')
 
