@@ -92,8 +92,8 @@ jobs:
       - name: TEMP debug apithreads on Linux
         if: always()
         run: |
-          sudo apt-get update -qq >/dev/null 2>&1; sudo apt-get install -y -qq gdb >/dev/null 2>&1; which gdb
-          cd bin && gdb -batch -ex run -ex bt -ex 'info registers' -ex 'x/12i $pc-24' -ex 'info threads' ./ext_apithreads 2>&1 | tail -80
+          sudo apt-get install -y gdb >/dev/null 2>&1 || true
+          cd bin && gdb -batch -ex run -ex bt -ex 'info registers' -ex 'x/8i $pc-12' ./ext_apithreads 2>&1 | tail -60
           objdump -d --no-show-raw-insn ext_apithreads | grep -B30 -A5 "$(gdb -batch -ex run -ex 'p/x $pc' ./ext_apithreads 2>&1 | grep -o '0x[0-9a-f]*' | tail -1 | sed 's/0x//'):" | head -60 || true
       - uses: actions/upload-artifact@v4
         with:
