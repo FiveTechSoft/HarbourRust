@@ -8,7 +8,7 @@ def run(cmd,work,label,e=env):
  r=subprocess.run(list(map(str,cmd)),cwd=work,env=e,capture_output=True,stdin=subprocess.DEVNULL,timeout=60)
  for k,v in [('stdout',r.stdout),('stderr',r.stderr),('rc',str(r.returncode).encode())]:(work/(label+'.'+k)).write_bytes(v)
  return r
-expect={**{n:'module STATIC requires a folded i64, logical, string or flat integer-array constant initializer'for n in ['nil','logical','string','hash','date','float','effectful']},'duplicate':'duplicate module STATIC','late':'module STATIC declarations must precede','branch_shadow':'module STATIC shadow inside control flow','memvar':'module STATIC and explicit MEMVAR','method_loop':'STATIC loop counters require','loop':'STATIC loop counters require','widen':'type mismatch in assignment'}
+expect={**{n:'module STATIC requires a folded i64, logical or string scalar or a constant array initializer (i64/logical/string/NIL cells, nested and empty arrays admitted); NIL, Date, float and hash initializers are not in this increment'for n in ['nil','hash','date','float','effectful']},'duplicate':'duplicate module STATIC','late':'module STATIC declarations must precede','branch_shadow':'module STATIC shadow inside control flow','memvar':'module STATIC and explicit MEMVAR','method_loop':'STATIC loop counters require','loop':'STATIC loop counters require','widen':'type mismatch in assignment'}
 for group in ['programs','negative']:
  for src in sorted((root/group).glob('*.prg')):
   for target in ['linux']+(['windows']if a.wine else[]):
