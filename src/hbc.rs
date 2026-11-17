@@ -19593,6 +19593,20 @@ fn cg_print_items(es: &[Expr], inline: bool, raw: bool, stderr: bool, env: &[CgL
                         }
                         continue;
                     }
+                    if t == Ty::I64 {
+                        // Harbour date parts print in their own field
+                        // (oracle pdate): Year 5, Month/Day/DoW 3 — a
+                        // direct call in a ? item keeps that width; any
+                        // other expression follows the integer macro.
+                        if let Expr::Call(id, _) = e {
+                            let w = match id.as_str() { "year" => Some(5u32), "month" | "day" | "dow" => Some(3u32), _ => None };
+                            if let Some(w) = w {
+                                if !stderr && !raw { out.push_str("    call hbc_pflush\n"); }
+                                out.push_str(&format!("    mov {}(%rsp), %rax\n    mov ${}, %edi\n    call hbc_print_i64w\n", off, w));
+                                continue;
+                            }
+                        }
+                    }
                     if t==Ty::NumLocal {
                         if !stderr && !raw {out.push_str("    call hbc_pflush\n");}
                         let l=fresh_lbl();let d=fresh_lbl();
@@ -28231,6 +28245,61 @@ hbc_print_i64c:
     leave
     ret
 
+# hbc_print_i64w: %rax = signed value, %edi = fixed field width. Harbour
+# date parts print with their own field (oracle pdate: Year 5, Month/Day/
+# DoW 3), not the integer 10/20 macro. Values wider than the field keep
+# the digits (Harbour overflows the field).
+hbc_print_i64w:
+    push %rbp
+    mov %rsp, %rbp
+    sub $64, %rsp
+    mov %edi, -12(%rbp)
+    xor %r9d, %r9d
+    test %rax, %rax
+    jns 1f
+    mov $1, %r9d
+    neg %rax
+1:
+    lea -1(%rbp), %rsi
+    mov $10, %r8
+2:
+    xor %edx, %edx
+    div %r8
+    add $48, %dl
+    mov %dl, (%rsi)
+    dec %rsi
+    test %rax, %rax
+    jnz 2b
+    test %r9d, %r9d
+    jz 3f
+    movb $45, (%rsi)
+    dec %rsi
+3:
+    lea 1(%rsi), %r9
+    lea -1(%rbp), %r10
+    sub %r9, %r10
+    inc %r10
+    mov -12(%rbp), %rax
+    cmp %r10, %rax
+    jae 4f
+    mov %r10, %rax
+4:
+    sub %r10, %rax
+    jle 7f
+    mov %rax, %rdx
+    lea .Lpad20(%rip), %rsi
+    mov $1, %eax
+    mov $1, %edi
+    syscall
+7:
+    mov %r9, %rsi
+    mov %r10, %rdx
+    mov $1, %eax
+    mov $1, %edi
+    syscall
+    leave
+    ret
+
 # hbc_print_dyn: %rax = tag, %rdx = payload. Prints NIL (no field width,
 # probe n1) for tag 1, the raw string bytes for tag 2 (payload points at
 # the bytes, length header at payload-8 - same layout as a hash key
@@ -31343,6 +31412,58 @@ hbc_print_i64:
     mov %rdx, -40(%rbp)
     lea .Lpad20(%rip), %rax
     mov %r8, %rdx
+    call hbc_print_str
+    mov -32(%rbp), %rax
+    mov -40(%rbp), %rdx
+7:
+    call hbc_print_str
+    leave
+    ret
+
+# hbc_print_i64w: %rax = signed value, %edi = fixed field width. Harbour
+# date parts print with their own field (oracle pdate: Year 5, Month/Day/
+# DoW 3). Values wider than the field keep the digits.
+hbc_print_i64w:
+    push %rbp
+    mov %rsp, %rbp
+    sub $64, %rsp
+    mov %edi, -48(%rbp)
+    xor %r9d, %r9d
+    test %rax, %rax
+    jns 1f
+    mov $1, %r9d
+    neg %rax
+1:
+    lea -1(%rbp), %r10
+    mov $10, %r8
+2:
+    xor %edx, %edx
+    div %r8
+    add $48, %dl
+    mov %dl, (%r10)
+    dec %r10
+    test %rax, %rax
+    jnz 2b
+    test %r9d, %r9d
+    jz 3f
+    movb $45, (%r10)
+    dec %r10
+3:
+    lea 1(%r10), %rax
+    mov %rbp, %rdx
+    sub %r10, %rdx
+    dec %rdx
+    mov -48(%rbp), %r11
+    cmp %rdx, %r11
+    jae 4f
+    mov %rdx, %r11
+4:
+    sub %rdx, %r11
+    jle 7f
+    mov %rax, -32(%rbp)
+    mov %rdx, -40(%rbp)
+    lea .Lpad20(%rip), %rax
+    mov %r11, %rdx
     call hbc_print_str
     mov -32(%rbp), %rax
     mov -40(%rbp), %rdx
