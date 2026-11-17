@@ -50,30 +50,25 @@ producer sin locales owned; no prueba unwind general de frames ajenos.
 
 ## Gates
 
-Revision 2 (tras bloqueos del revisor en 9dbd9486, retirado): gates nuevos
-`page-lengths` (longitudes alrededor de len+16 multiplo de pagina), `cache-poison`
-(string liberado con bytes no nulos antes de DIRMAKE), `poison-*` (6 ejecuciones
-que rellenan el clon con 'y' tras hbc_stralloc: solo el NUL explicito mantiene
-los nombres exactos, incluido len 4079/4080/4081/4095) y la forma de memoria
-`object-identity` (delta 2 igual que el control, baseline de objetos).
-Total 179 checks. Los conteos de arriba son los de la revision 1; los raws de
-la revision 2 mandan.
-
 `check.py` exige --hbmk2 y --hbct externos. Genera fixtures propios y usa
 cwd desechable separado por ejecutable. Compara stdout, stderr, exit y arbol
 filesystem (incluidos permisos) con el oracle Linux, sin normalizacion.
+Total 179 checks, desglose medido en results.json:
 
-- 14 casos filesystem contra oracle.
-- 28 emisiones Darwin, NO ejecuciones nativas.
-- 11 rechazos: aridad, agregados, validacion malformada/unknown/forward,
-  Windows y LLVM.
-- 108 rutas ownership: 18 formas x N=1/500/1000 x actual/control.
-  Incluye literal, temp/nombre StrOwn, Dyn literal/owned/float/return,
-  concat Dyn-string ya existente, input desde array/hash, module STATIC,
-  IIF, DATA, wrapper-return y producer que lanza Break.
-  17 formas tienen delta 0 en actual y control. DATA tiene delta fijo 2 en
-  ambos, con N=1/500/1000: es el baseline heredado del fixture de objetos,
-  no una fuga por llamada DIRMAKE. No se presenta como delta cero.
+- 16 casos filesystem contra oracle (incluye page-lengths y cache-poison).
+- 32 emisiones Darwin, NO ejecuciones nativas.
+- 11 rechazos: 7 de validacion (aridad, agregados, malformado/unknown/forward)
+  y 4 perfiles Windows/LLVM.
+- 114 rutas ownership: 19 formas x N=1/500/1000 x actual/control. Incluye
+  literal, temp/nombre StrOwn, Dyn literal/owned/float/return, concat Dyn-string
+  existente, input desde array/hash, module STATIC, IIF, DATA, object-identity
+  (DIRMAKE(identity(o)) con Dyn dueño tag13), wrapper-return y producer que
+  lanza Break. 17 formas tienen delta 0 en actual y control. DATA y
+  object-identity tienen delta fijo 2 en ambos, con N=1/500/1000: es el
+  baseline heredado del fixture de objetos, no una fuga por llamada DIRMAKE.
+- 6 ejecuciones poison-*: tras hbc_stralloc el clon se rellena con 'y'; solo el
+  NUL explicito mantiene los nombres exactos (len 1, 3, 4079, 4080, 4081, 4095).
+  No fuerza una lectura fuera de mapping; prueba que no se depende del relleno.
 
 `check_native.py` es un gate de ejecucion contra el OS local, NO oracle
 Harbour. Ejecuta seis casos (paths/owned/scalar x umask 022/077), exige bytes,

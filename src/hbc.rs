@@ -31,6 +31,7 @@ use std::process;
 
 thread_local! {
     static DIRMAKE_USED: std::cell::Cell<bool> = const {std::cell::Cell::new(false)};
+    static INKEY_USED: std::cell::Cell<bool> = const {std::cell::Cell::new(false)};
     static FILE_USED: std::cell::Cell<bool> = const {std::cell::Cell::new(false)};
     static FILE_PATH_LINE: std::cell::Cell<Option<usize>> = const {std::cell::Cell::new(None)};
 }
@@ -245,6 +246,13 @@ fn f64_const(bits: u64) -> usize {
 // Numeric literal view for Harbour's compile-time fold (expropt2.c):
 // Float/FloatV are doubles with their written/folded dec; Int is a long
 // (dec 0). Returns (value, dec).
+// INKEY timeout in whole milliseconds: only a finite literal from 0.01 s (the
+// oracle waits forever below that) to one day, rounded to the nearest ms.
+fn inkey_literal_ms(e: &Expr) -> Option<u64> {
+    let (v, _) = num_lit(e)?;
+    if !v.is_finite() || v < 0.01 || v > 86400.0 { return None; }
+    Some((v * 1000.0).round() as u64)
+}
 fn num_lit(e: &Expr) -> Option<(f64, u8)> {
     match e {
         Expr::Int(v) => v.parse::<i64>().ok().map(|k| (k as f64, 0)),
@@ -1776,7 +1784,7 @@ const ASM_RESERVED: &[&str] = &[
     // hbc itself emits; a user function with one of these names would
     // collide with a helper symbol.
     "dtos", "stod", "year", "day", "month", "dow", "cdow", "cmonth", "dtoc", "sqrt", "exp", "log", "mod", "padc", "rat", "stuff", "isdigit", "isalpha", "isupper", "islower", "strzero", "ischar", "strzero_fix", "str_f64", "fmt_f64", "date_add", "date_diff", "date_days", "date_from_days",
-    "strtran", "space", "substr", "date", "ctod", "date_pack", "date_render", "date_today", "curdir", "dirmake", "file", "hrfile_setdefault", "hrfile_setpath", "qout", "qqout", "outstd", "outerr", "empty", "procname", "min", "max", "str", "padr", "hb_ntos", "replicate", "aeval", "hb_isnumeric", "hb_isarray", "hb_isstring", "dfree", "upper", "lower", "left", "right", "at", "int", "abs", "padl", "val", "ascan", "aclone", "atail", "asort", "hb_bitand", "hb_bitor", "hb_bitxor", "hb_bitnot", "hb_bittest", "hb_bitset", "hb_bitreset", "eprint_str", "eprint_sep", "eprint_i64", "eprint_i64c", "eprint_dyn", "eprint_dynlit", "print_dynlit", "eprint_f64", "hb_eol", "procline", "asc", "trim", "ltrim", "rtrim", "alltrim", "chr", "trace_top", "print_trace", "panic_exit", "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_range_error", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
+    "strtran", "space", "substr", "date", "ctod", "date_pack", "date_render", "date_today", "curdir", "dirmake", "inkey", "file", "hrfile_setdefault", "hrfile_setpath", "qout", "qqout", "outstd", "outerr", "empty", "procname", "min", "max", "str", "padr", "hb_ntos", "replicate", "aeval", "hb_isnumeric", "hb_isarray", "hb_isstring", "dfree", "upper", "lower", "left", "right", "at", "int", "abs", "padl", "val", "ascan", "aclone", "atail", "asort", "hb_bitand", "hb_bitor", "hb_bitxor", "hb_bitnot", "hb_bittest", "hb_bitset", "hb_bitreset", "eprint_str", "eprint_sep", "eprint_i64", "eprint_i64c", "eprint_dyn", "eprint_dynlit", "print_dynlit", "eprint_f64", "hb_eol", "procline", "asc", "trim", "ltrim", "rtrim", "alltrim", "chr", "trace_top", "print_trace", "panic_exit", "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_range_error", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
 ];
 
 fn dbf_result(id: &str) -> Option<Ty> {
@@ -3502,6 +3510,7 @@ fn parse(src: &str) -> Result<Prog, String> {
     module_static::reset();
     MACRO_CONTEXT.with(|c|c.set(false));
     DIRMAKE_USED.with(|v|v.set(false));
+    INKEY_USED.with(|v|v.set(false));
     FILE_USED.with(|v|v.set(false));
     FILE_PATH_LINE.with(|v|v.set(None));
     SET_CONSOLE_LINE.with(|v|v.set(None));
@@ -7074,6 +7083,19 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                     return Err(format!("line {}: `ctod` expects a string",n));
                 }
                 return Ok(Ty::Date);
+            }
+            if is_builtin(id,"inkey") {
+                if !CURDIR_LINUX_NATIVE.with(|v|v.get()) {
+                    return Err(format!("line {}: INKEY supports ordinary Linux stdin only in this increment; Darwin, Windows and LLVM are not measured",n));
+                }
+                if args.len()>1 {return Err(format!("line {}: INKEY supports zero arguments or one numeric literal from 0.01 to 86400 seconds in this increment; mask and extra arguments are not covered",n));}
+                if let Some(a)=args.first() {
+                    if inkey_literal_ms(a).is_none() {
+                        return Err(format!("line {}: INKEY supports zero arguments or one numeric literal from 0.01 to 86400 seconds in this increment; zero, negative, NIL, non-numeric and runtime timeouts are not covered",n));
+                    }
+                }
+                INKEY_USED.with(|v|v.set(true));
+                return Ok(Ty::I64);
             }
             if is_builtin(id,"dirmake") {
                 if !CURDIR_LINUX_NATIVE.with(|v|v.get()) && !MACHO_MODE.with(|v|v.get()) {
@@ -11219,6 +11241,7 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
             if is_builtin(id,"date") { return; }
             if is_builtin(id,"ctod") { apply_moves(&args[0],env,sigs,false); return; }
             if is_builtin(id,"dirmake") {for a in args {apply_moves(a,env,sigs,false);}return;}
+            if is_builtin(id,"inkey") {return;}
             if is_builtin(id,"file") || id=="hrfile_setdefault" || id=="hrfile_setpath" {
                 for a in args {apply_moves(a,env,sigs,false);}return;
             }
@@ -14771,6 +14794,10 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             if temp { out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n"); }
             out.push_str("    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_ctod\n");
             if temp { out.push_str("    mov %rax, 8(%rsp)\n    mov (%rsp), %rdi\n    call hbc_freestr\n    mov 8(%rsp), %rax\n    add $16, %rsp\n"); }
+        }
+        Expr::Call(id,args) if is_builtin(id,"inkey") => {
+            let ms=args.first().map(|a|inkey_literal_ms(a).expect("INKEY literal validated")).unwrap_or(0);
+            out.push_str(&format!("    mov ${}, %rdi\n    call hbc_inkey\n    xor %edx, %edx\n",ms));
         }
         Expr::Call(id,args) if is_builtin(id,"dirmake") => {
             if args.is_empty() {out.push_str("    mov $-2, %rax\n");}
@@ -18355,7 +18382,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
                 let t = expr_ty(&args[0], env, sigs);
                 return t;
             }
-            if is_builtin(id,"dirmake") {return Ty::I64;}
+            if is_builtin(id,"dirmake") || is_builtin(id,"inkey") {return Ty::I64;}
             if is_builtin(id,"file") {return Ty::Bool;}
             if id=="hrfile_setdefault"||id=="hrfile_setpath" {return Ty::Dyn;}
             if is_builtin(id, "curdir") || is_builtin(id, "chr") || is_builtin(id, "str") || is_builtin(id, "hb_ntos") || is_builtin(id, "padr") || is_builtin(id, "replicate") { return Ty::StrOwn; }
@@ -27352,6 +27379,15 @@ fn emit_asm(funcs: &[Func], sigs: &[Sig], externs: &[String], target: Target, in
         // Original MIT implementation. Compiler strings are counted, not
         // necessarily terminated. Make one owned NUL-terminated OS snapshot.
         out.push_str("    .text\nhbc_dirmake:\n    push %rbp\n    mov %rsp, %rbp\n    sub $32, %rsp\n    mov %rdi, -8(%rbp)\n    mov %rsi, -16(%rbp)\n    add $1, %rsi\n    jc hbc_oom\n    call hbc_stralloc\n    mov %rax, -24(%rbp)\n    mov -8(%rbp), %rsi\n    mov %rax, %rdi\n    mov -16(%rbp), %rcx\n    rep movsb\n    movb $0, (%rdi)\n    mov %rax, %rdi\n    mov $511, %esi\n    mov $83, %eax\n    syscall\n    mov %rax, -16(%rbp)\n    mov -24(%rbp), %rdi\n    call hbc_freestr\n    mov -16(%rbp), %rax\n    leave\n    ret\n");
+    }
+    if INKEY_USED.with(|v|v.get()) {
+        // Original MIT implementation. rdi = timeout in ms (0 = no wait).
+        // A CLOCK_MONOTONIC deadline is fixed on entry; poll/read/nanosleep
+        // are retried on EINTR with the REMAINING time. A readable byte is
+        // returned; on EOF, closed or hung-up stdin the remaining time to the
+        // deadline is slept (never the full timeout again) and the result is 0.
+        // No raw mode: tty input stays line-buffered.
+        out.push_str("    .text\nhbc_inkey:\n    push %rbp\n    mov %rsp, %rbp\n    sub $64, %rsp\n    mov %rdi, -8(%rbp)\n    test %rdi, %rdi\n    jz .Linkey_loop\n    mov $1, %edi\n    lea -48(%rbp), %rsi\n    mov $228, %eax\n    syscall\n    mov -48(%rbp), %rax\n    imul $1000000000, %rax, %rax\n    add -40(%rbp), %rax\n    mov -8(%rbp), %rcx\n    imul $1000000, %rcx, %rcx\n    add %rcx, %rax\n    mov %rax, -56(%rbp)\n.Linkey_loop:\n    cmpq $0, -8(%rbp)\n    jz .Linkey_poll0\n    mov $1, %edi\n    lea -48(%rbp), %rsi\n    mov $228, %eax\n    syscall\n    mov -48(%rbp), %rax\n    imul $1000000000, %rax, %rax\n    add -40(%rbp), %rax\n    mov -56(%rbp), %rcx\n    sub %rax, %rcx\n    jle .Linkey_none\n    add $999999, %rcx\n    mov %rcx, %rax\n    xor %edx, %edx\n    mov $1000000, %rcx\n    div %rcx\n    mov %rax, %rdx\n    jmp .Linkey_poll\n.Linkey_poll0:\n    xor %edx, %edx\n.Linkey_poll:\n    movl $0, -16(%rbp)\n    movw $1, -12(%rbp)\n    movw $0, -10(%rbp)\n    lea -16(%rbp), %rdi\n    mov $1, %esi\n    mov $7, %eax\n    syscall\n    cmp $-4, %rax\n    je .Linkey_intr\n    test %rax, %rax\n    jl .Linkey_eof\n    jz .Linkey_none\n    movzwl -10(%rbp), %eax\n    test $1, %eax\n    jz .Linkey_eof\n    xor %eax, %eax\n    xor %edi, %edi\n    lea -24(%rbp), %rsi\n    mov $1, %edx\n    syscall\n    cmp $1, %rax\n    je .Linkey_got\n    cmp $-4, %rax\n    je .Linkey_intr\n    jmp .Linkey_eof\n.Linkey_got:\n    movzbl -24(%rbp), %eax\n    leave\n    ret\n.Linkey_intr:\n    cmpq $0, -8(%rbp)\n    je .Linkey_none\n    jmp .Linkey_loop\n.Linkey_eof:\n    cmpq $0, -8(%rbp)\n    je .Linkey_none\n.Linkey_sleep:\n    mov $1, %edi\n    lea -48(%rbp), %rsi\n    mov $228, %eax\n    syscall\n    mov -48(%rbp), %rax\n    imul $1000000000, %rax, %rax\n    add -40(%rbp), %rax\n    mov -56(%rbp), %rcx\n    sub %rax, %rcx\n    jle .Linkey_none\n    mov %rcx, %rax\n    xor %edx, %edx\n    mov $1000000000, %rcx\n    div %rcx\n    mov %rax, -48(%rbp)\n    mov %rdx, -40(%rbp)\n    lea -48(%rbp), %rdi\n    xor %esi, %esi\n    mov $35, %eax\n    syscall\n    jmp .Linkey_sleep\n.Linkey_none:\n    xor %eax, %eax\n    leave\n    ret\n");
     }
     match target {
         Target::Linux => out.push_str("# target: linux - no libc, I/O via own syscall helpers at the end\n"),
