@@ -37,7 +37,7 @@ jobs:
           function Factorial(n)
           return IIF(n<=1,1,n*Factorial(n-1))
           PRG
-          ./hbc macos.prg program.ll --experimental-llvm
+          ./hbc macos.prg program.ll --target=linux --experimental-llvm
       - name: Assemble the bounded LLVM smoke sample
         run: |
           set -eu
