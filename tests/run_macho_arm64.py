@@ -139,11 +139,41 @@ def thread_suite(hbc, d, ref):
     return res
 
 
+def ext_suite(hbc, d, ref):
+    """EXTERNAL demos: the C extension and extend/hbhbr.c form the dylib
+    libhbext.dylib next to the executable; outputs against Linux (gcc
+    bridge, as, ld) runs of the same demos."""
+    import pathlib
+    res = []
+    for n in ['apif64', 'apiecho', 'apiref', 'apistorref', 'apiitem', 'apiarr', 'apieval', 'extdemo']:
+        work = pathlib.Path(d) / ('ext_' + n)
+        work.mkdir()
+        srcs = ['extend/hbhbr.c', 'extend/demo/' + ('myext' if n == 'extdemo' else n) + '.c']
+        if n in ('apiref', 'apiitem', 'apistorref', 'apiarr', 'apieval'):
+            srcs.append('extend/demo/apif64.c')
+        c = subprocess.run(['clang', '-O2', '-dynamiclib', '-undefined', 'dynamic_lookup', '-Iextend', *srcs, '-o', str(work / 'libhbext.dylib')], capture_output=True)
+        if c.returncode:
+            res.append(('FAIL', 'extend/' + n, 'clang: ' + c.stderr.decode('latin-1')[-300:])); continue
+        c = subprocess.run([hbc, 'extend/demo/%s.prg' % n, str(work / 'prog'), '--target=macho-arm64'], capture_output=True)
+        if c.returncode:
+            res.append(('REJ', 'extend/' + n, c.stderr.decode('latin-1').strip()[-200:])); continue
+        r_ = pathlib.Path(ref)
+        exp = ((r_ / ('ext_%s.stdout' % n)).read_bytes(), (r_ / ('ext_%s.stderr' % n)).read_bytes(), int((r_ / ('ext_%s.rc' % n)).read_text()))
+        try:
+            r = subprocess.run([str(work / 'prog')], cwd=work, capture_output=True, stdin=subprocess.DEVNULL, timeout=60)
+            got = (r.stdout, r.stderr, r.returncode)
+        except subprocess.TimeoutExpired:
+            got = (b'', b'', 'timeout')
+        ok = got == exp
+        res.append(('PASS' if ok else 'FAIL', 'extend/' + n, '' if ok else 'rc=%s stdout=%r stderr=%r expected rc=%s stdout=%r' % (got[2], got[0][:300], got[1][:300], exp[2], exp[0][:300])))
+    return res
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--hbc', default='./hbc')
     ap.add_argument('--jobs', type=int, default=os.cpu_count() or 4)
-    ap.add_argument('--thread-ref', help='directory with Linux <name>.stdout/.stderr/.rc of tests/threads/programs')
+    ap.add_argument('--thread-ref', help='directory with Linux <name>.stdout/.stderr/.rc of tests/threads/programs and ext_<demo> EXTERNAL demos')
     ap.add_argument('pattern', nargs='?')
     a = ap.parse_args()
     hbc = os.path.abspath(a.hbc)
@@ -156,7 +186,7 @@ def main():
         if not a.pattern:
             res += file_suite(hbc, d) + dbf_suite(hbc, d)
             if a.thread_ref:
-                res += thread_suite(hbc, d, a.thread_ref)
+                res += thread_suite(hbc, d, a.thread_ref) + ext_suite(hbc, d, a.thread_ref)
     for r in res:
         if r[0] != 'PASS':
             print('%s %s %s' % r)

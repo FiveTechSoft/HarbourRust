@@ -300,7 +300,35 @@ int hb_parl( int iParam )
  * flow (ld / hbmk2 -nostdlib on Linux, mingw-ld -lkernel32 on
  * Windows). The sys_* names below keep their Linux flavour; each is a
  * one-line shim over the platform primitive. */
-#ifndef _WIN32
+#if defined( __APPLE__ ) && defined( __aarch64__ )
+/* macOS Apple Silicon: the bridge is built into the extension dylib
+ * (docs/EXTEND-BRIDGE.md, Mach-O ARM64) and uses libSystem; the hbc
+ * executable exports hbc_strcpy/hbc_freestr/hbc_blk_launch to it. */
+extern void * mmap( void * addr, unsigned long len, int prot, int flags, int fd, long off );
+extern int    munmap( void * addr, unsigned long len );
+extern long   write( int fd, const void * buf, unsigned long len );
+extern void   _exit( int code ) __attribute__( ( noreturn ) );
+static void * sys_mmap( HB_ULONG len )
+{
+    return mmap( (void *) 0, len, 3, 0x1002, -1, 0 ); /* RW, MAP_PRIVATE|MAP_ANON */
+}
+static void sys_munmap( void * addr, HB_ULONG len )
+{
+    munmap( addr, len );
+}
+static void sys_write_err( const char * msg, HB_ULONG len )
+{
+    write( 2, msg, len );
+}
+extern void hrdbf_app_close( void ) __attribute__( ( weak_import ) );
+static void sys_exit1( void )
+{
+    if( hrdbf_app_close )
+        hrdbf_app_close();
+    _exit( 1 );
+}
+#define HBC_MAP_FAILED( p ) ( (HB_ULONG) ( p ) > (HB_ULONG) -4096 )
+#elif !defined( _WIN32 )
 static void * sys_mmap( HB_ULONG len )
 {
     void * ret;
@@ -804,7 +832,9 @@ PHB_ITEM hb_itemReturn( PHB_ITEM pItem )
  * clobbers can unbalance the caller - and no compiler register
  * allocation can reinterpret the convention (review finding on the
  * inline-asm version). */
-#ifndef _WIN32
+#if defined( __APPLE__ ) && defined( __aarch64__ )
+/* provided by the hbc executable (C-callable export) */
+#elif !defined( _WIN32 )
 __asm__(
     ".p2align 3\n"
     ".globl hbc_blk_launch\n"

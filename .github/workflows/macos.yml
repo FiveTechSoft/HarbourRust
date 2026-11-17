@@ -71,6 +71,21 @@ jobs:
             (cd bin && set +e; timeout 60 "./$b" > "../ref/$b.stdout" 2> "../ref/$b.stderr" < /dev/null; echo $? > "../ref/$b.rc")
           done
           ls ref | wc -l
+      - name: Linux outputs of the EXTERNAL demos (gcc bridge, as, ld)
+        run: |
+          set -eu
+          gcc -c -O2 -ffreestanding -fno-stack-protector -Iextend extend/hbhbr.c -o bin/hbhbr.o
+          gcc -c -O2 -ffreestanding -fno-stack-protector -Iextend extend/demo/apif64.c -o bin/apif64.c.o
+          for n in apif64 apiecho apiref apistorref apiitem apiarr apieval extdemo; do
+            c=extend/demo/$n.c; [ "$n" = extdemo ] && c=extend/demo/myext.c
+            gcc -c -O2 -ffreestanding -fno-stack-protector -Iextend "$c" -o "bin/$n.c.o"
+            ./hbc "extend/demo/$n.prg" "bin/$n.s" --target=linux
+            as "bin/$n.s" -o "bin/$n.o"
+            extra=""; case $n in apiref|apiitem|apistorref|apiarr|apieval) extra=bin/apif64.c.o;; esac
+            ld -o "bin/ext_$n" "bin/$n.o" "bin/$n.c.o" bin/hbhbr.o $extra
+            (cd bin && set +e; timeout 60 "./ext_$n" > "../ref/ext_$n.stdout" 2> "../ref/ext_$n.stderr" < /dev/null; echo $? > "../ref/ext_$n.rc")
+          done
+          ls ref | wc -l
       - uses: actions/upload-artifact@v4
         with:
           name: thread-reference

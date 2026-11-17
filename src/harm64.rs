@@ -262,6 +262,8 @@ struct Tr<'a> {
     imports: Vec<&'static str>,
     used_helpers: std::collections::HashSet<&'static str>,
     threaded: bool,         // program uses the thread runtime: TSO-ordered memory, pthread clone
+    ext: bool,              // EXTERNAL program: undefined symbols come from the extension dylib
+    ext_imports: std::collections::HashSet<&'static str>,
 }
 
 impl<'a> Tr<'a> {
@@ -371,6 +373,13 @@ impl<'a> Tr<'a> {
         let dconst = match disp { None => Some(0), Some(e) => self.cval(e) };
         if riplab.is_some() || dconst.is_none() {
             let e = disp.clone().ok_or("ARM64: empty symbolic displacement")?;
+            if base.is_none() && index.is_none() {
+                if let Some(g) = self.ext_symbol(&e) {
+                    self.out.push(AI::Adr { rd: T2, t: Tg::Got(g) });
+                    self.w(e_ldst_u(3, false, 1, T2, T2, 0));
+                    return Ok((T2, 0));
+                }
+            }
             self.out.push(AI::Adr { rd: T2, t: Tg::E(e) });
             if let Some(bb) = base { self.w(e_addsub_reg(true, false, false, T2, T2, RMAP[*bb as usize], 0, 0)); }
             if let Some((ix, sc)) = index { self.w(e_addsub_reg(true, false, false, T2, T2, RMAP[*ix as usize], 0, *sc)); }
@@ -632,6 +641,17 @@ impl<'a> Tr<'a> {
         None
     }
 
+    // Symbol neither a label nor a constant: in an EXTERNAL program it is
+    // provided by the extension dylib (bound at load time, ordinal 2).
+    fn ext_symbol(&mut self, e: &Expr) -> Option<usize> {
+        if !self.ext || e.0.len() != 1 { return None; }
+        let name = match &e.0[0] { (false, Term::Sym(n)) => n, _ => return None };
+        if self.a.p.labels.contains_key(name) || self.a.p.consts.contains_key(name) { return None; }
+        let m: &'static str = Box::leak(format!("_{}", name).into_boxed_str());
+        self.ext_imports.insert(m);
+        Some(self.import(m))
+    }
+
     fn import(&mut self, s: &'static str) -> usize {
         if let Some(p) = self.imports.iter().position(|x| *x == s) { return p; }
         self.imports.push(s);
@@ -835,6 +855,12 @@ impl<'a> Tr<'a> {
             "leave" => { self.w(e_mov(true, XSP, 29)); self.w(e_ldst_9(3, false, 1, 29, XSP, 8, 1)); }
             "ret" => { self.w(e_ldst_9(3, false, 1, LR, XSP, 8, 1)); self.w(RET); }
             "call" => match &ops[0] {
+                Op::Imm(e) if self.ext && self.cval(e).is_none() && self.ext_symbol(e).is_some() => {
+                    let g = self.ext_symbol(e).unwrap();
+                    self.out.push(AI::Adr { rd: T1, t: Tg::Got(g) });
+                    self.used_helpers.insert("__a64_cout");
+                    self.out.push(AI::B { link: true, t: Tg::H("__a64_cout") });
+                }
                 Op::Imm(_) => { let t = self.target(&ops[0])?; self.call_seq(Some(t), 0); }
                 Op::Star(inner) => { let v = self.val(inner, 64, T1)?; self.call_seq(None, v); }
                 _ => return Err("ARM64: call form".into()),
@@ -1316,7 +1342,7 @@ fn helper(name: &'static str, tr: &mut Tr) -> Vec<AI> {
     if name == "__a64_fyl2x" {
         // d16 = d17 * log2(d16); exact libm log/log10 when d17 is ln2/log10(2)
         let (glog, glog10, glog2) = (tr.import("_log"), tr.import("_log10"), tr.import("_log2"));
-        let mut t = Tr { a: tr.a, out: Vec::new(), need: Vec::new(), live: Vec::new(), ckind: Vec::new(), imports: Vec::new(), used_helpers: Default::default(), threaded: false };
+        let mut t = Tr { a: tr.a, out: Vec::new(), need: Vec::new(), live: Vec::new(), ckind: Vec::new(), imports: Vec::new(), used_helpers: Default::default(), threaded: false, ext: false, ext_imports: Default::default() };
         t.w(e_ldst_9(3, false, 0, LR, XSP, -8, 3));
         t.w(e_fmov_to_x(T0, FT1));
         for (bits, g, lab) in [(0x3FE6_2E42_FEFA_39EFu64, glog, 9001u32), (0x3FD3_4413_509F_79FF, glog10, 9002)] {
@@ -1339,8 +1365,57 @@ fn helper(name: &'static str, tr: &mut Tr) -> Vec<AI> {
         v.extend(t.out);
         return v;
     }
+    if name == "__a64_cout" {
+        // translated code -> C function at [x16] (SysV argument registers
+        // -> AAPCS64). x86 callee-saved rbx and the %fs register are
+        // caller-saved in C; the emulated stack pointer is published for
+        // C -> hbc callbacks (nested calls restore the previous one).
+        let mut t = Tr { a: tr.a, out: Vec::new(), need: Vec::new(), live: Vec::new(), ckind: Vec::new(), imports: Vec::new(), used_helpers: Default::default(), threaded: false, ext: false, ext_imports: Default::default() };
+        let esp = Tg::E(Expr(vec![(false, Term::Sym("__a64_esp".into()))]));
+        t.w(e_ldst_u(3, false, 1, T1, T1, 0));
+        t.w(e_stp(true, false, false, 29, LR, 31, -48) | 0x0080_0000); // stp x29, x30, [sp, #-48]! (pre-index)
+        t.w(e_stp(true, false, false, FSR, 12, 31, 16));
+        t.out.push(AI::Adr { rd: T2, t: esp.clone() });
+        t.w(e_stp(true, false, true, T0, T3, T2, 0)); // old esp, old fs
+        t.w(e_stp(true, false, false, T0, T3, 31, 32));
+        t.w(e_stp(true, false, false, XSP, FSR, T2, 0));
+        for (k, src) in [14u8, 13, 11, 10, 19, 20].iter().enumerate() { t.w(e_mov(true, k as u8, *src)); }
+        t.w(e_blr(T1));
+        t.w(e_mov(true, 9, 0));
+        t.w(e_mov(true, 11, 1));
+        t.out.push(AI::Adr { rd: T2, t: esp });
+        t.w(e_stp(true, false, true, T0, T3, 31, 32));
+        t.w(e_stp(true, false, false, T0, T3, T2, 0));
+        t.w(e_stp(true, false, true, FSR, 12, 31, 16));
+        t.w(e_stp(true, false, true, 29, LR, 31, 0));
+        t.w(e_addsub_imm(true, false, false, 31, 31, 48, false));
+        t.w(RET);
+        v.extend(t.out);
+        return v;
+    }
+    if let Some(target) = name.strip_prefix("__a64_cin_") {
+        // C caller -> translated hbc function (AAPCS64 -> SysV registers),
+        // on the emulated stack published by the outgoing thunk.
+        let mut t = Tr { a: tr.a, out: Vec::new(), need: Vec::new(), live: Vec::new(), ckind: Vec::new(), imports: Vec::new(), used_helpers: Default::default(), threaded: false, ext: false, ext_imports: Default::default() };
+        let esp = Tg::E(Expr(vec![(false, Term::Sym("__a64_esp".into()))]));
+        t.w(e_stp(true, false, false, 29, LR, 31, -96) | 0x0080_0000);
+        for (k, p) in [(19u8, 20u8), (21, 22), (23, 24), (25, 26), (27, 28)].iter().enumerate() { t.w(e_stp(true, false, false, p.0, p.1, 31, 16 + 16 * k as i64)); }
+        t.out.push(AI::Adr { rd: T2, t: esp });
+        t.w(e_stp(true, false, true, XSP, FSR, T2, 0));
+        t.w(e_addsub_imm(true, true, false, XSP, XSP, 256, false)); // below the caller's red zone
+        for (k, dst) in [14u8, 13, 11, 10, 19, 20].iter().enumerate() { t.w(e_mov(true, *dst, k as u8)); }
+        t.call_seq(Some(Tg::E(Expr(vec![(false, Term::Sym(target.to_string()))]))), 0);
+        t.w(e_mov(true, 0, 9));
+        t.w(e_mov(true, 1, 11));
+        for (k, p) in [(19u8, 20u8), (21, 22), (23, 24), (25, 26), (27, 28)].iter().enumerate() { t.w(e_stp(true, false, true, p.0, p.1, 31, 16 + 16 * k as i64)); }
+        t.w(e_stp(true, false, true, 29, LR, 31, 0));
+        t.w(e_addsub_imm(true, false, false, 31, 31, 96, false));
+        t.w(RET);
+        v.extend(t.out);
+        return v;
+    }
     if name == "__a64_clone" || name == "__a64_exit_thread" || name == "__a64_thread_tramp" {
-        let mut t = Tr { a: tr.a, out: Vec::new(), need: Vec::new(), live: Vec::new(), ckind: Vec::new(), imports: Vec::new(), used_helpers: Default::default(), threaded: false };
+        let mut t = Tr { a: tr.a, out: Vec::new(), need: Vec::new(), live: Vec::new(), ckind: Vec::new(), imports: Vec::new(), used_helpers: Default::default(), threaded: false, ext: false, ext_imports: Default::default() };
         let ctx_regs: [(u8, u8); 9] = [(FSR, 9), (10, 11), (12, 13), (14, 19), (20, 21), (22, 23), (24, 25), (26, 29), (LR, 13)];
         match name {
             "__a64_clone" => {
@@ -1453,7 +1528,7 @@ fn helper(name: &'static str, tr: &mut Tr) -> Vec<AI> {
 // emulated stack and jumps to the translated _start.
 fn entry_stub(scratch: &Asm) -> Vec<AI> {
     let mut t = Tr { a: scratch, out: vec![AI::Hl("__a64_entry")], need: Vec::new(), live: Vec::new(), ckind: Vec::new(),
-        imports: Vec::new(), used_helpers: Default::default(), threaded: false };
+        imports: Vec::new(), used_helpers: Default::default(), threaded: false, ext: false, ext_imports: Default::default() };
     t.w(e_mov(true, 19, 0)); t.w(e_mov(true, 20, 1)); t.w(e_mov(true, 21, 2));
     t.w(e_movw(true, 2, 0, 0, 0));
     t.mov_imm(true, 1, ESTACK);
@@ -1868,9 +1943,52 @@ __a64_linux_syscall:
     ret
 "#;
 
-pub fn assemble_macho_arm64(src: &str) -> Result<Vec<u8>, String> {
-    let src = format!("{}
-{}", src, LINUX_SYSCALL_DISPATCH);
+// hbc_blk_launch (SysV, from extend/hbhbr.c): C evaluates an hbc
+// codeblock through it, so in the dylib model it lives in the executable.
+const EXT_BRIDGE_TEXT: &str = r#"
+    .text
+hbc_blk_launch:
+    push %rbp
+    mov %rsp, %rbp
+    push %rbx
+    push %r12
+    mov %rdx, %rcx
+    mov %rdi, %rbx
+    test %rcx, %rcx
+    jz .La64blk2
+.La64blk1:
+    sub $16, %rsp
+    mov (%rsi), %rax
+    mov %rax, (%rsp)
+    movq $0, 8(%rsp)
+    add $8, %rsi
+    dec %rcx
+    jnz .La64blk1
+.La64blk2:
+    call *%rbx
+    lea -16(%rbp), %rsp
+    pop %r12
+    pop %rbx
+    pop %rbp
+    ret
+    .data
+    .p2align 3
+__a64_esp: .quad 0
+__a64_fs: .quad 0
+    .text
+"#;
+
+// C-callable entry points the executable exports to the extension dylib.
+const EXT_EXPORTS: [(&str, &str); 4] = [
+    ("hbc_strcpy", "__a64_cin_hbc_strcpy"), ("hbc_freestr", "__a64_cin_hbc_freestr"),
+    ("hbc_blk_launch", "__a64_cin_hbc_blk_launch"), ("hrdbf_app_close", "__a64_cin_hrdbf_app_close"),
+];
+
+pub fn assemble_macho_arm64(src: &str) -> Result<Vec<u8>, String> { assemble_macho_arm64_ext(src, None) }
+
+// ext: install name of the EXTERNAL extension dylib (LC_LOAD_DYLIB).
+pub fn assemble_macho_arm64_ext(src: &str, ext: Option<&str>) -> Result<Vec<u8>, String> {
+    let src = format!("{}\n{}{}", src, LINUX_SYSCALL_DISPATCH, if ext.is_some() { EXT_BRIDGE_TEXT } else { "" });
     let expanded = expand_rept(&src)?;
     let mut a = Asm {
         p: Parser { consts: HashMap::new(), labels: HashMap::new(), numlabels: HashMap::new(), seq: Cell::new(0) },
@@ -1883,7 +2001,7 @@ pub fn assemble_macho_arm64(src: &str) -> Result<Vec<u8>, String> {
     }
     let (need, live, ckind) = analyze(&a)?;
     let threaded = a.p.labels.contains_key("hbc_thread_start");
-    let mut t = Tr { a: &a, out: Vec::new(), need, live, ckind, imports: Vec::new(), used_helpers: Default::default(), threaded };
+    let mut t = Tr { a: &a, out: Vec::new(), need, live, ckind, imports: Vec::new(), used_helpers: Default::default(), threaded, ext: ext.is_some(), ext_imports: Default::default() };
     let n = a.text.len();
     let mut starts = vec![0usize; n + 1];
     let mut i = 0;
@@ -1919,6 +2037,9 @@ pub fn assemble_macho_arm64(src: &str) -> Result<Vec<u8>, String> {
         i += adv;
     }
     starts[n] = t.out.len();
+    if ext.is_some() {
+        for (lab, h) in EXT_EXPORTS { if a.p.labels.contains_key(lab) { t.used_helpers.insert(h); } }
+    }
     let mut helpers: Vec<&'static str> = t.used_helpers.iter().copied().collect();
     helpers.sort();
     let mut items = std::mem::take(&mut t.out);
@@ -2068,9 +2189,11 @@ pub fn assemble_macho_arm64(src: &str) -> Result<Vec<u8>, String> {
                 }
             }
         }
-        let binds: Vec<(&str, u64)> = imports.iter().enumerate().map(|(g, s)| (*s, got_va + 8 * g as u64 - data_va)).collect();
+        let binds: Vec<(&str, u64, u8)> = imports.iter().enumerate()
+            .map(|(g, s)| (*s, got_va + 8 * g as u64 - data_va, if t.ext_imports.contains(s) { 2 } else { 1 })).collect();
+        let exports: Vec<(String, u64)> = EXT_EXPORTS.iter().filter_map(|(lab, h)| hpos.get(h).map(|k| (format!("_{}", lab), HDR + offs[*k]))).collect();
         let total_vm = bss_va + bss_size - data_va;
-        return write_macho(&code, entry_off, &data, total_vm, &rebases, &binds);
+        return write_macho(&code, entry_off, &data, total_vm, &rebases, &binds, ext, &exports);
     }
 }
 
@@ -2102,7 +2225,8 @@ fn string_command(cmd: u32, path: &str) -> Vec<u8> {
 }
 fn words(v: &[u32]) -> Vec<u8> { v.iter().flat_map(|n| n.to_le_bytes()).collect() }
 
-fn write_macho(code: &[u8], entry_off: u64, data: &[u8], data_vm: u64, rebases: &[u64], binds: &[(&str, u64)]) -> Result<Vec<u8>, String> {
+fn write_macho(code: &[u8], entry_off: u64, data: &[u8], data_vm: u64, rebases: &[u64], binds: &[(&str, u64, u8)],
+               ext: Option<&str>, exports: &[(String, u64)]) -> Result<Vec<u8>, String> {
     let align_up = |v: u64, a: u64| (v + a - 1) & !(a - 1);
     let textsize = align_up(HDR + code.len() as u64, 0x4000);
     let data_off = textsize;
@@ -2119,9 +2243,9 @@ fn write_macho(code: &[u8], entry_off: u64, data: &[u8], data_vm: u64, rebases: 
     while reb.len() % 8 != 0 { reb.push(0); }
     let mut bind = Vec::new();
     if !binds.is_empty() {
-        bind.push(0x11); // dylib ordinal 1 (libSystem)
         bind.push(0x51); // BIND_TYPE_POINTER
-        for (s, off) in binds {
+        for (s, off, ord) in binds {
+            bind.push(0x10 | ord); // dylib ordinal: 1 libSystem, 2 extension
             bind.push(0x40); bind.extend_from_slice(s.as_bytes()); bind.push(0);
             bind.push(0x72); uleb(&mut bind, *off);
             bind.push(0x90);
@@ -2129,9 +2253,30 @@ fn write_macho(code: &[u8], entry_off: u64, data: &[u8], data_vm: u64, rebases: 
     }
     bind.push(0);
     while bind.len() % 8 != 0 { bind.push(0); }
+    // export trie: root with one terminal child per exported symbol
+    let mut trie = Vec::new();
+    if !exports.is_empty() {
+        let nodes: Vec<Vec<u8>> = exports.iter().map(|(_, addr)| {
+            let mut body = vec![0u8]; uleb(&mut body, *addr);
+            let mut n = Vec::new(); uleb(&mut n, body.len() as u64); n.extend(body); n.push(0); n
+        }).collect();
+        let mut root_len = 0usize;
+        loop {
+            let mut root = vec![0u8, exports.len() as u8];
+            let mut at = root_len;
+            for ((name, _), node) in exports.iter().zip(&nodes) {
+                root.extend_from_slice(name.as_bytes()); root.push(0);
+                uleb(&mut root, at as u64); at += node.len();
+            }
+            if root.len() == root_len { trie = root; for n in &nodes { trie.extend_from_slice(n); } break; }
+            root_len = root.len();
+        }
+        while trie.len() % 8 != 0 { trie.push(0); }
+    }
     let reb_off = link_off;
     let bind_off = reb_off + reb.len() as u64;
-    let strtab_off = bind_off + bind.len() as u64;
+    let export_off = bind_off + bind.len() as u64;
+    let strtab_off = export_off + trie.len() as u64;
     let sigoff = align_up(strtab_off + 8, 16);
     let ident = b"hbc-arm64\0";
     let cdheader = 88u64;
@@ -2146,7 +2291,8 @@ fn write_macho(code: &[u8], entry_off: u64, data: &[u8], data_vm: u64, rebases: 
         segment("__DATA", data_va, data_ms, data_off, data_fs, 3, &[("__data", data_va, data.len() as u64, data_off as u32, 0)]),
         segment("__LINKEDIT", BASE + textsize + data_ms, align_up(fileend - link_off, 0x4000), link_off, fileend - link_off, 1, &[]),
     ];
-    cmds.push(words(&[0x8000_0022, 48, reb_off as u32, reb.len() as u32, bind_off as u32, bind.len() as u32, 0, 0, 0, 0, 0, 0]));
+    cmds.push(words(&[0x8000_0022, 48, reb_off as u32, reb.len() as u32, bind_off as u32, bind.len() as u32, 0, 0, 0, 0,
+        if trie.is_empty() { 0 } else { export_off as u32 }, trie.len() as u32]));
     cmds.push(words(&[2, 24, strtab_off as u32, 0, strtab_off as u32, 8]));
     cmds.push(words(&[11, 80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]));
     cmds.push(string_command(14, "/usr/lib/dyld"));
@@ -2161,6 +2307,7 @@ fn write_macho(code: &[u8], entry_off: u64, data: &[u8], data_vm: u64, rebases: 
     w64(&mut m, 0);
     cmds.push(m);
     cmds.push(string_command(12, "/usr/lib/libSystem.B.dylib"));
+    if let Some(path) = ext { cmds.push(string_command(12, path)); }
     cmds.push(words(&[29, 16, sigoff as u32, sigsize as u32]));
     let cmdsize: usize = cmds.iter().map(Vec::len).sum();
     let mut b = words(&[0xfeed_facf, 0x0100_000c, 0, 2, cmds.len() as u32, cmdsize as u32, 0x0020_0085, 0]);
@@ -2173,6 +2320,7 @@ fn write_macho(code: &[u8], entry_off: u64, data: &[u8], data_vm: u64, rebases: 
     b.resize(link_off as usize, 0);
     b.extend(reb);
     b.extend(bind);
+    b.extend(trie);
     b.resize(sigoff as usize, 0);
     // ad hoc code signature (CodeDirectory, SHA-256 per 4 KiB page)
     let be = |b: &mut Vec<u8>, n: u32| b.extend_from_slice(&n.to_be_bytes());

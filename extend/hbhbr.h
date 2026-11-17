@@ -65,6 +65,11 @@ typedef unsigned short HB_USHORT;   /* hbdefs.h:460 */
 /* Registration: one entry per HB_FUNC in the hbhbr_funcs linker
  * section; hbc_ext_dispatch walks it at call time. Function names are
  * matched case-insensitively (Harbour names are case-insensitive). */
+#ifdef __APPLE__
+#define HBHBR_SECTION "__DATA,hbhbr_funcs" /* Mach-O: segment,section */
+#else
+#define HBHBR_SECTION "hbhbr_funcs"
+#endif
 typedef void (* HBC_EXT_FN )( void );
 typedef struct { const char * name; HBC_EXT_FN fn; } HBC_EXT_ENTRY;
 
@@ -76,7 +81,7 @@ typedef struct { const char * name; HBC_EXT_FN fn; } HBC_EXT_ENTRY;
  * forming the symbol. */
 #define HB_FUNC( NAME ) \
     void HBHBR_FN_##NAME( void ); \
-    __attribute__( ( used, section( "hbhbr_funcs" ), aligned( 8 ) ) ) \
+    __attribute__( ( used, section( HBHBR_SECTION ), aligned( 8 ) ) ) \
     static const HBC_EXT_ENTRY HBC_REG_##NAME = { #NAME, HBHBR_FN_##NAME }; \
     void HBHBR_FN_##NAME( void )
 

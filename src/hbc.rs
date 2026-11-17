@@ -31579,6 +31579,8 @@ fn main() {
     let mut target = if cfg!(windows) { Target::Windows } else { Target::Linux };
     let mut macho = cfg!(target_os = "macos");
     let mut macho_arm64 = cfg!(all(target_os = "macos", target_arch = "aarch64"));
+    // Mach-O ARM64 EXTERNAL: install name of the extension dylib (C extension + hbhbr.c)
+    let mut ext_dylib: Option<String> = None;
     let mut incdirs: Vec<String> = Vec::new();
     let mut instrument = false;
     let mut llvm = false;
@@ -31602,6 +31604,7 @@ fn main() {
             "--harbour-rdd" => HB_RDD.with(|v| v.set(true)),
             "--harbour-dll" => harbour_dll = true,
             _ if a.starts_with("--harbour-dir=") => harbour_dir = Some(a["--harbour-dir=".len()..].to_string()),
+            _ if a.starts_with("--ext-dylib=") => ext_dylib = Some(a["--ext-dylib=".len()..].to_string()),
             "--instrument" => instrument = true,
             "--no-escape-analysis" => no_escape = true,
             "--no-arena" => no_arena = true,
@@ -32218,7 +32221,7 @@ fn main() {
     let arena_active = !macho && !no_arena && !THREADS.with(|c| c.get()) && ARENA_MAP.with(|m| m.borrow().values().any(|a| a.any()));
     ARENA_ACTIVE.with(|a| a.set(arena_active));
     if macho && !macho_arm64 && (DBF_USED.with(|v|v.get()) || THREADS.with(|v|v.get()) || !externs.is_empty()) { eprintln!("error: Mach-O Intel: DBF, threads and EXTERNAL are not ported in this increment"); process::exit(1); }
-    if macho_arm64 && !externs.is_empty() { eprintln!("error: Mach-O ARM64: EXTERNAL is not ported in this increment"); process::exit(1); }
+    if macho_arm64 && !externs.is_empty() && THREADS.with(|v|v.get()) { eprintln!("error: Mach-O ARM64: EXTERNAL together with threads is outside this increment"); process::exit(1); }
     let mut out = vas::finish(emit_asm(&funcs, &sigs, &externs, target, instrument), target, instrument);
     out.push_str(if vas::active() {
         "
@@ -32256,7 +32259,8 @@ hbc_aclone_alloc:
     }
 
     if macho_arm64 {
-        let bytes = hasm::arm64::assemble_macho_arm64(&out).unwrap_or_else(|e| {eprintln!("error: Mach-O ARM64: {}",e);process::exit(1);});
+        let ext = if externs.is_empty() { None } else { Some(ext_dylib.clone().unwrap_or_else(|| "@executable_path/libhbext.dylib".to_string())) };
+        let bytes = hasm::arm64::assemble_macho_arm64_ext(&out, ext.as_deref()).unwrap_or_else(|e| {eprintln!("error: Mach-O ARM64: {}",e);process::exit(1);});
         fs::write(pos[1],bytes).unwrap_or_else(|e| {eprintln!("cannot write {}: {}",pos[1],e);process::exit(2);});
         #[cfg(unix)] {use std::os::unix::fs::PermissionsExt; let _=fs::set_permissions(pos[1],fs::Permissions::from_mode(0o755));}
         println!("{} -> {} ({} functions, native Mach-O ARM64)",pos[0],pos[1],funcs.len());
