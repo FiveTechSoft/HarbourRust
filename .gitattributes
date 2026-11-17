@@ -56,3 +56,6 @@ tests/module-static-owned/expected/** -text
 tests/module-static-array/expected/** -text
 
 tests/module-static-array/expected/** -text
+
+# hb_idleSleep windows pins carry intentional CRLF.
+tests/idlesleep-linux/expected/** -text

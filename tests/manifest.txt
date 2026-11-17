@@ -1796,7 +1796,7 @@ neg tests/module-static/negative/late.prg module STATIC declarations must preced
 neg tests/module-static/negative/loop.prg STATIC loop counters require
 neg tests/module-static/negative/memvar.prg module STATIC and explicit MEMVAR
 neg tests/module-static/negative/nil.prg module STATIC requires a folded i64, logical or string scalar or a constant array initializer (i64/logical/string/NIL cells, nested and empty arrays admitted); NIL, Date, float and hash initializers are not in this increment
-neg tests/module-static/negative/widen.prg type mismatch in assignment
+neg tests/module-static/negative/widen.prg keeps the scalar type of its folded initializer in this increment
 pos2 tests/module-static/programs/byref_variants.prg tests/module-static/expected/byref_variants.linux.out tests/module-static/expected/byref_variants.windows.out
 pos2 tests/module-static/programs/separate_local_statics.prg tests/module-static/expected/separate_local_statics.linux.out tests/module-static/expected/separate_local_statics.windows.out
 neg tests/module-static/negative/method_loop.prg STATIC loop counters require
@@ -1822,8 +1822,8 @@ neg tests/module-static-owned/negative/catch_shadow.prg module STATIC catch bind
 neg tests/module-static-owned/negative/compound_call.prg inline-effect
 neg tests/module-static-owned/negative/counter_try.prg STATIC loop counters require
 neg tests/module-static-owned/negative/inline_write.prg inline-effect
-neg tests/module-static-owned/negative/logical_widen.prg type mismatch in assignment
-neg tests/module-static-owned/negative/string_widen.prg type mismatch in assignment
+neg tests/module-static-owned/negative/logical_widen.prg keeps the scalar type of its folded initializer in this increment
+neg tests/module-static-owned/negative/string_widen.prg keeps the scalar type of its folded initializer in this increment
 neg tests/module-static-owned/negative/print_mutation.prg inline-effect
 neg tests/module-static-owned/negative/argument_mutation.prg inline-effect
 pos2 tests/module-static-array/programs/aadd.prg tests/module-static-array/expected/aadd.linux.out tests/module-static-array/expected/aadd.windows.out
@@ -1852,3 +1852,10 @@ neg tests/module-static-array/negative/compound.prg shared-array use is outside 
 neg tests/module-static-array/negative/container.prg shared-array use is outside the dynamic increment
 neg tests/module-static-array/negative/if_whole.prg shared-array use is outside the dynamic increment
 neg tests/module-static-array/negative/obj_cell.prg storing into a cell of the shared module array
+pos2 tests/idlesleep-linux/programs/idlesleep_basic.prg tests/idlesleep-linux/expected/idlesleep_basic.linux.out tests/idlesleep-linux/expected/idlesleep_basic.windows.out
+pos2 tests/idlesleep-linux/programs/idlesleep_negative.prg tests/idlesleep-linux/expected/idlesleep_negative.linux.out tests/idlesleep-linux/expected/idlesleep_negative.windows.out
+pos2 tests/idlesleep-linux/programs/idlesleep_loop.prg tests/idlesleep-linux/expected/idlesleep_loop.linux.out tests/idlesleep-linux/expected/idlesleep_loop.windows.out
+pos2 tests/idlesleep-linux/programs/idlesleep_noarg.prg tests/idlesleep-linux/expected/idlesleep_noarg.linux.out tests/idlesleep-linux/expected/idlesleep_noarg.windows.out
+pos2 tests/idlesleep-linux/programs/idlesleep_dyn.prg tests/idlesleep-linux/expected/idlesleep_dyn.linux.out tests/idlesleep-linux/expected/idlesleep_dyn.windows.out
+neg tests/t_dyn_str_concat.prg string concatenation with a NIL-able (Dyn) operand is not in this increment
+neg tests/t_static_obj_store.prg module STATIC `o` keeps the scalar type of its folded initializer in this increment

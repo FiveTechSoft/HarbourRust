@@ -17,19 +17,36 @@ import argparse, codecs, collections, concurrent.futures as cf, os, re, subproce
 KINDS = ('pos', 'posx', 'pos2', 'posx2', 'streams', 'streams2')
 
 # Expected suite shape (docs/ARM64-NATIVE-2026-11-16.md, run 43985696680):
-# no row may be rejected by the backend, and the totals are fixed.
-EXPECTED_REJ = set()  # named rows the backend may reject; empty today
+# the totals are fixed and every backend rejection must be named here.
+# hb_idleSleep is a named Mach-O ARM64 limit: it lowers to Linux syscall
+# 35 (nanosleep) in the x86-64 runtime and the ARM64 dispatcher has no 35
+# route, so the compiler rejects it at compile time (no silent no-op).
+# EXPECTED_REJ maps each named row to the diagnostic substring its
+# rejection must carry: a row only counts as REJ when the compiler exits
+# normally (rc 1, never a signal) with that diagnostic; a crash, an
+# abnormal rc or a different message on a named row is a FAIL, never an
+# expected rejection (fail-closed). A named REJ that stops rejecting
+# with its diagnostic fails the battery (stale name).
+IDLESLEEP_LIMIT_MSG = 'hb_idleSleep` is not implemented by the Mach-O '  # ARM64 and Intel backends
+EXPECTED_REJ = {
+    'tests/idlesleep-linux/programs/idlesleep_basic.prg': IDLESLEEP_LIMIT_MSG,
+    'tests/idlesleep-linux/programs/idlesleep_negative.prg': IDLESLEEP_LIMIT_MSG,
+    'tests/idlesleep-linux/programs/idlesleep_loop.prg': IDLESLEEP_LIMIT_MSG,
+    'tests/idlesleep-linux/programs/idlesleep_noarg.prg': IDLESLEEP_LIMIT_MSG,
+    'tests/idlesleep-linux/programs/idlesleep_dyn.prg': IDLESLEEP_LIMIT_MSG,
+}
 FILE_POSITIVES = 6
 DBF_TESTS = 4
 THREAD_PROGRAMS = 37
 EXT_DEMOS = 9
 TARGET = '--target=macho-arm64'  # --target=macho runs the same battery on Intel
 # Executable-row inventory of the committed tests/manifest.txt on main
-# (1218 rows, all (kind, source) identities unique; S4 added 9 over the
-# original 1209). The full battery refuses a truncated/empty manifest or
-# a runner constant gone stale; bump this only with the manifest change
-# that explains it. Full-battery expected total: 1218+6+4+37+9 = 1274.
-EXPECTED_MANIFEST_ROWS = 1218
+# (1223 rows, all (kind, source) identities unique; S4 added 9 over the
+# original 1209, S5 added the 5 idlesleep pos2 rows above). The full
+# battery refuses a truncated/empty manifest or a runner constant gone
+# stale; bump this only with the manifest change that explains it.
+# Full-battery expected total: 1223+6+4+37+9 = 1279 (5 named REJ).
+EXPECTED_MANIFEST_ROWS = 1223
 # Post-run m_clie.dbf SHA-256 per DBF acceptance test (generated on Linux,
 # stdout checked against the committed expectations). t4 appends records:
 # dbAppend rewrites the header last-update date (bytes 1-3, YY MM DD of the
@@ -56,6 +73,38 @@ def unesc(s):
     return codecs.escape_decode(s.encode('latin-1'))[0]
 
 
+def classify_compile_failure(f, rc, err_text):
+    """Compile-time failure triage. A row named in EXPECTED_REJ counts as
+    REJ only on a normal error exit (rc 1, never a signal) whose stderr
+    carries the row's registered diagnostic substring; a crash, an
+    abnormal rc or a different message is a FAIL (fail-closed: an
+    expected rejection can never hide a broken compiler). A row not
+    named in EXPECTED_REJ stays REJ here and is caught by the
+    unexpected-REJ check in main()."""
+    lines = err_text.strip().splitlines()
+    last = (lines[-1] if lines else '?')[:200]
+    if f not in EXPECTED_REJ:
+        return 'REJ', last
+    if rc == 1 and EXPECTED_REJ[f] in err_text:
+        return 'REJ', last
+    if rc < 0:
+        return 'FAIL', 'named-limit row killed by signal %d: %s' % (-rc, last)
+    if rc != 1:
+        return 'FAIL', 'named-limit row abnormal reject rc=%d (expected 1): %s' % (rc, last)
+    return 'FAIL', 'named-limit row rejected with the wrong diagnostic (expected substring %r): %s' % (EXPECTED_REJ[f], last)
+
+
+def stale_named_rejections(res):
+    """Named EXPECTED_REJ rows missing a strict REJ in the results (the
+    row compiled and ran, crashed, or rejected with the wrong diagnostic
+    - classify_compile_failure only produces REJ for the registered
+    rc-1-with-diagnostic shape). EXPECTED_REJ is a dict row ->
+    diagnostic; iterate its keys. Run 44039075657: `EXPECTED_REJ - set`
+    on the dict itself raised TypeError after a PASS 1273 + REJ 5
+    battery."""
+    return sorted(set(EXPECTED_REJ) - {r[1] for r in res if r[0] == 'REJ'})
+
+
 def run_case(line, hbc, outdir):
     p = line.split(' ')
     kind, f = p[0], p[1]
@@ -63,8 +112,8 @@ def run_case(line, hbc, outdir):
     exe = os.path.join(outdir, base)
     c = subprocess.run([hbc, f, exe, TARGET, '--instrument', '-I', 'tests'], capture_output=True)
     if c.returncode != 0:
-        msg = (c.stderr.decode('latin-1').strip().splitlines() or ['?'])[-1]
-        return 'REJ', f, msg[:200]
+        kind, msg = classify_compile_failure(f, c.returncode, c.stderr.decode('latin-1'))
+        return kind, f, msg
     try:
         if kind == 'posx2':
             r = subprocess.run([exe], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL, timeout=60)
@@ -284,6 +333,11 @@ def main():
     if unexpected_rej:
         print('FAIL runner: %d unexpected REJ row(s)' % len(unexpected_rej))
         bad = 1
+    if not a.pattern and EXPECTED_REJ:
+        stale_rej = stale_named_rejections(res)
+        if stale_rej:
+            print('FAIL runner: %d named REJ row(s) did not reject with their diagnostic (stale EXPECTED_REJ): %s' % (len(stale_rej), stale_rej[0]))
+            bad = 1
     if len(res) != expected:
         print('FAIL runner: suite total %d != expected %d' % (len(res), expected))
         bad = 1

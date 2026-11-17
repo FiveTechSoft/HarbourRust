@@ -6904,6 +6904,31 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 }
                 return Ok(Ty::F64);
             }
+            if is_builtin(id, "hb_idlesleep") && MACHO_MODE.with(|v| v.get()) {
+                // hb_idleSleep lowers to Linux syscall 35 (nanosleep) in the
+                // x86-64 runtime; the ARM64 translator lowers only classified
+                // syscalls and its __a64_linux_syscall dispatcher has no 35
+                // route, so the call would come back ENOSYS and the sleep
+                // would silently not happen. Named compile-time limit, never
+                // a silent no-op; the five tests/idlesleep-linux rows are
+                // named EXPECTED_REJ in tests/run_macho_arm64.py until a
+                // Darwin nanosleep lowering lands.
+                return Err(format!("line {}: `hb_idleSleep` is not implemented by the Mach-O {} backend in this increment (no nanosleep lowering; registered limit, no silent no-op)",n, if MACHO_ARM64.with(|v| v.get()) { "ARM64" } else { "Intel" }));
+            }
+            if is_builtin(id, "hb_idlesleep") {
+                // hb_idleSleep([nSeconds]) (rtl/idle.c:133): negative is a
+                // no-op, zero serves the idle queue once (no idle tasks in
+                // this runtime, so an immediate return), positive sleeps.
+                // Returns NIL. Dyn args follow hb_parnd: numeric payloads
+                // convert, NIL/other tags default to 0.
+                if args.len() > 1 { return Err(format!("line {}: `hb_idleSleep` takes at most one numeric argument in this increment",n)); }
+                if let Some(a) = args.first() {
+                    if !matches!(type_expr(a,env,sigs,n)?, Ty::I64 | Ty::F64 | Ty::NumLocal | Ty::Dyn) {
+                        return Err(format!("line {}: `hb_idleSleep` expects a numeric argument",n));
+                    }
+                }
+                return Ok(Ty::Dyn);
+            }
             if is_builtin(id, "mod") {
                 if args.len()!=2 { return Err(format!("line {}: `Mod` takes two numeric arguments in this increment",n)); }
                 for a in args {
@@ -8001,6 +8026,16 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
             // value semantics, variables keep their own copies.
             if *op == '+' && matches!(ta, Ty::Str | Ty::StrOwn) && matches!(tb, Ty::Str | Ty::StrOwn) {
                 return Ok(Ty::StrOwn);
+            }
+            // String `+` with a NIL-able (Dyn) operand (probe pOBJ2:
+            // `o:s := o:s + "cd"` over a DATA casilla read, or a Dyn
+            // local): Harbour dispatches at runtime - concatenates when
+            // the Dyn holds a string, BASE/1081 type error otherwise.
+            // This PoC cannot dispatch on the runtime payload, so it
+            // names the limit instead of falling through to the integer
+            // arithmetic diagnostic, which misdescribed the construct.
+            if *op == '+' && ((matches!(ta, Ty::Dyn) && matches!(tb, Ty::Str | Ty::StrOwn)) || (matches!(tb, Ty::Dyn) && matches!(ta, Ty::Str | Ty::StrOwn))) {
+                return Err(format!("line {}: string concatenation with a NIL-able (Dyn) operand is not in this increment (Harbour dispatches at runtime: concatenates when the Dyn holds a string, type error otherwise) - registered limit, no silent fallback", n));
             }
             // Dyn operands are extracted at runtime: a NIL payload is a
             // clean type error (Harbour's interactive dialog is the
@@ -10955,6 +10990,15 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 } else if matches!(env[idx].ty, Ty::Obj(_)) {
                     return Err(format!("line {}: `{}` is object-typed; reassigning it to a non-object value is not in this increment (declare a separate local, or `o := NIL` to release)", n, id));
                 } else if env[idx].ty != t {
+                    if module_static::is_module_binding(id) {
+                        // Probe pA6b: Harbour re-tags STATIC cells
+                        // dynamically - `STATIC o := 0` followed by
+                        // `o := T():New()` RUNS there (prints 3). Our
+                        // module statics keep the scalar type of the
+                        // folded initializer, so this assignment cannot
+                        // be a type error: it is a registered limit.
+                        return Err(format!("line {}: module STATIC `{}` keeps the scalar type of its folded initializer in this increment (Harbour re-tags STATIC cells dynamically; assigning a value of another kind runs there) - registered limit, no silent re-tag", n, id));
+                    }
                     return Err(format!("line {}: type mismatch in assignment to `{}`", n, id));
                 }
                 // Reassignment makes a moved variable live again (Rust too).
@@ -11220,6 +11264,11 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
                 // Thread builtins BORROW every argument: hb_threadStart's
                 // marshal deep-copies strings and retains objects itself;
                 // join's `@r` borrows the slot.
+                for a in args { apply_moves(a, env, sigs, false); }
+                return;
+            }
+            if is_builtin(id, "hb_idlesleep") {
+                // The numeric seconds argument is READ only; nothing moves.
                 for a in args { apply_moves(a, env, sigs, false); }
                 return;
             }
@@ -13325,7 +13374,7 @@ hbc_mutex_lock:
 
 # hbc_mutex_unlock(rdi=mutex) -> rax = 1 (mt02). Unlocking a mutex the
 # calling thread does not own (or one with a zero count) is a runtime
-# error: stderr message, then the shared panic exit, which under threads
+# failure: stderr message, then the shared panic exit, which under threads
 # kills only the offending worker with a NIL result for its joiner
 # (declared F1/F2 divergence route).
 hbc_mutex_unlock:
@@ -14949,6 +14998,43 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             cg_f64_operand(&args[0],env,sigs,strs,out,target);
             out.push_str(&format!("    call hbc_math_{}
 ", id.to_lowercase()));
+        }
+        Expr::Call(id,args) if is_builtin(id,"hb_idlesleep") => {
+            // Both dispatch sides: a typed numeric feeds xmm0 directly; a
+            // Dyn unpacks by kind (float pair through hbc_float_unpack,
+            // int tags convert, NIL/other tags default to 0 like hb_parnd).
+            // An OWNED Dyn temporary (Call/Send/SelfGet/memvar/Seq tail)
+            // is released by the standard protocol after the seconds are
+            // extracted: hbc_float_release for heap floats, hbc_freestr
+            // for tag-4 owned strings. Borrowed Vars never release.
+            match args.first() {
+                None => out.push_str("    xorpd %xmm0, %xmm0\n"),
+                Some(a) if expr_ty(a,env,sigs)==Ty::Dyn && dyn_expr_owned(a) => {
+                    cg_value(a,env,sigs,strs,out,target);
+                    out.push_str("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+                    out.push_str("    mov %rax, %rcx\n    and $255, %rcx\n    cmp $5, %rcx\n    jne 660f\n    call hbc_float_unpack\n    jmp 662f\n660:\n    test %rax, %rax\n    je 661f\n    cmp $9, %rax\n    je 661f\n    xorpd %xmm0, %xmm0\n    jmp 662f\n661:\n    cvtsi2sd %rdx, %xmm0\n662:\n");
+                    out.push_str("    movsd %xmm0, 16(%rsp)\n");
+                    // Full-kind release of the owned temporary, mirroring
+                    // cg_dyn_free_old: heap floats via hbc_float_release,
+                    // tag 4 string via hbc_freestr, tag 8 owned Dyn array
+                    // via hbc_dfree (count header), tag 13 object via
+                    // hrobj_release when classes are in the program.
+                    out.push_str("    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    call hbc_float_release\n");
+                    let k = fresh_lbl();
+                    if CLASSES.with(|c| !c.borrow().is_empty()) {
+                        out.push_str(&format!("    @HBC_TAG_KIND@cmpq $4, (%rsp)@HBC_TAG_END@\n    jne .Lida{}\n    mov 8(%rsp), %rdi\n    test %rdi, %rdi\n    je .Lidz{}\n    call hbc_freestr\n    jmp .Lidz{}\n.Lida{}:\n    @HBC_TAG_KIND@cmpq $8, (%rsp)@HBC_TAG_END@\n    jne .Lidb{}\n    mov 8(%rsp), %rdi\n    test %rdi, %rdi\n    je .Lidz{}\n    mov -8(%rdi), %rsi\n    call hbc_dfree\n    jmp .Lidz{}\n.Lidb{}:\n    @HBC_TAG_KIND@cmpq $13, (%rsp)@HBC_TAG_END@\n    jne .Lidz{}\n    mov 8(%rsp), %rdi\n    test %rdi, %rdi\n    je .Lidz{}\n    call hrobj_release\n.Lidz{}:\n", k, k, k, k, k, k, k, k, k, k, k));
+                    } else {
+                        out.push_str(&format!("    @HBC_TAG_KIND@cmpq $4, (%rsp)@HBC_TAG_END@\n    jne .Lida{}\n    mov 8(%rsp), %rdi\n    test %rdi, %rdi\n    je .Lidz{}\n    call hbc_freestr\n    jmp .Lidz{}\n.Lida{}:\n    @HBC_TAG_KIND@cmpq $8, (%rsp)@HBC_TAG_END@\n    jne .Lidz{}\n    mov 8(%rsp), %rdi\n    test %rdi, %rdi\n    je .Lidz{}\n    mov -8(%rdi), %rsi\n    call hbc_dfree\n.Lidz{}:\n", k, k, k, k, k, k, k));
+                    }
+                    out.push_str("    movsd 16(%rsp), %xmm0\n    add $32, %rsp\n");
+                }
+                Some(a) if expr_ty(a,env,sigs)==Ty::Dyn => {
+                    cg_value(a,env,sigs,strs,out,target);
+                    out.push_str("    mov %rax, %rcx\n    and $255, %rcx\n    cmp $5, %rcx\n    jne 660f\n    call hbc_float_unpack\n    jmp 662f\n660:\n    test %rax, %rax\n    je 661f\n    cmp $9, %rax\n    je 661f\n    xorpd %xmm0, %xmm0\n    jmp 662f\n661:\n    cvtsi2sd %rdx, %xmm0\n662:\n");
+                }
+                Some(a) => cg_f64_operand(a,env,sigs,strs,out,target),
+            }
+            out.push_str("    call hbc_idlesleep\n    mov $1, %eax\n    xor %edx, %edx\n");
         }
         Expr::Call(id,args) if is_builtin(id,"mod") => {
             cg_f64_operand(&args[0],env,sigs,strs,out,target);
@@ -18108,6 +18194,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             if is_builtin(id, "hb_mutexcreate") || is_builtin(id, "hb_mutexnotify") || is_builtin(id, "hb_mutexnotifyall") { return Ty::Dyn; }
             if is_builtin(id, "hb_mutexlock") || is_builtin(id, "hb_mutexunlock") || is_builtin(id, "hb_mutexsubscribe") || is_builtin(id, "hb_mutexsubscribenow") || is_builtin(id, "hb_mutexqueueinfo") || is_builtin(id, "hb_threadonce") { return Ty::Bool; }
             if is_builtin(id, "hb_mutexeval") { return Ty::I64; }
+                        if is_builtin(id, "hb_idlesleep") { return Ty::Dyn; }
             match sigs.iter().find(|v| v.name == *id) {
                 Some(s) => s.ret.expect("checked"),
                 // Extend-System C boundary: every EXTERNAL returns a Dyn
@@ -20569,6 +20656,48 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                             env.push(CgLocal { name: v.clone(), ty: Ty::Dyn, off: *frame });
                         }
                     }
+                    if var.is_none() {
+                        // A CATCH without a variable still CONSUMES the
+                        // pending exception (Harbour RECOVER without USING):
+                        // pop it and release it exactly like a Dyn slot at
+                        // scope exit (float payload, owned string, owned
+                        // Dyn-cell array, object reference). Without the pop
+                        // the entry stayed on the exception stack and 256
+                        // bare catches overflowed it (oracle pCATCH6 vs
+                        // pCATCH7; Harbour survives 300 bare RECOVERs).
+                        let xk = fresh_lbl();
+                        out.push_str(&format!("    call hbc_seq_exc_take
+    call hbc_float_release
+    @HBC_TAG_KIND@cmp $4, %rax@HBC_TAG_END@
+    jne .Lxda{}
+    mov %rdx, %rdi
+    test %rdi, %rdi
+    jz .Lxdx{}
+    call hbc_freestr
+    jmp .Lxdx{}
+.Lxda{}:
+    @HBC_TAG_KIND@cmp $8, %rax@HBC_TAG_END@
+    jne .Lxdb{}
+    mov %rdx, %rdi
+    test %rdi, %rdi
+    jz .Lxdx{}
+    mov -8(%rdi), %rsi
+    call hbc_dfree
+    jmp .Lxdx{}
+.Lxdb{}:
+", xk, xk, xk, xk, xk, xk, xk, xk));
+                        if CLASSES.with(|c| !c.borrow().is_empty()) {
+                            out.push_str(&format!("    @HBC_TAG_KIND@cmp $13, %rax@HBC_TAG_END@
+    jne .Lxdx{}
+    mov %rdx, %rdi
+    test %rdi, %rdi
+    jz .Lxdx{}
+    call hrobj_release
+", xk, xk));
+                        }
+                        out.push_str(&format!(".Lxdx{}:
+", xk));
+                    }
                     cg_stmts(cbody, env, frame, sigs, strs, out, target, fname, label, flow, slots, dyn_names, byref_names);
                     env.truncate(mark);
                     if finally.is_some() {
@@ -20600,6 +20729,61 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 match expr_ty(e, env, sigs) {
                     Ty::Dyn => {
                         cg_value(e, env, sigs, strs, out, target);
+                        if !dyn_expr_owned(e) {
+                        // The pending exception is the SOLE owner of its
+                        // value: CatchBind hands it to the catch slot and a
+                        // bare CATCH discards it, and the Dyn-slot epilogue
+                        // releases owned payloads too. A Dyn pair from a Var
+                        // or borrowed cell SHARES the source slot's owned
+                        // payload, so copy it: owned floats
+                        // (hbc_float_clone), owned strings (hbc_strcpy),
+                        // owned Dyn-cell arrays (hbc_darrclone), objects
+                        // (retain). Scalars and borrowed/shared views carry
+                        // no ownership.
+                        // (oracle pCATCH9/pCATCH10: double-free segfault at
+                        // function exit before this copy)
+                        // An OWNED temporary (Call/Send/SelfGet/memvar/Seq
+                        // tail, per dyn_expr_owned) is TRANSFERRED instead:
+                        // the exception slot takes over the fresh payload,
+                        // no clone and no release (reviewer CATCH v1:
+                        // unconditional clone leaked the temporary - probes
+                        // pCATCH12/13/14 balance-guard rc=99 pre-fix).
+                        let brk = fresh_lbl();
+                        out.push_str(&format!("    call hbc_float_clone
+    @HBC_TAG_KIND@cmp $4, %rax@HBC_TAG_END@
+    jne .Lbrka{}
+    mov %rdx, %rdi
+    mov -8(%rdx), %rsi
+    call hbc_strcpy
+    mov %rax, %rdx
+    mov $4, %eax
+    jmp .Lbrkd{}
+.Lbrka{}:
+    @HBC_TAG_KIND@cmp $8, %rax@HBC_TAG_END@
+    jne .Lbrkb{}
+    mov %rdx, %rdi
+    call hbc_darrclone
+    mov %rax, %rdx
+    mov $8, %eax
+    jmp .Lbrkd{}
+.Lbrkb{}:
+", brk, brk, brk, brk, brk, brk));
+                        if CLASSES.with(|c| !c.borrow().is_empty()) {
+                            out.push_str(&format!("    @HBC_TAG_KIND@cmp $13, %rax@HBC_TAG_END@
+    jne .Lbrkd{}
+    sub $32, %rsp
+    mov %rax, 8(%rsp)
+    mov %rdx, 16(%rsp)
+    mov %rdx, %rdi
+    call hrobj_retain
+    mov 8(%rsp), %rax
+    mov 16(%rsp), %rdx
+    add $32, %rsp
+", brk));
+                        }
+                        out.push_str(&format!(".Lbrkd{}:
+", brk));
+                        }
                     }
                     Ty::I64 => {
                         cg_value(e, env, sigs, strs, out, target);
@@ -27448,6 +27632,7 @@ hbc_obj_drop_pending:
                 out.push_str(WIN_HELPERS);
             }
             out.push_str(F64_HELPER);
+            out.push_str(IDLESLEEP_WIN);
             out.push_str(CTOR_HELPERS);
             out.push_str(ARRAY3_HELPER);
             out.push_str(HASH_HELPERS);
@@ -28235,8 +28420,8 @@ hbc_dyn_eq:
 # tail call); string x integer is Harbour's BASE/1073/1075/1074/1076 per
 # operator (hk149-hk152 - dialogs hang headless): clean named exit 1 via
 # the hbc_dyncmp_*_error stubs, registered failure modes, not exact
-# equivalence. A NIL casilla in an ordering comparison is a Harbour type
-# error: hbc_type_error (registered failure mode). Leaf routine.
+# equivalence. A NIL casilla in an ordering comparison is a Harbour
+# type error: hbc_type_error (registered failure mode). Leaf routine.
 hbc_dynxcmp:
     @HBC_TAG_KIND@cmp $9, %rax@HBC_TAG_END@
     jne 91f
@@ -28350,7 +28535,7 @@ hbc_dynxeq_dd:
     out.push_str(r#"
 # hbc_bound_error: array index outside 1..=n at runtime (noreturn). Prints
 # the Harbour wording and exits 1. Harbour itself opens an interactive
-# error dialog here (probes a1/a2 hang even with stdin at EOF): a clean
+# modal error dialog here (probes a1/a2 hang even with stdin at EOF): a clean
 # exit is the registered failure-mode difference, same error condition.
 hbc_bound_error:
     cmpq $0, hbc_seq_depth(%rip)
@@ -28651,8 +28836,8 @@ hbc_snil_error:
     syscall
 
 # hbc_dyncmp_eq_error / hbc_dyncmp_ne_error: a numeric Dyn compared
-# against a string (noreturn). Harbour raises BASE/1071 "Argument
-# error: =" and BASE/1072 "Argument error: <>" (hk34/hk38, dialogs
+# against a string (noreturn). Harbour raises BASE/1071 and BASE/1072
+# wording "Argument error: =" / "Argument error: <>" (hk34/hk38, dialogs
 # that hang headless) - clean named exit 1 here, registered failure
 # mode, same error condition.
 hbc_dyncmp_eq_error:
@@ -28691,7 +28876,7 @@ hbc_dynxeq_error:
 
 # hbc_swxeq_nil_error: a NIL casilla reaches a SWITCH selector (noreturn).
 # Harbour raises BASE/3104 "Argument error: SWITCH" (oracle sw-nil-oth:
-# error at entry, before any comparison; dialog hangs headless) - clean
+# fails at entry, before any comparison; dialog hangs headless) - clean
 # named exit 1 here, registered failure mode, same error condition.
 hbc_swxeq_nil_error:
     lea .Lswxnilmsg(%rip), %rsi
@@ -28938,6 +29123,61 @@ hbc_dfree:
     pop %r13
     pop %r12
     pop %rbx
+    ret
+
+# hbc_darrclone: rdi = Dyn-cell array DATA pointer (tag-8 payload, live
+# count at -8). Deep clone of the literal-only cell shape (the checker
+# guarantees scalar/string cells): scalar cells copy verbatim, owned
+# string cells (tag 4) and owned float cells are re-created so the clone
+# owns its payloads independently. Returns rax = new data pointer; the
+# caller owns it. Used by Break(Dyn) so the exception entry never shares
+# the source slot's array.
+hbc_darrclone:
+    push %rbp
+    push %rbx
+    push %r12
+    push %r13
+    push %r14
+    mov %rdi, %rbx
+    mov -8(%rbx), %r12
+    mov %r12, %rdi
+    shl $4, %rdi
+    add $8, %rdi
+    call hbc_alloc
+    mov %r12, (%rax)
+    add $8, %rax
+    mov %rax, %r13
+    xor %r14, %r14
+.Ldacl_loop:
+    cmp %r12, %r14
+    jge .Ldacl_done
+    mov %r14, %rax
+    shl $4, %rax
+    mov (%rbx,%rax), %rcx
+    mov 8(%rbx,%rax), %rdx
+    mov %rcx, %rax
+    call hbc_float_clone
+    @HBC_TAG_KIND@cmp $4, %rax@HBC_TAG_END@
+    jne .Ldacl_store
+    mov %rdx, %rdi
+    mov -8(%rdx), %rsi
+    call hbc_strcpy
+    mov %rax, %rdx
+    mov $4, %eax
+.Ldacl_store:
+    mov %r14, %rcx
+    shl $4, %rcx
+    mov %rax, (%r13,%rcx)
+    mov %rdx, 8(%r13,%rcx)
+    inc %r14
+    jmp .Ldacl_loop
+.Ldacl_done:
+    mov %r13, %rax
+    pop %r14
+    pop %r13
+    pop %r12
+    pop %rbx
+    pop %rbp
     ret
 
 # hbc_rfree: rdi = block of (ptr,len) pairs, rsi = pair count, rdx =
@@ -29403,6 +29643,7 @@ hbc_seq_exc: .skip 4096
     out.push_str(ARRAY3_HELPER);
     out.push_str(HASH_HELPERS);
     out.push_str(F64_HELPER);
+    out.push_str(IDLESLEEP_LINUX);
     out.push_str("\n    .section .rodata\n");
     emit_strings(&mut out, &strs);
     emit_f64_consts(&mut out);
@@ -29669,7 +29910,7 @@ fn finalize_trace(mut out: String, target: Target) -> String {
     .align 8
 hbc_trace_top: .quad 0
 # Held trailing spaces of the open QOut line (q1-q17: Harbour trims at
-# line flush - newline, OutStd write, exit - not at statement end).
+# a line flush - newline, OutStd write, exit - not at statement end).
 hbc_pending: .quad 0
     .text
 # Language metadata helpers: RAX signed level; no calls, heap or helper frame.
@@ -30596,6 +30837,55 @@ hbc_math_mod:
 // then use the target's existing raw writer. Source bytes, lengths, ownership
 // and allocation counters are untouched. Other GTSTD controls stay outside
 // this increment; OutStd/OutErr bypass conversion entirely.
+const IDLESLEEP_LINUX: &str = r#"
+# --- hb_idleSleep ([nSeconds]) ---
+# hbc_idlesleep: xmm0 = seconds. Negative is a no-op (rtl/idle.c:133).
+# A single nanosleep covers the whole span: Harbour's per-slice
+# hb_idleState loop serves idle tasks, and none exist in this runtime.
+hbc_idlesleep:
+    xorpd %xmm1, %xmm1
+    ucomisd %xmm1, %xmm0
+    jp .Lidl_ret
+    jbe .Lidl_ret
+    cvttsd2si %xmm0, %rax
+    cvtsi2sd %rax, %xmm2
+    subsd %xmm2, %xmm0
+    mov $1000000000, %ecx
+    cvtsi2sd %rcx, %xmm3
+    mulsd %xmm3, %xmm0
+    cvttsd2si %xmm0, %rdx
+    sub $24, %rsp
+    mov %rax, (%rsp)
+    mov %rdx, 8(%rsp)
+    mov $35, %eax
+    mov %rsp, %rdi
+    xor %esi, %esi
+    syscall
+    add $24, %rsp
+.Lidl_ret:
+    ret
+"#;
+
+const IDLESLEEP_WIN: &str = r#"
+# --- hb_idleSleep ([nSeconds]) ---
+# hbc_idlesleep: xmm0 = seconds. Negative is a no-op (rtl/idle.c:133);
+# positive sleeps via kernel32 Sleep (no idle tasks to serve here).
+hbc_idlesleep:
+    xorpd %xmm1, %xmm1
+    ucomisd %xmm1, %xmm0
+    jp .Lidlw_ret
+    jbe .Lidlw_ret
+    mov $1000, %ecx
+    cvtsi2sd %rcx, %xmm2
+    mulsd %xmm2, %xmm0
+    cvttsd2si %xmm0, %rcx
+    sub $40, %rsp
+    call Sleep
+    add $40, %rsp
+.Lidlw_ret:
+    ret
+"#;
+
 const CONSOLE_NUL_HELPER: &str = r#"
     .bss
     .balign 8
@@ -31281,8 +31571,8 @@ hbc_dyn_eq:
 # tail call); string x integer is Harbour's BASE/1073/1075/1074/1076 per
 # operator (hk149-hk152 - dialogs hang headless): clean named exit 1 via
 # the hbc_dyncmp_*_error stubs, registered failure modes, not exact
-# equivalence. A NIL casilla in an ordering comparison is a Harbour type
-# error: hbc_type_error (registered failure mode). Leaf routine.
+# equivalence. A NIL casilla in an ordering comparison is a Harbour
+# type error: hbc_type_error (registered failure mode). Leaf routine.
 hbc_dynxcmp:
     @HBC_TAG_KIND@cmp $9, %rax@HBC_TAG_END@
     jne 91f
@@ -31717,7 +32007,7 @@ hbc_dynxeq_error:
 
 # hbc_swxeq_nil_error: a NIL casilla reaches a SWITCH selector (noreturn).
 # Harbour raises BASE/3104 "Argument error: SWITCH" (oracle sw-nil-oth:
-# error at entry, before any comparison; dialog hangs headless) - clean
+# fails at entry, before any comparison; dialog hangs headless) - clean
 # named exit 1 here, registered failure mode, same error condition.
 hbc_swxeq_nil_error:
     push %rbp
@@ -31981,6 +32271,61 @@ hbc_dfree:
     pop %r13
     pop %r12
     pop %rbx
+    ret
+
+# hbc_darrclone: rdi = Dyn-cell array DATA pointer (tag-8 payload, live
+# count at -8). Deep clone of the literal-only cell shape (the checker
+# guarantees scalar/string cells): scalar cells copy verbatim, owned
+# string cells (tag 4) and owned float cells are re-created so the clone
+# owns its payloads independently. Returns rax = new data pointer; the
+# caller owns it. Used by Break(Dyn) so the exception entry never shares
+# the source slot's array.
+hbc_darrclone:
+    push %rbp
+    push %rbx
+    push %r12
+    push %r13
+    push %r14
+    mov %rdi, %rbx
+    mov -8(%rbx), %r12
+    mov %r12, %rdi
+    shl $4, %rdi
+    add $8, %rdi
+    call hbc_alloc
+    mov %r12, (%rax)
+    add $8, %rax
+    mov %rax, %r13
+    xor %r14, %r14
+.Ldacl_loop:
+    cmp %r12, %r14
+    jge .Ldacl_done
+    mov %r14, %rax
+    shl $4, %rax
+    mov (%rbx,%rax), %rcx
+    mov 8(%rbx,%rax), %rdx
+    mov %rcx, %rax
+    call hbc_float_clone
+    @HBC_TAG_KIND@cmp $4, %rax@HBC_TAG_END@
+    jne .Ldacl_store
+    mov %rdx, %rdi
+    mov -8(%rdx), %rsi
+    call hbc_strcpy
+    mov %rax, %rdx
+    mov $4, %eax
+.Ldacl_store:
+    mov %r14, %rcx
+    shl $4, %rcx
+    mov %rax, (%r13,%rcx)
+    mov %rdx, 8(%r13,%rcx)
+    inc %r14
+    jmp .Ldacl_loop
+.Ldacl_done:
+    mov %r13, %rax
+    pop %r14
+    pop %r13
+    pop %r12
+    pop %rbx
+    pop %rbp
     ret
 
 # hbc_rfree: rdi = block of (ptr,len) pairs, rsi = pair count, rdx =
@@ -34776,6 +35121,34 @@ hbc_date_today:
             let wrapped = format!("@HBC_TAG_KIND@{}@HBC_TAG_END@",original);
             assert_eq!(finalize_tag_kind_accessors(wrapped.clone(),false),original);
             assert_eq!(finalize_tag_kind_accessors(wrapped,true),low);
+        }
+    }
+}
+
+#[cfg(test)]
+mod cpp_directive_comment_tests {
+    use super::*;
+    // The macOS feasibility job assembles the LLVM runtime sidecar
+    // (program.ll.runtime.s = emit_asm output) with clang, which runs the
+    // C preprocessor on .s files: a standalone comment whose first word is
+    // a cpp directive keyword (#error, #line, #pragma, ...) aborts the
+    // assemble. Run 44035714366 hit five such comments. Scan the emitted
+    // runtime for both native targets so no comment can reintroduce one.
+    #[test]
+    fn runtime_asm_has_no_cpp_directive_comments() {
+        const DIRECTIVES: [&str; 15] = ["error","warning","line","pragma","include",
+            "define","undef","if","ifdef","ifndef","elif","else","endif","ident","import"];
+        for target in [Target::Linux, Target::Windows] {
+            let s = emit_asm(&[], &[], &[], target, false);
+            for (i, l) in s.lines().enumerate() {
+                let t = l.trim_start();
+                if let Some(rest) = t.strip_prefix('#') {
+                    let word: String = rest.trim_start().chars()
+                        .take_while(|c| c.is_ascii_alphabetic()).collect();
+                    assert!(!DIRECTIVES.contains(&word.as_str()),
+                        "line {}: comment starts with cpp directive {:?}: {}", i + 1, word, t);
+                }
+            }
         }
     }
 }
