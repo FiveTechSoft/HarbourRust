@@ -53,3 +53,13 @@ ni cleanup general de temporales de un RHS antiguo que falla a medio evaluar,
 ni de argumentos previos si otro argumento o receiver falla. Los paresbase/new
 de esos limites siguen separados de las rutas equilibradas. Tampoco se han
 implementado Dyn+Dyn, DIRMAKE o INKEY. No ampliar estas mediciones a todoStrOwn.
+
+## Orden de validacion CExtend
+
+La guarda deproductores usa expr_ty solo DESPUES de type_expr de TODOSlos
+argumentos. Elcandidato9fb04404 violaba esteprecondicion: unknown/IIFmalformado/
+Min0/Eval0/forwardreturn dabanpanic101. Se reprodujeron antesdelcambio.
+validation.py ejecuta13programasdefrontend:10paresdirecto/envuelto con
+diagnosticorc1identico, unargumentoposteriorinvalido queganaprecedencia,
+forwardDynreturn conlimitenombrado yforwardStrreturn queemiteasmcorrecta.
+No se consideran elpanic nirechazogenerico comoresultadoaceptable.

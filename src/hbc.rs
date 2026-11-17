@@ -7617,11 +7617,6 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                         return Err(format!("line {}: Extend argument count exceeds INT_MAX",n));
                     }
                     for a in args.iter() {
-                        if has_dyn_string_concat(a,env,sigs) {
-                            return Err(format!("line {}: Dyn/string concat temporary across C Extend is not in this increment; materialize into a local first",n));
-                        }
-                    }
-                    for a in args.iter() {
                         if let Expr::ByRef(vn) = a {
                             // `@x` across the C boundary (milestone 2.2):
                             // x must be a Dyn local so its 16-byte casilla
@@ -7639,6 +7634,14 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                             Ty::Block(_, BRet::Int) => {}
                             Ty::Block(_, _) => return Err(format!("line {}: only codeblocks whose body returns an INTEGER cross the C Extend boundary in this increment (docs/EXTEND-BRIDGE.md)", n)),
                             other => return Err(format!("line {}: {} argument cannot cross the C Extend boundary in this increment (docs/EXTEND-BRIDGE.md)", n, ty_name(other))),
+                        }
+                    }
+                    // expr_ty is post-check only: validate every argument
+                    // before inspecting a producer nested inside it. Invalid
+                    // names/arities must keep their normal diagnostic.
+                    for a in args.iter() {
+                        if has_dyn_string_concat(a,env,sigs) {
+                            return Err(format!("line {}: Dyn/string concat temporary across C Extend is not in this increment; materialize into a local first",n));
                         }
                     }
                     return Ok(Ty::Dyn);
