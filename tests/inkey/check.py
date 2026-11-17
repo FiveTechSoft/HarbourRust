@@ -92,7 +92,7 @@ for name,expr in [('zero','inkey(0)'),('zerof','inkey(0.0)'),('neg','inkey(-1)')
 reject('mask','inkey(1,0)',b'mask and extra arguments');reject('three','inkey(1,2,3)',b'mask and extra arguments')
 reject('runtime-var','inkey(n)',M,'function main()\nlocal n:=1,k\nk:=inkey(n)\n?k\nreturn nil\n')
 reject('unknown-shadow-unaffected','x',b'',None) if False else None
-for target,mode in [('windows',None),('linux','--experimental-llvm'),('linux','--experimental-llvm-no-trace'),('windows','--experimental-llvm'),('macho-arm64',None),('macho',None)]:
-    d=out/('profile-'+target+'-'+str(mode));d.mkdir();(d/'p.prg').write_text(prg('inkey(1)'));r=run([compiler,d/'p.prg',d/'exe','--target='+target]+([mode]if mode else[]),d,'build');assert r.returncode==1 and b'INKEY supports ordinary Linux stdin only' in r.stderr,(target,mode,r.stderr);rows.append(dict(kind='profile-rejection',target=target,mode=mode,passed=True))
+for target,mode in [('linux','--experimental-llvm'),('linux','--experimental-llvm-no-trace'),('windows','--experimental-llvm'),('macho-arm64',None),('macho',None)]:
+    d=out/('profile-'+target+'-'+str(mode));d.mkdir();(d/'p.prg').write_text(prg('inkey(1)'));r=run([compiler,d/'p.prg',d/'exe','--target='+target]+([mode]if mode else[]),d,'build');assert r.returncode==1 and b'INKEY supports ordinary Linux and Windows PE stdin only' in r.stderr,(target,mode,r.stderr);rows.append(dict(kind='profile-rejection',target=target,mode=mode,passed=True))
 res=dict(compiler_sha256=hashlib.sha256(P(compiler).read_bytes()).hexdigest(),compiler_tree=a.tree,oracle_hbmk2=a.hbmk2,count=len(rows),rows=rows)
 (out/'results.json').write_text(json.dumps(res,indent=1));print('PASS',len(rows),'INKEY checks')

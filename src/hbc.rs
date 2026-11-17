@@ -67,6 +67,7 @@ thread_local! {
     static DBF_USED: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
     static SET_CONSOLE_LINE: std::cell::Cell<Option<usize>> = const { std::cell::Cell::new(None) };
     static DIRMAKE_WIN: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+    static INKEY_WIN: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
     static CURDIR_LINUX_NATIVE: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
     static MACHO_MODE: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
     static MACHO_ARM64: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
@@ -7126,8 +7127,8 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 return Ok(Ty::Date);
             }
             if is_builtin(id,"inkey") {
-                if !CURDIR_LINUX_NATIVE.with(|v|v.get()) {
-                    return Err(format!("line {}: INKEY supports ordinary Linux stdin only in this increment; Darwin, Windows and LLVM are not measured",n));
+                if !CURDIR_LINUX_NATIVE.with(|v|v.get()) && !INKEY_WIN.with(|v|v.get()) {
+                    return Err(format!("line {}: INKEY supports ordinary Linux and Windows PE stdin only in this increment; Darwin and LLVM are not measured",n));
                 }
                 if args.len()>1 {return Err(format!("line {}: INKEY supports zero arguments or one numeric literal from 0.01 to 86400 seconds in this increment; mask and extra arguments are not covered",n));}
                 if let Some(a)=args.first() {
@@ -27485,7 +27486,18 @@ fn emit_asm(funcs: &[Func], sigs: &[Sig], externs: &[String], target: Target, in
         // returned; on EOF, closed or hung-up stdin the remaining time to the
         // deadline is slept (never the full timeout again) and the result is 0.
         // No raw mode: tty input stays line-buffered.
+        if matches!(target, Target::Windows) {
+            // Stack map: locals rbp-8..rbp-56 (ms,handle,type,deadline,count/avail,byte,flag); outgoing area
+            // (32-byte shadow + args 5/6) is rsp..rsp+47 = rbp-112..rbp-65, below every local. Do not move locals into it.
+            // Windows PE: stdin is classified with GetFileType. Pipe: PeekNamedPipe
+            // (ERROR_NOT_SUPPORTED, as Wine answers for anonymous pipes = blocking ReadFile like the oracle; other error = closed pipe = EOF) then Sleep(1) slices until the
+            // GetTickCount64 deadline. Disk file / other: ReadFile of one byte,
+            // 0 bytes or failure = EOF. EOF with a timeout sleeps the REMAINING
+            // time. Result is the byte or 0. Real console stdin is not measured.
+            out.push_str("    .text\nhbc_inkey:\n    push %rbp\n    mov %rsp, %rbp\n    sub $112, %rsp\n    mov %rdi, -8(%rbp)\n    mov $-10, %ecx\n    call GetStdHandle\n    mov %rax, -16(%rbp)\n    mov %rax, %rcx\n    call GetFileType\n    mov %eax, -24(%rbp)\n    call GetTickCount64\n    add -8(%rbp), %rax\n    mov %rax, -32(%rbp)\n    movq $0, -56(%rbp)\n.Linkey_loop:\n    cmpl $3, -24(%rbp)\n    jne .Linkey_read\n    movl $0, -40(%rbp)\n    mov -16(%rbp), %rcx\n    xor %edx, %edx\n    xor %r8d, %r8d\n    xor %r9d, %r9d\n    lea -40(%rbp), %rax\n    mov %rax, 32(%rsp)\n    movq $0, 40(%rsp)\n    call PeekNamedPipe\n    test %eax, %eax\n    jz .Linkey_peekfail\n    cmpl $0, -40(%rbp)\n    jne .Linkey_read\n    cmpq $0, -8(%rbp)\n    je .Linkey_none\n    call GetTickCount64\n    cmp -32(%rbp), %rax\n    jae .Linkey_none\n    mov $1, %ecx\n    call Sleep\n    jmp .Linkey_loop\n.Linkey_peekfail:\n    call GetLastError\n    cmp $50, %eax\n    jne .Linkey_eof\n    movq $1, -56(%rbp)\n    jmp .Linkey_read\n    jmp .Linkey_eof\n.Linkey_read:\n    movl $0, -40(%rbp)\n    movb $0, -48(%rbp)\n    mov -16(%rbp), %rcx\n    lea -48(%rbp), %rdx\n    mov $1, %r8d\n    lea -40(%rbp), %r9\n    movq $0, 32(%rsp)\n    call ReadFile\n    test %eax, %eax\n    jz .Linkey_eof\n    cmpl $1, -40(%rbp)\n    jne .Linkey_eof\n    movzbl -48(%rbp), %eax\n    leave\n    ret\n.Linkey_eof:\n    cmpq $0, -8(%rbp)\n    je .Linkey_none\n    cmpq $0, -56(%rbp)\n    je .Linkey_rem\n    call GetTickCount64\n    add -8(%rbp), %rax\n    mov %rax, -32(%rbp)\n.Linkey_rem:\n    call GetTickCount64\n    mov -32(%rbp), %rcx\n    sub %rax, %rcx\n    jbe .Linkey_none\n    call Sleep\n.Linkey_none:\n    xor %eax, %eax\n    leave\n    ret\n");
+        } else {
         out.push_str("    .text\nhbc_inkey:\n    push %rbp\n    mov %rsp, %rbp\n    sub $64, %rsp\n    mov %rdi, -8(%rbp)\n    test %rdi, %rdi\n    jz .Linkey_loop\n    mov $1, %edi\n    lea -48(%rbp), %rsi\n    mov $228, %eax\n    syscall\n    mov -48(%rbp), %rax\n    imul $1000000000, %rax, %rax\n    add -40(%rbp), %rax\n    mov -8(%rbp), %rcx\n    imul $1000000, %rcx, %rcx\n    add %rcx, %rax\n    mov %rax, -56(%rbp)\n.Linkey_loop:\n    cmpq $0, -8(%rbp)\n    jz .Linkey_poll0\n    mov $1, %edi\n    lea -48(%rbp), %rsi\n    mov $228, %eax\n    syscall\n    mov -48(%rbp), %rax\n    imul $1000000000, %rax, %rax\n    add -40(%rbp), %rax\n    mov -56(%rbp), %rcx\n    sub %rax, %rcx\n    jle .Linkey_none\n    add $999999, %rcx\n    mov %rcx, %rax\n    xor %edx, %edx\n    mov $1000000, %rcx\n    div %rcx\n    mov %rax, %rdx\n    jmp .Linkey_poll\n.Linkey_poll0:\n    xor %edx, %edx\n.Linkey_poll:\n    movl $0, -16(%rbp)\n    movw $1, -12(%rbp)\n    movw $0, -10(%rbp)\n    lea -16(%rbp), %rdi\n    mov $1, %esi\n    mov $7, %eax\n    syscall\n    cmp $-4, %rax\n    je .Linkey_intr\n    test %rax, %rax\n    jl .Linkey_eof\n    jz .Linkey_none\n    movzwl -10(%rbp), %eax\n    test $1, %eax\n    jz .Linkey_eof\n    xor %eax, %eax\n    xor %edi, %edi\n    lea -24(%rbp), %rsi\n    mov $1, %edx\n    syscall\n    cmp $1, %rax\n    je .Linkey_got\n    cmp $-4, %rax\n    je .Linkey_intr\n    jmp .Linkey_eof\n.Linkey_got:\n    movzbl -24(%rbp), %eax\n    leave\n    ret\n.Linkey_intr:\n    cmpq $0, -8(%rbp)\n    je .Linkey_none\n    jmp .Linkey_loop\n.Linkey_eof:\n    cmpq $0, -8(%rbp)\n    je .Linkey_none\n.Linkey_sleep:\n    mov $1, %edi\n    lea -48(%rbp), %rsi\n    mov $228, %eax\n    syscall\n    mov -48(%rbp), %rax\n    imul $1000000000, %rax, %rax\n    add -40(%rbp), %rax\n    mov -56(%rbp), %rcx\n    sub %rax, %rcx\n    jle .Linkey_none\n    mov %rcx, %rax\n    xor %edx, %edx\n    mov $1000000000, %rcx\n    div %rcx\n    mov %rax, -48(%rbp)\n    mov %rdx, -40(%rbp)\n    lea -48(%rbp), %rdi\n    xor %esi, %esi\n    mov $35, %eax\n    syscall\n    jmp .Linkey_sleep\n.Linkey_none:\n    xor %eax, %eax\n    leave\n    ret\n");
+        }
     }
     match target {
         Target::Linux => out.push_str("# target: linux - no libc, I/O via own syscall helpers at the end\n"),
@@ -33610,6 +33622,7 @@ fn main() {
     MACHO_ARM64.with(|v| v.set(macho_arm64));
     CURDIR_LINUX_NATIVE.with(|v| v.set(!macho && !llvm && matches!(target, Target::Linux)));
     DIRMAKE_WIN.with(|v| v.set(!macho && !llvm && matches!(target, Target::Windows)));
+    INKEY_WIN.with(|v| v.set(!macho && !llvm && matches!(target, Target::Windows)));
     DBF_NATIVE.with(|v| v.set(!llvm));
     DBF_WINDOWS.with(|v| v.set(matches!(target, Target::Windows)));
     if llvm && instrument { eprintln!("error: LLVM scalar: --instrument is not supported; registry checks must not be silently omitted"); process::exit(1); }

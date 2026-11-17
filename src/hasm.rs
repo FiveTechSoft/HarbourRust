@@ -1804,12 +1804,12 @@ impl Asm {
         // D1.1: GetLastError feeds exact open-rejection diagnostics on PE.
         // D2: SetFilePointerEx + GetSystemTime feed record write-back and
         // the UTC header date on appends.
-        const WHITELIST: [&str; 31] = ["VirtualAlloc", "VirtualFree", "GetSystemInfo", "ExitProcess", "GetEnvironmentVariableA", "GetLocalTime", "GetProcessHeap",
+        const WHITELIST: [&str; 34] = ["VirtualAlloc", "VirtualFree", "GetSystemInfo", "ExitProcess", "GetEnvironmentVariableA", "GetLocalTime", "GetProcessHeap",
             "GetStdHandle", "HeapAlloc", "HeapFree", "WriteFile", "CreateFileW", "ReadFile", "GetFileSizeEx", "CloseHandle",
             "GetLastError", "SetFilePointerEx", "GetSystemTime",
             // Threads on Windows (CreateThread runtime, TEB TLS slots,
             // WaitOnAddress resolved at run time from the synch API set).
-            "CreateThread", "ExitThread", "GetCurrentThreadId", "TlsAlloc", "TlsFree", "LoadLibraryA", "GetProcAddress", "Sleep", "FindFirstFileW", "FindNextFileW", "FindClose", "CreateDirectoryW", "MultiByteToWideChar"];
+            "CreateThread", "ExitThread", "GetCurrentThreadId", "TlsAlloc", "TlsFree", "LoadLibraryA", "GetProcAddress", "Sleep", "FindFirstFileW", "FindNextFileW", "FindClose", "CreateDirectoryW", "MultiByteToWideChar", "GetFileType", "PeekNamedPipe", "GetTickCount64"];
         fn scan_expr(p: &Parser, e: &Expr, names: &mut Vec<String>) {
             for (_, t) in &e.0 {
                 if let Term::Sym(n) = t {
@@ -2396,7 +2396,7 @@ mod pe_dbf_encoder_tests {
         assert!(assemble_pe(source).is_ok());
     }
     #[test] fn dirmake_windows_imports_are_whitelisted() {
-        for name in ["CreateDirectoryW","MultiByteToWideChar"] {
+        for name in ["CreateDirectoryW","MultiByteToWideChar","GetFileType","PeekNamedPipe","GetTickCount64"] {
             assert!(assemble_pe(&format!(".text\n.globl _start\n_start:\ncall {}\ncall ExitProcess\n",name)).is_ok());
         }
     }
