@@ -50,6 +50,7 @@ pub fn discover_objects(funcs: &[Func], methods: &[crate::MethodDef], classes: &
             scan(&f.stmts,name,classes,&mut found)?;
         }
         if let Some(ci)=found{OBJECTS.with(|v|v.borrow_mut().insert(index,ci));}
+        else{return Err(format!("line {}: module STATIC requires a folded i64, logical or string scalar or a constant array initializer (i64/logical/string/NIL cells, nested and empty arrays admitted); NIL, Date, float and hash initializers are not in this increment",slots[index].0));}
     }
     Ok(())
 }
