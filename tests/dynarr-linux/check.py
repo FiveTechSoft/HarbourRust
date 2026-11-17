@@ -7,6 +7,13 @@ every x[k] read raised "Type error: NIL used as a number". Only the ARM64
 native battery ran these rows' runtime expectations; this gate runs them
 on Linux against BOTH the fresh Harbour oracle and the pinned
 oracle-derived expectations (raw bytes).
+
+Pass conditions per row (reviewer-required):
+  * our build rc 0, oracle build rc 0
+  * our run rc 0 AND empty stderr
+  * oracle run rc 0 AND empty stderr
+  * our stdout == oracle stdout == pinned expectation (raw bytes)
+Every run's rc and stderr are recorded in results.json.
 """
 import argparse, hashlib, json, os, pathlib, subprocess
 P = pathlib.Path
@@ -27,6 +34,8 @@ ap = argparse.ArgumentParser()
 ap.add_argument('--compiler', required=True)
 ap.add_argument('--hbmk2', required=True)
 ap.add_argument('--output', required=True)
+ap.add_argument('--tree', default=None,
+                help='git commit the compiler binary was built from (provenance stamp)')
 a = ap.parse_args()
 root = P(__file__).resolve().parent.parent
 out = P(a.output).resolve()
@@ -43,6 +52,11 @@ def run(cmd, work, label):
         (work / (label + '.' + k)).write_bytes(v)
     return r
 
+def rec(r):
+    if r is None:
+        return {'rc': None, 'stderr': None}
+    return {'rc': r.returncode, 'stderr': r.stderr.decode('utf-8', 'replace')}
+
 rows = []
 for stem in ROWS:
     work = out / stem
@@ -56,14 +70,23 @@ for stem in ROWS:
     pinned = (root / 'expectations' / 'qout' / (stem + '.linux.out')).read_bytes()
     ours_b = ours_run.stdout if ours_run else b''
     orc_b = orc_run.stdout if orc_run else b''
-    ok = (ours_run is not None and orc_run is not None
-          and ours_run.returncode == 0 and orc_run.returncode == 0
+    ours_clean = (ours_run is not None and ours_run.returncode == 0
+                  and ours_run.stderr == b'')
+    orc_clean = (orc_run is not None and orc_run.returncode == 0
+                 and orc_run.stderr == b'')
+    ok = (ours.returncode == 0 and orc_build.returncode == 0
+          and ours_clean and orc_clean
           and ours_b == orc_b == pinned)
     rows.append({'test': stem, 'pass': ok,
+                 'ours_build_rc': ours.returncode,
+                 'oracle_build_rc': orc_build.returncode,
+                 'ours': rec(ours_run),
+                 'oracle': rec(orc_run),
                  'ours_matches_oracle': ours_b == orc_b,
                  'ours_matches_pinned': ours_b == pinned})
     print(('PASS' if ok else 'FAIL'), stem, 'linux')
 (out / 'results.json').write_text(json.dumps(
     {'compiler_sha256': hashlib.sha256(P(compiler).read_bytes()).hexdigest(),
+     'compiler_tree': a.tree,
      'rows': rows}, indent=2) + '\n')
 assert all(r['pass'] for r in rows), 'see evidence'
