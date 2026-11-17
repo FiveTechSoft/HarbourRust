@@ -6904,16 +6904,10 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 }
                 return Ok(Ty::F64);
             }
-            if is_builtin(id, "hb_idlesleep") && MACHO_MODE.with(|v| v.get()) {
-                // hb_idleSleep lowers to Linux syscall 35 (nanosleep) in the
-                // x86-64 runtime; the ARM64 translator lowers only classified
-                // syscalls and its __a64_linux_syscall dispatcher has no 35
-                // route, so the call would come back ENOSYS and the sleep
-                // would silently not happen. Named compile-time limit, never
-                // a silent no-op; the five tests/idlesleep-linux rows are
-                // named EXPECTED_REJ in tests/run_macho_arm64.py until a
-                // Darwin nanosleep lowering lands.
-                return Err(format!("line {}: `hb_idleSleep` is not implemented by the Mach-O {} backend in this increment (no nanosleep lowering; registered limit, no silent no-op)",n, if MACHO_ARM64.with(|v| v.get()) { "ARM64" } else { "Intel" }));
+            if is_builtin(id, "hb_idlesleep") && MACHO_MODE.with(|v| v.get()) && !MACHO_ARM64.with(|v| v.get()) {
+                // Intel's Darwin dispatcher has no nanosleep route yet.
+                // ARM64 uses its own preserving libSystem wrapper.
+                return Err(format!("line {}: `hb_idleSleep` is not implemented by the Mach-O Intel backend in this increment (no nanosleep lowering; registered limit, no silent no-op)",n));
             }
             if is_builtin(id, "hb_idlesleep") {
                 // hb_idleSleep([nSeconds]) (rtl/idle.c:133): negative is a

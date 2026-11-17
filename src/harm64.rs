@@ -542,6 +542,14 @@ impl<'a> Tr<'a> {
             return Ok(());
         }
         match n {
+            Some(35) => {
+                // Darwin has no BSD nanosleep syscall. In particular 334 is
+                // __semwait_signal, NOT a timespec-pointer API. Use the stable
+                // libSystem nanosleep ABI through a preserving wrapper.
+                self.used_helpers.insert("__a64_nanosleep");
+                self.out.push(AI::B { link: true, t: Tg::H("__a64_nanosleep") });
+                return Ok(());
+            }
             Some(158) => {
                 // arch_prctl(ARCH_SET_FS, rsi): the %fs base register
                 self.w(e_mov(true, FSR, 13));
@@ -1339,6 +1347,53 @@ fn analyze(a: &Asm) -> Result<(Vec<bool>, Vec<bool>, Vec<Option<FK>>), String> {
 
 fn helper(name: &'static str, tr: &mut Tr) -> Vec<AI> {
     let mut v = vec![AI::Hl(name)];
+    if name == "__a64_nanosleep" {
+        let ns = tr.import("_nanosleep");
+        let er = tr.import("___error");
+        let mut t = Tr { a: tr.a, out: Vec::new(), need: Vec::new(), live: Vec::new(), ckind: Vec::new(), imports: Vec::new(), used_helpers: Default::default(), threaded: false, ext: false, ext_imports: Default::default() };
+        // Native SP stays 16-byte aligned. Save every mapped caller-saved
+        // GPR, the TLS/atomic scratch registers, NZCV and all 16 full XMM
+        // registers. C preserves x19-x29, including the emulated RSP x28.
+        t.w(e_addsub_imm(true, true, false, 31, 31, 352, false));
+        for (k, (a,b)) in [(10u8,11u8),(12,13),(14,15),(FSR,AX),(LR,9)].iter().enumerate() {
+            t.w(e_stp(true,false,false,*a,*b,31,(k*16) as i64));
+        }
+        t.w(e_mrs_nzcv(T0));
+        t.ldst(8,false,0,T0,31,80);
+        for q in 0..16u8 { t.ldst(16,true,0,q,31,96+16*q as i64); }
+        t.w(e_mov(true,0,14)); // rqtp = emulated RDI
+        t.w(e_mov(true,1,13)); // rmtp = emulated RSI
+        t.out.push(AI::Adr { rd:T1, t:Tg::Got(ns) });
+        t.ldst(8,false,1,T1,T1,0);
+        t.w(e_blr(T1));
+        // C int is w0 only. Clear unspecified upper x0 bits before the
+        // success path can copy it to the 64-bit emulated RAX.
+        t.w(e_mov(false,0,0));
+        // libc returns 0 or -1 and sets errno, not BSD carry. Relevant
+        // nanosleep errno values EINTR/EFAULT/EINVAL match Linux 4/14/22.
+        // Other errno values pass through as Darwin numbers, NOT a
+        // universal Linux mapping (Darwin ENOSYS=78, Linux=38).
+        t.w(e_addsub_imm(false,false,true,ZR,0,0,false));
+        t.out.push(AI::Bc { c:EQ, t:Tg::L(9052) });
+        t.out.push(AI::Adr { rd:T1, t:Tg::Got(er) });
+        t.ldst(8,false,1,T1,T1,0);
+        t.w(e_blr(T1));
+        t.ldst(4,false,1,0,0,0);
+        t.w(e_addsub_reg(true,true,false,0,ZR,0,0,0));
+        t.out.push(AI::Lab(9052));
+        t.w(e_mov(true,9,0));
+        for q in 0..16u8 { t.ldst(16,true,1,q,31,96+16*q as i64); }
+        t.ldst(8,false,1,T0,31,80);
+        t.w(e_msr_nzcv(T0));
+        for (k, (a,b)) in [(10u8,11u8),(12,13),(14,15),(FSR,AX)].iter().enumerate() {
+            t.w(e_stp(true,false,true,*a,*b,31,(k*16) as i64));
+        }
+        t.ldst(8,false,1,LR,31,64); // old RAX intentionally replaced
+        t.w(e_addsub_imm(true,false,false,31,31,352,false));
+        t.w(RET);
+        v.extend(t.out);
+        return v;
+    }
     if name == "__a64_fyl2x" {
         // d16 = d17 * log2(d16); exact libm log/log10 when d17 is ln2/log10(2)
         let (glog, glog10, glog2) = (tr.import("_log"), tr.import("_log10"), tr.import("_log2"));
@@ -2011,11 +2066,18 @@ const EXT_EXPORTS: [(&str, &str); 4] = [
     ("hbc_blk_launch", "__a64_cin_hbc_blk_launch"), ("hrdbf_app_close", "__a64_cin_hrdbf_app_close"),
 ];
 
+// Intel reuses the baseline dispatcher. Add syscall35 ONLY to the
+// ARM64 copy: otherwise Intel's unmapped 35 would reenter its dispatcher.
+fn arm64_linux_syscall_dispatch() -> String {
+    LINUX_SYSCALL_DISPATCH.replacen("    cmp $60, %rax\n", "    cmp $35, %rax\n    je .La64s_n35\n    cmp $60, %rax\n", 1)
+        + "\n.La64s_n35:\n    mov $35, %eax\n    syscall\n    ret\n"
+}
+
 pub fn assemble_macho_arm64(src: &str) -> Result<Vec<u8>, String> { assemble_macho_arm64_ext(src, None) }
 
 // ext: install name of the EXTERNAL extension dylib (LC_LOAD_DYLIB).
 pub fn assemble_macho_arm64_ext(src: &str, ext: Option<&str>) -> Result<Vec<u8>, String> {
-    let src = format!("{}\n{}{}", src, LINUX_SYSCALL_DISPATCH, if ext.is_some() { EXT_BRIDGE_TEXT } else { "" });
+    let src = format!("{}\n{}{}", src, arm64_linux_syscall_dispatch(), if ext.is_some() { EXT_BRIDGE_TEXT } else { "" });
     let expanded = expand_rept(&src)?;
     let mut a = Asm {
         p: Parser { consts: HashMap::new(), labels: HashMap::new(), numlabels: HashMap::new(), seq: Cell::new(0) },
@@ -2423,6 +2485,31 @@ mod tests {
         let hex = |b: [u8; 32]| b.iter().map(|x| format!("{:02x}", x)).collect::<String>();
         assert_eq!(hex(sha256(b"")), "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855");
         assert_eq!(hex(sha256(b"abc")), "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad");
+    }
+    #[test]
+    fn nanosleep_static_and_dynamic_lower_to_libsystem() {
+        assert!(!LINUX_SYSCALL_DISPATCH.contains(".La64s_n35"));
+        assert!(arm64_linux_syscall_dispatch().contains(".La64s_n35"));
+        for code in [
+            "mov $35, %eax\n syscall\n",
+            "mov $35, %r10\n mov %r10, %rax\n syscall\n",
+        ] {
+            let src = format!(".text\n.globl _start\n_start:\n{}mov $60, %eax\n xor %edi, %edi\n syscall\n", code);
+            let bin = assemble_macho_arm64(&src).unwrap();
+            assert!(bin.windows(10).any(|w|w==b"_nanosleep"));
+            assert!(bin.windows(9).any(|w|w==b"___error\0"));
+            // Actual emitted call -> normalize int32 -> compare w0.
+            // MOV W0,W0 clears upper bits even for a mock C return whose
+            // x0 is 0xdeadbeef00000000 (successful w0=0).
+            let seq = [e_blr(T1),e_mov(false,0,0),e_addsub_imm(false,false,true,ZR,0,0,false)]
+                .iter().flat_map(|w|w.to_le_bytes()).collect::<Vec<_>>();
+            assert!(bin.windows(seq.len()).any(|w|w==seq));
+            let dirty_success = 0xdead_beef_0000_0000u64;
+            assert_eq!(dirty_success as u32 as u64,0);
+            // Never mistake BSD __semwait_signal(334) for nanosleep.
+            let wrong = e_movw(true,2,16,334,0).to_le_bytes();
+            assert!(!bin.windows(4).any(|w|w==wrong));
+        }
     }
     #[test]
     fn bitmask_immediates() {

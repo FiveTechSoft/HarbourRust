@@ -12,29 +12,44 @@ Usage: python3 tests/run_macho_arm64.py [--hbc ./hbc] [--jobs N] [regex]
 Exit status 0 only when no row FAILs, no row REJs unexpectedly, the suite
 total equals the expected total and (full battery) --thread-ref is given.
 """
-import argparse, codecs, collections, concurrent.futures as cf, os, re, subprocess, sys, tempfile
+import argparse, codecs, collections, concurrent.futures as cf, os, re, subprocess, sys, tempfile, time
 
 KINDS = ('pos', 'posx', 'pos2', 'posx2', 'streams', 'streams2')
 
 # Expected suite shape (docs/ARM64-NATIVE-2026-11-16.md, run 43985696680):
 # the totals are fixed and every backend rejection must be named here.
-# hb_idleSleep is a named Mach-O ARM64 limit: it lowers to Linux syscall
-# 35 (nanosleep) in the x86-64 runtime and the ARM64 dispatcher has no 35
-# route, so the compiler rejects it at compile time (no silent no-op).
-# EXPECTED_REJ maps each named row to the diagnostic substring its
-# rejection must carry: a row only counts as REJ when the compiler exits
-# normally (rc 1, never a signal) with that diagnostic; a crash, an
-# abnormal rc or a different message on a named row is a FAIL, never an
-# expected rejection (fail-closed). A named REJ that stops rejecting
-# with its diagnostic fails the battery (stale name).
-IDLESLEEP_LIMIT_MSG = 'hb_idleSleep` is not implemented by the Mach-O '  # ARM64 and Intel backends
-EXPECTED_REJ = {
-    'tests/idlesleep-linux/programs/idlesleep_basic.prg': IDLESLEEP_LIMIT_MSG,
-    'tests/idlesleep-linux/programs/idlesleep_negative.prg': IDLESLEEP_LIMIT_MSG,
-    'tests/idlesleep-linux/programs/idlesleep_loop.prg': IDLESLEEP_LIMIT_MSG,
-    'tests/idlesleep-linux/programs/idlesleep_noarg.prg': IDLESLEEP_LIMIT_MSG,
-    'tests/idlesleep-linux/programs/idlesleep_dyn.prg': IDLESLEEP_LIMIT_MSG,
+# No named compile-time rejections in this increment: hb_idleSleep got
+# its Darwin lowering (Linux 35 -> libSystem _nanosleep wrapper, also
+# reached by the __a64_linux_syscall dispatcher), so the five
+# tests/idlesleep-linux rows run natively like every other row.
+# EXPECTED_REJ stays as the fail-closed machinery for future named
+# limits: a row only counts as REJ when the compiler exits normally
+# (rc 1, never a signal) with the named diagnostic; a crash, an abnormal
+# rc or a different message is a FAIL, never an expected rejection. A
+# named REJ that stops rejecting with its diagnostic fails the battery
+# (stale name). An empty map makes ANY rejection unexpected (fail).
+EXPECTED_REJ = {}
+# The idlesleep rows print identical bytes whether nanosleep really
+# slept or the lowering silently no-ops (wrong number, ENOSYS), so each
+# positive-sleep row also carries a wall-clock floor on the native run
+# (monotonic; the same bounds as the Linux suite).
+# A lowering that returns instantly FAILS here even on byte-exact output.
+IDLESLEEP_WINDOWS = {
+    'tests/idlesleep-linux/programs/idlesleep_basic.prg': (0.15, 2.0),
+    'tests/idlesleep-linux/programs/idlesleep_dyn.prg': (0.15, 2.0),
+    'tests/idlesleep-linux/programs/idlesleep_loop.prg': (1.1, 4.0),
+    'tests/idlesleep-linux/programs/idlesleep_negative.prg': (0.0, 0.5),
+    'tests/idlesleep-linux/programs/idlesleep_noarg.prg': (0.0, 0.5),
+
 }
+# Target-specific policy: Intel retains its five named rejections.
+IDLESLEEP_INTEL_REJ = {f: 'hb_idleSleep` is not implemented by the Mach-O Intel backend' for f in IDLESLEEP_WINDOWS}
+
+def configure_target(target):
+    global TARGET, EXPECTED_REJ
+    TARGET = '--target=' + target
+    EXPECTED_REJ = dict(IDLESLEEP_INTEL_REJ) if target == 'macho' else {}
+
 FILE_POSITIVES = 6
 DBF_TESTS = 4
 THREAD_PROGRAMS = 37
@@ -45,7 +60,8 @@ TARGET = '--target=macho-arm64'  # --target=macho runs the same battery on Intel
 # original 1209, S5 added the 5 idlesleep pos2 rows above). The full
 # battery refuses a truncated/empty manifest or a runner constant gone
 # stale; bump this only with the manifest change that explains it.
-# Full-battery expected total: 1223+6+4+37+9 = 1279 (5 named REJ).
+# Full total: 1223+6+4+37+9 = 1279. ARM64: 0 REJ; Intel: 5 REJ.
+
 EXPECTED_MANIFEST_ROWS = 1223
 # Post-run m_clie.dbf SHA-256 per DBF acceptance test (generated on Linux,
 # stdout checked against the committed expectations). t4 appends records:
@@ -114,7 +130,10 @@ def run_case(line, hbc, outdir):
     if c.returncode != 0:
         kind, msg = classify_compile_failure(f, c.returncode, c.stderr.decode('latin-1'))
         return kind, f, msg
+    window = IDLESLEEP_WINDOWS.get(f)
     try:
+        if window is not None:
+            t0 = time.monotonic()
         if kind == 'posx2':
             r = subprocess.run([exe], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL, timeout=60)
             o, e = r.stdout, b''
@@ -123,6 +142,9 @@ def run_case(line, hbc, outdir):
             o, e = r.stdout, r.stderr
     except subprocess.TimeoutExpired:
         return 'FAIL', f, 'timeout'
+    elapsed = time.monotonic() - t0 if window is not None else None
+    if window is not None and not window[0] <= elapsed <= window[1]:
+        return 'FAIL', f, 'elapsed %.3fs outside [%.3f, %.3f]s' % (elapsed, *window)
     code = r.returncode
     rd = lambda q: open(q, 'rb').read()
     nl = bytes([10])
@@ -141,7 +163,7 @@ def run_case(line, hbc, outdir):
     else:
         exp = rd(p[2]); ok = o == exp and e == rd(p[4]) and code == 0
     if ok:
-        return 'PASS', f, ''
+        return 'PASS', f, ('elapsed %.3fs in [%.3f, %.3f]s' % (elapsed, *window) if window is not None else '')
     return 'FAIL', f, 'rc=%s stdout=%r stderr=%r expected=%r' % (code, o[:160], e[:160], exp[:160])
 
 
@@ -275,8 +297,7 @@ def main():
     ap.add_argument('pattern', nargs='?')
     a = ap.parse_args()
     hbc = os.path.abspath(a.hbc)
-    global TARGET
-    TARGET = '--target=' + a.target
+    configure_target(a.target)
     if not a.pattern and not a.thread_ref:
         print('FAIL runner: the full battery needs --thread-ref (threads + EXTERNAL reference outputs); refusing to report a partial suite as green')
         return 1
@@ -322,7 +343,7 @@ def main():
             res += thread_suite(hbc, d, a.thread_ref) + ext_suite(hbc, d, a.thread_ref)
             expected += THREAD_PROGRAMS + EXT_DEMOS
     for r in res:
-        if r[0] != 'PASS':
+        if r[0] != 'PASS' or r[1] in IDLESLEEP_WINDOWS:
             print('%s %s %s' % r)
     c = collections.Counter(r[0] for r in res)
     print('SUMMARY', dict(c), '(PARTIAL pattern battery)' if a.pattern else '(FULL battery)')

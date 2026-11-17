@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Unit tests for tests/run_macho_arm64.py's named-rejection triage.
+"""Unit tests for native runner triage and real sleep duration windows.
 
 A row named in EXPECTED_REJ counts as REJ only when the compiler exits
 normally (rc 1, never a signal) with the row's registered diagnostic
@@ -10,12 +10,14 @@ guard). With HBC=<path to a real hbc> the real compiler's idlesleep
 rejection is classified end to end.
 """
 import importlib.util, os, subprocess, tempfile, unittest
+from unittest.mock import patch
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 spec = importlib.util.spec_from_file_location('run_macho_arm64', os.path.join(HERE, 'run_macho_arm64.py'))
 m = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(m)
-ROW = next(iter(m.EXPECTED_REJ))
+ROW = 'tests/synthetic_named_limit.prg'
+DIAGNOSTIC = 'synthetic diagnostic'
 
 
 def run_fake(script):
@@ -29,8 +31,13 @@ def run_fake(script):
 
 
 class ClassifyCompileFailureTests(unittest.TestCase):
+    def setUp(self):
+        self.scope = patch.dict(m.EXPECTED_REJ, {ROW: DIAGNOSTIC}, clear=True)
+        self.scope.start()
+        self.addCleanup(self.scope.stop)
+
     def test_exact_rejection_is_rej(self):
-        rc, err = run_fake("#!/bin/sh\necho 'error: line 2: `hb_idleSleep` is not implemented by the Mach-O ARM64 backend in this increment (no nanosleep lowering; registered limit, no silent no-op)' >&2\nexit 1\n")
+        rc, err = run_fake("#!/bin/sh\necho 'synthetic diagnostic' >&2\nexit 1\n")
         self.assertEqual(rc, 1)
         self.assertEqual(m.classify_compile_failure(ROW, rc, err)[0], 'REJ')
 
@@ -80,16 +87,58 @@ class ClassifyCompileFailureTests(unittest.TestCase):
 
 @unittest.skipUnless(os.environ.get('HBC'), 'set HBC to a real hbc to classify its actual rejection')
 class RealCompilerTest(unittest.TestCase):
-    def test_real_idlesleep_rejection(self):
+    def test_real_idlesleep_compile(self):
         d = tempfile.mkdtemp()
         prg = os.path.join(d, 'idl.prg')
         with open(prg, 'w') as fh:
             fh.write('function main()\n   hb_idleSleep(0.1)\nreturn nil\n')
         c = subprocess.run([os.environ['HBC'], prg, os.path.join(d, 'idl'), '--target=macho-arm64'],
                            capture_output=True)
-        self.assertEqual(c.returncode, 1)
-        kind, _ = m.classify_compile_failure(ROW, c.returncode, c.stderr.decode('latin-1'))
-        self.assertEqual(kind, 'REJ')
+        self.assertEqual(c.returncode, 0, c.stderr)
+
+    def test_real_intel_idlesleep_still_rejects_all_five(self):
+        for row, diag in m.IDLESLEEP_INTEL_REJ.items():
+            with tempfile.TemporaryDirectory() as d:
+                c = subprocess.run([os.environ['HBC'], row, os.path.join(d,'probe'), '--target=macho'],capture_output=True)
+                self.assertEqual(c.returncode,1,c.stderr)
+                self.assertIn(diag.encode(),c.stderr)
+
+
+
+class TimingTests(unittest.TestCase):
+    def test_target_policies_stay_separate(self):
+        try:
+            m.configure_target('macho')
+            self.assertEqual(len(m.EXPECTED_REJ),5)
+            self.assertEqual(m.EXT_DEMOS,9)
+            for row,diag in m.IDLESLEEP_INTEL_REJ.items():
+                self.assertEqual(m.classify_compile_failure(row,1,diag)[0],'REJ')
+            self.assertEqual(m.stale_named_rejections([('REJ',f,'') for f in m.IDLESLEEP_INTEL_REJ]),[])
+            m.configure_target('macho-arm64')
+            self.assertEqual(m.EXPECTED_REJ,{})
+            for row,diag in m.IDLESLEEP_INTEL_REJ.items():
+                # Unnamed REJ is caught by main's unexpected-REJ guard.
+                self.assertNotIn(row,m.EXPECTED_REJ)
+        finally:
+            m.configure_target('macho-arm64')
+
+    def test_empty_map_has_no_stale_names(self):
+        self.assertEqual(m.EXPECTED_REJ, {})
+        self.assertEqual(m.stale_named_rejections([]), [])
+
+    def test_all_native_windows_and_noop_guard(self):
+        for row, window in m.IDLESLEEP_WINDOWS.items():
+            line = next(l.strip() for l in open(os.path.join(HERE,'manifest.txt')) if l.startswith('pos2 '+row+' '))
+            want = open(line.split()[2],'rb').read()
+            compiled = subprocess.CompletedProcess([],0,b'',b'')
+            ran = subprocess.CompletedProcess([],0,want,b'')
+            for elapsed, status in [(sum(window)/2,'PASS'), (window[1]+0.01,'FAIL')]:
+                with self.subTest(row=row,elapsed=elapsed), patch.object(m.subprocess,'run',side_effect=[compiled,ran]), patch.object(m.time,'monotonic',side_effect=[100,100+elapsed]):
+                    self.assertEqual(m.run_case(line,'fake','/tmp')[0],status)
+            if window[0] > 0:
+                with self.subTest(row=row,noop=True), patch.object(m.subprocess,'run',side_effect=[compiled,ran]), patch.object(m.time,'monotonic',side_effect=[100,100.001]):
+                    self.assertEqual(m.run_case(line,'fake','/tmp')[0],'FAIL')
+
 
 
 if __name__ == '__main__':
