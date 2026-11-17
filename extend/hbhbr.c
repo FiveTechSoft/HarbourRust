@@ -60,10 +60,19 @@ extern void   hbw_freestr( void * owned );
 /* Bridge state, written by hbc_ext_dispatch before every call.
  * hbc_ext_argv points at 16-byte {tag,payload} casillas pushed left to
  * right; argument i (1-based) sits at index 2*(argc-i) / +1. */
+#if defined( __APPLE__ ) && defined( __x86_64__ )
+/* macOS Intel: the channel lives in the hbc executable, which calls the
+ * extension dylib directly and exports these four words to it. */
+extern HB_ULONG        hbc_ext_argc;
+extern const HB_ULONG *hbc_ext_argv;
+extern HB_ULONG        hbc_ext_ret_tag;
+extern HB_ULONG        hbc_ext_ret_pay;
+#else
 HB_ULONG        hbc_ext_argc;
 const HB_ULONG *hbc_ext_argv;
 HB_ULONG        hbc_ext_ret_tag = 1; /* NIL */
 HB_ULONG        hbc_ext_ret_pay = 0;
+#endif
 
 /* hbc Dyn tags: 0/9 integer, 1 NIL, 2 borrowed string, 3 logical,
  * 4 owned string, 5 double (payload = value bits, no allocation).
@@ -300,9 +309,9 @@ int hb_parl( int iParam )
  * flow (ld / hbmk2 -nostdlib on Linux, mingw-ld -lkernel32 on
  * Windows). The sys_* names below keep their Linux flavour; each is a
  * one-line shim over the platform primitive. */
-#if defined( __APPLE__ ) && defined( __aarch64__ )
-/* macOS Apple Silicon: the bridge is built into the extension dylib
- * (docs/EXTEND-BRIDGE.md, Mach-O ARM64) and uses libSystem; the hbc
+#if defined( __APPLE__ )
+/* macOS (Apple Silicon and Intel): the bridge is built into the extension
+ * dylib (docs/EXTEND-BRIDGE.md, Mach-O) and uses libSystem; the hbc
  * executable exports hbc_strcpy/hbc_freestr/hbc_blk_launch to it. */
 extern void * mmap( void * addr, unsigned long len, int prot, int flags, int fd, long off );
 extern int    munmap( void * addr, unsigned long len );
@@ -832,7 +841,7 @@ PHB_ITEM hb_itemReturn( PHB_ITEM pItem )
  * clobbers can unbalance the caller - and no compiler register
  * allocation can reinterpret the convention (review finding on the
  * inline-asm version). */
-#if defined( __APPLE__ ) && defined( __aarch64__ )
+#if defined( __APPLE__ )
 /* provided by the hbc executable (C-callable export) */
 #elif !defined( _WIN32 )
 __asm__(

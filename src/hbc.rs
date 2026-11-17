@@ -6745,7 +6745,6 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 return Ok(Ty::Bool);
             }
             if id=="&" {
-                if MACHO_MODE.with(|v|v.get()) && !MACHO_ARM64.with(|v|v.get()) { return Err(format!("line {}: the macro operator is not ported to Mach-O in this increment",n)); }
                 if !matches!(type_expr(&args[0],env,sigs,n)?,Ty::Str|Ty::StrOwn) {
                     return Err(macro_m1::limit(n, "macro text must be a string"));
                 }
@@ -6994,7 +6993,6 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 return Ok(Ty::Date);
             }
             if is_builtin(id,"file") || id=="hrfile_setdefault" || id=="hrfile_setpath" {
-                if MACHO_MODE.with(|v|v.get()) && !MACHO_ARM64.with(|v|v.get()) {return Err(format!("line {}: FILE/SET DEFAULT/PATH are implemented on Linux, Windows and Mach-O ARM64 only",n));}
                 if args.len()!=1 {return Err(format!("line {}: {} expects exactly one argument",n,id));}
                 let t=type_expr(&args[0],env,sigs,n)?;
                 if !matches!(t,Ty::Str|Ty::StrOwn|Ty::Dyn|Ty::I64|Ty::Bool|Ty::F64|Ty::Date) {return Err(format!("line {}: FILE supports scalar arguments in this increment",n));}
@@ -26957,8 +26955,19 @@ fn emit_asm(funcs: &[Func], sigs: &[Sig], externs: &[String], target: Target, in
         emit_class_runtime(sigs, &mut strs, &mut out, target);
     }
     if !externs.is_empty() {
+        // The bridge channel (hbc_ext_argc/argv/ret_tag/ret_pay) is process
+        // global, so a threaded program serializes EXTERNAL calls with a
+        // recursive lock owned by the thread block (%fs:120): a C function
+        // that evaluates an hbc codeblock may call EXTERNAL again.
+        let ext_lock = THREADS.with(|v| v.get());
+        if ext_lock {
+            out.push_str("hbc_ext_lock:\n    push %rdx\n    mov %fs:120, %rdx\n    cmp hbc_ext_lk_owner(%rip), %rdx\n    je .Lextlk_mine\n.Lextlk_spin:\n    xor %eax, %eax\n    lock cmpxchg %rdx, hbc_ext_lk_owner(%rip)\n    je .Lextlk_mine\n    pause\n    jmp .Lextlk_spin\n.Lextlk_mine:\n    incq hbc_ext_lk_depth(%rip)\n    pop %rdx\n    ret\n");
+            out.push_str("hbc_ext_unlock:\n    decq hbc_ext_lk_depth(%rip)\n    jnz .Lextlk_held\n    movq $0, hbc_ext_lk_owner(%rip)\n.Lextlk_held:\n    ret\n");
+            out.push_str("    .data\n    .p2align 3\nhbc_ext_lk_owner: .quad 0\nhbc_ext_lk_depth: .quad 0\n    .text\n");
+        }
         for name in externs.iter() {
             out.push_str(&format!("hbc_fn_{}:\n    push %rbp\n    mov %rsp, %rbp\n    sub $80, %rsp\n",name));
+            if ext_lock { out.push_str("    call hbc_ext_lock\n"); }
             //32 bytes at rsp remain Win64 shadow space. Slots32..63 save
             //the old channel;64..79 retain this call's return across restore.
             for (i,slot) in ["argc","argv","ret_tag","ret_pay"].iter().enumerate() {
@@ -26968,6 +26977,7 @@ fn emit_asm(funcs: &[Func], sigs: &[Sig], externs: &[String], target: Target, in
             for (i,slot) in ["argc","argv","ret_tag","ret_pay"].iter().enumerate() {
                 out.push_str(&format!("    mov {}(%rsp), %rax\n    mov %rax, hbc_ext_{}(%rip)\n",32+i*8,slot));
             }
+            if ext_lock { out.push_str("    call hbc_ext_unlock\n"); }
             out.push_str("    mov 64(%rsp), %rax\n    mov 72(%rsp), %rdx\n    leave\n    ret\n");
         }
         // hbhbr.o calls back into these runtime helpers across the
@@ -32619,7 +32629,7 @@ fn main() {
     MACHO_MODE.with(|v| v.set(macho));
     MACHO_ARM64.with(|v| v.set(macho_arm64));
     CURDIR_LINUX_NATIVE.with(|v| v.set(!macho && !llvm && matches!(target, Target::Linux)));
-    DBF_NATIVE.with(|v| v.set((!macho || macho_arm64) && !llvm));
+    DBF_NATIVE.with(|v| v.set(!llvm));
     DBF_WINDOWS.with(|v| v.set(matches!(target, Target::Windows)));
     if llvm && instrument { eprintln!("error: LLVM scalar: --instrument is not supported; registry checks must not be silently omitted"); process::exit(1); }
     if hb_rdd() && (!matches!(target, Target::Windows) || llvm || macho || external_as) {
@@ -33182,8 +33192,6 @@ fn main() {
     }
     let arena_active = !macho && !no_arena && !THREADS.with(|c| c.get()) && ARENA_MAP.with(|m| m.borrow().values().any(|a| a.any()));
     ARENA_ACTIVE.with(|a| a.set(arena_active));
-    if macho && !macho_arm64 && (DBF_USED.with(|v|v.get()) || THREADS.with(|v|v.get()) || !externs.is_empty()) { eprintln!("error: Mach-O Intel: DBF, threads and EXTERNAL are not ported in this increment"); process::exit(1); }
-    if macho_arm64 && !externs.is_empty() && THREADS.with(|v|v.get()) { eprintln!("error: Mach-O ARM64: EXTERNAL together with threads is outside this increment"); process::exit(1); }
     let mut out = vas::finish(emit_asm(&funcs, &sigs, &externs, target, instrument), target, instrument);
     out.push_str(if vas::active() {
         "
@@ -33205,7 +33213,10 @@ hbc_aclone_alloc:
     let out = if hb_rdd() { format!("{}
     .globl hrm_fail
 ", out) } else { out };
-    let out = if macho && !macho_arm64 { hmacho::darwin_asm(&out).unwrap_or_else(|e| {eprintln!("error: {}",e);process::exit(1);}) } else {out};
+    let (out, dyld) = if macho && !macho_arm64 {
+        let (o, d) = hmacho::darwin_dyld_asm(&out, THREADS.with(|v| v.get()), !externs.is_empty()).unwrap_or_else(|e| {eprintln!("error: {}",e);process::exit(1);});
+        (o, Some(d))
+    } else { (out, None) };
 
     if hb_rdd() && THREADS.with(|c| c.get()) { eprintln!("error: --harbour-rdd links Harbour's single-thread VM; threads are not supported with it"); process::exit(1); }
     if hb_rdd() && !(explicit_output && pos[1].ends_with(".s")) {
@@ -33229,10 +33240,12 @@ hbc_aclone_alloc:
         return;
     }
     if macho {
-        let bytes = hasm::assemble(&out).and_then(|elf| hmacho::from_elf(&elf)).unwrap_or_else(|e| {eprintln!("error: Mach-O Intel: {}",e);process::exit(1);});
+        let ext = if externs.is_empty() { None } else { Some(ext_dylib.clone().unwrap_or_else(|| "@executable_path/libhbext.dylib".to_string())) };
+        let plan = dyld.as_ref().unwrap();
+        let bytes = hasm::assemble(&out).and_then(|elf| hmacho::from_elf_dyld(&elf, plan, ext.as_deref())).unwrap_or_else(|e| {eprintln!("error: Mach-O Intel: {}",e);process::exit(1);});
         fs::write(pos[1],bytes).unwrap_or_else(|e| {eprintln!("cannot write {}: {}",pos[1],e);process::exit(2);});
         #[cfg(unix)] {use std::os::unix::fs::PermissionsExt; let _=fs::set_permissions(pos[1],fs::Permissions::from_mode(0o755));}
-        println!("{} -> {} ({} functions, experimental Mach-O Intel)",pos[0],pos[1],funcs.len());
+        println!("{} -> {} ({} functions, Mach-O Intel)",pos[0],pos[1],funcs.len());
         return;
     }
 

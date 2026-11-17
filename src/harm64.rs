@@ -1368,42 +1368,61 @@ fn helper(name: &'static str, tr: &mut Tr) -> Vec<AI> {
     if name == "__a64_cout" {
         // translated code -> C function at [x16] (SysV argument registers
         // -> AAPCS64). x86 callee-saved rbx and the %fs register are
-        // caller-saved in C; the emulated stack pointer is published for
-        // C -> hbc callbacks (nested calls restore the previous one).
+        // caller-saved in C. The emulated stack pointer and %fs base are
+        // published per thread (pthread TSD key __a64_tkey) for C -> hbc
+        // callbacks; nested calls chain to and restore the previous record.
         let mut t = Tr { a: tr.a, out: Vec::new(), need: Vec::new(), live: Vec::new(), ckind: Vec::new(), imports: Vec::new(), used_helpers: Default::default(), threaded: false, ext: false, ext_imports: Default::default() };
-        let esp = Tg::E(Expr(vec![(false, Term::Sym("__a64_esp".into()))]));
+        let (gg, gs) = (tr.import("_pthread_getspecific"), tr.import("_pthread_setspecific"));
+        let key = Tg::E(Expr(vec![(false, Term::Sym("__a64_tkey".into()))]));
+        let call = |t: &mut Tr, g: usize| {
+            t.out.push(AI::Adr { rd: T2, t: Tg::Got(g) });
+            t.w(e_ldst_u(3, false, 1, T2, T2, 0));
+            t.w(e_blr(T2));
+        };
+        let ldkey = |t: &mut Tr| { t.out.push(AI::Adr { rd: 0, t: key.clone() }); t.w(e_ldst_u(3, false, 1, 0, 0, 0)); };
+        // frame: [0] x29,x30 [16] x7,x12 [32] record {x28, x7} [48] prev, target [64] x14,x13 [80] x11,x10
         t.w(e_ldst_u(3, false, 1, T1, T1, 0));
-        t.w(e_stp(true, false, false, 29, LR, 31, -48) | 0x0080_0000); // stp x29, x30, [sp, #-48]! (pre-index)
+        t.w(e_stp(true, false, false, 29, LR, 31, -96) | 0x0080_0000); // stp x29, x30, [sp, #-96]! (pre-index)
         t.w(e_stp(true, false, false, FSR, 12, 31, 16));
-        t.out.push(AI::Adr { rd: T2, t: esp.clone() });
-        t.w(e_stp(true, false, true, T0, T3, T2, 0)); // old esp, old fs
-        t.w(e_stp(true, false, false, T0, T3, 31, 32));
-        t.w(e_stp(true, false, false, XSP, FSR, T2, 0));
+        t.w(e_stp(true, false, false, XSP, FSR, 31, 32));
+        t.w(e_ldst_u(3, false, 0, T1, 31, 7));
+        t.w(e_stp(true, false, false, 14, 13, 31, 64));
+        t.w(e_stp(true, false, false, 11, 10, 31, 80));
+        ldkey(&mut t); call(&mut t, gg);
+        t.w(e_ldst_u(3, false, 0, 0, 31, 6));
+        ldkey(&mut t); t.w(e_addsub_imm(true, false, false, 1, 31, 32, false)); call(&mut t, gs);
+        t.w(e_ldst_u(3, false, 1, T1, 31, 7));
+        t.w(e_stp(true, false, true, 14, 13, 31, 64));
+        t.w(e_stp(true, false, true, 11, 10, 31, 80));
         for (k, src) in [14u8, 13, 11, 10, 19, 20].iter().enumerate() { t.w(e_mov(true, k as u8, *src)); }
         t.w(e_blr(T1));
-        t.w(e_mov(true, 9, 0));
-        t.w(e_mov(true, 11, 1));
-        t.out.push(AI::Adr { rd: T2, t: esp });
-        t.w(e_stp(true, false, true, T0, T3, 31, 32));
-        t.w(e_stp(true, false, false, T0, T3, T2, 0));
+        t.w(e_stp(true, false, false, 0, 1, 31, 64));
+        ldkey(&mut t); t.w(e_ldst_u(3, false, 1, 1, 31, 6)); call(&mut t, gs);
+        t.w(e_stp(true, false, true, 9, 11, 31, 64));
         t.w(e_stp(true, false, true, FSR, 12, 31, 16));
         t.w(e_stp(true, false, true, 29, LR, 31, 0));
-        t.w(e_addsub_imm(true, false, false, 31, 31, 48, false));
+        t.w(e_addsub_imm(true, false, false, 31, 31, 96, false));
         t.w(RET);
         v.extend(t.out);
         return v;
     }
     if let Some(target) = name.strip_prefix("__a64_cin_") {
         // C caller -> translated hbc function (AAPCS64 -> SysV registers),
-        // on the emulated stack published by the outgoing thunk.
+        // on the emulated stack recorded by this thread's outgoing thunk.
         let mut t = Tr { a: tr.a, out: Vec::new(), need: Vec::new(), live: Vec::new(), ckind: Vec::new(), imports: Vec::new(), used_helpers: Default::default(), threaded: false, ext: false, ext_imports: Default::default() };
-        let esp = Tg::E(Expr(vec![(false, Term::Sym("__a64_esp".into()))]));
+        let gg = tr.import("_pthread_getspecific");
+        let key = Tg::E(Expr(vec![(false, Term::Sym("__a64_tkey".into()))]));
         t.w(e_stp(true, false, false, 29, LR, 31, -96) | 0x0080_0000);
         for (k, p) in [(19u8, 20u8), (21, 22), (23, 24), (25, 26), (27, 28)].iter().enumerate() { t.w(e_stp(true, false, false, p.0, p.1, 31, 16 + 16 * k as i64)); }
-        t.out.push(AI::Adr { rd: T2, t: esp });
-        t.w(e_stp(true, false, true, XSP, FSR, T2, 0));
+        for (dst, src) in [(21u8, 0u8), (22, 1), (23, 2), (24, 3), (19, 4), (20, 5)] { t.w(e_mov(true, dst, src)); }
+        t.out.push(AI::Adr { rd: 0, t: key });
+        t.w(e_ldst_u(3, false, 1, 0, 0, 0));
+        t.out.push(AI::Adr { rd: T2, t: Tg::Got(gg) });
+        t.w(e_ldst_u(3, false, 1, T2, T2, 0));
+        t.w(e_blr(T2));
+        t.w(e_stp(true, false, true, XSP, FSR, 0, 0));
         t.w(e_addsub_imm(true, true, false, XSP, XSP, 256, false)); // below the caller's red zone
-        for (k, dst) in [14u8, 13, 11, 10, 19, 20].iter().enumerate() { t.w(e_mov(true, *dst, k as u8)); }
+        for (dst, src) in [(14u8, 21u8), (13, 22), (11, 23), (10, 24)] { t.w(e_mov(true, dst, src)); }
         t.call_seq(Some(Tg::E(Expr(vec![(false, Term::Sym(target.to_string()))]))), 0);
         t.w(e_mov(true, 0, 9));
         t.w(e_mov(true, 1, 11));
@@ -1526,10 +1545,19 @@ fn helper(name: &'static str, tr: &mut Tr) -> Vec<AI> {
 // Darwin entry (LC_MAIN): x0 argc, x1 argv, x2 envp. Builds a Linux-style
 // initial stack (argc, argv..., 0, envp..., 0, AT_NULL) on an mmap'ed
 // emulated stack and jumps to the translated _start.
-fn entry_stub(scratch: &Asm) -> Vec<AI> {
+// key_create: GOT slot of pthread_key_create (EXTERNAL programs: the key
+// of the per-thread emulated stack record used by the C ABI thunks).
+fn entry_stub(scratch: &Asm, key_create: Option<usize>) -> Vec<AI> {
     let mut t = Tr { a: scratch, out: vec![AI::Hl("__a64_entry")], need: Vec::new(), live: Vec::new(), ckind: Vec::new(),
         imports: Vec::new(), used_helpers: Default::default(), threaded: false, ext: false, ext_imports: Default::default() };
     t.w(e_mov(true, 19, 0)); t.w(e_mov(true, 20, 1)); t.w(e_mov(true, 21, 2));
+    if let Some(g) = key_create {
+        t.out.push(AI::Adr { rd: 0, t: Tg::E(Expr(vec![(false, Term::Sym("__a64_tkey".into()))])) });
+        t.w(e_mov(true, 1, ZR));
+        t.out.push(AI::Adr { rd: T2, t: Tg::Got(g) });
+        t.w(e_ldst_u(3, false, 1, T2, T2, 0));
+        t.w(e_blr(T2));
+    }
     t.w(e_movw(true, 2, 0, 0, 0));
     t.mov_imm(true, 1, ESTACK);
     t.w(e_movw(true, 2, 2, 3, 0));
@@ -1579,7 +1607,7 @@ fn entry_stub(scratch: &Asm) -> Vec<AI> {
 
 // ------------------------------------------------------------------ layout, encoding, Mach-O
 
-fn uleb(b: &mut Vec<u8>, mut v: u64) {
+pub(crate) fn uleb(b: &mut Vec<u8>, mut v: u64) {
     loop { let mut x = (v & 0x7f) as u8; v >>= 7; if v != 0 { x |= 0x80; } b.push(x); if v == 0 { break; } }
 }
 
@@ -1588,7 +1616,7 @@ fn uleb(b: &mut Vec<u8>, mut v: u64) {
 // rdi rsi rdx r10 r8 r9 arguments. Out: rax (negative errno on error).
 // Preserves every register but rax, rcx and r11, like the syscall
 // instruction. "mov $0x2000000+N, %eax; syscall" is a raw Darwin call.
-const LINUX_SYSCALL_DISPATCH: &str = r#"
+pub(crate) const LINUX_SYSCALL_DISPATCH: &str = r#"
     .text
 __a64_linux_syscall:
     cmp $217, %rax
@@ -1785,9 +1813,9 @@ __a64_linux_syscall:
     mov %rcx, 0(%rdx)
     movq 8(%rsp), %rcx
     mov %rcx, 8(%rdx)
-    movzwq 6(%rsp), %rcx
+    movzwl 6(%rsp), %ecx
     mov %rcx, 16(%rdx)
-    movzwq 4(%rsp), %rcx
+    movzwl 4(%rsp), %ecx
     movl %ecx, 24(%rdx)
     movl 16(%rsp), %ecx
     movl %ecx, 28(%rdx)
@@ -1945,7 +1973,7 @@ __a64_linux_syscall:
 
 // hbc_blk_launch (SysV, from extend/hbhbr.c): C evaluates an hbc
 // codeblock through it, so in the dylib model it lives in the executable.
-const EXT_BRIDGE_TEXT: &str = r#"
+pub(crate) const EXT_BRIDGE_TEXT: &str = r#"
     .text
 hbc_blk_launch:
     push %rbp
@@ -1973,8 +2001,7 @@ hbc_blk_launch:
     ret
     .data
     .p2align 3
-__a64_esp: .quad 0
-__a64_fs: .quad 0
+__a64_tkey: .quad 0
     .text
 "#;
 
@@ -2044,7 +2071,8 @@ pub fn assemble_macho_arm64_ext(src: &str, ext: Option<&str>) -> Result<Vec<u8>,
     helpers.sort();
     let mut items = std::mem::take(&mut t.out);
     for h in helpers { let v = helper(h, &mut t); items.extend(v); }
-    items.extend(entry_stub(&a));
+    let key_create = if ext.is_some() { Some(t.import("_pthread_key_create")) } else { None };
+    items.extend(entry_stub(&a, key_create));
     let imports = t.imports.clone();
 
     let mut hpos: HashMap<&'static str, usize> = HashMap::new();
@@ -2200,7 +2228,31 @@ pub fn assemble_macho_arm64_ext(src: &str, ext: Option<&str>) -> Result<Vec<u8>,
 fn w32(b: &mut Vec<u8>, n: u32) { b.extend_from_slice(&n.to_le_bytes()); }
 fn w64(b: &mut Vec<u8>, n: u64) { b.extend_from_slice(&n.to_le_bytes()); }
 fn name16(b: &mut Vec<u8>, s: &str) { b.extend_from_slice(s.as_bytes()); b.resize(b.len() + 16 - s.len(), 0); }
-fn segment(s: &str, va: u64, ms: u64, off: u64, fs: u64, prot: u32, sections: &[(&str, u64, u64, u32, u32)]) -> Vec<u8> {
+// Mach-O export trie: a root with one terminal child per exported symbol
+// (address relative to the Mach-O header), padded to 8 bytes.
+pub(crate) fn export_trie(exports: &[(String, u64)]) -> Vec<u8> {
+    let mut trie = Vec::new();
+    if exports.is_empty() { return trie; }
+    let nodes: Vec<Vec<u8>> = exports.iter().map(|(_, addr)| {
+        let mut body = vec![0u8]; uleb(&mut body, *addr);
+        let mut n = Vec::new(); uleb(&mut n, body.len() as u64); n.extend(body); n.push(0); n
+    }).collect();
+    let mut root_len = 0usize;
+    loop {
+        let mut root = vec![0u8, exports.len() as u8];
+        let mut at = root_len;
+        for ((name, _), node) in exports.iter().zip(&nodes) {
+            root.extend_from_slice(name.as_bytes()); root.push(0);
+            uleb(&mut root, at as u64); at += node.len();
+        }
+        if root.len() == root_len { trie = root; for n in &nodes { trie.extend_from_slice(n); } break; }
+        root_len = root.len();
+    }
+    while trie.len() % 8 != 0 { trie.push(0); }
+    trie
+}
+
+pub(crate) fn segment(s: &str, va: u64, ms: u64, off: u64, fs: u64, prot: u32, sections: &[(&str, u64, u64, u32, u32)]) -> Vec<u8> {
     let mut b = Vec::new();
     w32(&mut b, 25); w32(&mut b, 72 + 80 * sections.len() as u32);
     name16(&mut b, s);
@@ -2213,7 +2265,7 @@ fn segment(s: &str, va: u64, ms: u64, off: u64, fs: u64, prot: u32, sections: &[
     }
     b
 }
-fn string_command(cmd: u32, path: &str) -> Vec<u8> {
+pub(crate) fn string_command(cmd: u32, path: &str) -> Vec<u8> {
     let extra = if cmd == 14 { 0 } else { 12 };
     let size = (12 + extra + path.len() + 1 + 7) & !7;
     let mut b = Vec::new();
@@ -2223,7 +2275,7 @@ fn string_command(cmd: u32, path: &str) -> Vec<u8> {
     b.resize(size, 0);
     b
 }
-fn words(v: &[u32]) -> Vec<u8> { v.iter().flat_map(|n| n.to_le_bytes()).collect() }
+pub(crate) fn words(v: &[u32]) -> Vec<u8> { v.iter().flat_map(|n| n.to_le_bytes()).collect() }
 
 fn write_macho(code: &[u8], entry_off: u64, data: &[u8], data_vm: u64, rebases: &[u64], binds: &[(&str, u64, u8)],
                ext: Option<&str>, exports: &[(String, u64)]) -> Result<Vec<u8>, String> {
@@ -2253,26 +2305,7 @@ fn write_macho(code: &[u8], entry_off: u64, data: &[u8], data_vm: u64, rebases: 
     }
     bind.push(0);
     while bind.len() % 8 != 0 { bind.push(0); }
-    // export trie: root with one terminal child per exported symbol
-    let mut trie = Vec::new();
-    if !exports.is_empty() {
-        let nodes: Vec<Vec<u8>> = exports.iter().map(|(_, addr)| {
-            let mut body = vec![0u8]; uleb(&mut body, *addr);
-            let mut n = Vec::new(); uleb(&mut n, body.len() as u64); n.extend(body); n.push(0); n
-        }).collect();
-        let mut root_len = 0usize;
-        loop {
-            let mut root = vec![0u8, exports.len() as u8];
-            let mut at = root_len;
-            for ((name, _), node) in exports.iter().zip(&nodes) {
-                root.extend_from_slice(name.as_bytes()); root.push(0);
-                uleb(&mut root, at as u64); at += node.len();
-            }
-            if root.len() == root_len { trie = root; for n in &nodes { trie.extend_from_slice(n); } break; }
-            root_len = root.len();
-        }
-        while trie.len() % 8 != 0 { trie.push(0); }
-    }
+    let trie = export_trie(exports);
     let reb_off = link_off;
     let bind_off = reb_off + reb.len() as u64;
     let export_off = bind_off + bind.len() as u64;
@@ -2340,7 +2373,7 @@ fn write_macho(code: &[u8], entry_off: u64, data: &[u8], data_vm: u64, rebases: 
 }
 
 // Own SHA-256 (FIPS 180-4), used only for the ad hoc code signature.
-fn sha256(data: &[u8]) -> [u8; 32] {
+pub(crate) fn sha256(data: &[u8]) -> [u8; 32] {
     const K: [u32; 64] = [
         0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
         0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
