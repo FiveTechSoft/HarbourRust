@@ -6905,6 +6905,17 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 }
                 return Ok(Ty::F64);
             }
+            if is_builtin(id, "hb_idlesleep") && MACHO_ARM64.with(|v| v.get()) {
+                // hb_idleSleep lowers to Linux syscall 35 (nanosleep) in the
+                // x86-64 runtime; the ARM64 translator lowers only classified
+                // syscalls and its __a64_linux_syscall dispatcher has no 35
+                // route, so the call would come back ENOSYS and the sleep
+                // would silently not happen. Named compile-time limit, never
+                // a silent no-op; the five tests/idlesleep-linux rows are
+                // named EXPECTED_REJ in tests/run_macho_arm64.py until a
+                // Darwin nanosleep lowering lands.
+                return Err(format!("line {}: `hb_idleSleep` is not implemented by the Mach-O ARM64 backend in this increment (no nanosleep lowering; registered limit, no silent no-op)",n));
+            }
             if is_builtin(id, "hb_idlesleep") {
                 // hb_idleSleep([nSeconds]) (rtl/idle.c:133): negative is a
                 // no-op, zero serves the idle queue once (no idle tasks in
@@ -13353,7 +13364,7 @@ hbc_mutex_lock:
 
 # hbc_mutex_unlock(rdi=mutex) -> rax = 1 (mt02). Unlocking a mutex the
 # calling thread does not own (or one with a zero count) is a runtime
-# error: stderr message, then the shared panic exit, which under threads
+# failure: stderr message, then the shared panic exit, which under threads
 # kills only the offending worker with a NIL result for its joiner
 # (declared F1/F2 divergence route).
 hbc_mutex_unlock:
@@ -28387,8 +28398,8 @@ hbc_dyn_eq:
 # tail call); string x integer is Harbour's BASE/1073/1075/1074/1076 per
 # operator (hk149-hk152 - dialogs hang headless): clean named exit 1 via
 # the hbc_dyncmp_*_error stubs, registered failure modes, not exact
-# equivalence. A NIL casilla in an ordering comparison is a Harbour type
-# error: hbc_type_error (registered failure mode). Leaf routine.
+# equivalence. A NIL casilla in an ordering comparison is a Harbour
+# type error: hbc_type_error (registered failure mode). Leaf routine.
 hbc_dynxcmp:
     @HBC_TAG_KIND@cmp $9, %rax@HBC_TAG_END@
     jne 91f
@@ -28502,7 +28513,7 @@ hbc_dynxeq_dd:
     out.push_str(r#"
 # hbc_bound_error: array index outside 1..=n at runtime (noreturn). Prints
 # the Harbour wording and exits 1. Harbour itself opens an interactive
-# error dialog here (probes a1/a2 hang even with stdin at EOF): a clean
+# modal error dialog here (probes a1/a2 hang even with stdin at EOF): a clean
 # exit is the registered failure-mode difference, same error condition.
 hbc_bound_error:
     cmpq $0, hbc_seq_depth(%rip)
@@ -28803,8 +28814,8 @@ hbc_snil_error:
     syscall
 
 # hbc_dyncmp_eq_error / hbc_dyncmp_ne_error: a numeric Dyn compared
-# against a string (noreturn). Harbour raises BASE/1071 "Argument
-# error: =" and BASE/1072 "Argument error: <>" (hk34/hk38, dialogs
+# against a string (noreturn). Harbour raises BASE/1071 and BASE/1072
+# wording "Argument error: =" / "Argument error: <>" (hk34/hk38, dialogs
 # that hang headless) - clean named exit 1 here, registered failure
 # mode, same error condition.
 hbc_dyncmp_eq_error:
@@ -28843,7 +28854,7 @@ hbc_dynxeq_error:
 
 # hbc_swxeq_nil_error: a NIL casilla reaches a SWITCH selector (noreturn).
 # Harbour raises BASE/3104 "Argument error: SWITCH" (oracle sw-nil-oth:
-# error at entry, before any comparison; dialog hangs headless) - clean
+# fails at entry, before any comparison; dialog hangs headless) - clean
 # named exit 1 here, registered failure mode, same error condition.
 hbc_swxeq_nil_error:
     lea .Lswxnilmsg(%rip), %rsi
@@ -29877,7 +29888,7 @@ fn finalize_trace(mut out: String, target: Target) -> String {
     .align 8
 hbc_trace_top: .quad 0
 # Held trailing spaces of the open QOut line (q1-q17: Harbour trims at
-# line flush - newline, OutStd write, exit - not at statement end).
+# a line flush - newline, OutStd write, exit - not at statement end).
 hbc_pending: .quad 0
     .text
 # Language metadata helpers: RAX signed level; no calls, heap or helper frame.
@@ -31538,8 +31549,8 @@ hbc_dyn_eq:
 # tail call); string x integer is Harbour's BASE/1073/1075/1074/1076 per
 # operator (hk149-hk152 - dialogs hang headless): clean named exit 1 via
 # the hbc_dyncmp_*_error stubs, registered failure modes, not exact
-# equivalence. A NIL casilla in an ordering comparison is a Harbour type
-# error: hbc_type_error (registered failure mode). Leaf routine.
+# equivalence. A NIL casilla in an ordering comparison is a Harbour
+# type error: hbc_type_error (registered failure mode). Leaf routine.
 hbc_dynxcmp:
     @HBC_TAG_KIND@cmp $9, %rax@HBC_TAG_END@
     jne 91f
@@ -31974,7 +31985,7 @@ hbc_dynxeq_error:
 
 # hbc_swxeq_nil_error: a NIL casilla reaches a SWITCH selector (noreturn).
 # Harbour raises BASE/3104 "Argument error: SWITCH" (oracle sw-nil-oth:
-# error at entry, before any comparison; dialog hangs headless) - clean
+# fails at entry, before any comparison; dialog hangs headless) - clean
 # named exit 1 here, registered failure mode, same error condition.
 hbc_swxeq_nil_error:
     push %rbp
@@ -35085,6 +35096,34 @@ hbc_date_today:
             let wrapped = format!("@HBC_TAG_KIND@{}@HBC_TAG_END@",original);
             assert_eq!(finalize_tag_kind_accessors(wrapped.clone(),false),original);
             assert_eq!(finalize_tag_kind_accessors(wrapped,true),low);
+        }
+    }
+}
+
+#[cfg(test)]
+mod cpp_directive_comment_tests {
+    use super::*;
+    // The macOS feasibility job assembles the LLVM runtime sidecar
+    // (program.ll.runtime.s = emit_asm output) with clang, which runs the
+    // C preprocessor on .s files: a standalone comment whose first word is
+    // a cpp directive keyword (#error, #line, #pragma, ...) aborts the
+    // assemble. Run 44035714366 hit five such comments. Scan the emitted
+    // runtime for both native targets so no comment can reintroduce one.
+    #[test]
+    fn runtime_asm_has_no_cpp_directive_comments() {
+        const DIRECTIVES: [&str; 15] = ["error","warning","line","pragma","include",
+            "define","undef","if","ifdef","ifndef","elif","else","endif","ident","import"];
+        for target in [Target::Linux, Target::Windows] {
+            let s = emit_asm(&[], &[], &[], target, false);
+            for (i, l) in s.lines().enumerate() {
+                let t = l.trim_start();
+                if let Some(rest) = t.strip_prefix('#') {
+                    let word: String = rest.trim_start().chars()
+                        .take_while(|c| c.is_ascii_alphabetic()).collect();
+                    assert!(!DIRECTIVES.contains(&word.as_str()),
+                        "line {}: comment starts with cpp directive {:?}: {}", i + 1, word, t);
+                }
+            }
         }
     }
 }

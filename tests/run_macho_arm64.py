@@ -17,18 +17,30 @@ import argparse, codecs, collections, concurrent.futures as cf, os, re, subproce
 KINDS = ('pos', 'posx', 'pos2', 'posx2', 'streams', 'streams2')
 
 # Expected suite shape (docs/ARM64-NATIVE-2026-11-16.md, run 43985696680):
-# no row may be rejected by the backend, and the totals are fixed.
-EXPECTED_REJ = set()  # named rows the backend may reject; empty today
+# the totals are fixed and every backend rejection must be named here.
+# hb_idleSleep is a named Mach-O ARM64 limit: it lowers to Linux syscall
+# 35 (nanosleep) in the x86-64 runtime and the ARM64 dispatcher has no 35
+# route, so the compiler rejects it at compile time (no silent no-op).
+# The five idlesleep rows REJ by name until a Darwin nanosleep lowering
+# lands; a named REJ that stops rejecting fails the battery (stale name).
+EXPECTED_REJ = {
+    'tests/idlesleep-linux/programs/idlesleep_basic.prg',
+    'tests/idlesleep-linux/programs/idlesleep_negative.prg',
+    'tests/idlesleep-linux/programs/idlesleep_loop.prg',
+    'tests/idlesleep-linux/programs/idlesleep_noarg.prg',
+    'tests/idlesleep-linux/programs/idlesleep_dyn.prg',
+}
 FILE_POSITIVES = 6
 DBF_TESTS = 4
 THREAD_PROGRAMS = 37
 EXT_DEMOS = 8
 # Executable-row inventory of the committed tests/manifest.txt on main
-# (1218 rows, all (kind, source) identities unique; S4 added 9 over the
-# original 1209). The full battery refuses a truncated/empty manifest or
-# a runner constant gone stale; bump this only with the manifest change
-# that explains it. Full-battery expected total: 1218+6+4+37+8 = 1273.
-EXPECTED_MANIFEST_ROWS = 1218
+# (1223 rows, all (kind, source) identities unique; S4 added 9 over the
+# original 1209, S5 added the 5 idlesleep pos2 rows above). The full
+# battery refuses a truncated/empty manifest or a runner constant gone
+# stale; bump this only with the manifest change that explains it.
+# Full-battery expected total: 1223+6+4+37+8 = 1278 (5 named REJ).
+EXPECTED_MANIFEST_ROWS = 1223
 # Post-run m_clie.dbf SHA-256 per DBF acceptance test (generated on Linux,
 # stdout checked against the committed expectations). t4 appends records:
 # dbAppend rewrites the header last-update date (bytes 1-3, YY MM DD of the
@@ -280,6 +292,11 @@ def main():
     if unexpected_rej:
         print('FAIL runner: %d unexpected REJ row(s)' % len(unexpected_rej))
         bad = 1
+    if not a.pattern and EXPECTED_REJ:
+        stale_rej = sorted(EXPECTED_REJ - {r[1] for r in res if r[0] == 'REJ'})
+        if stale_rej:
+            print('FAIL runner: %d named REJ row(s) did not reject (stale EXPECTED_REJ): %s' % (len(stale_rej), stale_rej[0]))
+            bad = 1
     if len(res) != expected:
         print('FAIL runner: suite total %d != expected %d' % (len(res), expected))
         bad = 1
