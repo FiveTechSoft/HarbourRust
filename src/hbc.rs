@@ -7939,6 +7939,14 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                             if wk == BRet::Int { "integer" } else { "NIL" },
                             if gk == BRet::Int { "integer" } else { "NIL" }));
                     }
+                    // E: a shared module array (or an alias of it) named
+                    // as the argument gets the S4 scope diagnostic, not a
+                    // generic type-mismatch riddle.
+                    if let Expr::Var(v) = a {
+                        if module_static::current(v) == Some(Ty::Dyn) {
+                            return Err(format!("line {}: passing the shared module array `{}` as argument {} of `{}` is outside the dynamic increment in this increment (Harbour would alias the one object; measured in probe p6, deferred)", n, v, i + 1, id));
+                        }
+                    }
                     return Err(format!("line {}: argument {} of `{}` must be {}, got {}",
                         n, i + 1, id,
                         ty_name(sig_params[i]), ty_name(ta)));
