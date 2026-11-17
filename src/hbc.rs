@@ -10992,6 +10992,15 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 } else if matches!(env[idx].ty, Ty::Obj(_)) {
                     return Err(format!("line {}: `{}` is object-typed; reassigning it to a non-object value is not in this increment (declare a separate local, or `o := NIL` to release)", n, id));
                 } else if env[idx].ty != t {
+                    if module_static::is_module_binding(id) {
+                        // Probe pA6b: Harbour re-tags STATIC cells
+                        // dynamically - `STATIC o := 0` followed by
+                        // `o := T():New()` RUNS there (prints 3). Our
+                        // module statics keep the scalar type of the
+                        // folded initializer, so this assignment cannot
+                        // be a type error: it is a registered limit.
+                        return Err(format!("line {}: module STATIC `{}` keeps the scalar type of its folded initializer in this increment (Harbour re-tags STATIC cells dynamically; assigning a value of another kind runs there) - registered limit, no silent re-tag", n, id));
+                    }
                     return Err(format!("line {}: type mismatch in assignment to `{}`", n, id));
                 }
                 // Reassignment makes a moved variable live again (Rust too).
