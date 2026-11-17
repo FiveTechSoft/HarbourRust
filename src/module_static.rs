@@ -645,3 +645,27 @@ RETURN
         }
     }
 }
+
+#[cfg(test)]
+mod object_tests {
+    use super::*;
+    #[test]
+    fn nil_object_inference_and_canonical_class() {
+        crate::parse("STATIC o := NIL\nCLASS T\nENDCLASS\nFUNCTION Main()\no := T()\nRETURN NIL\nFUNCTION ReadO()\nRETURN o:n\n").unwrap();
+        assert_eq!(kind("main","o"),Some(Ty::Obj(0)));
+        assert_eq!(kind("reado","o"),Some(Ty::Obj(0)));
+        assert_eq!(storage("main","o"),storage("reado","o"));
+        assert!(has_objects());
+        crate::parse("FUNCTION Main()\nRETURN NIL\n").unwrap();
+        assert!(!has_objects());
+    }
+    #[test]
+    fn object_inference_respects_local_shadow_and_rejects_two_classes() {
+        let src="STATIC o := NIL\nCLASS T\nENDCLASS\nCLASS U\nENDCLASS\nFUNCTION Main()\no := T()\nRETURN NIL\nFUNCTION PrivateO()\nLOCAL o\no := U()\nRETURN NIL\n";
+        crate::parse(src).unwrap();
+        assert_eq!(kind("main","o"),Some(Ty::Obj(0)));
+        assert_eq!(kind("privateo","o"),None);
+        let bad=src.replace("LOCAL o\n","");
+        assert!(crate::parse(&bad).err().unwrap().contains("multiple constructor classes"));
+    }
+}

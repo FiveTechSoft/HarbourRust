@@ -56,13 +56,13 @@ THREAD_PROGRAMS = 37
 EXT_DEMOS = 9
 TARGET = '--target=macho-arm64'  # --target=macho runs the same battery on Intel
 # Executable-row inventory of the committed tests/manifest.txt on main
-# (1230 rows, all (kind, source) identities unique; S4 added 9 over the
+# (1234 rows, all (kind, source) identities unique; S4 added 9 over the
 # original 1209, S5 added the 5 idlesleep pos2 rows above). The full
 # battery refuses a truncated/empty manifest or a runner constant gone
 # stale; bump this only with the manifest change that explains it.
-# Full total: 1230+6+4+37+9 = 1286. ARM64: 0 REJ; Intel: 5 REJ.
+# Full total: 1234+6+4+37+9 = 1290. ARM64: 0 REJ; Intel: 5 REJ.
 
-EXPECTED_MANIFEST_ROWS = 1230
+EXPECTED_MANIFEST_ROWS = 1234
 # Post-run m_clie.dbf SHA-256 per DBF acceptance test (generated on Linux,
 # stdout checked against the committed expectations). t4 appends records:
 # dbAppend rewrites the header last-update date (bytes 1-3, YY MM DD of the
