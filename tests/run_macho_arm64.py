@@ -27,7 +27,7 @@ KINDS = ('pos', 'posx', 'pos2', 'posx2', 'streams', 'streams2')
 # abnormal rc or a different message on a named row is a FAIL, never an
 # expected rejection (fail-closed). A named REJ that stops rejecting
 # with its diagnostic fails the battery (stale name).
-IDLESLEEP_LIMIT_MSG = 'hb_idleSleep` is not implemented by the Mach-O ARM64 backend'
+IDLESLEEP_LIMIT_MSG = 'hb_idleSleep` is not implemented by the Mach-O '  # ARM64 and Intel backends
 EXPECTED_REJ = {
     'tests/idlesleep-linux/programs/idlesleep_basic.prg': IDLESLEEP_LIMIT_MSG,
     'tests/idlesleep-linux/programs/idlesleep_negative.prg': IDLESLEEP_LIMIT_MSG,
@@ -38,13 +38,14 @@ EXPECTED_REJ = {
 FILE_POSITIVES = 6
 DBF_TESTS = 4
 THREAD_PROGRAMS = 37
-EXT_DEMOS = 8
+EXT_DEMOS = 9
+TARGET = '--target=macho-arm64'  # --target=macho runs the same battery on Intel
 # Executable-row inventory of the committed tests/manifest.txt on main
 # (1223 rows, all (kind, source) identities unique; S4 added 9 over the
 # original 1209, S5 added the 5 idlesleep pos2 rows above). The full
 # battery refuses a truncated/empty manifest or a runner constant gone
 # stale; bump this only with the manifest change that explains it.
-# Full-battery expected total: 1223+6+4+37+8 = 1278 (5 named REJ).
+# Full-battery expected total: 1223+6+4+37+9 = 1279 (5 named REJ).
 EXPECTED_MANIFEST_ROWS = 1223
 # Post-run m_clie.dbf SHA-256 per DBF acceptance test (generated on Linux,
 # stdout checked against the committed expectations). t4 appends records:
@@ -109,7 +110,7 @@ def run_case(line, hbc, outdir):
     kind, f = p[0], p[1]
     base = re.sub(r'[^A-Za-z0-9_]', '_', f)
     exe = os.path.join(outdir, base)
-    c = subprocess.run([hbc, f, exe, '--target=macho-arm64', '--instrument', '-I', 'tests'], capture_output=True)
+    c = subprocess.run([hbc, f, exe, TARGET, '--instrument', '-I', 'tests'], capture_output=True)
     if c.returncode != 0:
         kind, msg = classify_compile_failure(f, c.returncode, c.stderr.decode('latin-1'))
         return kind, f, msg
@@ -165,7 +166,7 @@ def file_suite(hbc, d):
     for entry in json.loads((root / 'manifest.json').read_text())['positive']:
         name = entry['name']
         exe = pathlib.Path(d) / ('file_' + name)
-        c = subprocess.run([hbc, name + '.prg', str(exe), '--target=macho-arm64', '--instrument'], cwd=cwd, capture_output=True)
+        c = subprocess.run([hbc, name + '.prg', str(exe), TARGET, '--instrument'], cwd=cwd, capture_output=True)
         if c.returncode:
             res.append(('REJ', 'file-compat/' + name, c.stderr.decode('latin-1').strip()[-200:])); continue
         r = subprocess.run([str(exe)], cwd=cwd, env=env, capture_output=True, stdin=subprocess.DEVNULL, timeout=60)
@@ -185,7 +186,7 @@ def dbf_suite(hbc, d):
         work.mkdir()
         shutil.copyfile('tests/dbf/acceptance-test3/M_CLIE.DBF', work / 'm_clie.dbf')
         exe = work / 'probe'
-        c = subprocess.run([hbc, str(src / ('test%d.prg' % t)), str(exe), '--target=macho-arm64'], capture_output=True)
+        c = subprocess.run([hbc, str(src / ('test%d.prg' % t)), str(exe), TARGET], capture_output=True)
         if c.returncode:
             res.append(('REJ', 'dbf/test%d' % t, c.stderr.decode('latin-1').strip()[-200:])); continue
         import datetime
@@ -217,7 +218,7 @@ def thread_suite(hbc, d, ref):
     for src in sorted(pathlib.Path('tests/threads/programs').glob('*.prg')):
         b = src.stem
         exe = pathlib.Path(d) / ('thr_' + b)
-        c = subprocess.run([hbc, str(src), str(exe), '--target=macho-arm64'], capture_output=True)
+        c = subprocess.run([hbc, str(src), str(exe), TARGET], capture_output=True)
         if c.returncode:
             res.append(('REJ', 'threads/' + b, c.stderr.decode('latin-1').strip()[-200:])); continue
         r_ = pathlib.Path(ref)
@@ -241,16 +242,16 @@ def ext_suite(hbc, d, ref):
     bridge, as, ld) runs of the same demos."""
     import pathlib
     res = []
-    for n in ['apif64', 'apiecho', 'apiref', 'apistorref', 'apiitem', 'apiarr', 'apieval', 'extdemo']:
+    for n in ['apif64', 'apiecho', 'apiref', 'apistorref', 'apiitem', 'apiarr', 'apieval', 'extdemo', 'apithreads']:
         work = pathlib.Path(d) / ('ext_' + n)
         work.mkdir()
-        srcs = ['extend/hbhbr.c', 'extend/demo/' + ('myext' if n == 'extdemo' else n) + '.c']
-        if n in ('apiref', 'apiitem', 'apistorref', 'apiarr', 'apieval'):
+        srcs = ['extend/hbhbr.c', 'extend/demo/' + {'extdemo': 'myext', 'apithreads': 'apieval'}.get(n, n) + '.c']
+        if n in ('apiref', 'apiitem', 'apistorref', 'apiarr', 'apieval', 'apithreads'):
             srcs.append('extend/demo/apif64.c')
         c = subprocess.run(['clang', '-O2', '-dynamiclib', '-undefined', 'dynamic_lookup', '-Iextend', *srcs, '-o', str(work / 'libhbext.dylib')], capture_output=True)
         if c.returncode:
             res.append(('FAIL', 'extend/' + n, 'clang: ' + c.stderr.decode('latin-1')[-300:])); continue
-        c = subprocess.run([hbc, 'extend/demo/%s.prg' % n, str(work / 'prog'), '--target=macho-arm64'], capture_output=True)
+        c = subprocess.run([hbc, 'extend/demo/%s.prg' % n, str(work / 'prog'), TARGET], capture_output=True)
         if c.returncode:
             res.append(('REJ', 'extend/' + n, c.stderr.decode('latin-1').strip()[-200:])); continue
         r_ = pathlib.Path(ref)
@@ -270,9 +271,12 @@ def main():
     ap.add_argument('--hbc', default='./hbc')
     ap.add_argument('--jobs', type=int, default=os.cpu_count() or 4)
     ap.add_argument('--thread-ref', help='directory with Linux <name>.stdout/.stderr/.rc of tests/threads/programs and ext_<demo> EXTERNAL demos')
+    ap.add_argument('--target', default='macho-arm64', choices=['macho-arm64', 'macho'])
     ap.add_argument('pattern', nargs='?')
     a = ap.parse_args()
     hbc = os.path.abspath(a.hbc)
+    global TARGET
+    TARGET = '--target=' + a.target
     if not a.pattern and not a.thread_ref:
         print('FAIL runner: the full battery needs --thread-ref (threads + EXTERNAL reference outputs); refusing to report a partial suite as green')
         return 1
@@ -297,7 +301,7 @@ def main():
         # so a broken compiler or host can never look like zero rows to run.
         smoke_prg = os.path.join(d, 'smoke.prg')
         open(smoke_prg, 'w').write(SMOKE_SOURCE)
-        c0 = subprocess.run([hbc, smoke_prg, os.path.join(d, 'smoke'), '--target=macho-arm64'], capture_output=True)
+        c0 = subprocess.run([hbc, smoke_prg, os.path.join(d, 'smoke'), TARGET], capture_output=True)
         if c0.returncode != 0:
             print('FAIL smoke: compile rc=%s %s' % (c0.returncode, c0.stderr.decode('latin-1')[-200:]))
             return 1

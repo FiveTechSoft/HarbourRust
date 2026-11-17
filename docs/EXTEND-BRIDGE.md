@@ -355,16 +355,23 @@ bridge linkage is unsupported. No proxy casillas or copy-back pass is used.
 Nested thunks and callbacks preserve argc/capability, argv, return and
 scratch scopes. See [the representation and limits](DYN-HEAP-FLOAT-2026-11-15.md).
 
-## macOS Apple Silicon (--target=macho-arm64)
+## macOS (--target=macho-arm64 and --target=macho)
 
 hbc writes the executable itself, so the C side is a dylib loaded next
 to it (see docs/ARM64-NATIVE-2026-11-16.md):
 
     clang -O2 -dynamiclib -undefined dynamic_lookup -Iextend \
           extend/hbhbr.c myext.c -o libhbext.dylib
-    hbc extdemo.prg extdemo --target=macho-arm64
+    hbc extdemo.prg extdemo --target=macho-arm64   # or --target=macho (Intel)
     ./extdemo
 
 `--ext-dylib=NAME` changes the install name (default
-`@executable_path/libhbext.dylib`). EXTERNAL with threads is a named
-rejection on this target.
+`@executable_path/libhbext.dylib`). On Intel the bridge channel words
+live in the executable and the dylib resolves them by name.
+
+EXTERNAL with threads (every target): calls into C are serialized by a
+recursive lock, so only one thread runs C code at a time; a C function
+may evaluate an hbc codeblock that calls EXTERNAL again. A codeblock
+evaluated from C must not wait for another thread that needs EXTERNAL
+(deadlock). Demo: `extend/demo/apithreads.prg` (C sources apieval.c and
+apif64.c).

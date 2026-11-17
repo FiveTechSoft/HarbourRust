@@ -21,6 +21,6 @@ static=[('arity','dbUseArea(.T.,"DBFCDX","data.dbf","P",.F.)'),('shared','dbUseA
 for name,body in static:
  p=out/(name+'.prg');p.write_text('function Main()\n'+body+'\nreturn nil\n');q=subprocess.run([compiler,p,out/(name+'.exe'),'--target=windows'],capture_output=True);(out/(name+'.compile.stderr')).write_bytes(q.stderr);assert q.returncode!=0 and q.stderr,(name,q.stderr);rows.append(dict(case='static-'+name,pass_=True))
 p=out/'platform.prg';p.write_text('function Main()\ndbCloseArea()\nreturn nil\n')
-for target in ['--target=macho','--experimental-llvm']:
+for target in ['--experimental-llvm']:  # Mach-O runs DBF since 17 November
  q=subprocess.run([compiler,p,out/'platform.out',target],capture_output=True);assert q.returncode!=0 and b'ordinary native backend' in q.stderr;(out/(target.replace('--','').replace('=','-')+'.stderr')).write_bytes(q.stderr);rows.append(dict(case=target,pass_=True))
 (out/'results.json').write_text(json.dumps(rows,indent=2)+'\n');print('PASS',len(rows),'explicit pre-cursor format/subset/runtime and static/platform rejections')

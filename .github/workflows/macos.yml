@@ -79,12 +79,12 @@ jobs:
           set -eu
           gcc -c -O2 -ffreestanding -fno-stack-protector -Iextend extend/hbhbr.c -o bin/hbhbr.o
           gcc -c -O2 -ffreestanding -fno-stack-protector -Iextend extend/demo/apif64.c -o bin/apif64.c.o
-          for n in apif64 apiecho apiref apistorref apiitem apiarr apieval extdemo; do
-            c=extend/demo/$n.c; [ "$n" = extdemo ] && c=extend/demo/myext.c
+          for n in apif64 apiecho apiref apistorref apiitem apiarr apieval extdemo apithreads; do
+            c=extend/demo/$n.c; [ "$n" = extdemo ] && c=extend/demo/myext.c; [ "$n" = apithreads ] && c=extend/demo/apieval.c
             gcc -c -O2 -ffreestanding -fno-stack-protector -Iextend "$c" -o "bin/$n.c.o"
             ./hbc "extend/demo/$n.prg" "bin/$n.s" --target=linux
             as "bin/$n.s" -o "bin/$n.o"
-            extra=""; case $n in apiref|apiitem|apistorref|apiarr|apieval) extra=bin/apif64.c.o;; esac
+            extra=""; case $n in apiref|apiitem|apistorref|apiarr|apieval|apithreads) extra=bin/apif64.c.o;; esac
             ld -o "bin/ext_$n" "bin/$n.o" "bin/$n.c.o" bin/hbhbr.o $extra
             (cd bin && set +e; timeout 60 "./ext_$n" > "../ref/ext_$n.stdout" 2> "../ref/ext_$n.stderr" < /dev/null; echo $? > "../ref/ext_$n.rc")
           done
@@ -124,3 +124,33 @@ jobs:
       - name: Native Mach-O ARM64 battery
         if: always()
         run: python3 tests/run_macho_arm64.py --hbc ./hbc --thread-ref thread-ref
+  native-intel:
+    needs: linux-thread-reference
+    runs-on: macos-15-intel
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Build the compiler
+        run: |
+          set -eu
+          test "$(uname -m)" = x86_64
+          sw_vers
+          rustc --version
+          rustc --edition=2021 -O src/hbc.rs -o hbc
+      - name: Native Mach-O Intel smoke (dyld, libSystem)
+        run: |
+          set -eu
+          printf 'function Main()\n? "hello", 2^10, Log(100)\nreturn nil\n' > smoke.prg
+          ./hbc smoke.prg smoke --target=macho
+          file smoke
+          otool -hl smoke | head -80
+          ./smoke; echo "exit=$?"
+      - uses: actions/download-artifact@v4
+        with:
+          name: thread-reference
+          path: thread-ref
+      - name: Native Mach-O Intel battery
+        if: always()
+        run: python3 tests/run_macho_arm64.py --hbc ./hbc --target macho --thread-ref thread-ref
