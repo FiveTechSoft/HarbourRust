@@ -30,6 +30,17 @@ use std::fs;
 use std::process;
 
 thread_local! {
+    // Addresses of mixed-type iif nodes that sit in a position whose
+    // consumer takes ownership of the tagged cell (output argument,
+    // assignment/initializer of a dynamic variable, return value).
+    static MIXED_IIF_OK: std::cell::RefCell<std::collections::HashSet<usize>> = std::cell::RefCell::new(std::collections::HashSet::new());
+}
+fn allow_mixed_iif(e: &Expr) {
+    if matches!(e, Expr::Call(id, _) if is_builtin(id, "iif")) {
+        MIXED_IIF_OK.with(|s| { s.borrow_mut().insert(e as *const Expr as usize); });
+    }
+}
+thread_local! {
     static DIRMAKE_USED: std::cell::Cell<bool> = const {std::cell::Cell::new(false)};
     static DYNPLUS_NODES: std::cell::RefCell<std::collections::HashSet<usize>> = std::cell::RefCell::new(std::collections::HashSet::new());
     static INKEY_USED: std::cell::Cell<bool> = const {std::cell::Cell::new(false)};
@@ -6859,6 +6870,10 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 // its arm is taken; an owned-variable side moves only
                 // when its arm is taken (laziness keeps single ownership).
                 if matches!(ta, Ty::Str | Ty::StrOwn) && matches!(tb, Ty::Str | Ty::StrOwn) { return Ok(Ty::StrOwn); }
+                if iif_mixed(&args[1], &args[2], ta, tb) {
+                    if MIXED_IIF_OK.with(|s| s.borrow().contains(&(e as *const Expr as usize))) { return Ok(Ty::Dyn); }
+                    return Err(format!("line {}: a mixed-type `iif` result (an owned tagged value) is only supported directly as the last item of an output statement, in an assignment or initializer of a dynamic variable, and in return; consumers such as arithmetic, comparison, hb_ntos, call arguments, indexes and integer slots do not release it when they raise an error", n));
+                }
                 return Err(format!("line {}: `iif` branches must share a scalar type (float absorbs an int side), got {:?} and {:?}", n, ta, tb));
             }
             if ["ltrim", "rtrim", "alltrim", "trim"].iter().any(|b| is_builtin(id,b)) {
@@ -9622,6 +9637,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 if env.iter().any(|v| v.name == *id) {
                     return Err(format!("line {}: duplicate local `{}`", n, id));
                 }
+                if matches!(s, Stmt::Local(..)) { allow_mixed_iif(e); }
                 // ains piece 1a: a Dyn-cell read borrowed from a DArrDyn
                 // cannot be STORED into a variable - the cell owns its
                 // payload and a Dyn local would free it again at scope
@@ -9686,6 +9702,10 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 }
             }
             Stmt::Print(n, es, _) => {
+                // Only the LAST item: earlier items are evaluated before the
+                // render, and a Break in a later item unwinds past the pending
+                // owned cell (measured leak, N=1/500).
+                if let Some(e) = es.last() { allow_mixed_iif(e); }
                 for e in es { mark_dynplus(e, env, sigs, *n); }
                 // ains P2 stage 1 closure (independent-review blocker):
                 // an output statement that borrows a Dyn root's cells
@@ -9758,6 +9778,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 if ctxs.iter().any(|c| c.is_fin) {
                     return Err(format!("line {}: `return` from within a FINALLY block is not in this increment (Harbour defers it through the unwind; CATCH bodies take a normal `return`)", n));
                 }
+                allow_mixed_iif(e);
                 let t = type_expr(e, env, sigs, *n)?;
                 if t==Ty::NumLocal {return Err(format!("line {}: mixed numeric LOCAL return ABI is not in this increment",n));}
                 if t == Ty::F64 {
@@ -11107,6 +11128,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 else {env.push(Local{name:id.clone(),ty:Ty::Dyn,moved:false,ro:false,byref:false});}
             }
             Stmt::Assign(n, id, e) => {
+                if env.iter().rev().find(|v| v.name == *id).map_or(false, |v| v.ty == Ty::Dyn) { allow_mixed_iif(e); }
                 if env.iter().rev().find(|v| v.name == *id).map_or(false, |v| v.ty == Ty::Dyn) { mark_dynplus(e, env, sigs, *n); }
                 // S4: a Dyn copy of a shared module array aliases the
                 // same object; register the target as a shared-array name.
@@ -14369,6 +14391,13 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             let tb = expr_ty(&args[2], env, sigs);
             let k = fresh_lbl();
             cg_cond_jump(&args[0], env, sigs, strs, out, target, &format!(".Liift{}", k));
+            if iif_mixed(&args[1], &args[2], ta, tb) {
+                cg_iif_tagged(&args[2], env, sigs, strs, out, target);
+                out.push_str(&format!("    jmp .Liife{}\n.Liift{}:\n", k, k));
+                cg_iif_tagged(&args[1], env, sigs, strs, out, target);
+                out.push_str(&format!(".Liife{}:\n", k));
+                return;
+            }
             let mut f64side = |t: Ty, a: &Expr, out: &mut String| {
                 if t == Ty::F64 {
                     cg_f64_load(a, env, sigs, strs, out, target);
@@ -18637,6 +18666,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
                 // Branch unification mirrors the checker (oracle hk321).
                 let ta = expr_ty(&args[1], env, sigs);
                 let tb = expr_ty(&args[2], env, sigs);
+                if iif_mixed(&args[1], &args[2], ta, tb) { return Ty::Dyn; }
                 return if ta == Ty::F64 || tb == Ty::F64 { Ty::F64 }
                     else if matches!(ta, Ty::StrOwn) || matches!(tb, Ty::StrOwn) { Ty::StrOwn } else { ta };
             }
@@ -18900,6 +18930,37 @@ fn obj_fresh(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> bool {
 // into a fresh owned tag-4 copy. Scalar tags pass through untouched.
 // A language call produces its own temporary; sequence tails preserve that
 // ownership. IIF Dyn arms are normalized on the selected branch below.
+// iif() whose branches are scalars of DIFFERENT types (string, integer,
+// logical, float) or one scalar and a literal NIL. The taken branch keeps
+// its own type, so the result is a fresh OWNED Dyn cell (tag + payload).
+// Deliberately narrow: no Dyn variables/calls/DATA, objects, arrays, blocks,
+// dates or raw array cells as arms; those keep the named rejection.
+fn iif_mixed(a: &Expr, b: &Expr, ta: Ty, tb: Ty) -> bool {
+    let arm = |e: &Expr, t: Ty| matches!(t, Ty::I64 | Ty::Bool | Ty::Str | Ty::StrOwn | Ty::F64) || matches!(e, Expr::Nil);
+    if !arm(a, ta) || !arm(b, tb) { return false; }
+    if matches!(a, Expr::Nil) && matches!(b, Expr::Nil) { return false; }
+    if ta == tb { return false; }
+    if matches!((ta, tb), (Ty::F64, Ty::I64) | (Ty::I64, Ty::F64)) { return false; }
+    if matches!(ta, Ty::Str | Ty::StrOwn) && matches!(tb, Ty::Str | Ty::StrOwn) { return false; }
+    true
+}
+// One arm of a mixed iif as an owned tagged cell (rax = tag, rdx = payload).
+// An owned-string variable MOVES its buffer on the taken path (the checker
+// already treats an iif owned-string arm as moved); every other string is
+// copied, as DATA does.
+fn cg_iif_tagged(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target) {
+    match e {
+        Expr::Nil => cg_expr(e, env, sigs, strs, out, target),
+        Expr::Var(v) if env.iter().any(|x| x.name == *v && x.ty == Ty::StrOwn) => {
+            cg_value(e, env, sigs, strs, out, target);
+            if let Some(lv) = env.iter().find(|x| x.name == *v && x.ty == Ty::StrOwn) {
+                out.push_str(&format!("    movq $0, -{}(%rbp)\n", lv.off));
+            }
+            out.push_str("    mov %rax, %rdx\n    mov $4, %eax\n");
+        }
+        _ => cg_data_value(e, env, sigs, strs, out, target),
+    }
+}
 fn dyn_expr_owned(e: &Expr) -> bool {
     match e {
         Expr::Var(id)=>CG_MEMVAR_NAMES.with(|c|c.borrow().contains(id)),
