@@ -1865,7 +1865,8 @@ pos2 tests/t1682_dyn_div_assign.prg tests/expectations/qout/t1682_dyn_div_assign
 pos2 tests/t1683_dyn_div_objdata.prg tests/expectations/qout/t1683_dyn_div_objdata.linux.out tests/expectations/qout/t1683_dyn_div_objdata.windows.out
 pos2 tests/t1684_dyn_div_seq_catch.prg tests/expectations/qout/t1684_dyn_div_seq_catch.linux.out tests/expectations/qout/t1684_dyn_div_seq_catch.windows.out
 posx tests/t1685_dyn_div_zero.prg 1 Error: division by zero\nCallstack:\n  at main (tests/t1685_dyn_div_zero.prg:8)
-neg tests/t1686_dyn_float_arith_limit.prg arithmetic between a NIL-able (Dyn) value and a float is a covered LIMIT
+# Dyn float minus a static float literal: formerly a named rejection (neg), enabled by tests/dyn-static-float.
+pos tests/t1686_dyn_float_sub_literal.prg \n         7.0
 pos2 tests/module-static-objects/programs/borrowed_null.prg tests/module-static-objects/expected/borrowed_null.linux.out tests/module-static-objects/expected/borrowed_null.windows.out
 pos2 tests/module-static-objects/programs/callee_rebind.prg tests/module-static-objects/expected/callee_rebind.linux.out tests/module-static-objects/expected/callee_rebind.windows.out
 pos2 tests/module-static-objects/programs/nil_assign.prg tests/module-static-objects/expected/nil_assign.linux.out tests/module-static-objects/expected/nil_assign.windows.out
