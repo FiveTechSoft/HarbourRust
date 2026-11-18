@@ -61,3 +61,14 @@ Probes are written so real Harbour is deterministic: a worker printing
 while Main prints would interleave nondeterministically in both
 implementations (a declared F1 property), so worker-printing probes keep
 Main silent until after the join.
+
+## Not in the Harbour gate
+
+- **ts01_str_dyn** (Linux reference + native macOS runs only): `Str()` of
+  a Dyn value in a threaded program. Integer and float values render; a
+  string raises Harbour's terminal BASE/1099 text ("Called from STR(0)"
+  then the language frames) on stderr through `hbc_str_dyn_fail`, a
+  relabelled `hrm_fail` copy that does not need the MEMVAR/macro context.
+  A failing worker ends alone (its join yields NIL); a failing main thread
+  exits 1. Single-thread programs keep the macro-context check, with
+  byte-identical assembly.
