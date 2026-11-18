@@ -66,8 +66,11 @@ runtime blob clean under AddressSanitizer and UBSan.
   except when the member belongs to exactly one class hierarchy in the
   program: then the receiver is pinned to that hierarchy's root class and
   checked statically. Harbour resolves all of these at runtime.
-- Classes are Linux x86-64 only in this increment; `--target=windows`
-  rejects them by name.
+- Classes were Linux x86-64 only in this increment (v0.7.0). Since the
+  16 November 2026 Windows work (see the correction below) the compiler also
+  accepts them for `--target=windows`: Wine is the oracle, and the candidate
+  has a fixture gate on native Windows (CI). Class compatibility on Mac is
+  not established here; compiling is not running.
 - `=` as an expression operator remains outside the supported subset
   (pre-existing limitation, unchanged).
 
@@ -78,6 +81,6 @@ live object must not leave a space before the next newline. The earlier
 claim that p_sep's space was an established GTCGI difference is withdrawn.
 The focused regression and its evidence scope are documented in
 [windows-separators](../tests/classes/windows-separators/README.md).
-Real-Windows execution is still pending. The broader string-only
+Native Windows runs only the separator fixtures: the CI step "Object separators on native Windows" in `.github/workflows/native-ci.yml` runs `tests/classes/windows-separators/check.py` against versioned GTSTD fixtures. That is not a full differential class gate. The broader string-only
 GTSTD/GTCGI hold/flush mismatch remains open Harbour compatibility debt;
 this fix does not change the global console profile or claim full parity.

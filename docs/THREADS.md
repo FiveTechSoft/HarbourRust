@@ -60,7 +60,9 @@ hb_threadWaitForAll()                 // block until every worker finishes
   exit (80 + 16 bytes per argument per thread): the second-join .F.
   reads the consumed state instead of faulting. Harbour reclaims through
   its GC; HarbourRust's raw-mmap allocator reclaims at exit.
-- Windows: see "Windows runtime" below. macOS has no thread runtime yet.
+- Windows: see "Windows runtime" below. macOS had no thread runtime when this record was written; the ARM64 Mach-O
+  thread runtime of 17 November 2026 is in
+  [ARM64-NATIVE-2026-11-16.md](ARM64-NATIVE-2026-11-16.md).
 - `--instrument` with threads is a named rejection (the allocation
   registry is process-global).
 - `hb_memcheck` counters are approximate while threads run.
@@ -268,8 +270,8 @@ through the existing terminal thread panic route after its arguments run.
 This is not Harbour's substitutable BASE/1001 error profile. No general
 symbol table or error-recovery machinery is added.
 
-Inherited limits stay visible: Linux and Windows x86-64 only (no macOS
-thread runtime), no capturing or block-variable start target, and no general
+Inherited limits stay visible: Linux and Windows x86-64 in this record (macOS
+threads: see the ARM64 record of 17 November 2026), no capturing or block-variable start target, and no general
 closure ABI. Literal blocks still use the published AST lifting, whose
 normal function inference can admit string parameters/results; the older
 integer-only block-value restrictions do not describe that lifted path.

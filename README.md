@@ -16,7 +16,7 @@ Kind-5 Dyn values now keep their double bits and full display metadata in
 an owned heap item. Old inline casillas remain readable, and the Extend
 bridge negotiates return/store format per call so old callers keep inline
 results. This supports the original `multiarg.prg` and bounded F64/Dyn
-transport, not general Dyn-float arithmetic. New objects require a rebuilt
+transport (record of 15 November 2026). Since then main has bounded Dyn-float arithmetic: `+ - *` at Dyn consumers, with their own gates `tests/dyn-mul-i64`, `tests/dyn-addsub` and `tests/dyn-static-float`, and `/` with `tests/dyn-division` (30 assertions; its README states a measured leak limit across frames when a method fails to a caller's catch, so no general zero-leak claim is made) (main `9e150aee`, 18 November 2026), and comparisons of a float Dyn or a Dyn arithmetic expression (`IF a + 1 > 2`) with the gate `tests/dyn-compare` (main `b807f17a`, 18 November 2026). `%` and numeric builtin arguments are not covered; it is not general Dyn-float arithmetic. New objects require a rebuilt
 bridge. See [representation, compatibility and limits](docs/DYN-HEAP-FLOAT-2026-11-15.md).
 
 ## .hrb files
