@@ -21385,6 +21385,11 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
             }
             Stmt::CatchBind(_, var) => {
                 let off = env.iter().rev().find(|v| v.name == *var).expect("checked").off;
+                // The catch slot may still own the exception (or any other
+                // value) from an earlier round of a loop: release it like
+                // every other store into a Dyn slot before the new
+                // exception takes over (a bare store leaked N-1 cells).
+                cg_dyn_free_old(out, off);
                 out.push_str("    call hbc_seq_exc_take
 ");
                 out.push_str(&format!("    mov %rax, -{}(%rbp)
