@@ -290,6 +290,21 @@ fn mark_dynplus(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) {
 // owned Dyn string temporary reaches an integer conversion.
 fn mark_dynplus_rec(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Vec<usize> {
     let mut ins: Vec<usize> = Vec::new();
+    // A comparison accepts Dyn cells on either side (its helpers dispatch on the tags), so arithmetic operands keep their marks.
+    if let Expr::Cmp(_, a, b) = e {
+        ins.extend(mark_dynplus_rec(a, env, sigs, n));
+        ins.extend(mark_dynplus_rec(b, env, sigs, n));
+        return ins;
+    }
+    if let Expr::LAnd(a, b) | Expr::LOr(a, b) = e {
+        ins.extend(mark_dynplus_rec(a, env, sigs, n));
+        ins.extend(mark_dynplus_rec(b, env, sigs, n));
+        return ins;
+    }
+    if let Expr::LNot(a) = e {
+        ins.extend(mark_dynplus_rec(a, env, sigs, n));
+        return ins;
+    }
     if let Expr::Bin(mop @ ('+' | '-' | '*'), a, b) = e {
         let mut kids = mark_dynplus_rec(a, env, sigs, n);
         kids.extend(mark_dynplus_rec(b, env, sigs, n));
@@ -8518,8 +8533,8 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 // headless) - a clean named exit 1 here, registered
                 // failure mode, not exact equivalence.
                 if (matches!(ta, Ty::Dyn) || matches!(tb, Ty::Dyn))
-                    && matches!(ta, Ty::Dyn | Ty::Str | Ty::StrOwn | Ty::I64)
-                    && matches!(tb, Ty::Dyn | Ty::Str | Ty::StrOwn | Ty::I64) {
+                    && matches!(ta, Ty::Dyn | Ty::Str | Ty::StrOwn | Ty::I64 | Ty::F64)
+                    && matches!(tb, Ty::Dyn | Ty::Str | Ty::StrOwn | Ty::I64 | Ty::F64) {
                     return Ok(Ty::Bool);
                 }
                 // Codeblocks stay rejected: Harbour's identity is per
@@ -8638,12 +8653,9 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 if DBF_USED.with(|v| v.get()) {
                     return Ok(Ty::Bool);
                 }
-                // Covered LIMIT outside DBF (same reason as arithmetic):
-                // a number-holding Dyn compares fine in Harbour; without
-                // the DBF hooks this PoC's Dyn compares floats only
-                // through the registered rejection, not a silent i64
-                // extraction (63zc).
-                return Err(format!("line {}: comparing a NIL-able (Dyn) value with a float is a covered LIMIT of this increment (Harbour runs it when the Dyn holds a number; this PoC's Dyn has no float payload - registered divergence)", n));
+                // Outside DBF a Dyn against a static float compares through the numeric float arm of the Dyn compare helpers
+                // (a float or integer payload by value; NIL and strings keep their errors).
+                return Ok(Ty::Bool);
             }
             if ta != tb {
                 return Err(format!("line {}: cannot compare a string with an integer in this PoC", n));
@@ -9861,6 +9873,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 falls = false;
             }
             Stmt::If(n, cond, then_s, else_s) => {
+                mark_dynplus(cond, env, sigs, *n);
                 let ct = type_expr(cond, env, sigs, *n)?;
                 apply_moves(cond, env, sigs, false);
                 if !matches!(ct, Ty::Bool | Ty::Dyn) {
@@ -9877,6 +9890,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 falls = ft || fe;
             }
             Stmt::While(n, cond, body) => {
+                mark_dynplus(cond, env, sigs, *n);
                 let ct = type_expr(cond, env, sigs, *n)?;
                 apply_moves(cond, env, sigs, false);
                 if !matches!(ct, Ty::Bool | Ty::Dyn) {
@@ -19377,8 +19391,17 @@ fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<Strin
         let owned=|e:&Expr|expr_ty(e,env,sigs)==Ty::Dyn && dyn_expr_owned(e);
         if owned(a)||owned(b) {
             let id=fresh_lbl();let mut ee=env.to_vec();let mut vv=Vec::new();
+            // Landing pad under an active user TRY: the first operand's owned cell is released when the second
+            // operand (or the comparison itself) raises. The slots are zeroed first so an unevaluated one is a no-op.
+            let guard=aview_scratch();
+            let offs=[aview_scratch(),aview_scratch()];
+            out.push_str(&format!("    movq $0, -{}(%rbp)\n", guard));
+            for (i,e) in [a.as_ref(),b.as_ref()].iter().enumerate() {
+                if owned(e) { out.push_str(&format!("    movq $0, -{}(%rbp)\n    movq $0, -{}(%rbp)\n", offs[i], offs[i]-8)); }
+            }
+            out.push_str(&format!("    cmpq $0, hbc_seq_depth(%rip)\n    je .Lcpg{id}\n    lea .Lcpc{id}(%rip), %rdi\n    call hbc_seq_push\n    movq $1, -{guard}(%rbp)\n.Lcpg{id}:\n"));
             for (i,e) in [a.as_ref(),b.as_ref()].iter().enumerate(){
-                let ty=expr_ty(e,env,sigs);let off=aview_scratch();
+                let ty=expr_ty(e,env,sigs);let off=offs[i];
                 if ty==Ty::F64 {cg_f64_load(e,env,sigs,strs,out,target);out.push_str(&format!("    movsd %xmm0, -{}(%rbp)\n    mov %rdi, -{}(%rbp)\n",off,off-8));}
                 else {cg_value(e,env,sigs,strs,out,target);out.push_str(&format!("    mov %rax, -{}(%rbp)\n    mov %rdx, -{}(%rbp)\n",off,off-8));}
                 let v=CgLocal{name:format!("__dbfcmp_{}_{}",id,i),ty,off};ee.push(v.clone());vv.push(v);
@@ -19386,11 +19409,20 @@ fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<Strin
             let c=Expr::Cmp(*op,Box::new(Expr::Var(vv[0].name.clone())),Box::new(Expr::Var(vv[1].name.clone())));
             cg_cond_jump(&c,&ee,sigs,strs,out,target,&format!(".Ldbfcmpt{}",id));
             out.push_str(&format!("    xor %eax, %eax\n    jmp .Ldbfcmpd{}\n.Ldbfcmpt{}:\n    mov $1, %eax\n.Ldbfcmpd{}:\n    sub $16, %rsp\n    mov %rax, (%rsp)\n",id,id,id));
+            out.push_str(&format!("    cmpq $0, -{guard}(%rbp)\n    je .Lcpd{id}\n    call hbc_seq_pop\n.Lcpd{id}:\n"));
             for (e,v) in [a.as_ref(),b.as_ref()].iter().zip(vv.iter()) {
                 if owned(e){out.push_str(&format!("    mov -{}(%rbp),%rax\n    mov -{}(%rbp),%rdx\n    call hbc_float_release\n",v.off,v.off-8));let skip=fresh_lbl();out.push_str(&format!("    cmpb $4, -{}(%rbp)\n    jne .Ldbfcmps{}\n    mov -{}(%rbp), %rdi\n    call hbc_freestr\n.Ldbfcmps{}:\n",v.off,skip,v.off-8,skip));}
                 else if v.ty==Ty::StrOwn && !matches!(e,Expr::Var(_)){out.push_str(&format!("    mov -{}(%rbp), %rdi\n    call hbc_freestr\n",v.off));}
             }
-            out.push_str(&format!("    mov (%rsp), %rax\n    add $16, %rsp\n    test %rax, %rax\n    jnz {}\n",true_label));return;
+            out.push_str(&format!("    mov (%rsp), %rax\n    add $16, %rsp\n    test %rax, %rax\n    jnz {}\n",true_label));
+            // out-of-line pad: release the owned operand cells, then continue the unwind
+            let after=fresh_lbl();
+            out.push_str(&format!("    jmp .Lcpe{after}\n.Lcpc{id}:\n"));
+            for (e,v) in [a.as_ref(),b.as_ref()].iter().zip(vv.iter()) {
+                if owned(e){let skip=fresh_lbl();out.push_str(&format!("    mov -{}(%rbp),%rax\n    mov -{}(%rbp),%rdx\n    call hbc_float_release\n    cmpb $4, -{}(%rbp)\n    jne .Ldbfcmps{}\n    mov -{}(%rbp), %rdi\n    call hbc_freestr\n.Ldbfcmps{}:\n",v.off,v.off-8,v.off,skip,v.off-8,skip));}
+            }
+            out.push_str(&format!("    jmp hbc_seq_unwind\n.Lcpe{after}:\n"));
+            return;
         }
     }
     match cond {
@@ -19585,7 +19617,8 @@ fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<Strin
                 // 5|(dec<<8), payload the IEEE-754 bits). Runtime NIL
                 // and string casillas fall through the hooks to the
                 // helpers' original logic, identical to the paths below.
-                if DBF_USED.with(|v| v.get())
+                let ord_op = !matches!(op, CmpOp::Eq | CmpOp::Ne | CmpOp::EqEq);
+                if (DBF_USED.with(|v| v.get()) || ta == Ty::F64 || tb == Ty::F64 || (ord_op && (ta == Ty::Dyn) != (tb == Ty::Dyn)))
                     && matches!(ta, Ty::I64 | Ty::F64 | Ty::Dyn)
                     && matches!(tb, Ty::I64 | Ty::F64 | Ty::Dyn)
                 {
@@ -19618,7 +19651,8 @@ fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<Strin
                         }
                         _ => {
                             let sel = match op { CmpOp::Lt => 1, CmpOp::Gt => 2, CmpOp::Le => 3, CmpOp::Ge => 4, _ => unreachable!("CmpOp variants") };
-                            out.push_str(&format!("    mov ${}, %r9d\n    call hbc_dynxcmp\n    test %rax, %rax\n", sel));
+                            let cmph = if DBF_USED.with(|v| v.get()) { "hbc_dynxcmp" } else { "hbc_dynxcmp_n" };
+                            out.push_str(&format!("    mov ${}, %r9d\n    call {}\n    test %rax, %rax\n", sel, cmph));
                             let j = match op { CmpOp::Lt => "js", CmpOp::Le => "jle", CmpOp::Gt => "jg", CmpOp::Ge => "jns", _ => unreachable!() };
                             out.push_str(&format!("    {} {}\n", j, true_label));
                         }
@@ -29249,7 +29283,12 @@ hbc_dyn_eq:
 80: @HBC_TAG_KIND@cmp $4, %rcx@HBC_TAG_END@
     jne 81f
     mov $2, %ecx
-81: @HBC_TAG_KIND@cmp %rcx, %rax@HBC_TAG_END@
+81:
+    cmpb $5, %al
+    je 50f
+    cmpb $5, %cl
+    je 50f
+    @HBC_TAG_KIND@cmp %rcx, %rax@HBC_TAG_END@
     jne 7f
     @HBC_TAG_KIND@cmp $2, %rax@HBC_TAG_END@
     je 6f
@@ -29278,6 +29317,44 @@ hbc_dyn_eq:
     je 8b
     jmp hbc_dyncmp_eq_error
 
+50:
+    # float arm: both sides must be numbers (tag 0 integer or kind 5 float); heap floats carry bit63
+    cmpb $5, %al
+    jne 51f
+    test %rax, %rax
+    js 52f
+    movq %rdx, %xmm0
+    jmp 53f
+52: movsd (%rdx), %xmm0
+    jmp 53f
+51: @HBC_TAG_KIND@test %rax, %rax@HBC_TAG_END@
+    jne 57f
+    cvtsi2sd %rdx, %xmm0
+53: cmpb $5, %cl
+    jne 54f
+    test %rcx, %rcx
+    js 55f
+    movq %r8, %xmm1
+    jmp 56f
+55: movsd (%r8), %xmm1
+    jmp 56f
+54: @HBC_TAG_KIND@test %rcx, %rcx@HBC_TAG_END@
+    jne 57f
+    cvtsi2sd %r8, %xmm1
+56: ucomisd %xmm1, %xmm0
+    jp 58f
+    jne 58f
+    mov $1, %eax
+    ret
+58: xor %eax, %eax
+    ret
+57:
+    @HBC_TAG_KIND@cmp $1, %rax@HBC_TAG_END@
+    je 58b
+    @HBC_TAG_KIND@cmp $1, %rcx@HBC_TAG_END@
+    je 58b
+    jmp hbc_dyncmp_eq_error
+
 # hbc_dynxcmp: %rax/%rdx = lhs tag/payload, %rcx/%r8 = rhs tag/payload,
 # %r9d = operator (1=<, 2=>, 3=<=, 4=>=) -> %rax = -1/0/1 (signed).
 # Ordering between two Dyn casillas (hk148): int x int numerically;
@@ -29302,7 +29379,12 @@ hbc_dynxcmp:
 80: @HBC_TAG_KIND@cmp $4, %rcx@HBC_TAG_END@
     jne 81f
     mov $2, %ecx
-81: @HBC_TAG_KIND@cmp %rcx, %rax@HBC_TAG_END@
+81:
+    cmpb $5, %al
+    je 50f
+    cmpb $5, %cl
+    je 50f
+    @HBC_TAG_KIND@cmp %rcx, %rax@HBC_TAG_END@
     jne 70f
     @HBC_TAG_KIND@test %rax, %rax@HBC_TAG_END@
     jnz 71f
@@ -29336,6 +29418,42 @@ hbc_dynxcmp:
     je hbc_dyncmp_le_error
     jmp hbc_dyncmp_ge_error
 
+50:
+    # float arm: both sides must be numbers (tag 0 integer or kind 5 float); heap floats carry bit63
+    cmpb $5, %al
+    jne 51f
+    test %rax, %rax
+    js 52f
+    movq %rdx, %xmm0
+    jmp 53f
+52: movsd (%rdx), %xmm0
+    jmp 53f
+51: @HBC_TAG_KIND@test %rax, %rax@HBC_TAG_END@
+    jne 57f
+    cvtsi2sd %rdx, %xmm0
+53: cmpb $5, %cl
+    jne 54f
+    test %rcx, %rcx
+    js 55f
+    movq %r8, %xmm1
+    jmp 56f
+55: movsd (%r8), %xmm1
+    jmp 56f
+54: @HBC_TAG_KIND@test %rcx, %rcx@HBC_TAG_END@
+    jne 57f
+    cvtsi2sd %r8, %xmm1
+56: ucomisd %xmm1, %xmm0
+    ja 59f
+    jb 60f
+    xor %eax, %eax
+    ret
+59: mov $1, %eax
+    ret
+60: mov $-1, %rax
+    ret
+57:
+    jmp 70b
+
 # hbc_dynxeq_dd: %rax/%rdx = lhs tag/payload, %rcx/%r8 = rhs tag/payload ->
 # %rax = 1/0. Harbour's `==` between casillas (hk132/hk133/hk138/hk140):
 # NIL x NIL .T., NIL x payload .F., number x number by value, string x
@@ -29358,7 +29476,12 @@ hbc_dynxeq_dd:
 80: @HBC_TAG_KIND@cmp $4, %rcx@HBC_TAG_END@
     jne 81f
     mov $2, %ecx
-81: @HBC_TAG_KIND@cmp %rcx, %rax@HBC_TAG_END@
+81:
+    cmpb $5, %al
+    je 50f
+    cmpb $5, %cl
+    je 50f
+    @HBC_TAG_KIND@cmp %rcx, %rax@HBC_TAG_END@
     jne 5f
     @HBC_TAG_KIND@cmp $2, %rax@HBC_TAG_END@
     je 2f
@@ -29387,6 +29510,60 @@ hbc_dynxeq_dd:
     jmp hbc_dynxeq_error
 8:  xor %eax, %eax
     ret
+50:
+    # float arm: both sides must be numbers (tag 0 integer or kind 5 float); heap floats carry bit63
+    cmpb $5, %al
+    jne 51f
+    test %rax, %rax
+    js 52f
+    movq %rdx, %xmm0
+    jmp 53f
+52: movsd (%rdx), %xmm0
+    jmp 53f
+51: @HBC_TAG_KIND@test %rax, %rax@HBC_TAG_END@
+    jne 57f
+    cvtsi2sd %rdx, %xmm0
+53: cmpb $5, %cl
+    jne 54f
+    test %rcx, %rcx
+    js 55f
+    movq %r8, %xmm1
+    jmp 56f
+55: movsd (%r8), %xmm1
+    jmp 56f
+54: @HBC_TAG_KIND@test %rcx, %rcx@HBC_TAG_END@
+    jne 57f
+    cvtsi2sd %r8, %xmm1
+56: ucomisd %xmm1, %xmm0
+    jp 58f
+    jne 58f
+    mov $1, %eax
+    ret
+58: xor %eax, %eax
+    ret
+57:
+    @HBC_TAG_KIND@cmp $1, %rax@HBC_TAG_END@
+    je 58b
+    @HBC_TAG_KIND@cmp $1, %rcx@HBC_TAG_END@
+    je 58b
+    jmp hbc_dynxeq_error
+# hbc_dynxcmp_n: ordering between a Dyn and an integer cell (the cells are Dyn-boxed). A float on either
+# side takes the numeric float arm of hbc_dynxcmp; any other non-integer cell keeps the type error the integer
+# extraction raised before (NIL, string).
+hbc_dynxcmp_n:
+    cmpb $5, %al
+    je hbc_dynxcmp
+    cmpb $5, %cl
+    je hbc_dynxcmp
+    @HBC_TAG_KIND@cmp $9, %rax@HBC_TAG_END@
+    je 1f
+    @HBC_TAG_KIND@test %rax, %rax@HBC_TAG_END@
+    jne hbc_type_error
+1:  @HBC_TAG_KIND@cmp $9, %rcx@HBC_TAG_END@
+    je 2f
+    @HBC_TAG_KIND@test %rcx, %rcx@HBC_TAG_END@
+    jne hbc_type_error
+2:  jmp hbc_dynxcmp
 "#;
         if CLASSES.with(|c| !c.borrow().is_empty()) {
             let marked = blob.replace("    @HBC_TAG_KIND@cmp $8, %rax@HBC_TAG_END@\n    je 13f\n    @HBC_TAG_KIND@cmp $16, %rax@HBC_TAG_END@\n    je 13f\n    mov %rax, %r10", "    @HBC_TAG_KIND@cmp $8, %rax@HBC_TAG_END@\n    je 13f\n    @HBC_TAG_KIND@cmp $16, %rax@HBC_TAG_END@\n    je 13f\n    @HBC_TAG_KIND@cmp $13, %rax@HBC_TAG_END@\n    je 13f\n    mov %rax, %r10");
@@ -32526,7 +32703,12 @@ hbc_dyn_eq:
 80: @HBC_TAG_KIND@cmp $4, %rcx@HBC_TAG_END@
     jne 81f
     mov $2, %ecx
-81: @HBC_TAG_KIND@cmp %rcx, %rax@HBC_TAG_END@
+81:
+    cmpb $5, %al
+    je 50f
+    cmpb $5, %cl
+    je 50f
+    @HBC_TAG_KIND@cmp %rcx, %rax@HBC_TAG_END@
     jne 7f
     @HBC_TAG_KIND@cmp $2, %rax@HBC_TAG_END@
     je 6f
@@ -32555,6 +32737,44 @@ hbc_dyn_eq:
     je 8b
     jmp hbc_dyncmp_eq_error
 
+50:
+    # float arm: both sides must be numbers (tag 0 integer or kind 5 float); heap floats carry bit63
+    cmpb $5, %al
+    jne 51f
+    test %rax, %rax
+    js 52f
+    movq %rdx, %xmm0
+    jmp 53f
+52: movsd (%rdx), %xmm0
+    jmp 53f
+51: @HBC_TAG_KIND@test %rax, %rax@HBC_TAG_END@
+    jne 57f
+    cvtsi2sd %rdx, %xmm0
+53: cmpb $5, %cl
+    jne 54f
+    test %rcx, %rcx
+    js 55f
+    movq %r8, %xmm1
+    jmp 56f
+55: movsd (%r8), %xmm1
+    jmp 56f
+54: @HBC_TAG_KIND@test %rcx, %rcx@HBC_TAG_END@
+    jne 57f
+    cvtsi2sd %r8, %xmm1
+56: ucomisd %xmm1, %xmm0
+    jp 58f
+    jne 58f
+    mov $1, %eax
+    ret
+58: xor %eax, %eax
+    ret
+57:
+    @HBC_TAG_KIND@cmp $1, %rax@HBC_TAG_END@
+    je 58b
+    @HBC_TAG_KIND@cmp $1, %rcx@HBC_TAG_END@
+    je 58b
+    jmp hbc_dyncmp_eq_error
+
 # hbc_dynxcmp: %rax/%rdx = lhs tag/payload, %rcx/%r8 = rhs tag/payload,
 # %r9d = operator (1=<, 2=>, 3=<=, 4=>=) -> %rax = -1/0/1 (signed).
 # Ordering between two Dyn casillas (hk148): int x int numerically;
@@ -32579,7 +32799,12 @@ hbc_dynxcmp:
 80: @HBC_TAG_KIND@cmp $4, %rcx@HBC_TAG_END@
     jne 81f
     mov $2, %ecx
-81: @HBC_TAG_KIND@cmp %rcx, %rax@HBC_TAG_END@
+81:
+    cmpb $5, %al
+    je 50f
+    cmpb $5, %cl
+    je 50f
+    @HBC_TAG_KIND@cmp %rcx, %rax@HBC_TAG_END@
     jne 70f
     @HBC_TAG_KIND@test %rax, %rax@HBC_TAG_END@
     jnz 71f
@@ -32613,6 +32838,42 @@ hbc_dynxcmp:
     je hbc_dyncmp_le_error
     jmp hbc_dyncmp_ge_error
 
+50:
+    # float arm: both sides must be numbers (tag 0 integer or kind 5 float); heap floats carry bit63
+    cmpb $5, %al
+    jne 51f
+    test %rax, %rax
+    js 52f
+    movq %rdx, %xmm0
+    jmp 53f
+52: movsd (%rdx), %xmm0
+    jmp 53f
+51: @HBC_TAG_KIND@test %rax, %rax@HBC_TAG_END@
+    jne 57f
+    cvtsi2sd %rdx, %xmm0
+53: cmpb $5, %cl
+    jne 54f
+    test %rcx, %rcx
+    js 55f
+    movq %r8, %xmm1
+    jmp 56f
+55: movsd (%r8), %xmm1
+    jmp 56f
+54: @HBC_TAG_KIND@test %rcx, %rcx@HBC_TAG_END@
+    jne 57f
+    cvtsi2sd %r8, %xmm1
+56: ucomisd %xmm1, %xmm0
+    ja 59f
+    jb 60f
+    xor %eax, %eax
+    ret
+59: mov $1, %eax
+    ret
+60: mov $-1, %rax
+    ret
+57:
+    jmp 70b
+
 # hbc_dynxeq_dd: %rax/%rdx = lhs tag/payload, %rcx/%r8 = rhs tag/payload ->
 # %rax = 1/0. Harbour's `==` between casillas (hk132/hk133/hk138/hk140):
 # NIL x NIL .T., NIL x payload .F., number x number by value, string x
@@ -32635,7 +32896,12 @@ hbc_dynxeq_dd:
 80: @HBC_TAG_KIND@cmp $4, %rcx@HBC_TAG_END@
     jne 81f
     mov $2, %ecx
-81: @HBC_TAG_KIND@cmp %rcx, %rax@HBC_TAG_END@
+81:
+    cmpb $5, %al
+    je 50f
+    cmpb $5, %cl
+    je 50f
+    @HBC_TAG_KIND@cmp %rcx, %rax@HBC_TAG_END@
     jne 5f
     @HBC_TAG_KIND@cmp $2, %rax@HBC_TAG_END@
     je 2f
@@ -32664,6 +32930,60 @@ hbc_dynxeq_dd:
     jmp hbc_dynxeq_error
 8:  xor %eax, %eax
     ret
+50:
+    # float arm: both sides must be numbers (tag 0 integer or kind 5 float); heap floats carry bit63
+    cmpb $5, %al
+    jne 51f
+    test %rax, %rax
+    js 52f
+    movq %rdx, %xmm0
+    jmp 53f
+52: movsd (%rdx), %xmm0
+    jmp 53f
+51: @HBC_TAG_KIND@test %rax, %rax@HBC_TAG_END@
+    jne 57f
+    cvtsi2sd %rdx, %xmm0
+53: cmpb $5, %cl
+    jne 54f
+    test %rcx, %rcx
+    js 55f
+    movq %r8, %xmm1
+    jmp 56f
+55: movsd (%r8), %xmm1
+    jmp 56f
+54: @HBC_TAG_KIND@test %rcx, %rcx@HBC_TAG_END@
+    jne 57f
+    cvtsi2sd %r8, %xmm1
+56: ucomisd %xmm1, %xmm0
+    jp 58f
+    jne 58f
+    mov $1, %eax
+    ret
+58: xor %eax, %eax
+    ret
+57:
+    @HBC_TAG_KIND@cmp $1, %rax@HBC_TAG_END@
+    je 58b
+    @HBC_TAG_KIND@cmp $1, %rcx@HBC_TAG_END@
+    je 58b
+    jmp hbc_dynxeq_error
+# hbc_dynxcmp_n: ordering between a Dyn and an integer cell (the cells are Dyn-boxed). A float on either
+# side takes the numeric float arm of hbc_dynxcmp; any other non-integer cell keeps the type error the integer
+# extraction raised before (NIL, string).
+hbc_dynxcmp_n:
+    cmpb $5, %al
+    je hbc_dynxcmp
+    cmpb $5, %cl
+    je hbc_dynxcmp
+    @HBC_TAG_KIND@cmp $9, %rax@HBC_TAG_END@
+    je 1f
+    @HBC_TAG_KIND@test %rax, %rax@HBC_TAG_END@
+    jne hbc_type_error
+1:  @HBC_TAG_KIND@cmp $9, %rcx@HBC_TAG_END@
+    je 2f
+    @HBC_TAG_KIND@test %rcx, %rcx@HBC_TAG_END@
+    jne hbc_type_error
+2:  jmp hbc_dynxcmp
 
 # hbc_type_error: NIL used as a number at runtime. Reached via a JUMP from
 # hbc_dyn_to_i64, so force 16-byte alignment before calling out (noreturn).
