@@ -30,6 +30,17 @@ use std::fs;
 use std::process;
 
 thread_local! {
+    // Addresses of mixed-type iif nodes that sit in a position whose
+    // consumer takes ownership of the tagged cell (output argument,
+    // assignment/initializer of a dynamic variable, return value).
+    static MIXED_IIF_OK: std::cell::RefCell<std::collections::HashSet<usize>> = std::cell::RefCell::new(std::collections::HashSet::new());
+}
+fn allow_mixed_iif(e: &Expr) {
+    if matches!(e, Expr::Call(id, _) if is_builtin(id, "iif")) {
+        MIXED_IIF_OK.with(|s| { s.borrow_mut().insert(e as *const Expr as usize); });
+    }
+}
+thread_local! {
     static DIRMAKE_USED: std::cell::Cell<bool> = const {std::cell::Cell::new(false)};
     static DYNPLUS_NODES: std::cell::RefCell<std::collections::HashSet<usize>> = std::cell::RefCell::new(std::collections::HashSet::new());
     static INKEY_USED: std::cell::Cell<bool> = const {std::cell::Cell::new(false)};
@@ -49,6 +60,8 @@ thread_local! {
 fn hb_rdd() -> bool { HB_RDD.with(|v| v.get()) }
 thread_local! {
     static CG_MEMVAR_NAMES: std::cell::RefCell<std::collections::HashSet<String>> = std::cell::RefCell::new(std::collections::HashSet::new());
+    // names a PRIVATE/PUBLIC statement bound in the function being parsed
+    static PARSE_MEMVARS: std::cell::RefCell<std::collections::HashSet<String>> = std::cell::RefCell::new(std::collections::HashSet::new());
     static MACRO_CONTEXT: std::cell::Cell<bool> = const {std::cell::Cell::new(false)};
     // Str(Dyn) seen by the checker. Single-thread programs validate it
     // through the macro context (hrmacro_str_check); threaded programs use
@@ -259,6 +272,12 @@ fn f64_const(bits: u64) -> usize {
 // consumer that already accepts a Dyn cell (print item, assignment to a Dyn
 // slot, and '+' operand chains below those). Every other Dyn+Dyn keeps the
 // numeric route and its I64 type, so integer contexts are unchanged.
+// Dyn op I64 and I64 op Dyn ('*', '+', '-'): a Dyn operand may hold a float at run time, which the integer
+// extraction cannot multiply. At a marked Dyn consumer the product takes the Dyn*Dyn route, the
+// static integer operand entering it as an integer cell.
+fn mul_mixed_tys(op: char, ta: Ty, tb: Ty) -> bool {
+    matches!(op, '*' | '+' | '-') && ((ta == Ty::Dyn && matches!(tb, Ty::I64 | Ty::F64)) || (matches!(ta, Ty::I64 | Ty::F64) && tb == Ty::Dyn))
+}
 fn dynplus_marked(e: &Expr) -> bool {
     DYNPLUS_NODES.with(|v| v.borrow().contains(&(e as *const Expr as usize)))
 }
@@ -271,15 +290,16 @@ fn mark_dynplus(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) {
 // owned Dyn string temporary reaches an integer conversion.
 fn mark_dynplus_rec(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Vec<usize> {
     let mut ins: Vec<usize> = Vec::new();
-    if let Expr::Bin('+', a, b) = e {
+    if let Expr::Bin(mop @ ('+' | '-' | '*'), a, b) = e {
         let mut kids = mark_dynplus_rec(a, env, sigs, n);
         kids.extend(mark_dynplus_rec(b, env, sigs, n));
         let ta = type_expr(a, env, sigs, n);
         let tb = type_expr(b, env, sigs, n);
         let strish = |t: &Result<Ty, String>| matches!(t, Ok(Ty::Str | Ty::StrOwn));
         let dynt = |t: &Result<Ty, String>| matches!(t, Ok(Ty::Dyn));
-        let dd = !DBF_USED.with(|v| v.get()) && dynt(&ta) && dynt(&tb);
-        let sd = (strish(&ta) && dynt(&tb)) || (dynt(&ta) && strish(&tb));
+        let mixed = matches!((&ta, &tb), (Ok(x), Ok(y)) if mul_mixed_tys(*mop, *x, *y));
+        let dd = !DBF_USED.with(|v| v.get()) && ((dynt(&ta) && dynt(&tb)) || mixed);
+        let sd = *mop == '+' && ((strish(&ta) && dynt(&tb)) || (dynt(&ta) && strish(&tb)));
         if dd {
             ins.extend(kids);
             let id = e as *const Expr as usize;
@@ -2704,6 +2724,11 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                                 Some(Tok::Ident(v)) => { check_ident(v, cn)?; Some(v.clone()) }
                                 _ => None,
                             };
+                            if let Some(v) = &var {
+                                if PARSE_MEMVARS.with(|c| c.borrow().contains(&v.to_ascii_uppercase())) {
+                                    return Err(format!("line {}: CATCH variable `{}` is a PRIVATE/PUBLIC (MEMVAR) binding; the catch variable must be a LOCAL in this increment", cn, v));
+                                }
+                            }
                             *i += 1;
                             let mut cbody = Vec::new();
                             parse_stmts(lines, i, &mut cbody, depth + 1)?;
@@ -3481,6 +3506,7 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                 for(k,t)in rest.iter().enumerate(){match t {Tok::LParen|Tok::LBracket|Tok::LBrace=>depth+=1,Tok::RParen|Tok::RBracket|Tok::RBrace=>depth-=1,Tok::Comma if depth==0=>{spans.push(&rest[start..k]);start=k+1;},_=>{}}}spans.push(&rest[start..]);
                 for it in spans {
                     let id=match it.first(){Some(Tok::Ident(id))=>{check_global_ident(id,n)?;id.clone()},_=>return Err(format!("line {}: MEMVAR declaration expects an identifier",n))};
+                    PARSE_MEMVARS.with(|c| c.borrow_mut().insert(id.to_ascii_uppercase()));
                     if it.len()==1 {out.push(Stmt::MemvarDecl(n,private,id));}
                     else if it.len()>=3&&matches!(it[1],Tok::Assign|Tok::Eq){out.push(Stmt::MemvarSet(n,private,id,parse_expr_tokens(it[2..].to_vec(),n)?));}
                     else{return Err(format!("line {}: MEMVAR declaration expects name [:= expression]",n));}
@@ -3768,7 +3794,7 @@ fn parse(src: &str) -> Result<Prog, String> {
                 return Err(format!("line {}: method `{}` defined for unknown class `{}`", n, mname, cname));
             }
             i += 1;
-            let mut f = Func { init: false, name: format!("{}__{}", cname, mname), params, ret: None, stmts: Vec::new(), dyn_names: std::collections::HashSet::new() };
+            PARSE_MEMVARS.with(|c| c.borrow_mut().clear()); let mut f = Func { init: false, name: format!("{}__{}", cname, mname), params, ret: None, stmts: Vec::new(), dyn_names: std::collections::HashSet::new() };
             parse_stmts(&lines, &mut i, &mut f.stmts, 0)?;
             if i >= lines.len() || lines[i].1[0] != Tok::KwReturn {
                 return Err(format!("method `{}` of `{}` without closing return", mname, cname));
@@ -3794,7 +3820,7 @@ fn parse(src: &str) -> Result<Prog, String> {
                 // `function main()` after an implicit group trips the
                 // duplicate-function check (Harbour silently prefers the
                 // explicit one, hk247e).
-                let mut f = Func { init: false, name: "main".to_string(), params: Vec::new(), ret: None, stmts: Vec::new(), dyn_names: std::collections::HashSet::new() };
+                PARSE_MEMVARS.with(|c| c.borrow_mut().clear()); let mut f = Func { init: false, name: "main".to_string(), params: Vec::new(), ret: None, stmts: Vec::new(), dyn_names: std::collections::HashSet::new() };
                 parse_stmts(&lines, &mut i, &mut f.stmts, 0)?;
                 if i < lines.len() && lines[i].1[0] == Tok::KwReturn {
                     let (rn, rt) = &lines[i];
@@ -3843,7 +3869,7 @@ fn parse(src: &str) -> Result<Prog, String> {
             return Err(format!("line {}: INIT procedures with parameters are not in this increment", n));
         }
         i += 1;
-        let mut f = Func { init, name: if init { format!("{}$", name) } else { name }, params, ret: None, stmts: Vec::new(), dyn_names: std::collections::HashSet::new() };
+        PARSE_MEMVARS.with(|c| c.borrow_mut().clear()); let mut f = Func { init, name: if init { format!("{}$", name) } else { name }, params, ret: None, stmts: Vec::new(), dyn_names: std::collections::HashSet::new() };
         parse_stmts(&lines, &mut i, &mut f.stmts, 0)?;
         if i >= lines.len() || lines[i].1[0] != Tok::KwReturn {
             return Err(format!("function `{}` without closing return", f.name));
@@ -4406,6 +4432,18 @@ fn receiver_pin_class(member: &str) -> Result<Option<u32>, String> {
 // body only returns or copies is NOT pinnable: report it honestly instead
 // of guessing.
 // ---------------------------------------------------------------------------
+thread_local! {
+    // Parameters some caller passes with @: the slot belongs to the caller.
+    static BYREF_PARAMS: std::cell::RefCell<std::collections::HashMap<String, Vec<usize>>> = std::cell::RefCell::new(std::collections::HashMap::new());
+    // Parameters that already received the tagged slot for lack of evidence.
+    static DEFAULT_DYN: std::cell::RefCell<std::collections::HashSet<(String,usize)>> = std::cell::RefCell::new(std::collections::HashSet::new());
+    // Late phase: enabled only after the ordinary fixpoint converged with the
+    // no-evidence parameter error. A program that compiles today is unchanged.
+    static DEFAULT_ENABLED: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+}
+fn byref_param(function: &str, index: usize) -> bool {
+    BYREF_PARAMS.with(|m|m.borrow().get(function).map_or(false,|v|v.contains(&index)))
+}
 fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>), String> {
     let n = f.params.len();
     let mut pin: Vec<Option<Ty>> = vec![None; n];
@@ -4414,6 +4452,9 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
     // Root-reference parameters keep tagged storage regardless of how their
     // current value is used. Their full body still passes ordinary checking.
     for(i,p)in f.params.iter().enumerate(){if root_param(&f.name,p){pin[i]=Some(Ty::Dyn);}}
+    // Once defaulted, a parameter keeps the tagged slot in later rounds, so the
+    // fixpoint stays monotone (mutual recursion without evidence, t694).
+    DEFAULT_DYN.with(|m|for (name,i) in m.borrow().iter(){if *name==f.name && *i<n {pin[*i]=Some(Ty::Dyn);}});
     // Method functions: the implicit leading `Self` parameter is pinned
     // to the defining class (no body evidence needed).
     if let Some(ci) = METHOD_CLASS.with(|m| m.borrow().get(&f.name).copied()) {
@@ -5462,6 +5503,13 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
             && f.name != "main" && !METHOD_CLASS.with(|m|m.borrow().contains_key(&f.name))
             && pin.iter().all(|t|matches!(t, None | Some(Ty::I64) | Some(Ty::Dyn) | Some(Ty::Obj(_)))) {
             pin[i] = Some(Ty::Dyn);
+        }
+        // No evidence in the body nor at any call site: the parameter travels in a
+        // tagged slot and accepts any value, as in Harbour. By-reference parameters
+        // keep the rejection: their slot is the caller's.
+        if pin[i].is_none() && DEFAULT_ENABLED.with(|v|v.get()) && !byref_param(&f.name,i) {
+            pin[i] = Some(Ty::Dyn);
+            DEFAULT_DYN.with(|m|{m.borrow_mut().insert((f.name.clone(),i));});
         }
         if pin[i].is_none() && pin_err.is_none() {
             pin_err = Some(format!("cannot infer the type of parameter `{}` of function `{}` (returning or copying it is not enough; print it, use it in arithmetic, or compare it against a value of known type)", p, f.name));
@@ -6837,6 +6885,10 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 // its arm is taken; an owned-variable side moves only
                 // when its arm is taken (laziness keeps single ownership).
                 if matches!(ta, Ty::Str | Ty::StrOwn) && matches!(tb, Ty::Str | Ty::StrOwn) { return Ok(Ty::StrOwn); }
+                if iif_mixed(&args[1], &args[2], ta, tb) {
+                    if MIXED_IIF_OK.with(|s| s.borrow().contains(&(e as *const Expr as usize))) { return Ok(Ty::Dyn); }
+                    return Err(format!("line {}: a mixed-type `iif` result (an owned tagged value) is only supported directly as the last item of an output statement, in an assignment or initializer of a dynamic variable, and in return; consumers such as arithmetic, comparison, hb_ntos, call arguments, indexes and integer slots do not release it when they raise an error", n));
+                }
                 return Err(format!("line {}: `iif` branches must share a scalar type (float absorbs an int side), got {:?} and {:?}", n, ta, tb));
             }
             if ["ltrim", "rtrim", "alltrim", "trim"].iter().any(|b| is_builtin(id,b)) {
@@ -7793,7 +7845,16 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                     sigs[si].nil_ev[i] = true;
                 }
             }
+            // A call with a defaulted-Dyn parameter is screened at runtime for a tag-13 argument (see the call
+            // codegen). That screen releases only flat owned casillas (string, float, Dyn), so in the same call no
+            // other argument may be `@` (its casilla is a slot ADDRESS) or object-typed (its casilla holds a moved or
+            // retained reference): named rejection, a conscious cut of this increment. The checks run INSIDE the
+            // argument loop below, reusing the type already computed there (no second type_expr, no extra moves).
+            let dd_call = CLASSES.with(|c| !c.borrow().is_empty()) && DEFAULT_DYN.with(|m| m.borrow().iter().any(|(nm, j)| *nm == sigs[si].name && *j < args.len()));
             for (i, a) in args.iter().enumerate() {
+                if dd_call && matches!(a, Expr::ByRef(_)) {
+                    return Err(format!("line {}: a `@` argument (argument {}) in a call to `{}`, which has a parameter without type evidence, is outside the dynamic increment in this increment (the boundary screen for object values could not release it)", n, i + 1, id));
+                }
                 // An EXPLICIT NIL argument (an empty Argument in the
                 // source or a literal NIL) is the same boundary event as
                 // a trailing omission: the parameter must carry NIL, so
@@ -7821,10 +7882,18 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                         Expr::Int(_) => Some(Ty::I64),
                         Expr::Str(_) => Some(Ty::Str),
                         Expr::Log(_) => Some(Ty::Bool),
-                        _ => match type_expr(a, env, sigs, n) {
-                            Ok(Ty::F64) => Some(Ty::F64),
-                            Ok(Ty::Date) => Some(Ty::Date),
-                            _ => None,
+                        // This is an evidence-only pass: it must not leave moves behind, or the
+                        // real check of the same argument (below) sees its owned variables as
+                        // already moved (F(G(s), d) was rejected as a use after move).
+                        _ => {
+                            let saved: Vec<Local> = env.to_vec();
+                            let ty = type_expr(a, env, sigs, n);
+                            env.clone_from_slice(&saved);
+                            match ty {
+                                Ok(Ty::F64) => Some(Ty::F64),
+                                Ok(Ty::Date) => Some(Ty::Date),
+                                _ => None,
+                            }
                         },
                     };
                     if let Some(e) = ev {
@@ -8057,6 +8126,9 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                     }
                 }
                 let ta = type_expr(a, env, sigs, n)?;
+                if dd_call && matches!(ta, Ty::Obj(_)) && !DEFAULT_DYN.with(|m| m.borrow().contains(&(sigs[si].name.clone(), i))) {
+                    return Err(format!("line {}: an object argument (argument {}) in a call to `{}`, which has a parameter without type evidence, is outside the dynamic increment in this increment (the boundary screen for object values could not release its reference)", n, i + 1, id));
+                }
                 if ta == Ty::AView && !sig_aview[i] {
                     // ains piece 1b (transitive fixpoint): passing a view
                     // parameter whole forces the callee position into the
@@ -8114,6 +8186,25 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 // unreachable.
                 if ta == Ty::Hash && !matches!(a, Expr::Var(_)) {
                     return Err(format!("line {}: a hash argument is a variable in this increment (assign the literal first)", n));
+                }
+                // A parameter that only reached the tagged slot because no evidence
+                // existed (DEFAULT_DYN) must never receive the shared module array or
+                // an alias of it: Harbour would alias the one object (probe p6), and
+                // the defaulted slot would accept it silently because the types agree.
+                // Checked before the acceptance test so inference converging to Dyn
+                // cannot skip it.
+                if let Expr::Var(v) = a {
+                    if module_static::current(v) == Some(Ty::Dyn) && DEFAULT_DYN.with(|m| m.borrow().contains(&(sigs[si].name.clone(), i))) {
+                        return Err(format!("line {}: passing the shared module array `{}` as argument {} of `{}` is outside the dynamic increment in this increment (Harbour would alias the one object; measured in probe p6, deferred)", n, v, i + 1, id));
+                    }
+                }
+                // A defaulted-Dyn parameter (no body evidence of its type) never receives an
+                // object: Harbour shares the one object, and every consumer of the returned
+                // tagged reference (print, FILE, SET, sequence temporaries, ...) would need its
+                // own tag-13 release (probed: print item, LOCAL init in a loop, FILE, SET, multi-item print and a
+// discarded call each leaked one reference per turn). Named rejection, not an ownership claim.
+                if matches!(ta, Ty::Obj(_)) && DEFAULT_DYN.with(|m| m.borrow().contains(&(sigs[si].name.clone(), i))) {
+                    return Err(format!("line {}: passing an object as argument {} of `{}` is outside the dynamic increment in this increment (the parameter has no type evidence and defaults to the tagged slot, whose returned object reference would need a per-consumer release)", n, i + 1, id));
                 }
                 let ok = ta == sig_params[i]
                     || (ta == Ty::Dyn && sig_params[i] == Ty::I64)  // runtime extract (nil -> clean type error)
@@ -8201,7 +8292,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
             // Dyn+Dyn with '+' and no DBF: runtime dispatch. Two string
             // payloads concatenate, two integer payloads add; the static
             // result is a Dyn cell (owned for strings).
-            if *op == '+' && ta == Ty::Dyn && tb == Ty::Dyn && !DBF_USED.with(|v| v.get()) && dynplus_marked(e) {
+            if ((matches!(*op, '+' | '-' | '*') && ta == Ty::Dyn && tb == Ty::Dyn) || mul_mixed_tys(*op, ta, tb)) && !DBF_USED.with(|v| v.get()) && dynplus_marked(e) {
                 return Ok(Ty::Dyn);
             }
             if *op == '+' && ((ta == Ty::Dyn && matches!(tb, Ty::Str | Ty::StrOwn)) || (tb == Ty::Dyn && matches!(ta, Ty::Str | Ty::StrOwn))) {
@@ -9569,6 +9660,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 if env.iter().any(|v| v.name == *id) {
                     return Err(format!("line {}: duplicate local `{}`", n, id));
                 }
+                if matches!(s, Stmt::Local(..)) { allow_mixed_iif(e); }
                 // ains piece 1a: a Dyn-cell read borrowed from a DArrDyn
                 // cannot be STORED into a variable - the cell owns its
                 // payload and a Dyn local would free it again at scope
@@ -9633,6 +9725,10 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 }
             }
             Stmt::Print(n, es, _) => {
+                // Only the LAST item: earlier items are evaluated before the
+                // render, and a Break in a later item unwinds past the pending
+                // owned cell (measured leak, N=1/500).
+                if let Some(e) = es.last() { allow_mixed_iif(e); }
                 for e in es { mark_dynplus(e, env, sigs, *n); }
                 // ains P2 stage 1 closure (independent-review blocker):
                 // an output statement that borrows a Dyn root's cells
@@ -9705,6 +9801,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 if ctxs.iter().any(|c| c.is_fin) {
                     return Err(format!("line {}: `return` from within a FINALLY block is not in this increment (Harbour defers it through the unwind; CATCH bodies take a normal `return`)", n));
                 }
+                allow_mixed_iif(e);
                 let t = type_expr(e, env, sigs, *n)?;
                 if t==Ty::NumLocal {return Err(format!("line {}: mixed numeric LOCAL return ABI is not in this increment",n));}
                 if t == Ty::F64 {
@@ -11054,6 +11151,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 else {env.push(Local{name:id.clone(),ty:Ty::Dyn,moved:false,ro:false,byref:false});}
             }
             Stmt::Assign(n, id, e) => {
+                if env.iter().rev().find(|v| v.name == *id).map_or(false, |v| v.ty == Ty::Dyn) { allow_mixed_iif(e); }
                 if env.iter().rev().find(|v| v.name == *id).map_or(false, |v| v.ty == Ty::Dyn) { mark_dynplus(e, env, sigs, *n); }
                 // S4: a Dyn copy of a shared module array aliases the
                 // same object; register the target as a shared-array name.
@@ -14316,6 +14414,13 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             let tb = expr_ty(&args[2], env, sigs);
             let k = fresh_lbl();
             cg_cond_jump(&args[0], env, sigs, strs, out, target, &format!(".Liift{}", k));
+            if iif_mixed(&args[1], &args[2], ta, tb) {
+                cg_iif_tagged(&args[2], env, sigs, strs, out, target);
+                out.push_str(&format!("    jmp .Liife{}\n.Liift{}:\n", k, k));
+                cg_iif_tagged(&args[1], env, sigs, strs, out, target);
+                out.push_str(&format!(".Liife{}:\n", k));
+                return;
+            }
             let mut f64side = |t: Ty, a: &Expr, out: &mut String| {
                 if t == Ty::F64 {
                     cg_f64_load(a, env, sigs, strs, out, target);
@@ -16806,6 +16911,8 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             // against the pre-move environment, so `len(a)` there is a
             // legal read of the still-live value.
             let mut moved_nulls: Vec<(usize, usize)> = Vec::new();
+            // Dyn arguments into a defaulted-Dyn parameter that must be screened for a tag-13 object at runtime: (argument index, owned temporary?).
+            let mut dd_checks: Vec<(usize, bool)> = Vec::new();
             for (ai, a) in args.iter().enumerate() {
                 if psig.as_ref().and_then(|p|p.get(ai)) == Some(&Ty::AView) {
                     match a {
@@ -16990,8 +17097,13 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                     continue;
                 }
                 if ta == Ty::Dyn {
-                    // The callee OWNS its Dyn parameter (freed at its
-                    // epilogue like any owned param): a string payload is
+                    if pty == Some(Ty::Dyn) && CLASSES.with(|c| !c.borrow().is_empty()) && DEFAULT_DYN.with(|m| m.borrow().contains(&(id.clone(), ai))) {
+                        // Defaulted-Dyn parameter (no body evidence): an object held by a
+                        // Dyn value is never transferred to it. The check runs after ALL
+                        // arguments are materialized (the screen below), before the call.
+                        dd_checks.push((ai, dyn_expr_owned(a)));
+                    }
+                    // The callee OWNS its Dyn parameter (freed at its epilogue like any owned param): a string payload is
                     // cloned at the boundary so caller and callee never
                     // share an allocation.
                     if !dyn_expr_owned(a) { cg_dyn_clone_if_str(out); }
@@ -17044,6 +17156,48 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             let total = psig.as_ref().map(|p| p.len()).unwrap_or(args.len());
             for _ in args.len()..total {
                 out.push_str("    sub $16, %rsp\n    movq $1, (%rsp)\n    movq $0, 8(%rsp)\n");
+            }
+            if !dd_checks.is_empty() {
+                // Runtime screen of defaulted-Dyn parameters. A tag-13 casilla is NOT handed over: after every
+                // argument has been evaluated and pushed (same order as the existing NIL-object protocol), the
+                // owned casillas are released (a borrowed object is never released; an owned temporary object is),
+                // then the named error is raised. The callee never starts.
+                if let Some(params) = &psig {
+                    if params.iter().any(|t| matches!(t, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::Hash)) {
+                        let line = TRACE_LINE.with(|v| v.get());
+                        let at = if line > 0 { format!("line {}: ", line) } else { String::new() };
+                        eprintln!("error: {}an owned array or hash argument cannot be combined with a Dyn argument to an untyped parameter of `{}` in the same call in this increment (the boundary screen could not release it)", at, id);
+                        process::exit(1);
+                    }
+                }
+                let k = fresh_lbl();
+                let ok_l = format!(".Lddok{k}");
+                let bad_l = format!(".Lddbad{k}");
+                for (ai, _) in &dd_checks {
+                    let off = 16 * (total - 1 - ai);
+                    out.push_str(&format!("    @HBC_TAG_KIND@cmpq $13, {off}(%rsp)@HBC_TAG_END@\n    je {bad_l}\n"));
+                }
+                out.push_str(&format!("    jmp {ok_l}\n{bad_l}:\n"));
+                if let Some(params) = &psig {
+                    for (i, t) in params.iter().enumerate().take(args.len()) {
+                        let off = 16 * (total - 1 - i);
+                        // defensive: a `@` casilla is a slot ADDRESS and an object casilla holds a reference; both are rejected at compile time in such a call
+                        if matches!(args[i], Expr::ByRef(_)) || matches!(t, Ty::Obj(_)) { continue; }
+                        match t {
+                            Ty::StrOwn => out.push_str(&format!("    mov {}(%rsp), %rdi\n    test %rdi, %rdi\n    je 81f\n    call hbc_freestr\n81:\n", off)),
+                            Ty::Dyn => {
+                                cg_dyn_stack_release(out, off, false);
+                                // tag 13: only an owned temporary releases its object
+                                if dyn_expr_owned(&args[i]) {
+                                    let kk = fresh_lbl();
+                                    out.push_str(&format!("    @HBC_TAG_KIND@cmpq $13, {off}(%rsp)@HBC_TAG_END@\n    jne .Lddn{kk}\n    mov {}(%rsp), %rdi\n    test %rdi, %rdi\n    je .Lddn{kk}\n    call hrobj_release\n.Lddn{kk}:\n", off + 8));
+                                }
+                            }
+                            _ => {}
+                        }
+                    }
+                }
+                out.push_str(&format!("    call hbc_objdyn_error\n{ok_l}:\n"));
             }
             let brmask: Vec<bool> = args.iter().map(|a| matches!(a, Expr::ByRef(_))).collect();
             let call_lbl = if brmask.iter().any(|b| *b) {
@@ -17451,6 +17605,10 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             }
             if *op == '+' && expr_ty(a,env,sigs)==Ty::Dyn && expr_ty(b,env,sigs)==Ty::Dyn && !DBF_USED.with(|v| v.get()) && dynplus_marked(e) {
                 cg_dyn_dyn_plus(a,b,env,sigs,strs,out,target);
+                return;
+            }
+            if matches!(*op, '*' | '-' | '+') && { let (xa,xb)=(expr_ty(a,env,sigs),expr_ty(b,env,sigs)); (*op != '+' && xa==Ty::Dyn && xb==Ty::Dyn) || mul_mixed_tys(*op,xa,xb) } && !DBF_USED.with(|v| v.get()) && dynplus_marked(e) {
+                cg_dyn_dyn_mul(*op,a,b,env,sigs,strs,out,target);
                 return;
             }
             if *op == '+' && ((expr_ty(a,env,sigs)==Ty::Dyn && matches!(expr_ty(b,env,sigs),Ty::Str|Ty::StrOwn)) || (expr_ty(b,env,sigs)==Ty::Dyn && matches!(expr_ty(a,env,sigs),Ty::Str|Ty::StrOwn))) {
@@ -18398,7 +18556,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
 
             if matches!(ta, Ty::Str | Ty::StrOwn) || matches!(tb, Ty::Str | Ty::StrOwn) {
                 Ty::StrOwn
-            } else if *op == '+' && ta == Ty::Dyn && tb == Ty::Dyn && !DBF_USED.with(|v| v.get()) && dynplus_marked(e) {
+            } else if ((matches!(*op, '+' | '-' | '*') && ta == Ty::Dyn && tb == Ty::Dyn) || mul_mixed_tys(*op, ta, tb)) && !DBF_USED.with(|v| v.get()) && dynplus_marked(e) {
                 // Mirror of type_expr: Dyn+Dyn runtime dispatch, Dyn cell.
                 Ty::Dyn
             } else if matches!(*op, '+' | '-' | '*' | '/' | '%' | '^')
@@ -18531,6 +18689,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
                 // Branch unification mirrors the checker (oracle hk321).
                 let ta = expr_ty(&args[1], env, sigs);
                 let tb = expr_ty(&args[2], env, sigs);
+                if iif_mixed(&args[1], &args[2], ta, tb) { return Ty::Dyn; }
                 return if ta == Ty::F64 || tb == Ty::F64 { Ty::F64 }
                     else if matches!(ta, Ty::StrOwn) || matches!(tb, Ty::StrOwn) { Ty::StrOwn } else { ta };
             }
@@ -18819,13 +18978,44 @@ fn obj_fresh(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> bool {
 // into a fresh owned tag-4 copy. Scalar tags pass through untouched.
 // A language call produces its own temporary; sequence tails preserve that
 // ownership. IIF Dyn arms are normalized on the selected branch below.
+// iif() whose branches are scalars of DIFFERENT types (string, integer,
+// logical, float) or one scalar and a literal NIL. The taken branch keeps
+// its own type, so the result is a fresh OWNED Dyn cell (tag + payload).
+// Deliberately narrow: no Dyn variables/calls/DATA, objects, arrays, blocks,
+// dates or raw array cells as arms; those keep the named rejection.
+fn iif_mixed(a: &Expr, b: &Expr, ta: Ty, tb: Ty) -> bool {
+    let arm = |e: &Expr, t: Ty| matches!(t, Ty::I64 | Ty::Bool | Ty::Str | Ty::StrOwn | Ty::F64) || matches!(e, Expr::Nil);
+    if !arm(a, ta) || !arm(b, tb) { return false; }
+    if matches!(a, Expr::Nil) && matches!(b, Expr::Nil) { return false; }
+    if ta == tb { return false; }
+    if matches!((ta, tb), (Ty::F64, Ty::I64) | (Ty::I64, Ty::F64)) { return false; }
+    if matches!(ta, Ty::Str | Ty::StrOwn) && matches!(tb, Ty::Str | Ty::StrOwn) { return false; }
+    true
+}
+// One arm of a mixed iif as an owned tagged cell (rax = tag, rdx = payload).
+// An owned-string variable MOVES its buffer on the taken path (the checker
+// already treats an iif owned-string arm as moved); every other string is
+// copied, as DATA does.
+fn cg_iif_tagged(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target) {
+    match e {
+        Expr::Nil => cg_expr(e, env, sigs, strs, out, target),
+        Expr::Var(v) if env.iter().any(|x| x.name == *v && x.ty == Ty::StrOwn) => {
+            cg_value(e, env, sigs, strs, out, target);
+            if let Some(lv) = env.iter().find(|x| x.name == *v && x.ty == Ty::StrOwn) {
+                out.push_str(&format!("    movq $0, -{}(%rbp)\n", lv.off));
+            }
+            out.push_str("    mov %rax, %rdx\n    mov $4, %eax\n");
+        }
+        _ => cg_data_value(e, env, sigs, strs, out, target),
+    }
+}
 fn dyn_expr_owned(e: &Expr) -> bool {
     match e {
         Expr::Var(id)=>CG_MEMVAR_NAMES.with(|c|c.borrow().contains(id)),
         Expr::Call(..) | Expr::Send(..) | Expr::SelfGet(..) => true,
         Expr::Seq(es) => es.last().map_or(false, dyn_expr_owned),
         // Dyn+Dyn runtime '+' yields a fresh cell (owned string or integer).
-        Expr::Bin('+',..) => dynplus_marked(e),
+        Expr::Bin('+' | '-' | '*',..) => dynplus_marked(e),
         _ => false,
     }
 }
@@ -18871,6 +19061,12 @@ fn cg_concat_snapshot_ex(e:&Expr,env:&[CgLocal],sigs:&[Sig],strs:&mut Vec<String
         // Dyn+Dyn dispatch keeps an integer payload (tag 0) unchanged:
         // nothing heap-owned, nothing to copy or release.
         if keep_int { out.push_str(&format!("    @HBC_TAG_KIND@cmp $0, %rax@HBC_TAG_END@\n    je .Lcsdone{k}\n    @HBC_TAG_KIND@cmp $9, %rax@HBC_TAG_END@\n    je .Lcsdone{k}\n")); }
+        // Dyn+Dyn also keeps a float payload: an owned clone of a borrowed one (a legacy inline float owns nothing).
+        if keep_int {
+            out.push_str(&format!("    cmp $5, %al\n    jne .Lcsnf{k}\n"));
+            if !dyn_expr_owned(e) { out.push_str("    call hbc_float_clone\n"); }
+            out.push_str(&format!("    jmp .Lcsdone{k}\n.Lcsnf{k}:\n"));
+        }
         out.push_str(&format!("    @HBC_TAG_KIND@cmp $2, %rax@HBC_TAG_END@\n    je .Lcscopy{k}\n    @HBC_TAG_KIND@cmp $4, %rax@HBC_TAG_END@\n"));
         if dyn_expr_owned(e) {
             out.push_str(&format!("    jmp .Lcsdone{k}\n"));
@@ -18908,9 +19104,51 @@ fn cg_dyn_dyn_plus(a:&Expr,b:&Expr,env:&[CgLocal],sigs:&[Sig],strs:&mut Vec<Stri
     out.push_str("    mov %rax, 32(%rsp)\n    mov %rdx, 40(%rsp)\n");
     cg_concat_drop(out,0);cg_concat_drop(out,16);
     let (ovf, ovfl) = if CHECKED_I64.with(|c| c.get()) { (format!("    jo .Lcsovf{}\n", k), format!(".Lcsovf{}:\n    add $64, %rsp\n    jmp hbc_static_overflow\n", k)) } else { (String::new(), String::new()) };
-    out.push_str(&format!("    mov 32(%rsp), %rdx\n    mov $4, %eax\n    add $64, %rsp\n    jmp .Lcsend{k}\n.Lcsint{k}:\n    @HBC_TAG_KIND@cmpq $0, (%rsp)@HBC_TAG_END@\n    je .Lcsi1{k}\n    @HBC_TAG_KIND@cmpq $9, (%rsp)@HBC_TAG_END@\n    jne .Lcserror{k}\n.Lcsi1{k}:\n    @HBC_TAG_KIND@cmpq $0, 16(%rsp)@HBC_TAG_END@\n    je .Lcsi2{k}\n    @HBC_TAG_KIND@cmpq $9, 16(%rsp)@HBC_TAG_END@\n    jne .Lcserror{k}\n.Lcsi2{k}:\n    mov 8(%rsp), %rdx\n    add 24(%rsp), %rdx\n{ovf}    xor %eax, %eax\n    add $64, %rsp\n    jmp .Lcsend{k}\n{ovfl}.Lcserror{k}:\n"));
+    out.push_str(&format!("    mov 32(%rsp), %rdx\n    mov $4, %eax\n    add $64, %rsp\n    jmp .Lcsend{k}\n.Lcsint{k}:\n    @HBC_TAG_KIND@cmpq $0, (%rsp)@HBC_TAG_END@\n    je .Lcsi1{k}\n    @HBC_TAG_KIND@cmpq $9, (%rsp)@HBC_TAG_END@\n    jne .Lcsmix{k}\n.Lcsi1{k}:\n    @HBC_TAG_KIND@cmpq $0, 16(%rsp)@HBC_TAG_END@\n    je .Lcsi2{k}\n    @HBC_TAG_KIND@cmpq $9, 16(%rsp)@HBC_TAG_END@\n    jne .Lcsmix{k}\n.Lcsi2{k}:\n    mov 8(%rsp), %rdx\n    add 24(%rsp), %rdx\n{ovf}    xor %eax, %eax\n    add $64, %rsp\n    jmp .Lcsend{k}\n{ovfl}.Lcsmix{k}:\n    mov (%rsp), %rdi\n    mov 8(%rsp), %rsi\n    mov 16(%rsp), %rdx\n    mov 24(%rsp), %rcx\n    call hbc_dyn_addf\n    cmp $-1, %rax\n    je .Lcserror{k}\n    mov %rax, 32(%rsp)\n    mov %rdx, 40(%rsp)\n"));
+    cg_concat_drop(out,0);cg_concat_drop(out,16);
+    out.push_str(&format!("    mov 32(%rsp), %rax\n    mov 40(%rsp), %rdx\n    add $64, %rsp\n    jmp .Lcsend{k}\n.Lcserror{k}:\n"));
     cg_concat_drop(out,0);cg_concat_drop(out,16);
     out.push_str(&format!("    add $64, %rsp\n    jmp hbc_strarg_error\n.Lcscatch{k}:\n"));
+    cg_concat_drop(out,0);cg_concat_drop(out,16);
+    out.push_str(&format!("    add $64, %rsp\n    jmp hbc_seq_unwind\n.Lcsend{k}:\n"));
+}
+
+// Dyn*Dyn (marked: only under the Dyn consumers dyn-dyn-plus already uses). Both integer payloads keep the
+// integer product; a float on either side multiplies as doubles (dec = sum of the operands' dec, like Harbour's
+// hb_vmMult) into an owned heap float. Any other kind is a type error after BOTH operands evaluated.
+// Operand snapshots are exclusively owned: borrowed floats are cloned, borrowed non-numbers become NIL.
+fn cg_mul_snapshot(e:&Expr,env:&[CgLocal],sigs:&[Sig],strs:&mut Vec<String>,out:&mut String,target:Target) {
+    if expr_ty(e,env,sigs)==Ty::I64 {
+        // static integer operand: an integer cell (tag 0), nothing to own
+        cg_expr(e,env,sigs,strs,out,target);
+        out.push_str("    mov %rax, %rdx\n    xor %eax, %eax\n");
+        return;
+    }
+    if expr_ty(e,env,sigs)==Ty::F64 {
+        // static float operand: an owned heap float pair (dec and width from the static metadata)
+        cg_data_value(e,env,sigs,strs,out,target);
+        return;
+    }
+    cg_value(e,env,sigs,strs,out,target);
+    let k=fresh_lbl();
+    out.push_str(&format!("    @HBC_TAG_KIND@cmp $0, %rax@HBC_TAG_END@\n    je .Lmsdone{k}\n    @HBC_TAG_KIND@cmp $9, %rax@HBC_TAG_END@\n    je .Lmsdone{k}\n    cmp $5, %al\n    jne .Lmsnf{k}\n"));
+    if !dyn_expr_owned(e) { out.push_str("    call hbc_float_clone\n"); }
+    out.push_str(&format!("    jmp .Lmsdone{k}\n.Lmsnf{k}:\n"));
+    if !dyn_expr_owned(e) { out.push_str("    mov $1, %eax\n    xor %edx, %edx\n"); }
+    out.push_str(&format!(".Lmsdone{k}:\n"));
+}
+fn cg_dyn_dyn_mul(op:char,a:&Expr,b:&Expr,env:&[CgLocal],sigs:&[Sig],strs:&mut Vec<String>,out:&mut String,target:Target) {
+    let k=fresh_lbl();
+    let (iop,hf)=match op {'+'=>("add","hbc_dyn_addf"),'-'=>("sub","hbc_dyn_subf"),_=>("imul","hbc_dyn_mulf")};
+    cg_mul_snapshot(a,env,sigs,strs,out,target);
+    out.push_str(&format!("    sub $64, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n    movq $1, 16(%rsp)\n    movq $0, 24(%rsp)\n    movq $0, 48(%rsp)\n    cmpq $0, hbc_seq_depth(%rip)\n    je .Lcseval{k}\n    lea .Lcscatch{k}(%rip), %rdi\n    call hbc_seq_push\n    movq $1, 48(%rsp)\n.Lcseval{k}:\n"));
+    cg_mul_snapshot(b,env,sigs,strs,out,target);
+    let (ovf, ovfl) = if CHECKED_I64.with(|c| c.get()) { (format!("    jo .Lcsovf{}\n", k), format!(".Lcsovf{}:\n    add $64, %rsp\n    jmp hbc_static_overflow\n", k)) } else { (String::new(), String::new()) };
+    out.push_str(&format!("    mov %rax, 16(%rsp)\n    mov %rdx, 24(%rsp)\n    cmpq $0, 48(%rsp)\n    je .Lcscheck{k}\n    call hbc_seq_pop\n.Lcscheck{k}:\n    @HBC_TAG_KIND@cmpq $0, (%rsp)@HBC_TAG_END@\n    je .Lcsi1{k}\n    @HBC_TAG_KIND@cmpq $9, (%rsp)@HBC_TAG_END@\n    jne .Lcsmix{k}\n.Lcsi1{k}:\n    @HBC_TAG_KIND@cmpq $0, 16(%rsp)@HBC_TAG_END@\n    je .Lcsi2{k}\n    @HBC_TAG_KIND@cmpq $9, 16(%rsp)@HBC_TAG_END@\n    jne .Lcsmix{k}\n.Lcsi2{k}:\n    mov 8(%rsp), %rdx\n    {iop} 24(%rsp), %rdx\n{ovf}    xor %eax, %eax\n    add $64, %rsp\n    jmp .Lcsend{k}\n{ovfl}.Lcsmix{k}:\n    mov (%rsp), %rdi\n    mov 8(%rsp), %rsi\n    mov 16(%rsp), %rdx\n    mov 24(%rsp), %rcx\n    call {hf}\n    cmp $-1, %rax\n    je .Lcserror{k}\n    mov %rax, 32(%rsp)\n    mov %rdx, 40(%rsp)\n"));
+    cg_concat_drop(out,0);cg_concat_drop(out,16);
+    out.push_str(&format!("    mov 32(%rsp), %rax\n    mov 40(%rsp), %rdx\n    add $64, %rsp\n    jmp .Lcsend{k}\n.Lcserror{k}:\n"));
+    cg_concat_drop(out,0);cg_concat_drop(out,16);
+    out.push_str(&format!("    add $64, %rsp\n    jmp hbc_type_error\n.Lcscatch{k}:\n"));
     cg_concat_drop(out,0);cg_concat_drop(out,16);
     out.push_str(&format!("    add $64, %rsp\n    jmp hbc_seq_unwind\n.Lcsend{k}:\n"));
 }
@@ -19698,7 +19936,31 @@ fn cg_print_items(es: &[Expr], inline: bool, raw: bool, stderr: bool, env: &[CgL
                 // tag-2/4 payload) and the clone is freed after printing;
                 // owned temporaries keep their existing release path.
                 let dyn_cell_borrow = |e: &Expr, env: &[CgLocal]| hash_cell_borrow(e,env) || matches!(e, Expr::Index(v, _) if env.iter().any(|x| x.name == *v && matches!(x.ty, Ty::DArrDyn | Ty::Dyn | Ty::RefDyn)));
-                for e in es {
+                // Pending pairs vs a throw in a LATER item. Every owned pair already pushed
+                // (Dyn float/string cells, owned string temporaries) is released by a landing
+                // pad before the same error keeps unwinding; evaluation and output order are
+                // unchanged. Pairs of other kinds keep their previous behaviour (not released).
+                // pend_kind: 1 = Dyn pair (float cell / tag-4 string released like the render
+                // does), 2 = owned string temporary (pointer in the tag slot), 0 = nothing.
+                let pend_kind = |e: &Expr| -> u8 {
+                    if cg_iif_out_rawdyn(e, env, sigs).is_some() || darr2_child(e, env) || darrs_elem(e, env) || renders_empty(e) { return 0; }
+                    match expr_ty(e, env, sigs) {
+                        Ty::Dyn => 1,
+                        Ty::StrOwn if matches!(e, Expr::Call(..) | Expr::Bin(..)) => 2,
+                        _ => 0,
+                    }
+                };
+                let pad_n = es.len();
+                let pad_kinds: Vec<u8> = es.iter().map(|e| pend_kind(e)).collect();
+                let pad = pad_n >= 2 && pad_kinds[..pad_n - 1].iter().any(|k| *k != 0);
+                let pad_k = if pad { fresh_lbl() } else { 0 };
+                if pad {
+                    out.push_str(&format!("    sub $16, %rsp\n    movq $0, (%rsp)\n    movq $0, 8(%rsp)\n    cmpq $0, hbc_seq_depth(%rip)\n    je .Lppev{k}\n    lea .Lppcatch{k}(%rip), %rdi\n    call hbc_seq_push\n    movq $1, 8(%rsp)\n.Lppev{k}:\n", k = pad_k));
+                }
+                for (item_idx, e) in es.iter().enumerate() {
+                    if pad && item_idx > 0 {
+                        out.push_str(&format!("    movq ${}, {}(%rsp)\n", item_idx, 16 * item_idx));
+                    }
                     if let Some((cond, arm1, arm2, cell1)) = cg_iif_out_rawdyn(e, env, sigs) {
                         // Evaluate the condition ONCE, then only the chosen
                         // arm (iif laziness, hk321). Both arms push a
@@ -19800,6 +20062,28 @@ fn cg_print_items(es: &[Expr], inline: bool, raw: bool, stderr: bool, env: &[CgL
                     }
                     cg_value(e, env, sigs, strs, out, target);
                     out.push_str("    push %rdx\n    push %rax\n");
+                }
+                if pad {
+                    let n = pad_n;
+                    let k = pad_k;
+                    // all items evaluated: drop the pad, then move the pairs up over the slot
+                    out.push_str(&format!("    cmpq $0, {}(%rsp)\n    je .Lppnp{k}\n    call hbc_seq_pop\n.Lppnp{k}:\n", 16 * n + 8, k = k));
+                    for w in (0..2 * n).rev() {
+                        out.push_str(&format!("    mov {}(%rsp), %r11\n    mov %r11, {}(%rsp)\n", 8 * w, 8 * w + 16));
+                    }
+                    out.push_str(&format!("    add $16, %rsp\n    jmp .Lppdone{k}\n.Lppcatch{k}:\n    sub ${}, %rsp\n", 16 * n, k = k));
+                    for i in 0..n - 1 {
+                        if pad_kinds[i] == 0 { continue; }
+                        let off = 16 * (n - 1 - i);
+                        out.push_str(&format!("    cmpq ${}, {}(%rsp)\n    jle .Lppnx{k}_{i}\n", i, 16 * n, k = k, i = i));
+                        if pad_kinds[i] == 1 {
+                            cg_dyn_stack_release(out, off, false);
+                        } else {
+                            out.push_str(&format!("    mov {}(%rsp), %rdi\n    call hbc_freestr\n", off));
+                        }
+                        out.push_str(&format!(".Lppnx{k}_{i}:\n", k = k, i = i));
+                    }
+                    out.push_str(&format!("    add ${}, %rsp\n    jmp hbc_seq_unwind\n.Lppdone{k}:\n", 16 * n + 16, k = k));
                 }
                 // `??` skips ONLY the leading newline (hk274-hk276;
                 // the comment's further claim of a per-statement `??`
@@ -21207,6 +21491,11 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
             }
             Stmt::CatchBind(_, var) => {
                 let off = env.iter().rev().find(|v| v.name == *var).expect("checked").off;
+                // The catch slot may still own the exception (or any other
+                // value) from an earlier round of a loop: release it like
+                // every other store into a Dyn slot before the new
+                // exception takes over (a bare store leaked N-1 cells).
+                cg_dyn_free_old(out, off);
                 out.push_str("    call hbc_seq_exc_take
 ");
                 out.push_str(&format!("    mov %rax, -{}(%rbp)
@@ -29317,6 +29606,18 @@ hbc_objnil_error:
     mov $1, %edi
     syscall
 
+hbc_objdyn_error:
+    cmpq $0, hbc_seq_depth(%rip)
+    jne .Lseqt_objdyn
+    lea .Lobjdymsg(%rip), %rsi
+    mov $28, %edx
+    mov $1, %eax
+    mov $1, %edi
+    syscall
+    mov $60, %eax
+    mov $1, %edi
+    syscall
+
 hbc_divarg_error:
     cmpq $0, hbc_seq_depth(%rip)
     jne .Lseqt_divarg
@@ -30218,6 +30519,9 @@ hbc_seq_unwind:
 .Lseqt_objnil:
     lea .LseqD_objnil(%rip), %rsi
     jmp hbc_seq_throw_error
+.Lseqt_objdyn:
+    lea .LseqD_objdyn(%rip), %rsi
+    jmp hbc_seq_throw_error
 .Lseqt_divarg:
     lea .LseqD_divarg(%rip), %rsi
     jmp hbc_seq_throw_error
@@ -30525,7 +30829,7 @@ fn finalize_trace(mut out: String, target: Target) -> String {
         });
     }
     if out.contains("call hbc_seconds") {
-        out.push_str(match target {Target::Windows=>SECONDS_WINDOWS,_=>SECONDS_LINUX});
+        out.push_str(if MACHO_MODE.with(|v| v.get()) { SECONDS_DARWIN } else { match target {Target::Windows=>SECONDS_WINDOWS,_=>SECONDS_LINUX} });
     }
     // Add private stderr variants only when used. No mutable routing state:
     // nested OutStd/QOut and controlled diagnostics retain their destination.
@@ -30713,7 +31017,9 @@ fn emit_strings(out: &mut String, strs: &[String]) {
     out.push_str(".Losbadmsg:\n    .byte 73,110,116,101,114,110,97,108,32,101,114,114,111,114,58,32,79,83,32,102,114,101,101,32,102,97,105,108,101,100,10\n");
     out.push_str(".Lregbadmsg:\n    .byte 73,110,116,101,114,110,97,108,32,101,114,114,111,114,58,32,97,108,108,111,99,97,116,105,111,110,32,114,101,103,105,115,116,114,121,32,109,105,115,109,97,116,99,104,10\n");
     out.push_str(".Lobjnilmsg:\n    .byte 79,98,106,101,99,116,32,97,99,99,101,115,115,32,111,110,32,78,73,76,10\n");
+    out.push_str(".Lobjdymsg:\n    .byte 79,98,106,101,99,116,32,105,110,32,117,110,116,121,112,101,100,32,112,97,114,97,109,101,116,101,114,10\n");
     out.push_str(".quad 20\n.LseqD_objnil:\n    .byte 79,98,106,101,99,116,32,97,99,99,101,115,115,32,111,110,32,78,73,76\n");
+    out.push_str(".quad 27\n.LseqD_objdyn:\n    .byte 79,98,106,101,99,116,32,105,110,32,117,110,116,121,112,101,100,32,112,97,114,97,109,101,116,101,114\n");
     out.push_str(".Ldivargmsg:\n    .byte 65,114,103,117,109,101,110,116,32,101,114,114,111,114,58,32,47,10\n");
     out.push_str(".quad 17\n.LseqD_divarg:\n    .byte 65,114,103,117,109,101,110,116,32,101,114,114,111,114,58,32,47\n");
     out.push_str(".Lstrargmsg:\n    .byte 65,114,103,117,109,101,110,116,32,101,114,114,111,114,58,32,43,10\n");
@@ -32399,6 +32705,19 @@ hbc_objnil_error:
     mov $1, %ecx
     call ExitProcess
 
+hbc_objdyn_error:
+    cmpq $0, hbc_seq_depth(%rip)
+    jne .Lseqt_objdyn
+    push %rbp
+    mov %rsp, %rbp
+    and $-16, %rsp
+    sub $48, %rsp
+    lea .Lobjdymsg(%rip), %rax
+    mov $28, %edx
+    call hbc_print_str
+    mov $1, %ecx
+    call ExitProcess
+
 hbc_divarg_error:
     cmpq $0, hbc_seq_depth(%rip)
     jne .Lseqt_divarg
@@ -33482,6 +33801,9 @@ hbc_seq_unwind:
 .Lseqt_objnil:
     lea .LseqD_objnil(%rip), %rsi
     jmp hbc_seq_throw_error
+.Lseqt_objdyn:
+    lea .LseqD_objdyn(%rip), %rsi
+    jmp hbc_seq_throw_error
 .Lseqt_divarg:
     lea .LseqD_divarg(%rip), %rsi
     jmp hbc_seq_throw_error
@@ -33912,6 +34234,7 @@ fn main() {
     for f in &funcs {
         scan_byref_stmts(&f.stmts, &f.name, &mut byref_params, &mut byref_locals, &mut byref_variants);
     }
+    BYREF_PARAMS.with(|m|*m.borrow_mut()=byref_params.clone());
 
     // Pass 1: semantic analysis - types, ownership/move, signatures.
     // ORDER-INDEPENDENT inference (oracle hk253: Harbour resolves calls
@@ -34026,6 +34349,7 @@ fn main() {
         // recording cannot rest on a stale mid-convergence reading.
         let mut first_err: Option<String> = None;
         let mut first_pin_err: Option<String> = None;
+        let mut uninferred_parameter = false;
         for (fi, f) in funcs.iter_mut().enumerate() {
             if f.name == "main" { has_main = true; }
             // Pin parameter types. On failure, keep the PREVIOUS view entry
@@ -34154,6 +34478,7 @@ fn main() {
                 if std::env::var("HBC_INFER_TRACE").is_ok() {
                     eprintln!("infer round {}: {} pin_err: {}", round, f.name, m);
                 }
+                if m.starts_with("cannot infer the type of parameter") { uninferred_parameter = true; }
                 if first_pin_err.is_none() { first_pin_err = Some(m); }
             }
             cur.push(Sig { name: f.name.clone(), string_iter_copy: view[fi].string_iter_copy.clone(), nil_ret_only: view[fi].nil_ret_only, borrowed: vec![false; ptys.len()], arr_moved: vec![false; ptys.len()], aview: vec![false; ptys.len()], params: ptys.clone(), ret, inferred, arg_ev: view[fi].arg_ev.clone(), nil_ev: view[fi].nil_ev.clone() });
@@ -34193,6 +34518,12 @@ fn main() {
             // body errors because call-site checks against uninferred
             // parameters are skipped, so a body error that survives to
             // the converged round never rests on a placeholder.
+            if !DEFAULT_ENABLED.with(|v|v.get()) && uninferred_parameter {
+                // Run the fixpoint again with the tagged slot for those parameters.
+                DEFAULT_ENABLED.with(|v|v.set(true));
+                round = 0;
+                continue;
+            }
             if let Some(m) = first_err.or(first_pin_err) {
                 eprintln!("error: {}", m);
                 process::exit(1);
@@ -35873,44 +36204,93 @@ const SECONDS_LINUX: &str = r#"
 # hbc_seconds: xmm0 = seconds since midnight (double), rdi = meta
 # ((width 10 << 16) | dec 2). SYS_time is UTC, the same source the
 # date helper uses, so Seconds() is UTC-based in this increment.
+# clock_gettime(CLOCK_REALTIME): millisecond fraction like Harbour's.
 hbc_seconds:
     push %rbp
     mov %rsp, %rbp
+    sub $16, %rsp
     xor %edi, %edi
-    mov $201, %eax
+    lea -16(%rbp), %rsi
+    mov $228, %eax
     syscall
+    test %rax, %rax
+    jnz .Lseconds_lfail
+    mov -8(%rbp), %rax
+    xor %edx, %edx
+    mov $1000000, %ecx
+    div %rcx
+    mov %rax, %r8
+    mov -16(%rbp), %rax
     xor %edx, %edx
     mov $86400, %ecx
     div %rcx
     cvtsi2sd %rdx, %xmm0
+    cvtsi2sd %r8, %xmm1
+    mov $1000, %eax
+    cvtsi2sd %eax, %xmm2
+    divsd %xmm2, %xmm1
+    addsd %xmm1, %xmm0
+    jmp .Lseconds_ldone
+.Lseconds_lfail:
+    xorpd %xmm0, %xmm0
+.Lseconds_ldone:
     mov $655362, %edi
+    leave
+    ret
+"#;
+
+const SECONDS_DARWIN: &str = r#"
+    .text
+# hbc_seconds on Darwin: gettimeofday (UTC, like the date helper);
+# timeval tv_sec at 0, tv_usec at 8. Whole seconds only: tv_usec is not
+# read, so there is no millisecond fraction (the Linux and Windows helpers
+# keep milliseconds). Compiled by the manifest check, not executed.
+hbc_seconds:
+    push %rbp
+    mov %rsp, %rbp
+    sub $32, %rsp
+    lea -32(%rbp), %rdi
+    xor %esi, %esi
+    mov $96, %eax
+    syscall
+    xor %edx, %edx
+    test %rax, %rax
+    js .Lseconds_fail
+    mov -32(%rbp), %rax
+    mov $86400, %ecx
+    div %rcx
+.Lseconds_fail:
+    cvtsi2sd %rdx, %xmm0
+    mov $655362, %edi
+    leave
     ret
 "#;
 
 const SECONDS_WINDOWS: &str = r#"
     .text
 # hbc_seconds: xmm0 = seconds since midnight (double), rdi = meta.
-# GetLocalTime fills a SYSTEMTIME; hour/min/sec live at -8/-6/-4 of the
-# buffer when it starts at -16(%rbp).
+# The 16-byte SYSTEMTIME lives at -16(%rbp), ABOVE the 32-byte shadow
+# space of the call (rsp = rbp-48, shadow = rbp-48..rbp-16), so the callee
+# cannot clobber it. wHour/wMinute/wSecond are at +8/+10/+12.
 hbc_seconds:
     push %rbp
     mov %rsp, %rbp
-    sub $32, %rsp
+    sub $48, %rsp
     lea -16(%rbp), %rcx
     call GetLocalTime
     movzwl -8(%rbp), %eax
     movzwl -6(%rbp), %ecx
     movzwl -4(%rbp), %edx
-    cvtsi2sd %eax, %xmm0
-    imul $60, %eax, %eax
-    cvtsi2sd %eax, %xmm1
-    addsd %xmm1, %xmm0
-    cvtsi2sd %ecx, %xmm1
-    addsd %xmm1, %xmm0
+    imul $3600, %eax, %eax
     imul $60, %ecx, %ecx
-    cvtsi2sd %ecx, %xmm1
-    addsd %xmm1, %xmm0
-    cvtsi2sd %edx, %xmm1
+    add %ecx, %eax
+    add %edx, %eax
+    cvtsi2sd %eax, %xmm0
+    movzwl -2(%rbp), %eax
+    cvtsi2sd %eax, %xmm1
+    mov $1000, %eax
+    cvtsi2sd %eax, %xmm2
+    divsd %xmm2, %xmm1
     addsd %xmm1, %xmm0
     mov $655362, %edi
     leave

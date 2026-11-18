@@ -952,7 +952,7 @@ neg tests/t957_sequence_loop_move_neg.prg moved inside the `for` body
 neg tests/t958_sequence_lazy_arm_move_neg.prg use of moved value
 neg tests/t959_sequence_lazy_and_move_neg.prg use of moved value
 neg tests/t960_sequence_lazy_or_move_neg.prg use of moved value
-neg tests/t961_sequence_seq_inside_arg_move_neg.prg use of moved value
+neg tests/t961_sequence_seq_inside_arg_move_neg.prg must be a string
 neg tests/t962_sequence_double_consume_neg.prg use of moved value
 pos2 tests/t963_sequence_lazy_reassign.prg tests/expectations/qout/t963_sequence_lazy_reassign.linux.out tests/expectations/qout/t963_sequence_lazy_reassign.windows.out
 neg tests/t964_qout_seq_sibling_move_neg.prg use of moved value
@@ -981,7 +981,7 @@ pos2 tests/t992_inline_if_block_condition.prg tests/expectations/qout/t992_inlin
 neg tests/t986_inline_if_move_neg.prg use of moved value
 neg tests/t987_inline_if_qout_move_neg.prg use of moved value
 neg tests/t988_inline_if_dyn_limit_neg.prg branches must share a scalar type
-neg tests/t989_inline_if_numeric_nil_neg.prg branches must share a scalar type
+pos tests/t989_inline_if_numeric_nil_neg.prg \n         1
 neg tests/t990_inline_if_condition_neg.prg condition must be logical
 neg tests/t991_inline_if_arity_neg.prg without `endif`
 pos2 tests/t993_inline_if_discard_balance.prg tests/expectations/qout/t993_inline_if_discard_balance.linux.out tests/expectations/qout/t993_inline_if_discard_balance.windows.out
@@ -993,7 +993,7 @@ pos2 tests/t998_recursive_inline_mutual.prg tests/expectations/qout/t998_recursi
 pos2 tests/t999_recursive_inline_float.prg tests/expectations/qout/t999_recursive_inline_float.linux.out tests/expectations/qout/t999_recursive_inline_float.windows.out
 pos2 tests/t1000_recursive_inline_bool.prg tests/expectations/qout/t1000_recursive_inline_bool.linux.out tests/expectations/qout/t1000_recursive_inline_bool.windows.out
 pos2 tests/t1001_recursive_inline_str.prg tests/expectations/qout/t1001_recursive_inline_str.linux.out tests/expectations/qout/t1001_recursive_inline_str.windows.out
-neg tests/t1002_recursive_inline_mixed.prg branches must share a scalar type
+pos tests/t1002_recursive_inline_mixed.prg \nbad
 neg tests/t1003_recursive_inline_wrongarg.prg never returns a value
 neg tests/t1004_recursive_inline_nonanchor.prg never returns a value
 neg tests/t1005_recursive_inline_noground.prg never returns a value
@@ -1846,7 +1846,7 @@ neg tests/module-static-array/negative/aadd_lit.prg shared-array use is outside 
 neg tests/module-static-array/negative/afill.prg shared-array use is outside the dynamic increment
 neg tests/module-static-array/negative/assign_nonconst.prg takes a literal of constants
 neg tests/module-static-array/negative/byref.prg shared-array use is outside the dynamic increment
-neg tests/module-static-array/negative/call_arg.prg cannot infer the type of parameter
+neg tests/module-static-array/negative/call_arg.prg passing the shared module array
 neg tests/module-static-array/negative/cmp_whole.prg shared-array use is outside the dynamic increment
 neg tests/module-static-array/negative/compound.prg shared-array use is outside the dynamic increment
 neg tests/module-static-array/negative/container.prg shared-array use is outside the dynamic increment
@@ -1865,7 +1865,8 @@ pos2 tests/t1682_dyn_div_assign.prg tests/expectations/qout/t1682_dyn_div_assign
 pos2 tests/t1683_dyn_div_objdata.prg tests/expectations/qout/t1683_dyn_div_objdata.linux.out tests/expectations/qout/t1683_dyn_div_objdata.windows.out
 pos2 tests/t1684_dyn_div_seq_catch.prg tests/expectations/qout/t1684_dyn_div_seq_catch.linux.out tests/expectations/qout/t1684_dyn_div_seq_catch.windows.out
 posx tests/t1685_dyn_div_zero.prg 1 Error: division by zero\nCallstack:\n  at main (tests/t1685_dyn_div_zero.prg:8)
-neg tests/t1686_dyn_float_arith_limit.prg arithmetic between a NIL-able (Dyn) value and a float is a covered LIMIT
+# Dyn float minus a static float literal: formerly a named rejection (neg), enabled by tests/dyn-static-float.
+pos tests/t1686_dyn_float_sub_literal.prg \n         7.0
 pos2 tests/module-static-objects/programs/borrowed_null.prg tests/module-static-objects/expected/borrowed_null.linux.out tests/module-static-objects/expected/borrowed_null.windows.out
 pos2 tests/module-static-objects/programs/callee_rebind.prg tests/module-static-objects/expected/callee_rebind.linux.out tests/module-static-objects/expected/callee_rebind.windows.out
 pos2 tests/module-static-objects/programs/nil_assign.prg tests/module-static-objects/expected/nil_assign.linux.out tests/module-static-objects/expected/nil_assign.windows.out
@@ -1894,4 +1895,27 @@ pos2 tests/dyn-string-concat/programs/rhs_bound.prg tests/dyn-string-concat/expe
 pos2 tests/dyn-string-concat/programs/rhs_break.prg tests/dyn-string-concat/expected/rhs_break.linux.out tests/dyn-string-concat/expected/rhs_break.windows.out
 pos2 tests/dyn-string-concat/programs/string_snapshot.prg tests/dyn-string-concat/expected/string_snapshot.linux.out tests/dyn-string-concat/expected/string_snapshot.windows.out
 pos2 tests/dyn-string-concat/programs/break_result.prg tests/dyn-string-concat/expected/break_result.linux.out tests/dyn-string-concat/expected/break_result.windows.out
+neg tests/t1687_iif_mixed_neg_object.prg branches must share a scalar type
+neg tests/t1688_iif_mixed_neg_array.prg branches must share a scalar type
+neg tests/t1689_iif_mixed_neg_block.prg branches must share a scalar type
+neg tests/t1690_iif_mixed_neg_date.prg branches must share a scalar type
+neg tests/t1691_iif_mixed_neg_dynvar.prg branches must share a scalar type
+neg tests/t1692_iif_mixed_neg_nested.prg an owned tagged value
+neg tests/t1693_iif_mixed_neg_call.prg branches must share a scalar type
+neg tests/t1702_iif_mixed_neg_consumer_left_count.prg an owned tagged value
+neg tests/t1705_iif_mixed_neg_output_multi_owned_var.prg an owned tagged value
+neg tests/t1704_iif_mixed_neg_output_multi_float.prg an owned tagged value
+neg tests/t1703_iif_mixed_neg_output_multi_str.prg an owned tagged value
+neg tests/t1701_iif_mixed_neg_consumer_str_arg.prg an owned tagged value
+neg tests/t1700_iif_mixed_neg_consumer_compare.prg an owned tagged value
+neg tests/t1699_iif_mixed_neg_consumer_plus.prg an owned tagged value
+neg tests/t1698_iif_mixed_neg_consumer_minus.prg an owned tagged value
+neg tests/t1697_iif_mixed_neg_consumer_int_slot_assign.prg an owned tagged value
+neg tests/t1696_iif_mixed_neg_consumer_user_int_param.prg an owned tagged value
+neg tests/t1695_iif_mixed_neg_consumer_hb_ntos_float.prg an owned tagged value
+neg tests/t1694_iif_mixed_neg_consumer_hb_ntos_str.prg an owned tagged value
+neg tests/t1706_nested_move_neg_same_call.prg use of moved value
+neg tests/t1707_nested_move_neg_after.prg use of moved value
+neg tests/t1708_nested_move_neg_twice.prg use of moved value
+neg tests/t1709_nested_move_neg_loop.prg is moved inside the
 pos2 tests/str-concat-assign/programs/accumulate.prg tests/str-concat-assign/expected/accumulate.linux.out tests/str-concat-assign/expected/accumulate.windows.out

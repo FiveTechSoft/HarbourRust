@@ -1,0 +1,11 @@
+FUNCTION F()
+PRIVATE e
+RETURN 1
+FUNCTION Main()
+LOCAL e
+TRY
+ Break("x")
+CATCH e
+ ? e
+END
+RETURN NIL

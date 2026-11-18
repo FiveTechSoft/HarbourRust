@@ -1,0 +1,11 @@
+FUNCTION Main()
+LOCAL i
+FOR i := 1 TO 2
+ PRIVATE e
+ TRY
+  Break("x")
+ CATCH e
+  ? e
+ END
+NEXT
+RETURN NIL

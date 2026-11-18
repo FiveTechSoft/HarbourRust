@@ -25,26 +25,24 @@ HarbourRust does not support `.hrb` files, by design. A `.hrb` is precompiled pc
 
 ## Latest release
 
-**v0.11.4** (16 November 2026) is the latest release, with a Windows x86-64 compiler (`hbc_0.11.4.exe`), a Linux x86-64 compiler and a macOS Apple Silicon (arm64) compiler, plus `SHA256SUMS.txt`. See the [release notes](https://github.com/FiveTechSoft/HarbourRust/releases/tag/v0.11.4) for hashes, evidence and limits. The macOS arm64 binary is a compiler that runs on Apple Silicon; that release still emits x86-64 programs; native ARM64 output is in main after v0.11.4 (see Active development). Windows results in the release notes were checked under Wine; native Windows runs are recorded where the sections below say so.
+**v0.11.4** (16 November 2026) is the latest release, with a Windows x86-64 compiler (`hbc_0.11.4.exe`), a Linux x86-64 compiler and a macOS Apple Silicon (arm64) compiler, plus `SHA256SUMS.txt`. See the [release notes](https://github.com/FiveTechSoft/HarbourRust/releases/tag/v0.11.4) for hashes, evidence and limits. The macOS arm64 binary is a compiler that runs on Apple Silicon. It was built from `2325feaf` (16 November 2026), before native ARM64 output reached main (`0b206021`, 16 November), so that release asset emits x86-64 programs; native ARM64 output is in main only (see "Native ARM64" below and the [ARM64 record](docs/ARM64-NATIVE-2026-11-16.md)). Windows results in the release notes were checked under Wine; native Windows runs are recorded where the sections below say so.
 
-Since the checkpoint described below, main also has: threads, mutexes and one-shot initialisation on Windows, native DBF field writes and decimal arithmetic/comparison, a compile-time error for a fixed-size local array passed to a function that changes it, native ARM64 Mach-O output, `Seconds()`, `Str()` of a dynamic value inside threaded programs, and `+=`/`+` string accumulation on a local initialised from a non-empty literal. Each is described in its own bullet under Active development or in the linked record.
+Since the checkpoint described below, main also has: native ARM64 Mach-O output, threads, mutexes and one-shot initialisation on Windows, native DBF field writes and decimal arithmetic/comparison, classes on the Windows target (with limits), and a compile-time error for a fixed-size local array passed to a function that changes it. Each is described in its own bullet under Active development. Figures in this README carry their date and commit; the current main at the time of this edit is `9e150aee` (18 November 2026).
 
 ## Current status
 
 The current compiler includes the independently reviewed Date/CToD port,
 the CurDir/trailing-space work, and the bounded C Extend-System bridge (v9)
 on Linux and Windows x64 (Windows verified under Wine 11.0, not on real
-Windows). The [read-only DBF increment](docs/DBF-READONLY.md) adds bounded dBASE III
-support on Linux x86-64 and a [bounded Windows PE adapter](docs/DBF-WINDOWS-READONLY.md) verified under Wine, not native Windows. The [NTX increment](docs/NTX-READONLY.md) adds
-read-only character-field indexes on the same backend. Main also includes
-the bounded single-tag read-only CDX increment described below.
-Against the pinned Harbour source:
+Windows). DBF, NTX and CDX have an own MIT native adapter, which is the default route on Linux x86-64 and on the Windows target: the [read-only DBF increment](docs/DBF-READONLY.md) (dBASE III), the [bounded Windows PE adapter](docs/DBF-WINDOWS-READONLY.md) (Wine, not native Windows), the [NTX increment](docs/NTX-READONLY.md) (read-only character-field indexes) and the bounded single-tag read-only CDX increment described below, plus the native DBF writes in the first bullet below. On Windows only, the opt-in `--harbour-rdd` mode links Harbour 3.2's own RDD instead (see its bullet below); it is not the default.
+Against the pinned Harbour source (dated measurements, not re-run for this edit):
 
-- **32/268** originals under `tests/` compile, or **32/1041** across the full inventory.
-- **30/32** fresh Linux instrumented executions match stdout, stderr and exit status exactly.
+- **32/268** originals under `tests/` compile, or **32/1041** across the full inventory (measurement of 14 November 2026, in [BASELINE-2026-11-13.md](docs/BASELINE-2026-11-13.md)).
+- **30/32** Linux instrumented executions match stdout, stderr and exit status exactly (same 14 November measurement).
   The other two open error dialogues and time out; they are not passes.
-- Linux regression manifest: **1720/1720** instrumented at the hash-ownership marker (normal 1719/1720 with one base-identical mode gap); the older 1661-case slice keeps its inherited `t110`.
+- Linux regression manifest, **1720/1720** instrumented: a historical marker from the 14 November hash-ownership slice (normal 1719/1720 with one base-identical mode gap), not the current inventory; the older 1661-case slice keeps its inherited `t110`.
   The hash-default and nested-array shrink fixes resolve `t592`, `t385` and `t419`.
+- Current inventory at main `9e150aee` (18 November 2026): `tests/manifest.txt` has **1892** rows (non-comment lines), of which **1261** are executable rows checked by `tests/run_macho_arm64.py` (`EXPECTED_MANIFEST_ROWS`). The rest are rejection rows and other non-runnable kinds. These are inventory counts, not pass counts.
 - DBF hito 1: **8/8** same-source programs match real Harbour stdout, stderr
   and exit status byte-for-byte. A separate C bridge probe verifies copied
   field values after closing the DBF workarea.
@@ -56,7 +54,7 @@ changes are reviewed independently before publication.
 Linux `Date()` remains UTC, not local time. Date parameters and general dynamic
 Date storage are not supported. Windows smoke tests cover `CToD`, blank dates and
 `ValType` under Wine 11.0. The full Linux + Wine regression runner has now
-been run against main and the bridge increment: both report 1643 passes and
+been run against main and the bridge increment (13 November 2026): both report 1643 passes and
 27 failures, with no new failure cases and all five extra harnesses passing.
 These Linux + Wine figures are not a general native-Windows compatibility claim; the isolated native-Windows manifest run is recorded in the Windows build section.
 See the [Date port record](docs/DATE-PORT-2026-11-13.md) for the exact scope.
@@ -66,35 +64,26 @@ known failures and the history of published increments.
 
 ## Active development
 
-- **Issue #1 re-check (18 November).** Current main (`b5933e46`) on native
-  Windows 11 against Harbour 3.2 (bcc build, `hbmk2 -gtcgi`): 34 probes, 12
-  of them the repro files attached to the issue's 0.11.1 follow-up and 22
-  written from the constructs the issue lists. **10** byte-identical
-  (stdout and exit status), **23** rejected at compile time with a message,
-  **1** rejected at run time with a message (a DBF of more than 128 fields), **0** silent
-  mismatches. Arrays changed by a callee, a silent wrong result in 0.11.1,
-  are now a compile-time error; DBF decimal comparisons and arithmetic and
-  `Year()`/`Month()`/`Day()`/`DoW()` widths now match. Still rejected:
-  shared DBF open, `dbSetOrder`/`dbSeek` on a structural CDX, `dbGoto`/`FCount`
-  on the native adapter, codeblocks with comparisons or assignments,
-  `PRIVATE`, `BEGIN SEQUENCE`, `SET DATE`, `Transform` and others. This is
-  not the issue's 117-probe kit, which is not in the repository.
+- **Issue #1 re-check (18 November).** Main at `b5933e46` on native Windows 11
+  against Harbour 3.2 (bcc build, `hbmk2 -gtcgi`): 34 probes, 12 of them the
+  repro files attached to the issue's 0.11.1 follow-up and 22 written from the
+  constructs the issue lists. **10** byte-identical (stdout and exit status),
+  **23** rejected at compile time with a message, **1** rejected at run time
+  with a message (a DBF of more than 128 fields), **0** silent mismatches.
+  Arrays changed by a callee, a silent wrong result in 0.11.1, are now a
+  compile-time error. Still rejected: shared DBF open, `dbSetOrder`/`dbSeek` on
+  a structural CDX, `dbGoto`/`FCount` on the native adapter, codeblocks over
+  strings or with assignments, `PRIVATE`, `BEGIN SEQUENCE`, `SET DATE`,
+  `Transform` and others. This is not the issue's 117-probe kit, which is not
+  in the repository.
 
 - **String accumulation (18 November).** `local c := "a"` followed by
   `c += "b"` or `c := c + "b"` was a "type mismatch in assignment" (issue #1,
   section 3.3); only `local c := ""` was admitted. Such a local now gets an
   owned string slot from its declaration. Locals that are never `+`
-  assignment targets keep the previous code: assembly is unchanged for all
-  5420 Linux/Windows compiles of `tests/` and `extend/demo`. Output matches
+  assignment targets keep the previous code (assembly unchanged for every
+  other Linux/Windows compile of `tests/` and `extend/demo`). Output matches
   Harbour 3.2 byte for byte (`tests/str-concat-assign`).
-
-- **Native ARM64 Mach-O (16 November).** `--target=macho-arm64` (the default on
-  Apple Silicon) writes a native arm64 executable: the x86-64 subset hbc emits
-  is translated instruction by instruction to AArch64 at compile time, with no
-  run-time emulation. The macOS workflow runs the full battery on real
-  hardware: **1316/1316** on Apple Silicon (`macos-15`) and on Intel
-  (`macos-15-intel`) at the 18 November branch run. Threads, classes and DBF
-  keep their per-target limits. See [design and limits](docs/ARM64-NATIVE-2026-11-16.md).
 
 The first DBF, NTX and CDX increments are released; classes and objects
 are in main (v0.7.0). Broader RDD support remains
@@ -142,6 +131,16 @@ work in progress. No unmeasured speed or capability claims are made.
   CDX uses 512-byte pages, NTX 1024; empty-seek BOF differs by driver.
   Multi-tag/structural indexes and wider fields are explicitly rejected.
   See [scope, behavior and tests](docs/CDX-READONLY.md).
+- **Native ARM64 Mach-O (Apple Silicon; 16 to 17 November 2026, in main, not in v0.11.4).**
+  `--target=macho-arm64` writes a native arm64 executable. `src/harm64.rs`
+  translates hbc's fixed x86-64 instruction subset to AArch64 at compile time (no
+  run-time emulation, no x86 code in the output), with its own Mach-O writer and
+  ad hoc code signature. Recorded evidence in the [ARM64 record](docs/ARM64-NATIVE-2026-11-16.md):
+  GitHub Actions on Apple Silicon (macos-15), run 43985696680, `SUMMARY {'PASS': 1264}`;
+  on 17 November, run 44032525274, `{'PASS': 1274}` on both Apple Silicon and
+  macOS Intel, including FILE, DBF, threads and EXTERNAL programs. The record also
+  lists named limits (for example syscalls outside the lowered set are compile
+  errors). Not a claim of full Harbour parity.
 - **Classes and objects.** In main and v0.7.0, on Linux x86-64: `CREATE
   CLASS` / `CLASS ... FROM|INHERIT` with single inheritance, scalar `DATA`
   with lazy child-first `INIT`, methods and constructors (an implicit
@@ -174,10 +173,24 @@ work in progress. No unmeasured speed or capability claims are made.
   statically unknown class is rejected unless the member belongs to
   exactly one class hierarchy in the program, which pins the receiver to
   that hierarchy's root class (Harbour resolves these at runtime);
-  classes are Linux-only in this increment (`--target=windows` rejects
-  them by name); `=` as an expression operator remains outside the
+  class compatibility on Mac is not established here: a class program
+  compiled with `--target=macho` and with `--target=macho-arm64` produced a
+  Mach-O file (measured with the `9e150aee` compiler, 18 November 2026,
+  `tests/classes/programs/p01_defaults.prg`), compiling is not running. The real-Mac class step in
+  `macos.yml` (`tests/classes/check_macho.sh`) exists, but its result is not cited here; `=` as an expression operator remains outside the
   supported subset, as before.
-  See [scope, model and tests](docs/CLASSES.md).
+  See [scope, model and tests](docs/CLASSES.md). The sentence about Windows in
+  that record is older than the Windows work below.
+
+- **Classes on the Windows target (16 November 2026, limits).** `--target=windows`
+  compiles classes. The checked evidence is a focused object-output regression,
+  [tests/classes/windows-separators](tests/classes/windows-separators/README.md):
+  its expected GTSTD fixtures were captured from official Harbour 3.2.1dev under
+  Wine 11.22 (the oracle), and the compiled candidate runs against those fixtures
+  on native Windows in CI (`native-ci.yml`, step "Object separators on native
+  Windows", windows-2022, main `9e150aee`, run 44290661695). It is not a full
+  differential class gate. A broader GTSTD/GTCGI console-profile mismatch for
+  string-only trailing holds remains open compatibility debt.
 
 - **Threads and mutexes on Windows (16 November).** `--target=windows` now runs
   the same thread, mutex and one-shot runtime, over `CreateThread` and
@@ -185,7 +198,7 @@ work in progress. No unmeasured speed or capability claims are made.
   MT: **35/37** `tests/threads` and **33/36** `tests/threads-start` programs are
   identical (re-measured after the local-name fix). The rest are documented: two
   hit a Harbour 3.2 Windows timeout in `hb_mutexSubscribeNow`, and three are
-  declared compile-time limits. Not a claim of full thread parity. macOS has no thread runtime.
+  declared compile-time limits. Not a claim of full thread parity. macOS threads are described in the ARM64 record (17 November 2026).
   See [Windows runtime](docs/THREADS.md#windows-runtime-2026-11-16).
 
 - **Fixed-size array arguments (16 November).** Harbour passes arrays by
@@ -249,7 +262,7 @@ hello.exe
 
 **The tracked compiler is a main-branch snapshot, not the old v0.1.1 compiler.** It was built from source at `e17223f` and added to the repository in `8299ee4`; its full source pin and SHA256 are in [BUILDING.md](BUILDING.md#4-build-the-compiler-itself-as-a-windows-exe-hbcexe). It is not automatically rebuilt when source changes, so it can lag main; for current features use the [v0.11.4 release compiler](https://github.com/FiveTechSoft/HarbourRust/releases/tag/v0.11.4) or build from source.
 
-`hbc` writes supported native executables itself: ELF on Linux x86-64, PE32+ on Windows x86-64, and experimental Mach-O on macOS Intel x86-64. The native-only path needs no external assembler/linker or MinGW import libraries. The tracked compiler defaults to Windows output; use an explicit target for cross-compilation. Mach-O (Intel and native ARM64) runs the full battery on real Mac hardware in the macOS workflow. The exact tracked `bin/hbc.exe` was verified under Wine 11.0, not native Windows: hello and four positive TRY programs compiled and ran, and two TRY negatives rejected. This is not a full-manifest or general compatibility claim.
+`hbc` writes supported native executables itself: ELF on Linux x86-64, PE32+ on Windows x86-64, and experimental Mach-O on macOS Intel x86-64. The native-only path needs no external assembler/linker or MinGW import libraries. The tracked compiler defaults to Windows output; use an explicit target for cross-compilation. Intel Mach-O and native ARM64 were run on GitHub Actions macOS runners on 17 November 2026 (run 44032525274, see the ARM64 record); the release compilers predate native ARM64. The exact tracked `bin/hbc.exe` was verified under Wine 11.0, not native Windows: hello and four positive TRY programs compiled and ran, and two TRY negatives rejected. This is not a full-manifest or general compatibility claim.
 
 The internal PE writer emits a console image with entry `_start`, fixed ImageBase `0x140000000` and imports limited to a measured kernel32 whitelist (`ExitProcess`, `GetEnvironmentVariableA`, `GetLocalTime`, `GetProcessHeap`, `GetStdHandle`, `HeapAlloc`, `HeapFree`, `WriteFile`). VAS-eligible programs add `GetSystemInfo`, `VirtualAlloc` and `VirtualFree` (11 entries); ineligible programs retain the original eight. No CRT, SEH, TLS or base relocations are supported.
 
@@ -263,7 +276,7 @@ Do not reuse a v0.1.1/v0.2.0 `hbc.exe` or its `build.bat`: those compilers emitt
 
 ## Known limits
 
-Not implemented (no code for them in this repository): ODBC, SQL Server access and `hbwin`/OLE. `#pragma BEGINDUMP`/`ENDDUMP` is recognised and rejected with an explicit error; for C code use the separate-file [Extend bridge](docs/EXTEND-BRIDGE.md). `.hrb` files are unsupported by design. DBF: no index writes or locking (see the DBF bullets above). Classes on Windows and threads on macOS are not implemented. This is a bounded list, not a full inventory; see the [roadmap](docs/ROADMAP.md).
+Not implemented (no code for them in this repository): ODBC, SQL Server access and `hbwin`/OLE. `#pragma BEGINDUMP`/`ENDDUMP` is recognised and rejected with an explicit error; for C code use the separate-file [Extend bridge](docs/EXTEND-BRIDGE.md). `.hrb` files are unsupported by design. DBF: on the native DBF route there are no index writes or locking (see the DBF bullets above; the opt-in `--harbour-rdd` mode on Windows has its own scope). Native ARM64 output is in main with named limits (see the ARM64 record) but is not in the v0.11.4 release. Classes on Windows have the limits stated in their bullet. This is a bounded list, not a full inventory; see the [roadmap](docs/ROADMAP.md).
 
 ## Harbour standard-function compatibility
 
@@ -296,7 +309,8 @@ rustc --edition=2021 -O src/hbc.rs -o hbc
 ```
 
 The target defaults to the compiler host: ELF on Linux, PE32+ on Windows,
-Intel Mach-O on macOS Intel and native ARM64 Mach-O on Apple Silicon.
+and experimental Intel Mach-O on macOS Intel. On Apple Silicon it is a native ARM64
+Mach-O (translated from hbc's x86-64 subset, see the ARM64 record).
 Use `--target=linux` or `--target=windows` to force a target, including cross-compilation.
 The output filename does not select the target; `.s` selects assembly output.
 This default is in current source; rebuild older compiler binaries to get it.
@@ -314,9 +328,10 @@ rather than assuming any tracked or historical compiler binary matches HEAD.
 
 Build from current source with stable Rust and the macOS command-line developer
 tools. Follow the [numbered Mac build and test steps](BUILDING.md#macos-intel-and-arm64-status).
-The macOS workflow (`workflow_dispatch`) runs the full battery on real
-`macos-15` (Apple Silicon) and `macos-15-intel` runners; see
-[Intel scope](docs/MACHO-INTEL.md) and [native ARM64](docs/ARM64-NATIVE-2026-11-16.md).
+The Intel writer and Darwin runtime ran on a GitHub Actions macOS Intel runner on
+17 November 2026 (run 44032525274, `PASS 1274` in the ARM64 record), which is not
+a certification on every Mac. Native ARM64 output is described in the ARM64 record;
+see also [scope and evidence](docs/MACHO-INTEL.md).
 
 ## Build and run on Windows
 
@@ -336,7 +351,7 @@ hello.exe
 that toolchain is also used by the test runner. `dist\build.bat` chains the
 legacy path and defaults to the older `dist\2-hbc.exe`; set `HBC` to override.
 The internal writer was exercised on Windows 11 x86-64 with an isolated
-native-manifest battery over the current 1729-entry manifest: 1706 cases
+native-manifest battery over the 1729-entry manifest of that run (an earlier snapshot, not the current 1892-row inventory): 1706 cases
 passed, 23 Linux-only cases were skipped, and no case failed; no stream case
 needed CR normalization. The manifest snapshot and every per-case line are
 recorded in the run log. This is a bounded manifest result, not a general
