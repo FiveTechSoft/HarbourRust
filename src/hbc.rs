@@ -60,6 +60,8 @@ thread_local! {
 fn hb_rdd() -> bool { HB_RDD.with(|v| v.get()) }
 thread_local! {
     static CG_MEMVAR_NAMES: std::cell::RefCell<std::collections::HashSet<String>> = std::cell::RefCell::new(std::collections::HashSet::new());
+    // names a PRIVATE/PUBLIC/MEMVAR statement bound in the function being parsed
+    static PARSE_MEMVARS: std::cell::RefCell<std::collections::HashSet<String>> = std::cell::RefCell::new(std::collections::HashSet::new());
     static MACRO_CONTEXT: std::cell::Cell<bool> = const {std::cell::Cell::new(false)};
     // Str(Dyn) seen by the checker. Single-thread programs validate it
     // through the macro context (hrmacro_str_check); threaded programs use
@@ -2715,6 +2717,11 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                                 Some(Tok::Ident(v)) => { check_ident(v, cn)?; Some(v.clone()) }
                                 _ => None,
                             };
+                            if let Some(v) = &var {
+                                if PARSE_MEMVARS.with(|c| c.borrow().contains(&v.to_ascii_uppercase())) {
+                                    return Err(format!("line {}: CATCH variable `{}` is a PRIVATE/PUBLIC (MEMVAR) binding; the catch variable must be a LOCAL in this increment", cn, v));
+                                }
+                            }
                             *i += 1;
                             let mut cbody = Vec::new();
                             parse_stmts(lines, i, &mut cbody, depth + 1)?;
@@ -3492,6 +3499,7 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                 for(k,t)in rest.iter().enumerate(){match t {Tok::LParen|Tok::LBracket|Tok::LBrace=>depth+=1,Tok::RParen|Tok::RBracket|Tok::RBrace=>depth-=1,Tok::Comma if depth==0=>{spans.push(&rest[start..k]);start=k+1;},_=>{}}}spans.push(&rest[start..]);
                 for it in spans {
                     let id=match it.first(){Some(Tok::Ident(id))=>{check_global_ident(id,n)?;id.clone()},_=>return Err(format!("line {}: MEMVAR declaration expects an identifier",n))};
+                    PARSE_MEMVARS.with(|c| c.borrow_mut().insert(id.to_ascii_uppercase()));
                     if it.len()==1 {out.push(Stmt::MemvarDecl(n,private,id));}
                     else if it.len()>=3&&matches!(it[1],Tok::Assign|Tok::Eq){out.push(Stmt::MemvarSet(n,private,id,parse_expr_tokens(it[2..].to_vec(),n)?));}
                     else{return Err(format!("line {}: MEMVAR declaration expects name [:= expression]",n));}
@@ -3779,7 +3787,7 @@ fn parse(src: &str) -> Result<Prog, String> {
                 return Err(format!("line {}: method `{}` defined for unknown class `{}`", n, mname, cname));
             }
             i += 1;
-            let mut f = Func { init: false, name: format!("{}__{}", cname, mname), params, ret: None, stmts: Vec::new(), dyn_names: std::collections::HashSet::new() };
+            PARSE_MEMVARS.with(|c| c.borrow_mut().clear()); let mut f = Func { init: false, name: format!("{}__{}", cname, mname), params, ret: None, stmts: Vec::new(), dyn_names: std::collections::HashSet::new() };
             parse_stmts(&lines, &mut i, &mut f.stmts, 0)?;
             if i >= lines.len() || lines[i].1[0] != Tok::KwReturn {
                 return Err(format!("method `{}` of `{}` without closing return", mname, cname));
@@ -3805,7 +3813,7 @@ fn parse(src: &str) -> Result<Prog, String> {
                 // `function main()` after an implicit group trips the
                 // duplicate-function check (Harbour silently prefers the
                 // explicit one, hk247e).
-                let mut f = Func { init: false, name: "main".to_string(), params: Vec::new(), ret: None, stmts: Vec::new(), dyn_names: std::collections::HashSet::new() };
+                PARSE_MEMVARS.with(|c| c.borrow_mut().clear()); let mut f = Func { init: false, name: "main".to_string(), params: Vec::new(), ret: None, stmts: Vec::new(), dyn_names: std::collections::HashSet::new() };
                 parse_stmts(&lines, &mut i, &mut f.stmts, 0)?;
                 if i < lines.len() && lines[i].1[0] == Tok::KwReturn {
                     let (rn, rt) = &lines[i];
@@ -3854,7 +3862,7 @@ fn parse(src: &str) -> Result<Prog, String> {
             return Err(format!("line {}: INIT procedures with parameters are not in this increment", n));
         }
         i += 1;
-        let mut f = Func { init, name: if init { format!("{}$", name) } else { name }, params, ret: None, stmts: Vec::new(), dyn_names: std::collections::HashSet::new() };
+        PARSE_MEMVARS.with(|c| c.borrow_mut().clear()); let mut f = Func { init, name: if init { format!("{}$", name) } else { name }, params, ret: None, stmts: Vec::new(), dyn_names: std::collections::HashSet::new() };
         parse_stmts(&lines, &mut i, &mut f.stmts, 0)?;
         if i >= lines.len() || lines[i].1[0] != Tok::KwReturn {
             return Err(format!("function `{}` without closing return", f.name));
