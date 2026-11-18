@@ -50,6 +50,10 @@ fn hb_rdd() -> bool { HB_RDD.with(|v| v.get()) }
 thread_local! {
     static CG_MEMVAR_NAMES: std::cell::RefCell<std::collections::HashSet<String>> = std::cell::RefCell::new(std::collections::HashSet::new());
     static MACRO_CONTEXT: std::cell::Cell<bool> = const {std::cell::Cell::new(false)};
+    // Str(Dyn) seen by the checker. Single-thread programs validate it
+    // through the macro context (hrmacro_str_check); threaded programs use
+    // the context-free hbc_str_dyn_fail path instead (emit_asm decides).
+    static STR_DYN: std::cell::Cell<bool> = const {std::cell::Cell::new(false)};
     // I2 (Goose hybrid): true while emit_asm must carry the scope arena.
     static ARENA_ACTIVE: std::cell::Cell<bool> = std::cell::Cell::new(false);
     // I2: per-function arena routing map (set after eligibility; consumed by cg).
@@ -17677,7 +17681,7 @@ fn check_str_num_args(id: &str, args: &[Expr], env: &mut [Local], sigs: &mut Vec
     for (i,a) in args.iter().enumerate() {
         let t=type_expr(a,env,sigs,n)?;
         let ok=if i==0 {matches!(t,Ty::I64|Ty::F64)||(is_builtin(id,"str")&&t==Ty::Dyn)} else {t==Ty::I64};
-        if i==0&&t==Ty::Dyn&&is_builtin(id,"str"){MACRO_CONTEXT.with(|c|c.set(true));}
+        if i==0&&t==Ty::Dyn&&is_builtin(id,"str"){STR_DYN.with(|c|c.set(true));}
         if !ok { return Err(format!("line {}: `{}` argument {} must be {} in this increment",n,id,i+1,if i==0 {"an integer or a float"} else {"an integer"})); }
     }
     Ok(())
@@ -17686,8 +17690,17 @@ fn check_str_num_args(id: &str, args: &[Expr], env: &mut [Local], sigs: &mut Vec
 fn cg_str_dyn(args:&[Expr],env:&[CgLocal],sigs:&[Sig],strs:&mut Vec<String>,out:&mut String,target:Target){
     let owned=dyn_expr_owned(&args[0]);let k=fresh_lbl();
     cg_expr(&args[0],env,sigs,strs,out,target);
-    out.push_str("    sub $64, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n    mov %rax, %rsi\n");cg_memvar_context(out);
-    out.push_str(&format!("    mov ${}, %ecx\n    call hrmacro_str_check\n",if owned{1}else{0}));
+    out.push_str("    sub $64, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+    if MACRO_CONTEXT.with(|c|c.get()){
+        out.push_str("    mov %rax, %rsi\n");cg_memvar_context(out);
+        out.push_str(&format!("    mov ${}, %ecx\n    call hrmacro_str_check\n",if owned{1}else{0}));
+    }else{
+        // Threaded program: same kinds as hrmacro_str_check (0/9/5 render),
+        // anything else releases an owned operand and raises BASE/1099.
+        out.push_str(&format!("    and $255, %eax\n    je .Lsdynok{k}\n    cmp $9, %eax\n    je .Lsdynok{k}\n    cmp $5, %eax\n    je .Lsdynok{k}\n"));
+        if owned{cg_dyn_stack_release(out,0,false);}
+        out.push_str(&format!("    call hbc_str_dyn_fail\n.Lsdynok{k}:\n"));
+    }
     // Evaluate optional width/dec once, in source order, after validating n.
     out.push_str("    movq $0, 32(%rsp)\n    movq $0, 40(%rsp)\n");
     for i in 1..args.len(){cg_expr(&args[i],env,sigs,strs,out,target);out.push_str(&format!("    mov %rax, {}(%rsp)\n",24+i*8));}
@@ -18113,6 +18126,47 @@ hrm_contract_exit:
     .ascii ")  "
     .text
 "#;
+// Str(Dyn) argument error in a threaded program (no macro context):
+// Harbour's terminal BASE/1099 text on stderr, "Called from STR(0)" then
+// the language frames, exactly like hrmacro_str_check + hrm_fail. The
+// writer is a relabelled copy of MACRO_FAIL_*; its exit empties the trace
+// and ends through the ordinary panic tail (rewritten per thread).
+fn str_dyn_fail_helper(target: Target) -> String {
+    let (fail,tail)=match target {
+        Target::Windows => (MACRO_FAIL_WINDOWS,"    call hbc_print_trace\n    call hbc_pflush\n    mov $1, %ecx\n    call ExitProcess\n"),
+        _ => (MACRO_FAIL_LINUX,"    call hbc_print_trace\n    mov $60, %eax\n    mov $1, %edi\n    syscall\n"),
+    };
+    let a=fail.find("hrm_contract_exit:\n").expect("hrm_contract_exit");
+    let b=fail[a..].find("\n\n").expect("exit end")+a+1;
+    let body=format!("{}hrm_contract_exit:\n    movq $0, hbc_trace_top(%rip)\n{}{}",&fail[..a],tail,&fail[b..]);
+    let body=body.replace("    .globl hrm_fail\n","").replace("hrm_fail","hbc_sdf_fail")
+        .replace(".Lhrmf_",".Lsdf_").replace("hrm_contract_","hbc_sdf_");
+    let rodata = if target == Target::Windows { ".section .rdata,\"r\"" } else { ".section .rodata" };
+    format!("
+    .text
+hbc_str_dyn_fail:
+    and $-16, %rsp
+    sub $64, %rsp
+    mov hbc_trace_top(%rip), %r11
+    mov %r11, (%rsp)
+    movq $0, 8(%rsp)
+    movq $0, 16(%rsp)
+    movq $0, 24(%rsp)
+    lea .Lsdf_msg(%rip), %r11
+    add $33, %r11
+    mov %r11, 32(%rsp)
+    movq $3, 40(%rsp)
+    mov %rsp, %r11
+    mov %r11, hbc_trace_top(%rip)
+    lea .Lsdf_msg(%rip), %rdi
+    mov $36, %esi
+    jmp hbc_sdf_fail
+{rodata}
+.Lsdf_msg:
+    .ascii \"Error BASE/1099  Argument error: STR\"
+    .text
+{body}")
+}
 // hbc_fmt_f64 is hbc_print_f64 with its two writes turned into owned
 // copies: the same digits, rounding and stars, returned as rax/rdx.
 fn f64_fmt_helper() -> String {
@@ -27472,6 +27526,7 @@ fn emit_asm(funcs: &[Func], sigs: &[Sig], externs: &[String], target: Target, in
         eprintln!("error: --instrument is not supported with threads in this increment (the allocation registry is process-global)");
         process::exit(1);
     }
+    if STR_DYN.with(|c|c.get())&&!THREADS.with(|c|c.get()){MACRO_CONTEXT.with(|c|c.set(true));}
     if MACRO_CONTEXT.with(|c|c.get())&&THREADS.with(|c|c.get()){eprintln!("error: MEMVAR/macro contexts with threads are outside this stage");process::exit(1);}
     let mut out = String::new();
     if FILE_USED.with(|v|v.get()) {
@@ -30416,6 +30471,9 @@ fn finalize_threads_windows(out: String) -> String {
 
 fn finalize_trace(mut out: String, target: Target) -> String {
     out.push_str(dyn_float::HELPERS);
+    if out.contains("call hbc_str_dyn_fail") {
+        out.push_str(&str_dyn_fail_helper(target));
+    }
     if out.contains("call hbc_str_f64") {
         out.push_str(&f64_fmt_helper());
     }

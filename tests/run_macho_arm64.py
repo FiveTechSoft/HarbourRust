@@ -51,7 +51,7 @@ def configure_target(target):
 
 FILE_POSITIVES = 6
 DBF_TESTS = 4
-THREAD_PROGRAMS = 37
+THREAD_PROGRAMS = 38
 EXT_DEMOS = 9
 TARGET = '--target=macho-arm64'  # --target=macho runs the same battery on Intel
 # Executable-row inventory of the committed tests/manifest.txt:
@@ -60,7 +60,9 @@ TARGET = '--target=macho-arm64'  # --target=macho runs the same battery on Intel
 # The full battery refuses truncated/empty manifests and stale constants.
 # Bump this only with the manifest change that explains it.
 # Dyn/string concat adds20 runnable rows (19programs plus former negative).
-# Type predicates make t415 a positive row (+1): full total:1258+6+4+37+9 =1314,0 REJ on both targets.
+# Type predicates make t415 a positive row (+1).
+# tests/threads/programs gains ts01_str_dyn (Str(Dyn) in threads): 38.
+# Full total:1258+6+4+38+9 =1315,0 REJ on both targets.
 EXPECTED_MANIFEST_ROWS = 1258
 # Post-run m_clie.dbf SHA-256 per DBF acceptance test (generated on Linux,
 # stdout checked against the committed expectations). t4 appends records:
