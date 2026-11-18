@@ -69,3 +69,5 @@ tests/module-static-object-args/expected/** -text
 # Byte-exact bounded Dyn/string concat pins.
 tests/dyn-string-concat/expected/** -text
 tests/file-native-windows/*.stdout -text
+# Byte-exact Harbour 3.2 output for logical codeblocks and AScan with a block.
+tests/cb-logical/expected/** -text

@@ -101,13 +101,25 @@ enum Ty { NumLocal, F64, I64, Str, Bool, Date, Arr(usize), Block(usize, BRet), D
 // block id: assignment, parameter passing and function returns carry it,
 // and routes that would mix kinds are named rejections, not miscompiles.
 #[derive(Clone, Copy, PartialEq, Debug)]
-enum BRet { Int, Nil }
+enum BRet { Int, Nil, Bool }
 
 // Classify a block body's return kind from its last expression. The checker
 // decides admissibility; this only classifies what the checker admitted.
+// A logical block tail (issue #1 3.4, `{|x| x > 2}`): a comparison, a
+// logical connective or a logical literal. Syntactic, so the checker (which
+// also requires the tail to type Bool) and every classifier agree.
+fn block_bool_tail(e: &Expr) -> bool {
+    matches!(e, Expr::Cmp(..) | Expr::LAnd(..) | Expr::LOr(..) | Expr::LNot(..) | Expr::Log(_))
+}
+
+fn bret_name(k: BRet) -> &'static str {
+    match k { BRet::Int => "integer", BRet::Nil => "NIL", BRet::Bool => "logical" }
+}
+
 fn block_body_kind(body: &[Expr], sigs: &[Sig]) -> BRet {
     match body.last() {
         Some(Expr::Call(id, _)) if is_output_call(id) || sigs.iter().any(|s| s.name == *id && s.nil_ret_only) => BRet::Nil,
+        Some(e) if block_bool_tail(e) => BRet::Bool,
         _ => BRet::Int,
     }
 }
@@ -6806,7 +6818,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 }
                 // A NIL-only block returns the payload-free Dyn pair
                 // (oracle t1b: `? eval(b)` prints NIL after the body ran).
-                return Ok(match bk { BRet::Int => Ty::I64, BRet::Nil => Ty::Dyn });
+                return Ok(match bk { BRet::Int => Ty::I64, BRet::Nil => Ty::Dyn, BRet::Bool => Ty::Bool });
             }
             if is_builtin(id, "iif") {
                 // iif(cond, a, b) (oracle hk321): LAZY - only the chosen
@@ -7034,6 +7046,13 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 let tb = type_expr(&args[1],env,sigs,n)?;
                 match (ta, tb) {
                     (Ty::DArr, Ty::I64) | (Ty::DArrS, Ty::Str) | (Ty::DArrS, Ty::StrOwn) => {}
+                    // AScan(a, {|x[, i]| <logical>}) (issue #1 3.4): the block
+                    // gets each integer element (and its 1-based position);
+                    // the first .T. wins. A non-integer element is a clean
+                    // runtime type error (integer block parameters).
+                    (Ty::DArr, Ty::Block(1 | 2, BRet::Bool)) => {}
+                    (Ty::DArr, Ty::Block(_, BRet::Bool)) => return Err(format!("line {}: `AScan` codeblock takes one or two parameters (element, position)",n)),
+                    (Ty::DArr, Ty::Block(..)) => return Err(format!("line {}: `AScan` codeblock must return a logical (a final comparison) in this increment",n)),
                     _ => return Err(format!("line {}: `AScan` needs an integer array with an integer target or a string array with a string target in this increment",n)),
                 }
                 return Ok(Ty::I64);
@@ -8135,8 +8154,8 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                         }
                         return Err(format!("line {}: argument {} of `{}` must be an {}-returning codeblock, got a {}-returning one",
                             n, i + 1, id,
-                            if wk == BRet::Int { "integer" } else { "NIL" },
-                            if gk == BRet::Int { "integer" } else { "NIL" }));
+                            bret_name(wk),
+                            bret_name(gk)));
                     }
                     // E: a shared module array (or an alias of it) named
                     // as the argument gets the S4 scope diagnostic, not a
@@ -8930,8 +8949,9 @@ fn check_block_body(params: &[String], body: &[Expr], sigs: &mut Vec<Sig>, n: us
         // (oracle t1f: {|| 42, QOut("test") } prints and returns NIL).
         let discarded_nil = i + 1 < body.len() && matches!(e, Expr::Call(id, _) if is_output_call(id) || sigs.iter().any(|s| s.name == *id && s.nil_ret_only));
         let final_nil = i + 1 == body.len() && t == Ty::Dyn && matches!(e, Expr::Call(id, _) if is_output_call(id) || sigs.iter().any(|s| s.name == *id && s.nil_ret_only));
-        if t != Ty::I64 && !discarded_nil && !final_nil {
-            return Err(format!("line {}: codeblock bodies are integer expressions or NIL-only calls in this increment", n));
+        let final_bool = i + 1 == body.len() && t == Ty::Bool && block_bool_tail(e);
+        if t != Ty::I64 && !discarded_nil && !final_nil && !final_bool {
+            return Err(format!("line {}: codeblock bodies are integer expressions, NIL-only calls or a final logical comparison in this increment", n));
         }
     }
     Ok(Ty::Block(params.len(), block_body_kind(body, sigs)))
@@ -15190,6 +15210,20 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                     }
                     out.push_str("    add $32, %rsp\n");
                 }
+                Ty::Block(k, _) => {
+                    // Block scan: (%rsp) holds the 0-based position across
+                    // the indirect calls. Each element converts through
+                    // hbc_dyn_to_i64 (integer tags only, else type error)
+                    // and is passed like an Eval argument; a 2-parameter
+                    // block also gets the 1-based position.
+                    let l = fresh_lbl();
+                    out.push_str(&format!("    sub $16, %rsp\n    movq $0, (%rsp)\n.Lascb{l}:\n    mov (%rsp), %r8\n    cmp -{cnt}(%rbp), %r8\n    jae .Lascbz{l}\n    mov -{ptr}(%rbp), %r9\n    shl $4, %r8\n    add %r8, %r9\n    mov (%r9), %rax\n    mov 8(%r9), %rdx\n    call hbc_dyn_to_i64\n    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n", l=l, cnt=var.off-8, ptr=var.off));
+                    if k == 2 {
+                        out.push_str("    mov 16(%rsp), %rax\n    inc %rax\n    sub $16, %rsp\n    mov %rax, (%rsp)\n    movq $0, 8(%rsp)\n");
+                    }
+                    cg_expr(&args[1],env,sigs,strs,out,target);
+                    out.push_str(&format!("    mov %rax, %r11\n    call *%r11\n    add ${a}, %rsp\n    test %rax, %rax\n    jnz .Lascbf{l}\n    incq (%rsp)\n    jmp .Lascb{l}\n.Lascbf{l}:\n    mov (%rsp), %rax\n    inc %rax\n    jmp .Lascbe{l}\n.Lascbz{l}:\n    xor %eax, %eax\n.Lascbe{l}:\n    add $16, %rsp\n    xor %edx, %edx\n", a=16*k, l=l));
+                }
                 _ => {
                     cg_expr(&args[1],env,sigs,strs,out,target);
                     out.push_str(&format!("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov -{}(%rbp), %rdi\n    mov -{}(%rbp), %rsi\n    mov (%rsp), %rdx\n    call hbc_ascan\n    add $16, %rsp\n", var.off, var.off - 8));
@@ -18487,7 +18521,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             if is_builtin(id, "empty") || is_builtin(id, "hb_isnumeric") || is_builtin(id, "hb_isarray") || is_builtin(id, "hb_isstring") { return Ty::Bool; }
             if is_output_call(id) { return Ty::Dyn; }
             if is_builtin(id, "hb_pvalue") { return Ty::Dyn; }
-            if is_builtin(id, "eval") { return match expr_ty(&args[0], env, sigs) { Ty::Block(_, BRet::Nil) => Ty::Dyn, _ => Ty::I64 }; }
+            if is_builtin(id, "eval") { return match expr_ty(&args[0], env, sigs) { Ty::Block(_, BRet::Nil) => Ty::Dyn, Ty::Block(_, BRet::Bool) => Ty::Bool, _ => Ty::I64 }; }
             if is_builtin(id, "asc") || is_builtin(id, "len") || is_builtin(id, "hb_memcheck") || is_builtin(id, "procline") { return Ty::I64; }
             if is_builtin(id,"date") || is_builtin(id,"ctod") { return Ty::Date; }
             if is_builtin(id, "seconds") { return Ty::F64; }

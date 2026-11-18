@@ -62,8 +62,8 @@ TARGET = '--target=macho-arm64'  # --target=macho runs the same battery on Intel
 # Dyn/string concat adds20 runnable rows (19programs plus former negative).
 # Type predicates make t415 a positive row (+1).
 # tests/threads/programs gains ts01_str_dyn (Str(Dyn) in threads): 38.
-# Full total:1258+6+4+38+9 =1315,0 REJ on both targets.
-EXPECTED_MANIFEST_ROWS = 1258
+# Full total:1259+6+4+38+9 =1316,0 REJ on both targets.
+EXPECTED_MANIFEST_ROWS = 1259
 # Post-run m_clie.dbf SHA-256 per DBF acceptance test (generated on Linux,
 # stdout checked against the committed expectations). t4 appends records:
 # dbAppend rewrites the header last-update date (bytes 1-3, YY MM DD of the
