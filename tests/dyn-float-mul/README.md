@@ -16,4 +16,16 @@ Gate: `python3 tests/dyn-float-mul/check.py --compiler HBC --hbmk2 HBMK2 --mingw
 
 Not covered (measured, left as before): `a*2` (Dyn times a literal integer) and `a*(b/z)` (Dyn times a float-typed expression) stay on
 the older path and keep their named limit error; `+` and `-` with a float Dyn; dates; string subtraction; integer overflow into float.
-A throw while evaluating the right operand is not covered by a dedicated row here.
+
+Right-operand throw (rows `rhs-*-N`, N = 1, 500, 1000; ELF internal, ELF external, PE): the left operand is a borrowed float variable (`a*F(b)`), an
+owned float temporary (`(a*b)*F(b)`, `a*b*c*F(b)`) or the right side is itself an owned temporary (`a*(b*F(b))`), where `F` is a user function that
+returns a Dyn value and does `Break` under TRY. Output (hits, the untouched left variable, the target still NIL, the number of times the callee
+was entered) is byte-identical to the external oracle and `hb_memcheck` pending is 0. `rhs-control-no-throw-N` runs the same shape with a callee
+that returns normally. `--rows rhs` runs only these rows. Mutants of the compiler (no release of the left snapshot on the landing pad; no clone of a
+borrowed float left) fail these rows; their logs are in the review package.
+
+Limits found while writing the rows (measured, not changed here, and not covered by a passing row):
+- Alias mutation of the left operand by the right one: a float left cannot be mutated by the right operand in this subset (a float inline `:=` and float
+  array elements are named rejections), so there is no reachable shape to assert. `r := a*(b := 3)` and `r := a + (b := 3)` with `a := 1.5` raise
+  "NIL used as a number" at run time where the oracle prints 4.5 (also with `b` unrelated to `a`); `a*Ok(2)` (a call typed as an integer) raises the same error.
+- `catch e` with `Break("text")` repeated in a loop leaks N-1 cells (`catch` without a variable does not), on the previous compiler too; the rows use `catch`.

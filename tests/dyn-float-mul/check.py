@@ -5,6 +5,7 @@ Original MIT; Harbour 3.2.1dev r2610242111 is only an external oracle (not Harbo
 import argparse,pathlib,subprocess,json,hashlib,os
 P=pathlib.Path;ap=argparse.ArgumentParser()
 for k in ['--compiler','--hbmk2','--output','--mingw-lib']:ap.add_argument(k,required=True)
+ap.add_argument('--rows',default='all',choices=['all','rhs'])
 a=ap.parse_args();gate=P(__file__).resolve().parent;prog=gate.parent/'dyn-dyn-plus'/'programs';out=P(a.output).resolve();out.mkdir(parents=True,exist_ok=False);cc=str(P(a.compiler).resolve())
 env=dict(os.environ,PATH='/tmp/toolchain/bin:'+os.environ['PATH'],HB_CCPATH='/tmp/toolchain/bin/',HB_CCPREFIX='x86_64-w64-mingw32-',WINEDEBUG='-all',HBC_MINGW_LIB=a.mingw_lib,LC_ALL='C.UTF-8')
 lenv={k:v for k,v in env.items() if k not in ('HB_CCPATH','HB_CCPREFIX')}
@@ -21,7 +22,7 @@ def oracle(s):
     lines.insert(st,'ErrorBlock({|err| Break(err)})');s='\n'.join(lines)+'\n'
     return s.replace('try\n','begin sequence\n').replace('catch e\n','recover using e\n').replace('\nend\n','\nend sequence\n')
 # (1) PE vs oracle
-for name in ['float-dyn','mulf-values','mulf-errors']:
+for name in ([] if a.rows=='rhs' else ['float-dyn','mulf-values','mulf-errors']):
     w=out/('pe-'+name);w.mkdir();(w/'o.prg').write_text(oracle((prog/(name+'.prg')).read_text()))
     ob=sh([a.hbmk2,'-quiet','-gtstd','-w0','-o'+str(w/'oracle'),w/'o.prg'],w,'oracle-build',lenv);orr=sh([w/'oracle'],w,'oracle-run',lenv)
     (w/'p.prg').write_bytes((prog/(name+'.prg')).read_bytes());ok=ob.returncode==0 and orr.returncode==0
@@ -34,7 +35,7 @@ for name in ['float-dyn','mulf-values','mulf-errors']:
     add('pe-'+name,'pe-stdout-byte-identical-to-oracle',ok)
 # (2) memory rows, ELF internal/external and PE internal
 TB='try\n  r:=a*s\n catch e\n  hits:=hits+1\n end'
-for shape,tryb in [('owned',''),('try',TB)]:
+for shape,tryb in ([] if a.rows=='rhs' else [('owned',''),('try',TB)]):
   for n in [1,500,1000]:
     w=out/('mem-%s-%d'%(shape,n));w.mkdir();src=(gate/'mem'/'loop.prg').read_text().replace('@N@',str(n)).replace('TRYBLOCK',tryb)
     (w/'p.prg').write_text(src);ok=True
@@ -46,6 +47,28 @@ for shape,tryb in [('owned',''),('try',TB)]:
             good=r.returncode==0 and r.stdout==want and r.stderr==b''
         ok=ok and good
     add('mem-%s-%d'%(shape,n),'pending-zero-and-hits',ok)
+
+# (3) (CATCH without a variable: `catch e` with a Break string leaks N-1 cells in the repeated loop, measured on the previous compiler too, separate defect.)
+# throw while evaluating the RIGHT operand (left operand is a borrowed float variable or an owned float temporary), under TRY.
+# The callee is a Dyn-returning user function (so the product is Dyn*Dyn). Output (hits, the untouched left variable, the target still NIL, the callee entry count) is byte-identical to the external oracle; hb_memcheck pending 0.
+def tryb(expr,catch=True):return 'try\n r:='+expr+'\ncatch\n hits:=hits+1\nend' if catch else 'r:='+expr
+RHS=[('borrowed-left','a*Fails(b)',True),('owned-left','(a*b)*Fails(b)',True),('owned-chain-left','a*b*c*Fails(b)',True),('rhs-owned-temp','a*(b*Fails(b))',True),('control-no-throw','a*Ok(b)',False)]
+for shape,expr,thr in RHS:
+  for n in [1,500,1000]:
+    w=out/('rhs-%s-%d'%(shape,n));w.mkdir();src=(gate/'mem'/'rhs.prg').read_text().replace('@N@',str(n)).replace('TRYBLOCK',tryb(expr,True) if thr else tryb(expr,False))
+    (w/'p.prg').write_text(src)
+    osrc=''.join(l for l in src.splitlines(True) if 'baseline' not in l and 'pending' not in l)
+    (w/'o.prg').write_text(oracle(osrc).replace('catch\n','recover\n'))
+    ob=sh([a.hbmk2,'-quiet','-gtstd','-w0','-o'+str(w/'oracle'),w/'o.prg'],w,'oracle-build',lenv);orr=sh([w/'oracle'],w,'oracle-run',lenv)
+    ok=ob.returncode==0 and orr.returncode==0 and len(orr.stdout)>0
+    exp=orr.stdout+b'\npending %10d'%0
+    for who,cmd,flag in [('lin-int',[cc,'p.prg','x-lin-int'],None),('lin-ext',[cc,'p.prg','x-lin-ext','--external-as'],None),('win-int',[cc,'p.prg','x-win-int.exe','--target=windows'],'wine')]:
+        c=sh(cmd,w,'build-'+who);good=c.returncode==0
+        if good:
+            r=sh(['wine',w/'x-win-int.exe'] if flag else [w/('x-'+who)],w,'run-'+who);want=exp.replace(b'\n',b'\r\n') if flag else exp
+            good=r.returncode==0 and r.stdout==want and r.stderr==b''
+        ok=ok and good
+    add('rhs-%s-%d'%(shape,n),'rhs-throw-oracle-identical-and-pending-zero',ok)
 ident=dict(compiler_sha256=hashlib.sha256(P(cc).read_bytes()).hexdigest(),total=len(rows),passed=sum(r['pass_'] for r in rows))
 (out/'results.json').write_text(json.dumps(dict(ident=ident,rows=rows),indent=1))
 print('%d/%d'%(ident['passed'],ident['total']));raise SystemExit(0 if ident['passed']==ident['total'] else 1)
