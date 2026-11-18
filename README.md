@@ -85,6 +85,16 @@ known failures and the history of published increments.
   other Linux/Windows compile of `tests/` and `extend/demo`). Output matches
   Harbour 3.2 byte for byte (`tests/str-concat-assign`).
 
+- **Logical codeblocks and `AScan` with a block (18 November).** `{|x| x > 2}`
+  was rejected (issue #1, section 3.4). A block whose last expression is a
+  comparison, `.AND.`/`.OR.`/`.NOT.` or a logical literal now returns a
+  logical, and `AScan(a, {|x[, i]| ...})` on a dynamic integer array returns
+  the first position where the block answers `.T.`, or 0. Output matches
+  Harbour 3.2 byte for byte (`tests/cb-logical`). Still rejected: block
+  parameters other than integers (`AScan(aStrings, {|e| e == "z"})`),
+  captures of enclosing locals, assignments inside a block and `ASort` with
+  a block.
+
 The first DBF, NTX and CDX increments are released; classes and objects
 are in main (v0.7.0). Broader RDD support remains
 work in progress. No unmeasured speed or capability claims are made.
