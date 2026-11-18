@@ -36131,7 +36131,9 @@ hbc_seconds:
 const SECONDS_DARWIN: &str = r#"
     .text
 # hbc_seconds on Darwin: gettimeofday (UTC, like the date helper);
-# timeval tv_sec at 0, tv_usec at 8. Whole seconds only, as on Linux.
+# timeval tv_sec at 0, tv_usec at 8. Whole seconds only: tv_usec is not
+# read, so there is no millisecond fraction (the Linux and Windows helpers
+# keep milliseconds). Compiled by the manifest check, not executed.
 hbc_seconds:
     push %rbp
     mov %rsp, %rbp
