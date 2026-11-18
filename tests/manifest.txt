@@ -952,7 +952,7 @@ neg tests/t957_sequence_loop_move_neg.prg moved inside the `for` body
 neg tests/t958_sequence_lazy_arm_move_neg.prg use of moved value
 neg tests/t959_sequence_lazy_and_move_neg.prg use of moved value
 neg tests/t960_sequence_lazy_or_move_neg.prg use of moved value
-neg tests/t961_sequence_seq_inside_arg_move_neg.prg use of moved value
+neg tests/t961_sequence_seq_inside_arg_move_neg.prg must be a string
 neg tests/t962_sequence_double_consume_neg.prg use of moved value
 pos2 tests/t963_sequence_lazy_reassign.prg tests/expectations/qout/t963_sequence_lazy_reassign.linux.out tests/expectations/qout/t963_sequence_lazy_reassign.windows.out
 neg tests/t964_qout_seq_sibling_move_neg.prg use of moved value
@@ -1913,3 +1913,7 @@ neg tests/t1697_iif_mixed_neg_consumer_int_slot_assign.prg an owned tagged value
 neg tests/t1696_iif_mixed_neg_consumer_user_int_param.prg an owned tagged value
 neg tests/t1695_iif_mixed_neg_consumer_hb_ntos_float.prg an owned tagged value
 neg tests/t1694_iif_mixed_neg_consumer_hb_ntos_str.prg an owned tagged value
+neg tests/t1706_nested_move_neg_same_call.prg use of moved value
+neg tests/t1707_nested_move_neg_after.prg use of moved value
+neg tests/t1708_nested_move_neg_twice.prg use of moved value
+neg tests/t1709_nested_move_neg_loop.prg is moved inside the

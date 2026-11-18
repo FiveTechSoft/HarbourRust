@@ -7867,10 +7867,18 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                         Expr::Int(_) => Some(Ty::I64),
                         Expr::Str(_) => Some(Ty::Str),
                         Expr::Log(_) => Some(Ty::Bool),
-                        _ => match type_expr(a, env, sigs, n) {
-                            Ok(Ty::F64) => Some(Ty::F64),
-                            Ok(Ty::Date) => Some(Ty::Date),
-                            _ => None,
+                        // This is an evidence-only pass: it must not leave moves behind, or the
+                        // real check of the same argument (below) sees its owned variables as
+                        // already moved (F(G(s), d) was rejected as a use after move).
+                        _ => {
+                            let saved: Vec<Local> = env.to_vec();
+                            let ty = type_expr(a, env, sigs, n);
+                            env.clone_from_slice(&saved);
+                            match ty {
+                                Ok(Ty::F64) => Some(Ty::F64),
+                                Ok(Ty::Date) => Some(Ty::Date),
+                                _ => None,
+                            }
                         },
                     };
                     if let Some(e) = ev {
