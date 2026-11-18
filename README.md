@@ -51,7 +51,7 @@ These are bounded measurements, not a project completion percentage. Windows,
 LLVM and interactive-terminal support have separate limits. Source and probe
 changes are reviewed independently before publication.
 
-Linux `Date()` remains UTC, not local time. Date parameters and general dynamic
+Linux `Date()` and `Seconds()` use the local zone (TZ, or /etc/localtime when TZ is unset; TZif v2 files; measured 2026-11-18). Unsupported zones, such as a POSIX TZ string without a file, answer UTC, and this reader ignores the footer rule of "slim" zone files after their last transition; Darwin stays UTC. Details in docs/DATE-PORT-2026-11-13.md. Date parameters and general dynamic
 Date storage are not supported. Windows smoke tests cover `CToD`, blank dates and
 `ValType` under Wine 11.0. The full Linux + Wine regression runner has now
 been run against main and the bridge increment (13 November 2026): both report 1643 passes and
