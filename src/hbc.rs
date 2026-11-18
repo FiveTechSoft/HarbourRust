@@ -276,7 +276,7 @@ fn f64_const(bits: u64) -> usize {
 // extraction cannot multiply. At a marked Dyn consumer the product takes the Dyn*Dyn route, the
 // static integer operand entering it as an integer cell.
 fn mul_mixed_tys(op: char, ta: Ty, tb: Ty) -> bool {
-    matches!(op, '*' | '+' | '-') && ((ta == Ty::Dyn && tb == Ty::I64) || (ta == Ty::I64 && tb == Ty::Dyn))
+    matches!(op, '*' | '+' | '-') && ((ta == Ty::Dyn && matches!(tb, Ty::I64 | Ty::F64)) || (matches!(ta, Ty::I64 | Ty::F64) && tb == Ty::Dyn))
 }
 fn dynplus_marked(e: &Expr) -> bool {
     DYNPLUS_NODES.with(|v| v.borrow().contains(&(e as *const Expr as usize)))
@@ -19097,6 +19097,11 @@ fn cg_mul_snapshot(e:&Expr,env:&[CgLocal],sigs:&[Sig],strs:&mut Vec<String>,out:
         // static integer operand: an integer cell (tag 0), nothing to own
         cg_expr(e,env,sigs,strs,out,target);
         out.push_str("    mov %rax, %rdx\n    xor %eax, %eax\n");
+        return;
+    }
+    if expr_ty(e,env,sigs)==Ty::F64 {
+        // static float operand: an owned heap float pair (dec and width from the static metadata)
+        cg_data_value(e,env,sigs,strs,out,target);
         return;
     }
     cg_value(e,env,sigs,strs,out,target);

@@ -27,8 +27,7 @@ Controls (logs in the package): the previous compiler (v3 build) 21/49, a mutant
 snapshots on success 19/49, both exit 1 as expected.
 
 Not covered (named rejection or previous behaviour, left as is):
-- a STATIC float operand or a float-typed call result next to a Dyn (`a + 2.5`, `a - Ok(2)` when `Ok` is float-typed) keeps the named
-  rejection "arithmetic between a NIL-able (Dyn) value and a float is a covered LIMIT" (the same rejection `*` has).
+- a static float operand next to a Dyn (`a + 2.5`, `a - Fl()`): covered by tests/dyn-static-float.
 - `-` between two strings (Harbour concatenates with trimming, "x " - "y" gives "xy"): the Dyn route raises a type error, as the previous
   compiler did; not changed here.
 - Numeric contexts that are not a Dyn consumer (an `IF a + 1 > 2` condition) keep the integer route and still raise for a float Dyn.
