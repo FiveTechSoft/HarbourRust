@@ -30649,7 +30649,7 @@ fn finalize_trace(mut out: String, target: Target) -> String {
         });
     }
     if out.contains("call hbc_seconds") {
-        out.push_str(match target {Target::Windows=>SECONDS_WINDOWS,_=>SECONDS_LINUX});
+        out.push_str(if MACHO_MODE.with(|v| v.get()) { SECONDS_DARWIN } else { match target {Target::Windows=>SECONDS_WINDOWS,_=>SECONDS_LINUX} });
     }
     // Add private stderr variants only when used. No mutable routing state:
     // nested OutStd/QOut and controlled diagnostics retain their destination.
@@ -36024,44 +36024,91 @@ const SECONDS_LINUX: &str = r#"
 # hbc_seconds: xmm0 = seconds since midnight (double), rdi = meta
 # ((width 10 << 16) | dec 2). SYS_time is UTC, the same source the
 # date helper uses, so Seconds() is UTC-based in this increment.
+# clock_gettime(CLOCK_REALTIME): millisecond fraction like Harbour's.
 hbc_seconds:
     push %rbp
     mov %rsp, %rbp
+    sub $16, %rsp
     xor %edi, %edi
-    mov $201, %eax
+    lea -16(%rbp), %rsi
+    mov $228, %eax
     syscall
+    test %rax, %rax
+    jnz .Lseconds_lfail
+    mov -8(%rbp), %rax
+    xor %edx, %edx
+    mov $1000000, %ecx
+    div %rcx
+    mov %rax, %r8
+    mov -16(%rbp), %rax
     xor %edx, %edx
     mov $86400, %ecx
     div %rcx
     cvtsi2sd %rdx, %xmm0
+    cvtsi2sd %r8, %xmm1
+    mov $1000, %eax
+    cvtsi2sd %eax, %xmm2
+    divsd %xmm2, %xmm1
+    addsd %xmm1, %xmm0
+    jmp .Lseconds_ldone
+.Lseconds_lfail:
+    xorpd %xmm0, %xmm0
+.Lseconds_ldone:
     mov $655362, %edi
+    leave
+    ret
+"#;
+
+const SECONDS_DARWIN: &str = r#"
+    .text
+# hbc_seconds on Darwin: gettimeofday (UTC, like the date helper);
+# timeval tv_sec at 0, tv_usec at 8. Whole seconds only, as on Linux.
+hbc_seconds:
+    push %rbp
+    mov %rsp, %rbp
+    sub $32, %rsp
+    lea -32(%rbp), %rdi
+    xor %esi, %esi
+    mov $96, %eax
+    syscall
+    xor %edx, %edx
+    test %rax, %rax
+    js .Lseconds_fail
+    mov -32(%rbp), %rax
+    mov $86400, %ecx
+    div %rcx
+.Lseconds_fail:
+    cvtsi2sd %rdx, %xmm0
+    mov $655362, %edi
+    leave
     ret
 "#;
 
 const SECONDS_WINDOWS: &str = r#"
     .text
 # hbc_seconds: xmm0 = seconds since midnight (double), rdi = meta.
-# GetLocalTime fills a SYSTEMTIME; hour/min/sec live at -8/-6/-4 of the
-# buffer when it starts at -16(%rbp).
+# The 16-byte SYSTEMTIME lives at -16(%rbp), ABOVE the 32-byte shadow
+# space of the call (rsp = rbp-48, shadow = rbp-48..rbp-16), so the callee
+# cannot clobber it. wHour/wMinute/wSecond are at +8/+10/+12.
 hbc_seconds:
     push %rbp
     mov %rsp, %rbp
-    sub $32, %rsp
+    sub $48, %rsp
     lea -16(%rbp), %rcx
     call GetLocalTime
     movzwl -8(%rbp), %eax
     movzwl -6(%rbp), %ecx
     movzwl -4(%rbp), %edx
-    cvtsi2sd %eax, %xmm0
-    imul $60, %eax, %eax
-    cvtsi2sd %eax, %xmm1
-    addsd %xmm1, %xmm0
-    cvtsi2sd %ecx, %xmm1
-    addsd %xmm1, %xmm0
+    imul $3600, %eax, %eax
     imul $60, %ecx, %ecx
-    cvtsi2sd %ecx, %xmm1
-    addsd %xmm1, %xmm0
-    cvtsi2sd %edx, %xmm1
+    add %ecx, %eax
+    add %edx, %eax
+    cvtsi2sd %eax, %xmm0
+    movzwl -2(%rbp), %eax
+    cvtsi2sd %eax, %xmm1
+    mov $1000, %eax
+    cvtsi2sd %eax, %xmm2
+    divsd %xmm2, %xmm1
     addsd %xmm1, %xmm0
     mov $655362, %edi
     leave
