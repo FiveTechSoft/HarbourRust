@@ -12,7 +12,7 @@ def run(cmd,work,label,e=env):
 # multilevel on a flat literal is a RUNTIME failmode (Harbour dialog) and
 # left the suite (S4 probe battery covers it). The rest keep named
 # rejections with their post-flip texts until their arms land.
-expect={'call_arg':'cannot infer the type of parameter','assign_nonconst':'takes a literal of constants',**{n:'shared-array use is outside the dynamic increment' for n in ['cmp_whole','if_whole']},'obj_cell':'storing into a cell of the shared module array',**{n:'shared-array use is outside the dynamic increment'for n in ['byref','afill','compound','container']},**{n:'shared-array use is outside the dynamic increment' for n in ['aadd_lit']}}
+expect={'call_arg':'passing the shared module array','assign_nonconst':'takes a literal of constants',**{n:'shared-array use is outside the dynamic increment' for n in ['cmp_whole','if_whole']},'obj_cell':'storing into a cell of the shared module array',**{n:'shared-array use is outside the dynamic increment'for n in ['byref','afill','compound','container']},**{n:'shared-array use is outside the dynamic increment' for n in ['aadd_lit']}}
 for group in ['programs','negative']:
  for src in sorted((root/group).glob('*.prg')):
   for target in ['linux']+(['windows']if a.wine else[]):

@@ -1,0 +1,8 @@
+STATIC a := {1,2,3}
+PROCEDURE Main()
+? Fwd(a)
+RETURN
+FUNCTION Fwd(p)
+RETURN Show(p)
+FUNCTION Show(x)
+RETURN x

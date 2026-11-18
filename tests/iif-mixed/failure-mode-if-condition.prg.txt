@@ -1,0 +1,11 @@
+FUNCTION Main()
+ LOCAL x := IIf( .T., "x", 1 )
+ TRY
+  IF x
+   ? "yes"
+  ENDIF
+ CATCH
+  ? "recovered"
+ END
+ ? "after"
+RETURN NIL

@@ -74,6 +74,110 @@ hbc_float_clone:
 .Lfloat_clone_done:
     ret
 
+# Dyn * Dyn when at least one operand is a number that is not an integer pair.
+# rdi/rsi = tag/payload of A, rdx/rcx = tag/payload of B (borrowed snapshots, never
+# released here). Both operands must be integer (tag 0 or 9) or float (kind 5);
+# anything else returns rax = -1 (caller raises the type error). Result: owned
+# float pair (rax tag, rdx item) with dec = decA + decB for hbc_dyn_mulf (hbc_dyn_addf/hbc_dyn_subf: max(decA, decB), same entry contract) (an integer has dec 0) and
+# the F64 width rule (20 when x > 9999999999.0 or x < -999999999.0, else 10).
+hbc_dyn_mulf:
+    xor %r8d, %r8d
+    jmp hbc_dyn_arithf
+hbc_dyn_addf:
+    mov $1, %r8d
+    jmp hbc_dyn_arithf
+hbc_dyn_subf:
+    mov $2, %r8d
+hbc_dyn_arithf:
+    push %rbp
+    mov %rsp, %rbp
+    sub $64, %rsp
+    mov %r8, 48(%rsp)
+    mov %rdi, (%rsp)
+    mov %rsi, 8(%rsp)
+    mov %rdx, 16(%rsp)
+    mov %rcx, 24(%rsp)
+    mov (%rsp), %rax
+    mov 8(%rsp), %rdx
+    cmp $5, %al
+    je .Lmulf_af
+    test %rax, %rax
+    je .Lmulf_ai
+    cmp $9, %rax
+    jne .Lmulf_err
+.Lmulf_ai:
+    cvtsi2sd %rdx, %xmm0
+    xor %edi, %edi
+    jmp .Lmulf_as
+.Lmulf_af:
+    call hbc_float_unpack
+.Lmulf_as:
+    movsd %xmm0, 32(%rsp)
+    movzwl %di, %edi
+    mov %rdi, 40(%rsp)
+    mov 16(%rsp), %rax
+    mov 24(%rsp), %rdx
+    cmp $5, %al
+    je .Lmulf_bf
+    test %rax, %rax
+    je .Lmulf_bi
+    cmp $9, %rax
+    jne .Lmulf_err
+.Lmulf_bi:
+    cvtsi2sd %rdx, %xmm0
+    xor %edi, %edi
+    jmp .Lmulf_bs
+.Lmulf_bf:
+    call hbc_float_unpack
+.Lmulf_bs:
+    movzwl %di, %esi
+    mov 40(%rsp), %r10
+    cmpq $0, 48(%rsp)
+    jne .Larithf_maxdec
+    add %r10, %rsi
+    jmp .Larithf_dec
+.Larithf_maxdec:
+    cmp %rsi, %r10
+    cmova %r10, %rsi
+.Larithf_dec:
+    movsd 32(%rsp), %xmm1
+    cmpq $1, 48(%rsp)
+    je .Larithf_add
+    ja .Larithf_sub
+    mulsd %xmm0, %xmm1
+    jmp .Larithf_op
+.Larithf_add:
+    addsd %xmm0, %xmm1
+    jmp .Larithf_op
+.Larithf_sub:
+    subsd %xmm0, %xmm1
+.Larithf_op:
+    cmp $435, %rsi
+    jbe .Lmulf_dok
+    call hbc_f64range_error
+.Lmulf_dok:
+    mov $10, %eax
+    movsd .Ldynw_hi(%rip), %xmm2
+    ucomisd %xmm2, %xmm1
+    ja .Lmulf_wide
+    movsd .Ldynw_lo(%rip), %xmm2
+    ucomisd %xmm1, %xmm2
+    ja .Lmulf_wide
+    jmp .Lmulf_meta
+.Lmulf_wide:
+    mov $20, %eax
+.Lmulf_meta:
+    shl $16, %rax
+    or %rax, %rsi
+    movq %xmm1, %rdi
+    call hbc_float_new
+    leave
+    ret
+.Lmulf_err:
+    mov $-1, %rax
+    leave
+    ret
+
 # Release marked-float payloads in a flat cell range. RDI=data,RDX=count;
 # preserves RDI/RSI/RDX for the final block free. Never used on block moves.
 hbc_float_cells_release:

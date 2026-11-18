@@ -4078,3 +4078,6 @@ GREEN on Linux x86-64 and Wine 10.20. The frozen 175-original sweep
 stays at 20 COMPILES (archived-probe:sweep175-64bc.csv). hk483/hk484
 .byte-match compiled Harbour on both targets. No speed claim; hk455
 assembly is unchanged.
+
+
+Parameters without type evidence (Julio Ponce, MIT): programs whose parameters have no body or call-site evidence now compile with a tagged slot; the S4 guard keeps the shared module array out. `tests/manifest.txt` row of `module-static-array/negative/call_arg.prg` now expects the S4 diagnostic. See `tests/param-no-evidence/README.md`.

@@ -1,0 +1,8 @@
+FUNCTION Main()
+TRY
+ Break("x")
+CATCH e
+ ? e
+END
+PRIVATE e
+RETURN NIL
