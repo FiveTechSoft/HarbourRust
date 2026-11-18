@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Seconds(): runtime checks. The value is time dependent, so each run is
-bracketed by the host clock (UTC for the Linux ELF, local time for the PE under
+bracketed by the host clock (local time of TZ=Asia/Kolkata for the Linux ELF, local time for the PE under
 Wine) and the printed format is compared with the external oracle's profile
 (width 10, two decimals). Mach-O targets are only compiled here (not run).
 Original MIT; Harbour 3.2.1dev r2610242111 is only an external oracle (not Harbour 4)."""
@@ -12,11 +12,13 @@ env=dict(os.environ,PATH='/tmp/toolchain/bin:'+os.environ['PATH'],WINEDEBUG='-al
 rows=[]
 def add(n,ok,note=''):
     rows.append(dict(test=n,pass_=bool(ok),note=note));print('PASS' if ok else 'FAIL',n,note,flush=True)
-def sh(cmd,w,label):
-    p=subprocess.run(list(map(str,cmd)),cwd=w,capture_output=True,env=env,stdin=subprocess.DEVNULL,timeout=120)
+def sh(cmd,w,label,e=None):
+    p=subprocess.run(list(map(str,cmd)),cwd=w,capture_output=True,env=e or env,stdin=subprocess.DEVNULL,timeout=120)
     for k,v in [('stdout',p.stdout),('stderr',p.stderr),('rc',str(p.returncode).encode())]:(w/(label+'.'+k)).write_bytes(v)
     return p
-def sec_utc(t):return int(t)%86400
+import zoneinfo,datetime
+KTZ='Asia/Kolkata'  # non-UTC zone fixed for the ELF rows
+def sec_utc(t):l=datetime.datetime.fromtimestamp(int(t),zoneinfo.ZoneInfo(KTZ));return l.hour*3600+l.minute*60+l.second
 def sec_loc(t):l=time.localtime(t);return l.tm_hour*3600+l.tm_min*60+l.tm_sec
 def parse(stdout):
     ls=stdout.decode().replace('\r\n','\n').split('\n')
@@ -47,7 +49,7 @@ for who,flag,tgt in [('elf-internal',[],'linux'),('elf-external',['--external-as
     if c.returncode!=0:add(who,False,'build failed');continue
     cmd=['wine',w/'x.exe'] if tgt=='windows' else [w/'x']
     if tgt=='windows':sh(cmd,w,'warm')
-    t0=time.time();r=sh(cmd,w,'run');t1=time.time()
+    t0=time.time();r=sh(cmd,w,'run',None if tgt=='windows' else dict(env,TZ=KTZ));t1=time.time()
     ok=r.returncode==0 and r.stderr==b''
     good,note=check(who,parse(r.stdout),t0,t1,sec_loc if tgt=='windows' else sec_utc)
     add(who,ok and good,'rc=%d stderr=%d bytes %s'%(r.returncode,len(r.stderr),note))

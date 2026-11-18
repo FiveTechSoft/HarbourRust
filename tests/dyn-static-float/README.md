@@ -16,7 +16,7 @@ Run: `python3 check.py --compiler HBC --hbmk2 HBMK2 --output DIR` (fresh DIR): P
 - `prog-values`: stdout byte-identical to the oracle on ELF internal, ELF external and PE (Wine, CRLF): literals and float-typed calls
   on either side, dec rules, big values, chains, unary minus, assignment, loop, a float-typed callee that throws on the right, on the left and
   inside a chain under TRY, and string operand errors (an error in both).
-- `mem-<kind>-<N>` (14 kinds x N = 1, 500, 1000, three targets): `hb_memcheck` pending 0 on the second round, `a` unchanged, hit and callee
+- `mem-<kind>-<N>` (15 kinds x N = 1, 500, 1000, three targets): `hb_memcheck` pending 0 on the second round, `a` unchanged, hit and callee
   entry counters equal N where the callee throws. Float-typed and integer-typed throwers, on either side, in chains and after pending print items.
 
 Controls (logs in the package): the previous compiler (e487f68f build) 0/46; a mutant that clones the owned static-float snapshot (the

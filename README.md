@@ -16,7 +16,7 @@ Kind-5 Dyn values now keep their double bits and full display metadata in
 an owned heap item. Old inline casillas remain readable, and the Extend
 bridge negotiates return/store format per call so old callers keep inline
 results. This supports the original `multiarg.prg` and bounded F64/Dyn
-transport, not general Dyn-float arithmetic. New objects require a rebuilt
+transport (record of 15 November 2026). Since then main has bounded Dyn-float arithmetic: `+ - *` at Dyn consumers, with their own gates `tests/dyn-mul-i64`, `tests/dyn-addsub` and `tests/dyn-static-float`, and `/` with `tests/dyn-division` (30 assertions; its README states a measured leak limit across frames when a method fails to a caller's catch, so no general zero-leak claim is made) (main `9e150aee`, 18 November 2026), and comparisons of a float Dyn or a Dyn arithmetic expression (`IF a + 1 > 2`) with the gate `tests/dyn-compare` (main `b807f17a`, 18 November 2026). `%` and numeric builtin arguments are not covered; it is not general Dyn-float arithmetic. New objects require a rebuilt
 bridge. See [representation, compatibility and limits](docs/DYN-HEAP-FLOAT-2026-11-15.md).
 
 ## .hrb files
@@ -51,7 +51,7 @@ These are bounded measurements, not a project completion percentage. Windows,
 LLVM and interactive-terminal support have separate limits. Source and probe
 changes are reviewed independently before publication.
 
-Linux `Date()` remains UTC, not local time. Date parameters and general dynamic
+Linux `Date()` and `Seconds()` use the local zone (TZ, or /etc/localtime when TZ is unset; TZif v2 files; measured 2026-11-18). Unsupported zones, such as a POSIX TZ string without a file, answer UTC, and this reader ignores the footer rule of "slim" zone files after their last transition; Darwin stays UTC. Details in docs/DATE-PORT-2026-11-13.md. Date parameters and general dynamic
 Date storage are not supported. Windows smoke tests cover `CToD`, blank dates and
 `ValType` under Wine 11.0. The full Linux + Wine regression runner has now
 been run against main and the bridge increment (13 November 2026): both report 1643 passes and
