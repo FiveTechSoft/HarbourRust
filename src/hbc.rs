@@ -60,7 +60,7 @@ thread_local! {
 fn hb_rdd() -> bool { HB_RDD.with(|v| v.get()) }
 thread_local! {
     static CG_MEMVAR_NAMES: std::cell::RefCell<std::collections::HashSet<String>> = std::cell::RefCell::new(std::collections::HashSet::new());
-    // names a PRIVATE/PUBLIC/MEMVAR statement bound in the function being parsed
+    // names a PRIVATE/PUBLIC statement bound in the function being parsed
     static PARSE_MEMVARS: std::cell::RefCell<std::collections::HashSet<String>> = std::cell::RefCell::new(std::collections::HashSet::new());
     static MACRO_CONTEXT: std::cell::Cell<bool> = const {std::cell::Cell::new(false)};
     // Str(Dyn) seen by the checker. Single-thread programs validate it
@@ -272,6 +272,12 @@ fn f64_const(bits: u64) -> usize {
 // consumer that already accepts a Dyn cell (print item, assignment to a Dyn
 // slot, and '+' operand chains below those). Every other Dyn+Dyn keeps the
 // numeric route and its I64 type, so integer contexts are unchanged.
+// Dyn*I64 and I64*Dyn ('*' only): a Dyn operand may hold a float at run time, which the integer
+// extraction cannot multiply. At a marked Dyn consumer the product takes the Dyn*Dyn route, the
+// static integer operand entering it as an integer cell.
+fn mul_mixed_tys(op: char, ta: Ty, tb: Ty) -> bool {
+    op == '*' && ((ta == Ty::Dyn && tb == Ty::I64) || (ta == Ty::I64 && tb == Ty::Dyn))
+}
 fn dynplus_marked(e: &Expr) -> bool {
     DYNPLUS_NODES.with(|v| v.borrow().contains(&(e as *const Expr as usize)))
 }
@@ -291,7 +297,8 @@ fn mark_dynplus_rec(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) 
         let tb = type_expr(b, env, sigs, n);
         let strish = |t: &Result<Ty, String>| matches!(t, Ok(Ty::Str | Ty::StrOwn));
         let dynt = |t: &Result<Ty, String>| matches!(t, Ok(Ty::Dyn));
-        let dd = !DBF_USED.with(|v| v.get()) && dynt(&ta) && dynt(&tb);
+        let mixed = matches!((&ta, &tb), (Ok(x), Ok(y)) if mul_mixed_tys(*mop, *x, *y));
+        let dd = !DBF_USED.with(|v| v.get()) && ((dynt(&ta) && dynt(&tb)) || mixed);
         let sd = *mop == '+' && ((strish(&ta) && dynt(&tb)) || (dynt(&ta) && strish(&tb)));
         if dd {
             ins.extend(kids);
@@ -8285,7 +8292,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
             // Dyn+Dyn with '+' and no DBF: runtime dispatch. Two string
             // payloads concatenate, two integer payloads add; the static
             // result is a Dyn cell (owned for strings).
-            if matches!(*op, '+' | '*') && ta == Ty::Dyn && tb == Ty::Dyn && !DBF_USED.with(|v| v.get()) && dynplus_marked(e) {
+            if ((matches!(*op, '+' | '*') && ta == Ty::Dyn && tb == Ty::Dyn) || mul_mixed_tys(*op, ta, tb)) && !DBF_USED.with(|v| v.get()) && dynplus_marked(e) {
                 return Ok(Ty::Dyn);
             }
             if *op == '+' && ((ta == Ty::Dyn && matches!(tb, Ty::Str | Ty::StrOwn)) || (tb == Ty::Dyn && matches!(ta, Ty::Str | Ty::StrOwn))) {
@@ -17600,7 +17607,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                 cg_dyn_dyn_plus(a,b,env,sigs,strs,out,target);
                 return;
             }
-            if *op == '*' && expr_ty(a,env,sigs)==Ty::Dyn && expr_ty(b,env,sigs)==Ty::Dyn && !DBF_USED.with(|v| v.get()) && dynplus_marked(e) {
+            if *op == '*' && { let (xa,xb)=(expr_ty(a,env,sigs),expr_ty(b,env,sigs)); (xa==Ty::Dyn && xb==Ty::Dyn) || mul_mixed_tys('*',xa,xb) } && !DBF_USED.with(|v| v.get()) && dynplus_marked(e) {
                 cg_dyn_dyn_mul(a,b,env,sigs,strs,out,target);
                 return;
             }
@@ -18549,7 +18556,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
 
             if matches!(ta, Ty::Str | Ty::StrOwn) || matches!(tb, Ty::Str | Ty::StrOwn) {
                 Ty::StrOwn
-            } else if matches!(*op, '+' | '*') && ta == Ty::Dyn && tb == Ty::Dyn && !DBF_USED.with(|v| v.get()) && dynplus_marked(e) {
+            } else if ((matches!(*op, '+' | '*') && ta == Ty::Dyn && tb == Ty::Dyn) || mul_mixed_tys(*op, ta, tb)) && !DBF_USED.with(|v| v.get()) && dynplus_marked(e) {
                 // Mirror of type_expr: Dyn+Dyn runtime dispatch, Dyn cell.
                 Ty::Dyn
             } else if matches!(*op, '+' | '-' | '*' | '/' | '%' | '^')
@@ -19078,6 +19085,12 @@ fn cg_dyn_dyn_plus(a:&Expr,b:&Expr,env:&[CgLocal],sigs:&[Sig],strs:&mut Vec<Stri
 // hb_vmMult) into an owned heap float. Any other kind is a type error after BOTH operands evaluated.
 // Operand snapshots are exclusively owned: borrowed floats are cloned, borrowed non-numbers become NIL.
 fn cg_mul_snapshot(e:&Expr,env:&[CgLocal],sigs:&[Sig],strs:&mut Vec<String>,out:&mut String,target:Target) {
+    if expr_ty(e,env,sigs)==Ty::I64 {
+        // static integer operand: an integer cell (tag 0), nothing to own
+        cg_expr(e,env,sigs,strs,out,target);
+        out.push_str("    mov %rax, %rdx\n    xor %eax, %eax\n");
+        return;
+    }
     cg_value(e,env,sigs,strs,out,target);
     let k=fresh_lbl();
     out.push_str(&format!("    @HBC_TAG_KIND@cmp $0, %rax@HBC_TAG_END@\n    je .Lmsdone{k}\n    @HBC_TAG_KIND@cmp $9, %rax@HBC_TAG_END@\n    je .Lmsdone{k}\n    cmp $5, %al\n    jne .Lmsnf{k}\n"));
@@ -19884,7 +19897,31 @@ fn cg_print_items(es: &[Expr], inline: bool, raw: bool, stderr: bool, env: &[CgL
                 // tag-2/4 payload) and the clone is freed after printing;
                 // owned temporaries keep their existing release path.
                 let dyn_cell_borrow = |e: &Expr, env: &[CgLocal]| hash_cell_borrow(e,env) || matches!(e, Expr::Index(v, _) if env.iter().any(|x| x.name == *v && matches!(x.ty, Ty::DArrDyn | Ty::Dyn | Ty::RefDyn)));
-                for e in es {
+                // Pending pairs vs a throw in a LATER item. Every owned pair already pushed
+                // (Dyn float/string cells, owned string temporaries) is released by a landing
+                // pad before the same error keeps unwinding; evaluation and output order are
+                // unchanged. Pairs of other kinds keep their previous behaviour (not released).
+                // pend_kind: 1 = Dyn pair (float cell / tag-4 string released like the render
+                // does), 2 = owned string temporary (pointer in the tag slot), 0 = nothing.
+                let pend_kind = |e: &Expr| -> u8 {
+                    if cg_iif_out_rawdyn(e, env, sigs).is_some() || darr2_child(e, env) || darrs_elem(e, env) || renders_empty(e) { return 0; }
+                    match expr_ty(e, env, sigs) {
+                        Ty::Dyn => 1,
+                        Ty::StrOwn if matches!(e, Expr::Call(..) | Expr::Bin(..)) => 2,
+                        _ => 0,
+                    }
+                };
+                let pad_n = es.len();
+                let pad_kinds: Vec<u8> = es.iter().map(|e| pend_kind(e)).collect();
+                let pad = pad_n >= 2 && pad_kinds[..pad_n - 1].iter().any(|k| *k != 0);
+                let pad_k = if pad { fresh_lbl() } else { 0 };
+                if pad {
+                    out.push_str(&format!("    sub $16, %rsp\n    movq $0, (%rsp)\n    movq $0, 8(%rsp)\n    cmpq $0, hbc_seq_depth(%rip)\n    je .Lppev{k}\n    lea .Lppcatch{k}(%rip), %rdi\n    call hbc_seq_push\n    movq $1, 8(%rsp)\n.Lppev{k}:\n", k = pad_k));
+                }
+                for (item_idx, e) in es.iter().enumerate() {
+                    if pad && item_idx > 0 {
+                        out.push_str(&format!("    movq ${}, {}(%rsp)\n", item_idx, 16 * item_idx));
+                    }
                     if let Some((cond, arm1, arm2, cell1)) = cg_iif_out_rawdyn(e, env, sigs) {
                         // Evaluate the condition ONCE, then only the chosen
                         // arm (iif laziness, hk321). Both arms push a
@@ -19986,6 +20023,28 @@ fn cg_print_items(es: &[Expr], inline: bool, raw: bool, stderr: bool, env: &[CgL
                     }
                     cg_value(e, env, sigs, strs, out, target);
                     out.push_str("    push %rdx\n    push %rax\n");
+                }
+                if pad {
+                    let n = pad_n;
+                    let k = pad_k;
+                    // all items evaluated: drop the pad, then move the pairs up over the slot
+                    out.push_str(&format!("    cmpq $0, {}(%rsp)\n    je .Lppnp{k}\n    call hbc_seq_pop\n.Lppnp{k}:\n", 16 * n + 8, k = k));
+                    for w in (0..2 * n).rev() {
+                        out.push_str(&format!("    mov {}(%rsp), %r11\n    mov %r11, {}(%rsp)\n", 8 * w, 8 * w + 16));
+                    }
+                    out.push_str(&format!("    add $16, %rsp\n    jmp .Lppdone{k}\n.Lppcatch{k}:\n    sub ${}, %rsp\n", 16 * n, k = k));
+                    for i in 0..n - 1 {
+                        if pad_kinds[i] == 0 { continue; }
+                        let off = 16 * (n - 1 - i);
+                        out.push_str(&format!("    cmpq ${}, {}(%rsp)\n    jle .Lppnx{k}_{i}\n", i, 16 * n, k = k, i = i));
+                        if pad_kinds[i] == 1 {
+                            cg_dyn_stack_release(out, off, false);
+                        } else {
+                            out.push_str(&format!("    mov {}(%rsp), %rdi\n    call hbc_freestr\n", off));
+                        }
+                        out.push_str(&format!(".Lppnx{k}_{i}:\n", k = k, i = i));
+                    }
+                    out.push_str(&format!("    add ${}, %rsp\n    jmp hbc_seq_unwind\n.Lppdone{k}:\n", 16 * n + 16, k = k));
                 }
                 // `??` skips ONLY the leading newline (hk274-hk276;
                 // the comment's further claim of a per-statement `??`
