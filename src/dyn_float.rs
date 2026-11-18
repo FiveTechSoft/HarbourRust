@@ -78,12 +78,21 @@ hbc_float_clone:
 # rdi/rsi = tag/payload of A, rdx/rcx = tag/payload of B (borrowed snapshots, never
 # released here). Both operands must be integer (tag 0 or 9) or float (kind 5);
 # anything else returns rax = -1 (caller raises the type error). Result: owned
-# float pair (rax tag, rdx item) with dec = decA + decB (an integer has dec 0) and
+# float pair (rax tag, rdx item) with dec = decA + decB for hbc_dyn_mulf (hbc_dyn_addf/hbc_dyn_subf: max(decA, decB), same entry contract) (an integer has dec 0) and
 # the F64 width rule (20 when x > 9999999999.0 or x < -999999999.0, else 10).
 hbc_dyn_mulf:
+    xor %r8d, %r8d
+    jmp hbc_dyn_arithf
+hbc_dyn_addf:
+    mov $1, %r8d
+    jmp hbc_dyn_arithf
+hbc_dyn_subf:
+    mov $2, %r8d
+hbc_dyn_arithf:
     push %rbp
     mov %rsp, %rbp
-    sub $48, %rsp
+    sub $64, %rsp
+    mov %r8, 48(%rsp)
     mov %rdi, (%rsp)
     mov %rsi, 8(%rsp)
     mov %rdx, 16(%rsp)
@@ -122,9 +131,27 @@ hbc_dyn_mulf:
     call hbc_float_unpack
 .Lmulf_bs:
     movzwl %di, %esi
-    add 40(%rsp), %rsi
+    mov 40(%rsp), %r10
+    cmpq $0, 48(%rsp)
+    jne .Larithf_maxdec
+    add %r10, %rsi
+    jmp .Larithf_dec
+.Larithf_maxdec:
+    cmp %rsi, %r10
+    cmova %r10, %rsi
+.Larithf_dec:
     movsd 32(%rsp), %xmm1
+    cmpq $1, 48(%rsp)
+    je .Larithf_add
+    ja .Larithf_sub
     mulsd %xmm0, %xmm1
+    jmp .Larithf_op
+.Larithf_add:
+    addsd %xmm0, %xmm1
+    jmp .Larithf_op
+.Larithf_sub:
+    subsd %xmm0, %xmm1
+.Larithf_op:
     cmp $435, %rsi
     jbe .Lmulf_dok
     call hbc_f64range_error

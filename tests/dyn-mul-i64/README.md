@@ -25,10 +25,9 @@ updated before each item says how many) and keeps unwinding the same error. Eval
 (`prog-print`, `inta.prg` in dyn-dyn-plus).
 Not covered: pairs of other kinds in the same statement (a borrowed array element, an iif raw cell, a float STATIC) keep the previous behaviour.
 
-Not covered (measured, left as is): `+`, `-`, `/` with a float Dyn and an integer (`a + 1`, `a - Ok(2)`, `a + (b := 3)`) still raise the
-run-time type error, and Dyn+Dyn `+` on floats raises "Argument error: +" (no float add exists in the Dyn route at all). Numeric
-contexts that are not a Dyn consumer (an `IF a * 2 > 1` condition) keep the integer route and still raise for a float Dyn.
+Not covered: `/` with a float Dyn. `+` and `-` with a float Dyn are covered by tests/dyn-addsub. Numeric contexts that are not a Dyn consumer
+(an `IF a * 2 > 1` condition) keep the integer route and still raise for a float Dyn.
 
-Control rows (see the gate logs): the previous compiler (a00a92ce build), the version of this change without the pad (918c65f9 build) and a mutant whose landing pad releases nothing all fail the gate.
+Control rows (see the gate logs): the previous compiler (a00a92ce build), the e519f136 build (v2, named rejection, 19/53) and a mutant whose landing pad releases nothing all fail the gate.
 
 Original MIT; Harbour 3.2.1dev r2610242111 is only an external oracle (not Harbour 4).
