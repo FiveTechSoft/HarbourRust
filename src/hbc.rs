@@ -1843,7 +1843,7 @@ const ASM_RESERVED: &[&str] = &[
     // Not backend keywords (there is no textual backend anymore), but labels
     // hbc itself emits; a user function with one of these names would
     // collide with a helper symbol.
-    "dtos", "stod", "year", "day", "month", "dow", "cdow", "cmonth", "dtoc", "sqrt", "exp", "log", "mod", "padc", "rat", "stuff", "isdigit", "isalpha", "isupper", "islower", "strzero", "ischar", "strzero_fix", "str_f64", "fmt_f64", "date_add", "date_diff", "date_days", "date_from_days",
+    "dtos", "stod", "year", "day", "month", "dow", "cdow", "cmonth", "dtoc", "sqrt", "exp", "log", "mod", "padc", "rat", "stuff", "isdigit", "isalpha", "isupper", "islower", "strzero", "ischar", "strzero_fix", "str_f64", "fmt_f64", "date_add", "date_diff", "date_days", "date_from_days", "seconds",
     "strtran", "space", "substr", "date", "ctod", "date_pack", "date_render", "date_today", "curdir", "dirmake", "inkey", "file", "hrfile_setdefault", "hrfile_setpath", "qout", "qqout", "outstd", "outerr", "empty", "procname", "min", "max", "str", "padr", "hb_ntos", "replicate", "aeval", "hb_isnumeric", "hb_isarray", "hb_isstring", "dfree", "upper", "lower", "left", "right", "at", "int", "abs", "padl", "val", "ascan", "aclone", "atail", "asort", "hb_bitand", "hb_bitor", "hb_bitxor", "hb_bitnot", "hb_bittest", "hb_bitset", "hb_bitreset", "eprint_str", "eprint_sep", "eprint_i64", "eprint_i64c", "eprint_dyn", "eprint_dynlit", "print_dynlit", "eprint_f64", "hb_eol", "procline", "asc", "trim", "ltrim", "rtrim", "alltrim", "chr", "trace_top", "print_trace", "panic_exit", "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_range_error", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
 ];
 
@@ -7140,6 +7140,10 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 if !args.is_empty() { return Err(format!("line {}: `date` takes no arguments",n)); }
                 return Ok(Ty::Date);
             }
+            if is_builtin(id,"seconds") {
+                if !args.is_empty() { return Err(format!("line {}: `seconds` takes no arguments",n)); }
+                return Ok(Ty::F64);
+            }
             if is_builtin(id,"ctod") {
                 if args.len()!=1 { return Err(format!("line {}: `ctod` takes one argument",n)); }
                 if !matches!(type_expr(&args[0],env,sigs,n)?,Ty::Str|Ty::StrOwn) {
@@ -11310,6 +11314,7 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
                 return;
             }
             if is_builtin(id,"date") { return; }
+            if is_builtin(id,"seconds") { return; }
             if is_builtin(id,"ctod") { apply_moves(&args[0],env,sigs,false); return; }
             if is_builtin(id,"dirmake") {for a in args {apply_moves(a,env,sigs,false);}return;}
             if is_builtin(id,"inkey") {return;}
@@ -14860,6 +14865,9 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
         }
         Expr::Call(id,_) if is_builtin(id,"date") => {
             out.push_str("    call hbc_date_today\n");
+        }
+        Expr::Call(id,_) if is_builtin(id,"seconds") => {
+            out.push_str("    call hbc_seconds\n");
         }
         Expr::Call(id,args) if is_builtin(id,"ctod") => {
             let temp=expr_ty(&args[0],env,sigs)==Ty::StrOwn && !matches!(&args[0],Expr::Var(_));
@@ -18482,6 +18490,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             if is_builtin(id, "eval") { return match expr_ty(&args[0], env, sigs) { Ty::Block(_, BRet::Nil) => Ty::Dyn, _ => Ty::I64 }; }
             if is_builtin(id, "asc") || is_builtin(id, "len") || is_builtin(id, "hb_memcheck") || is_builtin(id, "procline") { return Ty::I64; }
             if is_builtin(id,"date") || is_builtin(id,"ctod") { return Ty::Date; }
+            if is_builtin(id, "seconds") { return Ty::F64; }
             if is_builtin(id, "valtype") || is_builtin(id, "hb_eol") || is_builtin(id, "procname") { return Ty::Str; } // hk88-hk92
             if ["ltrim", "rtrim", "alltrim", "trim"].iter().any(|b| is_builtin(id,b)) { return Ty::StrOwn; }
             if is_builtin(id,"substr") { return Ty::StrOwn; }
@@ -30490,6 +30499,9 @@ fn finalize_trace(mut out: String, target: Target) -> String {
             match target {Target::Linux=>DATE_TODAY_LINUX,Target::Windows=>DATE_TODAY_WINDOWS}
         });
     }
+    if out.contains("call hbc_seconds") {
+        out.push_str(match target {Target::Windows=>SECONDS_WINDOWS,_=>SECONDS_LINUX});
+    }
     // Add private stderr variants only when used. No mutable routing state:
     // nested OutStd/QOut and controlled diagnostics retain their destination.
     if out.contains("call hbc_eprint_") {
@@ -35830,6 +35842,57 @@ hbc_date_today:
     leave
     ret
 "#;
+
+const SECONDS_LINUX: &str = r#"
+    .text
+# hbc_seconds: xmm0 = seconds since midnight (double), rdi = meta
+# ((width 10 << 16) | dec 2). SYS_time is UTC, the same source the
+# date helper uses, so Seconds() is UTC-based in this increment.
+hbc_seconds:
+    push %rbp
+    mov %rsp, %rbp
+    xor %edi, %edi
+    mov $201, %eax
+    syscall
+    xor %edx, %edx
+    mov $86400, %ecx
+    div %rcx
+    cvtsi2sd %rdx, %xmm0
+    mov $655362, %edi
+    ret
+"#;
+
+const SECONDS_WINDOWS: &str = r#"
+    .text
+# hbc_seconds: xmm0 = seconds since midnight (double), rdi = meta.
+# GetLocalTime fills a SYSTEMTIME; hour/min/sec live at -8/-6/-4 of the
+# buffer when it starts at -16(%rbp).
+hbc_seconds:
+    push %rbp
+    mov %rsp, %rbp
+    sub $32, %rsp
+    lea -16(%rbp), %rcx
+    call GetLocalTime
+    movzwl -8(%rbp), %eax
+    movzwl -6(%rbp), %ecx
+    movzwl -4(%rbp), %edx
+    cvtsi2sd %eax, %xmm0
+    imul $60, %eax, %eax
+    cvtsi2sd %eax, %xmm1
+    addsd %xmm1, %xmm0
+    cvtsi2sd %ecx, %xmm1
+    addsd %xmm1, %xmm0
+    imul $60, %ecx, %ecx
+    cvtsi2sd %ecx, %xmm1
+    addsd %xmm1, %xmm0
+    cvtsi2sd %edx, %xmm1
+    addsd %xmm1, %xmm0
+    mov $655362, %edi
+    leave
+    ret
+"#;
+
+
 
 #[cfg(test)] mod dbf_tag_accessor_tests {
     use super::*;
