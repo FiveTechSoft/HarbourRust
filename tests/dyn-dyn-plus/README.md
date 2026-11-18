@@ -16,8 +16,7 @@ numerica antigua y su tipo I64. Motivo: tiparlo Dyn en todas partes rompio esos 
 (rechazos nuevos y resultados vacios en left/right/padl), medido contra el build base.
 
 No cubierto (limites documentados, sin ocultar):
-- float Dyn (`known/float-dyn.prg`: el oracle da 3.0, nosotros ERR; el check falla si algun dia
-  coincide silenciosamente). Es el siguiente corte.
+- float Dyn en `+` (ERR como antes). `*` entre dos Dyn con flotante lo cubre `tests/dyn-float-mul/`; `programs/float-dyn.prg` (el antiguo limite conocido) es ahora una comparacion positiva byte a byte contra el oracle.
 - fecha + entero y resta de strings Dyn: rechazo nombrado (`rejects/`).
 - `return a+b` con a, b Dyn y paso directo como argumento de llamada: mantienen el
   comportamiento anterior (no marcados).

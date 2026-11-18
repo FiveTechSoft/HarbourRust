@@ -271,7 +271,7 @@ fn mark_dynplus(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) {
 // owned Dyn string temporary reaches an integer conversion.
 fn mark_dynplus_rec(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Vec<usize> {
     let mut ins: Vec<usize> = Vec::new();
-    if let Expr::Bin('+', a, b) = e {
+    if let Expr::Bin(mop @ ('+' | '*'), a, b) = e {
         let mut kids = mark_dynplus_rec(a, env, sigs, n);
         kids.extend(mark_dynplus_rec(b, env, sigs, n));
         let ta = type_expr(a, env, sigs, n);
@@ -279,7 +279,7 @@ fn mark_dynplus_rec(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) 
         let strish = |t: &Result<Ty, String>| matches!(t, Ok(Ty::Str | Ty::StrOwn));
         let dynt = |t: &Result<Ty, String>| matches!(t, Ok(Ty::Dyn));
         let dd = !DBF_USED.with(|v| v.get()) && dynt(&ta) && dynt(&tb);
-        let sd = (strish(&ta) && dynt(&tb)) || (dynt(&ta) && strish(&tb));
+        let sd = *mop == '+' && ((strish(&ta) && dynt(&tb)) || (dynt(&ta) && strish(&tb)));
         if dd {
             ins.extend(kids);
             let id = e as *const Expr as usize;
@@ -8254,7 +8254,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
             // Dyn+Dyn with '+' and no DBF: runtime dispatch. Two string
             // payloads concatenate, two integer payloads add; the static
             // result is a Dyn cell (owned for strings).
-            if *op == '+' && ta == Ty::Dyn && tb == Ty::Dyn && !DBF_USED.with(|v| v.get()) && dynplus_marked(e) {
+            if matches!(*op, '+' | '*') && ta == Ty::Dyn && tb == Ty::Dyn && !DBF_USED.with(|v| v.get()) && dynplus_marked(e) {
                 return Ok(Ty::Dyn);
             }
             if *op == '+' && ((ta == Ty::Dyn && matches!(tb, Ty::Str | Ty::StrOwn)) || (tb == Ty::Dyn && matches!(ta, Ty::Str | Ty::StrOwn))) {
@@ -17555,6 +17555,10 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                 cg_dyn_dyn_plus(a,b,env,sigs,strs,out,target);
                 return;
             }
+            if *op == '*' && expr_ty(a,env,sigs)==Ty::Dyn && expr_ty(b,env,sigs)==Ty::Dyn && !DBF_USED.with(|v| v.get()) && dynplus_marked(e) {
+                cg_dyn_dyn_mul(a,b,env,sigs,strs,out,target);
+                return;
+            }
             if *op == '+' && ((expr_ty(a,env,sigs)==Ty::Dyn && matches!(expr_ty(b,env,sigs),Ty::Str|Ty::StrOwn)) || (expr_ty(b,env,sigs)==Ty::Dyn && matches!(expr_ty(a,env,sigs),Ty::Str|Ty::StrOwn))) {
                 cg_string_dyn_concat(a,b,env,sigs,strs,out,target);
                 return;
@@ -18500,7 +18504,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
 
             if matches!(ta, Ty::Str | Ty::StrOwn) || matches!(tb, Ty::Str | Ty::StrOwn) {
                 Ty::StrOwn
-            } else if *op == '+' && ta == Ty::Dyn && tb == Ty::Dyn && !DBF_USED.with(|v| v.get()) && dynplus_marked(e) {
+            } else if matches!(*op, '+' | '*') && ta == Ty::Dyn && tb == Ty::Dyn && !DBF_USED.with(|v| v.get()) && dynplus_marked(e) {
                 // Mirror of type_expr: Dyn+Dyn runtime dispatch, Dyn cell.
                 Ty::Dyn
             } else if matches!(*op, '+' | '-' | '*' | '/' | '%' | '^')
@@ -18902,7 +18906,7 @@ fn dyn_expr_owned(e: &Expr) -> bool {
         Expr::Call(..) | Expr::Send(..) | Expr::SelfGet(..) => true,
         Expr::Seq(es) => es.last().map_or(false, dyn_expr_owned),
         // Dyn+Dyn runtime '+' yields a fresh cell (owned string or integer).
-        Expr::Bin('+',..) => dynplus_marked(e),
+        Expr::Bin('+' | '*',..) => dynplus_marked(e),
         _ => false,
     }
 }
@@ -18988,6 +18992,34 @@ fn cg_dyn_dyn_plus(a:&Expr,b:&Expr,env:&[CgLocal],sigs:&[Sig],strs:&mut Vec<Stri
     out.push_str(&format!("    mov 32(%rsp), %rdx\n    mov $4, %eax\n    add $64, %rsp\n    jmp .Lcsend{k}\n.Lcsint{k}:\n    @HBC_TAG_KIND@cmpq $0, (%rsp)@HBC_TAG_END@\n    je .Lcsi1{k}\n    @HBC_TAG_KIND@cmpq $9, (%rsp)@HBC_TAG_END@\n    jne .Lcserror{k}\n.Lcsi1{k}:\n    @HBC_TAG_KIND@cmpq $0, 16(%rsp)@HBC_TAG_END@\n    je .Lcsi2{k}\n    @HBC_TAG_KIND@cmpq $9, 16(%rsp)@HBC_TAG_END@\n    jne .Lcserror{k}\n.Lcsi2{k}:\n    mov 8(%rsp), %rdx\n    add 24(%rsp), %rdx\n{ovf}    xor %eax, %eax\n    add $64, %rsp\n    jmp .Lcsend{k}\n{ovfl}.Lcserror{k}:\n"));
     cg_concat_drop(out,0);cg_concat_drop(out,16);
     out.push_str(&format!("    add $64, %rsp\n    jmp hbc_strarg_error\n.Lcscatch{k}:\n"));
+    cg_concat_drop(out,0);cg_concat_drop(out,16);
+    out.push_str(&format!("    add $64, %rsp\n    jmp hbc_seq_unwind\n.Lcsend{k}:\n"));
+}
+
+// Dyn*Dyn (marked: only under the Dyn consumers dyn-dyn-plus already uses). Both integer payloads keep the
+// integer product; a float on either side multiplies as doubles (dec = sum of the operands' dec, like Harbour's
+// hb_vmMult) into an owned heap float. Any other kind is a type error after BOTH operands evaluated.
+// Operand snapshots are exclusively owned: borrowed floats are cloned, borrowed non-numbers become NIL.
+fn cg_mul_snapshot(e:&Expr,env:&[CgLocal],sigs:&[Sig],strs:&mut Vec<String>,out:&mut String,target:Target) {
+    cg_value(e,env,sigs,strs,out,target);
+    let k=fresh_lbl();
+    out.push_str(&format!("    @HBC_TAG_KIND@cmp $0, %rax@HBC_TAG_END@\n    je .Lmsdone{k}\n    @HBC_TAG_KIND@cmp $9, %rax@HBC_TAG_END@\n    je .Lmsdone{k}\n    cmp $5, %al\n    jne .Lmsnf{k}\n"));
+    if !dyn_expr_owned(e) { out.push_str("    call hbc_float_clone\n"); }
+    out.push_str(&format!("    jmp .Lmsdone{k}\n.Lmsnf{k}:\n"));
+    if !dyn_expr_owned(e) { out.push_str("    mov $1, %eax\n    xor %edx, %edx\n"); }
+    out.push_str(&format!(".Lmsdone{k}:\n"));
+}
+fn cg_dyn_dyn_mul(a:&Expr,b:&Expr,env:&[CgLocal],sigs:&[Sig],strs:&mut Vec<String>,out:&mut String,target:Target) {
+    let k=fresh_lbl();
+    cg_mul_snapshot(a,env,sigs,strs,out,target);
+    out.push_str(&format!("    sub $64, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n    movq $1, 16(%rsp)\n    movq $0, 24(%rsp)\n    movq $0, 48(%rsp)\n    cmpq $0, hbc_seq_depth(%rip)\n    je .Lcseval{k}\n    lea .Lcscatch{k}(%rip), %rdi\n    call hbc_seq_push\n    movq $1, 48(%rsp)\n.Lcseval{k}:\n"));
+    cg_mul_snapshot(b,env,sigs,strs,out,target);
+    let (ovf, ovfl) = if CHECKED_I64.with(|c| c.get()) { (format!("    jo .Lcsovf{}\n", k), format!(".Lcsovf{}:\n    add $64, %rsp\n    jmp hbc_static_overflow\n", k)) } else { (String::new(), String::new()) };
+    out.push_str(&format!("    mov %rax, 16(%rsp)\n    mov %rdx, 24(%rsp)\n    cmpq $0, 48(%rsp)\n    je .Lcscheck{k}\n    call hbc_seq_pop\n.Lcscheck{k}:\n    @HBC_TAG_KIND@cmpq $0, (%rsp)@HBC_TAG_END@\n    je .Lcsi1{k}\n    @HBC_TAG_KIND@cmpq $9, (%rsp)@HBC_TAG_END@\n    jne .Lcsmix{k}\n.Lcsi1{k}:\n    @HBC_TAG_KIND@cmpq $0, 16(%rsp)@HBC_TAG_END@\n    je .Lcsi2{k}\n    @HBC_TAG_KIND@cmpq $9, 16(%rsp)@HBC_TAG_END@\n    jne .Lcsmix{k}\n.Lcsi2{k}:\n    mov 8(%rsp), %rdx\n    imul 24(%rsp), %rdx\n{ovf}    xor %eax, %eax\n    add $64, %rsp\n    jmp .Lcsend{k}\n{ovfl}.Lcsmix{k}:\n    mov (%rsp), %rdi\n    mov 8(%rsp), %rsi\n    mov 16(%rsp), %rdx\n    mov 24(%rsp), %rcx\n    call hbc_dyn_mulf\n    cmp $-1, %rax\n    je .Lcserror{k}\n    mov %rax, 32(%rsp)\n    mov %rdx, 40(%rsp)\n"));
+    cg_concat_drop(out,0);cg_concat_drop(out,16);
+    out.push_str(&format!("    mov 32(%rsp), %rax\n    mov 40(%rsp), %rdx\n    add $64, %rsp\n    jmp .Lcsend{k}\n.Lcserror{k}:\n"));
+    cg_concat_drop(out,0);cg_concat_drop(out,16);
+    out.push_str(&format!("    add $64, %rsp\n    jmp hbc_type_error\n.Lcscatch{k}:\n"));
     cg_concat_drop(out,0);cg_concat_drop(out,16);
     out.push_str(&format!("    add $64, %rsp\n    jmp hbc_seq_unwind\n.Lcsend{k}:\n"));
 }
