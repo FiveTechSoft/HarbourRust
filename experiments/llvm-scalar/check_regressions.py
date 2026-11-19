@@ -20,6 +20,9 @@ for line in pathlib.Path('tests/manifest.txt').read_text().splitlines():
         _, path = parts[:2]
         expected = parts[2] if len(parts) == 3 else ''
         manifest[path] = (parts[0],expected)
+    elif line.startswith('pos2 '):
+        parts = line.split(' ')
+        manifest[parts[1]] = (parts[0], parts[2] + ' ' + parts[3])
 
 def run(cmd):
     return subprocess.run(list(map(str, cmd)), check=True, capture_output=True)
@@ -46,8 +49,12 @@ for case in selected:
     if kind == 'posx':
         rc,escaped = escaped.split(' ',1)
         want_rc = int(rc)
-    expected = subprocess.run(['printf','%b',escaped], capture_output=True, check=True).stdout
+    expected = None if kind == 'pos2' else subprocess.run(['printf','%b',escaped], capture_output=True, check=True).stdout
     for target in ['linux'] + (['windows'] if not scan and env.get('M') and env.get('WINE') else []):
+        if kind == 'pos2':
+            linux_file, windows_file = escaped.split(' ')
+            # Same contract as tools/run_native_manifest.rs: per-target exact stdout.
+            expected = pathlib.Path(windows_file if target == 'windows' else linux_file).read_bytes()
         current_bytes = None
         for backend in ['current', 'llvm']:
             p = str(work / ('reg-' + pathlib.Path(case).stem + '-' + target + '-' + backend))
