@@ -71,3 +71,4 @@ tests/dyn-string-concat/expected/** -text
 tests/file-native-windows/*.stdout -text
 # Byte-exact Harbour 3.2 output for logical codeblocks and AScan with a block.
 tests/cb-logical/expected/** -text
+tests/str-concat-assign/expected/** -text
