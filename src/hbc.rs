@@ -296,6 +296,14 @@ fn dynplus_marked(e: &Expr) -> bool {
 fn mark_dynplus(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) {
     let _ = mark_dynplus_rec(e, env, sigs, n);
 }
+// Numeric builtin argument that may be a Dyn (a variable, a call result or an
+// arithmetic expression with a Dyn operand). The arithmetic node takes the Dyn
+// route (marked) so a float payload is added/multiplied by kind, and the
+// consumer unpacks the resulting cell by kind. Other types keep their rules.
+fn dyn_num_arg_ty(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Result<Ty, String> {
+    mark_dynplus(e, env, sigs, n);
+    type_expr(e, env, sigs, n)
+}
 // Returns the node ids it inserted. A '+' child stays marked only when its
 // parent is itself a Dyn consumer: Dyn+Dyn (marked) or string+Dyn concat.
 // A parent on the numeric route (e.g. `a+b+1`) un-marks its children so no
@@ -320,8 +328,18 @@ fn mark_dynplus_rec(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) 
     if let Expr::Bin(mop @ ('+' | '-' | '*'), a, b) = e {
         let mut kids = mark_dynplus_rec(a, env, sigs, n);
         kids.extend(mark_dynplus_rec(b, env, sigs, n));
+        // The two type_expr calls below are SPECULATIVE: they only feed the
+        // route decision. type_expr is not pure - typing a call marks its heap
+        // arguments moved, and the real typing pass visits these nodes again
+        // and would see a use-after-move (oracle regression: F( G( s ) + "y", 1 )
+        // with a Dyn parameter). Snapshot and restore the moved flags so the
+        // speculation leaves no trace; the marks in DYNPLUS_NODES stay (they
+        // are the point of the walk). Evidence collection into sigs is
+        // monotone and idempotent, so it needs no restore.
+        let saved_moved: Vec<bool> = env.iter().map(|v| v.moved).collect();
         let ta = type_expr(a, env, sigs, n);
         let tb = type_expr(b, env, sigs, n);
+        for (v, s) in env.iter_mut().zip(saved_moved.iter()) { v.moved = *s; }
         let strish = |t: &Result<Ty, String>| matches!(t, Ok(Ty::Str | Ty::StrOwn));
         let dynt = |t: &Result<Ty, String>| matches!(t, Ok(Ty::Dyn));
         let mixed = matches!((&ta, &tb), (Ok(x), Ok(y)) if mul_mixed_tys(*mop, *x, *y));
@@ -452,6 +470,37 @@ fn fold_num_bin(op: char, a: &Expr, b: &Expr) -> Option<Expr> {
 // released on BOTH success and caught-error paths; borrowed locals stay
 // untouched. Caught runtime errors remain description strings in this
 // increment, not Harbour Error objects (registered runtime divergence).
+fn cg_dyn_owned_release32(owned: bool, k: usize, out: &mut String) {
+    if owned {
+        out.push_str("    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    call hbc_float_release\n");
+        out.push_str(&format!("    @HBC_TAG_KIND@cmpq $4, (%rsp)@HBC_TAG_END@\n    jne .Ldivarr{k}\n    mov 8(%rsp), %rdi\n    call hbc_freestr\n    jmp .Ldivfreed{k}\n.Ldivarr{k}:\n    @HBC_TAG_KIND@cmpq $8, (%rsp)@HBC_TAG_END@\n    jne .Ldivobj{k}\n    mov 8(%rsp), %rdi\n    test %rdi, %rdi\n    je .Ldivfreed{k}\n    mov -8(%rdi), %rsi\n    call hbc_dfree\n    jmp .Ldivfreed{k}\n.Ldivobj{k}:\n"));
+        if CLASSES.with(|c| !c.borrow().is_empty()) {
+            out.push_str(&format!("    @HBC_TAG_KIND@cmpq $13, (%rsp)@HBC_TAG_END@\n    jne .Ldivfreed{k}\n    mov 8(%rsp), %rdi\n    test %rdi, %rdi\n    je .Ldivfreed{k}\n    call hrobj_release\n"));
+        }
+        out.push_str(&format!(".Ldivfreed{k}:\n"));
+    }
+}
+
+// Dyn operand of a numeric builtin or `%`: the double is taken BY KIND (a
+// float payload through hbc_float_unpack, integer tags converted), owned
+// temporaries are released, and a NIL/string/logical/array payload is the clean
+// registered type error (Harbour's dialog is the registered difference).
+fn cg_dyn_f64(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target) {
+    cg_div_operand(e, env, sigs, strs, out, target);
+    out.push_str("    test %rax, %rax\n    jne hbc_type_error\n    xor %ecx, %ecx\n");
+}
+// Int(Dyn): integer tags are returned exactly, a float payload truncates toward zero.
+fn cg_dyn_int_trunc(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target) {
+    cg_expr(e, env, sigs, strs, out, target);
+    let k=fresh_lbl();
+    let owned=dyn_expr_owned(e);
+    out.push_str("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n    movq $0, 24(%rsp)\n");
+    out.push_str(&format!("    cmp $5, %al\n    je .Ldivfloat{k}\n    test %rax, %rax\n    je .Ldivint{k}\n    cmp $9, %rax\n    je .Ldivint{k}\n    movq $1, 24(%rsp)\n    movq $0, 16(%rsp)\n    jmp .Ldivsave{k}\n.Ldivfloat{k}:\n    call hbc_float_unpack\n    cvttsd2si %xmm0, %rax\n    mov %rax, 16(%rsp)\n    jmp .Ldivsave{k}\n.Ldivint{k}:\n    mov %rdx, 16(%rsp)\n.Ldivsave{k}:\n"));
+    cg_dyn_owned_release32(owned, k, out);
+    // Tag 9 carries literal/copy integer display provenance; tag 0 and
+    // truncated floats are runtime results. Read the saved tag after release.
+    out.push_str("    mov 24(%rsp), %rcx\n    mov 16(%rsp), %rax\n    xor %edx, %edx\n    cmpq $9, (%rsp)\n    sete %dl\n    add $32, %rsp\n    test %rcx, %rcx\n    jne hbc_type_error\n");
+}
 fn cg_div_operand(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target) {
     if expr_ty(e, env, sigs) != Ty::Dyn {
         cg_f64_operand(e, env, sigs, strs, out, target);
@@ -463,14 +512,7 @@ fn cg_div_operand(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String
     let owned=dyn_expr_owned(e);
     out.push_str("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n    movq $0, 24(%rsp)\n");
     out.push_str(&format!("    cmp $5, %al\n    je .Ldivfloat{k}\n    test %rax, %rax\n    je .Ldivint{k}\n    cmp $9, %rax\n    je .Ldivint{k}\n    movq $1, 24(%rsp)\n    xorpd %xmm0, %xmm0\n    jmp .Ldivsave{k}\n.Ldivfloat{k}:\n    call hbc_float_unpack\n    jmp .Ldivsave{k}\n.Ldivint{k}:\n    cvtsi2sd %rdx, %xmm0\n.Ldivsave{k}:\n    movsd %xmm0, 16(%rsp)\n"));
-    if owned {
-        out.push_str("    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    call hbc_float_release\n");
-        out.push_str(&format!("    @HBC_TAG_KIND@cmpq $4, (%rsp)@HBC_TAG_END@\n    jne .Ldivarr{k}\n    mov 8(%rsp), %rdi\n    call hbc_freestr\n    jmp .Ldivfreed{k}\n.Ldivarr{k}:\n    @HBC_TAG_KIND@cmpq $8, (%rsp)@HBC_TAG_END@\n    jne .Ldivobj{k}\n    mov 8(%rsp), %rdi\n    test %rdi, %rdi\n    je .Ldivfreed{k}\n    mov -8(%rdi), %rsi\n    call hbc_dfree\n    jmp .Ldivfreed{k}\n.Ldivobj{k}:\n"));
-        if CLASSES.with(|c| !c.borrow().is_empty()) {
-            out.push_str(&format!("    @HBC_TAG_KIND@cmpq $13, (%rsp)@HBC_TAG_END@\n    jne .Ldivfreed{k}\n    mov 8(%rsp), %rdi\n    test %rdi, %rdi\n    je .Ldivfreed{k}\n    call hrobj_release\n"));
-        }
-        out.push_str(&format!(".Ldivfreed{k}:\n"));
-    }
+    cg_dyn_owned_release32(owned, k, out);
     // Return invalid-kind flag in RAX, not an early throw: the caller
     // must evaluate BOTH operands before reporting the argument error.
     out.push_str("    mov 24(%rsp), %rax\n    movsd 16(%rsp), %xmm0\n    add $32, %rsp\n    mov $2, %ecx\n");
@@ -525,14 +567,15 @@ fn cg_f64_load(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, 
             // zero (ucomisd sets PF on unordered) and divides through to
             // NaN. The packed metadata carries the asymmetric
             // HB_DBL_LENGTH of the RESULT (hbdefs.h:570, 63zb).
-            let dyn_div = *op=='/' && (expr_ty(a, env, sigs)==Ty::Dyn || expr_ty(b, env, sigs)==Ty::Dyn);
+            let dyn_div = (*op=='/'||*op=='%') && (expr_ty(a, env, sigs)==Ty::Dyn || expr_ty(b, env, sigs)==Ty::Dyn);
             if dyn_div { cg_div_operand(a, env, sigs, strs, out, target); } else { cg_f64_operand(a, env, sigs, strs, out, target); }
             out.push_str("    sub $32, %rsp\n    movsd %xmm0, (%rsp)\n    mov %rcx, 8(%rsp)\n");
             if dyn_div { out.push_str("    mov %rax, 16(%rsp)\n"); }
             if dyn_div { cg_div_operand(b, env, sigs, strs, out, target); } else { cg_f64_operand(b, env, sigs, strs, out, target); }
             if dyn_div {
                 let argok = fresh_lbl();
-                out.push_str(&format!("    or 16(%rsp), %rax\n    je .Ldivargok{argok}\n    call hbc_divarg_error\n.Ldivargok{argok}:\n"));
+                let argerr = if *op=='/' { "    call hbc_divarg_error\n" } else { "    jmp hbc_type_error\n" };
+                out.push_str(&format!("    or 16(%rsp), %rax\n    je .Ldivargok{argok}\n{argerr}.Ldivargok{argok}:\n"));
             }
             if *op == '/' {
                 let l = fresh_lbl();
@@ -667,6 +710,8 @@ fn cg_f64_operand(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String
     } else if expr_ty(e, env, sigs) == Ty::F64 {
         cg_f64_load(e, env, sigs, strs, out, target);
         out.push_str("    mov %rdi, %rcx\n    movzwl %cx, %ecx\n");
+    } else if expr_ty(e, env, sigs) == Ty::Dyn {
+        cg_dyn_f64(e, env, sigs, strs, out, target);
     } else {
         cg_expr(e, env, sigs, strs, out, target);
         // D5 fix: a Dyn casilla carries the tag in %rax and the PAYLOAD in
@@ -675,9 +720,6 @@ fn cg_f64_operand(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String
         // `? x ^ 2` printed 81.00 instead of 10000.00 ( Harbour runs the
         // payload; regression t1675). NIL payload -> clean type error,
         // Harbour's dialog is the registered difference.
-        if expr_ty(e, env, sigs) == Ty::Dyn {
-            out.push_str("    call hbc_dyn_to_i64\n");
-        }
         out.push_str("    cvtsi2sd %rax, %xmm0\n    xor %ecx, %ecx\n");
     }
 }
@@ -1252,6 +1294,25 @@ impl P {
         // method wins over a same-named DATA (cl10), DATA read is the
         // fallback; both resolve in codegen, not here.
         let mut e = self.factor_primary()?;
+        // ::Method(args) is a send to Self; bare ::Data retains its read path.
+        if let Expr::SelfGet(name) = &e {
+            if self.peek() == Some(&Tok::LParen) {
+                let name = name.clone();
+                self.pos += 1;
+                let mut args = Vec::new();
+                if self.peek() != Some(&Tok::RParen) {
+                    loop {
+                        args.push(self.expr()?);
+                        match self.bump() {
+                            Some(Tok::Comma) => continue,
+                            Some(Tok::RParen) => break,
+                            other => return Err(format!("line {}: expected comma or closing parenthesis in Self send, got {:?}", self.n, other)),
+                        }
+                    }
+                } else { self.pos += 1; }
+                e = Expr::Send(Box::new(Expr::SelfObj), name, args);
+            }
+        }
         while self.peek() == Some(&Tok::Colon) {
             self.pos += 1;
             let name = match self.bump() {
@@ -1275,7 +1336,9 @@ impl P {
                     self.pos += 1;
                 }
             }
-            e = Expr::Send(Box::new(e), name, args);
+            e = if matches!(&e, Expr::SelfGet(n) if n.eq_ignore_ascii_case("super")) {
+                Expr::Send(Box::new(Expr::SelfObj), format!("@super/{}", name), args)
+            } else { Expr::Send(Box::new(e), name, args) };
         }
         if matches!(self.peek(), Some(Tok::IncTok | Tok::DecTok)) {
             let delta = if self.peek() == Some(&Tok::IncTok) { 1 } else { -1 };
@@ -3757,7 +3820,8 @@ fn parse(src: &str) -> Result<Prog, String> {
                 | [Tok::KwClass, Tok::Ident(c), Tok::KwInherit, Tok::Ident(b)] => {
                     check_global_ident(c, n)?; check_global_ident(b, n)?; (c.clone(), Some(b.clone()))
                 }
-                [Tok::KwClass, Tok::Ident(c), Tok::Ident(f), Tok::Ident(b)] if f.eq_ignore_ascii_case("from") => {
+                [Tok::KwClass, Tok::Ident(c), Tok::Ident(f), Tok::Ident(b)]
+                | [Tok::KwCreate, Tok::KwClass, Tok::Ident(c), Tok::Ident(f), Tok::Ident(b)] if f.eq_ignore_ascii_case("from") => {
                     check_global_ident(c, n)?; check_global_ident(b, n)?; (c.clone(), Some(b.clone()))
                 }
                 [Tok::KwCreate, Tok::KwClass, Tok::Ident(_), Tok::KwInherit, Tok::Ident(_), Tok::Comma, ..]
@@ -3775,7 +3839,43 @@ fn parse(src: &str) -> Result<Prog, String> {
                 if i >= lines.len() { return Err(format!("class `{}` without ENDCLASS", decl.name)); }
                 let (ln, lt) = &lines[i];
                 let ln = *ln;
+                // INLINE is a single return expression with the same implicit
+                // Self and parameter handling as an out-of-line method.
+                if let [Tok::KwMethod, Tok::Ident(name), Tok::LParen, rest @ ..] = lt.as_slice() {
+                    if let Some(end) = rest.iter().position(|t| *t == Tok::RParen) {
+                        if matches!(rest.get(end + 1), Some(Tok::Ident(word)) if word.eq_ignore_ascii_case("inline")) {
+                            check_ident(name, ln)?;
+                            let params = parse_param_names(&rest[..end], ln)?;
+                            let expr = parse_expr_tokens(rest[end + 2..].to_vec(), ln)?;
+                            decl.methods.push((name.clone(), params.clone(), false));
+                            methods.push(MethodDef { class_name: decl.name.clone(), f: Func {
+                                init: false, name: format!("{}__{}", decl.name, name), params,
+                                ret: None, stmts: vec![Stmt::Ret(ln, Some(expr))],
+                                dyn_names: std::collections::HashSet::new(),
+                            }});
+                            i += 1;
+                            continue;
+                        }
+                    }
+                }
+                // VAR is the native hbclass alias for DATA. A bare list
+                // declares independent NIL-initialized slots, not one name.
+                if matches!(lt.first(), Some(Tok::KwData)) || matches!(lt.first(), Some(Tok::Ident(v)) if v.eq_ignore_ascii_case("var")) {
+                    if lt[1..].iter().all(|t| matches!(t, Tok::Ident(_) | Tok::Comma)) {
+                        if matches!(lt.last(), Some(Tok::Comma)) { return Err(format!("line {}: trailing comma in DATA list", ln)); }
+                        let names = parse_param_names(&lt[1..], ln).map_err(|m| m.replace("parameter", "DATA name"))?;
+                        if names.is_empty() { return Err(format!("line {}: empty DATA list", ln)); }
+                        for name in names { decl.datas.push((name, None)); }
+                        i += 1;
+                        continue;
+                    }
+                }
                 match lt.as_slice() {
+                    [Tok::Ident(v), Tok::Ident(d), Tok::KwInit, rest @ ..] if v.eq_ignore_ascii_case("var") => {
+                        check_ident(d, ln)?;
+                        decl.datas.push((d.clone(), Some(parse_expr_tokens(rest.to_vec(), ln)?)));
+                        i += 1;
+                    }
                     [Tok::KwEndclass] => { i += 1; break; }
                     [Tok::KwData, Tok::Ident(d)] => { check_ident(d, ln)?; decl.datas.push((d.clone(), None)); i += 1; }
                     [Tok::KwData, Tok::Ident(d), Tok::KwInit, rest @ ..] => {
@@ -4288,7 +4388,15 @@ fn class_name(ci: u32) -> String {
     CLASSES.with(|c| c.borrow()[ci as usize].name.clone())
 }
 fn method_lookup(ci: u32, lname: &str) -> Option<(u32, String)> {
-    CLASSES.with(|c| c.borrow()[ci as usize].slots.iter().enumerate().find(|(_, (n, _))| n == lname).map(|(i, (_, f))| (i as u32, f.clone())))
+    CLASSES.with(|c| {
+        let table = c.borrow();
+        // The parser-only prefix cannot be spelled as a source member name.
+        // Super starts at the lexical owner's parent, not the instance class.
+        let (owner, name) = if let Some(name) = lname.strip_prefix("@super/") {
+            (table[ci as usize].parent?, name)
+        } else { (ci, lname) };
+        table[owner as usize].slots.iter().enumerate().find(|(_, (n, _))| n == name).map(|(i, (_, f))| (i as u32, f.clone()))
+    })
 }
 fn data_lookup(ci: u32, lname: &str) -> Option<u32> {
     CLASSES.with(|c| {
@@ -4338,11 +4446,34 @@ fn check_data_value(n: usize, name: &str, t: Ty) -> Result<(), String> {
     }
 }
 // Build the flat class table. Named, fatal errors: duplicate class/DATA,
-// unknown parent (parents must precede children), declared-but-undefined
+// unknown parent or cyclic inheritance, declared-but-undefined
 // method, defined-but-undeclared method, non-scalar INIT.
 fn build_class_table(decls: &[ClassDecl], methods: &[MethodDef]) -> Result<Vec<ClassInfo>, String> {
+    // Resolve declarations before assigning flat layout indices. Stable DFS
+    // keeps ordinary source order while allowing a parent declared later.
+    fn order<'a>(i: usize, ds: &'a [ClassDecl], state: &mut [u8], out: &mut Vec<&'a ClassDecl>) -> Result<(), String> {
+        if state[i] == 2 { return Ok(()); }
+        if state[i] == 1 { return Err(format!("inheritance cycle involving class `{}`", ds[i].name)); }
+        state[i] = 1;
+        if let Some(p) = &ds[i].parent {
+            let j = ds.iter().position(|d| d.name.eq_ignore_ascii_case(p))
+                .ok_or_else(|| format!("class `{}` inherits from unknown class `{}`", ds[i].name, p))?;
+            order(j, ds, state, out)?;
+        }
+        state[i] = 2;
+        out.push(&ds[i]);
+        Ok(())
+    }
+    let mut ordered = Vec::new();
+    let mut state = vec![0; decls.len()];
+    for i in 0..decls.len() {
+        if decls[..i].iter().any(|d| d.name.eq_ignore_ascii_case(&decls[i].name)) {
+            return Err(format!("duplicate class `{}`", decls[i].name));
+        }
+        order(i, decls, &mut state, &mut ordered)?;
+    }
     let mut table: Vec<ClassInfo> = Vec::new();
-    for d in decls {
+    for d in ordered {
         let key = d.name.to_lowercase();
         if table.iter().any(|c| c.name.to_lowercase() == key) {
             return Err(format!("duplicate class `{}`", d.name));
@@ -6299,9 +6430,14 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
             }
             if is_builtin(id, "min") || is_builtin(id, "max") {
                 if args.len() != 2 { return Err(format!("line {}: `{}` takes two arguments in this increment", n, id)); }
-                let a = type_expr(&args[0], env, sigs, n)?;
+                let a = dyn_num_arg_ty(&args[0], env, sigs, n)?;
                 apply_moves(&args[0], env, sigs, false);
-                let b = type_expr(&args[1], env, sigs, n)?;
+                let b = dyn_num_arg_ty(&args[1], env, sigs, n)?;
+                // A numeric Dyn on either side: the comparison is by kind at run time and
+                // the result is the chosen operand as a Dyn cell (Harbour keeps its type).
+                if (a == Ty::Dyn || b == Ty::Dyn) && matches!(a, Ty::I64 | Ty::F64 | Ty::Dyn) && matches!(b, Ty::I64 | Ty::F64 | Ty::Dyn) {
+                    return Ok(Ty::Dyn);
+                }
                 if a != b || !matches!(a, Ty::I64 | Ty::F64 | Ty::Bool) {
                     return Err(format!("line {}: `{}` needs matching integer, float or logical arguments; mixed numeric/Dyn/other types are not in this increment", n, id));
                 }
@@ -7131,7 +7267,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
             }
             if ["sqrt","exp","log"].iter().any(|b|is_builtin(id,b)) {
                 if args.len()!=1 { return Err(format!("line {}: `{}` takes exactly one numeric argument in this increment",n,id)); }
-                if !matches!(type_expr(&args[0],env,sigs,n)?, Ty::I64 | Ty::F64 | Ty::NumLocal) {
+                if !matches!(dyn_num_arg_ty(&args[0],env,sigs,n)?, Ty::I64 | Ty::F64 | Ty::NumLocal | Ty::Dyn) {
                     return Err(format!("line {}: `{}` expects a numeric argument",n,id));
                 }
                 return Ok(Ty::F64);
@@ -7153,7 +7289,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
             if is_builtin(id, "mod") {
                 if args.len()!=2 { return Err(format!("line {}: `Mod` takes two numeric arguments in this increment",n)); }
                 for a in args {
-                    if !matches!(type_expr(a,env,sigs,n)?, Ty::I64 | Ty::F64 | Ty::NumLocal) {
+                    if !matches!(dyn_num_arg_ty(a,env,sigs,n)?, Ty::I64 | Ty::F64 | Ty::NumLocal | Ty::Dyn) {
                         return Err(format!("line {}: `Mod` expects numeric arguments",n));
                     }
                 }
@@ -7164,9 +7300,9 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 // identity, f64 converts (hb_vmInt). Dyn is the named
                 // limit (a NIL payload would be a Harbour dialog).
                 if args.len()!=1 { return Err(format!("line {}: `Int` takes exactly one argument in this increment",n)); }
-                return match type_expr(&args[0],env,sigs,n)? {
+                return match dyn_num_arg_ty(&args[0],env,sigs,n)? {
                     Ty::I64 | Ty::NumLocal => Ok(Ty::I64),
-                    Ty::F64 => Ok(Ty::I64),
+                    Ty::F64 | Ty::Dyn => Ok(Ty::I64),
                     t => Err(format!("line {}: `Int` takes a numeric value, got {}", n, ty_name(t))),
                 };
             }
@@ -7174,8 +7310,8 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 // Abs(n) (issue #1): the type is preserved (i64/f64 pair
                 // conventions, NumLocal included).
                 if args.len()!=1 { return Err(format!("line {}: `Abs` takes exactly one argument in this increment",n)); }
-                return match type_expr(&args[0],env,sigs,n)? {
-                    t @ (Ty::I64 | Ty::F64 | Ty::NumLocal) => Ok(t),
+                return match dyn_num_arg_ty(&args[0],env,sigs,n)? {
+                    t @ (Ty::I64 | Ty::F64 | Ty::NumLocal | Ty::Dyn) => Ok(t),
                     t => Err(format!("line {}: `Abs` takes a numeric value, got {}", n, ty_name(t))),
                 };
             }
@@ -7358,8 +7494,8 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 if args.len() != 2 {
                     return Err(format!("line {}: `round` takes two arguments", n));
                 }
-                let tn = type_expr(&args[0], env, sigs, n)?;
-                if !matches!(tn, Ty::I64 | Ty::F64 | Ty::NumLocal) {
+                let tn = dyn_num_arg_ty(&args[0], env, sigs, n)?;
+                if !matches!(tn, Ty::I64 | Ty::F64 | Ty::NumLocal | Ty::Dyn) {
                     return Err(format!("line {}: `round` expects a numeric first argument (Harbour raises RT error EG_ARG; compile-time typed here)", n));
                 }
                 let td = type_expr(&args[1], env, sigs, n)?;
@@ -8164,6 +8300,9 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                         }
                     }
                 }
+                // A Dyn parameter receives an arithmetic expression with a Dyn
+                // operand through the Dyn route (a float payload is combined by kind).
+                if sig_params[i] == Ty::Dyn { mark_dynplus(a, env, sigs, n); }
                 let ta = type_expr(a, env, sigs, n)?;
                 if dd_call && matches!(ta, Ty::Obj(_)) && !DEFAULT_DYN.with(|m| m.borrow().contains(&(sigs[si].name.clone(), i))) {
                     return Err(format!("line {}: an object argument (argument {}) in a call to `{}`, which has a parameter without type evidence, is outside the dynamic increment in this increment (the boundary screen for object values could not release its reference)", n, i + 1, id));
@@ -8296,6 +8435,9 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
             }
         }
         Expr::Bin(op, a, b) => {
+            // `%` takes its operands as doubles by kind: an arithmetic operand with a Dyn side
+            // takes the Dyn route so a float payload is combined by kind.
+            if *op == '%' { mark_dynplus(a, env, sigs, n); mark_dynplus(b, env, sigs, n); }
             let ta = type_expr(a, env, sigs, n)?;
             let tb = type_expr(b, env, sigs, n)?;
             if ta==Ty::Date || tb==Ty::Date {
@@ -8471,9 +8613,11 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
             // registered acceptance from spike 1); `=` and orderings are
             // unmeasured on objects and rejected by name. Object-vs-scalar
             // (NIL included) is likewise a named rejection in this
-            // increment. type_expr side effects are monotone, so the
-            // double evaluation on the fall-through path is harmless.
+            // increment. Calls can consume string arguments while typing.
+            // Keep those effects on object paths (which return here), but
+            // roll back speculative moves before the scalar pass below.
             {
+                let before: Vec<bool> = env.iter().map(|v| v.moved).collect();
                 let ta = type_expr(a, env, sigs, n);
                 let tb = type_expr(b, env, sigs, n);
                 if let (Ok(ta), Ok(tb)) = (ta, tb) {
@@ -8490,6 +8634,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                         return Err(format!("line {}: comparing an object with {} is not in this increment", n, ty_name(if aobj { tb } else { ta })));
                     }
                 }
+                for (local, moved) in env.iter_mut().zip(before) { local.moved = moved; }
             }
             // A grown casilla of an array of arrays compares against NIL
             // with `=` / `#` (oracle n4): the borrow reads the child
@@ -8991,6 +9136,11 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 // (the `local d := Dog():New()` idiom).
                 let is_ctor = CLASSES.with(|c| c.borrow()[ci as usize].ctor.as_deref() == Some(fname.as_str()));
                 return Ok(if is_ctor { Ty::Obj(ci) } else { rt2 });
+            }
+            // User methods retain priority over the universal ClassName.
+            if lname == "classname" && data_lookup(ci, &lname).is_none() {
+                if !args.is_empty() { return Err(format!("line {}: ClassName expects no arguments", n)); }
+                return Ok(Ty::StrOwn);
             }
             if data_lookup(ci, &lname).is_some() {
                 if !args.is_empty() {
@@ -12667,6 +12817,10 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
         }
         // These routes already return the selected/snapshotted metadata.
         Expr::Inc(..) | Expr::Set(..) | Expr::Seq(_) => {}
+        // Integer Int inputs keep display provenance, including tag-9 Dyn.
+        // The Dyn truncation adapter returns runtime metadata for floats.
+        Expr::Call(id, args) if is_builtin(id, "int") && args.len() == 1
+            && matches!(expr_ty(&args[0], env, sigs), Ty::I64 | Ty::Dyn) => {}
         Expr::Call(id, _) if is_builtin(id, "iif") || is_builtin(id, "eval")
             || sigs.iter().any(|s| s.name == *id && s.ret == Some(Ty::I64)) => {}
         _ => out.push_str(if fold_int(e).is_some() {
@@ -14090,6 +14244,7 @@ fn emit_class_runtime(sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, ta
     }
     for (i, c) in classes.iter().enumerate() {
         out.push_str(&format!("    .section .rodata\n.Lclsname{}: .asciz \"{}\"\n", i, c.name));
+        out.push_str(&format!(".Lclsupper{}: .ascii \"{}\"\n", i, c.name.to_ascii_uppercase()));
         if !c.slots.is_empty() {
             out.push_str(&format!("    .align 8\n.Lclsmt{}:\n", i));
             for (_, f) in &c.slots {
@@ -14194,9 +14349,30 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                 let mut cargs = Vec::with_capacity(args.len() + 1);
                 cargs.push((**recv).clone());
                 cargs.extend(args.iter().cloned());
-                DISPATCH_SLOT.with(|c| c.set(slot as i64));
+                DISPATCH_SLOT.with(|c| c.set(if lname.starts_with("@super/") { -1 } else { slot as i64 }));
                 cg_expr_inner(&Expr::Call(fname, cargs), env, sigs, strs, out, target);
                 DISPATCH_SLOT.with(|c| c.set(-1));
+                return;
+            }
+            if lname == "classname" && data_lookup(ci, &lname).is_none() {
+                // Read the runtime descriptor, not the receiver's inferred
+                // class: an inherited method still names the child instance.
+                cg_value(recv, env, sigs, strs, out, target);
+                if module_static::has_objects() { out.push_str("    test %rax, %rax\n    je hbc_objnil_error\n"); }
+                let fresh_receiver = obj_fresh(recv, env, sigs);
+                if fresh_receiver { out.push_str("    sub $32, %rsp\n    mov %rax, (%rsp)\n"); }
+                out.push_str("    mov (%rax), %rax\n");
+                let done = fresh_lbl();
+                CLASSES.with(|c| {
+                    for (i, cl) in c.borrow().iter().enumerate() {
+                        let next = fresh_lbl();
+                        out.push_str(&format!("    lea hrobj_desc_{}(%rip), %rcx\n    cmp %rcx, %rax\n    jne .Lclsnext{}\n    lea .Lclsupper{}(%rip), %rdi\n    mov ${}, %rsi\n    jmp .Lclsfound{}\n.Lclsnext{}:\n", i,next,i,cl.name.to_ascii_uppercase().len(),done,next));
+                    }
+                });
+                out.push_str(&format!("    call hbc_type_error\n.Lclsfound{}:\n    call hbc_strcpy\n", done));
+                if fresh_receiver {
+                    out.push_str("    mov %rax, 8(%rsp)\n    mov %rdx, 16(%rsp)\n    mov (%rsp), %rdi\n    call hrobj_release\n    mov 8(%rsp), %rax\n    mov 16(%rsp), %rdx\n    add $32, %rsp\n");
+                }
                 return;
             }
             if !args.is_empty() { unreachable!("checked") }
@@ -14934,6 +15110,12 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                 _ => unreachable!("checked"),
             }
         }
+        Expr::Call(id,args) if is_builtin(id,"abs") && expr_ty(&args[0],env,sigs)==Ty::Dyn => {
+            cg_dyn_abs(&args[0],env,sigs,strs,out,target);
+        }
+        Expr::Call(id,args) if (is_builtin(id,"min") || is_builtin(id,"max")) && args.len()==2 && expr_ty(e,env,sigs)==Ty::Dyn => {
+            cg_dyn_minmax(is_builtin(id,"max"),&args[0],&args[1],env,sigs,strs,out,target);
+        }
         Expr::Call(id,args) if is_builtin(id,"str")&&expr_ty(&args[0],env,sigs)==Ty::Dyn=>{
             cg_str_dyn(args,env,sigs,strs,out,target);
         }
@@ -15184,6 +15366,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             // identity; the f64 form converts with cvttsd2si and drops
             // the packed display metadata.
             match expr_ty(&args[0],env,sigs) {
+                Ty::Dyn => cg_dyn_int_trunc(&args[0],env,sigs,strs,out,target),
                 Ty::F64 => {
                     cg_f64_operand(&args[0],env,sigs,strs,out,target);
                     out.push_str("    cvttsd2si %xmm0, %rax\n    xor %edx, %edx\n");
@@ -15454,20 +15637,28 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             out.push_str("    call hbc_idlesleep\n    mov $1, %eax\n    xor %edx, %edx\n");
         }
         Expr::Call(id,args) if is_builtin(id,"mod") => {
-            cg_f64_operand(&args[0],env,sigs,strs,out,target);
-            out.push_str("    mov $10, %eax
+            // A Dyn dividend is unpacked by kind with the error DEFERRED
+            // (flag in rax, like the division operand): Harbour evaluates
+            // both arguments before validating the first one's type.
+            let dyn0=expr_ty(&args[0],env,sigs)==Ty::Dyn;
+            if dyn0 { cg_div_operand(&args[0],env,sigs,strs,out,target); } else { cg_f64_operand(&args[0],env,sigs,strs,out,target); out.push_str("    xor %eax, %eax\n"); }
+            out.push_str("    mov %rax, %rdi
+    mov $10, %eax
     shl $16, %rax
     or %rcx, %rax
-    mov %rax, %rdi
     sub $32, %rsp
     movsd %xmm0, (%rsp)
-    mov %rdi, 8(%rsp)
+    mov %rax, 8(%rsp)
+    mov %rdi, 16(%rsp)
 ");
             cg_f64_operand(&args[1],env,sigs,strs,out,target);
             out.push_str("    movsd %xmm0, %xmm1
     movsd (%rsp), %xmm0
     mov 8(%rsp), %rdi
+    mov 16(%rsp), %rax
     add $32, %rsp
+    test %rax, %rax
+    jne hbc_type_error
     call hbc_math_mod
 ");
         }
@@ -15479,10 +15670,11 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             // Round(n, d) - hb_numRound (oracles hk384-hk386): the helper
             // returns the f64 pair convention (xmm0 = value, rdi = packed
             // dec | length<<16), like any float-returning call (63zd).
-            cg_f64_operand(&args[0], env, sigs, strs, out, target);
-            out.push_str("    sub $16, %rsp\n    movsd %xmm0, (%rsp)\n");
+            let dyn0=expr_ty(&args[0],env,sigs)==Ty::Dyn;
+            if dyn0 { cg_div_operand(&args[0],env,sigs,strs,out,target); } else { cg_f64_operand(&args[0],env,sigs,strs,out,target); out.push_str("    xor %eax, %eax\n"); }
+            out.push_str("    sub $32, %rsp\n    movsd %xmm0, (%rsp)\n    mov %rax, 8(%rsp)\n");
             cg_expr(&args[1], env, sigs, strs, out, target);
-            out.push_str("    mov %rax, %rdi\n    movsd (%rsp), %xmm0\n    add $16, %rsp\n    call hbc_round\n");
+            out.push_str("    mov %rax, %rdi\n    movsd (%rsp), %xmm0\n    mov 8(%rsp), %rax\n    add $32, %rsp\n    test %rax, %rax\n    jne hbc_type_error\n    call hbc_round\n");
         }
         Expr::Call(id, args) if is_builtin(id, "len") => {
             // len(s) for a string (hk217): the value pair's len half.
@@ -16940,6 +17132,9 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             out.push_str(&format!(".Lpve{}:\n", k));
         }
         Expr::Call(id, args) => {
+            // A Send hands its dispatch slot to this call only. Nested
+            // argument calls must not inherit or erase the outer slot.
+            let dslot = DISPATCH_SLOT.with(|c| c.replace(-1));
             // Extend-System C boundary first (docs/EXTEND-BRIDGE.md): an
             // EXTERNAL name has no signature entry and marshals through
             // the bridge instead of the internal calling convention.
@@ -17260,7 +17455,6 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             let call_lbl = if brmask.iter().any(|b| *b) {
                 format!("{}__br{}", id, brmask.iter().map(|b| if *b { "1" } else { "0" }).collect::<String>())
             } else { id.clone() };
-            let dslot = DISPATCH_SLOT.with(|c| c.get());
             if dslot >= 0 {
                 // Virtual send: Self is the FIRST (deepest) casilla, its
                 // pointer at casilla+0. Two loads + indirect call.
@@ -17902,7 +18096,7 @@ fn str_builtin_ty(id: &str) -> Ty {
 // are integers.
 fn check_str_num_args(id: &str, args: &[Expr], env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Result<(), String> {
     for (i,a) in args.iter().enumerate() {
-        let t=type_expr(a,env,sigs,n)?;
+        let t=if i==0 && is_builtin(id,"str") { dyn_num_arg_ty(a,env,sigs,n)? } else { type_expr(a,env,sigs,n)? };
         let ok=if i==0 {matches!(t,Ty::I64|Ty::F64)||(is_builtin(id,"str")&&t==Ty::Dyn)} else {t==Ty::I64};
         if i==0&&t==Ty::Dyn&&is_builtin(id,"str"){STR_DYN.with(|c|c.set(true));}
         if !ok { return Err(format!("line {}: `{}` argument {} must be {} in this increment",n,id,i+1,if i==0 {"an integer or a float"} else {"an integer"})); }
@@ -17914,19 +18108,25 @@ fn cg_str_dyn(args:&[Expr],env:&[CgLocal],sigs:&[Sig],strs:&mut Vec<String>,out:
     let owned=dyn_expr_owned(&args[0]);let k=fresh_lbl();
     cg_expr(&args[0],env,sigs,strs,out,target);
     out.push_str("    sub $64, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
-    if MACRO_CONTEXT.with(|c|c.get()){
-        out.push_str("    mov %rax, %rsi\n");cg_memvar_context(out);
-        out.push_str(&format!("    mov ${}, %ecx\n    call hrmacro_str_check\n",if owned{1}else{0}));
-    }else{
-        // Threaded program: same kinds as hrmacro_str_check (0/9/5 render),
-        // anything else releases an owned operand and raises BASE/1099.
-        out.push_str(&format!("    and $255, %eax\n    je .Lsdynok{k}\n    cmp $9, %eax\n    je .Lsdynok{k}\n    cmp $5, %eax\n    je .Lsdynok{k}\n"));
-        if owned{cg_dyn_stack_release(out,0,false);}
-        out.push_str(&format!("    call hbc_str_dyn_fail\n.Lsdynok{k}:\n"));
+    // Harbour evaluates every argument before validating the first one's
+    // kind, so width/dec run FIRST (their effects and throws win over the
+    // kind error). An owned operand is protected by a landing pad while
+    // they run. An invalid kind then throws the catchable type error under
+    // TRY and keeps the BASE/1099 message and exit otherwise. The check is
+    // inline (same kinds as hrmacro_str_check: 0/9/5 render), so the macro
+    // context takes this path too.
+    let pad=owned&&args.len()>1;
+    out.push_str(&format!("    movq $0, 16(%rsp)\n    movq $0, 32(%rsp)\n    movq $0, 40(%rsp)\n"));
+    if pad {
+        out.push_str(&format!("    cmpq $0, hbc_seq_depth(%rip)\n    je .Lsdev{k}\n    lea .Lsdynpad{k}(%rip), %rdi\n    call hbc_seq_push\n    movq $1, 16(%rsp)\n.Lsdev{k}:\n"));
     }
-    // Evaluate optional width/dec once, in source order, after validating n.
-    out.push_str("    movq $0, 32(%rsp)\n    movq $0, 40(%rsp)\n");
     for i in 1..args.len(){cg_expr(&args[i],env,sigs,strs,out,target);out.push_str(&format!("    mov %rax, {}(%rsp)\n",24+i*8));}
+    if pad {
+        out.push_str(&format!("    cmpq $0, 16(%rsp)\n    je .Lsdnp{k}\n    call hbc_seq_pop\n.Lsdnp{k}:\n"));
+    }
+    out.push_str(&format!("    mov (%rsp), %rax\n    and $255, %eax\n    je .Lsdynok{k}\n    cmp $9, %eax\n    je .Lsdynok{k}\n    cmp $5, %eax\n    je .Lsdynok{k}\n"));
+    if owned{cg_dyn_stack_release(out,0,false);}
+    out.push_str(&format!("    cmpq $0, hbc_seq_depth(%rip)\n    jne .Lsdynthr{k}\n    call hbc_str_dyn_fail\n.Lsdynthr{k}:\n    add $64, %rsp\n    jmp hbc_type_error\n.Lsdynok{k}:\n"));
     out.push_str(&format!("    mov (%rsp), %rax\n    and $255, %eax\n    cmp $5, %eax\n    je .Lsdynfloat{}\n",k));
     if args.len()!=3{
         out.push_str(&format!("    mov 8(%rsp), %rdi\n    mov 32(%rsp), %rsi\n    call hbc_str_int_field\n    jmp .Lsdyndone{}\n",k));
@@ -17935,7 +18135,13 @@ fn cg_str_dyn(args:&[Expr],env:&[CgLocal],sigs:&[Sig],strs:&mut Vec<String>,out:
     }
     out.push_str(&format!(".Lsdynfloat{}:\n    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    call hbc_float_unpack\n.Lsdynrender{}:\n    mov 32(%rsp), %rsi\n    mov 40(%rsp), %rdx\n    mov ${}, %ecx\n    call hbc_str_f64\n.Lsdyndone{}:\n    mov %rax, 48(%rsp)\n    mov %rdx, 56(%rsp)\n",k,k,match args.len(){1=>0,2=>1,_=>3},k));
     if owned{cg_dyn_stack_release(out,0,false);}
-    out.push_str("    mov 48(%rsp), %rax\n    mov 56(%rsp), %rdx\n    add $64, %rsp\n");
+    if pad {
+        out.push_str(&format!("    mov 48(%rsp), %rax\n    mov 56(%rsp), %rdx\n    add $64, %rsp\n    jmp .Lsdend{k}\n.Lsdynpad{k}:\n"));
+        cg_dyn_stack_release(out,0,false);
+        out.push_str(&format!("    add $64, %rsp\n    jmp hbc_seq_unwind\n.Lsdend{k}:\n"));
+    } else {
+        out.push_str("    mov 48(%rsp), %rax\n    mov 56(%rsp), %rdx\n    add $64, %rsp\n");
+    }
 }
 // The float path: a float value, or any explicit dec argument.
 fn str_needs_f64(args: &[Expr], env: &[CgLocal], sigs: &[Sig]) -> bool {
@@ -18664,6 +18870,11 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
                     }
                 }
             }
+            if name.eq_ignore_ascii_case("classname") {
+                if let Ty::Obj(ci) = expr_ty(recv, env, sigs) {
+                    if data_lookup(ci, "classname").is_none() { return Ty::StrOwn; }
+                }
+            }
             Ty::Dyn // DATA casilla
         }
         Expr::Str(_) => Ty::Str,
@@ -18698,7 +18909,11 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             if is_builtin(id, "hb_hclone") { return Ty::Hash; }
             if is_bitindex(id) { return if is_builtin(id,"hb_bittest") {Ty::Bool} else {Ty::I64}; }
             if is_bitop(id) { return Ty::I64; }
-            if is_builtin(id, "min") || is_builtin(id, "max") { return expr_ty(&args[0], env, sigs); }
+            if is_builtin(id, "min") || is_builtin(id, "max") {
+                let ta = expr_ty(&args[0], env, sigs);
+                if args.len() == 2 && (ta == Ty::Dyn || expr_ty(&args[1], env, sigs) == Ty::Dyn) { return Ty::Dyn; }
+                return ta;
+            }
             if is_builtin(id, "empty") || is_builtin(id, "hb_isnumeric") || is_builtin(id, "hb_isarray") || is_builtin(id, "hb_isstring") { return Ty::Bool; }
             if is_output_call(id) { return Ty::Dyn; }
             if is_builtin(id, "hb_pvalue") { return Ty::Dyn; }
@@ -30642,7 +30857,7 @@ hbc_str_cache: .zero 128
 # address; the throwable runtime-error helpers and Break() push the value
 # on the exception stack and unwind to the innermost pad. FINALLY bodies
 # are local subroutines the normal path and the handler both call; a TRY
-# without CATCH re-enters hbc_seq_unwind afterwards. 256 pads of 80 bytes (offset 64 saves the receiving trace top),
+# without CATCH re-enters hbc_seq_unwind afterwards. 256 pads of 80 bytes (offset 64 saves the receiving trace top, offset 72 the macro frame mark),
 # 256 pending exceptions of 16 bytes. Registered limits: the stacks are
 # process-global (TRY inside hb_threadStart code is out of this
 # increment), and an unwound frame's owned temporaries leak (error paths).
@@ -30664,6 +30879,8 @@ hbc_seq_push:
     mov %rdi, 56(%r11)
     mov hbc_trace_top(%rip), %rax
     mov %rax, 64(%r11)
+    movq $0, 72(%r11)
+    # @SEQ_MACRO_MARK@
     incq hbc_seq_depth(%rip)
     ret
 
@@ -30722,6 +30939,7 @@ hbc_seq_unwind:
     mov 40(%r11), %r15
     mov 64(%r11), %rax
     mov %rax, hbc_trace_top(%rip)
+    # @SEQ_MACRO_UNWIND@
     mov 48(%r11), %rsp
     mov 56(%r11), %r11
     jmp *%r11
@@ -31027,6 +31245,29 @@ fn finalize_threads_windows(out: String) -> String {
     r
 }
 
+const SEQ_MACRO_MARK: &str = r"    test %rax, %rax
+    jz .Lseqpm
+    mov 48(%rax), %rdi
+    test %rdi, %rdi
+    jz .Lseqpm
+    push %r11
+    call hrmacro_frame_mark
+    pop %r11
+    mov %rax, 72(%r11)
+.Lseqpm:
+";
+const SEQ_MACRO_UNWIND: &str = r"    mov 72(%r11), %rsi
+    test %rsi, %rsi
+    jz .Lsequm
+    mov 48(%rax), %rdi
+    test %rdi, %rdi
+    jz .Lsequm
+    push %r11
+    call hrmacro_unwind_to
+    pop %r11
+.Lsequm:
+";
+
 fn finalize_trace(mut out: String, target: Target) -> String {
     out.push_str(dyn_float::HELPERS);
     if out.contains("call hbc_str_dyn_fail") {
@@ -31035,7 +31276,12 @@ fn finalize_trace(mut out: String, target: Target) -> String {
     if out.contains("call hbc_str_f64") {
         out.push_str(&f64_fmt_helper());
     }
-    if MACRO_CONTEXT.with(|c|c.get()) {
+    // The trace record carries a macro-context pointer only in macro mode.
+    // Keep non-macro/MT sequence pads byte-for-byte free of macro accesses.
+    let macro_mode = MACRO_CONTEXT.with(|c|c.get());
+    out = out.replace("    # @SEQ_MACRO_MARK@\n", if macro_mode { SEQ_MACRO_MARK } else { "" })
+        .replace("    # @SEQ_MACRO_UNWIND@\n", if macro_mode { SEQ_MACRO_UNWIND } else { "" });
+    if macro_mode {
         out.push_str(&macro_helpers(target));
     }
     if ["ctod", "date_today", "date_render", "stod", "dtos", "year", "day", "month", "dow", "cdow", "cmonth", "dtoc", "date_add", "date_diff", "date_days", "date_from_days"].iter().any(|name| out.contains(&format!("call hbc_{}",name))) {
@@ -34070,7 +34316,7 @@ hbc_str_cache: .zero 128
 # address; the throwable runtime-error helpers and Break() push the value
 # on the exception stack and unwind to the innermost pad. FINALLY bodies
 # are local subroutines the normal path and the handler both call; a TRY
-# without CATCH re-enters hbc_seq_unwind afterwards. 256 pads of 80 bytes (offset 64 saves the receiving trace top),
+# without CATCH re-enters hbc_seq_unwind afterwards. 256 pads of 80 bytes (offset 64 saves the receiving trace top, offset 72 the macro frame mark),
 # 256 pending exceptions of 16 bytes. Registered limits: the stacks are
 # process-global (TRY inside hb_threadStart code is out of this
 # increment), and an unwound frame's owned temporaries leak (error paths).
@@ -34092,6 +34338,8 @@ hbc_seq_push:
     mov %rdi, 56(%r11)
     mov hbc_trace_top(%rip), %rax
     mov %rax, 64(%r11)
+    movq $0, 72(%r11)
+    # @SEQ_MACRO_MARK@
     incq hbc_seq_depth(%rip)
     ret
 
@@ -34150,6 +34398,7 @@ hbc_seq_unwind:
     mov 40(%r11), %r15
     mov 64(%r11), %rax
     mov %rax, hbc_trace_top(%rip)
+    # @SEQ_MACRO_UNWIND@
     mov 48(%r11), %rsp
     mov 56(%r11), %r11
     jmp *%r11
@@ -34496,6 +34745,19 @@ fn main() {
         for m in &prog.methods {
             let ci = class_find(&m.class_name).unwrap_or(0);
             mmap.insert(m.f.name.clone(), ci);
+            // Validate lexical parent lookup before return-type inference can
+            // mask a missing parent/member as a no-return function.
+            let mut bad = None;
+            visit_stmts_ref(&m.f.stmts, &mut |_| {}, &mut |e| {
+                if let Expr::Send(_, name, _) = e {
+                    if let Some(member) = name.strip_prefix("@super/") {
+                        if method_lookup(ci, name).is_none() {
+                            bad = Some(format!("method `{}`: parent has no member `{}` for super dispatch", m.f.name, member));
+                        }
+                    }
+                }
+            });
+            if let Some(message) = bad { eprintln!("error: {}", message); process::exit(1); }
         }
         // Materialize the default-New bodies build_class_table wired
         // into the slots: `return Self`, typed by the ordinary method
@@ -37143,4 +37405,42 @@ mod dyn_concat_boundary_tests {
   assert!(has_dyn_string_concat(&Expr::Call("upper".into(),vec![concat]),&env,&[]));
   assert!(!has_dyn_string_concat(&Expr::Var("d".into()),&env,&[]));
  }
+}
+
+// Abs of a numeric Dyn: the result is a Dyn cell of the same kind (integer tag
+// stays an integer, a float payload becomes a fresh owned heap float with the
+// same metadata). The operand is an owned snapshot, released here.
+fn cg_dyn_abs(a:&Expr,env:&[CgLocal],sigs:&[Sig],strs:&mut Vec<String>,out:&mut String,target:Target) {
+    let k=fresh_lbl();
+    cg_mul_snapshot(a,env,sigs,strs,out,target);
+    out.push_str(&format!("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n    cmp $5, %al\n    je .Lab_f{k}\n    @HBC_TAG_KIND@cmpq $0, (%rsp)@HBC_TAG_END@\n    je .Lab_i{k}\n    @HBC_TAG_KIND@cmpq $9, (%rsp)@HBC_TAG_END@\n    jne .Lab_e{k}\n.Lab_i{k}:\n    mov 8(%rsp), %rax\n    mov %rax, %rcx\n    neg %rcx\n    test %rax, %rax\n    cmovs %rcx, %rax\n    mov %rax, 24(%rsp)\n    mov (%rsp), %rax\n    mov %rax, 16(%rsp)\n    jmp .Lab_r{k}\n.Lab_f{k}:\n    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    call hbc_float_unpack\n    mov %rdi, %rsi\n    movq %xmm0, %rax\n    movabs $0x7FFFFFFFFFFFFFFF, %rcx\n    and %rcx, %rax\n    mov %rax, %rdi\n    call hbc_float_new\n    mov %rax, 16(%rsp)\n    mov %rdx, 24(%rsp)\n.Lab_r{k}:\n"));
+    cg_concat_drop(out,0);
+    out.push_str(&format!("    mov 16(%rsp), %rax\n    mov 24(%rsp), %rdx\n    add $32, %rsp\n    jmp .Lab_d{k}\n.Lab_e{k}:\n"));
+    cg_concat_drop(out,0);
+    out.push_str(&format!("    add $32, %rsp\n    jmp hbc_type_error\n.Lab_d{k}:\n"));
+}
+// Min/Max with a numeric Dyn operand: both operands are owned snapshots,
+// compared as integers when both are integers and as doubles otherwise (the
+// first item wins a tie, like the typed forms); the chosen snapshot is the
+// result and the other is released. Under an active TRY a landing pad releases
+// the first snapshot when the second operand throws.
+fn cg_dyn_minmax(is_max:bool,a:&Expr,b:&Expr,env:&[CgLocal],sigs:&[Sig],strs:&mut Vec<String>,out:&mut String,target:Target) {
+    let k=fresh_lbl();
+    let (ji,jf)=if is_max {("jge","jae")} else {("jle","jbe")};
+    cg_mul_snapshot(a,env,sigs,strs,out,target);
+    out.push_str(&format!("    sub $80, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n    movq $1, 16(%rsp)\n    movq $0, 24(%rsp)\n    movq $0, 48(%rsp)\n    cmpq $0, hbc_seq_depth(%rip)\n    je .Lmm_eval{k}\n    lea .Lmm_catch{k}(%rip), %rdi\n    call hbc_seq_push\n    movq $1, 48(%rsp)\n.Lmm_eval{k}:\n"));
+    cg_mul_snapshot(b,env,sigs,strs,out,target);
+    out.push_str(&format!("    mov %rax, 16(%rsp)\n    mov %rdx, 24(%rsp)\n    cmpq $0, 48(%rsp)\n    je .Lmm_chk{k}\n    call hbc_seq_pop\n.Lmm_chk{k}:\n    movq $0, 72(%rsp)\n"));
+    for (tag,pay,dbl,bit,l) in [(0,8,56,1,"a"),(16,24,64,2,"b")] {
+        out.push_str(&format!("    mov {tag}(%rsp), %rax\n    mov {pay}(%rsp), %rdx\n    cmp $5, %al\n    je .Lmm_{l}f{k}\n    @HBC_TAG_KIND@cmpq $0, {tag}(%rsp)@HBC_TAG_END@\n    je .Lmm_{l}i{k}\n    @HBC_TAG_KIND@cmpq $9, {tag}(%rsp)@HBC_TAG_END@\n    jne .Lmm_err{k}\n.Lmm_{l}i{k}:\n    cvtsi2sd %rdx, %xmm0\n    movsd %xmm0, {dbl}(%rsp)\n    orq ${bit}, 72(%rsp)\n    jmp .Lmm_{l}d{k}\n.Lmm_{l}f{k}:\n    call hbc_float_unpack\n    movsd %xmm0, {dbl}(%rsp)\n.Lmm_{l}d{k}:\n"));
+    }
+    out.push_str(&format!("    cmpq $3, 72(%rsp)\n    jne .Lmm_dbl{k}\n    mov 8(%rsp), %r10\n    cmp 24(%rsp), %r10\n    {ji} .Lmm_first{k}\n    jmp .Lmm_second{k}\n.Lmm_dbl{k}:\n    movsd 56(%rsp), %xmm1\n    movsd 64(%rsp), %xmm0\n    ucomisd %xmm0, %xmm1\n    jp .Lmm_second{k}\n    {jf} .Lmm_first{k}\n.Lmm_second{k}:\n    mov 16(%rsp), %rax\n    mov 24(%rsp), %rdx\n    mov %rax, 32(%rsp)\n    mov %rdx, 40(%rsp)\n"));
+    cg_concat_drop(out,0);
+    out.push_str(&format!("    jmp .Lmm_done{k}\n.Lmm_first{k}:\n    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    mov %rax, 32(%rsp)\n    mov %rdx, 40(%rsp)\n"));
+    cg_concat_drop(out,16);
+    out.push_str(&format!(".Lmm_done{k}:\n    mov 32(%rsp), %rax\n    mov 40(%rsp), %rdx\n    add $80, %rsp\n    jmp .Lmm_end{k}\n.Lmm_err{k}:\n"));
+    cg_concat_drop(out,0);cg_concat_drop(out,16);
+    out.push_str(&format!("    add $80, %rsp\n    jmp hbc_type_error\n.Lmm_catch{k}:\n"));
+    cg_concat_drop(out,0);cg_concat_drop(out,16);
+    out.push_str(&format!("    add $80, %rsp\n    jmp hbc_seq_unwind\n.Lmm_end{k}:\n"));
 }
