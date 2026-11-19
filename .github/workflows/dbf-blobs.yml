@@ -1,0 +1,44 @@
+name: DBF blob regeneration (pinned toolchains)
+
+'on':
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  regenerate:
+    # The Linux blob is pinned to Ubuntu 22.04 gcc 11.4 and the Windows blob
+    # to the Debian/Ubuntu mingw-w64 gcc 10 posix build, exactly as recorded
+    # in generated/recipe.json and generated/windows-recipe.json.
+    runs-on: ubuntu-latest
+    container: ubuntu:22.04
+    timeout-minutes: 15
+    steps:
+      - name: Install the pinned toolchains
+        run: |
+          set -eu
+          apt-get update -qq
+          DEBIAN_FRONTEND=noninteractive apt-get install -y -qq gcc mingw-w64 git python3 ca-certificates
+          gcc --version | head -1
+          (command -v x86_64-w64-mingw32-gcc-10-posix || command -v x86_64-w64-mingw32-gcc-posix) | head -1
+      - name: Check out the branch
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Regenerate the embedded DBF blobs
+        run: |
+          set -eu
+          python3 tests/generate_linux_asm.py > work_blobs_linux.log
+          mingw=$(command -v x86_64-w64-mingw32-gcc-10-posix || command -v x86_64-w64-mingw32-gcc-posix)
+          HR_MINGW_CC="$mingw" python3 tests/generate_windows_asm.py > work_blobs_windows.log
+          cat work_blobs_linux.log work_blobs_windows.log
+          git diff --stat -- generated/
+      - name: Commit the regenerated blobs to a work branch
+        run: |
+          set -eu
+          git config user.name "HarbourRust Blobs CI"
+          git config user.email "blobs-ci@harbourrust.invalid"
+          BRANCH=dbf-blobs-${GITHUB_RUN_NUMBER}
+          git checkout -b "$BRANCH"
+          git add generated/
+          git commit -m "Regenerate hrdbf blobs with the pinned toolchains (Ubuntu gcc 11.4, mingw gcc 10 posix)"
+          git push origin "$BRANCH"

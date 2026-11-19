@@ -253,6 +253,7 @@ HR_SYSV void hrdbf_app_top( void ) { hr_do0( "DBGOTOP" ); }
 HR_SYSV void hrdbf_app_bottom( void ) { hr_do0( "DBGOBOTTOM" ); }
 HR_SYSV void hrdbf_app_skip( int64_t k ) { PHB_ITEM n = hb_itemPutNInt( NULL, k ); hb_itemRelease( hr_doC( "DBSKIP", 1, n ) ); hb_itemRelease( n ); }
 HR_SYSV void hrdbf_app_goto( int64_t k ) { PHB_ITEM n = hb_itemPutNInt( NULL, k ); hb_itemRelease( hr_doC( "DBGOTO", 1, n ) ); hb_itemRelease( n ); }
+HR_SYSV void hrdbf_app_ordselect( int64_t k ) { PHB_ITEM n = hb_itemPutNInt( NULL, k ); hb_itemRelease( hr_doC( "DBSETORDER", 1, n ) ); hb_itemRelease( n ); }
 HR_SYSV uint64_t hrdbf_app_order_add( const unsigned char * p, size_t len ) { PHB_ITEM f = hr_str( p, len ); PHB_ITEM r = hr_doC( "ORDLISTADD", 1, f ); uint64_t v = hb_itemGetL( r ); hb_itemRelease( r ); hb_itemRelease( f ); return v; }
 HR_SYSV void hrdbf_app_order_clear( void ) { hr_do0( "ORDLISTCLEAR" ); }
 HR_SYSV uint64_t hrdbf_app_found( void ) { return hr_bool0( "FOUND" ); }
@@ -264,6 +265,7 @@ HR_SYSV uint64_t hrdbf_app_seek( const unsigned char * p, size_t n, uint64_t sof
 }
 HR_SYSV uint64_t hrdbf_app_recno( void ) { return hr_num0( "RECNO" ); }
 HR_SYSV uint64_t hrdbf_app_lastrec( void ) { return hr_num0( "LASTREC" ); }
+HR_SYSV uint64_t hrdbf_app_fcount( void ) { return hr_num0( "FCOUNT" ); }
 HR_SYSV uint64_t hrdbf_app_bof( void ) { return hr_bool0( "BOF" ); }
 HR_SYSV uint64_t hrdbf_app_eof( void ) { return hr_bool0( "EOF" ); }
 HR_SYSV uint64_t hrdbf_app_deleted( void ) { return hr_bool0( "DELETED" ); }

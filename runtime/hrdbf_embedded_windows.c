@@ -31,6 +31,9 @@
 #define hrdbf_app_seek hrdbfw_app_seek
 #define hrdbf_app_recno hrdbfw_app_recno
 #define hrdbf_app_lastrec hrdbfw_app_lastrec
+#define hrdbf_app_fcount hrdbfw_app_fcount
+#define hrdbf_app_goto hrdbfw_app_goto
+#define hrdbf_app_ordselect hrdbfw_app_ordselect
 #define hrdbf_app_bof hrdbfw_app_bof
 #define hrdbf_app_eof hrdbfw_app_eof
 #define hrdbf_app_deleted hrdbfw_app_deleted
