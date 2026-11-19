@@ -18086,6 +18086,33 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             if expr_ty(a, env, sigs) == Ty::Dyn {
                 out.push_str("    call hbc_dyn_to_i64\n");
             }
+            // Scalar-slot rhs register shuffle: a statically-typed local
+            // rhs (I64/Bool/Date) compiles to one bare `mov -off(%rbp),
+            // %rax` - no call and no %rcx clobber - so the lhs goes to
+            // %rcx directly instead of through the 16-byte spill slot.
+            // The post-op sequence already expects rcx=lhs / rax=rhs, so
+            // flags and the jo overflow contract are identical.
+            let scalar_slot_rhs = matches!(&**b, Expr::Var(_))
+                && matches!(expr_ty(b, env, sigs), Ty::I64 | Ty::Bool | Ty::Date);
+            if scalar_slot_rhs && matches!(op, '+' | '-' | '*') {
+                // The shared cg_expr(a) above already evaluated the lhs
+                // exactly once (side effects included): reuse it.
+                out.push_str("    mov %rax, %rcx\n");
+                cg_expr(b, env, sigs, strs, out, target);
+                match op {
+                    '+' => out.push_str("    add %rcx, %rax\n"),
+                    '-' => {
+                        out.push_str("    sub %rax, %rcx\n");
+                        out.push_str("    mov %rcx, %rax\n");
+                    }
+                    '*' => out.push_str("    imul %rcx, %rax\n"),
+                    _ => unreachable!("checked"),
+                }
+                if CHECKED_I64.with(|c| c.get()) {
+                    out.push_str("    jo hbc_static_overflow\n");
+                }
+                return;
+            }
             // Keep the lhs in a full 16-byte slot on both targets so any
             // C/SysV call within the rhs retains call-site alignment.
             match target {
@@ -20349,6 +20376,40 @@ fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<Strin
             }
         }
         Expr::Cmp(op, a, b) => {
+            let j = match op {
+                CmpOp::Lt => "jl", CmpOp::Le => "jle", CmpOp::Gt => "jg",
+                CmpOp::Ge => "jge", CmpOp::Eq => "je", CmpOp::Ne => "jne",
+                // Integer `==` compares like `=` (hk124).
+                CmpOp::EqEq => "je",
+                CmpOp::Contains => unreachable!("the checker gates `$` to strings; the string arm handles it"),
+            };
+            // Immediate rhs: a literal in imm32 range compares in place.
+            // `cmp $imm, %rax` computes lhs-rhs exactly like the generic
+            // `cmp %rax, %rcx` with rcx=lhs below, so the same jump table
+            // applies; a literal has no side effects to preserve. Only
+            // scalar operands reach this arm (Str/Dyn/F64/NumLocal/array
+            // arms above). A scalar-slot local rhs (one bare slot load,
+            // no call and no %rcx clobber) moves the lhs to %rcx and
+            // skips the push/pop stack round-trip.
+            let imm_rhs = if let Expr::Int(v) = &**b {
+                v.parse::<i64>().ok().filter(|x| *x >= i32::MIN as i64 && *x <= i32::MAX as i64)
+            } else {
+                None
+            };
+            let scalar_slot_rhs = matches!(&**b, Expr::Var(_))
+                && matches!(expr_ty(b, env, sigs), Ty::I64 | Ty::Bool | Ty::Date);
+            if let Some(imm) = imm_rhs {
+                cg_expr(a, env, sigs, strs, out, target);
+                out.push_str(&format!("    cmp ${}, %rax\n    {} {}\n", imm, j, true_label));
+                return;
+            }
+            if scalar_slot_rhs {
+                cg_expr(a, env, sigs, strs, out, target);
+                out.push_str("    mov %rax, %rcx\n");
+                cg_expr(b, env, sigs, strs, out, target);
+                out.push_str(&format!("    cmp %rax, %rcx\n    {} {}\n", j, true_label));
+                return;
+            }
             cg_expr(a, env, sigs, strs, out, target);
             match target {
                 Target::Linux => out.push_str("    push %rax\n"),
@@ -20360,13 +20421,6 @@ fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<Strin
                 Target::Windows => out.push_str("    mov (%rsp), %rcx\n    add $16, %rsp\n"),
             }
             out.push_str("    cmp %rax, %rcx\n");
-            let j = match op {
-                CmpOp::Lt => "jl", CmpOp::Le => "jle", CmpOp::Gt => "jg",
-                CmpOp::Ge => "jge", CmpOp::Eq => "je", CmpOp::Ne => "jne",
-                // Integer `==` compares like `=` (hk124).
-                CmpOp::EqEq => "je",
-                CmpOp::Contains => unreachable!("the checker gates `$` to strings; the string arm handles it"),
-            };
             out.push_str(&format!("    {} {}\n", j, true_label));
         }
         _ => {
