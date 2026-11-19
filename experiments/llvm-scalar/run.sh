@@ -135,7 +135,8 @@ python3 check_marker_rejections.py
 python3 prepare_perfextra.py
 as -o run/perfextra-wrappers.o run/perfextra-wrappers.s
 objcopy --redefine-sym ll_main=ll_perfextra_main run/perfextra.o run/perfextra-bench.o
-"$RUSTC" -O -C target-cpu=x86-64 -C overflow-checks=off -C link-arg=run/perfextra-wrappers.o -C link-arg=run/perfextra-bench.o -C relocation-model=static run/perfextra-rust.rs -o run/perfextra-rust
+objcopy --redefine-sym ll_main=ll_perfextra_main run/corpus-runtime-bench.o run/corpus-runtime-perfextra.o
+"$RUSTC" -O -C target-cpu=x86-64 -C overflow-checks=off -C link-arg=run/perfextra-wrappers.o -C link-arg=run/perfextra-bench.o -C link-arg=run/corpus-runtime-perfextra.o -C relocation-model=static run/perfextra-rust.rs -o run/perfextra-rust
 run/perfextra-rust
 if [ "${RUN_BENCHMARKS:-0}" = 1 ]; then
  run/perfextra-rust "${BENCH_N:-1000000}" > run/perfextra.csv
