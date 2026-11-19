@@ -1294,6 +1294,25 @@ impl P {
         // method wins over a same-named DATA (cl10), DATA read is the
         // fallback; both resolve in codegen, not here.
         let mut e = self.factor_primary()?;
+        // ::Method(args) is a send to Self; bare ::Data retains its read path.
+        if let Expr::SelfGet(name) = &e {
+            if self.peek() == Some(&Tok::LParen) {
+                let name = name.clone();
+                self.pos += 1;
+                let mut args = Vec::new();
+                if self.peek() != Some(&Tok::RParen) {
+                    loop {
+                        args.push(self.expr()?);
+                        match self.bump() {
+                            Some(Tok::Comma) => continue,
+                            Some(Tok::RParen) => break,
+                            other => return Err(format!("line {}: expected comma or closing parenthesis in Self send, got {:?}", self.n, other)),
+                        }
+                    }
+                } else { self.pos += 1; }
+                e = Expr::Send(Box::new(Expr::SelfObj), name, args);
+            }
+        }
         while self.peek() == Some(&Tok::Colon) {
             self.pos += 1;
             let name = match self.bump() {
@@ -1317,7 +1336,9 @@ impl P {
                     self.pos += 1;
                 }
             }
-            e = Expr::Send(Box::new(e), name, args);
+            e = if matches!(&e, Expr::SelfGet(n) if n.eq_ignore_ascii_case("super")) {
+                Expr::Send(Box::new(Expr::SelfObj), format!("@super/{}", name), args)
+            } else { Expr::Send(Box::new(e), name, args) };
         }
         if matches!(self.peek(), Some(Tok::IncTok | Tok::DecTok)) {
             let delta = if self.peek() == Some(&Tok::IncTok) { 1 } else { -1 };
@@ -3799,7 +3820,8 @@ fn parse(src: &str) -> Result<Prog, String> {
                 | [Tok::KwClass, Tok::Ident(c), Tok::KwInherit, Tok::Ident(b)] => {
                     check_global_ident(c, n)?; check_global_ident(b, n)?; (c.clone(), Some(b.clone()))
                 }
-                [Tok::KwClass, Tok::Ident(c), Tok::Ident(f), Tok::Ident(b)] if f.eq_ignore_ascii_case("from") => {
+                [Tok::KwClass, Tok::Ident(c), Tok::Ident(f), Tok::Ident(b)]
+                | [Tok::KwCreate, Tok::KwClass, Tok::Ident(c), Tok::Ident(f), Tok::Ident(b)] if f.eq_ignore_ascii_case("from") => {
                     check_global_ident(c, n)?; check_global_ident(b, n)?; (c.clone(), Some(b.clone()))
                 }
                 [Tok::KwCreate, Tok::KwClass, Tok::Ident(_), Tok::KwInherit, Tok::Ident(_), Tok::Comma, ..]
@@ -3817,6 +3839,25 @@ fn parse(src: &str) -> Result<Prog, String> {
                 if i >= lines.len() { return Err(format!("class `{}` without ENDCLASS", decl.name)); }
                 let (ln, lt) = &lines[i];
                 let ln = *ln;
+                // INLINE is a single return expression with the same implicit
+                // Self and parameter handling as an out-of-line method.
+                if let [Tok::KwMethod, Tok::Ident(name), Tok::LParen, rest @ ..] = lt.as_slice() {
+                    if let Some(end) = rest.iter().position(|t| *t == Tok::RParen) {
+                        if matches!(rest.get(end + 1), Some(Tok::Ident(word)) if word.eq_ignore_ascii_case("inline")) {
+                            check_ident(name, ln)?;
+                            let params = parse_param_names(&rest[..end], ln)?;
+                            let expr = parse_expr_tokens(rest[end + 2..].to_vec(), ln)?;
+                            decl.methods.push((name.clone(), params.clone(), false));
+                            methods.push(MethodDef { class_name: decl.name.clone(), f: Func {
+                                init: false, name: format!("{}__{}", decl.name, name), params,
+                                ret: None, stmts: vec![Stmt::Ret(ln, Some(expr))],
+                                dyn_names: std::collections::HashSet::new(),
+                            }});
+                            i += 1;
+                            continue;
+                        }
+                    }
+                }
                 match lt.as_slice() {
                     [Tok::KwEndclass] => { i += 1; break; }
                     [Tok::KwData, Tok::Ident(d)] => { check_ident(d, ln)?; decl.datas.push((d.clone(), None)); i += 1; }
@@ -4330,7 +4371,15 @@ fn class_name(ci: u32) -> String {
     CLASSES.with(|c| c.borrow()[ci as usize].name.clone())
 }
 fn method_lookup(ci: u32, lname: &str) -> Option<(u32, String)> {
-    CLASSES.with(|c| c.borrow()[ci as usize].slots.iter().enumerate().find(|(_, (n, _))| n == lname).map(|(i, (_, f))| (i as u32, f.clone())))
+    CLASSES.with(|c| {
+        let table = c.borrow();
+        // The parser-only prefix cannot be spelled as a source member name.
+        // Super starts at the lexical owner's parent, not the instance class.
+        let (owner, name) = if let Some(name) = lname.strip_prefix("@super/") {
+            (table[ci as usize].parent?, name)
+        } else { (ci, lname) };
+        table[owner as usize].slots.iter().enumerate().find(|(_, (n, _))| n == name).map(|(i, (_, f))| (i as u32, f.clone()))
+    })
 }
 fn data_lookup(ci: u32, lname: &str) -> Option<u32> {
     CLASSES.with(|c| {
@@ -14249,7 +14298,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                 let mut cargs = Vec::with_capacity(args.len() + 1);
                 cargs.push((**recv).clone());
                 cargs.extend(args.iter().cloned());
-                DISPATCH_SLOT.with(|c| c.set(slot as i64));
+                DISPATCH_SLOT.with(|c| c.set(if lname.starts_with("@super/") { -1 } else { slot as i64 }));
                 cg_expr_inner(&Expr::Call(fname, cargs), env, sigs, strs, out, target);
                 DISPATCH_SLOT.with(|c| c.set(-1));
                 return;
@@ -17007,6 +17056,9 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             out.push_str(&format!(".Lpve{}:\n", k));
         }
         Expr::Call(id, args) => {
+            // A Send hands its dispatch slot to this call only. Nested
+            // argument calls must not inherit or erase the outer slot.
+            let dslot = DISPATCH_SLOT.with(|c| c.replace(-1));
             // Extend-System C boundary first (docs/EXTEND-BRIDGE.md): an
             // EXTERNAL name has no signature entry and marshals through
             // the bridge instead of the internal calling convention.
@@ -17327,7 +17379,6 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             let call_lbl = if brmask.iter().any(|b| *b) {
                 format!("{}__br{}", id, brmask.iter().map(|b| if *b { "1" } else { "0" }).collect::<String>())
             } else { id.clone() };
-            let dslot = DISPATCH_SLOT.with(|c| c.get());
             if dslot >= 0 {
                 // Virtual send: Self is the FIRST (deepest) casilla, its
                 // pointer at casilla+0. Two loads + indirect call.
@@ -34613,6 +34664,19 @@ fn main() {
         for m in &prog.methods {
             let ci = class_find(&m.class_name).unwrap_or(0);
             mmap.insert(m.f.name.clone(), ci);
+            // Validate lexical parent lookup before return-type inference can
+            // mask a missing parent/member as a no-return function.
+            let mut bad = None;
+            visit_stmts_ref(&m.f.stmts, &mut |_| {}, &mut |e| {
+                if let Expr::Send(_, name, _) = e {
+                    if let Some(member) = name.strip_prefix("@super/") {
+                        if method_lookup(ci, name).is_none() {
+                            bad = Some(format!("method `{}`: parent has no member `{}` for super dispatch", m.f.name, member));
+                        }
+                    }
+                }
+            });
+            if let Some(message) = bad { eprintln!("error: {}", message); process::exit(1); }
         }
         // Materialize the default-New bodies build_class_table wired
         // into the slots: `return Self`, typed by the ordinary method

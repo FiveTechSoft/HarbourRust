@@ -1,0 +1,9 @@
+CREATE CLASS A
+ METHOD Bad()
+ENDCLASS
+METHOD Bad() CLASS A
+RETURN ::super:Missing()
+FUNCTION Main()
+ LOCAL o := A()
+ o:Bad()
+RETURN NIL
