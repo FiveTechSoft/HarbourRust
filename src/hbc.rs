@@ -9735,7 +9735,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 // and literal reassignments both land. Non-empty literal
                 // initializers keep the borrowed slot and its
                 // byte-identical assembly.
-                let t = if t == Ty::Str && matches!(e, Expr::Str(s) if s.is_empty()) { Ty::StrOwn } else { t };
+                let t = if t == Ty::Str && matches!(e, Expr::Str(s) if s.is_empty() || concat_assigned_in(stmts).contains(id)) { Ty::StrOwn } else { t };
                 // Bare-local FOR counter (oracle hk336): the slot types
                 // i64 from declaration via the one shared predicate;
                 // every other shape keeps Dyn and the named `for`
@@ -18833,6 +18833,31 @@ fn byref_names_in(stmts: &[Stmt]) -> std::collections::HashSet<String> {
     out
 }
 
+// Locals that receive a `+` result by plain assignment anywhere in these
+// statements (`c := c + "x"`, `c += "x"`; issue #1 3.3). A local
+// initialized from a non-empty string literal starts as a borrowed rodata
+// slot; when it is also a concatenation target the slot must be laid out
+// owned from the declaration on, exactly like the `local c := ""`
+// accumulator. Syntactic, shared by the checker and the layout so both
+// pick the same slot kind.
+fn concat_assigned_in(stmts: &[Stmt]) -> std::collections::HashSet<String> {
+    fn st(stmts: &[Stmt], out: &mut std::collections::HashSet<String>) {
+        for s in stmts {
+            match s {
+                Stmt::Assign(_, id, Expr::Bin('+', _, _)) => { out.insert(id.clone()); }
+                Stmt::If(_, _, t, el) => { st(t, out); st(el, out); }
+                Stmt::While(_, _, b) | Stmt::For(_, _, _, _, _, b) | Stmt::ForEach(_, _, _, b) => st(b, out),
+                Stmt::Switch(_, _, arms, otherwise) => { for (_, _, b) in arms { st(b, out); } if let Some((_, ob)) = otherwise { st(ob, out); } }
+                Stmt::Try(_, b, c, f) => { st(b, out); if let Some((_, cb)) = c { st(cb, out); } if let Some(fb) = f { st(fb, out); } }
+                _ => {}
+            }
+        }
+    }
+    let mut out = std::collections::HashSet::new();
+    st(stmts, &mut out);
+    out
+}
+
 // The (callee, mask) set of `@`-receiving variants actually used, syntactic.
 fn collect_byref_variants(funcs: &[Func]) -> std::collections::BTreeSet<(String, Vec<bool>)> {
     fn ex(e: &Expr, out: &mut std::collections::BTreeSet<(String, Vec<bool>)>) {
@@ -19245,7 +19270,7 @@ fn layout_locals(stmts: &[Stmt], env: &mut Vec<CgLocal>, sigs: &[Sig], frame: &m
                 // Empty-literal accumulator (`local c := ""`): the checker
                 // pins StrOwn so owned concatenations land; the slot must be
                 // laid out owned too, or the epilogue never frees it.
-                if t == Ty::Str && (byref_names.contains(id) || matches!(e, Expr::Str(s) if s.is_empty())) { t = Ty::StrOwn; }
+                if t == Ty::Str && (byref_names.contains(id) || matches!(e, Expr::Str(s) if s.is_empty() || concat_assigned_in(stmts).contains(id))) { t = Ty::StrOwn; }
                 // Bare-local FOR counter (hk336): i64 slot from
                 // declaration, in lockstep with the checker through the
                 // one shared predicate.
@@ -20613,7 +20638,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 // (710a3cb); codegen must copy the literal into an owned
                 // buffer at init, or the first reassignment frees rodata.
                 let empty_lit_str = t == Ty::Str && matches!(e, Expr::Str(s) if s.is_empty());
-                let byref_str = t == Ty::Str && byref_names.contains(id);
+                let byref_str = t == Ty::Str && (byref_names.contains(id) || (matches!(e, Expr::Str(_)) && concat_assigned_in(stmts).contains(id)));
                 if byref_str || empty_lit_str { t = Ty::StrOwn; }
                 // Bare-local FOR counter (hk336): i64 slot, in lockstep
                 // with the checker and layout through the one shared

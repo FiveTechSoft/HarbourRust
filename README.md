@@ -73,6 +73,27 @@ known failures and the history of published increments.
   give identical stdout, stderr and exit status before and after, plain and
   with `--instrument`. Details: [docs/PEEPHOLE-2026-11-19.md](docs/PEEPHOLE-2026-11-19.md).
 
+- **Issue #1 re-check (18 November).** Main at `b5933e46` on native Windows 11
+  against Harbour 3.2 (bcc build, `hbmk2 -gtcgi`): 34 probes, 12 of them the
+  repro files attached to the issue's 0.11.1 follow-up and 22 written from the
+  constructs the issue lists. **10** byte-identical (stdout and exit status),
+  **23** rejected at compile time with a message, **1** rejected at run time
+  with a message (a DBF of more than 128 fields), **0** silent mismatches.
+  Arrays changed by a callee, a silent wrong result in 0.11.1, are now a
+  compile-time error. Still rejected: shared DBF open, `dbSetOrder`/`dbSeek` on
+  a structural CDX, `dbGoto`/`FCount` on the native adapter, codeblocks over
+  strings or with assignments, `PRIVATE`, `BEGIN SEQUENCE`, `SET DATE`,
+  `Transform` and others. This is not the issue's 117-probe kit, which is not
+  in the repository.
+
+- **String accumulation (18 November).** `local c := "a"` followed by
+  `c += "b"` or `c := c + "b"` was a "type mismatch in assignment" (issue #1,
+  section 3.3); only `local c := ""` was admitted. Such a local now gets an
+  owned string slot from its declaration. Locals that are never `+`
+  assignment targets keep the previous code (assembly unchanged for every
+  other Linux/Windows compile of `tests/` and `extend/demo`). Output matches
+  Harbour 3.2 byte for byte (`tests/str-concat-assign`).
+
 - **Logical codeblocks and `AScan` with a block (18 November).** `{|x| x > 2}`
   was rejected (issue #1, section 3.4). A block whose last expression is a
   comparison, `.AND.`/`.OR.`/`.NOT.` or a logical literal now returns a
