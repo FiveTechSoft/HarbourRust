@@ -568,16 +568,62 @@ fn cg_f64_load(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, 
             // NaN. The packed metadata carries the asymmetric
             // HB_DBL_LENGTH of the RESULT (hbdefs.h:570, 63zb).
             let dyn_div = (*op=='/'||*op=='%') && (expr_ty(a, env, sigs)==Ty::Dyn || expr_ty(b, env, sigs)==Ty::Dyn);
+            // Literal-nonzero rhs of `/`: the divisor is a compile-time
+            // double constant ((f64)v, round-to-nearest-even like
+            // cvtsi2sd), so the materialization, the conversion and the
+            // runtime zero-check all fold away; a nonzero integer is
+            // never +-0.0 or NaN. The lhs spill and the result metadata
+            // contract stay exactly as the generic path. Zero literals
+            // keep the generic path (hbc_div0_error).
+            let imm_rhs_f64 = if *op == '/' && !dyn_div {
+                if let Expr::Int(v) = &**b {
+                    v.parse::<i64>().ok().filter(|x| *x != 0).map(|x| x as f64)
+                } else {
+                    None
+                }
+            } else {
+                None
+            };
             if dyn_div { cg_div_operand(a, env, sigs, strs, out, target); } else { cg_f64_operand(a, env, sigs, strs, out, target); }
+            // Scalar-slot rhs register shuffle (+,-,*): an F64, I64 or
+            // NumLocal local rhs loads with slot moves and cvtsi2sd only - no
+            // call, no %xmm1/%r8 clobber - so the lhs value stays in
+            // %xmm1 and its dec metadata in %r8 instead of the 32-byte
+            // spill slot. The metadata contract is the one the generic
+            // path applies after its reload (max for +,-, guarded sum
+            // for *), and both paths join at .Lf64nt after the shared
+            // stack adjustment.
+            let float_var_rhs = matches!(*op, '+' | '-' | '*') && !dyn_div
+                && matches!(&**b, Expr::Var(_))
+                && matches!(expr_ty(b, env, sigs), Ty::F64 | Ty::I64 | Ty::NumLocal);
+            let nt = fresh_lbl();
+            if float_var_rhs {
+                out.push_str("    movsd %xmm0, %xmm1\n    mov %rcx, %r8\n");
+                cg_f64_operand(b, env, sigs, strs, out, target);
+                let inst = match op { '+' => "addsd", '-' => "subsd", '*' => "mulsd", _ => unreachable!("checked") };
+                out.push_str(&format!("    {} %xmm0, %xmm1\n", inst));
+                match op {
+                    '+' | '-' => out.push_str("    mov %r8, %rdi\n    cmp %rcx, %rdi\n    cmovb %rcx, %rdi\n"),
+                    '*' => {
+                        let lok = fresh_lbl();
+                        out.push_str(&format!("    mov %r8, %rdi\n    add %rcx, %rdi\n    cmp $435, %rdi\n    jbe .Lf64m{lok}\n    call hbc_f64range_error\n.Lf64m{lok}:\n"));
+                    }
+                    _ => unreachable!("checked"),
+                }
+                out.push_str(&format!("    jmp .Lf64nt{}\n", nt));
+            }
             out.push_str("    sub $32, %rsp\n    movsd %xmm0, (%rsp)\n    mov %rcx, 8(%rsp)\n");
             if dyn_div { out.push_str("    mov %rax, 16(%rsp)\n"); }
-            if dyn_div { cg_div_operand(b, env, sigs, strs, out, target); } else { cg_f64_operand(b, env, sigs, strs, out, target); }
+            if let Some(dv) = imm_rhs_f64 {
+                let k = f64_const(dv.to_bits());
+                out.push_str(&format!("    movsd .Lf64c{}(%rip), %xmm0\n    xor %ecx, %ecx\n", k));
+            } else if dyn_div { cg_div_operand(b, env, sigs, strs, out, target); } else { cg_f64_operand(b, env, sigs, strs, out, target); }
             if dyn_div {
                 let argok = fresh_lbl();
                 let argerr = if *op=='/' { "    call hbc_divarg_error\n" } else { "    jmp hbc_type_error\n" };
                 out.push_str(&format!("    or 16(%rsp), %rax\n    je .Ldivargok{argok}\n{argerr}.Ldivargok{argok}:\n"));
             }
-            if *op == '/' {
+            if *op == '/' && imm_rhs_f64.is_none() {
                 let l = fresh_lbl();
                 out.push_str(&format!("    xorpd %xmm2, %xmm2\n    ucomisd %xmm2, %xmm0\n    jp .Ldivok{}\n    jne .Ldivok{}\n    call hbc_div0_error\n.Ldivok{}:\n", l, l, l));
             }
@@ -646,6 +692,7 @@ fn cg_f64_load(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, 
                 _ => unreachable!("checked"),
             }
             out.push_str("    add $32, %rsp\n");
+            out.push_str(&format!(".Lf64nt{}:\n", nt));
             // Length: asymmetric HB_DBL_LENGTH - 20 when x > 9999999999.0
             // or x < -999999999.0, else 10 (hbdefs.h:570; hk297). NaN
             // fails both tests (unordered) and keeps 10.
@@ -1954,7 +2001,7 @@ const ASM_RESERVED: &[&str] = &[
     // hbc itself emits; a user function with one of these names would
     // collide with a helper symbol.
     "dtos", "stod", "year", "day", "month", "dow", "cdow", "cmonth", "dtoc", "sqrt", "exp", "log", "mod", "padc", "rat", "stuff", "isdigit", "isalpha", "isupper", "islower", "strzero", "ischar", "strzero_fix", "str_f64", "fmt_f64", "date_add", "date_diff", "date_days", "date_from_days", "seconds",
-    "strtran", "space", "substr", "date", "ctod", "date_pack", "date_render", "date_today", "curdir", "dirmake", "inkey", "file", "hrfile_setdefault", "hrfile_setpath", "qout", "qqout", "outstd", "outerr", "empty", "procname", "min", "max", "str", "padr", "hb_ntos", "replicate", "aeval", "hb_isnumeric", "hb_isarray", "hb_isstring", "dfree", "upper", "lower", "left", "right", "at", "int", "abs", "padl", "val", "ascan", "aclone", "atail", "asort", "hb_bitand", "hb_bitor", "hb_bitxor", "hb_bitnot", "hb_bittest", "hb_bitset", "hb_bitreset", "eprint_str", "eprint_sep", "eprint_i64", "eprint_i64c", "eprint_dyn", "eprint_dynlit", "print_dynlit", "eprint_f64", "hb_eol", "procline", "asc", "trim", "ltrim", "rtrim", "alltrim", "chr", "trace_top", "print_trace", "panic_exit", "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_range_error", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
+    "strtran", "space", "substr", "date", "ctod", "date_pack", "date_render", "date_today", "curdir", "fcreate", "fopen", "fwrite", "fclose", "freadstr", "hb_libname", "hb_ps", "os", "dirmake", "inkey", "file", "hrfile_setdefault", "hrfile_setpath", "qout", "qqout", "outstd", "outerr", "empty", "procname", "min", "max", "str", "padr", "hb_ntos", "replicate", "aeval", "hb_isnumeric", "hb_isarray", "hb_isstring", "dfree", "upper", "lower", "left", "right", "at", "int", "abs", "padl", "val", "ascan", "aclone", "atail", "asort", "hb_bitand", "hb_bitor", "hb_bitxor", "hb_bitnot", "hb_bittest", "hb_bitset", "hb_bitreset", "eprint_str", "eprint_sep", "eprint_i64", "eprint_i64c", "eprint_dyn", "eprint_dynlit", "print_dynlit", "eprint_f64", "hb_eol", "procline", "asc", "trim", "ltrim", "rtrim", "alltrim", "chr", "trace_top", "print_trace", "panic_exit", "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_range_error", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
 ];
 
 fn dbf_result(id: &str) -> Option<Ty> {
@@ -6475,6 +6522,38 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                     apply_moves(a,env,sigs,false);
                 }
                 return Ok(if is_builtin(id,"procname") { Ty::Str } else { Ty::I64 });
+            }
+            if ["fcreate","fopen","fwrite","fclose","freadstr"].iter().any(|b|is_builtin(id,b)) {
+                if !CURDIR_LINUX_NATIVE.with(|v|v.get()) { return Err(format!("line {}: typed file I/O is measured only on ordinary Linux",n)); }
+                let two=is_builtin(id,"fwrite")||is_builtin(id,"freadstr");
+                if args.len()!=if two {2} else {1} { return Err(format!("line {}: `{}` supports {} argument(s) in typed file I/O",n,id,if two {2} else {1})); }
+                for (i,a) in args.iter().enumerate() {
+                    let t=type_expr(a,env,sigs,n)?;
+                    let string=(i==0&&(is_builtin(id,"fcreate")||is_builtin(id,"fopen"))) || (i==1&&is_builtin(id,"fwrite"));
+                    if if string {!matches!(t,Ty::Str|Ty::StrOwn)} else {t!=Ty::I64 && !(i==0 && t==Ty::Dyn && matches!(a,Expr::Var(_)))} { return Err(format!("line {}: `{}` requires typed strings and integer handles (Dyn variables checked at runtime)",n,id)); }
+                    apply_moves(a,env,sigs,false);
+                }
+                // Zero may abort the external runtime; dynamic counts and
+                // unbounded requests are deliberately not admitted yet.
+                if is_builtin(id,"freadstr") && !matches!(&args[1],Expr::Int(v) if v.parse::<u64>().map_or(false,|v|v>=1&&v<=1048576)) { return Err(format!("line {}: FReadStr count must be a literal in 1..1048576 in this increment",n)); }
+                return Ok(if is_builtin(id,"freadstr") {Ty::StrOwn} else if is_builtin(id,"fclose") {Ty::Bool} else {Ty::I64});
+            }
+            if is_builtin(id,"hb_libname") || is_builtin(id,"hb_ps") {
+                if !CURDIR_LINUX_NATIVE.with(|v|v.get()) { return Err(format!("line {}: library filenames are measured only on ordinary Linux",n)); }
+                if is_builtin(id,"hb_ps") {
+                    if !args.is_empty() { return Err(format!("line {}: hb_ps takes no arguments in this increment",n)); }
+                } else {
+                    if args.is_empty() || args.len()>2 { return Err(format!("line {}: hb_libName takes one or two string/NIL arguments",n)); }
+                    for a in args { if !matches!(a,Expr::Nil) && !matches!(type_expr(a,env,sigs,n)?,Ty::Str|Ty::StrOwn) { return Err(format!("line {}: hb_libName requires typed string/NIL arguments",n)); } }
+                }
+                return Ok(Ty::StrOwn);
+            }
+            if is_builtin(id, "os") {
+                if !CURDIR_LINUX_NATIVE.with(|v|v.get()) {
+                    return Err(format!("line {}: OS is measured only on the ordinary Linux backend in this increment", n));
+                }
+                if !args.is_empty() { return Err(format!("line {}: OS takes no arguments in this increment", n)); }
+                return Ok(Ty::StrOwn);
             }
             if is_builtin(id, "hb_eol") {
                 if !args.is_empty() { return Err(format!("line {}: `hb_eol` takes no arguments in this increment", n)); }
@@ -11608,7 +11687,17 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
             if is_builtin(id,"file") || id=="hrfile_setdefault" || id=="hrfile_setpath" {
                 for a in args {apply_moves(a,env,sigs,false);}return;
             }
-            if is_builtin(id,"curdir") { return; } // admitted args are inert literals only
+            if ["fcreate","fopen","fwrite","fclose","freadstr"].iter().any(|b|is_builtin(id,b)) {
+                for a in args { apply_moves(a,env,sigs,false); }
+                return;
+            }
+            if is_builtin(id,"hb_libname") {
+                // The builtin borrows its results, but nested calls still
+                // consume their own arguments under the usual contract.
+                for a in args { apply_moves(a,env,sigs,false); }
+                return;
+            }
+            if is_builtin(id,"hb_ps") || is_builtin(id,"os") || is_builtin(id,"curdir") { return; } // admitted args are inert literals only
             if is_builtin(id,"replicate") {
                 for a in args { apply_moves(a,env,sigs,false); }
                 return;
@@ -15268,6 +15357,64 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             if setter {out.push_str("    mov $1, %eax\n    xor %edx, %edx\n");}
             else {out.push_str("    xor %edx, %edx\n");}
         }
+        Expr::Call(id,args) if is_builtin(id,"fcreate") || is_builtin(id,"fopen") => {
+            let a=&args[0]; let temp=expr_ty(a,env,sigs)==Ty::StrOwn&&!matches!(a,Expr::Var(_));
+            cg_value(a,env,sigs,strs,out,target);
+            out.push_str("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rax, %rdi\n    mov %rdx, %rsi\n");
+            out.push_str(&format!("    mov ${}, %edx\n    call hbc_fileio_open\n    mov %rax, 8(%rsp)\n",if is_builtin(id,"fcreate"){578}else{0}));
+            if temp {out.push_str("    mov (%rsp), %rdi\n    call hbc_freestr\n");}
+            out.push_str("    mov 8(%rsp), %rax\n    xor %edx, %edx\n    add $32, %rsp\n");
+        }
+        Expr::Call(id,args) if is_builtin(id,"fwrite") => {
+            cg_expr(&args[0],env,sigs,strs,out,target);
+            if expr_ty(&args[0],env,sigs)==Ty::Dyn {out.push_str("    call hbc_dyn_to_i64\n");}
+            out.push_str("    sub $32, %rsp\n    mov %rax, (%rsp)\n");
+            let a=&args[1];let temp=expr_ty(a,env,sigs)==Ty::StrOwn&&!matches!(a,Expr::Var(_));
+            cg_value(a,env,sigs,strs,out,target);
+            out.push_str("    mov %rax, 8(%rsp)\n    mov %rax, %rsi\n    mov (%rsp), %rdi\n    call hbc_fileio_write\n    mov %rax, 16(%rsp)\n");
+            if temp {out.push_str("    mov 8(%rsp), %rdi\n    call hbc_freestr\n");}
+            out.push_str("    mov 16(%rsp), %rax\n    xor %edx, %edx\n    add $32, %rsp\n");
+        }
+        Expr::Call(id,args) if is_builtin(id,"fclose") => {
+            cg_expr(&args[0],env,sigs,strs,out,target);
+            if expr_ty(&args[0],env,sigs)==Ty::Dyn {out.push_str("    call hbc_dyn_to_i64\n");}
+            out.push_str("    mov %rax, %rdi\n    call hbc_fileio_close\n");
+        }
+        Expr::Call(id,args) if is_builtin(id,"freadstr") => {
+            cg_expr(&args[0],env,sigs,strs,out,target);
+            if expr_ty(&args[0],env,sigs)==Ty::Dyn {out.push_str("    call hbc_dyn_to_i64\n");}
+            if let Expr::Int(v)=&args[1] {out.push_str(&format!("    mov %rax, %rdi\n    mov ${}, %esi\n    call hbc_fileio_readstr\n",v));}
+        }
+        Expr::Call(id,args) if is_builtin(id,"hb_ps") => {
+            let _=args;
+            let i=strs.len();strs.push("/".to_string());
+            out.push_str(&format!("    lea .Lstr{}(%rip), %rdi\n    mov $1, %esi\n    call hbc_strcpy\n",i));
+        }
+        Expr::Call(id,args) if is_builtin(id,"hb_libname") => {
+            out.push_str("    sub $64, %rsp\n");
+            for i in 0..2 {
+                if let Some(a)=args.get(i).filter(|a|!matches!(a,Expr::Nil)) {
+                    cg_value(a,env,sigs,strs,out,target);
+                    // Snapshot borrowed strings before the next argument can
+                    // consume their owner. Fresh owned results transfer here.
+                    if expr_ty(a,env,sigs)!=Ty::StrOwn || matches!(a,Expr::Var(_)) {
+                        out.push_str("    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_strcpy\n");
+                    }
+                }
+                else { out.push_str("    xor %eax, %eax\n    xor %edx, %edx\n"); }
+                out.push_str(&format!("    mov %rax, {}(%rsp)\n    mov %rdx, {}(%rsp)\n",i*16,i*16+8));
+            }
+            if matches!(args[0],Expr::Nil) { out.push_str("    xor %esi, %esi\n    call hbc_stralloc\n"); }
+            else { out.push_str("    mov (%rsp), %rdi\n    mov 8(%rsp), %rsi\n    mov 16(%rsp), %rdx\n    mov 24(%rsp), %rcx\n    call hbc_libname_linux\n"); }
+            out.push_str("    mov %rax, 48(%rsp)\n    mov %rdx, 56(%rsp)\n");
+            for (i,a) in args.iter().enumerate() {
+                if !matches!(a,Expr::Nil) { out.push_str(&format!("    mov {}(%rsp), %rdi\n    call hbc_freestr\n",i*16)); }
+            }
+            out.push_str("    mov 48(%rsp), %rax\n    mov 56(%rsp), %rdx\n    add $64, %rsp\n");
+        }
+        Expr::Call(id,_) if is_builtin(id,"os") => {
+            out.push_str("    call hbc_os_uname_linux\n");
+        }
         Expr::Call(id,_) if is_builtin(id,"curdir") => {
             out.push_str("    call hbc_curdir_linux\n");
         }
@@ -17958,9 +18105,69 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             // Operands are i64 or Dyn (checked in analysis): a Dyn operand
             // is extracted with the runtime tag check (NIL payload -> clean
             // type error, Harbour's dialog is the registered difference).
+            // Immediate-rhs fast path: a literal right operand fits the
+            // imm32 form of add/sub/imul, so the lhs never leaves %rax and
+            // no spill/reload shuffle or dead rhs tag load is emitted. The
+            // flags contract is identical (same jo overflow check below),
+            // the result tag slot keeps the same unspecified-int-tag
+            // contract the spill path has (rdx after the op), and there is
+            // no call within a literal rhs, so the alignment slot the
+            // comment below keeps for is not needed.
+            let imm_rhs = if matches!(op, '+' | '-' | '*') {
+                if let Expr::Int(v) = &**b {
+                    v.parse::<i64>().ok().filter(|x| *x >= i32::MIN as i64 && *x <= i32::MAX as i64)
+                } else {
+                    None
+                }
+            } else {
+                None
+            };
+            if let Some(imm) = imm_rhs {
+                cg_expr(a, env, sigs, strs, out, target);
+                if expr_ty(a, env, sigs) == Ty::Dyn {
+                    out.push_str("    call hbc_dyn_to_i64\n");
+                }
+                match op {
+                    '+' => out.push_str(&format!("    add ${}, %rax\n", imm)),
+                    '-' => out.push_str(&format!("    sub ${}, %rax\n", imm)),
+                    '*' => out.push_str(&format!("    imul ${}, %rax, %rax\n", imm)),
+                    _ => unreachable!("checked"),
+                }
+                if CHECKED_I64.with(|c| c.get()) {
+                    out.push_str("    jo hbc_static_overflow\n");
+                }
+                return;
+            }
             cg_expr(a, env, sigs, strs, out, target);
             if expr_ty(a, env, sigs) == Ty::Dyn {
                 out.push_str("    call hbc_dyn_to_i64\n");
+            }
+            // Scalar-slot rhs register shuffle: a statically-typed local
+            // rhs (I64/Bool/Date) compiles to one bare `mov -off(%rbp),
+            // %rax` - no call and no %rcx clobber - so the lhs goes to
+            // %rcx directly instead of through the 16-byte spill slot.
+            // The post-op sequence already expects rcx=lhs / rax=rhs, so
+            // flags and the jo overflow contract are identical.
+            let scalar_slot_rhs = matches!(&**b, Expr::Var(_))
+                && matches!(expr_ty(b, env, sigs), Ty::I64 | Ty::Bool | Ty::Date);
+            if scalar_slot_rhs && matches!(op, '+' | '-' | '*') {
+                // The shared cg_expr(a) above already evaluated the lhs
+                // exactly once (side effects included): reuse it.
+                out.push_str("    mov %rax, %rcx\n");
+                cg_expr(b, env, sigs, strs, out, target);
+                match op {
+                    '+' => out.push_str("    add %rcx, %rax\n"),
+                    '-' => {
+                        out.push_str("    sub %rax, %rcx\n");
+                        out.push_str("    mov %rcx, %rax\n");
+                    }
+                    '*' => out.push_str("    imul %rcx, %rax\n"),
+                    _ => unreachable!("checked"),
+                }
+                if CHECKED_I64.with(|c| c.get()) {
+                    out.push_str("    jo hbc_static_overflow\n");
+                }
+                return;
             }
             // Keep the lhs in a full 16-byte slot on both targets so any
             // C/SysV call within the rhs retains call-site alignment.
@@ -18955,7 +19162,10 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             if is_builtin(id,"dirmake") || is_builtin(id,"inkey") {return Ty::I64;}
             if is_builtin(id,"file") {return Ty::Bool;}
             if id=="hrfile_setdefault"||id=="hrfile_setpath" {return Ty::Dyn;}
-            if is_builtin(id, "curdir") || is_builtin(id, "chr") || is_builtin(id, "str") || is_builtin(id, "hb_ntos") || is_builtin(id, "padr") || is_builtin(id, "replicate") { return Ty::StrOwn; }
+            if is_builtin(id,"freadstr") {return Ty::StrOwn;}
+            if is_builtin(id,"fclose") {return Ty::Bool;}
+            if ["fcreate","fopen","fwrite"].iter().any(|b|is_builtin(id,b)) {return Ty::I64;}
+            if is_builtin(id,"hb_libname") || is_builtin(id,"hb_ps") || is_builtin(id, "os") || is_builtin(id, "curdir") || is_builtin(id, "chr") || is_builtin(id, "str") || is_builtin(id, "hb_ntos") || is_builtin(id, "padr") || is_builtin(id, "replicate") { return Ty::StrOwn; }
             if is_builtin(id, "round") { return Ty::F64; } // hk384-hk386
             if is_builtin(id, "iif") {
                 // Branch unification mirrors the checker (oracle hk321).
@@ -19068,6 +19278,8 @@ fn concat_assigned_in(stmts: &[Stmt]) -> std::collections::HashSet<String> {
         for s in stmts {
             match s {
                 Stmt::Assign(_, id, Expr::Bin('+', _, _)) => { out.insert(id.clone()); }
+                // FReadStr replaces its destination with an owned buffer.
+                Stmt::Assign(_, id, Expr::Call(f, _)) if is_builtin(f,"freadstr") => { out.insert(id.clone()); }
                 Stmt::If(_, _, t, el) => { st(t, out); st(el, out); }
                 Stmt::While(_, _, b) | Stmt::For(_, _, _, _, _, b) | Stmt::ForEach(_, _, _, b) => st(b, out),
                 Stmt::Switch(_, _, arms, otherwise) => { for (_, _, b) in arms { st(b, out); } if let Some((_, ob)) = otherwise { st(ob, out); } }
@@ -19653,7 +19865,69 @@ fn layout_locals(stmts: &[Stmt], env: &mut Vec<CgLocal>, sigs: &[Sig], frame: &m
 // haystack is .F. (measured). Case-sensitive byte compare. Clobbers rcx,
 // r8, r10, r11 and rax; leaf code with no calls and no stack use, so it
 // adds no ABI surface (no helper symbol, no canary needed).
+// Inline word-wise string comparison for borrowed operands (no owned
+// temporaries): the exact xBase semantics of hbc_str_eq / hbc_str_xeq /
+// hbc_str_cmp - compare over the RIGHT operand's length with the left
+// read NUL-padded past its end; `==` is the exact byte compare - but
+// eight bytes per step and without the call. Inputs like the helpers:
+// %rax,%rdx = lhs ptr,len; %rcx,%r8 = rhs ptr,len. Clobbers r9-r11 only
+// (the helpers also return a result in rax). Word loads never cross
+// either operand's end: a word step runs only while i+8 stays within
+// the right operand's full words AND i+8 <= lhs len; anything else
+// falls into the byte loop, so no out-of-bounds read is possible.
+// Emits the jump to true_label itself; the false path falls through.
+fn cg_str_cmp_inline(out: &mut String, k: usize, op: &CmpOp, true_label: &str) {
+    // Word phase preamble shared by `=`/`#` and the ordering ops.
+    let word_phase = format!("    xor %r11d, %r11d\n    mov %r8, %r9\n    and $-8, %r9\n.Lsiw{k}:\n    cmp %r9, %r11\n    jae .Lsit{k}\n    lea 8(%r11), %r10\n    cmp %rdx, %r10\n    ja .Lsit{k}\n    mov (%rax,%r11), %r10\n    cmp (%rcx,%r11), %r10\n");
+    // Byte tail over the right operand's length, left NUL-padded (the
+    // same scan as the helpers, entered at the word phase's stop index).
+    let byte_tail = format!(".Lsit{k}:\n    cmp %r8, %r11\n");
+    let pad_block = format!("    movzbl (%rcx,%r11), %r10d\n    cmp %rdx, %r11\n    jae .Lsipd{k}\n    movzbl (%rax,%r11), %r9d\n    jmp .Lsicb{k}\n.Lsipd{k}:\n    xor %r9d, %r9d\n.Lsicb{k}:\n    cmp %r9b, %r10b\n");
+    match op {
+        CmpOp::EqEq => {
+            // Exact compare: equal lengths first, then words and tail
+            // over that length (no padding can occur).
+            out.push_str(&format!("    cmp %r8, %rdx\n    jne .Lsin{k}\n    xor %r11d, %r11d\n    mov %rdx, %r9\n    and $-8, %r9\n.Lsiw{k}:\n    cmp %r9, %r11\n    jae .Lsit{k}\n    mov (%rax,%r11), %r10\n    cmp (%rcx,%r11), %r10\n    jne .Lsin{k}\n    add $8, %r11\n    jmp .Lsiw{k}\n.Lsit{k}:\n    cmp %rdx, %r11\n    jae .Lsiy{k}\n    movzbl (%rcx,%r11), %r10d\n    movzbl (%rax,%r11), %r9d\n    cmp %r9b, %r10b\n    jne .Lsin{k}\n    inc %r11\n    jmp .Lsit{k}\n.Lsiy{k}:\n    jmp {true_label}\n.Lsin{k}:\n"));
+        }
+        CmpOp::Eq | CmpOp::Ne => {
+            out.push_str(&word_phase);
+            out.push_str(&format!("    jne .Lsin{k}\n    add $8, %r11\n    jmp .Lsiw{k}\n"));
+            out.push_str(&byte_tail);
+            out.push_str(&format!("    jae .Lsiy{k}\n"));
+            out.push_str(&pad_block);
+            out.push_str(&format!("    jne .Lsin{k}\n    inc %r11\n    jmp .Lsit{k}\n"));
+            // The true block goes last so the false path falls through.
+            if matches!(op, CmpOp::Eq) {
+                out.push_str(&format!(".Lsiy{k}:\n    jmp {true_label}\n.Lsin{k}:\n"));
+            } else {
+                out.push_str(&format!(".Lsin{k}:\n    jmp {true_label}\n.Lsiy{k}:\n"));
+            }
+        }
+        _ => {
+            // Ordering: a word mismatch scans that word byte-wise (both
+            // operands in bounds there). Exits mirror hbc_str_cmp:
+            // rhs byte > lhs byte is a<b (.Lsim, its -1), rhs < lhs is
+            // a>b (.Lsig, its +1), equal over the right operand's
+            // length is .Lsiz (its 0).
+            out.push_str(&word_phase);
+            out.push_str(&format!("    jne .Lsib{k}\n    add $8, %r11\n    jmp .Lsiw{k}\n.Lsib{k}:\n    movzbl (%rcx,%r11), %r10d\n    movzbl (%rax,%r11), %r9d\n    cmp %r9b, %r10b\n    jb .Lsig{k}\n    ja .Lsim{k}\n    inc %r11\n    jmp .Lsib{k}\n"));
+            out.push_str(&byte_tail);
+            out.push_str(&format!("    jae .Lsiz{k}\n"));
+            out.push_str(&pad_block);
+            out.push_str(&format!("    jb .Lsig{k}\n    ja .Lsim{k}\n    inc %r11\n    jmp .Lsit{k}\n"));
+            match op {
+                CmpOp::Lt => out.push_str(&format!(".Lsim{k}:\n    jmp {true_label}\n.Lsiz{k}:\n.Lsig{k}:\n")),
+                CmpOp::Le => out.push_str(&format!(".Lsim{k}:\n.Lsiz{k}:\n    jmp {true_label}\n.Lsig{k}:\n")),
+                CmpOp::Gt => out.push_str(&format!(".Lsig{k}:\n    jmp {true_label}\n.Lsiz{k}:\n.Lsim{k}:\n")),
+                CmpOp::Ge => out.push_str(&format!(".Lsig{k}:\n.Lsiz{k}:\n    jmp {true_label}\n.Lsim{k}:\n")),
+                _ => unreachable!("Eq/Ne/EqEq/Contains handled outside"),
+            }
+        }
+    }
+}
+
 fn cg_str_contains(out: &mut String, k: usize) {
+
     out.push_str(&format!("    test %rdx, %rdx\n    je .Lsct_f{k}\n    cmp %r8, %rdx\n    ja .Lsct_f{k}\n    sub %rdx, %r8\n    inc %r8\n.Lsct_o{k}:\n    xor %r10, %r10\n.Lsct_i{k}:\n    movzbl (%rcx,%r10), %r11d\n    cmp (%rax,%r10), %r11b\n    jne .Lsct_n{k}\n    inc %r10\n    cmp %rdx, %r10\n    jb .Lsct_i{k}\n    mov $1, %r11d\n    jmp .Lsct_d{k}\n.Lsct_n{k}:\n    inc %rcx\n    dec %r8\n    jnz .Lsct_o{k}\n.Lsct_f{k}:\n    xor %r11d, %r11d\n.Lsct_d{k}:\n    mov %r11d, %eax\n"));
 }
 
@@ -20067,6 +20341,12 @@ fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<Strin
                 if b_tmp { out.push_str("    mov (%rsp), %rdi\n    call hbc_freestr\n"); }
                 out.push_str(&format!("    mov {}(%rsp), %rax\n    add ${}, %rsp\n", 16 * nt, 16 * (nt + 1)));
             }
+            if !a_tmp && !b_tmp && !matches!(op, CmpOp::Contains) {
+                // Borrowed operands: word-wise inline compare, same
+                // semantics as the helpers, no call (cg_str_cmp_inline
+                // emits the jump to true_label itself).
+                cg_str_cmp_inline(out, fresh_lbl(), op, true_label);
+            } else {
             let j = match op {
                 CmpOp::Eq | CmpOp::Ne | CmpOp::EqEq => {
                     if !a_tmp && !b_tmp {
@@ -20097,6 +20377,7 @@ fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<Strin
                 }
             };
             out.push_str(&format!("    {} {}\n", j, true_label));
+            }
         }
         Expr::Cmp(op, a, b) if matches!(op, CmpOp::EqEq)
             && matches!(expr_ty(a, env, sigs), Ty::DArr | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::Hash)
@@ -20151,6 +20432,40 @@ fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<Strin
             }
         }
         Expr::Cmp(op, a, b) => {
+            let j = match op {
+                CmpOp::Lt => "jl", CmpOp::Le => "jle", CmpOp::Gt => "jg",
+                CmpOp::Ge => "jge", CmpOp::Eq => "je", CmpOp::Ne => "jne",
+                // Integer `==` compares like `=` (hk124).
+                CmpOp::EqEq => "je",
+                CmpOp::Contains => unreachable!("the checker gates `$` to strings; the string arm handles it"),
+            };
+            // Immediate rhs: a literal in imm32 range compares in place.
+            // `cmp $imm, %rax` computes lhs-rhs exactly like the generic
+            // `cmp %rax, %rcx` with rcx=lhs below, so the same jump table
+            // applies; a literal has no side effects to preserve. Only
+            // scalar operands reach this arm (Str/Dyn/F64/NumLocal/array
+            // arms above). A scalar-slot local rhs (one bare slot load,
+            // no call and no %rcx clobber) moves the lhs to %rcx and
+            // skips the push/pop stack round-trip.
+            let imm_rhs = if let Expr::Int(v) = &**b {
+                v.parse::<i64>().ok().filter(|x| *x >= i32::MIN as i64 && *x <= i32::MAX as i64)
+            } else {
+                None
+            };
+            let scalar_slot_rhs = matches!(&**b, Expr::Var(_))
+                && matches!(expr_ty(b, env, sigs), Ty::I64 | Ty::Bool | Ty::Date);
+            if let Some(imm) = imm_rhs {
+                cg_expr(a, env, sigs, strs, out, target);
+                out.push_str(&format!("    cmp ${}, %rax\n    {} {}\n", imm, j, true_label));
+                return;
+            }
+            if scalar_slot_rhs {
+                cg_expr(a, env, sigs, strs, out, target);
+                out.push_str("    mov %rax, %rcx\n");
+                cg_expr(b, env, sigs, strs, out, target);
+                out.push_str(&format!("    cmp %rax, %rcx\n    {} {}\n", j, true_label));
+                return;
+            }
             cg_expr(a, env, sigs, strs, out, target);
             match target {
                 Target::Linux => out.push_str("    push %rax\n"),
@@ -20162,13 +20477,6 @@ fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<Strin
                 Target::Windows => out.push_str("    mov (%rsp), %rcx\n    add $16, %rsp\n"),
             }
             out.push_str("    cmp %rax, %rcx\n");
-            let j = match op {
-                CmpOp::Lt => "jl", CmpOp::Le => "jle", CmpOp::Gt => "jg",
-                CmpOp::Ge => "jge", CmpOp::Eq => "je", CmpOp::Ne => "jne",
-                // Integer `==` compares like `=` (hk124).
-                CmpOp::EqEq => "je",
-                CmpOp::Contains => unreachable!("the checker gates `$` to strings; the string arm handles it"),
-            };
             out.push_str(&format!("    {} {}\n", j, true_label));
         }
         _ => {
@@ -24180,13 +24488,18 @@ const REG_SFREE_W: &str = r"    # harness registry (string free): computed 16 + 
     mov %r9, (%r11,%rcx,8)
     mov %rdx, hbc_reg_count(%rip)
 ";
-const REG_HFREE_W: &str = r"    # harness registry (hash data block, 16-byte header): computed
-    # 16 + cap*32 must equal the recorded allocation size, and the block
+const REG_HFREE_W: &str = r"    # harness registry (hash block: buckets cap*4B + next cap*4B +
+    # 16-byte header + cap*32B entries): computed 16 + cap*40 must equal
+    # the recorded allocation size, base is rdi-16-cap*8, and the block
     # must be live (double free = absent).
     mov -8(%rdi), %rax
-    shl $5, %rax
-    add $16, %rax
-    lea -16(%rdi), %r8
+    mov %rax, %r8
+    shl $3, %r8
+    shl $3, %rax
+    lea 16(%rax,%rax,4), %rax
+    lea -16(%rdi), %r9
+    sub %r8, %r9
+    mov %r9, %r8
     mov hbc_reg_count(%rip), %rcx
     lea hbc_reg_base(%rip), %r10
     lea hbc_reg_size(%rip), %r11
@@ -24401,77 +24714,199 @@ const HASH_HELPERS: &str = r"
 # {tag, payload} pairs (i64 or NIL in v1). Target-independent logic: all
 # OS contact goes through hbc_alloc/hbc_free.
 
+# --- hash bucket index (v2) ---------------------------------------------
+# Block layout: [buckets cap*4][next cap*4][flags][capacity][entries cap*32],
+# with the data pointer at the entries, so -16(data)=flags and -8(data)=cap
+# keep their v1 meaning and every entry-addressing path is unchanged.
+# buckets hold index+1 (0 empty); next[i] links to the previous bucket head
+# (index+1, 0 end). Chains are prepend-ordered, so the FIRST chain match is
+# the LAST insertion-order match (hk171/hk174). Keys hash FNV-1a over
+# ALWAYS-folded ASCII bytes, so toggling CaseMatch never invalidates the
+# index (hk169-hk176): sensitive lookups filter exact bytes inside the
+# bucket. A header-only block (capacity 0) is still 16 bytes, so hbc_hclone
+# and hbc_hsetcasematch need no change. Block bytes: 16 + 40*cap.
+
+# hbc_hhash: rdi = key bytes, rsi = length. Returns eax = FNV-1a 32 over
+# ASCII-uppercase-folded bytes. Leaf: clobbers rax, rcx, r8 only.
+hbc_hhash:
+    mov $0x811c9dc5, %eax
+    xor %ecx, %ecx
+1: cmp %rsi, %rcx
+    jae 2f
+    movzbl (%rdi,%rcx), %r8d
+    cmp $97, %r8b
+    jb 3f
+    cmp $122, %r8b
+    ja 3f
+    sub $32, %r8b
+3: xor %r8d, %eax
+    imul $0x01000193, %eax
+    inc %rcx
+    jmp 1b
+2: ret
+
+# hbc_hfind: rdi = slot address, rsi = key bytes, rdx = key length.
+# Returns rax = the entry's 0-based index, or -1 on a miss. Matching is
+# exactly the v1 behavior: flag -16(data)!=0 is byte exact; flag==0 folds
+# ASCII letters and the first chain match is the LAST insertion-order
+# match (hk171). A zero live count short-circuits before touching buckets
+# (a capacity-0 header-only block has no bucket array). Read-only.
+hbc_hfind:
+    push %rbp
+    mov %rsp, %rbp
+    push %rbx
+    push %r12
+    push %r13
+    push %r14
+    push %r15
+    sub $40, %rsp
+    mov %rdi, %rbx
+    mov %rsi, %r12
+    mov %rdx, %r13
+    mov (%rbx), %r14
+    test %r14, %r14
+    je 90f
+    cmpq $0, 8(%rbx)
+    je 90f
+    mov %r12, %rdi
+    mov %r13, %rsi
+    call hbc_hhash
+    mov -8(%r14), %rcx
+    dec %rcx
+    and %rcx, %rax
+    mov -8(%r14), %rcx
+    shl $3, %rcx
+    lea -16(%r14), %r15
+    sub %rcx, %r15
+    mov (%r15,%rax,4), %eax
+    mov %rax, -48(%rbp)
+91: mov -48(%rbp), %rax
+    test %rax, %rax
+    je 90f
+    dec %rax
+    mov %rax, -56(%rbp)
+    shl $5, %rax
+    add %r14, %rax
+    cmp 8(%rax), %r13
+    jne 92f
+    mov (%rax), %rdi
+    xor %ecx, %ecx
+93: cmp %r13, %rcx
+    jae 94f
+    movzbl (%rdi,%rcx), %r8d
+    movzbl (%r12,%rcx), %r9d
+    cmpq $0, -16(%r14)
+    jne 95f
+    cmp $97, %r8b
+    jb 96f
+    cmp $122, %r8b
+    ja 96f
+    sub $32, %r8b
+96: cmp $97, %r9b
+    jb 95f
+    cmp $122, %r9b
+    ja 95f
+    sub $32, %r9b
+95: cmp %r9b, %r8b
+    jne 92f
+    inc %rcx
+    jmp 93b
+94: mov -56(%rbp), %rax
+    jmp 97f
+92: mov -8(%r14), %rcx
+    shl $2, %rcx
+    lea (%r15,%rcx), %rdx
+    mov -56(%rbp), %rax
+    mov (%rdx,%rax,4), %eax
+    mov %rax, -48(%rbp)
+    jmp 91b
+90: movq $-1, %rax
+97: add $40, %rsp
+    pop %r15
+    pop %r14
+    pop %r13
+    pop %r12
+    pop %rbx
+    pop %rbp
+    ret
+
+# hbc_hreindex: rdi = block data pointer, rsi = live pair count. Rebuilds
+# buckets and next from the packed entries (used after a grow and after a
+# delete's compaction shift).
+hbc_hreindex:
+    push %rbp
+    mov %rsp, %rbp
+    push %rbx
+    push %r12
+    push %r13
+    push %r14
+    push %r15
+    sub $24, %rsp
+    mov %rdi, %rbx
+    mov %rsi, %r12
+    mov -8(%rbx), %r13
+    mov %r13, %rax
+    shl $3, %rax
+    lea -16(%rbx), %r14
+    sub %rax, %r14
+    xor %ecx, %ecx
+1: cmp %r13, %rcx
+    jae 2f
+    movl $0, (%r14,%rcx,4)
+    inc %rcx
+    jmp 1b
+2: lea (%r14,%r13,4), %r15
+    movq $0, -48(%rbp)
+3: mov -48(%rbp), %rcx
+    cmp %r12, %rcx
+    jae 4f
+    mov %rcx, %rax
+    shl $5, %rax
+    add %rbx, %rax
+    mov (%rax), %rdi
+    mov 8(%rax), %rsi
+    call hbc_hhash
+    lea -1(%r13), %rdx
+    and %rdx, %rax
+    mov (%r14,%rax,4), %edx
+    mov -48(%rbp), %rcx
+    mov %edx, (%r15,%rcx,4)
+    inc %ecx
+    mov %ecx, (%r14,%rax,4)
+    mov %rcx, -48(%rbp)
+    jmp 3b
+4: add $24, %rsp
+    pop %r15
+    pop %r14
+    pop %r13
+    pop %r12
+    pop %rbx
+    pop %rbp
+    ret
+
 # hbc_hget: rdi = slot address, rsi = key bytes, rdx = key length.
 # Returns rax = pointer to the entry's {tag, payload} pair, or 0 on a
 # miss. Read-only: a lookup never mutates the hash (probes h3/h3b/h3c).
-# Matching honors the CaseMatch flag at -16(data): sensitive is byte
-# exact; insensitive folds ASCII letters and returns the LAST
-# insertion-order match (hk171).
+# Matching honors the CaseMatch flag at -16(data) exactly as v1 did, via
+# hbc_hfind (sensitive: byte exact; insensitive: LAST insertion-order
+# match, hk171).
 hbc_hget:
+    push %rbp
+    mov %rsp, %rbp
+    sub $16, %rsp
     mov (%rdi), %r10
     test %r10, %r10
     je 41f
-    push %rbx
-    push %r12
-    mov -16(%r10), %rbx
-    movq $-1, %r12
-    mov 8(%rdi), %r11
-    xor %ecx, %ecx
-42: cmp %r11, %rcx
-    jae 430f
-    mov %rcx, %rax
-    shl $5, %rax
-    add %r10, %rax
-    mov 8(%rax), %r8
-    cmp %rdx, %r8
-    jne 43f
-    xor %r9d, %r9d
-44: cmp %rdx, %r9
-    jae 45f
-    mov (%rax), %r8
-    movzbl (%r8,%r9), %edi
-    movzbl (%rsi,%r9), %r8d
-    test %rbx, %rbx
-    jnz 440f
-    cmp $97, %dil
-    jb 441f
-    cmp $122, %dil
-    ja 441f
-    sub $32, %dil
-441: cmp $97, %r8b
-    jb 440f
-    cmp $122, %r8b
-    ja 440f
-    sub $32, %r8b
-440: cmp %r8b, %dil
-    jne 43f
-    inc %r9
-    jmp 44b
-43: inc %rcx
-    jmp 42b
-45: test %rbx, %rbx
-    jz 450f
-    add $16, %rax
-    pop %r12
-    pop %rbx
-    ret
-450: mov %rcx, %r12
-    inc %rcx
-    jmp 42b
-430: test %r12, %r12
-    js 431f
-    mov %r12, %rax
+    call hbc_hfind
+    test %rax, %rax
+    js 41f
     shl $5, %rax
     add %r10, %rax
     add $16, %rax
-    pop %r12
-    pop %rbx
-    ret
-431: xor %eax, %eax
-    pop %r12
-    pop %rbx
+    leave
     ret
 41: xor %eax, %eax
+    leave
     ret
 
 # hbc_hsetdef: rdi = slot address, rsi = key bytes, rdx = key length,
@@ -24620,54 +25055,14 @@ hbc_hput:
     mov 8(%rbx), %r13
     test %r12, %r12
     je 30f
-    mov -16(%r12), %rax
-    mov %rax, -72(%rbp)
-    movq $-1, -80(%rbp)
-    xor %ecx, %ecx
-31: cmp %r13, %rcx
-    jae 300f
-    mov %rcx, %rax
-    shl $5, %rax
-    add %r12, %rax
-    mov 8(%rax), %r8
-    cmp %r15, %r8
-    jne 32f
-    mov (%rax), %r8
-    xor %r9d, %r9d
-33: cmp %r15, %r9
-    jae 34f
-    movzbl (%r8,%r9), %r10d
-    movzbl (%r14,%r9), %r11d
-    # case-insensitive mode (flag 0): fold both bytes to uppercase -
-    # ASCII letters only, the measured scope of the hk169-hk175 oracles
-    cmpq $0, -72(%rbp)
-    jne 330f
-    cmp $97, %r10b
-    jb 331f
-    cmp $122, %r10b
-    ja 331f
-    sub $32, %r10b
-331: cmp $97, %r11b
-    jb 330f
-    cmp $122, %r11b
-    ja 330f
-    sub $32, %r11b
-330: cmp %r11b, %r10b
-    jne 32f
-    inc %r9
-    jmp 33b
-32: inc %rcx
-    jmp 31b
-300: mov -80(%rbp), %rcx
-    test %rcx, %rcx
+    # bucket-indexed lookup (same matching as the v1 scan, via hbc_hfind)
+    mov %rbx, %rdi
+    mov %r14, %rsi
+    mov %r15, %rdx
+    call hbc_hfind
+    test %rax, %rax
     js 30f
-    jmp 340f
-34: cmpq $0, -72(%rbp)
-    je 341f
-    jmp 340f
-341: mov %rcx, -80(%rbp)
-    inc %rcx
-    jmp 31b
+    mov %rax, %rcx
 340: mov %rcx, %rax
     shl $5, %rax
     add %r12, %rax
@@ -24691,28 +25086,35 @@ hbc_hput:
     je 37f
     mov -8(%r12), %rax
     cmp %rax, %r13
-    jb 40f
+    jae 360f
+    movq $0, -88(%rbp)
+    jmp 40f
+360:
     test %rax, %rax
     je 37f
     add %rax, %rax
-    mov $0x07FFFFFFFFFFFFFF, %rcx
+    mov $0x80000000, %ecx
     cmp %rcx, %rax
     ja hbc_oom
     jmp 38f
 37: mov $4, %eax
 38: mov %rax, -56(%rbp)
-    shl $5, %rax
-    lea 16(%rax), %rdi
+    mov %rax, %rdi
+    shl $3, %rdi
+    lea 16(%rdi,%rdi,4), %rdi
     call hbc_alloc
     mov -56(%rbp), %rcx
-    mov %rcx, 8(%rax)
+    mov %rcx, %rdx
+    shl $3, %rdx
+    mov %rcx, 8(%rax,%rdx)
     movq $1, %rcx
     test %r12, %r12
     je 381f
     mov -16(%r12), %rcx
-381: mov %rcx, (%rax)
-    add $16, %rax
+381: mov %rcx, (%rax,%rdx)
+    lea 16(%rax,%rdx), %rax
     mov %rax, -64(%rbp)
+    movq $1, -88(%rbp)
     mov %rax, %r9
     test %r12, %r12
     je 39f
@@ -24744,7 +25146,29 @@ hbc_hput:
     mov %r8, 16(%rax)
     mov 8(%rcx), %r8
     mov %r8, 24(%rax)
-    mov %r12, (%rbx)
+    cmpq $0, -88(%rbp)
+    je 45f
+    mov %r12, %rdi
+    lea 1(%r13), %rsi
+    call hbc_hreindex
+    jmp 48f
+45: mov %r14, %rdi
+    mov %r15, %rsi
+    call hbc_hhash
+    mov -8(%r12), %rcx
+    lea -1(%rcx), %rdx
+    and %rdx, %rax
+    shl $3, %rcx
+    lea -16(%r12), %rdx
+    sub %rcx, %rdx
+    mov (%rdx,%rax,4), %r8d
+    mov -8(%r12), %rcx
+    shl $2, %rcx
+    lea (%rdx,%rcx), %r9
+    mov %r8d, (%r9,%r13,4)
+    lea 1(%r13), %r8d
+    mov %r8d, (%rdx,%rax,4)
+48: mov %r12, (%rbx)
     inc %r13
     mov %r13, 8(%rbx)
 49: add $72, %rsp
@@ -24817,57 +25241,16 @@ hbc_hdel:
     mov %rdi, %r15
     mov (%r15), %r12
     mov 8(%r15), %r13
-    movq $1, %rax
     test %r12, %r12
-    je 600f
-    mov -16(%r12), %rax
-600: mov %rax, -48(%rbp)
-    movq $-1, -56(%rbp)
-    xor %r14d, %r14d
-60: cmp %r13, %r14
-    jae 610f
-    mov %r14, %rax
-    shl $5, %rax
-    lea (%r12,%rax), %rbx
-    cmp 8(%rbx), %rdx
-    jne 62f
-    mov (%rbx), %rcx
-    xor %r9d, %r9d
-63: cmp %rdx, %r9
-    jae 64f
-    movzbl (%rcx,%r9), %r10d
-    movzbl (%rsi,%r9), %r11d
-    cmpq $0, -48(%rbp)
-    jne 630f
-    cmp $97, %r10b
-    jb 631f
-    cmp $122, %r10b
-    ja 631f
-    sub $32, %r10b
-631: cmp $97, %r11b
-    jb 630f
-    cmp $122, %r11b
-    ja 630f
-    sub $32, %r11b
-630: cmp %r11b, %r10b
-    jne 62f
-    inc %r9
-    jmp 63b
-62: inc %r14
-    jmp 60b
-610: mov -56(%rbp), %r14
-    test %r14, %r14
+    je 61f
+    # bucket-indexed lookup (same matching as the v1 scan, via hbc_hfind;
+    # insensitive mode removes the LAST insertion-order match, hk174)
+    call hbc_hfind
+    test %rax, %rax
     js 61f
-    mov %r14, %rax
+    mov %rax, %r14
     shl $5, %rax
     lea (%r12,%rax), %rbx
-    jmp 620f
-64: cmpq $0, -48(%rbp)
-    je 640f
-    jmp 620f
-640: mov %r14, -56(%rbp)
-    inc %r14
-    jmp 60b
 620: mov (%rbx), %rdi
     call hbc_freestr
     mov 16(%rbx), %rax
@@ -24892,6 +25275,10 @@ hbc_hdel:
     jmp 65b
 66: dec %r13
     mov %r13, 8(%r15)
+    # indices shifted with the compaction: rebuild the bucket index
+    mov %r12, %rdi
+    mov %r13, %rsi
+    call hbc_hreindex
 61: add $24, %rsp
     pop %r15
     pop %r14
@@ -24907,64 +25294,14 @@ hbc_hdel:
 # ordinary key. Leaf: caller-saved registers only, no allocation, the
 # hash and the lookup key are only read.
 hbc_hhaskey:
-    push %rbx
-    push %r12
-    mov (%rdi), %r8
-    mov 8(%rdi), %r9
-    movq $1, %rbx
-    test %r8, %r8
-    je 700f
-    mov -16(%r8), %rbx
-700: movq $-1, %r12
-    xor %ecx, %ecx
-70: cmp %r9, %rcx
-    jae 710f
-    mov %rcx, %rax
-    shl $5, %rax
-    cmp 8(%r8,%rax), %rdx
-    jne 72f
-    mov (%r8,%rax), %r11
-    xor %eax, %eax
-73: cmp %rdx, %rax
-    jae 74f
-    movzbl (%r11,%rax), %edi
-    movzbl (%rsi,%rax), %r10d
-    test %rbx, %rbx
-    jnz 730f
-    cmp $97, %dil
-    jb 731f
-    cmp $122, %dil
-    ja 731f
-    sub $32, %dil
-731: cmp $97, %r10b
-    jb 730f
-    cmp $122, %r10b
-    ja 730f
-    sub $32, %r10b
-730: cmp %r10b, %dil
-    jne 72f
-    inc %rax
-    jmp 73b
-74: test %rbx, %rbx
-    jz 740f
-    mov $1, %eax
-    pop %r12
-    pop %rbx
-    ret
-740: mov %rcx, %r12
-    inc %rcx
-    jmp 70b
-72: inc %rcx
-    jmp 70b
-710: test %r12, %r12
+    sub $8, %rsp
+    call hbc_hfind
+    add $8, %rsp
+    test %rax, %rax
     js 711f
     mov $1, %eax
-    pop %r12
-    pop %rbx
     ret
 711: xor %eax, %eax
-    pop %r12
-    pop %rbx
     ret
 
 # hbc_hpos: rdi = hash slot address, rsi = key bytes, rdx = key
@@ -24975,64 +25312,14 @@ hbc_hhaskey:
 # Leaf: caller-saved registers only, no allocation, the hash and the
 # lookup key are only read.
 hbc_hpos:
-    push %rbx
-    push %r12
-    mov (%rdi), %r8
-    mov 8(%rdi), %r9
-    movq $1, %rbx
-    test %r8, %r8
-    je 700f
-    mov -16(%r8), %rbx
-700: movq $-1, %r12
-    xor %ecx, %ecx
-70: cmp %r9, %rcx
-    jae 710f
-    mov %rcx, %rax
-    shl $5, %rax
-    cmp 8(%r8,%rax), %rdx
-    jne 72f
-    mov (%r8,%rax), %r11
-    xor %eax, %eax
-73: cmp %rdx, %rax
-    jae 74f
-    movzbl (%r11,%rax), %edi
-    movzbl (%rsi,%rax), %r10d
-    test %rbx, %rbx
-    jnz 730f
-    cmp $97, %dil
-    jb 731f
-    cmp $122, %dil
-    ja 731f
-    sub $32, %dil
-731: cmp $97, %r10b
-    jb 730f
-    cmp $122, %r10b
-    ja 730f
-    sub $32, %r10b
-730: cmp %r10b, %dil
-    jne 72f
-    inc %rax
-    jmp 73b
-74: test %rbx, %rbx
-    jz 740f
-    lea 1(%rcx), %rax
-    pop %r12
-    pop %rbx
-    ret
-740: mov %rcx, %r12
-    inc %rcx
-    jmp 70b
-72: inc %rcx
-    jmp 70b
-710: test %r12, %r12
+    sub $8, %rsp
+    call hbc_hfind
+    add $8, %rsp
+    test %rax, %rax
     js 711f
-    lea 1(%r12), %rax
-    pop %r12
-    pop %rbx
+    inc %rax
     ret
 711: xor %eax, %eax
-    pop %r12
-    pop %rbx
     ret
 
 # hbc_hmerge: rdi = dst hash slot address, rsi = src hash slot
@@ -28774,6 +29061,7 @@ hbc_obj_drop_pending:
             out = out.replace("@REG_HFREE_W@", if instrument { REG_HFREE_W } else { "" });
             out = out.replace("@REG_BAD_W@", if instrument { REG_BAD_W } else { "" });
             out = out.replace("@REG_DATA@", if instrument { REG_DATA } else { "" });
+            out = out.replace("@HEAP_OFF@", if MACHO_MODE.with(|v| v.get()) { "1" } else { "0" });
             return {
         let active=DBF_USED.with(|v|v.get());
             // Scope arena (Goose hybrid I2), Windows leg: same wiring as the
@@ -30105,10 +30393,7 @@ hbc_str_cache_flush:
     jz .Lcache_flush_l_skip
     mov (%rdi), %rsi
     add $16, %rsi
-    mov $11, %eax
-    syscall
-    test %rax, %rax
-    jnz hbc_os_bad
+    call hbc_release
 .Lcache_flush_l_skip:
     inc %r12
     cmp $-5, %r12
@@ -30124,9 +30409,175 @@ hbc_str_cache_flush:
     ret
 
 # ---- dynamic array heap (mmap) ----
-# hbc_alloc: rdi = bytes -> rax = base of a zeroed anonymous mapping.
-# mmap failure is a negative errno in rax (range -4095..-1), never NULL.
+# hbc_alloc: rdi = bytes -> rax = base of a zeroed block.
+# Arena allocator (Linux): 4 MiB mmap chunks with a bump pointer (virgin
+# zeroed pages, no zeroing needed) plus size-class free lists with
+# zero-on-reuse (16B classes up to 16 KiB, 4 KiB classes up to 1 MiB).
+# 0 bytes (old failure mode) and blocks over 1 MiB take the raw mmap path.
+# Spinlock-guarded: worker threads share this heap. mmap failure is a
+# negative errno in rax, never NULL.
 hbc_alloc:
+    cmpb $0, hbc_heap_off(%rip)
+    jne 960f
+    test %rdi, %rdi
+    je 960f
+    cmp $1048576, %rdi
+    ja 960f
+    mov %rdi, %rsi
+    cmp $16384, %rdi
+    ja 961f
+    lea 15(%rdi), %rcx
+    shr $4, %rcx
+    dec %rcx
+    jmp 962f
+961:
+    lea 4095(%rdi), %rcx
+    shr $12, %rcx
+    lea 1023(%rcx), %rcx
+962:
+    lea hbc_free_lists(%rip), %r8
+    lea (%r8,%rcx,8), %r8
+    mov $1, %r9d
+1:  xor %eax, %eax
+    lock cmpxchg %r9, hbc_heap_lock(%rip)
+    jne 1b
+    mov (%r8), %rax
+    test %rax, %rax
+    je 2f
+    # free-list hit: pop and zero the reused block (mmap contract)
+    mov (%rax), %r10
+    mov %r10, (%r8)
+    movq $0, hbc_heap_lock(%rip)
+    cmp $1024, %rcx
+    jae 3f
+    inc %rcx
+    shl $4, %rcx
+    jmp 4f
+3:  lea -1023(%rcx), %rcx
+    shl $12, %rcx
+4:  mov %rax, %r10
+    mov %rax, %rdi
+    xor %eax, %eax
+    rep stosb
+    mov %r10, %rax
+    jmp 964f
+2:  # bump path: rounded length in rdx
+    cmp $16384, %rsi
+    ja 5f
+    lea 15(%rsi), %rdx
+    and $-16, %rdx
+    jmp 6f
+5:  lea 4095(%rsi), %rdx
+    and $-4096, %rdx
+6:  mov hbc_heap_ptr(%rip), %rax
+    mov hbc_heap_end(%rip), %r10
+    lea (%rax,%rdx), %r11
+    cmp %r10, %r11
+    ja 7f
+    mov %r11, hbc_heap_ptr(%rip)
+    movq $0, hbc_heap_lock(%rip)
+    jmp 964f
+7:  # chunk refill under the lock (rdx <= 1 MiB always fits a 4 MiB chunk)
+    push %rsi
+    push %rdx
+    mov $4194304, %rsi
+    xor %edi, %edi
+    mov $3, %edx
+    mov $0x22, %r10d
+    mov $-1, %r8
+    xor %r9d, %r9d
+    mov $9, %eax
+    syscall
+    pop %rdx
+    pop %rsi
+    mov $-4096, %rcx
+    cmp %rcx, %rax
+    ja 963f
+    lea 4194304(%rax), %r10
+    mov %r10, hbc_heap_end(%rip)
+    lea (%rax,%rdx), %r11
+    mov %r11, hbc_heap_ptr(%rip)
+    movq $0, hbc_heap_lock(%rip)
+    jmp 964f
+963:
+    movq $0, hbc_heap_lock(%rip)
+    jmp hbc_oom
+960:
+    # raw path: zeroed anonymous mapping (0 bytes fails as before)
+    mov %rdi, %rsi
+    xor %edi, %edi
+    mov $3, %edx
+    mov $0x22, %r10d
+    mov $-1, %r8
+    xor %r9d, %r9d
+    mov $9, %eax
+    syscall
+    mov $-4096, %rcx
+    cmp %rcx, %rax
+    ja hbc_oom
+964:
+@REG_ALLOC_L@    incq hbc_mem_allocs(%rip)
+    ret
+
+# hbc_release: rdi = base, rsi = length. Pushes the block onto its
+# size-class free list (<= 1 MiB) or munmaps it (larger). Preserves every
+# register the munmap-based frees used to keep (rdx, r8, r9, r10 saved).
+hbc_release:
+    cmpb $0, hbc_heap_off(%rip)
+    jne 953f
+    push %rdx
+    push %r8
+    push %r9
+    push %r10
+    cmp $1048576, %rsi
+    ja 950f
+    cmp $16384, %rsi
+    ja 951f
+    lea 15(%rsi), %rcx
+    shr $4, %rcx
+    dec %rcx
+    jmp 952f
+951:
+    lea 4095(%rsi), %rcx
+    shr $12, %rcx
+    lea 1023(%rcx), %rcx
+952:
+    lea hbc_free_lists(%rip), %r8
+    lea (%r8,%rcx,8), %r8
+    mov $1, %r9d
+1:  xor %eax, %eax
+    lock cmpxchg %r9, hbc_heap_lock(%rip)
+    jne 1b
+    mov (%r8), %rdx
+    mov %rdx, (%rdi)
+    mov %rdi, (%r8)
+    movq $0, hbc_heap_lock(%rip)
+    pop %r10
+    pop %r9
+    pop %r8
+    pop %rdx
+    ret
+950:
+    mov $11, %eax
+    syscall
+    test %rax, %rax
+    jnz hbc_os_bad
+    pop %r10
+    pop %r9
+    pop %r8
+    pop %rdx
+    ret
+953:
+    mov $11, %eax
+    syscall
+    test %rax, %rax
+    jnz hbc_os_bad
+    ret
+
+# hbc_alloc_raw: rdi = bytes -> rax = base of a zeroed anonymous mapping
+# (always raw; used by the I2 scope arena, whose rewind/flush munmap the
+# segments directly - they must never be arena subblocks).
+hbc_alloc_raw:
     mov %rdi, %rsi
     xor %edi, %edi
     mov $3, %edx
@@ -30348,14 +30799,8 @@ hbc_free:
     imul %rsi, %rax
     lea 8(%rax), %rsi
     sub $8, %rdi
-@REG_FREE_L@    mov $11, %eax
-    syscall
-    # munmap result: 0 on success, negative errno otherwise - a registry
-    # match alone does not prove the OS released the block.
-    test %rax, %rax
-    jnz hbc_os_bad
-    incq hbc_mem_frees(%rip)
-    ret
+@REG_FREE_L@    incq hbc_mem_frees(%rip)
+    jmp hbc_release
 
 # hbc_freestr: rdi = string data pointer (non-null). String layout:
 # capacity at -16(%rdi), length at -8(%rdi); the mapping is 16 + cap
@@ -30393,29 +30838,26 @@ hbc_freestr:
     incq hbc_mem_frees(%rip)
     ret
 .Lstr_release_l:
-    mov $11, %eax
-    syscall
-    test %rax, %rax
-    jnz hbc_os_bad
     incq hbc_mem_frees(%rip)
-    ret
+    jmp hbc_release
 
 # hbc_hfreeblock: rdi = hash block data pointer (non-null). Frees the
-# whole block: 16-byte header [flags @0][capacity @8] + entries, so the
-# mapping base is rdi-16 and the length is 16 + cap*32. The registry
-# snippet is the formula-agnostic Linux one (it compares the computed
-# base and length against the recorded allocation).
+# whole block: buckets (cap*4B) + next (cap*4B) + 16-byte header
+# [flags @0][capacity @8] + entries (cap*32B), so the mapping base is
+# rdi-16-cap*8 and the length is 16 + cap*40. The registry snippet is
+# the formula-agnostic Linux one (it compares the computed base and
+# length against the recorded allocation).
 hbc_hfreeblock:
     mov -8(%rdi), %rax
-    shl $5, %rax
-    lea 16(%rax), %rsi
-    sub $16, %rdi
-@REG_FREE_L@    mov $11, %eax
-    syscall
-    test %rax, %rax
-    jnz hbc_os_bad
-    incq hbc_mem_frees(%rip)
-    ret
+    mov %rax, %rcx
+    shl $3, %rcx
+    lea -16(%rdi), %rdx
+    sub %rcx, %rdx
+    shl $3, %rax
+    lea 16(%rax,%rax,4), %rsi
+    mov %rdx, %rdi
+@REG_FREE_L@    incq hbc_mem_frees(%rip)
+    jmp hbc_release
 
 @REG_BAD_L@# hbc_os_bad: munmap reported failure (noreturn).
 hbc_os_bad:
@@ -31024,8 +31466,15 @@ hbc_seq_depth: .skip 8
 hbc_seq_exc_depth: .skip 8
 hbc_seq_pads: .skip 20480
 hbc_seq_exc: .skip 4096
+    .bss
+    .align 8
+hbc_heap_lock: .skip 8
+hbc_heap_ptr: .skip 8
+hbc_heap_end: .skip 8
+hbc_free_lists: .skip 10240
     .data
-@REG_DATA@    .text
+@REG_DATA@hbc_heap_off: .byte @HEAP_OFF@
+    .text
 "#);
     out.push_str(CTOR_HELPERS);
     out.push_str(ARRAY3_HELPER);
@@ -31047,6 +31496,10 @@ hbc_seq_exc: .skip 4096
     out = out.replace("@REG_SFREE_W@", if instrument { REG_SFREE_W } else { "" });
     out = out.replace("@REG_BAD_W@", if instrument { REG_BAD_W } else { "" });
     out = out.replace("@REG_DATA@", if instrument { REG_DATA } else { "" });
+    if out.contains("call hbc_fileio_") { out.push_str(include_str!("fileio_linux.s")); }
+    if out.contains("call hbc_libname_linux") { out.push_str(include_str!("libname_linux.s")); }
+    out = out.replace("@HEAP_OFF@", if MACHO_MODE.with(|v| v.get()) { "1" } else { "0" });
+    if out.contains("call hbc_os_uname_linux") { out.push_str(OS_UNAME_LINUX_HELPER); }
     // Emit the cwd helper only when referenced (independent of output rendering).
     if out.contains("call hbc_curdir_linux") {
         out.push_str(if MACHO_MODE.with(|v| v.get()) { CURDIR_DARWIN_HELPER } else { CURDIR_LINUX_HELPER });
@@ -33848,14 +34301,18 @@ hbc_freestr:
     ret
 
 # hbc_hfreeblock: rdi = hash block data pointer (non-null). Frees the
-# whole block: 16-byte header [flags @0][capacity @8] + entries, so the
-# block base is rdi-16 (HeapFree needs the base, not the length; the
-# registry snippet computes and checks the recorded size).
+# whole block: buckets (cap*4B) + next (cap*4B) + 16-byte header
+# [flags @0][capacity @8] + entries (cap*32B), so the block base is
+# rdi-16-cap*8 (HeapFree needs the base, not the length; the registry
+# snippet computes and checks the recorded size).
 hbc_hfreeblock:
     push %rbp
     mov %rsp, %rbp
     sub $48, %rsp
-@REG_HFREE_W@    sub $16, %rdi
+@REG_HFREE_W@    mov -8(%rdi), %rax
+    shl $3, %rax
+    lea -16(%rdi), %rdi
+    sub %rax, %rdi
     mov %rdi, %r8
     call GetProcessHeap
     mov %rax, %rcx
@@ -35227,6 +35684,10 @@ fn main() {
                 let mut rt = emit_asm(&[], &[], &[], target, false);
                 rt = rt.replace("call hbc_fn_main", "call ll_main");
                 rt.push_str("\n.globl hbc_trace_top\n");
+                // Same hbc_aclone_alloc stub the main path appends (VAS never
+                // active on the LLVM path): the unpruned sidecar references it
+                // from hbc_aclone_i/hbc_aclone_s and would not link otherwise.
+                rt.push_str("\n.text\nhbc_aclone_alloc:\n    jmp hbc_alloc\n");
                 fs::write(format!("{}.runtime.s",pos[1]), rt).unwrap();
                 return;
             },
@@ -35437,7 +35898,7 @@ hbc_arena_env_init:
     # seg=NULL, and the rewind would munmap the one segment the next
     # allocation created - per-iteration mmap+munmap churn (b5 probe).
     mov $65536, %rdi
-    call hbc_alloc
+    call hbc_alloc_raw
 @REG_ARENA_ALLOC@    movq $0, (%rax)
     movq $65536, 8(%rax)
     mov %rax, hbc_arena_seg(%rip)
@@ -35548,7 +36009,7 @@ hbc_aalloc:
 .Lara_newseg:
     push %rdi
     mov $65536, %rdi
-    call hbc_alloc
+    call hbc_alloc_raw
 @REG_ARENA_ALLOC@    pop %rdi
     mov hbc_arena_seg(%rip), %rcx
     mov %rcx, (%rax)
@@ -35562,7 +36023,7 @@ hbc_aalloc:
 .Lara_loose:
     push %rdi
     lea 16(%rdi), %rdi
-    call hbc_alloc
+    call hbc_alloc_raw
 @REG_ARENA_ALLOC@    pop %rdi
     mov hbc_arena_loose(%rip), %rcx
     mov %rcx, (%rax)
@@ -37444,3 +37905,55 @@ fn cg_dyn_minmax(is_max:bool,a:&Expr,b:&Expr,env:&[CgLocal],sigs:&[Sig],strs:&mu
     cg_concat_drop(out,0);cg_concat_drop(out,16);
     out.push_str(&format!("    add $80, %rsp\n    jmp hbc_seq_unwind\n.Lmm_end{k}:\n"));
 }
+
+// Original implementation: Linux uname syscall, system/release/machine.
+// Each kernel field is bounded by the Linux utsname 65-byte ABI slot.
+const OS_UNAME_LINUX_HELPER: &str = r#"
+.text
+hbc_os_uname_linux:
+    push %rbp
+    mov %rsp, %rbp
+    sub $608, %rsp
+    mov %rsp, %rdi
+    mov $63, %eax
+    syscall
+    test %rax, %rax
+    js .Los_uname_fail
+    lea 400(%rsp), %r8
+    xor %r9d, %r9d
+.Los_uname_field:
+    lea .Los_uname_offsets(%rip), %r10
+    mov (%r10,%r9,4), %esi
+    lea (%rsp,%rsi), %rdi
+    xor %ecx, %ecx
+.Los_uname_byte:
+    cmp $65, %ecx
+    jae .Los_uname_fail
+    mov (%rdi,%rcx), %al
+    test %al, %al
+    jz .Los_uname_next
+    mov %al, (%r8)
+    inc %r8
+    inc %ecx
+    jmp .Los_uname_byte
+.Los_uname_next:
+    inc %r9d
+    cmp $3, %r9d
+    je .Los_uname_copy
+    movb $32, (%r8)
+    inc %r8
+    jmp .Los_uname_field
+.Los_uname_copy:
+    lea 400(%rsp), %rdi
+    mov %r8, %rsi
+    sub %rdi, %rsi
+    call hbc_strcpy
+    leave
+    ret
+.Los_uname_fail:
+    call hbc_type_error
+.section .rodata
+.align 4
+.Los_uname_offsets: .long 0,130,260
+.text
+"#;
