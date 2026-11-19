@@ -35218,6 +35218,10 @@ fn main() {
                 let mut rt = emit_asm(&[], &[], &[], target, false);
                 rt = rt.replace("call hbc_fn_main", "call ll_main");
                 rt.push_str("\n.globl hbc_trace_top\n");
+                // Same hbc_aclone_alloc stub the main path appends (VAS never
+                // active on the LLVM path): the unpruned sidecar references it
+                // from hbc_aclone_i/hbc_aclone_s and would not link otherwise.
+                rt.push_str("\n.text\nhbc_aclone_alloc:\n    jmp hbc_alloc\n");
                 fs::write(format!("{}.runtime.s",pos[1]), rt).unwrap();
                 return;
             },
