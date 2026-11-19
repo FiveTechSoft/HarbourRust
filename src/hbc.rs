@@ -28849,6 +28849,8 @@ hbc_obj_drop_pending:
             out = out.replace("@REG_HFREE_W@", if instrument { REG_HFREE_W } else { "" });
             out = out.replace("@REG_BAD_W@", if instrument { REG_BAD_W } else { "" });
             out = out.replace("@REG_DATA@", if instrument { REG_DATA } else { "" });
+        out = out.replace("@HEAP_OFF@", if MACHO_MODE.with(|v| v.get()) { "1" } else { "0" });
+            out = out.replace("@HEAP_OFF@", if MACHO_MODE.with(|v| v.get()) { "1" } else { "0" });
             return {
         let active=DBF_USED.with(|v|v.get());
             // Scope arena (Goose hybrid I2), Windows leg: same wiring as the
@@ -30204,6 +30206,8 @@ hbc_str_cache_flush:
 # Spinlock-guarded: worker threads share this heap. mmap failure is a
 # negative errno in rax, never NULL.
 hbc_alloc:
+    cmpb $0, hbc_heap_off(%rip)
+    jne 960f
     test %rdi, %rdi
     je 960f
     cmp $1048576, %rdi
@@ -30308,6 +30312,8 @@ hbc_alloc:
 # size-class free list (<= 1 MiB) or munmaps it (larger). Preserves every
 # register the munmap-based frees used to keep (rdx, r8, r9, r10 saved).
 hbc_release:
+    cmpb $0, hbc_heap_off(%rip)
+    jne 953f
     push %rdx
     push %r8
     push %r9
@@ -30349,6 +30355,30 @@ hbc_release:
     pop %r9
     pop %r8
     pop %rdx
+    ret
+953:
+    mov $11, %eax
+    syscall
+    test %rax, %rax
+    jnz hbc_os_bad
+    ret
+
+# hbc_alloc_raw: rdi = bytes -> rax = base of a zeroed anonymous mapping
+# (always raw; used by the I2 scope arena, whose rewind/flush munmap the
+# segments directly - they must never be arena subblocks).
+hbc_alloc_raw:
+    mov %rdi, %rsi
+    xor %edi, %edi
+    mov $3, %edx
+    mov $0x22, %r10d
+    mov $-1, %r8
+    xor %r9d, %r9d
+    mov $9, %eax
+    syscall
+    mov $-4096, %rcx
+    cmp %rcx, %rax
+    ja hbc_oom
+@REG_ALLOC_L@    incq hbc_mem_allocs(%rip)
     ret
 
 # hbc_oom: allocation failure or capacity overflow (noreturn)
@@ -31232,7 +31262,8 @@ hbc_heap_ptr: .skip 8
 hbc_heap_end: .skip 8
 hbc_free_lists: .skip 10240
     .data
-@REG_DATA@    .text
+@REG_DATA@hbc_heap_off: .byte @HEAP_OFF@
+    .text
 "#);
     out.push_str(CTOR_HELPERS);
     out.push_str(ARRAY3_HELPER);
@@ -35655,7 +35686,7 @@ hbc_arena_env_init:
     # seg=NULL, and the rewind would munmap the one segment the next
     # allocation created - per-iteration mmap+munmap churn (b5 probe).
     mov $65536, %rdi
-    call hbc_alloc
+    call hbc_alloc_raw
 @REG_ARENA_ALLOC@    movq $0, (%rax)
     movq $65536, 8(%rax)
     mov %rax, hbc_arena_seg(%rip)
@@ -35766,7 +35797,7 @@ hbc_aalloc:
 .Lara_newseg:
     push %rdi
     mov $65536, %rdi
-    call hbc_alloc
+    call hbc_alloc_raw
 @REG_ARENA_ALLOC@    pop %rdi
     mov hbc_arena_seg(%rip), %rcx
     mov %rcx, (%rax)
@@ -35780,7 +35811,7 @@ hbc_aalloc:
 .Lara_loose:
     push %rdi
     lea 16(%rdi), %rdi
-    call hbc_alloc
+    call hbc_alloc_raw
 @REG_ARENA_ALLOC@    pop %rdi
     mov hbc_arena_loose(%rip), %rcx
     mov %rcx, (%rax)
