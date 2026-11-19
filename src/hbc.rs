@@ -30180,10 +30180,7 @@ hbc_str_cache_flush:
     jz .Lcache_flush_l_skip
     mov (%rdi), %rsi
     add $16, %rsi
-    mov $11, %eax
-    syscall
-    test %rax, %rax
-    jnz hbc_os_bad
+    call hbc_release
 .Lcache_flush_l_skip:
     inc %r12
     cmp $-5, %r12
@@ -30199,9 +30196,99 @@ hbc_str_cache_flush:
     ret
 
 # ---- dynamic array heap (mmap) ----
-# hbc_alloc: rdi = bytes -> rax = base of a zeroed anonymous mapping.
-# mmap failure is a negative errno in rax (range -4095..-1), never NULL.
+# hbc_alloc: rdi = bytes -> rax = base of a zeroed block.
+# Arena allocator (Linux): 4 MiB mmap chunks with a bump pointer (virgin
+# zeroed pages, no zeroing needed) plus size-class free lists with
+# zero-on-reuse (16B classes up to 16 KiB, 4 KiB classes up to 1 MiB).
+# 0 bytes (old failure mode) and blocks over 1 MiB take the raw mmap path.
+# Spinlock-guarded: worker threads share this heap. mmap failure is a
+# negative errno in rax, never NULL.
 hbc_alloc:
+    test %rdi, %rdi
+    je 960f
+    cmp $1048576, %rdi
+    ja 960f
+    mov %rdi, %rsi
+    cmp $16384, %rdi
+    ja 961f
+    lea 15(%rdi), %rcx
+    shr $4, %rcx
+    dec %rcx
+    jmp 962f
+961:
+    lea 4095(%rdi), %rcx
+    shr $12, %rcx
+    lea 1023(%rcx), %rcx
+962:
+    lea hbc_free_lists(%rip), %r8
+    lea (%r8,%rcx,8), %r8
+    mov $1, %r9d
+1:  xor %eax, %eax
+    lock cmpxchg %r9, hbc_heap_lock(%rip)
+    jne 1b
+    mov (%r8), %rax
+    test %rax, %rax
+    je 2f
+    # free-list hit: pop and zero the reused block (mmap contract)
+    mov (%rax), %r10
+    mov %r10, (%r8)
+    movq $0, hbc_heap_lock(%rip)
+    cmp $1024, %rcx
+    jae 3f
+    inc %rcx
+    shl $4, %rcx
+    jmp 4f
+3:  lea -1023(%rcx), %rcx
+    shl $12, %rcx
+4:  mov %rax, %r10
+    mov %rax, %rdi
+    xor %eax, %eax
+    rep stosb
+    mov %r10, %rax
+    jmp 964f
+2:  # bump path: rounded length in rdx
+    cmp $16384, %rsi
+    ja 5f
+    lea 15(%rsi), %rdx
+    and $-16, %rdx
+    jmp 6f
+5:  lea 4095(%rsi), %rdx
+    and $-4096, %rdx
+6:  mov hbc_heap_ptr(%rip), %rax
+    mov hbc_heap_end(%rip), %r10
+    lea (%rax,%rdx), %r11
+    cmp %r10, %r11
+    ja 7f
+    mov %r11, hbc_heap_ptr(%rip)
+    movq $0, hbc_heap_lock(%rip)
+    jmp 964f
+7:  # chunk refill under the lock (rdx <= 1 MiB always fits a 4 MiB chunk)
+    push %rsi
+    push %rdx
+    mov $4194304, %rsi
+    xor %edi, %edi
+    mov $3, %edx
+    mov $0x22, %r10d
+    mov $-1, %r8
+    xor %r9d, %r9d
+    mov $9, %eax
+    syscall
+    pop %rdx
+    pop %rsi
+    mov $-4096, %rcx
+    cmp %rcx, %rax
+    ja 963f
+    lea 4194304(%rax), %r10
+    mov %r10, hbc_heap_end(%rip)
+    lea (%rax,%rdx), %r11
+    mov %r11, hbc_heap_ptr(%rip)
+    movq $0, hbc_heap_lock(%rip)
+    jmp 964f
+963:
+    movq $0, hbc_heap_lock(%rip)
+    jmp hbc_oom
+960:
+    # raw path: zeroed anonymous mapping (0 bytes fails as before)
     mov %rdi, %rsi
     xor %edi, %edi
     mov $3, %edx
@@ -30213,7 +30300,55 @@ hbc_alloc:
     mov $-4096, %rcx
     cmp %rcx, %rax
     ja hbc_oom
+964:
 @REG_ALLOC_L@    incq hbc_mem_allocs(%rip)
+    ret
+
+# hbc_release: rdi = base, rsi = length. Pushes the block onto its
+# size-class free list (<= 1 MiB) or munmaps it (larger). Preserves every
+# register the munmap-based frees used to keep (rdx, r8, r9, r10 saved).
+hbc_release:
+    push %rdx
+    push %r8
+    push %r9
+    push %r10
+    cmp $1048576, %rsi
+    ja 950f
+    cmp $16384, %rsi
+    ja 951f
+    lea 15(%rsi), %rcx
+    shr $4, %rcx
+    dec %rcx
+    jmp 952f
+951:
+    lea 4095(%rsi), %rcx
+    shr $12, %rcx
+    lea 1023(%rcx), %rcx
+952:
+    lea hbc_free_lists(%rip), %r8
+    lea (%r8,%rcx,8), %r8
+    mov $1, %r9d
+1:  xor %eax, %eax
+    lock cmpxchg %r9, hbc_heap_lock(%rip)
+    jne 1b
+    mov (%r8), %rdx
+    mov %rdx, (%rdi)
+    mov %rdi, (%r8)
+    movq $0, hbc_heap_lock(%rip)
+    pop %r10
+    pop %r9
+    pop %r8
+    pop %rdx
+    ret
+950:
+    mov $11, %eax
+    syscall
+    test %rax, %rax
+    jnz hbc_os_bad
+    pop %r10
+    pop %r9
+    pop %r8
+    pop %rdx
     ret
 
 # hbc_oom: allocation failure or capacity overflow (noreturn)
@@ -30423,14 +30558,8 @@ hbc_free:
     imul %rsi, %rax
     lea 8(%rax), %rsi
     sub $8, %rdi
-@REG_FREE_L@    mov $11, %eax
-    syscall
-    # munmap result: 0 on success, negative errno otherwise - a registry
-    # match alone does not prove the OS released the block.
-    test %rax, %rax
-    jnz hbc_os_bad
-    incq hbc_mem_frees(%rip)
-    ret
+@REG_FREE_L@    incq hbc_mem_frees(%rip)
+    jmp hbc_release
 
 # hbc_freestr: rdi = string data pointer (non-null). String layout:
 # capacity at -16(%rdi), length at -8(%rdi); the mapping is 16 + cap
@@ -30468,12 +30597,8 @@ hbc_freestr:
     incq hbc_mem_frees(%rip)
     ret
 .Lstr_release_l:
-    mov $11, %eax
-    syscall
-    test %rax, %rax
-    jnz hbc_os_bad
     incq hbc_mem_frees(%rip)
-    ret
+    jmp hbc_release
 
 # hbc_hfreeblock: rdi = hash block data pointer (non-null). Frees the
 # whole block: buckets (cap*4B) + next (cap*4B) + 16-byte header
@@ -30490,12 +30615,8 @@ hbc_hfreeblock:
     shl $3, %rax
     lea 16(%rax,%rax,4), %rsi
     mov %rdx, %rdi
-@REG_FREE_L@    mov $11, %eax
-    syscall
-    test %rax, %rax
-    jnz hbc_os_bad
-    incq hbc_mem_frees(%rip)
-    ret
+@REG_FREE_L@    incq hbc_mem_frees(%rip)
+    jmp hbc_release
 
 @REG_BAD_L@# hbc_os_bad: munmap reported failure (noreturn).
 hbc_os_bad:
@@ -31104,6 +31225,12 @@ hbc_seq_depth: .skip 8
 hbc_seq_exc_depth: .skip 8
 hbc_seq_pads: .skip 20480
 hbc_seq_exc: .skip 4096
+    .bss
+    .align 8
+hbc_heap_lock: .skip 8
+hbc_heap_ptr: .skip 8
+hbc_heap_end: .skip 8
+hbc_free_lists: .skip 10240
     .data
 @REG_DATA@    .text
 "#);
