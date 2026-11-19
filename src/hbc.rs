@@ -1954,7 +1954,7 @@ const ASM_RESERVED: &[&str] = &[
     // hbc itself emits; a user function with one of these names would
     // collide with a helper symbol.
     "dtos", "stod", "year", "day", "month", "dow", "cdow", "cmonth", "dtoc", "sqrt", "exp", "log", "mod", "padc", "rat", "stuff", "isdigit", "isalpha", "isupper", "islower", "strzero", "ischar", "strzero_fix", "str_f64", "fmt_f64", "date_add", "date_diff", "date_days", "date_from_days", "seconds",
-    "strtran", "space", "substr", "date", "ctod", "date_pack", "date_render", "date_today", "curdir", "hb_libname", "hb_ps", "os", "dirmake", "inkey", "file", "hrfile_setdefault", "hrfile_setpath", "qout", "qqout", "outstd", "outerr", "empty", "procname", "min", "max", "str", "padr", "hb_ntos", "replicate", "aeval", "hb_isnumeric", "hb_isarray", "hb_isstring", "dfree", "upper", "lower", "left", "right", "at", "int", "abs", "padl", "val", "ascan", "aclone", "atail", "asort", "hb_bitand", "hb_bitor", "hb_bitxor", "hb_bitnot", "hb_bittest", "hb_bitset", "hb_bitreset", "eprint_str", "eprint_sep", "eprint_i64", "eprint_i64c", "eprint_dyn", "eprint_dynlit", "print_dynlit", "eprint_f64", "hb_eol", "procline", "asc", "trim", "ltrim", "rtrim", "alltrim", "chr", "trace_top", "print_trace", "panic_exit", "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_range_error", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
+    "strtran", "space", "substr", "date", "ctod", "date_pack", "date_render", "date_today", "curdir", "fcreate", "fopen", "fwrite", "fclose", "freadstr", "hb_libname", "hb_ps", "os", "dirmake", "inkey", "file", "hrfile_setdefault", "hrfile_setpath", "qout", "qqout", "outstd", "outerr", "empty", "procname", "min", "max", "str", "padr", "hb_ntos", "replicate", "aeval", "hb_isnumeric", "hb_isarray", "hb_isstring", "dfree", "upper", "lower", "left", "right", "at", "int", "abs", "padl", "val", "ascan", "aclone", "atail", "asort", "hb_bitand", "hb_bitor", "hb_bitxor", "hb_bitnot", "hb_bittest", "hb_bitset", "hb_bitreset", "eprint_str", "eprint_sep", "eprint_i64", "eprint_i64c", "eprint_dyn", "eprint_dynlit", "print_dynlit", "eprint_f64", "hb_eol", "procline", "asc", "trim", "ltrim", "rtrim", "alltrim", "chr", "trace_top", "print_trace", "panic_exit", "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_range_error", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
 ];
 
 fn dbf_result(id: &str) -> Option<Ty> {
@@ -6470,6 +6470,21 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                     apply_moves(a,env,sigs,false);
                 }
                 return Ok(if is_builtin(id,"procname") { Ty::Str } else { Ty::I64 });
+            }
+            if ["fcreate","fopen","fwrite","fclose","freadstr"].iter().any(|b|is_builtin(id,b)) {
+                if !CURDIR_LINUX_NATIVE.with(|v|v.get()) { return Err(format!("line {}: typed file I/O is measured only on ordinary Linux",n)); }
+                let two=is_builtin(id,"fwrite")||is_builtin(id,"freadstr");
+                if args.len()!=if two {2} else {1} { return Err(format!("line {}: `{}` supports {} argument(s) in typed file I/O",n,id,if two {2} else {1})); }
+                for (i,a) in args.iter().enumerate() {
+                    let t=type_expr(a,env,sigs,n)?;
+                    let string=(i==0&&(is_builtin(id,"fcreate")||is_builtin(id,"fopen"))) || (i==1&&is_builtin(id,"fwrite"));
+                    if if string {!matches!(t,Ty::Str|Ty::StrOwn)} else {t!=Ty::I64 && !(i==0 && t==Ty::Dyn && matches!(a,Expr::Var(_)))} { return Err(format!("line {}: `{}` requires typed strings and integer handles (Dyn variables checked at runtime)",n,id)); }
+                    apply_moves(a,env,sigs,false);
+                }
+                // Zero may abort the external runtime; dynamic counts and
+                // unbounded requests are deliberately not admitted yet.
+                if is_builtin(id,"freadstr") && !matches!(&args[1],Expr::Int(v) if v.parse::<u64>().map_or(false,|v|v>=1&&v<=1048576)) { return Err(format!("line {}: FReadStr count must be a literal in 1..1048576 in this increment",n)); }
+                return Ok(if is_builtin(id,"freadstr") {Ty::StrOwn} else if is_builtin(id,"fclose") {Ty::Bool} else {Ty::I64});
             }
             if is_builtin(id,"hb_libname") || is_builtin(id,"hb_ps") {
                 if !CURDIR_LINUX_NATIVE.with(|v|v.get()) { return Err(format!("line {}: library filenames are measured only on ordinary Linux",n)); }
@@ -11620,6 +11635,10 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
             if is_builtin(id,"file") || id=="hrfile_setdefault" || id=="hrfile_setpath" {
                 for a in args {apply_moves(a,env,sigs,false);}return;
             }
+            if ["fcreate","fopen","fwrite","fclose","freadstr"].iter().any(|b|is_builtin(id,b)) {
+                for a in args { apply_moves(a,env,sigs,false); }
+                return;
+            }
             if is_builtin(id,"hb_libname") {
                 // The builtin borrows its results, but nested calls still
                 // consume their own arguments under the usual contract.
@@ -15281,6 +15300,34 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             }
             if setter {out.push_str("    mov $1, %eax\n    xor %edx, %edx\n");}
             else {out.push_str("    xor %edx, %edx\n");}
+        }
+        Expr::Call(id,args) if is_builtin(id,"fcreate") || is_builtin(id,"fopen") => {
+            let a=&args[0]; let temp=expr_ty(a,env,sigs)==Ty::StrOwn&&!matches!(a,Expr::Var(_));
+            cg_value(a,env,sigs,strs,out,target);
+            out.push_str("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rax, %rdi\n    mov %rdx, %rsi\n");
+            out.push_str(&format!("    mov ${}, %edx\n    call hbc_fileio_open\n    mov %rax, 8(%rsp)\n",if is_builtin(id,"fcreate"){578}else{0}));
+            if temp {out.push_str("    mov (%rsp), %rdi\n    call hbc_freestr\n");}
+            out.push_str("    mov 8(%rsp), %rax\n    xor %edx, %edx\n    add $32, %rsp\n");
+        }
+        Expr::Call(id,args) if is_builtin(id,"fwrite") => {
+            cg_expr(&args[0],env,sigs,strs,out,target);
+            if expr_ty(&args[0],env,sigs)==Ty::Dyn {out.push_str("    call hbc_dyn_to_i64\n");}
+            out.push_str("    sub $32, %rsp\n    mov %rax, (%rsp)\n");
+            let a=&args[1];let temp=expr_ty(a,env,sigs)==Ty::StrOwn&&!matches!(a,Expr::Var(_));
+            cg_value(a,env,sigs,strs,out,target);
+            out.push_str("    mov %rax, 8(%rsp)\n    mov %rax, %rsi\n    mov (%rsp), %rdi\n    call hbc_fileio_write\n    mov %rax, 16(%rsp)\n");
+            if temp {out.push_str("    mov 8(%rsp), %rdi\n    call hbc_freestr\n");}
+            out.push_str("    mov 16(%rsp), %rax\n    xor %edx, %edx\n    add $32, %rsp\n");
+        }
+        Expr::Call(id,args) if is_builtin(id,"fclose") => {
+            cg_expr(&args[0],env,sigs,strs,out,target);
+            if expr_ty(&args[0],env,sigs)==Ty::Dyn {out.push_str("    call hbc_dyn_to_i64\n");}
+            out.push_str("    mov %rax, %rdi\n    call hbc_fileio_close\n");
+        }
+        Expr::Call(id,args) if is_builtin(id,"freadstr") => {
+            cg_expr(&args[0],env,sigs,strs,out,target);
+            if expr_ty(&args[0],env,sigs)==Ty::Dyn {out.push_str("    call hbc_dyn_to_i64\n");}
+            if let Expr::Int(v)=&args[1] {out.push_str(&format!("    mov %rax, %rdi\n    mov ${}, %esi\n    call hbc_fileio_readstr\n",v));}
         }
         Expr::Call(id,args) if is_builtin(id,"hb_ps") => {
             let _=args;
@@ -18999,6 +19046,9 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             if is_builtin(id,"dirmake") || is_builtin(id,"inkey") {return Ty::I64;}
             if is_builtin(id,"file") {return Ty::Bool;}
             if id=="hrfile_setdefault"||id=="hrfile_setpath" {return Ty::Dyn;}
+            if is_builtin(id,"freadstr") {return Ty::StrOwn;}
+            if is_builtin(id,"fclose") {return Ty::Bool;}
+            if ["fcreate","fopen","fwrite"].iter().any(|b|is_builtin(id,b)) {return Ty::I64;}
             if is_builtin(id,"hb_libname") || is_builtin(id,"hb_ps") || is_builtin(id, "os") || is_builtin(id, "curdir") || is_builtin(id, "chr") || is_builtin(id, "str") || is_builtin(id, "hb_ntos") || is_builtin(id, "padr") || is_builtin(id, "replicate") { return Ty::StrOwn; }
             if is_builtin(id, "round") { return Ty::F64; } // hk384-hk386
             if is_builtin(id, "iif") {
@@ -19112,6 +19162,8 @@ fn concat_assigned_in(stmts: &[Stmt]) -> std::collections::HashSet<String> {
         for s in stmts {
             match s {
                 Stmt::Assign(_, id, Expr::Bin('+', _, _)) => { out.insert(id.clone()); }
+                // FReadStr replaces its destination with an owned buffer.
+                Stmt::Assign(_, id, Expr::Call(f, _)) if is_builtin(f,"freadstr") => { out.insert(id.clone()); }
                 Stmt::If(_, _, t, el) => { st(t, out); st(el, out); }
                 Stmt::While(_, _, b) | Stmt::For(_, _, _, _, _, b) | Stmt::ForEach(_, _, _, b) => st(b, out),
                 Stmt::Switch(_, _, arms, otherwise) => { for (_, _, b) in arms { st(b, out); } if let Some((_, ob)) = otherwise { st(ob, out); } }
@@ -31075,6 +31127,7 @@ hbc_seq_exc: .skip 4096
     out = out.replace("@REG_SFREE_W@", if instrument { REG_SFREE_W } else { "" });
     out = out.replace("@REG_BAD_W@", if instrument { REG_BAD_W } else { "" });
     out = out.replace("@REG_DATA@", if instrument { REG_DATA } else { "" });
+    if out.contains("call hbc_fileio_") { out.push_str(include_str!("fileio_linux.s")); }
     if out.contains("call hbc_libname_linux") { out.push_str(include_str!("libname_linux.s")); }
     if out.contains("call hbc_os_uname_linux") { out.push_str(OS_UNAME_LINUX_HELPER); }
     // Emit the cwd helper only when referenced (independent of output rendering).
