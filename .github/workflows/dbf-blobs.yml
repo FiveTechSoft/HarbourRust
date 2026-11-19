@@ -28,7 +28,7 @@ jobs:
         working-directory: ${{ github.workspace }}
         run: |
           set -eu
-          env | grep -i '^GIT' || true
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
           python3 tests/generate_linux_asm.py > work_blobs_linux.log
           mingw=$(command -v x86_64-w64-mingw32-gcc-10-posix || command -v x86_64-w64-mingw32-gcc-posix)
           HR_MINGW_CC="$mingw" python3 tests/generate_windows_asm.py > work_blobs_windows.log
@@ -39,7 +39,7 @@ jobs:
         working-directory: ${{ github.workspace }}
         run: |
           set -eu
-          unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
           git config user.name "HarbourRust Blobs CI"
           git config user.email "blobs-ci@harbourrust.invalid"
           BRANCH=dbf-blobs-${GITHUB_RUN_NUMBER}
