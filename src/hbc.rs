@@ -568,16 +568,35 @@ fn cg_f64_load(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, 
             // NaN. The packed metadata carries the asymmetric
             // HB_DBL_LENGTH of the RESULT (hbdefs.h:570, 63zb).
             let dyn_div = (*op=='/'||*op=='%') && (expr_ty(a, env, sigs)==Ty::Dyn || expr_ty(b, env, sigs)==Ty::Dyn);
+            // Literal-nonzero rhs of `/`: the divisor is a compile-time
+            // double constant ((f64)v, round-to-nearest-even like
+            // cvtsi2sd), so the materialization, the conversion and the
+            // runtime zero-check all fold away; a nonzero integer is
+            // never +-0.0 or NaN. The lhs spill and the result metadata
+            // contract stay exactly as the generic path. Zero literals
+            // keep the generic path (hbc_div0_error).
+            let imm_rhs_f64 = if *op == '/' && !dyn_div {
+                if let Expr::Int(v) = &**b {
+                    v.parse::<i64>().ok().filter(|x| *x != 0).map(|x| x as f64)
+                } else {
+                    None
+                }
+            } else {
+                None
+            };
             if dyn_div { cg_div_operand(a, env, sigs, strs, out, target); } else { cg_f64_operand(a, env, sigs, strs, out, target); }
             out.push_str("    sub $32, %rsp\n    movsd %xmm0, (%rsp)\n    mov %rcx, 8(%rsp)\n");
             if dyn_div { out.push_str("    mov %rax, 16(%rsp)\n"); }
-            if dyn_div { cg_div_operand(b, env, sigs, strs, out, target); } else { cg_f64_operand(b, env, sigs, strs, out, target); }
+            if let Some(dv) = imm_rhs_f64 {
+                let k = f64_const(dv.to_bits());
+                out.push_str(&format!("    movsd .Lf64c{}(%rip), %xmm0\n    xor %ecx, %ecx\n", k));
+            } else if dyn_div { cg_div_operand(b, env, sigs, strs, out, target); } else { cg_f64_operand(b, env, sigs, strs, out, target); }
             if dyn_div {
                 let argok = fresh_lbl();
                 let argerr = if *op=='/' { "    call hbc_divarg_error\n" } else { "    jmp hbc_type_error\n" };
                 out.push_str(&format!("    or 16(%rsp), %rax\n    je .Ldivargok{argok}\n{argerr}.Ldivargok{argok}:\n"));
             }
-            if *op == '/' {
+            if *op == '/' && imm_rhs_f64.is_none() {
                 let l = fresh_lbl();
                 out.push_str(&format!("    xorpd %xmm2, %xmm2\n    ucomisd %xmm2, %xmm0\n    jp .Ldivok{}\n    jne .Ldivok{}\n    call hbc_div0_error\n.Ldivok{}:\n", l, l, l));
             }
