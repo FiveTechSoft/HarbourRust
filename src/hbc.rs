@@ -18049,6 +18049,39 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             // Operands are i64 or Dyn (checked in analysis): a Dyn operand
             // is extracted with the runtime tag check (NIL payload -> clean
             // type error, Harbour's dialog is the registered difference).
+            // Immediate-rhs fast path: a literal right operand fits the
+            // imm32 form of add/sub/imul, so the lhs never leaves %rax and
+            // no spill/reload shuffle or dead rhs tag load is emitted. The
+            // flags contract is identical (same jo overflow check below),
+            // the result tag slot keeps the same unspecified-int-tag
+            // contract the spill path has (rdx after the op), and there is
+            // no call within a literal rhs, so the alignment slot the
+            // comment below keeps for is not needed.
+            let imm_rhs = if matches!(op, '+' | '-' | '*') {
+                if let Expr::Int(v) = &**b {
+                    v.parse::<i64>().ok().filter(|x| *x >= i32::MIN as i64 && *x <= i32::MAX as i64)
+                } else {
+                    None
+                }
+            } else {
+                None
+            };
+            if let Some(imm) = imm_rhs {
+                cg_expr(a, env, sigs, strs, out, target);
+                if expr_ty(a, env, sigs) == Ty::Dyn {
+                    out.push_str("    call hbc_dyn_to_i64\n");
+                }
+                match op {
+                    '+' => out.push_str(&format!("    add ${}, %rax\n", imm)),
+                    '-' => out.push_str(&format!("    sub ${}, %rax\n", imm)),
+                    '*' => out.push_str(&format!("    imul ${}, %rax, %rax\n", imm)),
+                    _ => unreachable!("checked"),
+                }
+                if CHECKED_I64.with(|c| c.get()) {
+                    out.push_str("    jo hbc_static_overflow\n");
+                }
+                return;
+            }
             cg_expr(a, env, sigs, strs, out, target);
             if expr_ty(a, env, sigs) == Ty::Dyn {
                 out.push_str("    call hbc_dyn_to_i64\n");
