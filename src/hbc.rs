@@ -1954,7 +1954,7 @@ const ASM_RESERVED: &[&str] = &[
     // hbc itself emits; a user function with one of these names would
     // collide with a helper symbol.
     "dtos", "stod", "year", "day", "month", "dow", "cdow", "cmonth", "dtoc", "sqrt", "exp", "log", "mod", "padc", "rat", "stuff", "isdigit", "isalpha", "isupper", "islower", "strzero", "ischar", "strzero_fix", "str_f64", "fmt_f64", "date_add", "date_diff", "date_days", "date_from_days", "seconds",
-    "strtran", "space", "substr", "date", "ctod", "date_pack", "date_render", "date_today", "curdir", "dirmake", "inkey", "file", "hrfile_setdefault", "hrfile_setpath", "qout", "qqout", "outstd", "outerr", "empty", "procname", "min", "max", "str", "padr", "hb_ntos", "replicate", "aeval", "hb_isnumeric", "hb_isarray", "hb_isstring", "dfree", "upper", "lower", "left", "right", "at", "int", "abs", "padl", "val", "ascan", "aclone", "atail", "asort", "hb_bitand", "hb_bitor", "hb_bitxor", "hb_bitnot", "hb_bittest", "hb_bitset", "hb_bitreset", "eprint_str", "eprint_sep", "eprint_i64", "eprint_i64c", "eprint_dyn", "eprint_dynlit", "print_dynlit", "eprint_f64", "hb_eol", "procline", "asc", "trim", "ltrim", "rtrim", "alltrim", "chr", "trace_top", "print_trace", "panic_exit", "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_range_error", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
+    "strtran", "space", "substr", "date", "ctod", "date_pack", "date_render", "date_today", "curdir", "os", "dirmake", "inkey", "file", "hrfile_setdefault", "hrfile_setpath", "qout", "qqout", "outstd", "outerr", "empty", "procname", "min", "max", "str", "padr", "hb_ntos", "replicate", "aeval", "hb_isnumeric", "hb_isarray", "hb_isstring", "dfree", "upper", "lower", "left", "right", "at", "int", "abs", "padl", "val", "ascan", "aclone", "atail", "asort", "hb_bitand", "hb_bitor", "hb_bitxor", "hb_bitnot", "hb_bittest", "hb_bitset", "hb_bitreset", "eprint_str", "eprint_sep", "eprint_i64", "eprint_i64c", "eprint_dyn", "eprint_dynlit", "print_dynlit", "eprint_f64", "hb_eol", "procline", "asc", "trim", "ltrim", "rtrim", "alltrim", "chr", "trace_top", "print_trace", "panic_exit", "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_range_error", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
 ];
 
 fn dbf_result(id: &str) -> Option<Ty> {
@@ -6470,6 +6470,13 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                     apply_moves(a,env,sigs,false);
                 }
                 return Ok(if is_builtin(id,"procname") { Ty::Str } else { Ty::I64 });
+            }
+            if is_builtin(id, "os") {
+                if !CURDIR_LINUX_NATIVE.with(|v|v.get()) {
+                    return Err(format!("line {}: OS is measured only on the ordinary Linux backend in this increment", n));
+                }
+                if !args.is_empty() { return Err(format!("line {}: OS takes no arguments in this increment", n)); }
+                return Ok(Ty::StrOwn);
             }
             if is_builtin(id, "hb_eol") {
                 if !args.is_empty() { return Err(format!("line {}: `hb_eol` takes no arguments in this increment", n)); }
@@ -11603,7 +11610,7 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
             if is_builtin(id,"file") || id=="hrfile_setdefault" || id=="hrfile_setpath" {
                 for a in args {apply_moves(a,env,sigs,false);}return;
             }
-            if is_builtin(id,"curdir") { return; } // admitted args are inert literals only
+            if is_builtin(id,"os") || is_builtin(id,"curdir") { return; } // admitted args are inert literals only
             if is_builtin(id,"replicate") {
                 for a in args { apply_moves(a,env,sigs,false); }
                 return;
@@ -15258,6 +15265,9 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             }
             if setter {out.push_str("    mov $1, %eax\n    xor %edx, %edx\n");}
             else {out.push_str("    xor %edx, %edx\n");}
+        }
+        Expr::Call(id,_) if is_builtin(id,"os") => {
+            out.push_str("    call hbc_os_uname_linux\n");
         }
         Expr::Call(id,_) if is_builtin(id,"curdir") => {
             out.push_str("    call hbc_curdir_linux\n");
@@ -18946,7 +18956,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             if is_builtin(id,"dirmake") || is_builtin(id,"inkey") {return Ty::I64;}
             if is_builtin(id,"file") {return Ty::Bool;}
             if id=="hrfile_setdefault"||id=="hrfile_setpath" {return Ty::Dyn;}
-            if is_builtin(id, "curdir") || is_builtin(id, "chr") || is_builtin(id, "str") || is_builtin(id, "hb_ntos") || is_builtin(id, "padr") || is_builtin(id, "replicate") { return Ty::StrOwn; }
+            if is_builtin(id, "os") || is_builtin(id, "curdir") || is_builtin(id, "chr") || is_builtin(id, "str") || is_builtin(id, "hb_ntos") || is_builtin(id, "padr") || is_builtin(id, "replicate") { return Ty::StrOwn; }
             if is_builtin(id, "round") { return Ty::F64; } // hk384-hk386
             if is_builtin(id, "iif") {
                 // Branch unification mirrors the checker (oracle hk321).
@@ -31038,6 +31048,7 @@ hbc_seq_exc: .skip 4096
     out = out.replace("@REG_SFREE_W@", if instrument { REG_SFREE_W } else { "" });
     out = out.replace("@REG_BAD_W@", if instrument { REG_BAD_W } else { "" });
     out = out.replace("@REG_DATA@", if instrument { REG_DATA } else { "" });
+    if out.contains("call hbc_os_uname_linux") { out.push_str(OS_UNAME_LINUX_HELPER); }
     // Emit the cwd helper only when referenced (independent of output rendering).
     if out.contains("call hbc_curdir_linux") {
         out.push_str(if MACHO_MODE.with(|v| v.get()) { CURDIR_DARWIN_HELPER } else { CURDIR_LINUX_HELPER });
@@ -37439,3 +37450,55 @@ fn cg_dyn_minmax(is_max:bool,a:&Expr,b:&Expr,env:&[CgLocal],sigs:&[Sig],strs:&mu
     cg_concat_drop(out,0);cg_concat_drop(out,16);
     out.push_str(&format!("    add $80, %rsp\n    jmp hbc_seq_unwind\n.Lmm_end{k}:\n"));
 }
+
+// Original implementation: Linux uname syscall, system/release/machine.
+// Each kernel field is bounded by the Linux utsname 65-byte ABI slot.
+const OS_UNAME_LINUX_HELPER: &str = r#"
+.text
+hbc_os_uname_linux:
+    push %rbp
+    mov %rsp, %rbp
+    sub $608, %rsp
+    mov %rsp, %rdi
+    mov $63, %eax
+    syscall
+    test %rax, %rax
+    js .Los_uname_fail
+    lea 400(%rsp), %r8
+    xor %r9d, %r9d
+.Los_uname_field:
+    lea .Los_uname_offsets(%rip), %r10
+    mov (%r10,%r9,4), %esi
+    lea (%rsp,%rsi), %rdi
+    xor %ecx, %ecx
+.Los_uname_byte:
+    cmp $65, %ecx
+    jae .Los_uname_fail
+    mov (%rdi,%rcx), %al
+    test %al, %al
+    jz .Los_uname_next
+    mov %al, (%r8)
+    inc %r8
+    inc %ecx
+    jmp .Los_uname_byte
+.Los_uname_next:
+    inc %r9d
+    cmp $3, %r9d
+    je .Los_uname_copy
+    movb $32, (%r8)
+    inc %r8
+    jmp .Los_uname_field
+.Los_uname_copy:
+    lea 400(%rsp), %rdi
+    mov %r8, %rsi
+    sub %rdi, %rsi
+    call hbc_strcpy
+    leave
+    ret
+.Los_uname_fail:
+    call hbc_type_error
+.section .rodata
+.align 4
+.Los_uname_offsets: .long 0,130,260
+.text
+"#;
