@@ -15,6 +15,7 @@ used=sorted(set(re.findall(r'\.Lstr[0-9]+',seg)))
 defs=''.join(m.group(0) for m in re.finditer(r'(?m)^\.Lstr[0-9]+:\n(?:    \.byte [^\n]*\n)+',aw) if m.group(0).split(':')[0] in used)
 seg+='    .section .rodata\n'+defs
 seg=seg.replace('.Lstr','.Lstraw')
+seg=seg.replace('.Lavframe','.Lavframew')
 s+=seg
 for name in ['arraywalk','arraywalk2']:
  s+='\n.text\n.globl cur_'+name+'\ncur_'+name+':\n'
