@@ -2007,12 +2007,12 @@ const ASM_RESERVED: &[&str] = &[
 fn dbf_result(id: &str) -> Option<Ty> {
     if hb_rdd() {
         match id {
-            "dbappend" | "dbcommit" | "dbdelete" | "dbrecall" | "dbgoto" | "fieldput" | "ordcreate" | "ordsetfocus" | "dbffieldput" => return Some(Ty::Dyn),
+            "dbappend" | "dbcommit" | "dbdelete" | "dbrecall" | "dbgoto" | "fieldput" | "ordcreate" | "ordsetfocus" | "dbsetorder" | "dbffieldput" => return Some(Ty::Dyn),
             _ => {}
         }
     }
-    match id { "fieldget" | "dbclosearea" | "dbgotop" | "dbgobottom" | "ordlistclear" | "dbskip" | "dbffieldref" | "dbappend" | "fieldput" | "dbffieldput" | "dbcommit" | "dbdelete" | "dbrecall" | "dbgoto" | "ordcreate" | "ordsetfocus" => Some(Ty::Dyn),
-        "recno" | "lastrec" => Some(Ty::I64), "bof" | "eof" | "deleted" | "dbusearea" | "ordlistadd" | "dbseek" | "found" => Some(Ty::Bool), _ => None }
+    match id { "fieldget" | "dbclosearea" | "dbgotop" | "dbgobottom" | "ordlistclear" | "dbskip" | "dbffieldref" | "dbappend" | "fieldput" | "dbffieldput" | "dbcommit" | "dbdelete" | "dbrecall" | "dbgoto" | "ordcreate" | "ordsetfocus" | "dbsetorder" => Some(Ty::Dyn),
+        "recno" | "lastrec" | "fcount" => Some(Ty::I64), "bof" | "eof" | "deleted" | "dbusearea" | "ordlistadd" | "dbseek" | "found" => Some(Ty::Bool), _ => None }
 }
 
 // Generic post-order visitor over every expression of a statement list
@@ -6382,7 +6382,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                     let path=if id=="dbusearea" {args.get(2)} else if id=="ordlistadd" {args.first()} else {None};
                     if let Some(Expr::Str(p))=path {if !dbf_windows_literal_path(p) {return Err(format!("line {}: Windows DBF path requires bounded ASCII ordinary relative/drive-absolute form; NUL, devices, UNC, namespaces and long paths are unsupported",n));}}
                 }
-                if hb_rdd() && matches!(id.as_str(), "dbusearea"|"dbappend"|"dbcommit"|"dbdelete"|"dbrecall"|"dbgoto"|"fieldput"|"ordcreate"|"ordsetfocus"|"dbffieldput") {
+                if hb_rdd() && matches!(id.as_str(), "dbusearea"|"dbappend"|"dbcommit"|"dbdelete"|"dbrecall"|"dbgoto"|"fieldput"|"ordcreate"|"ordsetfocus"|"dbsetorder"|"dbffieldput") {
                     let scalar = |t: Ty| matches!(t, Ty::I64|Ty::F64|Ty::Str|Ty::StrOwn|Ty::Bool|Ty::Date|Ty::Dyn);
                     let lit = |e: &Expr| matches!(e, Expr::Str(_));
                     let why: Option<&str> = match id.as_str() {
@@ -6396,6 +6396,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                         }
                         "dbappend"|"dbcommit"|"dbdelete"|"dbrecall" => if args.is_empty() {None} else {Some("no arguments")},
                         "dbgoto" => if args.len()==1 && matches!(type_expr(&args[0],env,sigs,n)?,Ty::I64) {None} else {Some("one integer record number")},
+                        "dbsetorder" => if args.len()==1 && matches!(type_expr(&args[0],env,sigs,n)?,Ty::I64) {None} else {Some("one integer order position")},
                         "fieldput" => if args.len()==2 && matches!(type_expr(&args[0],env,sigs,n)?,Ty::I64) && scalar(type_expr(&args[1],env,sigs,n)?) {None} else {Some("FieldPut(nField, value) with an integer position and a C/N/D/L value")},
                         "ordcreate" => if args.len()==3 && args.iter().all(lit) {None} else {Some("ordCreate(cBag, cTag, cKeyExpr) with literal strings")},
                         "ordsetfocus" => if args.len()==1 && lit(&args[0]) {None} else {Some("ordSetFocus(cTag) with a literal tag name")},
@@ -6436,8 +6437,12 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                         return Err(format!("line {}: `{} := ...` assigns an undeclared name; Harbour 3.2 stores that in a memvar, not in the field (measured), and hbc does not create memvars implicitly: write FIELD->{} := ... or ALIAS->{} := ... to store the field",n,f,f,f));
                     }
                     if !matches!(type_expr(&args[2],env,sigs,n)?,Ty::I64|Ty::F64|Ty::Str|Ty::StrOwn|Ty::Bool|Ty::Date|Ty::Dyn) {return Err(format!("line {}: DBF field store expects a C/N/D/L value",n));}
-                } else if matches!(id.as_str(),"dbcommit"|"dbdelete"|"dbrecall"|"dbgoto"|"ordcreate"|"ordsetfocus") {
+                } else if matches!(id.as_str(),"dbcommit"|"dbdelete"|"dbrecall"|"ordcreate"|"ordsetfocus") {
                     return Err(format!("line {}: {} is outside this DBF increment",n,id));
+                } else if id=="dbgoto" {
+                    if args.len()!=1 || !matches!(type_expr(&args[0],env,sigs,n)?,Ty::I64) {return Err(format!("line {}: dbGoto expects one integer record number",n));}
+                } else if id=="dbsetorder" {
+                    if args.len()!=1 || !matches!(type_expr(&args[0],env,sigs,n)?,Ty::I64) {return Err(format!("line {}: dbSetOrder expects one integer order position",n));}
                 } else if !args.is_empty(){return Err(format!("line {}: {} takes no arguments",n,id));}
                 return Ok(ty);
             }
@@ -14591,6 +14596,10 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                     cg_value(&args[0],env,sigs,strs,out,target);
                     out.push_str("    mov %rax, %rdi\n    call hrdbf_app_goto\n    mov $1, %eax\n    xor %edx, %edx\n");
                 },
+                "dbsetorder" => {
+                    cg_value(&args[0],env,sigs,strs,out,target);
+                    out.push_str("    mov %rax, %rdi\n    call hrdbf_app_ordselect\n    mov $1, %eax\n    xor %edx, %edx\n");
+                },
                 "fieldput" => {
                     cg_value(&args[0],env,sigs,strs,out,target);
                     out.push_str("    sub $32, %rsp\n    mov %rax, 16(%rsp)\n");
@@ -14696,7 +14705,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                     }
                 },
                 _ => {
-                    let helper=match id.as_str(){"dbclosearea"=>"close","dbgotop"=>"top","dbgobottom"=>"bottom","ordlistclear"=>"order_clear","found"=>"found","recno"=>"recno","lastrec"=>"lastrec","bof"=>"bof","eof"=>"eof","deleted"=>"deleted",_=>unreachable!()};
+                    let helper=match id.as_str(){"dbclosearea"=>"close","dbgotop"=>"top","dbgobottom"=>"bottom","ordlistclear"=>"order_clear","found"=>"found","recno"=>"recno","lastrec"=>"lastrec","fcount"=>"fcount","bof"=>"bof","eof"=>"eof","deleted"=>"deleted",_=>unreachable!()};
                     out.push_str(&format!("    call hrdbf_app_{}\n",helper));
                     if matches!(id.as_str(),"dbclosearea"|"dbgotop"|"dbgobottom"|"ordlistclear"){out.push_str("    mov $1, %eax\n    xor %edx, %edx\n");}
                 }
