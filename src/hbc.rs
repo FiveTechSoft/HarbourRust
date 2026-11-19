@@ -28849,7 +28849,6 @@ hbc_obj_drop_pending:
             out = out.replace("@REG_HFREE_W@", if instrument { REG_HFREE_W } else { "" });
             out = out.replace("@REG_BAD_W@", if instrument { REG_BAD_W } else { "" });
             out = out.replace("@REG_DATA@", if instrument { REG_DATA } else { "" });
-        out = out.replace("@HEAP_OFF@", if MACHO_MODE.with(|v| v.get()) { "1" } else { "0" });
             out = out.replace("@HEAP_OFF@", if MACHO_MODE.with(|v| v.get()) { "1" } else { "0" });
             return {
         let active=DBF_USED.with(|v|v.get());
@@ -31287,6 +31286,7 @@ hbc_free_lists: .skip 10240
     out = out.replace("@REG_DATA@", if instrument { REG_DATA } else { "" });
     if out.contains("call hbc_fileio_") { out.push_str(include_str!("fileio_linux.s")); }
     if out.contains("call hbc_libname_linux") { out.push_str(include_str!("libname_linux.s")); }
+    out = out.replace("@HEAP_OFF@", if MACHO_MODE.with(|v| v.get()) { "1" } else { "0" });
     if out.contains("call hbc_os_uname_linux") { out.push_str(OS_UNAME_LINUX_HELPER); }
     // Emit the cwd helper only when referenced (independent of output rendering).
     if out.contains("call hbc_curdir_linux") {
