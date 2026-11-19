@@ -30716,7 +30716,7 @@ hbc_str_cache: .zero 128
 # address; the throwable runtime-error helpers and Break() push the value
 # on the exception stack and unwind to the innermost pad. FINALLY bodies
 # are local subroutines the normal path and the handler both call; a TRY
-# without CATCH re-enters hbc_seq_unwind afterwards. 256 pads of 80 bytes (offset 64 saves the receiving trace top),
+# without CATCH re-enters hbc_seq_unwind afterwards. 256 pads of 80 bytes (offset 64 saves the receiving trace top, offset 72 the macro frame mark),
 # 256 pending exceptions of 16 bytes. Registered limits: the stacks are
 # process-global (TRY inside hb_threadStart code is out of this
 # increment), and an unwound frame's owned temporaries leak (error paths).
@@ -30738,6 +30738,8 @@ hbc_seq_push:
     mov %rdi, 56(%r11)
     mov hbc_trace_top(%rip), %rax
     mov %rax, 64(%r11)
+    movq $0, 72(%r11)
+    # @SEQ_MACRO_MARK@
     incq hbc_seq_depth(%rip)
     ret
 
@@ -30796,6 +30798,7 @@ hbc_seq_unwind:
     mov 40(%r11), %r15
     mov 64(%r11), %rax
     mov %rax, hbc_trace_top(%rip)
+    # @SEQ_MACRO_UNWIND@
     mov 48(%r11), %rsp
     mov 56(%r11), %r11
     jmp *%r11
@@ -31101,6 +31104,29 @@ fn finalize_threads_windows(out: String) -> String {
     r
 }
 
+const SEQ_MACRO_MARK: &str = r"    test %rax, %rax
+    jz .Lseqpm
+    mov 48(%rax), %rdi
+    test %rdi, %rdi
+    jz .Lseqpm
+    push %r11
+    call hrmacro_frame_mark
+    pop %r11
+    mov %rax, 72(%r11)
+.Lseqpm:
+";
+const SEQ_MACRO_UNWIND: &str = r"    mov 72(%r11), %rsi
+    test %rsi, %rsi
+    jz .Lsequm
+    mov 48(%rax), %rdi
+    test %rdi, %rdi
+    jz .Lsequm
+    push %r11
+    call hrmacro_unwind_to
+    pop %r11
+.Lsequm:
+";
+
 fn finalize_trace(mut out: String, target: Target) -> String {
     out.push_str(dyn_float::HELPERS);
     if out.contains("call hbc_str_dyn_fail") {
@@ -31109,7 +31135,12 @@ fn finalize_trace(mut out: String, target: Target) -> String {
     if out.contains("call hbc_str_f64") {
         out.push_str(&f64_fmt_helper());
     }
-    if MACRO_CONTEXT.with(|c|c.get()) {
+    // The trace record carries a macro-context pointer only in macro mode.
+    // Keep non-macro/MT sequence pads byte-for-byte free of macro accesses.
+    let macro_mode = MACRO_CONTEXT.with(|c|c.get());
+    out = out.replace("    # @SEQ_MACRO_MARK@\n", if macro_mode { SEQ_MACRO_MARK } else { "" })
+        .replace("    # @SEQ_MACRO_UNWIND@\n", if macro_mode { SEQ_MACRO_UNWIND } else { "" });
+    if macro_mode {
         out.push_str(&macro_helpers(target));
     }
     if ["ctod", "date_today", "date_render", "stod", "dtos", "year", "day", "month", "dow", "cdow", "cmonth", "dtoc", "date_add", "date_diff", "date_days", "date_from_days"].iter().any(|name| out.contains(&format!("call hbc_{}",name))) {
@@ -34144,7 +34175,7 @@ hbc_str_cache: .zero 128
 # address; the throwable runtime-error helpers and Break() push the value
 # on the exception stack and unwind to the innermost pad. FINALLY bodies
 # are local subroutines the normal path and the handler both call; a TRY
-# without CATCH re-enters hbc_seq_unwind afterwards. 256 pads of 80 bytes (offset 64 saves the receiving trace top),
+# without CATCH re-enters hbc_seq_unwind afterwards. 256 pads of 80 bytes (offset 64 saves the receiving trace top, offset 72 the macro frame mark),
 # 256 pending exceptions of 16 bytes. Registered limits: the stacks are
 # process-global (TRY inside hb_threadStart code is out of this
 # increment), and an unwound frame's owned temporaries leak (error paths).
@@ -34166,6 +34197,8 @@ hbc_seq_push:
     mov %rdi, 56(%r11)
     mov hbc_trace_top(%rip), %rax
     mov %rax, 64(%r11)
+    movq $0, 72(%r11)
+    # @SEQ_MACRO_MARK@
     incq hbc_seq_depth(%rip)
     ret
 
@@ -34224,6 +34257,7 @@ hbc_seq_unwind:
     mov 40(%r11), %r15
     mov 64(%r11), %rax
     mov %rax, hbc_trace_top(%rip)
+    # @SEQ_MACRO_UNWIND@
     mov 48(%r11), %rsp
     mov 56(%r11), %r11
     jmp *%r11

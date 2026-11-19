@@ -116,3 +116,44 @@ hrm_builtin_fail:
     mov %rcx,40(%rsp)
     mov %rsp,hbc_trace_top(%rip)
     call hrm_fail
+# Sequence-unwind support (MEMVAR frame mismatch M0 fix).
+# A TRY/CATCH pad (hbc_seq_push) saves the bridge's current frame id in pad
+# offset 72; hbc_seq_unwind calls hrmacro_unwind_to so a throwing function's
+# frame, whose epilogue hrmacro_leave is skipped by the longjmp, does not
+# stay orphaned on the frame stack (Harbour unwinds the memvar stack in
+# RECOVER). Offsets: hrmacro_context.bridge is at +0 (runtime/hrmacro.h),
+# hrmb_context.storage at +0 (runtime/hrmembridge.h), and
+# hrmv_context.current_frame at +48 (runtime/hrmemvar.h).
+.globl hrmacro_frame_mark
+hrmacro_frame_mark:
+    mov 48(%rdi),%rax
+    ret
+.globl hrmacro_unwind_to
+hrmacro_unwind_to:
+    push %rbp
+    mov %rsp,%rbp
+    push %rbx
+    push %r12
+    and $-16,%rsp
+    mov %rdi,%rbx
+    mov %rsi,%r12
+.Lunw_loop:
+    mov 48(%rbx),%rax
+    cmp %r12,%rax
+    je .Lunw_done
+    test %rax,%rax
+    jz .Lunw_bad
+    mov %rax,%rsi
+    mov %rbx,%rdi
+    call hrmacro_leave
+    jmp .Lunw_loop
+.Lunw_bad:
+    xor %esi,%esi
+    mov %rbx,%rdi
+    call hrmacro_leave
+.Lunw_done:
+    lea -16(%rbp),%rsp
+    pop %r12
+    pop %rbx
+    pop %rbp
+    ret
