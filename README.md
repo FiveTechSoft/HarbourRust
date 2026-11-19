@@ -64,6 +64,15 @@ known failures and the history of published increments.
 
 ## Active development
 
+- **Peephole pass (19 November).** `src/peep.rs` rewrites exact local
+  patterns of the stack-machine output after pruning: operand spills through
+  the stack become a register move, and double jumps, jumps to the next
+  label and release/re-reserve pairs go away (`--no-peephole` turns it off).
+  The recursive `fib` body drops from 91 to 73 instructions and `fib(35)`
+  from 198 to 164 ms on native Windows 11. All 1262 runnable manifest rows
+  give identical stdout, stderr and exit status before and after, plain and
+  with `--instrument`. Details: [docs/PEEPHOLE-2026-11-19.md](docs/PEEPHOLE-2026-11-19.md).
+
 - **Logical codeblocks and `AScan` with a block (18 November).** `{|x| x > 2}`
   was rejected (issue #1, section 3.4). A block whose last expression is a
   comparison, `.AND.`/`.OR.`/`.NOT.` or a logical literal now returns a
