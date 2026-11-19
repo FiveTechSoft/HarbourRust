@@ -497,7 +497,9 @@ fn cg_dyn_int_trunc(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<Stri
     out.push_str("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n    movq $0, 24(%rsp)\n");
     out.push_str(&format!("    cmp $5, %al\n    je .Ldivfloat{k}\n    test %rax, %rax\n    je .Ldivint{k}\n    cmp $9, %rax\n    je .Ldivint{k}\n    movq $1, 24(%rsp)\n    movq $0, 16(%rsp)\n    jmp .Ldivsave{k}\n.Ldivfloat{k}:\n    call hbc_float_unpack\n    cvttsd2si %xmm0, %rax\n    mov %rax, 16(%rsp)\n    jmp .Ldivsave{k}\n.Ldivint{k}:\n    mov %rdx, 16(%rsp)\n.Ldivsave{k}:\n"));
     cg_dyn_owned_release32(owned, k, out);
-    out.push_str("    mov 24(%rsp), %rcx\n    mov 16(%rsp), %rax\n    add $32, %rsp\n    test %rcx, %rcx\n    jne hbc_type_error\n    xor %edx, %edx\n");
+    // Tag 9 carries literal/copy integer display provenance; tag 0 and
+    // truncated floats are runtime results. Read the saved tag after release.
+    out.push_str("    mov 24(%rsp), %rcx\n    mov 16(%rsp), %rax\n    xor %edx, %edx\n    cmpq $9, (%rsp)\n    sete %dl\n    add $32, %rsp\n    test %rcx, %rcx\n    jne hbc_type_error\n");
 }
 fn cg_div_operand(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target) {
     if expr_ty(e, env, sigs) != Ty::Dyn {
@@ -12716,10 +12718,10 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
         }
         // These routes already return the selected/snapshotted metadata.
         Expr::Inc(..) | Expr::Set(..) | Expr::Seq(_) => {}
-        // Int is an identity on an I64 pair, including its display provenance.
-        // Float/Dyn truncation still produces runtime-computed metadata.
+        // Integer Int inputs keep display provenance, including tag-9 Dyn.
+        // The Dyn truncation adapter returns runtime metadata for floats.
         Expr::Call(id, args) if is_builtin(id, "int") && args.len() == 1
-            && expr_ty(&args[0], env, sigs) == Ty::I64 => {}
+            && matches!(expr_ty(&args[0], env, sigs), Ty::I64 | Ty::Dyn) => {}
         Expr::Call(id, _) if is_builtin(id, "iif") || is_builtin(id, "eval")
             || sigs.iter().any(|s| s.name == *id && s.ret == Some(Ty::I64)) => {}
         _ => out.push_str(if fold_int(e).is_some() {
