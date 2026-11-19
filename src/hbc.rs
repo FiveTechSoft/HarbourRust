@@ -12716,6 +12716,10 @@ fn cg_expr(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out:
         }
         // These routes already return the selected/snapshotted metadata.
         Expr::Inc(..) | Expr::Set(..) | Expr::Seq(_) => {}
+        // Int is an identity on an I64 pair, including its display provenance.
+        // Float/Dyn truncation still produces runtime-computed metadata.
+        Expr::Call(id, args) if is_builtin(id, "int") && args.len() == 1
+            && expr_ty(&args[0], env, sigs) == Ty::I64 => {}
         Expr::Call(id, _) if is_builtin(id, "iif") || is_builtin(id, "eval")
             || sigs.iter().any(|s| s.name == *id && s.ret == Some(Ty::I64)) => {}
         _ => out.push_str(if fold_int(e).is_some() {
