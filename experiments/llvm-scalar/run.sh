@@ -34,16 +34,33 @@ objcopy --redefine-sym ll_main=ll_main_arraywork run/arraywork.o
 python3 prepare_bench.py
 as -o bench_current.o bench_current.s
 as -o bench_current_notrace.o bench_current_notrace.s
-"$RUSTC" -O -C target-cpu=x86-64 -C overflow-checks=off -C link-arg=bench_current.o -C link-arg=corpus.o -C link-arg=run/arraywork.o -C relocation-model=static validate.rs -o run/validate
+# bench_current.s assembles the benchmarked function bodies and the shared
+# rt_* adapters, but the four runtime helpers only reachable from the full
+# runtime (hbc_pstrt, hbc_print_sep, hbc_inc_overflow, hbc_bound_error)
+# stay undefined. Supply them from the assembled corpus runtime: localize
+# the globals that bench_current.o already provides (entry point, trace
+# top and the rt_* adapters) and globalize exactly those four helpers.
+# The helpers' own local labels and sequence machinery stay inside the
+# object, so the link gets the real implementations, not text excerpts.
+objcopy --redefine-sym _start=hbcs_bench_entry \
+ --localize-symbol hbc_trace_top \
+ --localize-symbol rt_nl --localize-symbol rt_sep --localize-symbol rt_int \
+ --localize-symbol rt_computed --localize-symbol rt_str --localize-symbol rt_pstrt \
+ --localize-symbol rt_pflush --localize-symbol rt_pdrop --localize-symbol rt_psep \
+ --localize-symbol rt_inc_error --localize-symbol rt_bound_error \
+ --globalize-symbol hbc_pstrt --globalize-symbol hbc_print_sep \
+ --globalize-symbol hbc_inc_overflow --globalize-symbol hbc_bound_error \
+ run/corpus-runtime.o run/corpus-runtime-bench.o
+"$RUSTC" -O -C target-cpu=x86-64 -C overflow-checks=off -C link-arg=bench_current.o -C link-arg=run/corpus-runtime-bench.o -C link-arg=corpus.o -C link-arg=run/arraywork.o -C relocation-model=static validate.rs -o run/validate
 run/validate
 # Correctness-only equivalent traced Rust control. No timing samples here.
 python3 make_traced_rust.py
 python3 make_rust_validation.py
-"$RUSTC" -O -C target-cpu=x86-64 -C overflow-checks=off -C link-arg=bench_current.o -C link-arg=corpus.o -C link-arg=run/arraywork.o -C relocation-model=static run/validate-traced-rust.rs -o run/validate-traced-rust
+"$RUSTC" -O -C target-cpu=x86-64 -C overflow-checks=off -C link-arg=bench_current.o -C link-arg=run/corpus-runtime-bench.o -C link-arg=corpus.o -C link-arg=run/arraywork.o -C relocation-model=static run/validate-traced-rust.rs -o run/validate-traced-rust
 run/validate-traced-rust
 # Timings are opt-in; routine correctness runs must not create new samples.
 if [ "${RUN_BENCHMARKS:-0}" = 1 ]; then
-"$RUSTC" -O -C target-cpu=x86-64 -C overflow-checks=off -C link-arg=bench_current.o -C link-arg=corpus.o -C link-arg=run/arraywork.o -C relocation-model=static bench.rs -o run/bench
+"$RUSTC" -O -C target-cpu=x86-64 -C overflow-checks=off -C link-arg=bench_current.o -C link-arg=run/corpus-runtime-bench.o -C link-arg=corpus.o -C link-arg=run/arraywork.o -C relocation-model=static bench.rs -o run/bench
 run/bench "${BENCH_N:-1000000}" > run/bench.csv
 # Deliberately untraced control for comparison to untraced Rust. Not product parity.
 run/hbc corpus.prg run/corpus-no-trace.ll --experimental-llvm-no-trace
@@ -51,9 +68,9 @@ python3 llvm_aot.py run/corpus-no-trace.ll run/corpus-no-trace.o
 run/hbc arraywork.prg run/arraywork-no-trace.ll --experimental-llvm-no-trace
 python3 llvm_aot.py run/arraywork-no-trace.ll run/arraywork-no-trace.o
 objcopy --redefine-sym ll_main=ll_main_arraywork run/arraywork-no-trace.o
-"$RUSTC" -O -C target-cpu=x86-64 -C overflow-checks=off -C link-arg=bench_current_notrace.o -C link-arg=run/corpus-no-trace.o -C link-arg=run/arraywork-no-trace.o -C relocation-model=static bench.rs -o run/bench-no-trace
+"$RUSTC" -O -C target-cpu=x86-64 -C overflow-checks=off -C link-arg=bench_current_notrace.o -C link-arg=run/corpus-runtime-bench.o -C link-arg=run/corpus-no-trace.o -C link-arg=run/arraywork-no-trace.o -C relocation-model=static bench.rs -o run/bench-no-trace
 run/bench-no-trace "${BENCH_N:-1000000}" > run/bench-no-trace.csv
-"$RUSTC" -O -C target-cpu=x86-64 -C overflow-checks=off -C link-arg=bench_current.o -C link-arg=corpus.o -C link-arg=run/arraywork.o -C relocation-model=static run/bench-traced-rust.rs -o run/bench-traced-rust
+"$RUSTC" -O -C target-cpu=x86-64 -C overflow-checks=off -C link-arg=bench_current.o -C link-arg=run/corpus-runtime-bench.o -C link-arg=corpus.o -C link-arg=run/arraywork.o -C relocation-model=static run/bench-traced-rust.rs -o run/bench-traced-rust
 run/bench-traced-rust "${BENCH_N:-1000000}" > run/bench-traced-rust.csv
 else
  rm -f run/bench.csv run/bench-no-trace.csv run/bench-traced-rust.csv
