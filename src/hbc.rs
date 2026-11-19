@@ -8517,9 +8517,11 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
             // registered acceptance from spike 1); `=` and orderings are
             // unmeasured on objects and rejected by name. Object-vs-scalar
             // (NIL included) is likewise a named rejection in this
-            // increment. type_expr side effects are monotone, so the
-            // double evaluation on the fall-through path is harmless.
+            // increment. Calls can consume string arguments while typing.
+            // Keep those effects on object paths (which return here), but
+            // roll back speculative moves before the scalar pass below.
             {
+                let before: Vec<bool> = env.iter().map(|v| v.moved).collect();
                 let ta = type_expr(a, env, sigs, n);
                 let tb = type_expr(b, env, sigs, n);
                 if let (Ok(ta), Ok(tb)) = (ta, tb) {
@@ -8536,6 +8538,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                         return Err(format!("line {}: comparing an object with {} is not in this increment", n, ty_name(if aobj { tb } else { ta })));
                     }
                 }
+                for (local, moved) in env.iter_mut().zip(before) { local.moved = moved; }
             }
             // A grown casilla of an array of arrays compares against NIL
             // with `=` / `#` (oracle n4): the borrow reads the child
