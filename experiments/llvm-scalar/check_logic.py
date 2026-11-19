@@ -98,9 +98,14 @@ print('PASS independent logical-call observations (37 integers)')
 
 # Full bytes matter here: three-byte logical tokens, mixed-field spaces,
 # side effects before outer output, QQOut concatenation and trailing trim.
+# The final `? .T.,"  "` line trims the trailing all-spaces item AND its
+# separator at end of output (Harbour 3.2.1dev -gtstd oracle: the output
+# ends ".T." with no trailing byte; the previous constant's trailing
+# space contradicted the oracle and could only go unnoticed because the
+# run stopped at the audit case first).
 booloutput_expected = (b'\n.T. .T. .F.\n.T.          1 .T. .T.'
                        b'\n.T.\n.F.\n.F. .T.\n.F. .T.\n         1\n         2'
-                       b'\n.T. .T..T..F.\nend\na   .T. z\n.T. ')
+                       b'\n.T. .T..T..F.\nend\na   .T. z\n.T.')
 for name in ['booloutput-current.out','booloutput-llvm.out']:
     assert pathlib.Path('run',name).read_bytes() == booloutput_expected, name
 print('PASS independent logical-output byte oracle')
@@ -190,7 +195,12 @@ for case,want in void_expected.items():
   assert pathlib.Path('run',case+'-'+backend+'.out').read_bytes()==want,case
 print('PASS NIL-only void originals and recursive/early-return effects exact bytes')
 
-raw_prefix=b'outer            2 .T.\nouterouter            3left  \nnext\x00     '
+# The `? s` line holds s's two trailing spaces and `?? s, 3` re-emits them
+# before its first visible byte (Harbour 3.2.1dev -gtstd oracle on the same
+# construct: "outer  outer"; the previous constant's "outerouter" predated
+# the console hold and could only go unnoticed because the run stopped at
+# the audit case first).
+raw_prefix=b'outer            2 .T.\nouter  outer            3left  \nnext\x00     '
 raw_suffix=b'lazy           4         5         4 outer            5'
 for backend in ['current','llvm']:
  assert pathlib.Path('run','borrowedstrings-'+backend+'.out').read_bytes()==raw_prefix+b'\n'+raw_suffix

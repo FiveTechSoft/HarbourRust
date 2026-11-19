@@ -4,11 +4,17 @@
 # Only evidence directories are written; the compiler is never modified.
 set -eu
 ROOT=$(CDPATH= cd -- "$(dirname "$0")/../.." && pwd)
-exec python3 - "$ROOT" "${1:-./hbc}" <<'PY'
+exec python3 - "$ROOT" "${1:-./hbc}" "${2:---target=macho}" <<'PY'
 from pathlib import Path
 import hashlib, json, platform, subprocess, sys, tempfile
 root = Path(sys.argv[1])
 hbc = Path(sys.argv[2]).resolve()
+target = sys.argv[3]
+# Mach-O CPU type the produced binaries must carry: little-endian MH_MAGIC_64 + CPU type.
+magic = {'--target=macho': bytes.fromhex('cffaedfe07000001'),
+         '--target=macho-arm64': bytes.fromhex('cffaedfe0c000001')}.get(target)
+if magic is None:
+    sys.exit(f'Unsupported target for this battery: {target}')
 if not hbc.is_file():
     sys.exit('Missing compiler: build hbc from the current checkout and pass its path.')
 work = Path(tempfile.mkdtemp(prefix='hbc-classes-macho.'))
@@ -38,21 +44,21 @@ run([hbc, '--version'], 'version', 15)
 failed = []
 for name in sorted(actual):
     exe = work/name
-    rc, out, err = run([hbc, inputs/(name+'.prg'), exe, '--target=macho', '-I', root/'tests'], name+'.compile', 60)
+    rc, out, err = run([hbc, inputs/(name+'.prg'), exe, target, '-I', root/'tests'], name+'.compile', 60)
     if name in negative:
         ok = rc == 1 and negative[name].encode() in err and b'panic' not in err.lower()
     elif rc != 0:
         ok = False
     else:
-        # Magic and CPU type: little-endian MH_MAGIC_64, x86_64.
-        ok = exe.is_file() and exe.read_bytes()[:8] == bytes.fromhex('cffaedfe07000001')
+        # Magic and CPU type matching the requested target.
+        ok = exe.is_file() and exe.read_bytes()[:8] == magic
         if ok:
             rc, out, err = run([exe], name+'.run', 20)
             ok = rc == 0 and not err and out == (expected/(name+'.out')).read_bytes()
     print(('PASS ' if ok else 'FAIL ')+name, flush=True)
     if not ok:
         failed.append(name)
-print(f'macho class battery: {43-len(failed)} pass, {len(failed)} fail (of 43)')
+print(f'macho class battery ({target}): {43-len(failed)} pass, {len(failed)} fail (of 43)')
 if failed:
     print('FAILED:', ', '.join(failed))
 sys.exit(bool(failed))
