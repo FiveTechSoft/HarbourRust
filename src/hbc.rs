@@ -19749,7 +19749,69 @@ fn layout_locals(stmts: &[Stmt], env: &mut Vec<CgLocal>, sigs: &[Sig], frame: &m
 // haystack is .F. (measured). Case-sensitive byte compare. Clobbers rcx,
 // r8, r10, r11 and rax; leaf code with no calls and no stack use, so it
 // adds no ABI surface (no helper symbol, no canary needed).
+// Inline word-wise string comparison for borrowed operands (no owned
+// temporaries): the exact xBase semantics of hbc_str_eq / hbc_str_xeq /
+// hbc_str_cmp - compare over the RIGHT operand's length with the left
+// read NUL-padded past its end; `==` is the exact byte compare - but
+// eight bytes per step and without the call. Inputs like the helpers:
+// %rax,%rdx = lhs ptr,len; %rcx,%r8 = rhs ptr,len. Clobbers r9-r11 only
+// (the helpers also return a result in rax). Word loads never cross
+// either operand's end: a word step runs only while i+8 stays within
+// the right operand's full words AND i+8 <= lhs len; anything else
+// falls into the byte loop, so no out-of-bounds read is possible.
+// Emits the jump to true_label itself; the false path falls through.
+fn cg_str_cmp_inline(out: &mut String, k: usize, op: &CmpOp, true_label: &str) {
+    // Word phase preamble shared by `=`/`#` and the ordering ops.
+    let word_phase = format!("    xor %r11d, %r11d\n    mov %r8, %r9\n    and $-8, %r9\n.Lsiw{k}:\n    cmp %r9, %r11\n    jae .Lsit{k}\n    lea 8(%r11), %r10\n    cmp %rdx, %r10\n    ja .Lsit{k}\n    mov (%rax,%r11), %r10\n    cmp (%rcx,%r11), %r10\n");
+    // Byte tail over the right operand's length, left NUL-padded (the
+    // same scan as the helpers, entered at the word phase's stop index).
+    let byte_tail = format!(".Lsit{k}:\n    cmp %r8, %r11\n");
+    let pad_block = format!("    movzbl (%rcx,%r11), %r10d\n    cmp %rdx, %r11\n    jae .Lsipd{k}\n    movzbl (%rax,%r11), %r9d\n    jmp .Lsicb{k}\n.Lsipd{k}:\n    xor %r9d, %r9d\n.Lsicb{k}:\n    cmp %r9b, %r10b\n");
+    match op {
+        CmpOp::EqEq => {
+            // Exact compare: equal lengths first, then words and tail
+            // over that length (no padding can occur).
+            out.push_str(&format!("    cmp %r8, %rdx\n    jne .Lsin{k}\n    xor %r11d, %r11d\n    mov %rdx, %r9\n    and $-8, %r9\n.Lsiw{k}:\n    cmp %r9, %r11\n    jae .Lsit{k}\n    mov (%rax,%r11), %r10\n    cmp (%rcx,%r11), %r10\n    jne .Lsin{k}\n    add $8, %r11\n    jmp .Lsiw{k}\n.Lsit{k}:\n    cmp %rdx, %r11\n    jae .Lsiy{k}\n    movzbl (%rcx,%r11), %r10d\n    movzbl (%rax,%r11), %r9d\n    cmp %r9b, %r10b\n    jne .Lsin{k}\n    inc %r11\n    jmp .Lsit{k}\n.Lsiy{k}:\n    jmp {true_label}\n.Lsin{k}:\n"));
+        }
+        CmpOp::Eq | CmpOp::Ne => {
+            out.push_str(&word_phase);
+            out.push_str(&format!("    jne .Lsin{k}\n    add $8, %r11\n    jmp .Lsiw{k}\n"));
+            out.push_str(&byte_tail);
+            out.push_str(&format!("    jae .Lsiy{k}\n"));
+            out.push_str(&pad_block);
+            out.push_str(&format!("    jne .Lsin{k}\n    inc %r11\n    jmp .Lsit{k}\n"));
+            // The true block goes last so the false path falls through.
+            if matches!(op, CmpOp::Eq) {
+                out.push_str(&format!(".Lsiy{k}:\n    jmp {true_label}\n.Lsin{k}:\n"));
+            } else {
+                out.push_str(&format!(".Lsin{k}:\n    jmp {true_label}\n.Lsiy{k}:\n"));
+            }
+        }
+        _ => {
+            // Ordering: a word mismatch scans that word byte-wise (both
+            // operands in bounds there). Exits mirror hbc_str_cmp:
+            // rhs byte > lhs byte is a<b (.Lsim, its -1), rhs < lhs is
+            // a>b (.Lsig, its +1), equal over the right operand's
+            // length is .Lsiz (its 0).
+            out.push_str(&word_phase);
+            out.push_str(&format!("    jne .Lsib{k}\n    add $8, %r11\n    jmp .Lsiw{k}\n.Lsib{k}:\n    movzbl (%rcx,%r11), %r10d\n    movzbl (%rax,%r11), %r9d\n    cmp %r9b, %r10b\n    jb .Lsig{k}\n    ja .Lsim{k}\n    inc %r11\n    jmp .Lsib{k}\n"));
+            out.push_str(&byte_tail);
+            out.push_str(&format!("    jae .Lsiz{k}\n"));
+            out.push_str(&pad_block);
+            out.push_str(&format!("    jb .Lsig{k}\n    ja .Lsim{k}\n    inc %r11\n    jmp .Lsit{k}\n"));
+            match op {
+                CmpOp::Lt => out.push_str(&format!(".Lsim{k}:\n    jmp {true_label}\n.Lsiz{k}:\n.Lsig{k}:\n")),
+                CmpOp::Le => out.push_str(&format!(".Lsim{k}:\n.Lsiz{k}:\n    jmp {true_label}\n.Lsig{k}:\n")),
+                CmpOp::Gt => out.push_str(&format!(".Lsig{k}:\n    jmp {true_label}\n.Lsiz{k}:\n.Lsim{k}:\n")),
+                CmpOp::Ge => out.push_str(&format!(".Lsig{k}:\n.Lsiz{k}:\n    jmp {true_label}\n.Lsim{k}:\n")),
+                _ => unreachable!("Eq/Ne/EqEq/Contains handled outside"),
+            }
+        }
+    }
+}
+
 fn cg_str_contains(out: &mut String, k: usize) {
+
     out.push_str(&format!("    test %rdx, %rdx\n    je .Lsct_f{k}\n    cmp %r8, %rdx\n    ja .Lsct_f{k}\n    sub %rdx, %r8\n    inc %r8\n.Lsct_o{k}:\n    xor %r10, %r10\n.Lsct_i{k}:\n    movzbl (%rcx,%r10), %r11d\n    cmp (%rax,%r10), %r11b\n    jne .Lsct_n{k}\n    inc %r10\n    cmp %rdx, %r10\n    jb .Lsct_i{k}\n    mov $1, %r11d\n    jmp .Lsct_d{k}\n.Lsct_n{k}:\n    inc %rcx\n    dec %r8\n    jnz .Lsct_o{k}\n.Lsct_f{k}:\n    xor %r11d, %r11d\n.Lsct_d{k}:\n    mov %r11d, %eax\n"));
 }
 
@@ -20163,6 +20225,12 @@ fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<Strin
                 if b_tmp { out.push_str("    mov (%rsp), %rdi\n    call hbc_freestr\n"); }
                 out.push_str(&format!("    mov {}(%rsp), %rax\n    add ${}, %rsp\n", 16 * nt, 16 * (nt + 1)));
             }
+            if !a_tmp && !b_tmp && !matches!(op, CmpOp::Contains) {
+                // Borrowed operands: word-wise inline compare, same
+                // semantics as the helpers, no call (cg_str_cmp_inline
+                // emits the jump to true_label itself).
+                cg_str_cmp_inline(out, fresh_lbl(), op, true_label);
+            } else {
             let j = match op {
                 CmpOp::Eq | CmpOp::Ne | CmpOp::EqEq => {
                     if !a_tmp && !b_tmp {
@@ -20193,6 +20261,7 @@ fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<Strin
                 }
             };
             out.push_str(&format!("    {} {}\n", j, true_label));
+            }
         }
         Expr::Cmp(op, a, b) if matches!(op, CmpOp::EqEq)
             && matches!(expr_ty(a, env, sigs), Ty::DArr | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::Hash)
