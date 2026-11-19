@@ -1,0 +1,6 @@
+#include "hbclass.ch"
+CREATE CLASS A
+ DATA a,
+ENDCLASS
+FUNCTION Main()
+RETURN NIL

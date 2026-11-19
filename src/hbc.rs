@@ -3858,7 +3858,24 @@ fn parse(src: &str) -> Result<Prog, String> {
                         }
                     }
                 }
+                // VAR is the native hbclass alias for DATA. A bare list
+                // declares independent NIL-initialized slots, not one name.
+                if matches!(lt.first(), Some(Tok::KwData)) || matches!(lt.first(), Some(Tok::Ident(v)) if v.eq_ignore_ascii_case("var")) {
+                    if lt[1..].iter().all(|t| matches!(t, Tok::Ident(_) | Tok::Comma)) {
+                        if matches!(lt.last(), Some(Tok::Comma)) { return Err(format!("line {}: trailing comma in DATA list", ln)); }
+                        let names = parse_param_names(&lt[1..], ln).map_err(|m| m.replace("parameter", "DATA name"))?;
+                        if names.is_empty() { return Err(format!("line {}: empty DATA list", ln)); }
+                        for name in names { decl.datas.push((name, None)); }
+                        i += 1;
+                        continue;
+                    }
+                }
                 match lt.as_slice() {
+                    [Tok::Ident(v), Tok::Ident(d), Tok::KwInit, rest @ ..] if v.eq_ignore_ascii_case("var") => {
+                        check_ident(d, ln)?;
+                        decl.datas.push((d.clone(), Some(parse_expr_tokens(rest.to_vec(), ln)?)));
+                        i += 1;
+                    }
                     [Tok::KwEndclass] => { i += 1; break; }
                     [Tok::KwData, Tok::Ident(d)] => { check_ident(d, ln)?; decl.datas.push((d.clone(), None)); i += 1; }
                     [Tok::KwData, Tok::Ident(d), Tok::KwInit, rest @ ..] => {
@@ -4429,11 +4446,34 @@ fn check_data_value(n: usize, name: &str, t: Ty) -> Result<(), String> {
     }
 }
 // Build the flat class table. Named, fatal errors: duplicate class/DATA,
-// unknown parent (parents must precede children), declared-but-undefined
+// unknown parent or cyclic inheritance, declared-but-undefined
 // method, defined-but-undeclared method, non-scalar INIT.
 fn build_class_table(decls: &[ClassDecl], methods: &[MethodDef]) -> Result<Vec<ClassInfo>, String> {
+    // Resolve declarations before assigning flat layout indices. Stable DFS
+    // keeps ordinary source order while allowing a parent declared later.
+    fn order<'a>(i: usize, ds: &'a [ClassDecl], state: &mut [u8], out: &mut Vec<&'a ClassDecl>) -> Result<(), String> {
+        if state[i] == 2 { return Ok(()); }
+        if state[i] == 1 { return Err(format!("inheritance cycle involving class `{}`", ds[i].name)); }
+        state[i] = 1;
+        if let Some(p) = &ds[i].parent {
+            let j = ds.iter().position(|d| d.name.eq_ignore_ascii_case(p))
+                .ok_or_else(|| format!("class `{}` inherits from unknown class `{}`", ds[i].name, p))?;
+            order(j, ds, state, out)?;
+        }
+        state[i] = 2;
+        out.push(&ds[i]);
+        Ok(())
+    }
+    let mut ordered = Vec::new();
+    let mut state = vec![0; decls.len()];
+    for i in 0..decls.len() {
+        if decls[..i].iter().any(|d| d.name.eq_ignore_ascii_case(&decls[i].name)) {
+            return Err(format!("duplicate class `{}`", decls[i].name));
+        }
+        order(i, decls, &mut state, &mut ordered)?;
+    }
     let mut table: Vec<ClassInfo> = Vec::new();
-    for d in decls {
+    for d in ordered {
         let key = d.name.to_lowercase();
         if table.iter().any(|c| c.name.to_lowercase() == key) {
             return Err(format!("duplicate class `{}`", d.name));
@@ -9091,6 +9131,11 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 // (the `local d := Dog():New()` idiom).
                 let is_ctor = CLASSES.with(|c| c.borrow()[ci as usize].ctor.as_deref() == Some(fname.as_str()));
                 return Ok(if is_ctor { Ty::Obj(ci) } else { rt2 });
+            }
+            // User methods retain priority over the universal ClassName.
+            if lname == "classname" && data_lookup(ci, &lname).is_none() {
+                if !args.is_empty() { return Err(format!("line {}: ClassName expects no arguments", n)); }
+                return Ok(Ty::StrOwn);
             }
             if data_lookup(ci, &lname).is_some() {
                 if !args.is_empty() {
@@ -14194,6 +14239,7 @@ fn emit_class_runtime(sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, ta
     }
     for (i, c) in classes.iter().enumerate() {
         out.push_str(&format!("    .section .rodata\n.Lclsname{}: .asciz \"{}\"\n", i, c.name));
+        out.push_str(&format!(".Lclsupper{}: .ascii \"{}\"\n", i, c.name.to_ascii_uppercase()));
         if !c.slots.is_empty() {
             out.push_str(&format!("    .align 8\n.Lclsmt{}:\n", i));
             for (_, f) in &c.slots {
@@ -14301,6 +14347,27 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                 DISPATCH_SLOT.with(|c| c.set(if lname.starts_with("@super/") { -1 } else { slot as i64 }));
                 cg_expr_inner(&Expr::Call(fname, cargs), env, sigs, strs, out, target);
                 DISPATCH_SLOT.with(|c| c.set(-1));
+                return;
+            }
+            if lname == "classname" && data_lookup(ci, &lname).is_none() {
+                // Read the runtime descriptor, not the receiver's inferred
+                // class: an inherited method still names the child instance.
+                cg_value(recv, env, sigs, strs, out, target);
+                if module_static::has_objects() { out.push_str("    test %rax, %rax\n    je hbc_objnil_error\n"); }
+                let fresh_receiver = obj_fresh(recv, env, sigs);
+                if fresh_receiver { out.push_str("    sub $32, %rsp\n    mov %rax, (%rsp)\n"); }
+                out.push_str("    mov (%rax), %rax\n");
+                let done = fresh_lbl();
+                CLASSES.with(|c| {
+                    for (i, cl) in c.borrow().iter().enumerate() {
+                        let next = fresh_lbl();
+                        out.push_str(&format!("    lea hrobj_desc_{}(%rip), %rcx\n    cmp %rcx, %rax\n    jne .Lclsnext{}\n    lea .Lclsupper{}(%rip), %rdi\n    mov ${}, %rsi\n    jmp .Lclsfound{}\n.Lclsnext{}:\n", i,next,i,cl.name.to_ascii_uppercase().len(),done,next));
+                    }
+                });
+                out.push_str(&format!("    call hbc_type_error\n.Lclsfound{}:\n    call hbc_strcpy\n", done));
+                if fresh_receiver {
+                    out.push_str("    mov %rax, 8(%rsp)\n    mov %rdx, 16(%rsp)\n    mov (%rsp), %rdi\n    call hrobj_release\n    mov 8(%rsp), %rax\n    mov 16(%rsp), %rdx\n    add $32, %rsp\n");
+                }
                 return;
             }
             if !args.is_empty() { unreachable!("checked") }
@@ -18792,6 +18859,11 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
                     if let Some(s) = sigs.iter().find(|s| s.name == fname) {
                         if let Some(r) = s.ret { return r; }
                     }
+                }
+            }
+            if name.eq_ignore_ascii_case("classname") {
+                if let Ty::Obj(ci) = expr_ty(recv, env, sigs) {
+                    if data_lookup(ci, "classname").is_none() { return Ty::StrOwn; }
                 }
             }
             Ty::Dyn // DATA casilla
