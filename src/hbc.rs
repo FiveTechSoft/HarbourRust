@@ -24181,13 +24181,18 @@ const REG_SFREE_W: &str = r"    # harness registry (string free): computed 16 + 
     mov %r9, (%r11,%rcx,8)
     mov %rdx, hbc_reg_count(%rip)
 ";
-const REG_HFREE_W: &str = r"    # harness registry (hash data block, 16-byte header): computed
-    # 16 + cap*32 must equal the recorded allocation size, and the block
+const REG_HFREE_W: &str = r"    # harness registry (hash block: buckets cap*4B + next cap*4B +
+    # 16-byte header + cap*32B entries): computed 16 + cap*40 must equal
+    # the recorded allocation size, base is rdi-16-cap*8, and the block
     # must be live (double free = absent).
     mov -8(%rdi), %rax
-    shl $5, %rax
-    add $16, %rax
-    lea -16(%rdi), %r8
+    mov %rax, %r8
+    shl $3, %r8
+    shl $3, %rax
+    lea 16(%rax,%rax,4), %rax
+    lea -16(%rdi), %r9
+    sub %r8, %r9
+    mov %r9, %r8
     mov hbc_reg_count(%rip), %rcx
     lea hbc_reg_base(%rip), %r10
     lea hbc_reg_size(%rip), %r11
@@ -24402,77 +24407,199 @@ const HASH_HELPERS: &str = r"
 # {tag, payload} pairs (i64 or NIL in v1). Target-independent logic: all
 # OS contact goes through hbc_alloc/hbc_free.
 
+# --- hash bucket index (v2) ---------------------------------------------
+# Block layout: [buckets cap*4][next cap*4][flags][capacity][entries cap*32],
+# with the data pointer at the entries, so -16(data)=flags and -8(data)=cap
+# keep their v1 meaning and every entry-addressing path is unchanged.
+# buckets hold index+1 (0 empty); next[i] links to the previous bucket head
+# (index+1, 0 end). Chains are prepend-ordered, so the FIRST chain match is
+# the LAST insertion-order match (hk171/hk174). Keys hash FNV-1a over
+# ALWAYS-folded ASCII bytes, so toggling CaseMatch never invalidates the
+# index (hk169-hk176): sensitive lookups filter exact bytes inside the
+# bucket. A header-only block (capacity 0) is still 16 bytes, so hbc_hclone
+# and hbc_hsetcasematch need no change. Block bytes: 16 + 40*cap.
+
+# hbc_hhash: rdi = key bytes, rsi = length. Returns eax = FNV-1a 32 over
+# ASCII-uppercase-folded bytes. Leaf: clobbers rax, rcx, r8 only.
+hbc_hhash:
+    mov $0x811c9dc5, %eax
+    xor %ecx, %ecx
+1: cmp %rsi, %rcx
+    jae 2f
+    movzbl (%rdi,%rcx), %r8d
+    cmp $97, %r8b
+    jb 3f
+    cmp $122, %r8b
+    ja 3f
+    sub $32, %r8b
+3: xor %r8d, %eax
+    imul $0x01000193, %eax
+    inc %rcx
+    jmp 1b
+2: ret
+
+# hbc_hfind: rdi = slot address, rsi = key bytes, rdx = key length.
+# Returns rax = the entry's 0-based index, or -1 on a miss. Matching is
+# exactly the v1 behavior: flag -16(data)!=0 is byte exact; flag==0 folds
+# ASCII letters and the first chain match is the LAST insertion-order
+# match (hk171). A zero live count short-circuits before touching buckets
+# (a capacity-0 header-only block has no bucket array). Read-only.
+hbc_hfind:
+    push %rbp
+    mov %rsp, %rbp
+    push %rbx
+    push %r12
+    push %r13
+    push %r14
+    push %r15
+    sub $40, %rsp
+    mov %rdi, %rbx
+    mov %rsi, %r12
+    mov %rdx, %r13
+    mov (%rbx), %r14
+    test %r14, %r14
+    je 90f
+    cmpq $0, 8(%rbx)
+    je 90f
+    mov %r12, %rdi
+    mov %r13, %rsi
+    call hbc_hhash
+    mov -8(%r14), %rcx
+    dec %rcx
+    and %rcx, %rax
+    mov -8(%r14), %rcx
+    shl $3, %rcx
+    lea -16(%r14), %r15
+    sub %rcx, %r15
+    mov (%r15,%rax,4), %eax
+    mov %rax, -48(%rbp)
+91: mov -48(%rbp), %rax
+    test %rax, %rax
+    je 90f
+    dec %rax
+    mov %rax, -56(%rbp)
+    shl $5, %rax
+    add %r14, %rax
+    cmp 8(%rax), %r13
+    jne 92f
+    mov (%rax), %rdi
+    xor %ecx, %ecx
+93: cmp %r13, %rcx
+    jae 94f
+    movzbl (%rdi,%rcx), %r8d
+    movzbl (%r12,%rcx), %r9d
+    cmpq $0, -16(%r14)
+    jne 95f
+    cmp $97, %r8b
+    jb 96f
+    cmp $122, %r8b
+    ja 96f
+    sub $32, %r8b
+96: cmp $97, %r9b
+    jb 95f
+    cmp $122, %r9b
+    ja 95f
+    sub $32, %r9b
+95: cmp %r9b, %r8b
+    jne 92f
+    inc %rcx
+    jmp 93b
+94: mov -56(%rbp), %rax
+    jmp 97f
+92: mov -8(%r14), %rcx
+    shl $2, %rcx
+    lea (%r15,%rcx), %rdx
+    mov -56(%rbp), %rax
+    mov (%rdx,%rax,4), %eax
+    mov %rax, -48(%rbp)
+    jmp 91b
+90: movq $-1, %rax
+97: add $40, %rsp
+    pop %r15
+    pop %r14
+    pop %r13
+    pop %r12
+    pop %rbx
+    pop %rbp
+    ret
+
+# hbc_hreindex: rdi = block data pointer, rsi = live pair count. Rebuilds
+# buckets and next from the packed entries (used after a grow and after a
+# delete's compaction shift).
+hbc_hreindex:
+    push %rbp
+    mov %rsp, %rbp
+    push %rbx
+    push %r12
+    push %r13
+    push %r14
+    push %r15
+    sub $24, %rsp
+    mov %rdi, %rbx
+    mov %rsi, %r12
+    mov -8(%rbx), %r13
+    mov %r13, %rax
+    shl $3, %rax
+    lea -16(%rbx), %r14
+    sub %rax, %r14
+    xor %ecx, %ecx
+1: cmp %r13, %rcx
+    jae 2f
+    movl $0, (%r14,%rcx,4)
+    inc %rcx
+    jmp 1b
+2: lea (%r14,%r13,4), %r15
+    movq $0, -48(%rbp)
+3: mov -48(%rbp), %rcx
+    cmp %r12, %rcx
+    jae 4f
+    mov %rcx, %rax
+    shl $5, %rax
+    add %rbx, %rax
+    mov (%rax), %rdi
+    mov 8(%rax), %rsi
+    call hbc_hhash
+    lea -1(%r13), %rdx
+    and %rdx, %rax
+    mov (%r14,%rax,4), %edx
+    mov -48(%rbp), %rcx
+    mov %edx, (%r15,%rcx,4)
+    inc %ecx
+    mov %ecx, (%r14,%rax,4)
+    mov %rcx, -48(%rbp)
+    jmp 3b
+4: add $24, %rsp
+    pop %r15
+    pop %r14
+    pop %r13
+    pop %r12
+    pop %rbx
+    pop %rbp
+    ret
+
 # hbc_hget: rdi = slot address, rsi = key bytes, rdx = key length.
 # Returns rax = pointer to the entry's {tag, payload} pair, or 0 on a
 # miss. Read-only: a lookup never mutates the hash (probes h3/h3b/h3c).
-# Matching honors the CaseMatch flag at -16(data): sensitive is byte
-# exact; insensitive folds ASCII letters and returns the LAST
-# insertion-order match (hk171).
+# Matching honors the CaseMatch flag at -16(data) exactly as v1 did, via
+# hbc_hfind (sensitive: byte exact; insensitive: LAST insertion-order
+# match, hk171).
 hbc_hget:
+    push %rbp
+    mov %rsp, %rbp
+    sub $16, %rsp
     mov (%rdi), %r10
     test %r10, %r10
     je 41f
-    push %rbx
-    push %r12
-    mov -16(%r10), %rbx
-    movq $-1, %r12
-    mov 8(%rdi), %r11
-    xor %ecx, %ecx
-42: cmp %r11, %rcx
-    jae 430f
-    mov %rcx, %rax
-    shl $5, %rax
-    add %r10, %rax
-    mov 8(%rax), %r8
-    cmp %rdx, %r8
-    jne 43f
-    xor %r9d, %r9d
-44: cmp %rdx, %r9
-    jae 45f
-    mov (%rax), %r8
-    movzbl (%r8,%r9), %edi
-    movzbl (%rsi,%r9), %r8d
-    test %rbx, %rbx
-    jnz 440f
-    cmp $97, %dil
-    jb 441f
-    cmp $122, %dil
-    ja 441f
-    sub $32, %dil
-441: cmp $97, %r8b
-    jb 440f
-    cmp $122, %r8b
-    ja 440f
-    sub $32, %r8b
-440: cmp %r8b, %dil
-    jne 43f
-    inc %r9
-    jmp 44b
-43: inc %rcx
-    jmp 42b
-45: test %rbx, %rbx
-    jz 450f
-    add $16, %rax
-    pop %r12
-    pop %rbx
-    ret
-450: mov %rcx, %r12
-    inc %rcx
-    jmp 42b
-430: test %r12, %r12
-    js 431f
-    mov %r12, %rax
+    call hbc_hfind
+    test %rax, %rax
+    js 41f
     shl $5, %rax
     add %r10, %rax
     add $16, %rax
-    pop %r12
-    pop %rbx
-    ret
-431: xor %eax, %eax
-    pop %r12
-    pop %rbx
+    leave
     ret
 41: xor %eax, %eax
+    leave
     ret
 
 # hbc_hsetdef: rdi = slot address, rsi = key bytes, rdx = key length,
@@ -24621,54 +24748,14 @@ hbc_hput:
     mov 8(%rbx), %r13
     test %r12, %r12
     je 30f
-    mov -16(%r12), %rax
-    mov %rax, -72(%rbp)
-    movq $-1, -80(%rbp)
-    xor %ecx, %ecx
-31: cmp %r13, %rcx
-    jae 300f
-    mov %rcx, %rax
-    shl $5, %rax
-    add %r12, %rax
-    mov 8(%rax), %r8
-    cmp %r15, %r8
-    jne 32f
-    mov (%rax), %r8
-    xor %r9d, %r9d
-33: cmp %r15, %r9
-    jae 34f
-    movzbl (%r8,%r9), %r10d
-    movzbl (%r14,%r9), %r11d
-    # case-insensitive mode (flag 0): fold both bytes to uppercase -
-    # ASCII letters only, the measured scope of the hk169-hk175 oracles
-    cmpq $0, -72(%rbp)
-    jne 330f
-    cmp $97, %r10b
-    jb 331f
-    cmp $122, %r10b
-    ja 331f
-    sub $32, %r10b
-331: cmp $97, %r11b
-    jb 330f
-    cmp $122, %r11b
-    ja 330f
-    sub $32, %r11b
-330: cmp %r11b, %r10b
-    jne 32f
-    inc %r9
-    jmp 33b
-32: inc %rcx
-    jmp 31b
-300: mov -80(%rbp), %rcx
-    test %rcx, %rcx
+    # bucket-indexed lookup (same matching as the v1 scan, via hbc_hfind)
+    mov %rbx, %rdi
+    mov %r14, %rsi
+    mov %r15, %rdx
+    call hbc_hfind
+    test %rax, %rax
     js 30f
-    jmp 340f
-34: cmpq $0, -72(%rbp)
-    je 341f
-    jmp 340f
-341: mov %rcx, -80(%rbp)
-    inc %rcx
-    jmp 31b
+    mov %rax, %rcx
 340: mov %rcx, %rax
     shl $5, %rax
     add %r12, %rax
@@ -24692,28 +24779,35 @@ hbc_hput:
     je 37f
     mov -8(%r12), %rax
     cmp %rax, %r13
-    jb 40f
+    jae 360f
+    movq $0, -88(%rbp)
+    jmp 40f
+360:
     test %rax, %rax
     je 37f
     add %rax, %rax
-    mov $0x07FFFFFFFFFFFFFF, %rcx
+    mov $0x80000000, %ecx
     cmp %rcx, %rax
     ja hbc_oom
     jmp 38f
 37: mov $4, %eax
 38: mov %rax, -56(%rbp)
-    shl $5, %rax
-    lea 16(%rax), %rdi
+    mov %rax, %rdi
+    shl $3, %rdi
+    lea 16(%rdi,%rdi,4), %rdi
     call hbc_alloc
     mov -56(%rbp), %rcx
-    mov %rcx, 8(%rax)
+    mov %rcx, %rdx
+    shl $3, %rdx
+    mov %rcx, 8(%rax,%rdx)
     movq $1, %rcx
     test %r12, %r12
     je 381f
     mov -16(%r12), %rcx
-381: mov %rcx, (%rax)
-    add $16, %rax
+381: mov %rcx, (%rax,%rdx)
+    lea 16(%rax,%rdx), %rax
     mov %rax, -64(%rbp)
+    movq $1, -88(%rbp)
     mov %rax, %r9
     test %r12, %r12
     je 39f
@@ -24745,7 +24839,29 @@ hbc_hput:
     mov %r8, 16(%rax)
     mov 8(%rcx), %r8
     mov %r8, 24(%rax)
-    mov %r12, (%rbx)
+    cmpq $0, -88(%rbp)
+    je 45f
+    mov %r12, %rdi
+    lea 1(%r13), %rsi
+    call hbc_hreindex
+    jmp 48f
+45: mov %r14, %rdi
+    mov %r15, %rsi
+    call hbc_hhash
+    mov -8(%r12), %rcx
+    lea -1(%rcx), %rdx
+    and %rdx, %rax
+    shl $3, %rcx
+    lea -16(%r12), %rdx
+    sub %rcx, %rdx
+    mov (%rdx,%rax,4), %r8d
+    mov -8(%r12), %rcx
+    shl $2, %rcx
+    lea (%rdx,%rcx), %r9
+    mov %r8d, (%r9,%r13,4)
+    lea 1(%r13), %r8d
+    mov %r8d, (%rdx,%rax,4)
+48: mov %r12, (%rbx)
     inc %r13
     mov %r13, 8(%rbx)
 49: add $72, %rsp
@@ -24818,57 +24934,16 @@ hbc_hdel:
     mov %rdi, %r15
     mov (%r15), %r12
     mov 8(%r15), %r13
-    movq $1, %rax
     test %r12, %r12
-    je 600f
-    mov -16(%r12), %rax
-600: mov %rax, -48(%rbp)
-    movq $-1, -56(%rbp)
-    xor %r14d, %r14d
-60: cmp %r13, %r14
-    jae 610f
-    mov %r14, %rax
-    shl $5, %rax
-    lea (%r12,%rax), %rbx
-    cmp 8(%rbx), %rdx
-    jne 62f
-    mov (%rbx), %rcx
-    xor %r9d, %r9d
-63: cmp %rdx, %r9
-    jae 64f
-    movzbl (%rcx,%r9), %r10d
-    movzbl (%rsi,%r9), %r11d
-    cmpq $0, -48(%rbp)
-    jne 630f
-    cmp $97, %r10b
-    jb 631f
-    cmp $122, %r10b
-    ja 631f
-    sub $32, %r10b
-631: cmp $97, %r11b
-    jb 630f
-    cmp $122, %r11b
-    ja 630f
-    sub $32, %r11b
-630: cmp %r11b, %r10b
-    jne 62f
-    inc %r9
-    jmp 63b
-62: inc %r14
-    jmp 60b
-610: mov -56(%rbp), %r14
-    test %r14, %r14
+    je 61f
+    # bucket-indexed lookup (same matching as the v1 scan, via hbc_hfind;
+    # insensitive mode removes the LAST insertion-order match, hk174)
+    call hbc_hfind
+    test %rax, %rax
     js 61f
-    mov %r14, %rax
+    mov %rax, %r14
     shl $5, %rax
     lea (%r12,%rax), %rbx
-    jmp 620f
-64: cmpq $0, -48(%rbp)
-    je 640f
-    jmp 620f
-640: mov %r14, -56(%rbp)
-    inc %r14
-    jmp 60b
 620: mov (%rbx), %rdi
     call hbc_freestr
     mov 16(%rbx), %rax
@@ -24893,6 +24968,10 @@ hbc_hdel:
     jmp 65b
 66: dec %r13
     mov %r13, 8(%r15)
+    # indices shifted with the compaction: rebuild the bucket index
+    mov %r12, %rdi
+    mov %r13, %rsi
+    call hbc_hreindex
 61: add $24, %rsp
     pop %r15
     pop %r14
@@ -24908,64 +24987,14 @@ hbc_hdel:
 # ordinary key. Leaf: caller-saved registers only, no allocation, the
 # hash and the lookup key are only read.
 hbc_hhaskey:
-    push %rbx
-    push %r12
-    mov (%rdi), %r8
-    mov 8(%rdi), %r9
-    movq $1, %rbx
-    test %r8, %r8
-    je 700f
-    mov -16(%r8), %rbx
-700: movq $-1, %r12
-    xor %ecx, %ecx
-70: cmp %r9, %rcx
-    jae 710f
-    mov %rcx, %rax
-    shl $5, %rax
-    cmp 8(%r8,%rax), %rdx
-    jne 72f
-    mov (%r8,%rax), %r11
-    xor %eax, %eax
-73: cmp %rdx, %rax
-    jae 74f
-    movzbl (%r11,%rax), %edi
-    movzbl (%rsi,%rax), %r10d
-    test %rbx, %rbx
-    jnz 730f
-    cmp $97, %dil
-    jb 731f
-    cmp $122, %dil
-    ja 731f
-    sub $32, %dil
-731: cmp $97, %r10b
-    jb 730f
-    cmp $122, %r10b
-    ja 730f
-    sub $32, %r10b
-730: cmp %r10b, %dil
-    jne 72f
-    inc %rax
-    jmp 73b
-74: test %rbx, %rbx
-    jz 740f
-    mov $1, %eax
-    pop %r12
-    pop %rbx
-    ret
-740: mov %rcx, %r12
-    inc %rcx
-    jmp 70b
-72: inc %rcx
-    jmp 70b
-710: test %r12, %r12
+    sub $8, %rsp
+    call hbc_hfind
+    add $8, %rsp
+    test %rax, %rax
     js 711f
     mov $1, %eax
-    pop %r12
-    pop %rbx
     ret
 711: xor %eax, %eax
-    pop %r12
-    pop %rbx
     ret
 
 # hbc_hpos: rdi = hash slot address, rsi = key bytes, rdx = key
@@ -24976,64 +25005,14 @@ hbc_hhaskey:
 # Leaf: caller-saved registers only, no allocation, the hash and the
 # lookup key are only read.
 hbc_hpos:
-    push %rbx
-    push %r12
-    mov (%rdi), %r8
-    mov 8(%rdi), %r9
-    movq $1, %rbx
-    test %r8, %r8
-    je 700f
-    mov -16(%r8), %rbx
-700: movq $-1, %r12
-    xor %ecx, %ecx
-70: cmp %r9, %rcx
-    jae 710f
-    mov %rcx, %rax
-    shl $5, %rax
-    cmp 8(%r8,%rax), %rdx
-    jne 72f
-    mov (%r8,%rax), %r11
-    xor %eax, %eax
-73: cmp %rdx, %rax
-    jae 74f
-    movzbl (%r11,%rax), %edi
-    movzbl (%rsi,%rax), %r10d
-    test %rbx, %rbx
-    jnz 730f
-    cmp $97, %dil
-    jb 731f
-    cmp $122, %dil
-    ja 731f
-    sub $32, %dil
-731: cmp $97, %r10b
-    jb 730f
-    cmp $122, %r10b
-    ja 730f
-    sub $32, %r10b
-730: cmp %r10b, %dil
-    jne 72f
-    inc %rax
-    jmp 73b
-74: test %rbx, %rbx
-    jz 740f
-    lea 1(%rcx), %rax
-    pop %r12
-    pop %rbx
-    ret
-740: mov %rcx, %r12
-    inc %rcx
-    jmp 70b
-72: inc %rcx
-    jmp 70b
-710: test %r12, %r12
+    sub $8, %rsp
+    call hbc_hfind
+    add $8, %rsp
+    test %rax, %rax
     js 711f
-    lea 1(%r12), %rax
-    pop %r12
-    pop %rbx
+    inc %rax
     ret
 711: xor %eax, %eax
-    pop %r12
-    pop %rbx
     ret
 
 # hbc_hmerge: rdi = dst hash slot address, rsi = src hash slot
@@ -30402,15 +30381,20 @@ hbc_freestr:
     ret
 
 # hbc_hfreeblock: rdi = hash block data pointer (non-null). Frees the
-# whole block: 16-byte header [flags @0][capacity @8] + entries, so the
-# mapping base is rdi-16 and the length is 16 + cap*32. The registry
-# snippet is the formula-agnostic Linux one (it compares the computed
-# base and length against the recorded allocation).
+# whole block: buckets (cap*4B) + next (cap*4B) + 16-byte header
+# [flags @0][capacity @8] + entries (cap*32B), so the mapping base is
+# rdi-16-cap*8 and the length is 16 + cap*40. The registry snippet is
+# the formula-agnostic Linux one (it compares the computed base and
+# length against the recorded allocation).
 hbc_hfreeblock:
     mov -8(%rdi), %rax
-    shl $5, %rax
-    lea 16(%rax), %rsi
-    sub $16, %rdi
+    mov %rax, %rcx
+    shl $3, %rcx
+    lea -16(%rdi), %rdx
+    sub %rcx, %rdx
+    shl $3, %rax
+    lea 16(%rax,%rax,4), %rsi
+    mov %rdx, %rdi
 @REG_FREE_L@    mov $11, %eax
     syscall
     test %rax, %rax
@@ -33850,14 +33834,18 @@ hbc_freestr:
     ret
 
 # hbc_hfreeblock: rdi = hash block data pointer (non-null). Frees the
-# whole block: 16-byte header [flags @0][capacity @8] + entries, so the
-# block base is rdi-16 (HeapFree needs the base, not the length; the
-# registry snippet computes and checks the recorded size).
+# whole block: buckets (cap*4B) + next (cap*4B) + 16-byte header
+# [flags @0][capacity @8] + entries (cap*32B), so the block base is
+# rdi-16-cap*8 (HeapFree needs the base, not the length; the registry
+# snippet computes and checks the recorded size).
 hbc_hfreeblock:
     push %rbp
     mov %rsp, %rbp
     sub $48, %rsp
-@REG_HFREE_W@    sub $16, %rdi
+@REG_HFREE_W@    mov -8(%rdi), %rax
+    shl $3, %rax
+    lea -16(%rdi), %rdi
+    sub %rax, %rdi
     mov %rdi, %r8
     call GetProcessHeap
     mov %rax, %rcx
