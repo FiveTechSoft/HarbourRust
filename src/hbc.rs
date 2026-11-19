@@ -585,6 +585,33 @@ fn cg_f64_load(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, 
                 None
             };
             if dyn_div { cg_div_operand(a, env, sigs, strs, out, target); } else { cg_f64_operand(a, env, sigs, strs, out, target); }
+            // Scalar-slot rhs register shuffle (+,-,*): an F64, I64 or
+            // NumLocal local rhs loads with slot moves and cvtsi2sd only - no
+            // call, no %xmm1/%r8 clobber - so the lhs value stays in
+            // %xmm1 and its dec metadata in %r8 instead of the 32-byte
+            // spill slot. The metadata contract is the one the generic
+            // path applies after its reload (max for +,-, guarded sum
+            // for *), and both paths join at .Lf64nt after the shared
+            // stack adjustment.
+            let float_var_rhs = matches!(*op, '+' | '-' | '*') && !dyn_div
+                && matches!(&**b, Expr::Var(_))
+                && matches!(expr_ty(b, env, sigs), Ty::F64 | Ty::I64 | Ty::NumLocal);
+            let nt = fresh_lbl();
+            if float_var_rhs {
+                out.push_str("    movsd %xmm0, %xmm1\n    mov %rcx, %r8\n");
+                cg_f64_operand(b, env, sigs, strs, out, target);
+                let inst = match op { '+' => "addsd", '-' => "subsd", '*' => "mulsd", _ => unreachable!("checked") };
+                out.push_str(&format!("    {} %xmm0, %xmm1\n", inst));
+                match op {
+                    '+' | '-' => out.push_str("    mov %r8, %rdi\n    cmp %rcx, %rdi\n    cmovb %rcx, %rdi\n"),
+                    '*' => {
+                        let lok = fresh_lbl();
+                        out.push_str(&format!("    mov %r8, %rdi\n    add %rcx, %rdi\n    cmp $435, %rdi\n    jbe .Lf64m{lok}\n    call hbc_f64range_error\n.Lf64m{lok}:\n"));
+                    }
+                    _ => unreachable!("checked"),
+                }
+                out.push_str(&format!("    jmp .Lf64nt{}\n", nt));
+            }
             out.push_str("    sub $32, %rsp\n    movsd %xmm0, (%rsp)\n    mov %rcx, 8(%rsp)\n");
             if dyn_div { out.push_str("    mov %rax, 16(%rsp)\n"); }
             if let Some(dv) = imm_rhs_f64 {
@@ -665,6 +692,7 @@ fn cg_f64_load(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, 
                 _ => unreachable!("checked"),
             }
             out.push_str("    add $32, %rsp\n");
+            out.push_str(&format!(".Lf64nt{}:\n", nt));
             // Length: asymmetric HB_DBL_LENGTH - 20 when x > 9999999999.0
             // or x < -999999999.0, else 10 (hbdefs.h:570; hk297). NaN
             // fails both tests (unordered) and keeps 10.
