@@ -28,3 +28,10 @@ Run each Python gate with --help for arguments:
   oracle-equal controls. Build failures, timeouts or signals never count.
 - guard_selftest.py: 4 fake rustc proxies demonstrate fail-closed mutant gates;
   proxies are not product mutants.
+
+Review V2: one effective signature drives ALL Ret branches (I64/F64 and
+StrOwn too). review.py adds12numeric byref sources/24exact pairs,6mixed
+CATCH+FINALLY compile limits/12rejections and4prior numeric FINALLY omissions
+with8base-identical controls. Only newly admitted mixed string/logical Dyn
+functions with such a return reject. Numeric base behavior is unchanged and
+still omits FINALLY; repairing that prior defect is out of this increment.

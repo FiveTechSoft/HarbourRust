@@ -9650,13 +9650,26 @@ fn has_dbf_read(e: &Expr) -> bool {
 // Return-type unification: numeric/NIL returns share Dyn ({tag,payload}).
 // Ordinary Linux also supports mixed string/logical with Dyn; other
 // profiles retain an explicit limit until their caller ABI is verified.
-fn unify_ret(ret: Option<Ty>, t: Ty, n: usize) -> Result<Ty, String> {
+// Only a newly admitted mixed return is limited. Existing numeric CATCH
+// returns keep their recorded behavior; repairing their FINALLY unwind is separate.
+fn catch_finally_return(stmts: &[Stmt]) -> Option<usize> {
+    let mut found=None;
+    visit_stmts_ref(stmts,&mut |st| {
+        if let Stmt::Try(_,_,Some((_,body)),Some(_))=st {
+            visit_stmts_ref(body,&mut |s| {if let Stmt::Ret(n,_)=s {if found.is_none(){found=Some(*n);}}},&mut |_|{});
+        }
+    },&mut |_|{});
+    found
+}
+
+fn unify_ret(ret: Option<Ty>, t: Ty, n: usize, mixed_finally_line: Option<usize>) -> Result<Ty, String> {
     match (ret, t) {
         (None, t) => Ok(t),
         (Some(p), t) if p == t => Ok(t),
         (Some(Ty::I64|Ty::F64), Ty::Dyn) | (Some(Ty::Dyn), Ty::I64|Ty::F64) => Ok(Ty::Dyn),
         (Some(Ty::Str|Ty::StrOwn|Ty::Bool),Ty::Dyn) | (Some(Ty::Dyn),Ty::Str|Ty::StrOwn|Ty::Bool) => {
             if !DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get()) {return Err(format!("line {}: mixed string/logical Dyn returns require ordinary Linux without threads or PRIVATE/PUBLIC/macro context",n));}
+            if let Some(line)=mixed_finally_line {return Err(format!("line {}: mixed string/logical Dyn return from CATCH with FINALLY is not in this increment (pending FINALLY return unwind)",line));}
             Ok(Ty::Dyn)
         },
         // A rodata string and an owned string unify to owned (the caller
@@ -10063,7 +10076,7 @@ fn stmt_mentions(s: &Stmt, name: &str) -> bool {
 // the innermost loop - oracle sw-loop-in-for).
 struct ChkCtx { is_loop: bool, is_try: bool, is_fin: bool, pre: Vec<bool>, exits: Vec<Vec<bool>> }
 
-fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &mut Option<Ty>, ctxs: &mut Vec<ChkCtx>, dyn_names: &std::collections::HashSet<String>, byref_names: &std::collections::HashSet<String>) -> Result<bool, String> {
+fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &mut Option<Ty>, ctxs: &mut Vec<ChkCtx>, dyn_names: &std::collections::HashSet<String>, byref_names: &std::collections::HashSet<String>, mixed_finally_line: Option<usize>) -> Result<bool, String> {
     let mut falls = true;
     for (si, s) in stmts.iter().enumerate() {
         match s {
@@ -10315,7 +10328,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                     // unify_ret - Harbour's item KIND varies per path
                     // there and arithmetic on the result differs beyond
                     // the measured dec-0 byte shape (oracle hk312).
-                    *ret = Some(unify_ret(*ret, Ty::F64, *n)?);
+                    *ret = Some(unify_ret(*ret, Ty::F64, *n, mixed_finally_line)?);
                     falls = false;
                 } else if let Ty::Arr(_) = t {
                     // Returning a static array materializes a dynamic
@@ -10328,7 +10341,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                         return Err(format!("line {}: a static array return is a variable in this increment", n));
                     }
                     apply_moves(e, env, sigs, false);
-                    *ret = Some(unify_ret(*ret, Ty::DArr, *n)?);
+                    *ret = Some(unify_ret(*ret, Ty::DArr, *n, mixed_finally_line)?);
                     falls = false;
                 } else
                 {
@@ -10347,7 +10360,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 // owner's variable keeps it; codegen copies through the
                 // pointer. Scalars copy by the same rule (hk236).
                 apply_moves(e, env, sigs, true);
-                *ret = Some(unify_ret(*ret, t, *n)?);
+                *ret = Some(unify_ret(*ret, t, *n, mixed_finally_line)?);
                 falls = false;
                 }
             }
@@ -10362,7 +10375,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 // value {tag=1}. Mixed `return 5` / `return nil` unifies to
                 // a Dyn return (probe n2) - Harbour behaviour, not a
                 // registered difference.
-                *ret = Some(unify_ret(*ret, Ty::Dyn, *n)?);
+                *ret = Some(unify_ret(*ret, Ty::Dyn, *n, mixed_finally_line)?);
                 falls = false;
             }
             Stmt::If(n, cond, then_s, else_s) => {
@@ -10374,9 +10387,9 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 }
                 let outer = env.len();
                 let mut env_then = env.clone();
-                let ft = check_stmts(then_s, &mut env_then, sigs, ret, ctxs, dyn_names, byref_names)?;
+                let ft = check_stmts(then_s, &mut env_then, sigs, ret, ctxs, dyn_names, byref_names, mixed_finally_line)?;
                 let mut env_else = env.clone();
-                let fe = check_stmts(else_s, &mut env_else, sigs, ret, ctxs, dyn_names, byref_names)?;
+                let fe = check_stmts(else_s, &mut env_else, sigs, ret, ctxs, dyn_names, byref_names, mixed_finally_line)?;
                 for k in 0..outer {
                     env[k].moved = env_then[k].moved || env_else[k].moved;
                 }
@@ -10393,7 +10406,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 let pre: Vec<bool> = env.iter().map(|v| v.moved).collect();
                 let mut env_body = env.clone();
                 ctxs.push(ChkCtx { is_loop: true, is_try: false, is_fin: false, pre, exits: Vec::new() });
-                let fb = check_stmts(body, &mut env_body, sigs, ret, ctxs, dyn_names, byref_names)?;
+                let fb = check_stmts(body, &mut env_body, sigs, ret, ctxs, dyn_names, byref_names, mixed_finally_line)?;
                 let wctx = ctxs.pop().expect("frame pushed above");
                 let pre = wctx.pre;
                 let wexits = wctx.exits;
@@ -10446,7 +10459,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 let pre: Vec<bool> = env.iter().map(|v| v.moved).collect();
                 let mut env_body = env.clone();
                 ctxs.push(ChkCtx { is_loop: true, is_try: false, is_fin: false, pre, exits: Vec::new() });
-                let fb = check_stmts(body, &mut env_body, sigs, ret, ctxs, dyn_names, byref_names)?;
+                let fb = check_stmts(body, &mut env_body, sigs, ret, ctxs, dyn_names, byref_names, mixed_finally_line)?;
                 let fctx = ctxs.pop().expect("frame pushed above");
                 let pre = fctx.pre;
                 let fexits = fctx.exits;
@@ -10618,7 +10631,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 let pre: Vec<bool> = env.iter().map(|v| v.moved).collect();
                 let mut env_body = env.clone();
                 ctxs.push(ChkCtx { is_loop: true, is_try: false, is_fin: false, pre, exits: Vec::new() });
-                let fb = check_stmts(body, &mut env_body, sigs, ret, ctxs, dyn_names, byref_names)?;
+                let fb = check_stmts(body, &mut env_body, sigs, ret, ctxs, dyn_names, byref_names, mixed_finally_line)?;
                 let fctx = ctxs.pop().expect("frame pushed above");
                 let pre = fctx.pre;
                 let fexits = fctx.exits;
@@ -10683,11 +10696,11 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 ctxs.push(ChkCtx { is_loop: false, is_try: false, is_fin: false, pre, exits: Vec::new() });
                 let mut any_fall = otherwise.is_none();
                 for (_, _, body) in arms {
-                    let fb = check_stmts(body, &mut env_chain, sigs, ret, ctxs, dyn_names, byref_names)?;
+                    let fb = check_stmts(body, &mut env_chain, sigs, ret, ctxs, dyn_names, byref_names, mixed_finally_line)?;
                     any_fall = any_fall || fb;
                 }
                 if let Some((_, obody)) = otherwise {
-                    let fo = check_stmts(obody, &mut env_chain, sigs, ret, ctxs, dyn_names, byref_names)?;
+                    let fo = check_stmts(obody, &mut env_chain, sigs, ret, ctxs, dyn_names, byref_names, mixed_finally_line)?;
                     any_fall = any_fall || fo;
                 }
                 let sctx = ctxs.pop().expect("frame pushed above");
@@ -10706,7 +10719,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 // CATCH and FINALLY bodies are ordinary scopes (oracle:
                 // `return` inside CATCH returns normally).
                 ctxs.push(ChkCtx { is_loop: false, is_try: true, is_fin: false, pre: env.iter().map(|v| v.moved).collect(), exits: Vec::new() });
-                check_stmts(body, env, sigs, ret, ctxs, dyn_names, byref_names)?;
+                check_stmts(body, env, sigs, ret, ctxs, dyn_names, byref_names, mixed_finally_line)?;
                 ctxs.pop().expect("frame pushed above");
                 if let Some((var, cbody)) = catch {
                     let mark = env.len();
@@ -10725,13 +10738,13 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                             env.push(Local { name: v.clone(), ty: Ty::Dyn, moved: false, ro: false, byref: false });
                         }
                     }
-                    check_stmts(cbody, env, sigs, ret, ctxs, dyn_names, byref_names)?;
+                    check_stmts(cbody, env, sigs, ret, ctxs, dyn_names, byref_names, mixed_finally_line)?;
                     env.truncate(mark);
                 }
                 if let Some(fbody) = finally {
                     let mark = env.len();
                     ctxs.push(ChkCtx { is_loop: false, is_try: false, is_fin: true, pre: env.iter().map(|v| v.moved).collect(), exits: Vec::new() });
-                    check_stmts(fbody, env, sigs, ret, ctxs, dyn_names, byref_names)?;
+                    check_stmts(fbody, env, sigs, ret, ctxs, dyn_names, byref_names, mixed_finally_line)?;
                     ctxs.pop().expect("frame pushed above");
                     env.truncate(mark);
                 }
@@ -12640,7 +12653,7 @@ fn escape_analysis(
         let mut ret = None;
         let mut ctxs: Vec<ChkCtx> = Vec::new();
         CUR_FN.with(|c| *c.borrow_mut() = f.name.clone());
-        let ok = check_stmts(&f.stmts, &mut env, &mut sv, &mut ret, &mut ctxs, &f.dyn_names, &byref_names).is_ok();
+        let ok = check_stmts(&f.stmts, &mut env, &mut sv, &mut ret, &mut ctxs, &f.dyn_names, &byref_names, catch_finally_return(&f.stmts)).is_ok();
         if !ok { env.clear(); }
         let mut outer_owned: std::collections::HashSet<String> = std::collections::HashSet::new();
         if let Some(s) = sg {
@@ -21876,6 +21889,13 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 cg_print_items(es, *inline, false, false, env, sigs, strs, out, target);
             }
             Stmt::Ret(_, Some(e)) => {
+                // Specialized byref labels share the base signature ABI.
+                // Exact-name first protects legitimate names containing __br.
+                let return_sig=sigs.iter().find(|sg|sg.name==fname).or_else(|| {
+                    let (base,mask)=fname.rsplit_once("__br")?;
+                    if mask.is_empty() || !mask.bytes().all(|b|b==b'0'||b==b'1') {return None;}
+                    sigs.iter().find(|sg|sg.name==base)
+                });
                 // Evaluate the return value before rewinding loop arenas:
                 // its expression may still read a routed loop-local string.
                 let pending_marks = flow.iter().filter(|f| matches!(f, CgFrame::Loop(_, _, Some(_)))).count();
@@ -21903,7 +21923,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 // float temporaries need no shuffling. The shared
                 // epilogue preserves the pair across the slot frees.
                 cg_f64_load(e, env, sigs, strs, out, target);
-                let dynret=sigs.iter().any(|sg|sg.name==fname && sg.ret==Some(Ty::Dyn));
+                let dynret=return_sig.map_or(false,|sg|sg.ret==Some(Ty::Dyn));
                 if dynret {out.push_str("    mov %rdi, %rsi\n    movq %xmm0, %rdi\n    call hbc_float_new\n");}
                 arena_return_rewind(pending_marks, !dynret, out);
                 out.push_str(&format!("    jmp .Lret_{}\n", fname));
@@ -21917,14 +21937,14 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 // Mixed int/NIL returns unify to Dyn (probe n2): an i64
                 // return expression is tagged into the {0, payload} pair.
                 if expr_ty(e, env, sigs) == Ty::I64
-                    && sigs.iter().any(|sg| sg.name == fname && sg.ret == Some(Ty::Dyn)) {
+                    && return_sig.map_or(false,|sg|sg.ret==Some(Ty::Dyn)) {
                     cg_i64_tagged(out);
                 }
                 // A rodata string returned under an owned-string signature
                 // (Str/StrOwn unification): the caller owns the result, so
                 // the return point hands over a fresh copy.
                 if expr_ty(e, env, sigs) == Ty::Str
-                    && sigs.iter().any(|sg| sg.name == fname && sg.ret == Some(Ty::StrOwn)) {
+                    && return_sig.map_or(false,|sg|sg.ret==Some(Ty::StrOwn)) {
                     out.push_str("    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_strcpy\n");
                 }
                 // Returning a by-reference string parameter copies the
@@ -21938,12 +21958,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 // Mixed typed string/logical -> Dyn uses the existing
                 // caller-owned tagged ABI. StrOwn transfer and byref copy
                 // above keep their old ownership rules; rodata needs a copy.
-                let mixed_ret_sig=sigs.iter().find(|sg|sg.name==fname).or_else(|| {
-                    let (base,mask)=fname.rsplit_once("__br")?;
-                    if mask.is_empty() || !mask.bytes().all(|b|b==b'0'||b==b'1') {return None;}
-                    sigs.iter().find(|sg|sg.name==base)
-                });
-                if mixed_ret_sig.map_or(false,|sg|sg.ret==Some(Ty::Dyn)) {
+                if return_sig.map_or(false,|sg|sg.ret==Some(Ty::Dyn)) {
                     match expr_ty(e,env,sigs) {
                         Ty::Str => out.push_str("    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_strcpy\n    mov %rax, %rdx\n    mov $4, %eax\n"),
                         Ty::StrOwn => out.push_str("    mov %rax, %rdx\n    mov $4, %eax\n"),
@@ -36266,7 +36281,7 @@ fn main() {
             let mut top_ctxs: Vec<ChkCtx> = Vec::new();
             CUR_FN.with(|c| *c.borrow_mut() = f.name.clone());
             CUR_METHOD_CLASS.with(|c| c.set(match mci { Some(ci) => ci as i64, None => -1 }));
-            let mut res = check_stmts(&f.stmts, &mut env, &mut view, &mut ret, &mut top_ctxs, &dyn_names, &byref_names);
+            let mut res = check_stmts(&f.stmts, &mut env, &mut view, &mut ret, &mut top_ctxs, &dyn_names, &byref_names, catch_finally_return(&f.stmts));
             if let Err(m) = &res {
                 let self_deadlock = m.contains("never returns a value")
                     && m.contains(&format!("`{}`", f.name));
@@ -36280,7 +36295,7 @@ fn main() {
                     }
                     let mut ret2 = None;
                     let mut top_ctxs2: Vec<ChkCtx> = Vec::new();
-                    let res2 = check_stmts(&f.stmts, &mut env2, &mut view, &mut ret2, &mut top_ctxs2, &dyn_names, &byref_names);
+                    let res2 = check_stmts(&f.stmts, &mut env2, &mut view, &mut ret2, &mut top_ctxs2, &dyn_names, &byref_names, catch_finally_return(&f.stmts));
                     if res2.is_ok() {
                         res = res2;
                         ret = ret2;
