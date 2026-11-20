@@ -14625,8 +14625,10 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                         // (tag,payload) cell in slots 0/8: the runtime takes the
                         // cell, extracts the character bytes (length header at
                         // payload[-1]) and releases nothing; the owned cell is
-                        // released after the call like any Dyn consumer.
-                        out.push_str("    mov (%rsp), %rsi\n    mov 8(%rsp), %rdx\n    mov 16(%rsp), %rcx\n    mov 24(%rsp), %r8\n    call hrdbf_app_seek_dyn\n");
+                        // released after the call like any Dyn consumer. SysV
+                        // arg order (tag, payload, soft, last) like every other
+                        // hrdbf_app_* call; the Windows blob re-marshals.
+                        out.push_str("    mov (%rsp), %rdi\n    mov 8(%rsp), %rsi\n    mov 16(%rsp), %rdx\n    mov 24(%rsp), %rcx\n    call hrdbf_app_seek_dyn\n");
                         out.push_str("    mov %rax, 32(%rsp)\n");
                         cg_dyn_stack_release(out,0,false);
                     } else {
