@@ -2024,7 +2024,7 @@ const ASM_RESERVED: &[&str] = &[
     // hbc itself emits; a user function with one of these names would
     // collide with a helper symbol.
     "dtos", "stod", "year", "day", "month", "dow", "cdow", "cmonth", "dtoc", "sqrt", "exp", "log", "mod", "padc", "rat", "stuff", "isdigit", "isalpha", "isupper", "islower", "strzero", "ischar", "strzero_fix", "str_f64", "fmt_f64", "date_add", "date_diff", "date_days", "date_from_days", "seconds",
-    "hb_bchar", "hb_bcode", "__defaultnil", "hb_default", "hb_defaultvalue", "hb_sha1", "hb_hmac_sha1", "strtran", "space", "substr", "date", "ctod", "date_pack", "date_render", "date_today", "dispbox", "hrbase_wait", "setcursor", "hb_flink", "hb_flinksym", "hb_flinkread", "hb_memowrit", "hb_dircreate", "ferror", "curdir", "fread", "fcreate", "fopen", "fwrite", "fclose", "freadstr", "hb_libname", "hb_ps", "os", "dirmake", "inkey", "file", "hrfile_setdefault", "hrfile_setpath", "qout", "qqout", "outstd", "outerr", "empty", "procname", "min", "max", "str", "padr", "hb_ntos", "replicate", "aeval", "hb_isnumeric", "hb_isarray", "hb_isstring", "dfree", "upper", "lower", "left", "right", "at", "int", "abs", "padl", "val", "ascan", "aclone", "atail", "asort", "hb_bitand", "hb_bitor", "hb_bitxor", "hb_bitnot", "hb_bittest", "hb_bitset", "hb_bitreset", "eprint_str", "eprint_sep", "eprint_i64", "eprint_i64c", "eprint_dyn", "eprint_dynlit", "print_dynlit", "eprint_f64", "hb_eol", "procline", "asc", "trim", "ltrim", "rtrim", "alltrim", "chr", "trace_top", "print_trace", "panic_exit", "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_range_error", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
+    "hb_at", "hb_bchar", "hb_bcode", "__defaultnil", "hb_default", "hb_defaultvalue", "hb_sha1", "hb_hmac_sha1", "strtran", "space", "substr", "date", "ctod", "date_pack", "date_render", "date_today", "dispbox", "hrbase_wait", "setcursor", "hb_flink", "hb_flinksym", "hb_flinkread", "hb_memowrit", "hb_dircreate", "ferror", "curdir", "fread", "fcreate", "fopen", "fwrite", "fclose", "freadstr", "hb_libname", "hb_ps", "os", "dirmake", "inkey", "file", "hrfile_setdefault", "hrfile_setpath", "qout", "qqout", "outstd", "outerr", "empty", "procname", "min", "max", "str", "padr", "hb_ntos", "replicate", "aeval", "hb_isnumeric", "hb_isarray", "hb_isstring", "dfree", "upper", "lower", "left", "right", "at", "int", "abs", "padl", "val", "ascan", "aclone", "atail", "asort", "hb_bitand", "hb_bitor", "hb_bitxor", "hb_bitnot", "hb_bittest", "hb_bitset", "hb_bitreset", "eprint_str", "eprint_sep", "eprint_i64", "eprint_i64c", "eprint_dyn", "eprint_dynlit", "print_dynlit", "eprint_f64", "hb_eol", "procline", "asc", "trim", "ltrim", "rtrim", "alltrim", "chr", "trace_top", "print_trace", "panic_exit", "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_range_error", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
 ];
 
 fn dbf_result(id: &str) -> Option<Ty> {
@@ -5085,6 +5085,14 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
                     if args.len() > 1 { pin_vars(f,&args[1],Ty::I64,pin,n)?; walk(f,&args[1],sigs,lit,pin,printed,n)?; }
                     return Ok(());
                 }
+                if is_builtin(id,"hb_at") {
+                    for (i,a) in args.iter().enumerate() {
+                        if i<2 {pin_vars(f,a,Ty::Str,pin,n)?;}
+                        else if !matches!(a,Expr::Nil) {pin_vars(f,a,Ty::I64,pin,n)?;}
+                        walk(f,a,sigs,lit,pin,printed,n)?;
+                    }
+                    return Ok(());
+                }
                 if is_builtin(id,"at") {
                     for a in args { pin_vars(f,a,Ty::Str,pin,n)?; walk(f,a,sigs,lit,pin,printed,n)?; }
                     return Ok(());
@@ -7313,6 +7321,16 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                     return Err(format!("line {}: `{}` length is an integer",n,id));
                 }
                 return Ok(Ty::StrOwn);
+            }
+            if is_builtin(id,"hb_at") {
+                if !(2..=4).contains(&args.len()) {return Err(format!("line {}: hb_At takes two to four arguments",n));}
+                if !DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get()) {return Err(format!("line {}: hb_At requires ordinary Linux without threads or PRIVATE/PUBLIC/macro context",n));}
+                for (i,a) in args.iter().enumerate() {
+                    if i<2 {
+                        if !matches!(type_expr(a,env,sigs,n)?,Ty::Str|Ty::StrOwn) {return Err(format!("line {}: hb_At expects typed strings",n));}
+                    } else if !matches!(a,Expr::Nil) && type_expr(a,env,sigs,n)?!=Ty::I64 {return Err(format!("line {}: hb_At bounds require I64 or literal NIL in this increment",n));}
+                }
+                return Ok(Ty::I64);
             }
             if is_builtin(id, "at") {
                 // At(search, text) (issue #1): case-sensitive 1-based
@@ -11895,6 +11913,10 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
                 for a in args { apply_moves(a,env,sigs,false); }
                 return;
             }
+            if is_builtin(id,"hb_at") {
+                for a in args {apply_moves(a,env,sigs,false);}
+                return;
+            }
             if is_builtin(id,"at") {
                 for a in args { apply_moves(a,env,sigs,false); }
                 return;
@@ -14624,6 +14646,32 @@ fn cg_i64_tagged(out: &mut String) {
 }
 
 
+// Typed hb_At evaluates left to right, retaining BOTH strings before
+// bounds can call user code. Its range is an inclusive byte interval;
+// hbc_at sees only the safe clipped slice and keeps its existing ABI.
+fn cg_hb_at(args:&[Expr],env:&[CgLocal],sigs:&[Sig],strs:&mut Vec<String>,out:&mut String,target:Target) {
+    let guard=fresh_lbl();
+    out.push_str(&format!("    sub $80, %rsp\n    movq $0, (%rsp)\n    movq $0, 16(%rsp)\n    movq $0, 56(%rsp)\n    cmpq $0, hbc_seq_depth(%rip)\n    je .Lhbat_eval{guard}\n    lea .Lhbat_catch{guard}(%rip), %rdi\n    call hbc_seq_push\n    movq $1, 56(%rsp)\n.Lhbat_eval{guard}:\n"));
+    for i in 0..2 {
+        cg_value(&args[i],env,sigs,strs,out,target);
+        out.push_str("    mov %rax, 64(%rsp)\n    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_strcpy\n");
+        out.push_str(&format!("    mov %rax, {}(%rsp)\n    mov %rdx, {}(%rsp)\n",i*16,i*16+8));
+        if expr_ty(&args[i],env,sigs)==Ty::StrOwn && !matches!(&args[i],Expr::Var(_)) {out.push_str("    mov 64(%rsp), %rdi\n    call hbc_freestr\n");}
+    }
+    if args.len()>2 && !matches!(&args[2],Expr::Nil) {cg_value(&args[2],env,sigs,strs,out,target);}
+    else {out.push_str("    mov $1, %eax\n");}
+    out.push_str("    mov %rax, 32(%rsp)\n");
+    if args.len()>3 && !matches!(&args[3],Expr::Nil) {cg_value(&args[3],env,sigs,strs,out,target);}
+    else {out.push_str("    mov 24(%rsp), %rax\n");}
+    out.push_str(&format!("    mov %rax, 40(%rsp)\n    cmpq $0, 56(%rsp)\n    je .Lhbat_invoke{guard}\n    call hbc_seq_pop\n.Lhbat_invoke{guard}:\n"));
+    let k=fresh_lbl();
+    out.push_str(&format!("    mov 32(%rsp), %r8\n    test %r8, %r8\n    js .Lhbat_miss{}\n    jnz .Lhbat_start{}\n    mov $1, %r8d\n.Lhbat_start{}:\n    dec %r8\n    mov %r8, 32(%rsp)\n    cmp 24(%rsp), %r8\n    jae .Lhbat_miss{}\n    mov 40(%rsp), %rcx\n    cmp 24(%rsp), %rcx\n    jbe .Lhbat_end{}\n    mov 24(%rsp), %rcx\n.Lhbat_end{}:\n    cmp %r8, %rcx\n    jbe .Lhbat_miss{}\n    sub %r8, %rcx\n    mov 16(%rsp), %rdx\n    add %r8, %rdx\n    mov (%rsp), %rdi\n    mov 8(%rsp), %rsi\n    call hbc_at\n    test %rax, %rax\n    jz .Lhbat_done{}\n    add 32(%rsp), %rax\n    jmp .Lhbat_done{}\n.Lhbat_miss{}:\n    xor %eax, %eax\n.Lhbat_done{}:\n",k,k,k,k,k,k,k,k,k,k,k));
+    out.push_str("    mov %rax, 48(%rsp)\n    mov (%rsp), %rdi\n    call hbc_freestr\n    mov 16(%rsp), %rdi\n    call hbc_freestr\n    mov 48(%rsp), %rax\n    xor %edx, %edx\n    add $80, %rsp\n");    out.push_str(&format!("    jmp .Lhbat_exit{guard}\n.Lhbat_catch{guard}:\n"));
+    for i in 0..2 {out.push_str(&format!("    mov {}(%rsp), %rdi\n    test %rdi, %rdi\n    je .Lhbat_skip{guard}_{i}\n    call hbc_freestr\n.Lhbat_skip{guard}_{i}:\n",i*16));}
+    out.push_str(&format!("    add $80, %rsp\n    jmp hbc_seq_unwind\n.Lhbat_exit{guard}:\n"));
+
+}
+
 fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target) {
     match e {
         Expr::Seq(es) => {
@@ -15872,6 +15920,9 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                 out.push_str(if is_builtin(id,"left") { "    call hbc_left\n" } else { "    call hbc_right\n" });
                 out.push_str("    mov %rax, 32(%rsp)\n    mov %rdx, 40(%rsp)\n    mov 8(%rsp), %rdi\n    call hbc_freestr\n    mov 32(%rsp), %rax\n    mov 40(%rsp), %rdx\n    add $48, %rsp\n");
             }
+        }
+        Expr::Call(id,args) if is_builtin(id,"hb_at") => {
+            cg_hb_at(args,env,sigs,strs,out,target);
         }
         Expr::Call(id,args) if is_builtin(id,"at") => {
             // At(search, text): Harbour evaluates the arguments left to
@@ -19551,7 +19602,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             // ERP string batch (issue #1): mirror the checker's types.
             if ["upper", "lower"].iter().any(|b| is_builtin(id,b)) { return Ty::StrOwn; }
             if ["left", "right"].iter().any(|b| is_builtin(id,b)) { return Ty::StrOwn; }
-            if is_builtin(id, "at") { return Ty::I64; }
+            if is_builtin(id, "at") || is_builtin(id,"hb_at") { return Ty::I64; }
             if id=="&" { return Ty::Dyn; }
             if id=="__mvexist" { return Ty::Bool; }
             if ["padc","rat","stuff","isdigit","isalpha","isupper","islower","strzero"].iter().any(|b|is_builtin(id,b)) { return str_builtin_ty(id); }
