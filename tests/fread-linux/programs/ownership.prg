@@ -8,6 +8,13 @@ FUNCTION Work()
   FClose(h)
  NEXT
  ? n,s,Len(s)
+ n:=0
+ FOR i:=1 TO 1000
+  h:=FOpen("own.dat")
+  n:=n+FRead(h,@s,9)
+  FClose(h)
+ NEXT
+ ? n,s,Len(s)
 RETURN NIL
 FUNCTION Main()
  Work()

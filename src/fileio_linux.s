@@ -98,7 +98,7 @@ hbc_fileio_readstr:
 # The logical length and any untouched suffix remain unchanged.
 hbc_fileio_read:
     cmp %r8, %rdx
-    ja .Lfileio_read_zero
+    ja .Lfileio_read_boundary
     test %rdx, %rdx
     jz .Lfileio_read_zero
     xor %eax, %eax
@@ -111,4 +111,52 @@ hbc_fileio_read:
 .Lfileio_read_zero:
     xor %eax, %eax
     xor %edx, %edx
+    ret
+
+# Harbour permits count == logical length + 1, consuming an extra byte
+# without extending the logical string. Our allocations have no implicit
+# terminator cell: use one temporary for one read, then copy only valid cells.
+.Lfileio_read_boundary:
+    lea 1(%r8), %rcx
+    cmp %rcx, %rdx
+    jne .Lfileio_read_zero
+    push %rbp
+    mov %rsp, %rbp
+    push %rbx
+    push %r12
+    push %r13
+    push %r14
+    sub $32, %rsp
+    mov %rdi, %r12
+    mov %rsi, %r13
+    mov %r8, %r14
+    mov %rdx, 8(%rsp)
+    mov %rdx, %rsi
+    call hbc_stralloc
+    mov %rax, %rbx
+    mov %r12, %rdi
+    mov %rbx, %rsi
+    mov 8(%rsp), %rdx
+    xor %eax, %eax
+    syscall
+    xor %ecx, %ecx
+    test %rax, %rax
+    cmovs %rcx, %rax
+    mov %rax, (%rsp)
+    cmp %r14, %rax
+    cmova %r14, %rax
+    mov %rax, %rcx
+    mov %rbx, %rsi
+    mov %r13, %rdi
+    rep movsb
+    mov %rbx, %rdi
+    call hbc_freestr
+    mov (%rsp), %rax
+    xor %edx, %edx
+    add $32, %rsp
+    pop %r14
+    pop %r13
+    pop %r12
+    pop %rbx
+    pop %rbp
     ret
