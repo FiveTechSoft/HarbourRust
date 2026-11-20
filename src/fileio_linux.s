@@ -93,3 +93,22 @@ hbc_fileio_readstr:
     pop %rbx
     pop %rbp
     ret
+
+# rdi=fd, rsi=owned mutable bytes, r8=buffer length, rdx=count.
+# The logical length and any untouched suffix remain unchanged.
+hbc_fileio_read:
+    cmp %r8, %rdx
+    ja .Lfileio_read_zero
+    test %rdx, %rdx
+    jz .Lfileio_read_zero
+    xor %eax, %eax
+    syscall
+    xor %ecx, %ecx
+    test %rax, %rax
+    cmovs %rcx, %rax
+    xor %edx, %edx
+    ret
+.Lfileio_read_zero:
+    xor %eax, %eax
+    xor %edx, %edx
+    ret
