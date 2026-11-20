@@ -1,0 +1,23 @@
+#!/usr/bin/env python3
+"""Own MIT literal integer hash key probes; external Harbour oracle only."""
+from pathlib import Path
+import subprocess,json,hashlib,argparse,os
+p=argparse.ArgumentParser();p.add_argument('--compiler',required=True);p.add_argument('--baseline',required=True);p.add_argument('--hbmk2',required=True);p.add_argument('--output',required=True);p.add_argument('--external-p08');a=p.parse_args();out=Path(a.output).resolve();out.mkdir(exist_ok=False);env=dict(os.environ,PATH='/tmp/toolchain/bin:'+os.environ['PATH']);rows=[]
+def h(p):return hashlib.sha256(p.read_bytes()).hexdigest()
+def run(cmd,w,label):
+ r=subprocess.run(list(map(str,cmd)),capture_output=True,env=env,timeout=30)
+ for ext,v in [('stdout',r.stdout),('stderr',r.stderr),('rc',str(r.returncode).encode())]:(w/(label+'.'+ext)).write_bytes(v)
+ return r
+programs={'empty-miss': 'function Main()\nlocal h:={=>}\n? hb_HHasKey(h,10)\nreturn nil\n', 'i64-string-value': 'function Main()\nlocal h:={=>}\nh[10]:="ten"\n? h[10],hb_HHasKey(h,10),Len(h),ValType(h[10])\nreturn nil\n', 'mixed-namespaces': 'function Main()\nlocal h:={=>}\nh[10]:=1\nh["10"]:=2\n? Len(h),h[10],h["10"]\nreturn nil\n', 'large-neighbors': 'function Main()\nlocal h:={=>}\nh[9007199254740993]:=1\nh[9007199254740992]:=2\n? Len(h),h[9007199254740993],h[9007199254740992]\nreturn nil\n', 'extremes': 'function Main()\nlocal h:={=>}\nh[0b1000000000000000000000000000000000000000000000000000000000000000]:=1\nh[9223372036854775807]:=2\nh[-1]:=3\nh[0]:=4\n? Len(h),h[0b1000000000000000000000000000000000000000000000000000000000000000],h[9223372036854775807],h[-1],h[0]\nreturn nil\n', 'overwrite': 'function Main()\nlocal h:={=>}\nh[10]:=1\nh[10]:=2\n? Len(h),h[10]\nreturn nil\n', 'encoded-string': 'function Main()\nlocal h:={=>}\nh[10]:=1\nh["000000000000000A"]:=2\nh["000000000000000a"]:=3\n? Len(h),h[10],h["000000000000000A"],hb_HHasKey(h,11)\nreturn nil\n', 'clone-delete': 'function Main()\nlocal h:={=>},k:={=>}\nh[10]:=1\nh["10"]:=2\nk:=hb_HClone(h)\nhb_HDelAt(h,1)\n? Len(h),Len(k),hb_HHasKey(h,10),k[10],h["10"]\nreturn nil\n', 'clear-reinsert': 'function Main()\nlocal h:={=>}\nh[10]:=1\nh["10"]:=2\nhb_HClear(h)\nh[10]:=3\n? Len(h),h[10],hb_HHasKey(h,"10")\nreturn nil\n', 'fill': 'function Main()\nlocal h:={=>}\nh[10]:=1\nh["10"]:=2\nhb_HFill(h,3)\n? Len(h),h[10],h["10"]\nreturn nil\n', 'copy': 'function Main()\nlocal h:={=>},k:={=>}\nh[10]:=1\nh["10"]:=2\nk[10]:=3\nhb_HCopy(h,k)\n? Len(k),k[10],k["10"]\nreturn nil\n', 'merge': 'function Main()\nlocal h:={=>},k:={=>}\nh[10]:=1\nh["10"]:=2\nk[10]:=3\nhb_HMerge(k,h)\n? Len(k),k[10],k["10"]\nreturn nil\n', 'owned-value-snapshot': 'function Keep(x)\nreturn x\nfunction Main()\nlocal h:={=>},x:=Keep(Upper("old-value")),dummy:=Keep(nil),z\nh[10]:=x\nx:=nil\nz:=Upper("bad-value")\n? h[10],z\nreturn nil\n', 'rhs-effects': 'function Loud()\n? "called"\nreturn 3\nfunction Main()\nlocal h:={=>}\nh[10]:=Loud()\n? h[10]\nreturn nil\n', 'growth': 'function Main()\nlocal h:={=>}\nh[0]:=1\nh[1]:=2\nh[2]:=3\nh[3]:=4\nh[4]:=5\nh[5]:=6\nh[6]:=7\nh[7]:=8\nh[8]:=9\nh[9]:=10\nh[10]:=11\nh[11]:=12\nh[12]:=13\nh[13]:=14\nh[14]:=15\nh[15]:=16\nh[16]:=17\nh[17]:=18\nh[18]:=19\nh[19]:=20\n? Len(h),h[0],h[19]\nhb_HDelAt(h,1)\n? Len(h),h[19],hb_HHasKey(h,0)\nreturn nil\n'}
+if a.external_p08:programs["external-p08-unmodified"]=Path(a.external_p08).read_text()
+for name,text in programs.items():
+ w=out/name;w.mkdir();src=w/'p.prg';src.write_text(text);row=dict(name=name,source_sha256=h(src),results={})
+ for label,cmd in [('base',[a.baseline,src,w/'base','--target=linux']),('int',[a.compiler,src,w/'int','--target=linux']),('ext',[a.compiler,src,w/'ext','--target=linux','--external-as']),('oracle',[a.hbmk2,src,'-quiet','-w0','-gtstd','-o'+str(w/'oracle')])]:
+  b=run(cmd,w,label+'-build');rr=dict(build_rc=b.returncode)
+  if not b.returncode:
+   q=run([w/label],w,label+'-run');rr.update(run_rc=q.returncode,binary_sha256=h(w/label));(w/label).unlink()
+  row['results'][label]=rr
+ for label in ['oracle','int','ext']:assert row['results'][label]['build_rc']==0,(name,label)
+ for label in ['int','ext']:assert all((w/(label+'-run.'+ext)).read_bytes()==(w/('oracle-run.'+ext)).read_bytes() for ext in ['rc','stdout','stderr']),(name,label)
+ rows.append(row);print(name,'EXACT int/ext',flush=True)
+(out/'results.json').write_text(json.dumps(dict(compiler_sha256=h(Path(a.compiler)),baseline_sha256=h(Path(a.baseline)),runner_sha256=h(Path(__file__)),scope='Own signed64-bit literal hash keys plus optional unchanged P08 original, int/ext exact rc/stdout/stderr against external Harbour. Baseline build rejections separate.',rows=rows),indent=2))

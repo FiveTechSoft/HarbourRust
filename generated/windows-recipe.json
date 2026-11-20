@@ -11,6 +11,7 @@
     "-fno-unwind-tables",
     "-fno-ident",
     "-mno-red-zone",
+    "-fno-jump-tables",
     "-Wall",
     "-Wextra",
     "-Werror",
@@ -21,7 +22,7 @@
     "runtime/hrcdx.h": "a6b48dce0cf0211715698cc16b5173ecc7bb1ff88b5e7ba8f03d1565a20db4ad",
     "runtime/hrdbf.c": "ee767959ff9cfaa64ff7d284ae525e8194e36ecb1d6c23b082e3885defc032f1",
     "runtime/hrdbf.h": "5debf22b47153ad299766663512d7a73dd4e3de56c721b564fbc66081dcb6093",
-    "runtime/hrdbf_app.c": "a8fcf4ac2bd4bf8a8747651ecf4edc8002a388ee7c7745ff052c0683c8f46b3d",
+    "runtime/hrdbf_app.c": "2eeebd247c374bbb8443dacf6cc667832a22f6bb8839e8e18e017b5c552cedab",
     "runtime/hrdbf_embedded_windows.c": "a687e097a7c85579ae65f8f49d69686806dc96e44e93cbfc0c606d5495dff078",
     "runtime/hrdbf_file.h": "78e63320df7529689b635eb6dbfce7dca8eae6c90cece31e1a94ca5672c685ac",
     "runtime/hrdbf_file_windows.c": "138588db987138ebb42fb160249d6ded934459a329d3e5812225defdf3731e7f",
@@ -34,6 +35,6 @@
     "runtime/hrvalue.c": "bc4970cd86c7a2ac71ad8bd974908c4302aaa1b870fbaa3cba6ebaa5d83999d1",
     "runtime/hrvalue.h": "962dee2ca2d6f75dc45d4d6597a1e84e62568b869a897911c496501fdc8a4dfe"
   },
-  "asm_sha256": "ee8f46f2996b560622bb55d7e2dc42ed94ebcd5f7b18726b92d26038aeb13c1b",
+  "asm_sha256": "dc016d1302909da79c6d2b1622c9e846b6880fb1b349bfce86675b589e8a2b86",
   "notes": "Win64 C bodies; explicit internal ABI and copy callback bridges; DLL import pointer references normalised to named thunks"
 }

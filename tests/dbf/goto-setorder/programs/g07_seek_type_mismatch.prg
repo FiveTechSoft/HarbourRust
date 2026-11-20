@@ -1,0 +1,18 @@
+function Main()
+dbUseArea(.T.,"DBFNTX","goto_set.dbf","GOTO",.F.,.F.)
+ordListAdd("goto_set.ntx")
+dbGoTop()
+dbSeek(AMOUNT)
+? "seek num:", RecNo(), Found(), Eof(), Bof()
+dbSeek(FLAG)
+? "seek log:", RecNo(), Found(), Eof(), Bof()
+dbSeek(FECHA)
+? "seek date:", RecNo(), Found(), Eof(), Bof()
+dbSeek(12.5)
+? "seek lit num:", RecNo(), Found(), Eof(), Bof()
+dbSeek("000003")
+? "seek str:", RecNo(), Found(), Eof(), Bof()
+dbSkip(-1)
+? "back:", RecNo(), KEY
+dbCloseArea()
+return nil

@@ -1,4 +1,5 @@
 mod box_gtstd;
+mod llvm_darwin;
 // hbc - PoC compiler: Harbour syntax (closed subset) -> x86-64 assembly.
 //
 // Pipeline: hbc does tokenizing, parsing, semantic analysis (types AND
@@ -520,14 +521,22 @@ fn cg_div_operand(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String
     out.push_str("    mov 24(%rsp), %rax\n    movsd 16(%rsp), %xmm0\n    add $32, %rsp\n    mov $2, %ecx\n");
 }
 
+// Discard a completed prefix immediately. Nothing remains pending when the
+// following expression throws; variables are borrowed and never released here.
+fn cg_seq_discard(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target) {
+    let t = expr_ty(e, env, sigs);
+    if t == Ty::F64 { cg_f64_load(e, env, sigs, strs, out, target); }
+    else { cg_value(e, env, sigs, strs, out, target); }
+    if t == Ty::StrOwn && !matches!(e, Expr::Var(_)) {
+        out.push_str("    mov %rax, %rdi\n    call hbc_freestr\n");
+    }
+}
+
 fn cg_f64_load(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target) {
     match e {
         Expr::Set(..) => unreachable!("inline `:=` is restricted to integer/logical values in this increment (checked)"),
         Expr::Seq(es) => {
-            for e in &es[..es.len()-1] {
-                if expr_ty(e, env, sigs) == Ty::F64 { cg_f64_load(e, env, sigs, strs, out, target); }
-                else { cg_value(e, env, sigs, strs, out, target); }
-            }
+            for e in &es[..es.len()-1] { cg_seq_discard(e, env, sigs, strs, out, target); }
             cg_f64_load(es.last().expect("nonempty"), env, sigs, strs, out, target);
         }
 
@@ -4661,6 +4670,14 @@ thread_local! {
     // Late phase: enabled only after the ordinary fixpoint converged with the
     // no-evidence parameter error. A program that compiles today is unchanged.
     static DEFAULT_ENABLED: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+    // New decimal-copy LOCAL admission is proven before semantic fixpoints:
+    // THREADS is discovered during typing and can otherwise arrive too late.
+    static DECIMAL_LOCAL_PROFILE: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+}
+// Same pre-fixpoint ordinary-Linux/no-thread proof as the decimal LOCAL
+// increment. Only mixed static numeric Min/Max admission uses this predicate.
+fn minmax_mixed_tys(a:Ty,b:Ty)->bool {
+    DECIMAL_LOCAL_PROFILE.with(|v|v.get()) && a!=b && matches!(a,Ty::I64|Ty::F64) && matches!(b,Ty::I64|Ty::F64)
 }
 fn byref_param(function: &str, index: usize) -> bool {
     BYREF_PARAMS.with(|m|m.borrow().get(function).map_or(false,|v|v.contains(&index)))
@@ -5873,6 +5890,23 @@ fn find_set_into(e: &Expr, roots: &[String]) -> Option<String> {
     }
 }
 
+// Literal integer hash keys carry a separate kind bit, never user string
+// spelling. Only the measured ordinary-Linux profile can admit this route.
+thread_local! { static HASH_I64_LITERAL: std::cell::Cell<bool> = const {std::cell::Cell::new(false)}; }
+fn hash_i64_literal(e:&Expr)->bool {
+    let yes=matches!(e,Expr::Int(v) if v.parse::<i64>().is_ok()) && DECIMAL_LOCAL_PROFILE.with(|v|v.get()) && !MACRO_CONTEXT.with(|v|v.get());
+    if yes { HASH_I64_LITERAL.with(|v|v.set(true)); }
+    yes
+}
+fn cg_hash_key(e:&Expr, env:&[CgLocal], sigs:&[Sig], strs:&mut Vec<String>, out:&mut String, target:Target) {
+    if let Expr::Int(i)=e {
+        // Immutable rodata needs no scratch buffer that a nested RHS could
+        // overwrite. All 64 integer bits survive, including values >2^53.
+        let k=strs.len();strs.push(format!("{:016X}",i.parse::<i64>().expect("checked literal hash key") as u64));
+        out.push_str(&format!("    lea .Lstr{}(%rip), %rax\n    movabs $0x8000000000000010, %rdx\n",k));
+    } else { cg_value(e,env,sigs,strs,out,target); }
+}
+
 fn expr_mentions(e: &Expr, name: &str) -> bool {
     match e {
         Expr::Seq(es) => es.iter().any(|e| expr_mentions(e, name)),
@@ -6323,8 +6357,11 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 // consumer already handles Dyn values (parexpr's
                 // `( y := 10, y )`). Owned Dyn temporaries keep the limit.
                 let dyn_var = t == Ty::Dyn && matches!(e, Expr::Var(_));
-                if !matches!(t, Ty::I64 | Ty::Bool | Ty::F64 | Ty::Str) && !nil_output && !dyn_var {
-                    return Err(format!("line {}: parenthesized comma expressions support numeric/logical/borrowed-string results only in this increment; owned, Dyn, array and block results remain a named limit", n));
+                if !matches!(t, Ty::I64 | Ty::Bool | Ty::F64 | Ty::Str | Ty::StrOwn) && !nil_output && !dyn_var {
+                    return Err(format!("line {}: parenthesized comma expressions support numeric/logical/borrowed-string results only in the portable subset; ordinary Linux additionally accepts typed owned strings; owned Dyn, array and block results remain a named limit", n));
+                }
+                if t == Ty::StrOwn && (!CURDIR_LINUX_NATIVE.with(|v|v.get()) || THREADS.with(|v|v.get())) {
+                    return Err(format!("line {}: owned-string comma lists are measured only on ordinary Linux without threads", n));
                 }
                 apply_moves(e, &mut local, sigs, false);
                 last = t;
@@ -6340,12 +6377,15 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
         Expr::Set(id, rhs) => {
             // Inline assignment as an expression (parexpr; probe px2):
             // the value is the NEW content. This increment restricts the
-            // new content to integers and logicals; float, string, Dyn,
-            // array and block payloads in inline position stay named
-            // limits (their ownership/promotion contract in expression
-            // position is not yet oracle-pinned).
+            // new content to integers/logicals in the portable subset.
+            // Ordinary Linux additionally admits scalar Dyn into a Dyn
+            // slot, returning an independent owned snapshot, and Date into
+            // an existing Date slot. Static float, string and container
+            // shapes remain named limits.
             let t = type_expr(rhs, env, sigs, n)?;
-            if !matches!(t, Ty::I64 | Ty::Bool) {
+            let dyn_inline = t==Ty::Dyn && DECIMAL_LOCAL_PROFILE.with(|v|v.get());
+            let date_inline = t==Ty::Date && DECIMAL_LOCAL_PROFILE.with(|v|v.get()) && env.iter().any(|v|v.name==*id && v.ty==Ty::Date);
+            if !matches!(t, Ty::I64 | Ty::Bool) && !dyn_inline && !date_inline {
                 return Err(format!("line {}: inline `:=` in an expression supports integer/logical values only in this increment; floats, strings, Dyn, arrays and blocks remain a named limit", n));
             }
             let idx = match env.iter().position(|v| v.name == *id) {
@@ -6437,7 +6477,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 } else if id=="ordlistadd" || id=="dbseek" {
                     if (id=="ordlistadd"&&args.len()!=1)||(id=="dbseek"&&(args.is_empty()||args.len()>3)){return Err(format!("line {}: {} expects {}",n,id,if id=="ordlistadd"{"one filename string"}else{"one key string and up to two logical flags"}));}
                     if id=="dbseek" {
-                        if !matches!(type_expr(&args[0],env,sigs,n)?,Ty::Str|Ty::StrOwn|Ty::Dyn){return Err(format!("line {}: NTX dbseek expects a statically typed string or a Dyn character value",n));}
+                        if !matches!(type_expr(&args[0],env,sigs,n)?,Ty::Str|Ty::StrOwn|Ty::Dyn|Ty::I64|Ty::F64|Ty::Bool|Ty::Date){return Err(format!("line {}: NTX dbseek expects a statically typed string or a scalar Dyn value",n));}
                     } else if !matches!(type_expr(&args[0],env,sigs,n)?,Ty::Str|Ty::StrOwn){return Err(format!("line {}: NTX {} expects a statically typed string (Dyn queries are outside this increment)",n,id));}
                     for a in &args[1..]{if type_expr(a,env,sigs,n)?!=Ty::Bool{return Err(format!("line {}: NTX seek flags must be logical",n));}}
                 } else if id=="dbskip" || id=="fieldget" {
@@ -6503,6 +6543,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 if (a == Ty::Dyn || b == Ty::Dyn) && matches!(a, Ty::I64 | Ty::F64 | Ty::Dyn) && matches!(b, Ty::I64 | Ty::F64 | Ty::Dyn) {
                     return Ok(Ty::Dyn);
                 }
+                if minmax_mixed_tys(a,b) { return Ok(Ty::Dyn); }
                 if a != b || !matches!(a, Ty::I64 | Ty::F64 | Ty::Bool) {
                     return Err(format!("line {}: `{}` needs matching integer, float or logical arguments; mixed numeric/Dyn/other types are not in this increment", n, id));
                 }
@@ -6855,7 +6896,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                     _ => {}
                 }
                 return match type_expr(&args[0], env, sigs, n)? {
-                    Ty::AView | Ty::DArrDyn | Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::Arr(_) | Ty::Hash => {
+                    t @ (Ty::AView | Ty::DArrDyn | Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::Arr(_) | Ty::Hash) => {
                         // Only variables: an array TEMPORARY in expression
                         // position has no free point in this increment
                         // (the FOR EACH temp machinery does not apply
@@ -6863,6 +6904,9 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                         // it also existed for dynamic ones - named
                         // rejection instead of the cg unreachable.
                         if !matches!(&args[0], Expr::Var(_)) {
+                            if t == Ty::DArrU && CURDIR_LINUX_NATIVE.with(|v|v.get()) && !THREADS.with(|v|v.get()) {
+                                return Ok(Ty::I64);
+                            }
                             return Err(format!("line {}: `len` of an array temporary is not in this increment (assign it to a variable first)", n));
                         }
                         Ok(Ty::I64)
@@ -6908,7 +6952,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 if !matches!(&args[0], Expr::Var(_)) || type_expr(&args[0], env, sigs, n)? != Ty::Hash {
                     return Err(format!("line {}: `hb_HHasKey` expects a hash variable (its slot is passed by address)", n));
                 }
-                if !matches!(type_expr(&args[1], env, sigs, n)?, Ty::Str | Ty::StrOwn) {
+                if !matches!(type_expr(&args[1], env, sigs, n)?, Ty::Str | Ty::StrOwn) && !hash_i64_literal(&args[1]) {
                     return Err(format!("line {}: hash keys are strings in this increment", n));
                 }
                 return Ok(Ty::Bool);
@@ -9092,7 +9136,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                     if v.moved {
                         return Err(format!("line {}: use of moved value `{}`", n, id));
                     }
-                    if it != Ty::Str && it != Ty::StrOwn {
+                    if it != Ty::Str && it != Ty::StrOwn && !hash_i64_literal(ie) {
                         return Err(format!("line {}: hash keys are strings in this increment", n));
                     }
                     Ok(Ty::Dyn)
@@ -9316,7 +9360,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                     return Err(format!("line {}: hash keys are strings in this increment", n));
                 }
                 let vt = type_expr(v, env, sigs, n)?;
-                if !matches!(vt, Ty::I64 | Ty::Bool | Ty::Dyn) {
+                if !matches!(vt, Ty::I64 | Ty::Bool | Ty::Dyn) && !(matches!(v,Expr::Str(_)) && CURDIR_LINUX_NATIVE.with(|v|v.get()) && !THREADS.with(|v|v.get())) {
                     return Err(format!("line {}: hash values are tagged scalars (integer, logical or NIL) in this increment", n));
                 }
             }
@@ -9475,9 +9519,20 @@ fn prescan_dyn(f: &Func, sigs: &[Sig], ptys: &[Ty]) -> std::collections::HashSet
     }
     let mut pairs: Vec<(&String, &Expr)> = Vec::new();
     collect(&f.stmts, &mut pairs);
+    let int_origins: HashSet<String> = pairs.iter().filter_map(|(id,e)|
+        if matches!(e,Expr::Int(_)) {Some((*id).clone())} else {None}).collect();
     let may_be_dyn = |e: &Expr, dyn_names: &HashSet<String>, darr: &HashSet<String>| -> bool {
         match e {
             Expr::Nil => true,
+            // A copied parameter can initialize as I64 before a later decimal
+            // store. Preserve existing NumLocal precedence; otherwise let that
+            // LOCAL use the already-owned Dyn slot/assignment/return contract.
+            // Only literal stores and variable +/-/* literal-decimal forms
+            // are evidenced here, never a speculative call/type_expr pass.
+            Expr::Float(..) | Expr::FloatV(..) if DECIMAL_LOCAL_PROFILE.with(|v|v.get()) => true,
+            Expr::Bin(op,a,b) if DECIMAL_LOCAL_PROFILE.with(|v|v.get()) && matches!(op,'+'|'-'|'*') &&
+                ((matches!(&**a,Expr::Var(_)) && matches!(&**b,Expr::Float(..)|Expr::FloatV(..))) ||
+                 (matches!(&**b,Expr::Var(_)) && matches!(&**a,Expr::Float(..)|Expr::FloatV(..)))) => true,
             Expr::Index(id, _) | Expr::Index2(id, _, _) => darr.contains(id),
             Expr::Var(v) => dyn_names.contains(v),
             // A DBF field read (FIELD->x / alias->x / FieldGet) yields a
@@ -9495,7 +9550,12 @@ fn prescan_dyn(f: &Func, sigs: &[Sig], ptys: &[Ty]) -> std::collections::HashSet
     loop {
         let before = dyn_names.len();
         for (name, e) in &pairs {
-            if may_be_dyn(e, &dyn_names, &darr_names) {
+            // A LOCAL with an integer literal store can also receive a
+            // proven F64 call. Use existing Dyn ownership/storage, without
+            // speculatively invoking type_expr or widening all F64 locals.
+            let float_call = DECIMAL_LOCAL_PROFILE.with(|v|v.get()) && int_origins.contains(*name) &&
+                matches!(e,Expr::Call(id,_) if is_builtin(id,"seconds") || sigs.iter().any(|s|s.name==*id && s.ret==Some(Ty::F64)));
+            if float_call || may_be_dyn(e, &dyn_names, &darr_names) {
                 dyn_names.insert((*name).clone());
             }
         }
@@ -9751,6 +9811,43 @@ fn foreach_lv_readonly(stmts: &[Stmt], name: &str) -> bool {
         Stmt::For(_, _, _, _, _, b) | Stmt::ForEach(_, _, _, b) => foreach_lv_readonly(b, name),
         _ => true,
     })
+}
+
+// A bare LOCAL whose first mention is an unconditional Date store never
+// exposes its initial NIL. Narrow only this dominated, non-byref shape.
+// Unknown/control-flow forms fail closed; the existing Date checker still
+// rejects all later non-Date stores. No inference invokes type_expr here.
+fn narrow_bare_date_locals(funcs:&mut [Func]) {
+    if !DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get()) { return; }
+    fn date_producer(e:&Expr,name:&str)->bool {
+        !expr_mentions(e,name) && matches!(e,Expr::Call(id,_) if ["date","stod","ctod"].iter().any(|b|is_builtin(id,b)))
+    }
+    fn first_store(s:&Stmt,name:&str)->bool {
+        match s {
+            Stmt::Assign(_,id,e) if id==name => date_producer(e,name),
+            Stmt::Print(_,es,_) => {
+                for e in es {
+                    if !expr_mentions(e,name) { continue; }
+                    return matches!(e,Expr::Set(id,r) if id==name && date_producer(r,name));
+                }
+                false
+            }
+            _ => false,
+        }
+    }
+    for f in funcs {
+        let mut byrefs=std::collections::HashSet::new();
+        visit_stmts_ref(&f.stmts,&mut |_|{},&mut |e| {if let Expr::ByRef(id)=e {byrefs.insert(id.clone());}});
+        for i in 0..f.stmts.len() {
+            let name=match &f.stmts[i] {Stmt::Local(_,id,Expr::Nil) if !byrefs.contains(id)=>id.clone(),_=>continue};
+            let first=f.stmts[i+1..].iter().find(|s|stmt_mentions(s,&name));
+            if first.map_or(false,|s|first_store(s,&name)) {
+                if let Stmt::Local(_,_,e)=&mut f.stmts[i] {
+                    *e=Expr::Call("stod".to_string(),vec![Expr::Str(String::new())]);
+                }
+            }
+        }
+    }
 }
 
 // Bare `local i` (or `local i := NIL`) whose FIRST mention in the same
@@ -10162,9 +10259,12 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                     return Err(format!("line {}: codeblocks cannot be returned in this increment", n));
                 }
 
-                if t == Ty::DArrU {
+                if t == Ty::DArrU && (!CURDIR_LINUX_NATIVE.with(|v|v.get()) || THREADS.with(|v|v.get())) {
                     return Err(format!("line {}: cannot return an empty array whose element type was never pinned by `AAdd`", n));
                 }
+                // Preserve the unpinned empty-array kind across the return.
+                // The caller may choose its element kind with the first AAdd;
+                // defaulting it to integers here would lose that contract.
                 // Returning a borrowed parameter is a value COPY (hk237):
                 // Harbour hands the caller the string value while the
                 // owner's variable keeps it; codegen copies through the
@@ -11102,7 +11202,8 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 if !matches!(type_expr(ke, env, sigs, *n)?, Ty::Str | Ty::StrOwn) {
                     return Err(format!("line {}: hash keys are strings in this increment", n));
                 }
-                if !matches!(type_expr(ve, env, sigs, *n)?, Ty::I64 | Ty::Dyn) {
+                let vt=type_expr(ve, env, sigs, *n)?;
+                if !matches!(vt, Ty::I64 | Ty::Dyn) && !(matches!(ve,Expr::Str(_)) && CURDIR_LINUX_NATIVE.with(|v|v.get()) && !THREADS.with(|v|v.get())) {
                     return Err(format!("line {}: hash values are tagged scalars (integer or NIL) in this increment", n));
                 }
                 apply_moves(ve, env, sigs, true);
@@ -11175,10 +11276,10 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                         }
                         // Value first, then the key (probe h4).
                         let vt = type_expr(e, env, sigs, *n)?;
-                        if !matches!(vt, Ty::I64 | Ty::Bool | Ty::Dyn) {
+                        if !matches!(vt, Ty::I64 | Ty::Bool | Ty::Dyn) && !(matches!(e,Expr::Str(_)) && (matches!(ie,Expr::Str(_)|Expr::Var(_)) || matches!(ie,Expr::Int(_)) && DECIMAL_LOCAL_PROFILE.with(|v|v.get())) && CURDIR_LINUX_NATIVE.with(|v|v.get()) && !THREADS.with(|v|v.get())) {
                             return Err(format!("line {}: hash values are tagged scalars (integer, logical or NIL) in this increment", n));
                         }
-                        if !matches!(type_expr(ie, env, sigs, *n)?, Ty::Str | Ty::StrOwn) {
+                        if !matches!(type_expr(ie, env, sigs, *n)?, Ty::Str | Ty::StrOwn) && !hash_i64_literal(ie) {
                             return Err(format!("line {}: hash keys are strings in this increment", n));
                         }
                         apply_moves(e, env, sigs, true);
@@ -14447,6 +14548,17 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                     out.push_str(&format!("    lea .Lstr{}(%rip), %rax\n", idx));
                     out.push_str(&format!("    mov ${}, %edx\n", s.as_bytes().len()));
                 } else { cg_value(e, env, sigs, strs, out, target); }
+                // A sequence owns a fresh final string, including a variable
+                // borrowed from a local/static slot. Consumers may release it
+                // without invalidating that slot; inner calls still consume
+                // their own arguments under the ordinary move rules.
+                if t == Ty::StrOwn {
+                    if i+1 < es.len() && !matches!(e, Expr::Var(_)) {
+                        out.push_str("    mov %rax, %rdi\n    call hbc_freestr\n");
+                    } else if i+1 == es.len() && matches!(e, Expr::Var(_)) {
+                        out.push_str("    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_strcpy\n");
+                    }
+                }
                 if i+1<es.len() && t==Ty::Dyn && dyn_expr_owned(e) {
                     out.push_str("    sub $16,%rsp\n    mov %rax,(%rsp)\n    mov %rdx,8(%rsp)\n");
                     cg_dyn_stack_release(out,0,false);
@@ -14458,12 +14570,28 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             // Inline assignment (parexpr): evaluate the right side, store
             // it into the variable's slot, and leave the NEW content in
             // rax as the expression's value. The checker restricts the
-            // target to plain I64/Bool locals and Dyn slots (no
-            // by-reference stores, no float/string payloads).
+            // target to plain I64/Bool/Date locals and Dyn slots. The bounded
+            // scalar Dyn branch below owns both slot and result; static
+            // float/string and by-reference stores remain excluded.
             let v = env.iter().find(|v| v.name == *id).expect("checked");
             let off = v.off;
             let lty = v.ty;
             let rt = expr_ty(rhs, env, sigs);
+            if lty==Ty::Dyn && rt==Ty::Dyn {
+                cg_expr(rhs,env,sigs,strs,out,target);
+                let k=fresh_lbl();
+                let message="Limit: inline Dyn assignment supports scalar values only in this increment\n";
+                let si=strs.len();strs.push(message.to_string());
+                out.push_str(&format!("    cmpb $5, %al\n    jbe .Lsetscalar{k}\n    cmpb $9, %al\n    je .Lsetscalar{k}\n    lea .Lstr{si}(%rip), %rax\n    mov ${}, %edx\n    call hbc_write_bytes\n    jmp hbc_panic_exit\n.Lsetscalar{k}:\n",message.len()));
+                // The slot and the expression result need independent owners.
+                // Clone a borrowed RHS before the old slot can be released.
+                if !dyn_expr_owned(rhs) { cg_dyn_clone_if_str(out); }
+                out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+                cg_dyn_free_old(out,off);
+                out.push_str(&format!("    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    add $16, %rsp\n    mov %rax, -{}(%rbp)\n    mov %rdx, -{}(%rbp)\n",off,off-8));
+                cg_dyn_clone_if_str(out);
+                return;
+            }
             cg_value(rhs, env, sigs, strs, out, target);
             if lty == Ty::Dyn {
                 // Dyn slot: tag the scalar in (mirror of the statement
@@ -14628,7 +14756,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                     out.push_str("    add $16, %rsp\n    mov $1, %eax\n    xor %edx, %edx\n");
                 },
                 "ordlistadd" | "dbseek" => {
-                    if id=="dbseek" && expr_ty(&args[0],env,sigs)==Ty::Dyn {
+                    if id=="dbseek" && !matches!(expr_ty(&args[0],env,sigs),Ty::Str|Ty::StrOwn) {
                         // cg_data_value normalizes the Dyn operand to an
                         // exclusively owned cell (Var reads clone). The runtime
                         // extracts the character bytes (length header at
@@ -15123,7 +15251,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                         // error condition (hk209: the dialog hangs headless)
                         // - the registered clean bound-error exit, NOT a
                         // silent "U" read.
-                        cg_value(ie, env, sigs, strs, out, target);
+                        cg_hash_key(ie, env, sigs, strs, out, target);
                         out.push_str(&format!("    mov %rax, %rsi\n    lea -{}(%rbp), %rdi\n    call hbc_hget\n", var.off));
                         out.push_str("    test %rax, %rax\n    je 85f\n    mov (%rax), %r10\n    jmp 86f\n85:\n    call hbc_bound_error\n86:\n");
                         vt_classify_scalar(strs, out);
@@ -15986,6 +16114,16 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                 }
                 return;
             }
+            // A fresh unpinned empty-array result still owns its header-only
+            // allocation. Read the count and release it here, before a later
+            // argument/item can throw. Variables keep their existing borrow.
+            if expr_ty(&args[0], env, sigs) == Ty::DArrU && !matches!(&args[0], Expr::Var(_)) {
+                cg_value(&args[0], env, sigs, strs, out, target);
+                // U has no cells. Match its allocator family: VAS when
+                // admitted, ordinary header-only storage otherwise.
+                vas::emit_flat(out, "    sub $16, %rsp\n    mov %rdx, (%rsp)\n    mov %rax, %rdi\n    mov $16, %esi\n    call hbc_free\n    mov (%rsp), %rax\n    add $16, %rsp\n");
+                return;
+            }
             // len(a) for a dynamic array: the length word of the slot.
             match &args[0] {
                 Expr::Var(v) => {
@@ -16120,7 +16258,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             // An owned key temporary (e.g. hb_HHasKey(h, keys[i])) is
             // freed right after the call - the helper only reads it
             // (leak found and fixed in iteration 52; t544).
-            cg_value(&args[1], env, sigs, strs, out, target);
+            cg_hash_key(&args[1], env, sigs, strs, out, target);
             let temp_key = expr_ty(&args[1], env, sigs) == Ty::StrOwn && !matches!(&args[1], Expr::Var(_));
             if temp_key {
                 out.push_str("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
@@ -17848,7 +17986,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                 // hangs headless (probes h3/h3c) - registered failure-mode
                 // difference, same error condition. The lookup never
                 // mutates the hash.
-                cg_value(ie, env, sigs, strs, out, target);
+                cg_hash_key(ie, env, sigs, strs, out, target);
                 out.push_str("    mov %rax, %rsi\n");
                 let temp_key = expr_ty(ie, env, sigs) == Ty::StrOwn && !matches!(&**ie, Expr::Var(_));
                 if temp_key {
@@ -19270,7 +19408,10 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             if is_bitop(id) { return Ty::I64; }
             if is_builtin(id, "min") || is_builtin(id, "max") {
                 let ta = expr_ty(&args[0], env, sigs);
-                if args.len() == 2 && (ta == Ty::Dyn || expr_ty(&args[1], env, sigs) == Ty::Dyn) { return Ty::Dyn; }
+                if args.len() == 2 {
+                    let tb=expr_ty(&args[1],env,sigs);
+                    if ta==Ty::Dyn || tb==Ty::Dyn || minmax_mixed_tys(ta,tb) { return Ty::Dyn; }
+                }
                 return ta;
             }
             if is_builtin(id, "empty") || is_builtin(id, "hb_isnumeric") || is_builtin(id, "hb_isarray") || is_builtin(id, "hb_isstring") { return Ty::Bool; }
@@ -19430,12 +19571,20 @@ fn byref_names_in(stmts: &[Stmt]) -> std::collections::HashSet<String> {
 // accumulator. Syntactic, shared by the checker and the layout so both
 // pick the same slot kind.
 fn concat_assigned_in(stmts: &[Stmt]) -> std::collections::HashSet<String> {
+    fn owned_assign(e: &Expr) -> bool {
+        match e {
+            // A comma list carries its final expression's allocation kind;
+            // prefixes cannot decide the destination's storage.
+            Expr::Seq(es) => es.last().map_or(false, owned_assign),
+            Expr::Bin('+', _, _) => true,
+            Expr::Call(f, _) if is_builtin(f,"freadstr") => true,
+            _ => false,
+        }
+    }
     fn st(stmts: &[Stmt], out: &mut std::collections::HashSet<String>) {
         for s in stmts {
             match s {
-                Stmt::Assign(_, id, Expr::Bin('+', _, _)) => { out.insert(id.clone()); }
-                // FReadStr replaces its destination with an owned buffer.
-                Stmt::Assign(_, id, Expr::Call(f, _)) if is_builtin(f,"freadstr") => { out.insert(id.clone()); }
+                Stmt::Assign(_, id, e) if owned_assign(e) => { out.insert(id.clone()); }
                 Stmt::If(_, _, t, el) => { st(t, out); st(el, out); }
                 Stmt::While(_, _, b) | Stmt::For(_, _, _, _, _, b) | Stmt::ForEach(_, _, _, b) => st(b, out),
                 Stmt::Switch(_, _, arms, otherwise) => { for (_, _, b) in arms { st(b, out); } if let Some((_, ob)) = otherwise { st(ob, out); } }
@@ -19621,13 +19770,15 @@ fn obj_fresh(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> bool {
 // iif() whose branches are scalars of DIFFERENT types (string, integer,
 // logical, float) or one scalar and a literal NIL. The taken branch keeps
 // its own type, so the result is a fresh OWNED Dyn cell (tag + payload).
-// Deliberately narrow: no Dyn variables/calls/DATA, objects, arrays, blocks,
-// dates or raw array cells as arms; those keep the named rejection.
+// Ordinary Linux also accepts borrowed Dyn variable arms in that scope.
+// Only the chosen arm is evaluated; a runtime scalar screen rejects its
+// container/date/object tags before any borrowed payload is cloned.
 fn iif_mixed(a: &Expr, b: &Expr, ta: Ty, tb: Ty) -> bool {
-    let arm = |e: &Expr, t: Ty| matches!(t, Ty::I64 | Ty::Bool | Ty::Str | Ty::StrOwn | Ty::F64) || matches!(e, Expr::Nil);
+    let dyn_arm = DECIMAL_LOCAL_PROFILE.with(|v|v.get()) && (ta==Ty::Dyn || tb==Ty::Dyn);
+    let arm = |e: &Expr, t: Ty| matches!(t, Ty::I64 | Ty::Bool | Ty::Str | Ty::StrOwn | Ty::F64) || matches!(e, Expr::Nil) || (dyn_arm && t==Ty::Dyn && matches!(e,Expr::Var(_)));
     if !arm(a, ta) || !arm(b, tb) { return false; }
     if matches!(a, Expr::Nil) && matches!(b, Expr::Nil) { return false; }
-    if ta == tb { return false; }
+    if ta == tb && !(dyn_arm && ta==Ty::Dyn) { return false; }
     if matches!((ta, tb), (Ty::F64, Ty::I64) | (Ty::I64, Ty::F64)) { return false; }
     if matches!(ta, Ty::Str | Ty::StrOwn) && matches!(tb, Ty::Str | Ty::StrOwn) { return false; }
     true
@@ -19637,6 +19788,15 @@ fn iif_mixed(a: &Expr, b: &Expr, ta: Ty, tb: Ty) -> bool {
 // already treats an iif owned-string arm as moved); every other string is
 // copied, as DATA does.
 fn cg_iif_tagged(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target) {
+    if expr_ty(e,env,sigs)==Ty::Dyn && !matches!(e,Expr::Nil) {
+        cg_expr(e,env,sigs,strs,out,target);
+        let k=fresh_lbl();
+        let message="Limit: Dyn IIF arms support scalar values only in this increment\n";
+        let si=strs.len();strs.push(message.to_string());
+        out.push_str(&format!("    cmpb $5, %al\n    jbe .Liifscalar{k}\n    cmpb $9, %al\n    je .Liifscalar{k}\n    lea .Lstr{si}(%rip), %rax\n    mov ${}, %edx\n    call hbc_write_bytes\n    jmp hbc_panic_exit\n.Liifscalar{k}:\n",message.len()));
+        if !dyn_expr_owned(e) { cg_dyn_clone_if_str(out); }
+        return;
+    }
     match e {
         Expr::Nil => cg_expr(e, env, sigs, strs, out, target),
         Expr::Var(v) if env.iter().any(|x| x.name == *v && x.ty == Ty::StrOwn) => {
@@ -19652,7 +19812,7 @@ fn cg_iif_tagged(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
 fn dyn_expr_owned(e: &Expr) -> bool {
     match e {
         Expr::Var(id)=>CG_MEMVAR_NAMES.with(|c|c.borrow().contains(id)),
-        Expr::Call(..) | Expr::Send(..) | Expr::SelfGet(..) => true,
+        Expr::Call(..) | Expr::Send(..) | Expr::SelfGet(..) | Expr::Set(..) => true,
         Expr::Seq(es) => es.last().map_or(false, dyn_expr_owned),
         // Dyn+Dyn runtime '+' yields a fresh cell (owned string or integer).
         Expr::Bin('+' | '-' | '*',..) => dynplus_marked(e),
@@ -20715,7 +20875,7 @@ fn cg_print_items(es: &[Expr], inline: bool, raw: bool, stderr: bool, env: &[CgL
                     if cg_iif_out_rawdyn(e, env, sigs).is_some() || darr2_child(e, env) || darrs_elem(e, env) || renders_empty(e) { return 0; }
                     match expr_ty(e, env, sigs) {
                         Ty::Dyn => 1,
-                        Ty::StrOwn if matches!(e, Expr::Call(..) | Expr::Bin(..)) => 2,
+                        Ty::StrOwn if matches!(e, Expr::Call(..) | Expr::Bin(..) | Expr::Seq(..)) => 2,
                         _ => 0,
                     }
                 };
@@ -21471,6 +21631,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                             out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
                             cg_value(v, env, sigs, strs, out, target);
                     cg_dbf_scalar_container(v,env,sigs,out);
+                            if matches!(v,Expr::Str(_)) { out.push_str("    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_strcpy\n    mov %rax, %rdx\n    mov $4, %eax\n"); }
                             if expr_ty(v, env, sigs) == Ty::I64 {
                                 cg_i64_tagged(out);
                             }
@@ -21479,7 +21640,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                             }
                             out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
                             out.push_str(&format!("    lea -{}(%rbp), %rdi\n    mov 16(%rsp), %rsi\n    mov 24(%rsp), %rdx\n    mov %rsp, %rcx\n    call hbc_hput\n", off));
-                            if expr_ty(v,env,sigs)==Ty::Dyn && dyn_expr_owned(v) { cg_dyn_stack_release(out,0,false); }
+                            if (expr_ty(v,env,sigs)==Ty::Dyn && dyn_expr_owned(v)) || matches!(v,Expr::Str(_)) { cg_dyn_stack_release(out,0,false); }
                             out.push_str("    add $32, %rsp\n");
                         }
                         env.push(CgLocal { name: id.clone(), ty: t, off });
@@ -22658,6 +22819,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                             out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
                             cg_value(v, env, sigs, strs, out, target);
                     cg_dbf_scalar_container(v,env,sigs,out);
+                            if matches!(v,Expr::Str(_)) { out.push_str("    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_strcpy\n    mov %rax, %rdx\n    mov $4, %eax\n"); }
                             if expr_ty(v, env, sigs) == Ty::I64 {
                                 cg_i64_tagged(out);
                             }
@@ -22666,7 +22828,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                             }
                             out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
                             out.push_str(&format!("    lea -{}(%rbp), %rdi\n    mov 16(%rsp), %rsi\n    mov 24(%rsp), %rdx\n    mov %rsp, %rcx\n    call hbc_hput\n", off));
-                            if expr_ty(v,env,sigs)==Ty::Dyn && dyn_expr_owned(v) { cg_dyn_stack_release(out,0,false); }
+                            if (expr_ty(v,env,sigs)==Ty::Dyn && dyn_expr_owned(v)) || matches!(v,Expr::Str(_)) { cg_dyn_stack_release(out,0,false); }
                             out.push_str("    add $32, %rsp\n");
                         }
                         continue;
@@ -23732,6 +23894,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 let temp_key = expr_ty(ke, env, sigs) == Ty::StrOwn && !matches!(ke, Expr::Var(_));
                 out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
                 cg_value(ve, env, sigs, strs, out, target);
+                if matches!(ve,Expr::Str(_)) { out.push_str("    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_strcpy\n    mov %rax, %rdx\n    mov $4, %eax\n"); }
                 if expr_ty(ve, env, sigs) == Ty::I64 {
                     cg_i64_tagged(out);
                 }
@@ -23740,7 +23903,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 }
                 out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
                 out.push_str(&format!("    lea -{}(%rbp), %rdi\n    mov 16(%rsp), %rsi\n    mov 24(%rsp), %rdx\n    mov %rsp, %rcx\n    call hbc_hput\n", var.off));
-                if expr_ty(ve,env,sigs)==Ty::Dyn && dyn_expr_owned(ve) { cg_dyn_stack_release(out,0,false); }
+                if (expr_ty(ve,env,sigs)==Ty::Dyn && dyn_expr_owned(ve)) || matches!(ve,Expr::Str(_)) { cg_dyn_stack_release(out,0,false); }
                 out.push_str("    add $16, %rsp\n");
                 if temp_key {
                     out.push_str("    mov (%rsp), %rdi\n    call hbc_freestr\n");
@@ -24022,14 +24185,15 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                     // the temporaries stay owned here.
                     cg_value(e, env, sigs, strs, out, target);
                     cg_dbf_scalar_container(e,env,sigs,out);
-                    if expr_ty(e, env, sigs) == Ty::I64 {
+                    if matches!(e,Expr::Str(_)) { out.push_str("    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_strcpy\n    mov %rax, %rdx\n    mov $4, %eax\n"); }
+                if expr_ty(e, env, sigs) == Ty::I64 {
                         cg_i64_tagged(out);
                     }
                     if expr_ty(e, env, sigs) == Ty::Bool {
                         out.push_str("    mov %rax, %rdx\n    mov $3, %eax\n");
                     }
                     out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
-                    cg_value(ie, env, sigs, strs, out, target);
+                    cg_hash_key(ie, env, sigs, strs, out, target);
                     out.push_str("    mov %rax, %rsi\n");
                     let temp_key = expr_ty(ie, env, sigs) == Ty::StrOwn && !matches!(ie, Expr::Var(_));
                     if temp_key {
@@ -24037,11 +24201,11 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                         // the bytes, so the temporary is freed right after.
                         out.push_str("    sub $16, %rsp\n    mov %rsi, (%rsp)\n");
                         out.push_str(&format!("    lea -{}(%rbp), %rdi\n    lea 16(%rsp), %rcx\n    call hbc_hput\n    mov (%rsp), %rdi\n    call hbc_freestr\n    add $16, %rsp\n", v.off));
-                        if expr_ty(e,env,sigs)==Ty::Dyn && dyn_expr_owned(e) { cg_dyn_stack_release(out,0,false); }
+                        if (expr_ty(e,env,sigs)==Ty::Dyn && dyn_expr_owned(e)) || matches!(e,Expr::Str(_)) { cg_dyn_stack_release(out,0,false); }
                         out.push_str("    add $16, %rsp\n");
                     } else {
                         out.push_str(&format!("    lea -{}(%rbp), %rdi\n    mov %rsp, %rcx\n    call hbc_hput\n", v.off));
-                        if expr_ty(e,env,sigs)==Ty::Dyn && dyn_expr_owned(e) { cg_dyn_stack_release(out,0,false); }
+                        if (expr_ty(e,env,sigs)==Ty::Dyn && dyn_expr_owned(e)) || matches!(e,Expr::Str(_)) { cg_dyn_stack_release(out,0,false); }
                         out.push_str("    add $16, %rsp\n");
                     }
                 } else if v.ty == Ty::DArr || v.ty == Ty::DArrRef {
@@ -24982,7 +25146,38 @@ hbc_array4m:
     ret
 ";
 
+// This new limit uses the existing raw writer and fatal/trace exit. Only
+// the native console profile needs its existing early-close boundary.
+fn hash_helpers() -> String {
+    HASH_HELPERS.replace("    # @HASH_FATAL_CLOSE@\n", if CURDIR_LINUX_NATIVE.with(|v|v.get()) && !THREADS.with(|v|v.get()) { "    call hbc_gtstd_before_fatal\n" } else { "" })
+}
+
 const HASH_HELPERS: &str = r"
+# Hash values have independent ownership. Snapshot before dropping an old
+# entry, including h[k] := h[k] and hash clone/copy/merge paths.
+hbc_hash_value_clone:
+    cmp $2, %rax
+    je .Lhashvc_string
+    cmp $4, %rax
+    je .Lhashvc_string
+    jmp hbc_float_clone
+.Lhashvc_string:
+    mov %rdx, %rdi
+    mov -8(%rdx), %rsi
+    sub $8, %rsp
+    call hbc_strcpy
+    add $8, %rsp
+    mov %rax, %rdx
+    mov $4, %eax
+    ret
+hbc_hash_value_release:
+    cmp $4, %rax
+    je .Lhashvr_string
+    jmp hbc_float_release
+.Lhashvr_string:
+    mov %rdx, %rdi
+    jmp hbc_freestr
+
 # --- hashes (v1): insertion-ordered, string-keyed maps -----------------
 # The slot holds {data pointer, live pair count}; null/0 is the empty
 # hash (probe h2). Block layout: capacity header (in pairs) at the base,
@@ -25005,8 +25200,11 @@ const HASH_HELPERS: &str = r"
 # and hbc_hsetcasematch need no change. Block bytes: 16 + 40*cap.
 
 # hbc_hhash: rdi = key bytes, rsi = length. Returns eax = FNV-1a 32 over
-# ASCII-uppercase-folded bytes. Leaf: clobbers rax, rcx, r8 only.
+# ASCII-uppercase-folded physical bytes. The high length bit is the
+# private literal-i64 kind, not part of byte count. Leaf: clobbers
+# rax, rcx, r8 and rsi (its kind bit is cleared).
 hbc_hhash:
+    btr $63, %rsi
     mov $0x811c9dc5, %eax
     xor %ecx, %ecx
 1: cmp %rsi, %rcx
@@ -25069,10 +25267,14 @@ hbc_hfind:
     jne 92f
     mov (%rax), %rdi
     xor %ecx, %ecx
-93: cmp %r13, %rcx
+93: mov %r13, %r11
+    btr $63, %r11
+    cmp %r11, %rcx
     jae 94f
     movzbl (%rdi,%rcx), %r8d
     movzbl (%r12,%rcx), %r9d
+    test %r13, %r13
+    js 95f
     cmpq $0, -16(%r14)
     jne 95f
     cmp $97, %r8b
@@ -25324,7 +25526,7 @@ hbc_hput:
     mov %rdx, %r15
     mov (%rcx), %rax
     mov 8(%rcx), %rdx
-    call hbc_float_clone
+    call hbc_hash_value_clone
     mov %rax, -112(%rbp)
     mov %rdx, -104(%rbp)
     lea -112(%rbp), %rcx
@@ -25348,7 +25550,7 @@ hbc_hput:
     mov 16(%rax), %r10
     mov 24(%rax), %rdx
     mov %r10, %rax
-    call hbc_float_release
+    call hbc_hash_value_release
     mov -96(%rbp), %rax
     mov -48(%rbp), %rcx
     mov (%rcx), %r8
@@ -25358,6 +25560,7 @@ hbc_hput:
     jmp 49f
 30: mov %r14, %rdi
     mov %r15, %rsi
+    btr $63, %rsi
     call hbc_strcpy
 36: mov %rax, %r14
     test %r12, %r12
@@ -25484,7 +25687,7 @@ hbc_hfree:
     lea (%rbx,%rax), %rcx
     mov 16(%rcx), %rax
     mov 24(%rcx), %rdx
-    call hbc_float_release
+    call hbc_hash_value_release
     inc %r13
     jmp 20b
 21: mov %rbx, %rdi
@@ -25533,7 +25736,7 @@ hbc_hdel:
     call hbc_freestr
     mov 16(%rbx), %rax
     mov 24(%rbx), %rdx
-    call hbc_float_release
+    call hbc_hash_value_release
 65: lea 1(%r14), %rax
     cmp %r13, %rax
     jae 66f
@@ -25779,6 +25982,22 @@ hbc_hvalues:
     sub $16, %rsp
     mov (%rdi), %r12
     mov 8(%rdi), %r13
+    # Numeric-flat HValues cannot own string payloads. Reject before
+    # allocating a result rather than return an alias or leak a copy.
+    xor %ecx, %ecx
+.Lhvalues_preflight:
+    cmp %r13, %rcx
+    jae .Lhvalues_numeric
+    mov %rcx, %rax
+    shl $5, %rax
+    mov 16(%r12,%rax), %rax
+    cmp $2, %rax
+    je hbc_hvalues_string_error
+    cmp $4, %rax
+    je hbc_hvalues_string_error
+    inc %rcx
+    jmp .Lhvalues_preflight
+.Lhvalues_numeric:
     mov $0x0FFFFFFFFFFFFFFF, %rax
     cmp %rax, %r13
     ja hbc_oom
@@ -25813,6 +26032,18 @@ hbc_hvalues:
     pop %rbx
     pop %rbp
     ret
+
+hbc_hvalues_string_error:
+    and $-16, %rsp
+    sub $32, %rsp
+    # @HASH_FATAL_CLOSE@
+    movq $0, hbc_pending(%rip)
+    lea .Lhvalues_limit_msg(%rip), %rax
+    mov $62, %edx
+    call hbc_write_bytes
+    jmp hbc_panic_exit
+.Lhvalues_limit_msg:
+    .byte 76,105,109,105,116,58,32,104,98,95,72,86,97,108,117,101,115,32,119,105,116,104,32,115,116,114,105,110,103,32,118,97,108,117,101,115,32,105,115,32,110,111,116,32,105,110,32,116,104,105,115,32,105,110,99,114,101,109,101,110,116,10
 
 # hbc_hcasematch: rdi = hash slot address. Returns rax = the hash's
 # CaseMatch flag: 1 = case-sensitive byte-exact key matching (the
@@ -25983,7 +26214,7 @@ hbc_hdelat:
     add %r12, %rax
     mov 24(%rax), %rdx
     mov 16(%rax), %rax
-    call hbc_float_release
+    call hbc_hash_value_release
     mov 8(%rbx), %r9
 857: lea 1(%r13), %rax
     cmp %r9, %rax
@@ -26031,7 +26262,7 @@ hbc_hfill:
     mov (%rdi),%rbx
     mov 8(%rdi),%r12
     mov %rsi,%rax
-    call hbc_float_clone
+    call hbc_hash_value_clone
     mov %rax,-48(%rbp)
     mov %rdx,-56(%rbp)
     xor %r13d,%r13d
@@ -26043,10 +26274,10 @@ hbc_hfill:
     add %rbx,%r14
     mov 16(%r14),%rax
     mov 24(%r14),%rdx
-    call hbc_float_release
+    call hbc_hash_value_release
     mov -48(%rbp),%rax
     mov -56(%rbp),%rdx
-    call hbc_float_clone
+    call hbc_hash_value_clone
     mov %rax,16(%r14)
     mov %rdx,24(%r14)
     inc %r13
@@ -26054,7 +26285,7 @@ hbc_hfill:
 .Lhf_done:
     mov -48(%rbp),%rax
     mov -56(%rbp),%rdx
-    call hbc_float_release
+    call hbc_hash_value_release
     add $24,%rsp
     pop %r15
     pop %r14
@@ -26096,7 +26327,7 @@ hbc_hclear:
     add %r12, %rax
     mov 24(%rax), %rdx
     mov 16(%rax), %rax
-    call hbc_float_release
+    call hbc_hash_value_release
     inc %r13
     jmp 862b
 863: mov %r12, %rdi
@@ -29331,7 +29562,7 @@ hbc_obj_drop_pending:
             out.push_str(IDLESLEEP_WIN);
             out.push_str(CTOR_HELPERS);
             out.push_str(ARRAY3_HELPER);
-            out.push_str(HASH_HELPERS);
+            out.push_str(&hash_helpers());
             out.push_str("\n    .section .rdata,\"r\"\n");
             emit_strings(&mut out, &strs);
     emit_f64_consts(&mut out);
@@ -31760,7 +31991,7 @@ hbc_free_lists: .skip 10240
 "#);
     out.push_str(CTOR_HELPERS);
     out.push_str(ARRAY3_HELPER);
-    out.push_str(HASH_HELPERS);
+    out.push_str(&hash_helpers());
     out.push_str(F64_HELPER);
     out.push_str(IDLESLEEP_LINUX);
     out.push_str("\n    .section .rodata\n");
@@ -35604,6 +35835,18 @@ fn main() {
         funcs.push(f);
     }
     funcs.extend(synth_new_funcs);
+    let mut decimal_thread_profile=false;
+    for f in &funcs {
+        visit_stmts_ref(&f.stmts,&mut |_|{},&mut |e| {
+            if let Expr::Call(id,_) = e {
+                // Conservative family exclusion includes calls nested in
+                // blocks, methods and functions appearing after the copy.
+                if id.starts_with("hb_thread") || id.starts_with("hb_mutex") { decimal_thread_profile=true; }
+            }
+        });
+    }
+    DECIMAL_LOCAL_PROFILE.with(|v|v.set(CURDIR_LINUX_NATIVE.with(|v|v.get()) && !decimal_thread_profile));
+    narrow_bare_date_locals(&mut funcs);
     if let Err(e)=box_gtstd::validate(&funcs){eprintln!("error: {}",e);process::exit(1);}
     lift_thread_blocks(&mut funcs);
 
@@ -36014,6 +36257,19 @@ fn main() {
         }
     }
 
+    // Existing enumeration APIs have a string-only result ABI. The case
+    // mutation API also has an older numeric-flag contract, not Harbour
+    // logical flags. Until their own increments, reject either combination
+    // with new integer keys before any emission. Never expose encoded bytes.
+    if HASH_I64_LITERAL.with(|v|v.get()) {
+        let mut enumeration=false;let mut case_mutation=false;
+        for f in &funcs { visit_stmts_ref(&f.stmts,&mut |s| {if matches!(s,Stmt::HSetCaseMatch(..)) {case_mutation=true;}},&mut |e| {
+            if matches!(e,Expr::Call(id,_) if is_builtin(id,"hb_hkeys") || is_builtin(id,"hb_hkeyat")) { enumeration=true; }
+        }); }
+        if case_mutation { eprintln!("error: Limit: literal integer hash keys cannot be combined with hb_HSetCaseMatch in this increment");process::exit(1); }
+        if enumeration { eprintln!("error: Limit: literal integer hash keys cannot be combined with hb_HKeys/hb_HKeyAt in this increment (their result ABI is string-only)");process::exit(1); }
+    }
+
     // I1 supplies conservative proof to the I2 arena eligibility consumer.
     if !no_escape {
         let reports = escape_analysis(&funcs, &sigs, &byref_params, &byref_locals);
@@ -36036,6 +36292,17 @@ fn main() {
         if FILE_USED.with(|v|v.get()) {eprintln!("error: FILE/SET DEFAULT/PATH are not implemented by the experimental LLVM backend");process::exit(1);}
         match llvm_scalar::emit(&funcs, &sigs, target, llvm_trace) {
             Ok(ir) => { fs::write(pos[1], ir).unwrap();
+                // The unchanged feasibility workflow builds this compiler on Darwin
+                // ARM64, while keeping --target=linux for the portable LLVM AST.
+                // Choose only the sidecar ABI by host; native emitters are untouched.
+                if target == Target::Linux && cfg!(all(target_os="macos",target_arch="aarch64")) {
+                    fs::write(format!("{}.runtime.s",pos[1]), llvm_darwin::arm64()).unwrap();
+                    return;
+                }
+                if target == Target::Linux && cfg!(all(target_os="macos",target_arch="x86_64")) {
+                    fs::write(format!("{}.runtime.s",pos[1]), llvm_darwin::intel()).unwrap();
+                    return;
+                }
                 let mut rt = emit_asm(&[], &[], &[], target, false);
                 rt = rt.replace("call hbc_fn_main", "call ll_main");
                 rt.push_str("\n.globl hbc_trace_top\n");
@@ -38247,12 +38514,21 @@ fn cg_dyn_abs(a:&Expr,env:&[CgLocal],sigs:&[Sig],strs:&mut Vec<String>,out:&mut 
 // first item wins a tie, like the typed forms); the chosen snapshot is the
 // result and the other is released. Under an active TRY a landing pad releases
 // the first snapshot when the second operand throws.
+// Min/Max returns the selected original item, including I64 display
+// provenance. Arithmetic snapshots deliberately erase it, so don't reuse
+// that conversion for static I64 inputs here.
+fn cg_minmax_snapshot(e:&Expr,env:&[CgLocal],sigs:&[Sig],strs:&mut Vec<String>,out:&mut String,target:Target) {
+    if expr_ty(e,env,sigs)==Ty::I64 {
+        cg_expr(e,env,sigs,strs,out,target);
+        cg_i64_tagged(out);
+    } else { cg_mul_snapshot(e,env,sigs,strs,out,target); }
+}
 fn cg_dyn_minmax(is_max:bool,a:&Expr,b:&Expr,env:&[CgLocal],sigs:&[Sig],strs:&mut Vec<String>,out:&mut String,target:Target) {
     let k=fresh_lbl();
     let (ji,jf)=if is_max {("jge","jae")} else {("jle","jbe")};
-    cg_mul_snapshot(a,env,sigs,strs,out,target);
+    cg_minmax_snapshot(a,env,sigs,strs,out,target);
     out.push_str(&format!("    sub $80, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n    movq $1, 16(%rsp)\n    movq $0, 24(%rsp)\n    movq $0, 48(%rsp)\n    cmpq $0, hbc_seq_depth(%rip)\n    je .Lmm_eval{k}\n    lea .Lmm_catch{k}(%rip), %rdi\n    call hbc_seq_push\n    movq $1, 48(%rsp)\n.Lmm_eval{k}:\n"));
-    cg_mul_snapshot(b,env,sigs,strs,out,target);
+    cg_minmax_snapshot(b,env,sigs,strs,out,target);
     out.push_str(&format!("    mov %rax, 16(%rsp)\n    mov %rdx, 24(%rsp)\n    cmpq $0, 48(%rsp)\n    je .Lmm_chk{k}\n    call hbc_seq_pop\n.Lmm_chk{k}:\n    movq $0, 72(%rsp)\n"));
     for (tag,pay,dbl,bit,l) in [(0,8,56,1,"a"),(16,24,64,2,"b")] {
         out.push_str(&format!("    mov {tag}(%rsp), %rax\n    mov {pay}(%rsp), %rdx\n    cmp $5, %al\n    je .Lmm_{l}f{k}\n    @HBC_TAG_KIND@cmpq $0, {tag}(%rsp)@HBC_TAG_END@\n    je .Lmm_{l}i{k}\n    @HBC_TAG_KIND@cmpq $9, {tag}(%rsp)@HBC_TAG_END@\n    jne .Lmm_err{k}\n.Lmm_{l}i{k}:\n    cvtsi2sd %rdx, %xmm0\n    movsd %xmm0, {dbl}(%rsp)\n    orq ${bit}, 72(%rsp)\n    jmp .Lmm_{l}d{k}\n.Lmm_{l}f{k}:\n    call hbc_float_unpack\n    movsd %xmm0, {dbl}(%rsp)\n.Lmm_{l}d{k}:\n"));
@@ -38319,3 +38595,22 @@ hbc_os_uname_linux:
 .Los_uname_offsets: .long 0,130,260
 .text
 "#;
+
+#[cfg(test)]
+mod seq_owned_tests {
+    use super::*;
+    #[test]
+    fn accumulator_storage_follows_only_final_list_result() {
+        let concat=Expr::Bin('+',Box::new(Expr::Var("s".into())),Box::new(Expr::Str("x".into())));
+        let positive=vec![Stmt::Assign(1,"s".into(),Expr::Seq(vec![Expr::Int("1".into()),Expr::Seq(vec![concat.clone()])]))];
+        assert!(concat_assigned_in(&positive).contains("s"));
+        let prefix_only=vec![Stmt::Assign(1,"s".into(),Expr::Seq(vec![concat,Expr::Int("1".into())]))];
+        assert!(!concat_assigned_in(&prefix_only).contains("s"));
+    }
+    #[test]
+    fn final_owned_variable_is_copied_not_moved() {
+        let mut env=vec![Local{name:"s".into(),ty:Ty::StrOwn,moved:false,ro:false,byref:false}];
+        apply_moves(&Expr::Seq(vec![Expr::Int("1".into()),Expr::Var("s".into())]),&mut env,&[],true);
+        assert!(!env[0].moved);
+    }
+}
