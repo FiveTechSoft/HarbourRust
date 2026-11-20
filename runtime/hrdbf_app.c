@@ -127,12 +127,31 @@ uint64_t hrdbf_app_seek(const unsigned char*p,size_t n,uint64_t soft,uint64_t la
  if(!(x->bytes&&hrdbf_app_order_active))hrdbf_app_fail("hbc: DBF index seek requires an open index\n");
  hrdbf_app_pos=hrntx_seek(x,p,n,soft!=0,last!=0,&found);hrdbf_app_found_flag=found;hrdbf_app_order_sync();hrdbf_app_state.area.bof=!hrdbf_app_cdx&&!x->count;return found;
 }
-/* Dyn-string seek entry: a field read or a Dyn local carrying a character
- * value (owned or borrowed cell, length header at payload[-1]). Measured
- * against real Harbour (o7-o9): a non-character key value against the
- * character-key index is a guaranteed miss with the cursor past the last
- * entry (recno count+1, Eof .T., Found .F.) - no numeric-to-string
- * conversion happens, for numbers, logicals and dates alike. */
+/* Dyn seek entry: a field read or a Dyn local. Measured against real
+ * Harbour (o7-o14, native Windows):
+ * - character cells (owned/borrowed, length header at payload[-1]) seek
+ *   by bytes, width-truncated like the ordinary path;
+ * - numeric cells convert to a ZERO-padded integer key string with the
+ *   index key width: the value rounds half away from zero first
+ *   (3.4->"000003", 3.6->"000004", 2.5->"000003", -1 below the range);
+ * - every other kind (NIL, logical, date) is a guaranteed miss with the
+ *   cursor past the last entry (recno count+1, Eof .T., Found .F.) for
+ *   soft and hard seeks alike.
+ * The zero-pad does not truncate: a value wider than the key simply
+ * sorts past the range, exactly like the literal form. */
+static void hrdbf_app_seek_miss_end(hrntx_index *x){
+ hrdbf_app_pos=x->count;hrdbf_app_found_flag=0;hrdbf_app_order_sync();hrdbf_app_state.area.bof=!hrdbf_app_cdx&&!x->count;
+}
+static size_t hrdbf_app_pad_ll(long long r,unsigned width,char *buf){
+ unsigned char tmp[24];size_t n=0,i,len;int neg=r<0;unsigned long long m=neg?(unsigned long long)(-(r+1))+1:(unsigned long long)r;
+ if(!m)tmp[n++]='0';
+ while(m){tmp[n++]=(unsigned char)('0'+(m%10));m/=10;}
+ len=0;
+ if(neg)buf[len++]='-';
+ if(width&&(size_t)width>n+len){for(i=n;i<(size_t)width-n-len;i++)buf[len++]='0';}
+ for(i=n;i>0;i--)buf[len++]=tmp[i-1];
+ return len;
+}
 uint64_t hrdbf_app_seek_dyn(uint64_t tag,uint64_t pay,uint64_t soft,uint64_t last){
  unsigned k=(unsigned)(tag&255u);hrntx_index*x=&hrdbf_app_order.index;hrdbf_app_require();
  if(!(x->bytes&&hrdbf_app_order_active))hrdbf_app_fail("hbc: DBF index seek requires an open index\n");
@@ -140,7 +159,29 @@ uint64_t hrdbf_app_seek_dyn(uint64_t tag,uint64_t pay,uint64_t soft,uint64_t las
   if(!pay)hrdbf_app_fail("hbc: DBF index seek expects a character key value\n");
   return hrdbf_app_seek((const unsigned char*)pay,(size_t)((const uint64_t*)pay)[-1],soft,last);
  }
- hrdbf_app_pos=x->count;hrdbf_app_found_flag=0;hrdbf_app_order_sync();hrdbf_app_state.area.bof=!hrdbf_app_cdx&&!x->count;return 0;
+ if(k==HRV_I64||k==HRV_I64_LITERAL){
+  char buf[280];size_t n=hrdbf_app_pad_ll((long long)(int64_t)pay,x->width,buf);
+  return hrdbf_app_seek((const unsigned char*)buf,n,soft,last);
+ }
+ if(k==HRV_DOUBLE){
+  union{uint64_t u;double d;}z;z.u=(tag&HR_DYN_FLOAT_HEAP)?((const uint64_t*)pay)[0]:pay;
+  double v=z.d;long long r;
+  char buf[280];size_t n;
+  if(v>9.2e18)r=(long long)9223372036854775807LL;else if(v<-9.2e18)r=(-9223372036854775807LL-1);
+  else r=v<0?(long long)(v-0.5):(long long)(v+0.5);
+  n=hrdbf_app_pad_ll(r,x->width,buf);
+  return hrdbf_app_seek((const unsigned char*)buf,n,soft,last);
+ }
+ if(k==HRV_FIELD_NUMERIC){
+  hrv_cell c={tag,pay};unsigned d=hrv_decimals(c);double v=(double)(int64_t)pay;long long r;
+  char buf[280];size_t n;
+  while(d--)v/=10.0;
+  if(v>9.2e18)r=(long long)9223372036854775807LL;else if(v<-9.2e18)r=(-9223372036854775807LL-1);
+  else r=v<0?(long long)(v-0.5):(long long)(v+0.5);
+  n=hrdbf_app_pad_ll(r,x->width,buf);
+  return hrdbf_app_seek((const unsigned char*)buf,n,soft,last);
+ }
+ hrdbf_app_seek_miss_end(x);return 0;
 }
 uint64_t hrdbf_app_recno(void){hrdbf_app_require();return hrdbf_app_state.area.recno;}
 uint64_t hrdbf_app_lastrec(void){hrdbf_app_require();return hrdbf_app_state.area.count;}
