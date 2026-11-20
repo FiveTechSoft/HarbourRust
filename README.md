@@ -64,6 +64,15 @@ known failures and the history of published increments.
 
 ## Active development
 
+- **Peephole pass (19 November).** `src/peep.rs` rewrites exact local
+  patterns of the stack-machine output after pruning: operand spills through
+  the stack become a register move, and double jumps, jumps to the next
+  label and release/re-reserve pairs go away (`--no-peephole` turns it off).
+  The recursive `fib` body drops from 91 to 73 instructions and `fib(35)`
+  from 198 to 164 ms on native Windows 11. All 1262 runnable manifest rows
+  give identical stdout, stderr and exit status before and after, plain and
+  with `--instrument`. Details: [docs/PEEPHOLE-2026-11-19.md](docs/PEEPHOLE-2026-11-19.md).
+
 - **Issue #1 re-check (18 November).** Main at `b5933e46` on native Windows 11
   against Harbour 3.2 (bcc build, `hbmk2 -gtcgi`): 34 probes, 12 of them the
   repro files attached to the issue's 0.11.1 follow-up and 22 written from the

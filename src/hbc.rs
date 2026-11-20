@@ -103,6 +103,7 @@ mod hmacho;
 mod vas;
 mod macro_m1;
 mod prune;
+mod peep;
 mod module_static;
 mod hbrdd;
 
@@ -35677,6 +35678,7 @@ fn main() {
     let mut no_escape = false;
     let mut no_arena = false;
     let mut no_prune = false;
+    let mut no_peephole = false;
     let mut no_vas = false;
     let mut hash_case_mode = false;
     let mut external_as = false;
@@ -35701,6 +35703,7 @@ fn main() {
             "--no-escape-analysis" => no_escape = true,
             "--no-arena" => no_arena = true,
             "--no-prune" => no_prune = true,
+            "--no-peephole" => no_peephole = true,
             "--no-vas-arrays" => no_vas = true,
             "--experimental-llvm" => llvm = true,
             "--experimental-llvm-no-trace" => {llvm = true; llvm_trace = false;},
@@ -35713,7 +35716,7 @@ fn main() {
   omitted output uses the input stem in the current directory (.exe on Windows target), preserving case
   output ending in .s writes assembly; any other name writes the selected target executable directly
   --hash-logical-case opts into logical hash flags and clear-preserve (ordinary Linux only)
-  flag --external-as keeps the external as/ld path; --instrument, --no-arena, --no-prune, --no-escape-analysis, --experimental-llvm[-no-trace]
+  flag --external-as keeps the external as/ld path; --instrument, --no-arena, --no-prune, --no-peephole, --no-escape-analysis, --experimental-llvm[-no-trace]
   --harbour-rdd links Harbour 3.2's own VM + RDD for DBF access (Windows; needs MinGW gcc and --harbour-dir=<install> or HB_DIR; --harbour-dll links harbour-32-x64.dll)"); process::exit(2); }
             _ => pos.push(a),
         }
@@ -35726,7 +35729,7 @@ fn main() {
   omitted output uses the input stem in the current directory (.exe on Windows target), preserving case
   output ending in .s writes assembly; any other name writes the selected target executable directly
   --hash-logical-case opts into logical hash flags and clear-preserve (ordinary Linux only)
-  flag --external-as keeps the external as/ld path; --instrument, --no-arena, --no-prune, --no-escape-analysis, --experimental-llvm[-no-trace]
+  flag --external-as keeps the external as/ld path; --instrument, --no-arena, --no-prune, --no-peephole, --no-escape-analysis, --experimental-llvm[-no-trace]
   --harbour-rdd links Harbour 3.2's own VM + RDD for DBF access (Windows; needs MinGW gcc and --harbour-dir=<install> or HB_DIR; --harbour-dll links harbour-32-x64.dll)");
         process::exit(2);
     }
@@ -36402,6 +36405,8 @@ hbc_aclone_alloc:
     }
     // Drop runtime helpers the program never reaches (src/prune.rs).
     let out = if no_prune { out } else { prune::prune(&out) };
+    // Local rewrites of the stack-machine output (src/peep.rs).
+    let out = if no_peephole { out } else { peep::peephole(&out) };
     // runtime/hrharbour_rdd.c (a separate object) reports Harbour errors
     // through hrm_fail: keep the symbol exported after pruning.
     let out = if hb_rdd() { format!("{}
