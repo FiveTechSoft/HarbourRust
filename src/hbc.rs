@@ -19713,13 +19713,15 @@ fn obj_fresh(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> bool {
 // iif() whose branches are scalars of DIFFERENT types (string, integer,
 // logical, float) or one scalar and a literal NIL. The taken branch keeps
 // its own type, so the result is a fresh OWNED Dyn cell (tag + payload).
-// Deliberately narrow: no Dyn variables/calls/DATA, objects, arrays, blocks,
-// dates or raw array cells as arms; those keep the named rejection.
+// Ordinary Linux also accepts borrowed Dyn variable arms in that scope.
+// Only the chosen arm is evaluated; a runtime scalar screen rejects its
+// container/date/object tags before any borrowed payload is cloned.
 fn iif_mixed(a: &Expr, b: &Expr, ta: Ty, tb: Ty) -> bool {
-    let arm = |e: &Expr, t: Ty| matches!(t, Ty::I64 | Ty::Bool | Ty::Str | Ty::StrOwn | Ty::F64) || matches!(e, Expr::Nil);
+    let dyn_arm = DECIMAL_LOCAL_PROFILE.with(|v|v.get()) && (ta==Ty::Dyn || tb==Ty::Dyn);
+    let arm = |e: &Expr, t: Ty| matches!(t, Ty::I64 | Ty::Bool | Ty::Str | Ty::StrOwn | Ty::F64) || matches!(e, Expr::Nil) || (dyn_arm && t==Ty::Dyn && matches!(e,Expr::Var(_)));
     if !arm(a, ta) || !arm(b, tb) { return false; }
     if matches!(a, Expr::Nil) && matches!(b, Expr::Nil) { return false; }
-    if ta == tb { return false; }
+    if ta == tb && !(dyn_arm && ta==Ty::Dyn) { return false; }
     if matches!((ta, tb), (Ty::F64, Ty::I64) | (Ty::I64, Ty::F64)) { return false; }
     if matches!(ta, Ty::Str | Ty::StrOwn) && matches!(tb, Ty::Str | Ty::StrOwn) { return false; }
     true
@@ -19729,6 +19731,15 @@ fn iif_mixed(a: &Expr, b: &Expr, ta: Ty, tb: Ty) -> bool {
 // already treats an iif owned-string arm as moved); every other string is
 // copied, as DATA does.
 fn cg_iif_tagged(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target) {
+    if expr_ty(e,env,sigs)==Ty::Dyn && !matches!(e,Expr::Nil) {
+        cg_expr(e,env,sigs,strs,out,target);
+        let k=fresh_lbl();
+        let message="Limit: Dyn IIF arms support scalar values only in this increment\n";
+        let si=strs.len();strs.push(message.to_string());
+        out.push_str(&format!("    cmpb $5, %al\n    jbe .Liifscalar{k}\n    cmpb $9, %al\n    je .Liifscalar{k}\n    lea .Lstr{si}(%rip), %rax\n    mov ${}, %edx\n    call hbc_write_bytes\n    jmp hbc_panic_exit\n.Liifscalar{k}:\n",message.len()));
+        if !dyn_expr_owned(e) { cg_dyn_clone_if_str(out); }
+        return;
+    }
     match e {
         Expr::Nil => cg_expr(e, env, sigs, strs, out, target),
         Expr::Var(v) if env.iter().any(|x| x.name == *v && x.ty == Ty::StrOwn) => {
