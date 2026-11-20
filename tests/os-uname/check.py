@@ -29,7 +29,7 @@ for name,flags in [('windows',['--target=windows']),('darwin',['--target=macho']
 (w/'args.prg').write_text('function main()\n? OS(1)\nreturn nil\n');b=run([cc,w/'args.prg',w/'args','--target=linux'],w,'build-args');add('limit-args',b.returncode==1 and b'OS takes no arguments' in b.stderr,build_rc=b.returncode)
 # Deterministic syscall-boundary diagnostics using generated ELF assembly.
 # These are own synthetic kernel records, not Harbour/platform executions.
-w=out/'kernel-records';w.mkdir();(w/'p.prg').write_text('function main()\n? ">"+OS()+"<"\nreturn nil\n')
+w=out/'kernel-records';w.mkdir();(w/'p.prg').write_text('function main()\nOutStd(Chr(10)+">"+OS()+"<")\nreturn nil\n')
 b=run([cc,w/'p.prg',w/'original.s','--target=linux'],w,'emit')
 if b.returncode==0:
  text=(w/'original.s').read_text();start=text.index('hbc_os_uname_linux:');end=text.index('.section .rodata',start);helper=text[start:end];assert helper.count('    syscall')==1

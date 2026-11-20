@@ -13,7 +13,7 @@ return 0
 procedure show(s)
 local n
 for n := 1 to len(s)
-?? iif(hb_isnumeric(s[n]), hb_ntos(s[n]), s[n])
-?? ","
+OutStd(iif(hb_isnumeric(s[n]), hb_ntos(s[n]), s[n]))
+OutStd(",")
 next
 return

@@ -71,6 +71,12 @@ static int dot_word(lex *L) {
 static void number(lex *L) {
   const unsigned char *q = L->p;
   int64_t iv = 0; double dv = 0.0; int dbl = 0, dec = 0, frac = 0;
+  if (q+1<L->end && q[0]=='0' && (q[1]=='b'||q[1]=='B')) {
+    uint64_t v=0;unsigned count=0;q+=2;
+    while(q<L->end && (*q=='0'||*q=='1')){v=v*2u+(unsigned)(*q-'0');q++;count++;}
+    if(!count||count>4096||(q<L->end&&(is_alpha(*q)||is_digit(*q)||*q=='.'))){lex_fail(L,"Error BASE/1449  Syntax error: &");return;}
+    L->num.kind=V_INT;L->num.i=(int64_t)v;L->p=q;L->tok=T_NUM;return;
+  }
   if (q + 1 < L->end && q[0] == '0' && (q[1] == 'x' || q[1] == 'X')) {
     q += 2;
     const unsigned char *h = q;
