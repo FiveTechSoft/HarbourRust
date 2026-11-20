@@ -32120,6 +32120,11 @@ hbc_panic_exit:
     sub $32, %rsp
     call hbc_print_trace
 "#);
+    if gtstd_native {
+        // A Dyn render can fail before its output fragment restores raw mode.
+        // Native diagnostic bytes and the existing callstack must bypass GTSTD.
+        out=out.replace("hbc_panic_exit:\n", "hbc_panic_exit:\n    movq $0, hbc_console_mode(%rip)\n");
+    }
     match target {
         Target::Linux => out.push_str("    mov $60, %eax\n    mov $1, %edi\n    syscall\n    .section .rodata\n"),
         Target::Windows => out.push_str("    call hbc_pflush\n    mov $1, %ecx\n    call ExitProcess\n    .section .rdata,\"r\"\n"),

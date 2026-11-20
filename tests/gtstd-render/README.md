@@ -34,3 +34,14 @@ a data-builder test, not a console test. Its old synthetic 195-byte maximum
 record expected one unwrapped line through '?', which conflicts with the
 measured 80-column GTSTD behavior. Its expected bytes are unchanged. The real
 OS original and differential fixtures still pass without changes.
+
+The root memory fixtures t886_cached_collision, t1488_stepc_mem_1000 and
+t1491_stepd_mem_1000 now use OutStd for their long stream. Checks and expected
+bytes are unchanged. t1488 spells the same lazy iif as an if/else because the
+existing array-view verifier does not admit that nested iif under OutStd.
+
+Exact fail-mode comparison found a missing final callstack LF in t1480 when a
+Dyn render failed before restoring raw mode. The new profile resets console
+mode at entry to hbc_panic_exit. No trace-emission, metadata or print_trace code
+changes. The existing posx manifest matcher strips LF and misses that defect;
+the additional isolation gate compares all stdout/stderr/rc bytes unchanged.
