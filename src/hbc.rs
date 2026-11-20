@@ -6865,7 +6865,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                     _ => {}
                 }
                 return match type_expr(&args[0], env, sigs, n)? {
-                    Ty::AView | Ty::DArrDyn | Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::Arr(_) | Ty::Hash => {
+                    t @ (Ty::AView | Ty::DArrDyn | Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::Arr(_) | Ty::Hash) => {
                         // Only variables: an array TEMPORARY in expression
                         // position has no free point in this increment
                         // (the FOR EACH temp machinery does not apply
@@ -6873,6 +6873,9 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                         // it also existed for dynamic ones - named
                         // rejection instead of the cg unreachable.
                         if !matches!(&args[0], Expr::Var(_)) {
+                            if t == Ty::DArrU && CURDIR_LINUX_NATIVE.with(|v|v.get()) && !THREADS.with(|v|v.get()) {
+                                return Ok(Ty::I64);
+                            }
                             return Err(format!("line {}: `len` of an array temporary is not in this increment (assign it to a variable first)", n));
                         }
                         Ok(Ty::I64)
@@ -10172,9 +10175,12 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                     return Err(format!("line {}: codeblocks cannot be returned in this increment", n));
                 }
 
-                if t == Ty::DArrU {
+                if t == Ty::DArrU && (!CURDIR_LINUX_NATIVE.with(|v|v.get()) || THREADS.with(|v|v.get())) {
                     return Err(format!("line {}: cannot return an empty array whose element type was never pinned by `AAdd`", n));
                 }
+                // Preserve the unpinned empty-array kind across the return.
+                // The caller may choose its element kind with the first AAdd;
+                // defaulting it to integers here would lose that contract.
                 // Returning a borrowed parameter is a value COPY (hk237):
                 // Harbour hands the caller the string value while the
                 // owner's variable keeps it; codegen copies through the
@@ -16005,6 +16011,16 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                 } else {
                     out.push_str("    mov %rdx, %rax\n");
                 }
+                return;
+            }
+            // A fresh unpinned empty-array result still owns its header-only
+            // allocation. Read the count and release it here, before a later
+            // argument/item can throw. Variables keep their existing borrow.
+            if expr_ty(&args[0], env, sigs) == Ty::DArrU && !matches!(&args[0], Expr::Var(_)) {
+                cg_value(&args[0], env, sigs, strs, out, target);
+                // U has no cells. Match its allocator family: VAS when
+                // admitted, ordinary header-only storage otherwise.
+                vas::emit_flat(out, "    sub $16, %rsp\n    mov %rdx, (%rsp)\n    mov %rax, %rdi\n    mov $16, %esi\n    call hbc_free\n    mov (%rsp), %rax\n    add $16, %rsp\n");
                 return;
             }
             // len(a) for a dynamic array: the length word of the slot.
