@@ -5892,6 +5892,9 @@ fn find_set_into(e: &Expr, roots: &[String]) -> Option<String> {
 // Literal integer hash keys carry a separate kind bit, never user string
 // spelling. Only the measured ordinary-Linux profile can admit this route.
 thread_local! { static HASH_I64_LITERAL: std::cell::Cell<bool> = const {std::cell::Cell::new(false)}; }
+fn hash_case_logical_profile()->bool {
+    DECIMAL_LOCAL_PROFILE.with(|v|v.get()) && !MACRO_CONTEXT.with(|v|v.get())
+}
 fn hash_i64_literal(e:&Expr)->bool {
     let yes=matches!(e,Expr::Int(v) if v.parse::<i64>().is_ok()) && DECIMAL_LOCAL_PROFILE.with(|v|v.get()) && !MACRO_CONTEXT.with(|v|v.get());
     if yes { HASH_I64_LITERAL.with(|v|v.set(true)); }
@@ -7044,18 +7047,25 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 return Ok(Ty::I64);
             }
             if is_builtin(id, "hb_hcasematch") {
-                // hb_HCaseMatch(h): the hash's CaseMatch flag (hk169:
-                // default .T.; core hb_HCaseMatch). The hash is
-                // borrowed. The result is 1/0 (the dialect has no
-                // logical type; the oracle's .T./.F. is the registered
-                // boolean rendering family).
-                if args.len() != 1 {
-                    return Err(format!("line {}: `hb_HCaseMatch` takes exactly one argument", n));
+                let logical=hash_case_logical_profile();
+                if args.len()!=1 && !(logical && args.len()==2) {
+                    return Err(format!("line {}: `hb_HCaseMatch` takes one hash argument; ordinary Linux additionally accepts a logical flag",n));
                 }
-                if !matches!(&args[0], Expr::Var(_)) || type_expr(&args[0], env, sigs, n)? != Ty::Hash {
-                    return Err(format!("line {}: `hb_HCaseMatch` expects a hash variable (its slot is passed by address)", n));
+                let idx=match &args[0] {
+                    Expr::Var(v) => env.iter().position(|x|x.name==*v),
+                    _ => None,
+                };
+                if idx.is_none() || type_expr(&args[0],env,sigs,n)?!=Ty::Hash {
+                    return Err(format!("line {}: `hb_HCaseMatch` expects a hash variable (its slot is passed by address)",n));
                 }
-                return Ok(Ty::I64);
+                if args.len()==2 {
+                    if type_expr(&args[1],env,sigs,n)?!=Ty::Bool {
+                        return Err(format!("line {}: `hb_HCaseMatch` flag must be a typed logical in this increment",n));
+                    }
+                    apply_moves(&args[1],env,sigs,false);
+                    if env[idx.unwrap()].moved { return Err(format!("line {}: hash moved while evaluating `hb_HCaseMatch` flag",n)); }
+                }
+                return Ok(if logical {Ty::Bool}else{Ty::I64});
             }
             if is_builtin(id, "hb_hget") {
                 // hb_HGet(h, key [, default]): the value casilla of an
@@ -11178,7 +11188,8 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 if env[kp].moved {
                     return Err(format!("line {}: use of moved value `{}`", n, id));
                 }
-                if type_expr(e, env, sigs, *n)? != Ty::I64 {
+                let flag=type_expr(e, env, sigs, *n)?;
+                if flag != Ty::I64 && !(flag==Ty::Bool && hash_case_logical_profile()) {
                     return Err(format!("line {}: the hb_HSetCaseMatch flag is an integer in this increment (1 sensitive, 0 insensitive)", n));
                 }
                 apply_moves(e, env, sigs, true);
@@ -16300,16 +16311,16 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             }
         }
         Expr::Call(id, args) if is_builtin(id, "hb_hcasematch") => {
-            // hb_HCaseMatch(h): the slot goes by address; returns
-            // rax = the flag (1 sensitive, 0 insensitive; an untouched
-            // empty hash answers the default 1 - hk169).
-            if let Expr::Var(v) = &args[0] {
-                let var = env.iter().rev().find(|x| x.name == *v).expect("checked");
-                out.push_str(&format!("    lea -{}(%rbp), %rdi
-    call hbc_hcasematch
-", var.off));
-            } else {
-                unreachable!("checked: hb_HCaseMatch takes a hash variable");
+            let v=match &args[0] {Expr::Var(v)=>v,_=>unreachable!("checked hash slot")};
+            let var=env.iter().rev().find(|x|x.name==*v).expect("checked");
+            if args.len()==2 {
+                // All argument effects precede the observed old flag. Keep
+                // the new flag and old result across possible allocation.
+                cg_value(&args[1],env,sigs,strs,out,target);
+                out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n");
+                out.push_str(&format!("    lea -{}(%rbp), %rdi\n    call hbc_hcasematch\n    mov %rax, 8(%rsp)\n    mov (%rsp), %rsi\n    lea -{}(%rbp), %rdi\n    call hbc_hsetcasematch\n    mov 8(%rsp), %rax\n    add $16, %rsp\n    xor %edx, %edx\n",var.off,var.off));
+            }else{
+                out.push_str(&format!("    lea -{}(%rbp), %rdi\n    call hbc_hcasematch\n    xor %edx, %edx\n",var.off));
             }
         }
         Expr::Call(id, args) if is_builtin(id, "hb_threadstart") => {
@@ -19397,7 +19408,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             if is_builtin(id, "hb_hscan") { return Ty::I64; }
             if is_builtin(id, "hb_hkeyat") { return Ty::StrOwn; }
             if is_builtin(id, "hb_hvalueat") { return Ty::Dyn; }
-            if is_builtin(id, "hb_hcasematch") { return Ty::I64; }
+            if is_builtin(id, "hb_hcasematch") { return if hash_case_logical_profile() {Ty::Bool}else{Ty::I64}; }
             if is_builtin(id, "hb_hget") { return Ty::Dyn; }
             if is_builtin(id, "hb_hgetdef") { return Ty::Dyn; }
             if is_builtin(id, "hb_hsetdef") { return Ty::Dyn; }
@@ -23977,12 +23988,9 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 }
             }
             Stmt::HClear(_, id) => {
-                // hb_HClear: the slot goes by address; the helper
-                // frees every key copy and the whole data block and
-                // zeroes the slot (hk191/hk193: reusable after a
-                // clear, CaseMatch flag back to the default).
                 let var = env.iter().rev().find(|x| x.name == *id).expect("checked");
-                out.push_str(&format!("    lea -{}(%rbp), %rdi\n    call hbc_hclear\n", var.off));
+                let helper=if hash_case_logical_profile() {"hbc_hclear_keepcase"}else{"hbc_hclear"};
+                out.push_str(&format!("    lea -{}(%rbp), %rdi\n    call {}\n",var.off,helper));
             }
             Stmt::HFill(_, id, e) => {
                 // hb_HFill: the value evaluates first, normalized to
@@ -26084,6 +26092,26 @@ hbc_hsetcasematch:
     pop %rbp
     ret
 41: mov %rsi, -16(%rax)
+    ret
+
+# hbc_hclear_keepcase: ordinary Linux logical CaseMatch contract. The
+# slot and mode survive freeing all live entries and their owned strings.
+hbc_hclear_keepcase:
+    push %rbx
+    sub $16, %rsp
+    mov %rdi, %rbx
+    call hbc_hcasematch
+    mov %rax, (%rsp)
+    mov %rbx, %rdi
+    call hbc_hclear
+    cmpq $0, (%rsp)
+    jne .Lhclear_keep_done
+    mov %rbx, %rdi
+    xor %esi, %esi
+    call hbc_hsetcasematch
+.Lhclear_keep_done:
+    add $16, %rsp
+    pop %rbx
     ret
 
 # hbc_hscan: rdi = hash slot address, rsi = value tag (0/9 = i64,
