@@ -4669,6 +4669,9 @@ thread_local! {
     // Late phase: enabled only after the ordinary fixpoint converged with the
     // no-evidence parameter error. A program that compiles today is unchanged.
     static DEFAULT_ENABLED: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+    // New decimal-copy LOCAL admission is proven before semantic fixpoints:
+    // THREADS is discovered during typing and can otherwise arrive too late.
+    static DECIMAL_LOCAL_PROFILE: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
 }
 fn byref_param(function: &str, index: usize) -> bool {
     BYREF_PARAMS.with(|m|m.borrow().get(function).map_or(false,|v|v.contains(&index)))
@@ -9492,6 +9495,15 @@ fn prescan_dyn(f: &Func, sigs: &[Sig], ptys: &[Ty]) -> std::collections::HashSet
     let may_be_dyn = |e: &Expr, dyn_names: &HashSet<String>, darr: &HashSet<String>| -> bool {
         match e {
             Expr::Nil => true,
+            // A copied parameter can initialize as I64 before a later decimal
+            // store. Preserve existing NumLocal precedence; otherwise let that
+            // LOCAL use the already-owned Dyn slot/assignment/return contract.
+            // Only literal stores and variable +/-/* literal-decimal forms
+            // are evidenced here, never a speculative call/type_expr pass.
+            Expr::Float(..) | Expr::FloatV(..) if DECIMAL_LOCAL_PROFILE.with(|v|v.get()) => true,
+            Expr::Bin(op,a,b) if DECIMAL_LOCAL_PROFILE.with(|v|v.get()) && matches!(op,'+'|'-'|'*') &&
+                ((matches!(&**a,Expr::Var(_)) && matches!(&**b,Expr::Float(..)|Expr::FloatV(..))) ||
+                 (matches!(&**b,Expr::Var(_)) && matches!(&**a,Expr::Float(..)|Expr::FloatV(..)))) => true,
             Expr::Index(id, _) | Expr::Index2(id, _, _) => darr.contains(id),
             Expr::Var(v) => dyn_names.contains(v),
             // A DBF field read (FIELD->x / alias->x / FieldGet) yields a
@@ -35712,6 +35724,17 @@ fn main() {
         funcs.push(f);
     }
     funcs.extend(synth_new_funcs);
+    let mut decimal_thread_profile=false;
+    for f in &funcs {
+        visit_stmts_ref(&f.stmts,&mut |_|{},&mut |e| {
+            if let Expr::Call(id,_) = e {
+                // Conservative family exclusion includes calls nested in
+                // blocks, methods and functions appearing after the copy.
+                if id.starts_with("hb_thread") || id.starts_with("hb_mutex") { decimal_thread_profile=true; }
+            }
+        });
+    }
+    DECIMAL_LOCAL_PROFILE.with(|v|v.set(CURDIR_LINUX_NATIVE.with(|v|v.get()) && !decimal_thread_profile));
     if let Err(e)=box_gtstd::validate(&funcs){eprintln!("error: {}",e);process::exit(1);}
     lift_thread_blocks(&mut funcs);
 
