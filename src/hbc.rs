@@ -7259,6 +7259,11 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 }
                 return Err(format!("line {}: `iif` branches must share a scalar type (float absorbs an int side), got {:?} and {:?}", n, ta, tb));
             }
+            if ["lower","upper","alltrim"].iter().any(|b|is_builtin(id,b)) && args.len()==1 && (matches!(&args[0],Expr::Var(v) if env.iter().rev().any(|l|l.name==*v&&l.ty==Ty::Dyn)) || matches!(&args[0],Expr::Call(id,_) if is_builtin(id,"hb_defaultvalue"))) {
+                if !DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get()) {return Err(format!("line {}: Dyn string consumers require ordinary Linux without threads or macros in this increment",n));}
+                if type_expr(&args[0],env,sigs,n)?!=Ty::Dyn {return Err(format!("line {}: Dyn string consumer argument changed type during checking",n));}
+                apply_moves(&args[0],env,sigs,false);return Ok(Ty::StrOwn);
+            }
             if ["ltrim", "rtrim", "alltrim", "trim"].iter().any(|b| is_builtin(id,b)) {
                 if args.len()!=1 { return Err(format!("line {}: `{}` takes one argument in this increment",n,id)); }
                 if !matches!(type_expr(&args[0],env,sigs,n)?,Ty::Str|Ty::StrOwn) {
@@ -15761,6 +15766,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             }
             out.push_str("    add $32, %rsp\n");
         }
+        Expr::Call(id,args) if ["lower","upper","alltrim"].iter().any(|b|is_builtin(id,b)) && expr_ty(&args[0],env,sigs)==Ty::Dyn => {cg_dyn_string_unary(id,&args[0],env,sigs,strs,out,target);}
         Expr::Call(id,args) if ["ltrim", "rtrim", "alltrim", "trim"].iter().any(|b| is_builtin(id,b)) => {
             let temp=expr_ty(&args[0],env,sigs)==Ty::StrOwn && !matches!(&args[0],Expr::Var(_));
             cg_value(&args[0],env,sigs,strs,out,target);
@@ -38750,4 +38756,17 @@ fn cg_default_setter(id:&str,a:&Expr,b:&Expr,env:&[CgLocal],sigs:&[Sig],strs:&mu
     cg_dyn_stack_release(out,0,false);
     let msg="Limit: default setter supports scalar values only in this increment\n";let si=strs.len();strs.push(msg.to_string());
     out.push_str(&format!("    add $48, %rsp\n    lea .Lstr{si}(%rip), %rax\n    mov ${}, %edx\n    call hbc_write_bytes\n    jmp hbc_panic_exit\n.Lds_end{k}:\n",msg.len()));
+}
+
+// Convert an admitted Dyn scalar string to an independent input snapshot,
+// call the existing typed helper, release the input and return owned output.
+fn cg_dyn_string_unary(id:&str,e:&Expr,env:&[CgLocal],sigs:&[Sig],strs:&mut Vec<String>,out:&mut String,target:Target) {
+    let k=fresh_lbl();cg_data_value(e,env,sigs,strs,out,target);
+    out.push_str(&format!("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n    cmp $4, %al\n    jne .Ldsu_limit{k}\n    mov %rdx, %rdi\n    mov -8(%rdx), %rsi\n"));
+    if is_builtin(id,"alltrim") {out.push_str("    mov $3, %edx\n    call hbc_trim\n");}
+    else {out.push_str(if is_builtin(id,"upper") {"    call hbc_upper\n"}else{"    call hbc_lower\n"});}
+    out.push_str("    mov %rax, 16(%rsp)\n    mov %rdx, 24(%rsp)\n");cg_dyn_stack_release(out,0,false);
+    out.push_str(&format!("    mov 16(%rsp), %rax\n    mov 24(%rsp), %rdx\n    add $32, %rsp\n    jmp .Ldsu_end{k}\n.Ldsu_limit{k}:\n"));
+    cg_dyn_stack_release(out,0,false);let msg="Limit: Dyn string consumer requires a string value in this increment\n";let si=strs.len();strs.push(msg.to_string());
+    out.push_str(&format!("    add $32, %rsp\n    lea .Lstr{si}(%rip), %rax\n    mov ${}, %edx\n    call hbc_write_bytes\n    jmp hbc_panic_exit\n.Ldsu_end{k}:\n",msg.len()));
 }
