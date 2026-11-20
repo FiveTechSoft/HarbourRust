@@ -4504,7 +4504,7 @@ fn build_class_table(decls: &[ClassDecl], methods: &[MethodDef]) -> Result<Vec<C
         state[i] = 1;
         if let Some(p) = &ds[i].parent {
             let j = ds.iter().position(|d| d.name.eq_ignore_ascii_case(p))
-                .ok_or_else(|| format!("class `{}` inherits from unknown class `{}`", ds[i].name, p))?;
+                .ok_or_else(|| format!("class `{}` inherits from unknown class `{}` (declare the parent before the child in this increment)", ds[i].name, p))?;
             order(j, ds, state, out)?;
         }
         state[i] = 2;
