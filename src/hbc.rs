@@ -5892,8 +5892,9 @@ fn find_set_into(e: &Expr, roots: &[String]) -> Option<String> {
 // Literal integer hash keys carry a separate kind bit, never user string
 // spelling. Only the measured ordinary-Linux profile can admit this route.
 thread_local! { static HASH_I64_LITERAL: std::cell::Cell<bool> = const {std::cell::Cell::new(false)}; }
+thread_local! { static HASH_CASE_LOGICAL_MODE: std::cell::Cell<bool> = const {std::cell::Cell::new(false)}; }
 fn hash_case_logical_profile()->bool {
-    DECIMAL_LOCAL_PROFILE.with(|v|v.get()) && !MACRO_CONTEXT.with(|v|v.get())
+    HASH_CASE_LOGICAL_MODE.with(|v|v.get()) && DECIMAL_LOCAL_PROFILE.with(|v|v.get()) && !MACRO_CONTEXT.with(|v|v.get())
 }
 fn hash_i64_literal(e:&Expr)->bool {
     let yes=matches!(e,Expr::Int(v) if v.parse::<i64>().is_ok()) && DECIMAL_LOCAL_PROFILE.with(|v|v.get()) && !MACRO_CONTEXT.with(|v|v.get());
@@ -7049,7 +7050,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
             if is_builtin(id, "hb_hcasematch") {
                 let logical=hash_case_logical_profile();
                 if args.len()!=1 && !(logical && args.len()==2) {
-                    return Err(format!("line {}: `hb_HCaseMatch` takes one hash argument; ordinary Linux additionally accepts a logical flag",n));
+                    return Err(format!("line {}: `hb_HCaseMatch` takes one hash argument by default; --hash-logical-case on ordinary Linux enables a logical flag",n));
                 }
                 let idx=match &args[0] {
                     Expr::Var(v) => env.iter().position(|x|x.name==*v),
@@ -16313,7 +16314,10 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
         Expr::Call(id, args) if is_builtin(id, "hb_hcasematch") => {
             let v=match &args[0] {Expr::Var(v)=>v,_=>unreachable!("checked hash slot")};
             let var=env.iter().rev().find(|x|x.name==*v).expect("checked");
-            if args.len()==2 {
+            if !hash_case_logical_profile() {
+                // Default dialect preserves the old emission exactly.
+                out.push_str(&format!("    lea -{}(%rbp), %rdi\n    call hbc_hcasematch\n",var.off));
+            }else if args.len()==2 {
                 // All argument effects precede the observed old flag. Keep
                 // the new flag and old result across possible allocation.
                 cg_value(&args[1],env,sigs,strs,out,target);
@@ -25156,8 +25160,32 @@ hbc_array4m:
 // This new limit uses the existing raw writer and fatal/trace exit. Only
 // the native console profile needs its existing early-close boundary.
 fn hash_helpers() -> String {
-    HASH_HELPERS.replace("    # @HASH_FATAL_CLOSE@\n", if CURDIR_LINUX_NATIVE.with(|v|v.get()) && !THREADS.with(|v|v.get()) { "    call hbc_gtstd_before_fatal\n" } else { "" })
+    let mut result=HASH_HELPERS.replace("    # @HASH_FATAL_CLOSE@\n", if CURDIR_LINUX_NATIVE.with(|v|v.get()) && !THREADS.with(|v|v.get()) { "    call hbc_gtstd_before_fatal\n" } else { "" });
+    if hash_case_logical_profile() {result.push_str(HASH_CLEAR_KEEPCASE_HELPER);}
+    result
 }
+
+const HASH_CLEAR_KEEPCASE_HELPER: &str = r"# hbc_hclear_keepcase: ordinary Linux logical CaseMatch contract. The
+# slot and mode survive freeing all live entries and their owned strings.
+hbc_hclear_keepcase:
+    push %rbx
+    sub $16, %rsp
+    mov %rdi, %rbx
+    call hbc_hcasematch
+    mov %rax, (%rsp)
+    mov %rbx, %rdi
+    call hbc_hclear
+    cmpq $0, (%rsp)
+    jne .Lhclear_keep_done
+    mov %rbx, %rdi
+    xor %esi, %esi
+    call hbc_hsetcasematch
+.Lhclear_keep_done:
+    add $16, %rsp
+    pop %rbx
+    ret
+
+";
 
 const HASH_HELPERS: &str = r"
 # Hash values have independent ownership. Snapshot before dropping an old
@@ -26092,26 +26120,6 @@ hbc_hsetcasematch:
     pop %rbp
     ret
 41: mov %rsi, -16(%rax)
-    ret
-
-# hbc_hclear_keepcase: ordinary Linux logical CaseMatch contract. The
-# slot and mode survive freeing all live entries and their owned strings.
-hbc_hclear_keepcase:
-    push %rbx
-    sub $16, %rsp
-    mov %rdi, %rbx
-    call hbc_hcasematch
-    mov %rax, (%rsp)
-    mov %rbx, %rdi
-    call hbc_hclear
-    cmpq $0, (%rsp)
-    jne .Lhclear_keep_done
-    mov %rbx, %rdi
-    xor %esi, %esi
-    call hbc_hsetcasematch
-.Lhclear_keep_done:
-    add $16, %rsp
-    pop %rbx
     ret
 
 # hbc_hscan: rdi = hash slot address, rsi = value tag (0/9 = i64,
@@ -35670,6 +35678,7 @@ fn main() {
     let mut no_arena = false;
     let mut no_prune = false;
     let mut no_vas = false;
+    let mut hash_case_mode = false;
     let mut external_as = false;
     let mut llvm_trace = true;
     let mut harbour_dir: Option<String> = None;
@@ -35687,6 +35696,7 @@ fn main() {
             "--harbour-dll" => harbour_dll = true,
             _ if a.starts_with("--harbour-dir=") => harbour_dir = Some(a["--harbour-dir=".len()..].to_string()),
             _ if a.starts_with("--ext-dylib=") => ext_dylib = Some(a["--ext-dylib=".len()..].to_string()),
+            "--hash-logical-case" => hash_case_mode = true,
             "--instrument" => instrument = true,
             "--no-escape-analysis" => no_escape = true,
             "--no-arena" => no_arena = true,
@@ -35702,6 +35712,7 @@ fn main() {
   --target overrides it; macho-arm64 emits a native Apple Silicon executable
   omitted output uses the input stem in the current directory (.exe on Windows target), preserving case
   output ending in .s writes assembly; any other name writes the selected target executable directly
+  --hash-logical-case opts into logical hash flags and clear-preserve (ordinary Linux only)
   flag --external-as keeps the external as/ld path; --instrument, --no-arena, --no-prune, --no-escape-analysis, --experimental-llvm[-no-trace]
   --harbour-rdd links Harbour 3.2's own VM + RDD for DBF access (Windows; needs MinGW gcc and --harbour-dir=<install> or HB_DIR; --harbour-dll links harbour-32-x64.dll)"); process::exit(2); }
             _ => pos.push(a),
@@ -35714,6 +35725,7 @@ fn main() {
   --target overrides it; macho-arm64 emits a native Apple Silicon executable
   omitted output uses the input stem in the current directory (.exe on Windows target), preserving case
   output ending in .s writes assembly; any other name writes the selected target executable directly
+  --hash-logical-case opts into logical hash flags and clear-preserve (ordinary Linux only)
   flag --external-as keeps the external as/ld path; --instrument, --no-arena, --no-prune, --no-escape-analysis, --experimental-llvm[-no-trace]
   --harbour-rdd links Harbour 3.2's own VM + RDD for DBF access (Windows; needs MinGW gcc and --harbour-dir=<install> or HB_DIR; --harbour-dll links harbour-32-x64.dll)");
         process::exit(2);
@@ -35871,6 +35883,8 @@ fn main() {
         });
     }
     DECIMAL_LOCAL_PROFILE.with(|v|v.set(CURDIR_LINUX_NATIVE.with(|v|v.get()) && !decimal_thread_profile));
+    if hash_case_mode && (!DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get())) {eprintln!("error: hb_HCaseMatch logical mode requires ordinary Linux without threads or macros");process::exit(1);}
+    HASH_CASE_LOGICAL_MODE.with(|v|v.set(hash_case_mode));
     narrow_bare_date_locals(&mut funcs);
     if let Err(e)=box_gtstd::validate(&funcs){eprintln!("error: {}",e);process::exit(1);}
     lift_thread_blocks(&mut funcs);

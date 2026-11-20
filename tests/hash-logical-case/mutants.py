@@ -20,12 +20,12 @@ programs={
 'clear':'function Main()\nlocal h:={=>}\nhb_HCaseMatch(h,.F.)\nh["Host"]:=1\nhb_HClear(h)\nh["Host"]:=2\n? hb_HCaseMatch(h),hb_HHasKey(h,"HOST")\nreturn nil\n',
 }
 for name,(old,new,test) in mutations.items():
- assert source.count(old)==1,(name,source.count(old));w=out/name;w.mkdir();src=w/'p.prg';src.write_text(programs[test]);cb=run([a.compiler,src,w/'control','--target=linux'],w,'control-build');ob=run([a.hbmk2,src,'-quiet','-w0','-gtstd','-o'+str(w/'oracle')],w,'oracle-build');assert ob.returncode==0;rr=run([w/'oracle'],w,'oracle-run');assert rr.returncode==0 and not rr.stderr;row=dict(name=name,source_sha256=h(src),control_build_rc=cb.returncode,oracle_binary_sha256=h(w/'oracle'))
+ assert source.count(old)==1,(name,source.count(old));w=out/name;w.mkdir();src=w/'p.prg';src.write_text(programs[test]);cb=run([a.compiler,src,w/'control','--target=linux','--hash-logical-case'],w,'control-build');ob=run([a.hbmk2,src,'-quiet','-w0','-gtstd','-o'+str(w/'oracle')],w,'oracle-build');assert ob.returncode==0;rr=run([w/'oracle'],w,'oracle-run');assert rr.returncode==0 and not rr.stderr;row=dict(name=name,source_sha256=h(src),control_build_rc=cb.returncode,oracle_binary_sha256=h(w/'oracle'))
  if True:
   assert cb.returncode==0;cr=run([w/'control'],w,'control-run');assert (cr.returncode,cr.stdout,cr.stderr)==(rr.returncode,rr.stdout,rr.stderr);row['control_binary_sha256']=h(w/'control')
  rust=repo/'src/hbc_hashcase_mutant.rs';rust.write_text(source.replace(old,new));row['mutated_source_sha256']=h(rust);mb=run([a.rustc,'--edition=2021','-C','link-arg=-s',rust,'-o',w/'compiler'],w,'compiler-build');rust.unlink();row['compiler_build_rc']=mb.returncode;row['caught']=False
  if mb.returncode==0:
-  row['mutant_compiler_sha256']=h(w/'compiler');b=run([w/'compiler',src,w/'mutant','--target=linux'],w,'mutant-build');row['program_build_rc']=b.returncode
+  row['mutant_compiler_sha256']=h(w/'compiler');b=run([w/'compiler',src,w/'mutant','--target=linux','--hash-logical-case'],w,'mutant-build');row['program_build_rc']=b.returncode
   if b.returncode==0:
    mr=run([w/'mutant'],w,'mutant-run');row.update(kind='runtime-difference',mutant_run_rc=mr.returncode,mutant_binary_sha256=h(w/'mutant'),caught=mr.returncode!=124 and (mr.returncode,mr.stdout,mr.stderr)!=(rr.returncode,rr.stdout,rr.stderr))
   else:row.update(kind='build-rejection',caught=True)
