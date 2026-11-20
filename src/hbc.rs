@@ -31777,6 +31777,10 @@ hbc_free_lists: .skip 10240
         out = out.replace("@REG_ARENA_ALLOC@", "    decq hbc_mem_allocs(%rip)\n");
     }
         let mut result=finalize_trace(out,target);
+        if gtstd_native {
+            // A Dyn render can fail before restoring raw diagnostic mode.
+            result=result.replace("hbc_panic_exit:\n", "hbc_panic_exit:\n    movq $0, hbc_console_mode(%rip)\n");
+        }
         if THREADS.with(|c| c.get()) { result = finalize_threads(result, target); }
         if active {
             result=result.replace("    call hbc_fn_main\n", "    call hbc_fn_main\n    call hrdbf_app_close\n");
@@ -32120,11 +32124,6 @@ hbc_panic_exit:
     sub $32, %rsp
     call hbc_print_trace
 "#);
-    if gtstd_native {
-        // A Dyn render can fail before its output fragment restores raw mode.
-        // Native diagnostic bytes and the existing callstack must bypass GTSTD.
-        out=out.replace("hbc_panic_exit:\n", "hbc_panic_exit:\n    movq $0, hbc_console_mode(%rip)\n");
-    }
     match target {
         Target::Linux => out.push_str("    mov $60, %eax\n    mov $1, %edi\n    syscall\n    .section .rodata\n"),
         Target::Windows => out.push_str("    call hbc_pflush\n    mov $1, %ecx\n    call ExitProcess\n    .section .rdata,\"r\"\n"),
