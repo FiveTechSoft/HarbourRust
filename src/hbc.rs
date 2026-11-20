@@ -2024,7 +2024,7 @@ const ASM_RESERVED: &[&str] = &[
     // hbc itself emits; a user function with one of these names would
     // collide with a helper symbol.
     "dtos", "stod", "year", "day", "month", "dow", "cdow", "cmonth", "dtoc", "sqrt", "exp", "log", "mod", "padc", "rat", "stuff", "isdigit", "isalpha", "isupper", "islower", "strzero", "ischar", "strzero_fix", "str_f64", "fmt_f64", "date_add", "date_diff", "date_days", "date_from_days", "seconds",
-    "hb_sha1", "hb_hmac_sha1", "strtran", "space", "substr", "date", "ctod", "date_pack", "date_render", "date_today", "dispbox", "hrbase_wait", "setcursor", "hb_flink", "hb_flinksym", "hb_flinkread", "hb_memowrit", "hb_dircreate", "ferror", "curdir", "fread", "fcreate", "fopen", "fwrite", "fclose", "freadstr", "hb_libname", "hb_ps", "os", "dirmake", "inkey", "file", "hrfile_setdefault", "hrfile_setpath", "qout", "qqout", "outstd", "outerr", "empty", "procname", "min", "max", "str", "padr", "hb_ntos", "replicate", "aeval", "hb_isnumeric", "hb_isarray", "hb_isstring", "dfree", "upper", "lower", "left", "right", "at", "int", "abs", "padl", "val", "ascan", "aclone", "atail", "asort", "hb_bitand", "hb_bitor", "hb_bitxor", "hb_bitnot", "hb_bittest", "hb_bitset", "hb_bitreset", "eprint_str", "eprint_sep", "eprint_i64", "eprint_i64c", "eprint_dyn", "eprint_dynlit", "print_dynlit", "eprint_f64", "hb_eol", "procline", "asc", "trim", "ltrim", "rtrim", "alltrim", "chr", "trace_top", "print_trace", "panic_exit", "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_range_error", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
+    "hb_defaultvalue", "hb_sha1", "hb_hmac_sha1", "strtran", "space", "substr", "date", "ctod", "date_pack", "date_render", "date_today", "dispbox", "hrbase_wait", "setcursor", "hb_flink", "hb_flinksym", "hb_flinkread", "hb_memowrit", "hb_dircreate", "ferror", "curdir", "fread", "fcreate", "fopen", "fwrite", "fclose", "freadstr", "hb_libname", "hb_ps", "os", "dirmake", "inkey", "file", "hrfile_setdefault", "hrfile_setpath", "qout", "qqout", "outstd", "outerr", "empty", "procname", "min", "max", "str", "padr", "hb_ntos", "replicate", "aeval", "hb_isnumeric", "hb_isarray", "hb_isstring", "dfree", "upper", "lower", "left", "right", "at", "int", "abs", "padl", "val", "ascan", "aclone", "atail", "asort", "hb_bitand", "hb_bitor", "hb_bitxor", "hb_bitnot", "hb_bittest", "hb_bitset", "hb_bitreset", "eprint_str", "eprint_sep", "eprint_i64", "eprint_i64c", "eprint_dyn", "eprint_dynlit", "print_dynlit", "eprint_f64", "hb_eol", "procline", "asc", "trim", "ltrim", "rtrim", "alltrim", "chr", "trace_top", "print_trace", "panic_exit", "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_range_error", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
 ];
 
 fn dbf_result(id: &str) -> Option<Ty> {
@@ -6514,6 +6514,17 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 return Err(format!("line {}: mixed numeric LOCAL cannot cross a function or unsupported builtin ABI",n));
             }
 
+            if is_builtin(id,"hb_defaultvalue") {
+                if !DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get()) {return Err(format!("line {}: hb_defaultValue requires ordinary Linux without threads or macros in this increment",n));}
+                if args.len()!=2 {return Err(format!("line {}: hb_defaultValue takes exactly two arguments in this increment",n));}
+                for a in args {
+                    let t=type_expr(a,env,sigs,n)?;
+                    let dyn_shape=t==Ty::Dyn && (matches!(a,Expr::Nil|Expr::Var(_)) || matches!(a,Expr::Call(id,_) if is_builtin(id,"hb_defaultvalue")));
+                    if !matches!(t,Ty::I64|Ty::F64|Ty::Bool|Ty::Str|Ty::StrOwn) && !dyn_shape {return Err(format!("line {}: hb_defaultValue admits typed scalar arguments, NIL, Dyn variables and nested hb_defaultValue only; Date, containers, references and other Dyn producers are outside this increment",n));}
+                    apply_moves(a,env,sigs,false);
+                }
+                return Ok(Ty::Dyn);
+            }
             if is_bitindex(id) {
                 if args.len() != 2 { return Err(format!("line {}: `{}` takes two arguments in this increment",n,id)); }
                 if type_expr(&args[0],env,sigs,n)? != Ty::I64 {
@@ -11779,6 +11790,7 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
                 return;
             }
             if is_builtin(id, "procline") || is_builtin(id, "hb_eol") || is_builtin(id, "procname") { for a in args { apply_moves(a,env,sigs,false); } return; }
+            if is_builtin(id,"hb_defaultvalue") {for a in args {apply_moves(a,env,sigs,false);}return;}
             if is_bitindex(id) { apply_moves(&args[0],env,sigs,false); return; }
             if is_bitop(id) { for a in args { apply_moves(a, env, sigs, false); } return; }
             if is_builtin(id, "min") || is_builtin(id, "max") {
@@ -15423,6 +15435,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                 _ => unreachable!("checked"),
             }
         }
+        Expr::Call(id,args) if is_builtin(id,"hb_defaultvalue") => {cg_default_value(&args[0],&args[1],env,sigs,strs,out,target);}
         Expr::Call(id,args) if is_builtin(id,"abs") && expr_ty(&args[0],env,sigs)==Ty::Dyn => {
             cg_dyn_abs(&args[0],env,sigs,strs,out,target);
         }
@@ -19415,6 +19428,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             if is_builtin(id, "hb_hkeyat") { return Ty::StrOwn; }
             if is_builtin(id, "hb_hvalueat") { return Ty::Dyn; }
             if is_builtin(id, "hb_hcasematch") { return if hash_case_logical_profile() {Ty::Bool}else{Ty::I64}; }
+            if is_builtin(id,"hb_defaultvalue") {return Ty::Dyn;}
             if is_builtin(id, "hb_hget") { return Ty::Dyn; }
             if is_builtin(id, "hb_hgetdef") { return Ty::Dyn; }
             if is_builtin(id, "hb_hsetdef") { return Ty::Dyn; }
@@ -38659,4 +38673,35 @@ mod seq_owned_tests {
         apply_moves(&Expr::Seq(vec![Expr::Int("1".into()),Expr::Var("s".into())]),&mut env,&[],true);
         assert!(!env[0].moved);
     }
+}
+
+// Scalar-only default selection. Both arguments become independent snapshots,
+// left to right, before matching Harbour value categories. Dyn inputs are
+// borrowed variables or this function's own scalar result, never an arbitrary
+// owning container producer. Only scalar payloads enter snapshot cleanup.
+fn cg_default_value(a:&Expr,b:&Expr,env:&[CgLocal],sigs:&[Sig],strs:&mut Vec<String>,out:&mut String,target:Target) {
+    let k=fresh_lbl();
+    cg_data_value(a,env,sigs,strs,out,target);
+    out.push_str(&format!("    sub $64, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n    movq $1, 16(%rsp)\n    movq $0, 24(%rsp)\n    movq $0, 48(%rsp)\n    cmpq $0, hbc_seq_depth(%rip)\n    je .Ldf_eval{k}\n    lea .Ldf_catch{k}(%rip), %rdi\n    call hbc_seq_push\n    movq $1, 48(%rsp)\n.Ldf_eval{k}:\n"));
+    cg_data_value(b,env,sigs,strs,out,target);
+    out.push_str(&format!("    mov %rax, 16(%rsp)\n    mov %rdx, 24(%rsp)\n    cmpq $0, 48(%rsp)\n    je .Ldf_check{k}\n    call hbc_seq_pop\n.Ldf_check{k}:\n"));
+    for off in [0,16] {
+        out.push_str(&format!("    mov {off}(%rsp), %rax\n    and $255, %eax\n    cmp $5, %eax\n    jbe .Ldf_valid{off}_{k}\n    cmp $9, %eax\n    jne .Ldf_limit{k}\n.Ldf_valid{off}_{k}:\n"));
+    }
+    // Normalize display-provenance integer tag9 to number, float kind5 to
+    // number, and borrowed/owned string tags2/4 to character for comparison.
+    for (off,reg) in [(0,"%ecx"),(16,"%r8d")] {
+        out.push_str(&format!("    mov {off}(%rsp), %rax\n    and $255, %eax\n    cmp $9, %eax\n    je .Ldf_num{off}_{k}\n    cmp $5, %eax\n    je .Ldf_num{off}_{k}\n    cmp $4, %eax\n    jne .Ldf_kind{off}_{k}\n    mov $2, %eax\n    jmp .Ldf_kind{off}_{k}\n.Ldf_num{off}_{k}:\n    xor %eax, %eax\n.Ldf_kind{off}_{k}:\n    mov %eax, {reg}\n"));
+    }
+    out.push_str(&format!("    cmp %ecx, %r8d\n    je .Ldf_first{k}\n    mov 16(%rsp), %rax\n    mov 24(%rsp), %rdx\n    mov %rax, 32(%rsp)\n    mov %rdx, 40(%rsp)\n"));
+    cg_dyn_stack_release(out,0,false);
+    out.push_str(&format!("    jmp .Ldf_done{k}\n.Ldf_first{k}:\n    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    mov %rax, 32(%rsp)\n    mov %rdx, 40(%rsp)\n"));
+    cg_dyn_stack_release(out,16,false);
+    out.push_str(&format!(".Ldf_done{k}:\n    mov 32(%rsp), %rax\n    mov 40(%rsp), %rdx\n    add $64, %rsp\n    jmp .Ldf_end{k}\n.Ldf_catch{k}:\n"));
+    cg_dyn_stack_release(out,0,false);cg_dyn_stack_release(out,16,false);
+    out.push_str(&format!("    add $64, %rsp\n    jmp hbc_seq_unwind\n.Ldf_limit{k}:\n"));
+    cg_dyn_stack_release(out,0,false);cg_dyn_stack_release(out,16,false);
+    let message="Limit: hb_defaultValue supports scalar values only in this increment\n";
+    let si=strs.len();strs.push(message.to_string());
+    out.push_str(&format!("    add $64, %rsp\n    lea .Lstr{si}(%rip), %rax\n    mov ${}, %edx\n    call hbc_write_bytes\n    jmp hbc_panic_exit\n.Ldf_end{k}:\n",message.len()));
 }
