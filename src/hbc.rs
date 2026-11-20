@@ -7553,6 +7553,13 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 }
                 return Ok(Ty::StrOwn);
             }
+            if is_builtin(id,"substr") && (2..=3).contains(&args.len()) && (matches!(&args[0],Expr::Var(v) if env.iter().rev().any(|l|l.name==*v&&l.ty==Ty::Dyn)) || matches!(&args[0],Expr::Call(id,_) if is_builtin(id,"hb_defaultvalue"))) {
+                if !DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get()) {return Err(format!("line {}: Dyn SubStr requires ordinary Linux without threads or macros in this increment",n));}
+                if type_expr(&args[0],env,sigs,n)?!=Ty::Dyn {return Err(format!("line {}: Dyn SubStr source changed type during checking",n));}
+                apply_moves(&args[0],env,sigs,false);
+                for a in &args[1..] {if type_expr(a,env,sigs,n)?!=Ty::I64 {return Err(format!("line {}: Dyn SubStr position/length must be typed integers in this increment",n));}apply_moves(a,env,sigs,false);}
+                return Ok(Ty::StrOwn);
+            }
             if is_builtin(id,"substr") {
                 if !(2..=3).contains(&args.len()) { return Err(format!("line {}: `substr` takes 2 or 3 arguments in this increment",n)); }
                 if !matches!(type_expr(&args[0],env,sigs,n)?,Ty::Str|Ty::StrOwn) {
@@ -15501,6 +15508,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                 out.push_str("    call hbc_str_int_field\n");
             }
         }
+        Expr::Call(id,args) if is_builtin(id,"substr") && expr_ty(&args[0],env,sigs)==Ty::Dyn => {cg_dyn_substr(args,env,sigs,strs,out,target);}
         Expr::Call(id,args) if is_builtin(id,"substr") => {
             // Snapshot the source before later arguments can mutate/reassign
             // its owner, matching Harbour's retained argument value. Numeric
@@ -38792,4 +38800,18 @@ fn cg_dyn_string_slice(id:&str,a:&Expr,b:&Expr,env:&[CgLocal],sigs:&[Sig],strs:&
     cg_dyn_stack_release(out,0,false);out.push_str(&format!("    add $64, %rsp\n    jmp hbc_seq_unwind\n.Ldsl_limit{k}:\n"));
     cg_dyn_stack_release(out,0,false);let msg="Limit: Dyn string slice requires a string source in this increment\n";let si=strs.len();strs.push(msg.to_string());
     out.push_str(&format!("    add $64, %rsp\n    lea .Lstr{si}(%rip), %rax\n    mov ${}, %edx\n    call hbc_write_bytes\n    jmp hbc_panic_exit\n.Ldsl_end{k}:\n",msg.len()));
+}
+
+// Retain an owned Dyn source while numeric operands run once in source order.
+// A local sequence pad releases that source on either later-operand throw.
+fn cg_dyn_substr(args:&[Expr],env:&[CgLocal],sigs:&[Sig],strs:&mut Vec<String>,out:&mut String,target:Target) {
+    let k=fresh_lbl();cg_data_value(&args[0],env,sigs,strs,out,target);
+    out.push_str(&format!("    sub $64, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n    movq $0, 48(%rsp)\n    cmpq $0, hbc_seq_depth(%rip)\n    je .Ldss_eval{k}\n    lea .Ldss_catch{k}(%rip), %rdi\n    call hbc_seq_push\n    movq $1, 48(%rsp)\n.Ldss_eval{k}:\n"));
+    cg_expr(&args[1],env,sigs,strs,out,target);out.push_str("    mov %rax, 32(%rsp)\n");
+    if args.len()==3 {cg_expr(&args[2],env,sigs,strs,out,target);} else {out.push_str("    movabs $9223372036854775807, %rax\n");}
+    out.push_str(&format!("    mov %rax, 40(%rsp)\n    cmpq $0, 48(%rsp)\n    je .Ldss_check{k}\n    call hbc_seq_pop\n.Ldss_check{k}:\n    cmpb $4, (%rsp)\n    jne .Ldss_limit{k}\n    mov 8(%rsp), %rdi\n    mov -8(%rdi), %rsi\n    mov 32(%rsp), %rdx\n    mov 40(%rsp), %rcx\n    call hbc_substr\n    mov %rax, 16(%rsp)\n    mov %rdx, 24(%rsp)\n"));
+    cg_dyn_stack_release(out,0,false);out.push_str(&format!("    mov 16(%rsp), %rax\n    mov 24(%rsp), %rdx\n    add $64, %rsp\n    jmp .Ldss_end{k}\n.Ldss_catch{k}:\n"));
+    cg_dyn_stack_release(out,0,false);out.push_str(&format!("    add $64, %rsp\n    jmp hbc_seq_unwind\n.Ldss_limit{k}:\n"));
+    cg_dyn_stack_release(out,0,false);let msg="Limit: Dyn SubStr requires a string source in this increment\n";let si=strs.len();strs.push(msg.to_string());
+    out.push_str(&format!("    add $64, %rsp\n    lea .Lstr{si}(%rip), %rax\n    mov ${}, %edx\n    call hbc_write_bytes\n    jmp hbc_panic_exit\n.Ldss_end{k}:\n",msg.len()));
 }
