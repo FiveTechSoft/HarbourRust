@@ -6359,12 +6359,13 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
         Expr::Set(id, rhs) => {
             // Inline assignment as an expression (parexpr; probe px2):
             // the value is the NEW content. This increment restricts the
-            // new content to integers and logicals; float, string, Dyn,
-            // array and block payloads in inline position stay named
-            // limits (their ownership/promotion contract in expression
-            // position is not yet oracle-pinned).
+            // new content to integers/logicals in the portable subset.
+            // Ordinary Linux additionally admits scalar Dyn into a Dyn
+            // slot, returning an independent owned snapshot. Static float,
+            // string, date and container shapes remain named limits.
             let t = type_expr(rhs, env, sigs, n)?;
-            if !matches!(t, Ty::I64 | Ty::Bool) {
+            let dyn_inline = t==Ty::Dyn && DECIMAL_LOCAL_PROFILE.with(|v|v.get());
+            if !matches!(t, Ty::I64 | Ty::Bool) && !dyn_inline {
                 return Err(format!("line {}: inline `:=` in an expression supports integer/logical values only in this increment; floats, strings, Dyn, arrays and blocks remain a named limit", n));
             }
             let idx = match env.iter().position(|v| v.name == *id) {
@@ -14512,12 +14513,28 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             // Inline assignment (parexpr): evaluate the right side, store
             // it into the variable's slot, and leave the NEW content in
             // rax as the expression's value. The checker restricts the
-            // target to plain I64/Bool locals and Dyn slots (no
-            // by-reference stores, no float/string payloads).
+            // target to plain I64/Bool locals and Dyn slots. The bounded
+            // scalar Dyn branch below owns both slot and result; static
+            // float/string and by-reference stores remain excluded.
             let v = env.iter().find(|v| v.name == *id).expect("checked");
             let off = v.off;
             let lty = v.ty;
             let rt = expr_ty(rhs, env, sigs);
+            if lty==Ty::Dyn && rt==Ty::Dyn {
+                cg_expr(rhs,env,sigs,strs,out,target);
+                let k=fresh_lbl();
+                let message="Limit: inline Dyn assignment supports scalar values only in this increment\n";
+                let si=strs.len();strs.push(message.to_string());
+                out.push_str(&format!("    cmpb $5, %al\n    jbe .Lsetscalar{k}\n    cmpb $9, %al\n    je .Lsetscalar{k}\n    lea .Lstr{si}(%rip), %rax\n    mov ${}, %edx\n    call hbc_write_bytes\n    jmp hbc_panic_exit\n.Lsetscalar{k}:\n",message.len()));
+                // The slot and the expression result need independent owners.
+                // Clone a borrowed RHS before the old slot can be released.
+                if !dyn_expr_owned(rhs) { cg_dyn_clone_if_str(out); }
+                out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+                cg_dyn_free_old(out,off);
+                out.push_str(&format!("    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    add $16, %rsp\n    mov %rax, -{}(%rbp)\n    mov %rdx, -{}(%rbp)\n",off,off-8));
+                cg_dyn_clone_if_str(out);
+                return;
+            }
             cg_value(rhs, env, sigs, strs, out, target);
             if lty == Ty::Dyn {
                 // Dyn slot: tag the scalar in (mirror of the statement
@@ -19727,7 +19744,7 @@ fn cg_iif_tagged(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
 fn dyn_expr_owned(e: &Expr) -> bool {
     match e {
         Expr::Var(id)=>CG_MEMVAR_NAMES.with(|c|c.borrow().contains(id)),
-        Expr::Call(..) | Expr::Send(..) | Expr::SelfGet(..) => true,
+        Expr::Call(..) | Expr::Send(..) | Expr::SelfGet(..) | Expr::Set(..) => true,
         Expr::Seq(es) => es.last().map_or(false, dyn_expr_owned),
         // Dyn+Dyn runtime '+' yields a fresh cell (owned string or integer).
         Expr::Bin('+' | '-' | '*',..) => dynplus_marked(e),
