@@ -13,6 +13,7 @@
     "-fno-unwind-tables",
     "-fno-ident",
     "-mno-red-zone",
+    "-fno-jump-tables",
     "-Wall",
     "-Wextra",
     "-Werror",
@@ -24,7 +25,7 @@
     "runtime/hrcdx.h": "a6b48dce0cf0211715698cc16b5173ecc7bb1ff88b5e7ba8f03d1565a20db4ad",
     "runtime/hrdbf.c": "ee767959ff9cfaa64ff7d284ae525e8194e36ecb1d6c23b082e3885defc032f1",
     "runtime/hrdbf.h": "5debf22b47153ad299766663512d7a73dd4e3de56c721b564fbc66081dcb6093",
-    "runtime/hrdbf_app.c": "a8fcf4ac2bd4bf8a8747651ecf4edc8002a388ee7c7745ff052c0683c8f46b3d",
+    "runtime/hrdbf_app.c": "2eeebd247c374bbb8443dacf6cc667832a22f6bb8839e8e18e017b5c552cedab",
     "runtime/hrdbf_embedded_linux.c": "0eca1b515a4ee8092781eae36de64e2c8174642c85c07ebe876a3a1b5743e812",
     "runtime/hrdbf_file.h": "78e63320df7529689b635eb6dbfce7dca8eae6c90cece31e1a94ca5672c685ac",
     "runtime/hrdbf_file_linux.c": "d3b970d78b401904d89fa919858d10f7c405a30da40951e974303a277fbefbec",
@@ -37,8 +38,8 @@
     "runtime/hrvalue.c": "bc4970cd86c7a2ac71ad8bd974908c4302aaa1b870fbaa3cba6ebaa5d83999d1",
     "runtime/hrvalue.h": "962dee2ca2d6f75dc45d4d6597a1e84e62568b869a897911c496501fdc8a4dfe"
   },
-  "asm_sha256": "f056636467bf3ac1d3c6c069d45d800bb2e6a971e81c2308b5169615b920a072",
-  "labels": 1118,
+  "asm_sha256": "0601d9c81304f12c53ea050b7fe685e4088f22d3e51650b5fa478b5a20036175",
+  "labels": 1143,
   "undefined_symbols": [],
   "local_label_namespace": ".Lhrdbf_",
   "notes": "Experimental compiler integration; separate non-DBF byte-identity evidence required. CWD-independent output: .file stripped."

@@ -5,7 +5,7 @@ All generation happens during development, never when hbc compiles a program.
 from pathlib import Path
 import subprocess,re,json,hashlib
 root=Path(__file__).resolve().parents[1]
-flags=['-std=c99','-O2','-S','-ffreestanding','-fno-builtin','-fno-stack-protector','-fno-pic','-fno-pie','-fno-asynchronous-unwind-tables','-fno-unwind-tables','-fno-ident','-mno-red-zone','-Wall','-Wextra','-Werror','-Wno-misleading-indentation']
+flags=['-std=c99','-O2','-S','-ffreestanding','-fno-builtin','-fno-stack-protector','-fno-pic','-fno-pie','-fno-asynchronous-unwind-tables','-fno-unwind-tables','-fno-ident','-mno-red-zone','-fno-jump-tables','-Wall','-Wextra','-Werror','-Wno-misleading-indentation']
 # Additional flags: no builtin helpers, no synchronous unwind tables/ident,
 # no red-zone reliance while sharing a runtime, strict warnings. We deliberately
 # keep ordinary integer/floating ABI conventions, with no architecture tuning.

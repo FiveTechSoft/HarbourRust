@@ -6448,7 +6448,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 } else if id=="ordlistadd" || id=="dbseek" {
                     if (id=="ordlistadd"&&args.len()!=1)||(id=="dbseek"&&(args.is_empty()||args.len()>3)){return Err(format!("line {}: {} expects {}",n,id,if id=="ordlistadd"{"one filename string"}else{"one key string and up to two logical flags"}));}
                     if id=="dbseek" {
-                        if !matches!(type_expr(&args[0],env,sigs,n)?,Ty::Str|Ty::StrOwn|Ty::Dyn){return Err(format!("line {}: NTX dbseek expects a statically typed string or a Dyn character value",n));}
+                        if !matches!(type_expr(&args[0],env,sigs,n)?,Ty::Str|Ty::StrOwn|Ty::Dyn|Ty::I64|Ty::F64|Ty::Bool|Ty::Date){return Err(format!("line {}: NTX dbseek expects a statically typed string or a scalar Dyn value",n));}
                     } else if !matches!(type_expr(&args[0],env,sigs,n)?,Ty::Str|Ty::StrOwn){return Err(format!("line {}: NTX {} expects a statically typed string (Dyn queries are outside this increment)",n,id));}
                     for a in &args[1..]{if type_expr(a,env,sigs,n)?!=Ty::Bool{return Err(format!("line {}: NTX seek flags must be logical",n));}}
                 } else if id=="dbskip" || id=="fieldget" {
@@ -14657,7 +14657,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                     out.push_str("    add $16, %rsp\n    mov $1, %eax\n    xor %edx, %edx\n");
                 },
                 "ordlistadd" | "dbseek" => {
-                    if id=="dbseek" && expr_ty(&args[0],env,sigs)==Ty::Dyn {
+                    if id=="dbseek" && !matches!(expr_ty(&args[0],env,sigs),Ty::Str|Ty::StrOwn) {
                         // cg_data_value normalizes the Dyn operand to an
                         // exclusively owned cell (Var reads clone). The runtime
                         // extracts the character bytes (length header at

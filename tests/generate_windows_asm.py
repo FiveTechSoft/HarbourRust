@@ -4,7 +4,7 @@ from pathlib import Path
 import subprocess,re,json,hashlib,os
 root=Path(__file__).resolve().parents[1]
 cc=os.environ.get('HR_MINGW_CC','x86_64-w64-mingw32-gcc')
-flags=['-std=c99','-O2','-S','-ffreestanding','-fno-builtin','-fno-stack-protector','-fno-asynchronous-unwind-tables','-fno-unwind-tables','-fno-ident','-mno-red-zone','-Wall','-Wextra','-Werror','-Wno-misleading-indentation']
+flags=['-std=c99','-O2','-S','-ffreestanding','-fno-builtin','-fno-stack-protector','-fno-asynchronous-unwind-tables','-fno-unwind-tables','-fno-ident','-mno-red-zone','-fno-jump-tables','-Wall','-Wextra','-Werror','-Wno-misleading-indentation']
 raw=root/'generated/hrdbf_windows.raw.s'
 subprocess.run([cc,*flags,'runtime/hrdbf_embedded_windows.c','-o',raw],cwd=root,check=True)
 s=raw.read_text();s=re.sub(r'^\s*\.(file|def)\s+.*\n','',s,flags=re.M)
