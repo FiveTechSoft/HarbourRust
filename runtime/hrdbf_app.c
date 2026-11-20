@@ -143,12 +143,13 @@ static void hrdbf_app_seek_miss_end(hrntx_index *x){
  hrdbf_app_pos=x->count;hrdbf_app_found_flag=0;hrdbf_app_order_sync();hrdbf_app_state.area.bof=!hrdbf_app_cdx&&!x->count;
 }
 static size_t hrdbf_app_pad_ll(long long r,unsigned width,char *buf){
- unsigned char tmp[24];size_t n=0,i,len;int neg=r<0;unsigned long long m=neg?(unsigned long long)(-(r+1))+1:(unsigned long long)r;
+ unsigned char tmp[24];size_t n=0,i,len,zeros;int neg=r<0;unsigned long long m=neg?(unsigned long long)(-(r+1))+1:(unsigned long long)r;
  if(!m)tmp[n++]='0';
  while(m){tmp[n++]=(unsigned char)('0'+(m%10));m/=10;}
  len=0;
  if(neg)buf[len++]='-';
- if(width&&(size_t)width>n+len){for(i=0;i<(size_t)width-n-len;i++)buf[len++]='0';}
+ zeros=(size_t)width-n-len;
+ for(i=0;i<zeros;i++)buf[len++]='0';
  for(i=n;i>0;i--)buf[len++]=tmp[i-1];
  return len;
 }
