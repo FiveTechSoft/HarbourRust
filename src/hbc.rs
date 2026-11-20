@@ -7281,6 +7281,13 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 }
                 return Ok(Ty::StrOwn);
             }
+            if ["left","right"].iter().any(|b|is_builtin(id,b)) && args.len()==2 && (matches!(&args[0],Expr::Var(v) if env.iter().rev().any(|l|l.name==*v&&l.ty==Ty::Dyn)) || matches!(&args[0],Expr::Call(id,_) if is_builtin(id,"hb_defaultvalue"))) {
+                if !DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get()) {return Err(format!("line {}: Dyn string slices require ordinary Linux without threads or macros in this increment",n));}
+                if type_expr(&args[0],env,sigs,n)?!=Ty::Dyn {return Err(format!("line {}: Dyn slice source changed type during checking",n));}
+                apply_moves(&args[0],env,sigs,false);
+                if type_expr(&args[1],env,sigs,n)?!=Ty::I64 {return Err(format!("line {}: Dyn string slice length must be a typed integer in this increment",n));}
+                apply_moves(&args[1],env,sigs,false);return Ok(Ty::StrOwn);
+            }
             if ["left", "right"].iter().any(|b| is_builtin(id,b)) {
                 // Left/Right (issue #1): a bounded slice of the borrowed
                 // input; the result is an owned copy.
@@ -15792,6 +15799,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             }
             out.push_str("    add $32, %rsp\n");
         }
+        Expr::Call(id,args) if ["left","right"].iter().any(|b|is_builtin(id,b)) && expr_ty(&args[0],env,sigs)==Ty::Dyn => {cg_dyn_string_slice(id,&args[0],&args[1],env,sigs,strs,out,target);}
         Expr::Call(id,args) if ["left", "right"].iter().any(|b| is_builtin(id,b)) => {
             // Snapshot the source into an owned copy before the count
             // argument can mutate or reassign its owner, matching Harbour's
@@ -38769,4 +38777,19 @@ fn cg_dyn_string_unary(id:&str,e:&Expr,env:&[CgLocal],sigs:&[Sig],strs:&mut Vec<
     out.push_str(&format!("    mov 16(%rsp), %rax\n    mov 24(%rsp), %rdx\n    add $32, %rsp\n    jmp .Ldsu_end{k}\n.Ldsu_limit{k}:\n"));
     cg_dyn_stack_release(out,0,false);let msg="Limit: Dyn string consumer requires a string value in this increment\n";let si=strs.len();strs.push(msg.to_string());
     out.push_str(&format!("    add $32, %rsp\n    lea .Lstr{si}(%rip), %rax\n    mov ${}, %edx\n    call hbc_write_bytes\n    jmp hbc_panic_exit\n.Ldsu_end{k}:\n",msg.len()));
+}
+
+// Own Dyn source snapshot is retained through count evaluation. A local
+// sequence landing pad releases it when count evaluation throws.
+fn cg_dyn_string_slice(id:&str,a:&Expr,b:&Expr,env:&[CgLocal],sigs:&[Sig],strs:&mut Vec<String>,out:&mut String,target:Target) {
+    let k=fresh_lbl();cg_data_value(a,env,sigs,strs,out,target);
+    out.push_str(&format!("    sub $64, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n    movq $0, 48(%rsp)\n    cmpq $0, hbc_seq_depth(%rip)\n    je .Ldsl_eval{k}\n    lea .Ldsl_catch{k}(%rip), %rdi\n    call hbc_seq_push\n    movq $1, 48(%rsp)\n.Ldsl_eval{k}:\n"));
+    cg_expr(b,env,sigs,strs,out,target);
+    out.push_str(&format!("    mov %rax, 32(%rsp)\n    cmpq $0, 48(%rsp)\n    je .Ldsl_check{k}\n    call hbc_seq_pop\n.Ldsl_check{k}:\n    cmpb $4, (%rsp)\n    jne .Ldsl_limit{k}\n    mov 8(%rsp), %rdi\n    mov -8(%rdi), %rsi\n    mov 32(%rsp), %rdx\n"));
+    out.push_str(if is_builtin(id,"left") {"    call hbc_left\n"}else{"    call hbc_right\n"});
+    out.push_str("    mov %rax, 16(%rsp)\n    mov %rdx, 24(%rsp)\n");cg_dyn_stack_release(out,0,false);
+    out.push_str(&format!("    mov 16(%rsp), %rax\n    mov 24(%rsp), %rdx\n    add $64, %rsp\n    jmp .Ldsl_end{k}\n.Ldsl_catch{k}:\n"));
+    cg_dyn_stack_release(out,0,false);out.push_str(&format!("    add $64, %rsp\n    jmp hbc_seq_unwind\n.Ldsl_limit{k}:\n"));
+    cg_dyn_stack_release(out,0,false);let msg="Limit: Dyn string slice requires a string source in this increment\n";let si=strs.len();strs.push(msg.to_string());
+    out.push_str(&format!("    add $64, %rsp\n    lea .Lstr{si}(%rip), %rax\n    mov ${}, %edx\n    call hbc_write_bytes\n    jmp hbc_panic_exit\n.Ldsl_end{k}:\n",msg.len()));
 }
