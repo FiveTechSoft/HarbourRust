@@ -63,8 +63,9 @@ TARGET = '--target=macho-arm64'  # --target=macho runs the same battery on Intel
 # Type predicates make t415 a positive row (+1).
 # tests/threads/programs gains ts01_str_dyn (Str(Dyn) in threads): 38.
 # Mixed scalar iif makes t989 and t1002 positive rows (+2).
-# Full total:1264+6+4+38+9 =1321,0 REJ on both targets.
-EXPECTED_MANIFEST_ROWS = 1264
+# Variable I64 bit index makes t1077 a positive row (+1).
+# Full total:1265+6+4+38+9 =1322,0 REJ on both targets.
+EXPECTED_MANIFEST_ROWS = 1265
 # Post-run m_clie.dbf SHA-256 per DBF acceptance test (generated on Linux,
 # stdout checked against the committed expectations). t4 appends records:
 # dbAppend rewrites the header last-update date (bytes 1-3, YY MM DD of the
