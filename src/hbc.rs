@@ -6753,7 +6753,9 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                                 // variable dispatches on the runtime tag
                                 // (6 or 8). hb_isnumeric also admits a Dyn variable.
                                 Ty::Dyn if is_builtin(id, "hb_isarray") => {}
-                                Ty::Dyn => {},
+                                Ty::Dyn => {
+                                    if MACRO_CONTEXT.with(|v|v.get()) {return Err(format!("line {}: hb_isnumeric Dyn variable requires non-macro local storage; PRIVATE/PUBLIC and macro contexts are outside this increment",n));}
+                                },
                                 Ty::I64 | Ty::F64 | Ty::Bool | Ty::Str | Ty::StrOwn | Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::DArrRef | Ty::DArrRef2 | Ty::DArrDyn | Ty::AView | Ty::Arr(_) => {}
                                 _ => return Err(format!("line {}: `{}` over this variable type is not measured in this PoC", n, id)),
                             },
