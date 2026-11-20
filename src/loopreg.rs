@@ -32,8 +32,10 @@
 // and rdi are free whenever the loop text does not name them. (rsi and rdi
 // are callee-saved in the Win64 ABI, but hbc code uses its own SysV-like
 // convention on every target: hbc_fn_* bodies already clobber them without
-// saving, and C only enters hbc code through hbc_wthr_entry and the process
-// entry, which never return to C.) Every output form already appears in
+// saving, the runtime blobs entered from C use the same convention (e.g.
+// hrm_call takes its id in %edi and saves only rbx and r12-r15), and the
+// Win64 entries, hbc_wthr_entry and the process entry, never return to C.)
+// Every output form already appears in
 // the generated code with a register operand, so the ELF/PE/Mach-O writers
 // and the ARM64 translator see no new instruction shapes.
 

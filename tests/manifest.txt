@@ -1920,3 +1920,4 @@ neg tests/t1708_nested_move_neg_twice.prg use of moved value
 neg tests/t1709_nested_move_neg_loop.prg is moved inside the
 pos2 tests/cb-logical/programs/ascan_block.prg tests/cb-logical/expected/ascan_block.linux.out tests/cb-logical/expected/ascan_block.windows.out
 pos2 tests/str-concat-assign/programs/accumulate.prg tests/str-concat-assign/expected/accumulate.linux.out tests/str-concat-assign/expected/accumulate.windows.out
+pos2 tests/loopreg/programs/edges.prg tests/loopreg/expected/edges.linux.out tests/loopreg/expected/edges.windows.out
