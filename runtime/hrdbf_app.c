@@ -128,13 +128,19 @@ uint64_t hrdbf_app_seek(const unsigned char*p,size_t n,uint64_t soft,uint64_t la
  hrdbf_app_pos=hrntx_seek(x,p,n,soft!=0,last!=0,&found);hrdbf_app_found_flag=found;hrdbf_app_order_sync();hrdbf_app_state.area.bof=!hrdbf_app_cdx&&!x->count;return found;
 }
 /* Dyn-string seek entry: a field read or a Dyn local carrying a character
- * value (owned or borrowed cell, length header at payload[-1]). Numeric or
- * other Dyn kinds are a clean typed failure; Harbour's numeric-to-string
- * key conversion is a separate increment. */
+ * value (owned or borrowed cell, length header at payload[-1]). Measured
+ * against real Harbour (o7-o9): a non-character key value against the
+ * character-key index is a guaranteed miss with the cursor past the last
+ * entry (recno count+1, Eof .T., Found .F.) - no numeric-to-string
+ * conversion happens, for numbers, logicals and dates alike. */
 uint64_t hrdbf_app_seek_dyn(uint64_t tag,uint64_t pay,uint64_t soft,uint64_t last){
- unsigned k=(unsigned)(tag&255u);hrdbf_app_require();
- if((k!=HRV_STR_OWN&&k!=HRV_STR_BORROW)||!pay)hrdbf_app_fail("hbc: DBF index seek expects a character key value\n");
- return hrdbf_app_seek((const unsigned char*)pay,(size_t)((const uint64_t*)pay)[-1],soft,last);
+ unsigned k=(unsigned)(tag&255u);hrntx_index*x=&hrdbf_app_order.index;hrdbf_app_require();
+ if(!(x->bytes&&hrdbf_app_order_active))hrdbf_app_fail("hbc: DBF index seek requires an open index\n");
+ if(k==HRV_STR_OWN||k==HRV_STR_BORROW){
+  if(!pay)hrdbf_app_fail("hbc: DBF index seek expects a character key value\n");
+  return hrdbf_app_seek((const unsigned char*)pay,(size_t)((const uint64_t*)pay)[-1],soft,last);
+ }
+ hrdbf_app_pos=x->count;hrdbf_app_found_flag=0;hrdbf_app_order_sync();hrdbf_app_state.area.bof=!hrdbf_app_cdx&&!x->count;return 0;
 }
 uint64_t hrdbf_app_recno(void){hrdbf_app_require();return hrdbf_app_state.area.recno;}
 uint64_t hrdbf_app_lastrec(void){hrdbf_app_require();return hrdbf_app_state.area.count;}
