@@ -1,0 +1,3 @@
+FUNCTION Main()
+DispBox(0,0,2,4,"123456789")
+RETURN NIL

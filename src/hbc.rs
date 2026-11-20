@@ -1,3 +1,4 @@
+mod box_gtstd;
 // hbc - PoC compiler: Harbour syntax (closed subset) -> x86-64 assembly.
 //
 // Pipeline: hbc does tokenizing, parsing, semantic analysis (types AND
@@ -983,6 +984,12 @@ fn tokenize(line: &str, n: usize) -> Result<Vec<Tok>, String> {
                 while let Some(&(_, c2)) = it.peek() {
                     if c2.is_ascii_digit() { num.push(c2); it.next(); } else { break; }
                 }
+                if num=="0" && matches!(it.peek(),Some(&(_, 'b'))|Some(&(_, 'B'))) {
+                    it.next();let mut value=0u64;let mut count=0usize;
+                    while let Some(&(_,c))=it.peek() {if c!='0'&&c!='1'{break;}value=value.wrapping_mul(2).wrapping_add((c as u8-b'0') as u64);count+=1;it.next();}
+                    if count==0 || count>4096 || it.peek().map_or(false,|&(_,c)|c.is_ascii_alphanumeric()||c=='_'||c=='.') {return Err(format!("line {}: invalid or oversized binary literal (1..4096 bits)",n));}
+                    toks.push(Tok::Int((value as i64).to_string()));continue;
+                }
                 // Hex literal 0xABAB (oracle hk281: prints as a plain
                 // integer, 43947, 10-column field).
                 if num == "0" && matches!(it.peek(), Some(&(_, 'x')) | Some(&(_, 'X'))) {
@@ -1486,11 +1493,16 @@ impl P {
                 // Harbour (expropt2.c), not a runtime 0-8 double divide
                 // printing "-4.00".
                 if let Expr::Int(v) = e {
-                    return Ok(Expr::Int(format!("-{}", v)));
+                    let n = v.parse::<i128>().map_err(|_|format!("line {}: integer literal out of range (i64)",self.n))?;
+                    let neg = -n;
+                    if neg < i64::MIN as i128 || neg > i64::MAX as i128 {return Err(format!("line {}: negated integer literal out of range (i64)",self.n));}
+                    return Ok(Expr::Int(neg.to_string()));
                 }
                 Ok(Expr::Bin('-', Box::new(Expr::Int("0".to_string())), Box::new(e)))
             }
             Some(Tok::Int(v)) => {
+                // A negative token can only originate from wrapped binary bits.
+                if v.starts_with('-') {return v.parse::<i64>().map(|x|Expr::Int(x.to_string())).map_err(|_|format!("line {}: binary literal out of range",self.n));}
                 match v.parse::<u128>() {
                     Ok(k) if k <= i64::MAX as u128 => Ok(Expr::Int(k.to_string())),
                     _ => Err(format!("line {}: integer literal out of range (i64)", self.n)),
@@ -2002,18 +2014,18 @@ const ASM_RESERVED: &[&str] = &[
     // hbc itself emits; a user function with one of these names would
     // collide with a helper symbol.
     "dtos", "stod", "year", "day", "month", "dow", "cdow", "cmonth", "dtoc", "sqrt", "exp", "log", "mod", "padc", "rat", "stuff", "isdigit", "isalpha", "isupper", "islower", "strzero", "ischar", "strzero_fix", "str_f64", "fmt_f64", "date_add", "date_diff", "date_days", "date_from_days", "seconds",
-    "strtran", "space", "substr", "date", "ctod", "date_pack", "date_render", "date_today", "curdir", "fcreate", "fopen", "fwrite", "fclose", "freadstr", "hb_libname", "hb_ps", "os", "dirmake", "inkey", "file", "hrfile_setdefault", "hrfile_setpath", "qout", "qqout", "outstd", "outerr", "empty", "procname", "min", "max", "str", "padr", "hb_ntos", "replicate", "aeval", "hb_isnumeric", "hb_isarray", "hb_isstring", "dfree", "upper", "lower", "left", "right", "at", "int", "abs", "padl", "val", "ascan", "aclone", "atail", "asort", "hb_bitand", "hb_bitor", "hb_bitxor", "hb_bitnot", "hb_bittest", "hb_bitset", "hb_bitreset", "eprint_str", "eprint_sep", "eprint_i64", "eprint_i64c", "eprint_dyn", "eprint_dynlit", "print_dynlit", "eprint_f64", "hb_eol", "procline", "asc", "trim", "ltrim", "rtrim", "alltrim", "chr", "trace_top", "print_trace", "panic_exit", "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_range_error", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
+    "hb_sha1", "hb_hmac_sha1", "strtran", "space", "substr", "date", "ctod", "date_pack", "date_render", "date_today", "dispbox", "hrbase_wait", "setcursor", "hb_flink", "hb_flinksym", "hb_flinkread", "hb_memowrit", "hb_dircreate", "ferror", "curdir", "fread", "fcreate", "fopen", "fwrite", "fclose", "freadstr", "hb_libname", "hb_ps", "os", "dirmake", "inkey", "file", "hrfile_setdefault", "hrfile_setpath", "qout", "qqout", "outstd", "outerr", "empty", "procname", "min", "max", "str", "padr", "hb_ntos", "replicate", "aeval", "hb_isnumeric", "hb_isarray", "hb_isstring", "dfree", "upper", "lower", "left", "right", "at", "int", "abs", "padl", "val", "ascan", "aclone", "atail", "asort", "hb_bitand", "hb_bitor", "hb_bitxor", "hb_bitnot", "hb_bittest", "hb_bitset", "hb_bitreset", "eprint_str", "eprint_sep", "eprint_i64", "eprint_i64c", "eprint_dyn", "eprint_dynlit", "print_dynlit", "eprint_f64", "hb_eol", "procline", "asc", "trim", "ltrim", "rtrim", "alltrim", "chr", "trace_top", "print_trace", "panic_exit", "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_range_error", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
 ];
 
 fn dbf_result(id: &str) -> Option<Ty> {
     if hb_rdd() {
         match id {
-            "dbappend" | "dbcommit" | "dbdelete" | "dbrecall" | "dbgoto" | "fieldput" | "ordcreate" | "ordsetfocus" | "dbffieldput" => return Some(Ty::Dyn),
+            "dbappend" | "dbcommit" | "dbdelete" | "dbrecall" | "dbgoto" | "fieldput" | "ordcreate" | "ordsetfocus" | "dbsetorder" | "dbffieldput" => return Some(Ty::Dyn),
             _ => {}
         }
     }
-    match id { "fieldget" | "dbclosearea" | "dbgotop" | "dbgobottom" | "ordlistclear" | "dbskip" | "dbffieldref" | "dbappend" | "fieldput" | "dbffieldput" | "dbcommit" | "dbdelete" | "dbrecall" | "dbgoto" | "ordcreate" | "ordsetfocus" => Some(Ty::Dyn),
-        "recno" | "lastrec" => Some(Ty::I64), "bof" | "eof" | "deleted" | "dbusearea" | "ordlistadd" | "dbseek" | "found" => Some(Ty::Bool), _ => None }
+    match id { "fieldget" | "dbclosearea" | "dbgotop" | "dbgobottom" | "ordlistclear" | "dbskip" | "dbffieldref" | "dbappend" | "fieldput" | "dbffieldput" | "dbcommit" | "dbdelete" | "dbrecall" | "dbgoto" | "ordcreate" | "ordsetfocus" | "dbsetorder" => Some(Ty::Dyn),
+        "recno" | "lastrec" | "fcount" => Some(Ty::I64), "bof" | "eof" | "deleted" | "dbusearea" | "ordlistadd" | "dbseek" | "found" => Some(Ty::Bool), _ => None }
 }
 
 // Generic post-order visitor over every expression of a statement list
@@ -2338,6 +2350,9 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
             }
             *i += 1;
             continue;
+        }
+        if matches!(&toks[0],Tok::Ident(k) if k.eq_ignore_ascii_case("wait")) && toks.len()==1 {
+            out.push(Stmt::CallStmt(n,Expr::Call("hrbase_wait".to_string(),vec![])));*i+=1;continue;
         }
         match toks[0].clone() {
             Tok::KwInit | Tok::KwExit if toks.get(1) == Some(&Tok::KwFunction) => return Ok(()),
@@ -4505,7 +4520,7 @@ fn build_class_table(decls: &[ClassDecl], methods: &[MethodDef]) -> Result<Vec<C
         state[i] = 1;
         if let Some(p) = &ds[i].parent {
             let j = ds.iter().position(|d| d.name.eq_ignore_ascii_case(p))
-                .ok_or_else(|| format!("class `{}` inherits from unknown class `{}`", ds[i].name, p))?;
+                .ok_or_else(|| format!("class `{}` inherits from unknown class `{}` (declare the parent before the child in this increment)", ds[i].name, p))?;
             order(j, ds, state, out)?;
         }
         state[i] = 2;
@@ -6383,7 +6398,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                     let path=if id=="dbusearea" {args.get(2)} else if id=="ordlistadd" {args.first()} else {None};
                     if let Some(Expr::Str(p))=path {if !dbf_windows_literal_path(p) {return Err(format!("line {}: Windows DBF path requires bounded ASCII ordinary relative/drive-absolute form; NUL, devices, UNC, namespaces and long paths are unsupported",n));}}
                 }
-                if hb_rdd() && matches!(id.as_str(), "dbusearea"|"dbappend"|"dbcommit"|"dbdelete"|"dbrecall"|"dbgoto"|"fieldput"|"ordcreate"|"ordsetfocus"|"dbffieldput") {
+                if hb_rdd() && matches!(id.as_str(), "dbusearea"|"dbappend"|"dbcommit"|"dbdelete"|"dbrecall"|"dbgoto"|"fieldput"|"ordcreate"|"ordsetfocus"|"dbsetorder"|"dbffieldput") {
                     let scalar = |t: Ty| matches!(t, Ty::I64|Ty::F64|Ty::Str|Ty::StrOwn|Ty::Bool|Ty::Date|Ty::Dyn);
                     let lit = |e: &Expr| matches!(e, Expr::Str(_));
                     let why: Option<&str> = match id.as_str() {
@@ -6397,6 +6412,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                         }
                         "dbappend"|"dbcommit"|"dbdelete"|"dbrecall" => if args.is_empty() {None} else {Some("no arguments")},
                         "dbgoto" => if args.len()==1 && matches!(type_expr(&args[0],env,sigs,n)?,Ty::I64) {None} else {Some("one integer record number")},
+                        "dbsetorder" => if args.len()==1 && matches!(type_expr(&args[0],env,sigs,n)?,Ty::I64) {None} else {Some("one integer order position")},
                         "fieldput" => if args.len()==2 && matches!(type_expr(&args[0],env,sigs,n)?,Ty::I64) && scalar(type_expr(&args[1],env,sigs,n)?) {None} else {Some("FieldPut(nField, value) with an integer position and a C/N/D/L value")},
                         "ordcreate" => if args.len()==3 && args.iter().all(lit) {None} else {Some("ordCreate(cBag, cTag, cKeyExpr) with literal strings")},
                         "ordsetfocus" => if args.len()==1 && lit(&args[0]) {None} else {Some("ordSetFocus(cTag) with a literal tag name")},
@@ -6420,7 +6436,9 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                     if let Expr::Str(a)=&args[3] {DBF_ALIASES.with(|v|{let mut v=v.borrow_mut();let a=a.to_ascii_uppercase();if !v.contains(&a){v.push(a);}});}
                 } else if id=="ordlistadd" || id=="dbseek" {
                     if (id=="ordlistadd"&&args.len()!=1)||(id=="dbseek"&&(args.is_empty()||args.len()>3)){return Err(format!("line {}: {} expects {}",n,id,if id=="ordlistadd"{"one filename string"}else{"one key string and up to two logical flags"}));}
-                    if !matches!(type_expr(&args[0],env,sigs,n)?,Ty::Str|Ty::StrOwn){return Err(format!("line {}: NTX {} expects a statically typed string (Dyn queries are outside this increment)",n,id));}
+                    if id=="dbseek" {
+                        if !matches!(type_expr(&args[0],env,sigs,n)?,Ty::Str|Ty::StrOwn|Ty::Dyn){return Err(format!("line {}: NTX dbseek expects a statically typed string or a Dyn character value",n));}
+                    } else if !matches!(type_expr(&args[0],env,sigs,n)?,Ty::Str|Ty::StrOwn){return Err(format!("line {}: NTX {} expects a statically typed string (Dyn queries are outside this increment)",n,id));}
                     for a in &args[1..]{if type_expr(a,env,sigs,n)?!=Ty::Bool{return Err(format!("line {}: NTX seek flags must be logical",n));}}
                 } else if id=="dbskip" || id=="fieldget" {
                     if args.len()>1 || (id=="fieldget"&&args.is_empty()) {return Err(format!("line {}: {} expects {} integer argument",n,id,if id=="dbskip" {"zero or one"} else {"one"}));}
@@ -6437,8 +6455,12 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                         return Err(format!("line {}: `{} := ...` assigns an undeclared name; Harbour 3.2 stores that in a memvar, not in the field (measured), and hbc does not create memvars implicitly: write FIELD->{} := ... or ALIAS->{} := ... to store the field",n,f,f,f));
                     }
                     if !matches!(type_expr(&args[2],env,sigs,n)?,Ty::I64|Ty::F64|Ty::Str|Ty::StrOwn|Ty::Bool|Ty::Date|Ty::Dyn) {return Err(format!("line {}: DBF field store expects a C/N/D/L value",n));}
-                } else if matches!(id.as_str(),"dbcommit"|"dbdelete"|"dbrecall"|"dbgoto"|"ordcreate"|"ordsetfocus") {
+                } else if matches!(id.as_str(),"dbcommit"|"dbdelete"|"dbrecall"|"ordcreate"|"ordsetfocus") {
                     return Err(format!("line {}: {} is outside this DBF increment",n,id));
+                } else if id=="dbgoto" {
+                    if args.len()!=1 || !matches!(type_expr(&args[0],env,sigs,n)?,Ty::I64) {return Err(format!("line {}: dbGoto expects one integer record number",n));}
+                } else if id=="dbsetorder" {
+                    if args.len()!=1 || !matches!(type_expr(&args[0],env,sigs,n)?,Ty::I64) {return Err(format!("line {}: dbSetOrder expects one integer order position",n));}
                 } else if !args.is_empty(){return Err(format!("line {}: {} takes no arguments",n,id));}
                 return Ok(ty);
             }
@@ -6518,6 +6540,25 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                     apply_moves(a,env,sigs,false);
                 }
                 return Ok(if is_builtin(id,"procname") { Ty::Str } else { Ty::I64 });
+            }
+            if is_builtin(id,"fread") {
+                if !CURDIR_LINUX_NATIVE.with(|v|v.get()) {return Err(format!("line {}: typed FRead is measured only on ordinary Linux",n));}
+                if args.len()!=3 {return Err(format!("line {}: FRead needs handle, @owned_local_string, literal_count",n));}
+                let t=type_expr(&args[0],env,sigs,n)?;
+                if t!=Ty::I64 && !(t==Ty::Dyn&&matches!(&args[0],Expr::Var(_))) {return Err(format!("line {}: FRead handle requires integer or integer Dyn variable",n));}
+                apply_moves(&args[0],env,sigs,false);
+                let vn=if let Expr::ByRef(v)=&args[1] {v} else {return Err(format!("line {}: FRead buffer must be @owned_local_string",n));};
+                type_expr(&Expr::Var(vn.clone()),env,sigs,n)?;
+                let v=env.iter().rev().find(|v|v.name==*vn).expect("checked");
+                if v.ty!=Ty::StrOwn || v.byref || v.ro || module_static::is_module_binding(vn) {return Err(format!("line {}: FRead buffer must be @owned_local_string, not static/byref/borrowed",n));}
+                if expr_mentions(&args[0],vn) {return Err(format!("line {}: FRead cannot alias its buffer in the handle expression",n));}
+                if !matches!(&args[2],Expr::Int(v) if v.parse::<u64>().map_or(false,|v|v<=1048576)) {return Err(format!("line {}: FRead count must be a literal in 0..1048576",n));}
+                return Ok(Ty::I64);
+            }
+            if is_builtin(id,"dispbox") {
+                if !CURDIR_LINUX_NATIVE.with(|v|v.get()) {return Err(format!("line {}: literal GTSTD boxes are measured only on ordinary Linux",n));}
+                box_gtstd::shape(args).map_err(|e|format!("line {}: {}",n,e))?;
+                return Ok(Ty::Dyn);
             }
             if ["fcreate","fopen","fwrite","fclose","freadstr"].iter().any(|b|is_builtin(id,b)) {
                 if !CURDIR_LINUX_NATIVE.with(|v|v.get()) { return Err(format!("line {}: typed file I/O is measured only on ordinary Linux",n)); }
@@ -7453,14 +7494,39 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 }
                 return Ok(Ty::Date);
             }
+            if ["hb_flink","hb_flinksym","hb_flinkread","hb_memowrit","hb_dircreate","ferror"].iter().any(|b|is_builtin(id,b)) {
+                if !CURDIR_LINUX_NATIVE.with(|v|v.get()) || THREADS.with(|v|v.get()) {return Err(format!("line {}: Linux filesystem links/FError are measured only on ordinary Linux",n));}
+                let valid=if is_builtin(id,"ferror"){args.is_empty()}else if is_builtin(id,"hb_flinkread")||is_builtin(id,"hb_dircreate"){args.len()<=1}else if is_builtin(id,"hb_memowrit"){args.len()==2}else{args.is_empty()||args.len()==2};
+                if !valid {return Err(format!("line {}: filesystem link builtin arity is outside the measured subset",n));}
+                for a in args {if !matches!(type_expr(a,env,sigs,n)?,Ty::Str|Ty::StrOwn){return Err(format!("line {}: filesystem link builtin requires typed strings",n));}apply_moves(a,env,sigs,false);}
+                return Ok(if is_builtin(id,"hb_flinkread"){Ty::StrOwn}else if is_builtin(id,"hb_memowrit"){Ty::Bool}else{Ty::I64});
+            }
+            if is_builtin(id,"hb_sha1") || is_builtin(id,"hb_hmac_sha1") {
+                let nstr=if is_builtin(id,"hb_sha1"){1}else{2};
+                if !CURDIR_LINUX_NATIVE.with(|v|v.get()) || THREADS.with(|v|v.get()) {return Err(format!("line {}: SHA1/HMAC is measured only on ordinary Linux without threads",n));}
+                if args.len()!=nstr && args.len()!=nstr+1 {return Err(format!("line {}: SHA1/HMAC requires typed string data/key and optional logical raw flag",n));}
+                for a in &args[..nstr] {if !matches!(type_expr(a,env,sigs,n)?,Ty::Str|Ty::StrOwn){return Err(format!("line {}: SHA1/HMAC data/key requires typed strings",n));}apply_moves(a,env,sigs,false);}
+                if args.len()>nstr && type_expr(&args[nstr],env,sigs,n)?!=Ty::Bool {return Err(format!("line {}: SHA1/HMAC raw flag requires a logical value",n));}
+                return Ok(Ty::StrOwn);
+            }
+            if id=="hrbase_wait" {
+                if !args.is_empty()||!CURDIR_LINUX_NATIVE.with(|v|v.get())||THREADS.with(|v|v.get()) {return Err(format!("line {}: bare WAIT is measured only on ordinary Linux GTSTD",n));}return Ok(Ty::I64);
+            }
+            if is_builtin(id,"setcursor") {
+                if !CURDIR_LINUX_NATIVE.with(|v|v.get()) {return Err(format!("line {}: SetCursor is measured only on ordinary Linux GTSTD",n));}
+                if args.len()>1{return Err(format!("line {}: SetCursor takes zero or one typed integer argument",n));}
+                for a in args {if type_expr(a,env,sigs,n)?!=Ty::I64{return Err(format!("line {}: SetCursor requires a typed integer mode",n));}apply_moves(a,env,sigs,false);}
+                return Ok(Ty::I64);
+            }
             if is_builtin(id,"inkey") {
                 if !CURDIR_LINUX_NATIVE.with(|v|v.get()) && !INKEY_WIN.with(|v|v.get()) {
                     return Err(format!("line {}: INKEY supports ordinary Linux and Windows PE stdin only in this increment; Darwin and LLVM are not measured",n));
                 }
                 if args.len()>1 {return Err(format!("line {}: INKEY supports zero arguments or one numeric literal from 0.01 to 86400 seconds in this increment; mask and extra arguments are not covered",n));}
                 if let Some(a)=args.first() {
-                    if inkey_literal_ms(a).is_none() {
-                        return Err(format!("line {}: INKEY supports zero arguments or one numeric literal from 0.01 to 86400 seconds in this increment; zero, negative, NIL, non-numeric and runtime timeouts are not covered",n));
+                    let blocking=CURDIR_LINUX_NATIVE.with(|v|v.get()) && num_lit(a).map_or(false,|(x,_)|x==0.0);
+                    if inkey_literal_ms(a).is_none() && !blocking {
+                        return Err(format!("line {}: INKEY supports zero arguments or one numeric literal from 0.01 to 86400 seconds (also literal zero for blocking Linux stdin); negative, NIL, non-numeric and runtime timeouts are not covered",n));
                     }
                 }
                 INKEY_USED.with(|v|v.set(true));
@@ -11594,6 +11660,7 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
         Expr::Call(id, args) => {
             if dbf_result(id).is_some(){for a in args{apply_moves(a,env,sigs,false);}return;}
 
+            if is_builtin(id,"dispbox") {return;} // validated inert literal expressions
             if is_builtin(id, "hb_memcheck") {
                 return;
             }
@@ -11679,11 +11746,15 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
             if is_builtin(id,"seconds") { return; }
             if is_builtin(id,"ctod") { apply_moves(&args[0],env,sigs,false); return; }
             if is_builtin(id,"dirmake") {for a in args {apply_moves(a,env,sigs,false);}return;}
+            if ["hb_flink","hb_flinksym","hb_flinkread","hb_memowrit","hb_dircreate","ferror"].iter().any(|b|is_builtin(id,b)) {for a in args {apply_moves(a,env,sigs,false);}return;}
+            if is_builtin(id,"setcursor") {for a in args {apply_moves(a,env,sigs,false);}return;}
+            if is_builtin(id,"hb_sha1") || is_builtin(id,"hb_hmac_sha1") {for a in args {apply_moves(a,env,sigs,false);}return;}
+            if id=="hrbase_wait" {return;}
             if is_builtin(id,"inkey") {return;}
             if is_builtin(id,"file") || id=="hrfile_setdefault" || id=="hrfile_setpath" {
                 for a in args {apply_moves(a,env,sigs,false);}return;
             }
-            if ["fcreate","fopen","fwrite","fclose","freadstr"].iter().any(|b|is_builtin(id,b)) {
+            if ["fread","fcreate","fopen","fwrite","fclose","freadstr"].iter().any(|b|is_builtin(id,b)) {
                 for a in args { apply_moves(a,env,sigs,false); }
                 return;
             }
@@ -14557,13 +14628,29 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                     out.push_str("    add $16, %rsp\n    mov $1, %eax\n    xor %edx, %edx\n");
                 },
                 "ordlistadd" | "dbseek" => {
+                    if id=="dbseek" && expr_ty(&args[0],env,sigs)==Ty::Dyn {
+                        // cg_data_value normalizes the Dyn operand to an
+                        // exclusively owned cell (Var reads clone). The runtime
+                        // extracts the character bytes (length header at
+                        // payload[-1]); the owned cell is released after the
+                        // call like any Dyn consumer. SysV arg order (tag,
+                        // payload, soft, last) like every other hrdbf_app_* call;
+                        // the Windows blob re-marshals.
+                        cg_data_value(&args[0],env,sigs,strs,out,target);
+                        out.push_str("    sub $48, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n    movq $0, 16(%rsp)\n    movq $0, 24(%rsp)\n");
+                        for (i,a) in args.iter().enumerate().skip(1){cg_value(a,env,sigs,strs,out,target);out.push_str(&format!("    mov %rax, {}(%rsp)\n",8+i*8));}
+                        out.push_str("    mov (%rsp), %rdi\n    mov 8(%rsp), %rsi\n    mov 16(%rsp), %rdx\n    mov 24(%rsp), %rcx\n    call hrdbf_app_seek_dyn\n");
+                        out.push_str("    mov %rax, 32(%rsp)\n");
+                        cg_dyn_stack_release(out,0,false);
+                    } else {
                     cg_value(&args[0],env,sigs,strs,out,target);
                     out.push_str("    sub $48, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n    movq $0, 16(%rsp)\n    movq $0, 24(%rsp)\n");
                     for (i,a) in args.iter().enumerate().skip(1){cg_value(a,env,sigs,strs,out,target);out.push_str(&format!("    mov %rax, {}(%rsp)\n",8+i*8));}
-                    out.push_str("    mov (%rsp), %rdi\n    mov 8(%rsp), %rsi\n    mov 16(%rsp), %rdx\n    mov 24(%rsp), %rcx\n");
-                    out.push_str(if id=="ordlistadd"{"    call hrdbf_app_order_add\n"}else{"    call hrdbf_app_seek\n"});
-                    out.push_str("    mov %rax, 32(%rsp)\n");
-                    if expr_ty(&args[0],env,sigs)==Ty::StrOwn && !matches!(&args[0],Expr::Var(_)){out.push_str("    mov (%rsp), %rdi\n    call hbc_freestr\n");}
+                        out.push_str("    mov (%rsp), %rdi\n    mov 8(%rsp), %rsi\n    mov 16(%rsp), %rdx\n    mov 24(%rsp), %rcx\n");
+                        out.push_str(if id=="ordlistadd"{"    call hrdbf_app_order_add\n"}else{"    call hrdbf_app_seek\n"});
+                        out.push_str("    mov %rax, 32(%rsp)\n");
+                        if expr_ty(&args[0],env,sigs)==Ty::StrOwn && !matches!(&args[0],Expr::Var(_)){out.push_str("    mov (%rsp), %rdi\n    call hbc_freestr\n");}
+                    }
                     out.push_str("    mov 32(%rsp), %rax\n    xor %edx, %edx\n    add $48, %rsp\n");
                 },
                 "fieldget" | "dbskip" => {
@@ -14591,6 +14678,10 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                 "dbgoto" => {
                     cg_value(&args[0],env,sigs,strs,out,target);
                     out.push_str("    mov %rax, %rdi\n    call hrdbf_app_goto\n    mov $1, %eax\n    xor %edx, %edx\n");
+                },
+                "dbsetorder" => {
+                    cg_value(&args[0],env,sigs,strs,out,target);
+                    out.push_str("    mov %rax, %rdi\n    call hrdbf_app_ordselect\n    mov $1, %eax\n    xor %edx, %edx\n");
                 },
                 "fieldput" => {
                     cg_value(&args[0],env,sigs,strs,out,target);
@@ -14697,7 +14788,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                     }
                 },
                 _ => {
-                    let helper=match id.as_str(){"dbclosearea"=>"close","dbgotop"=>"top","dbgobottom"=>"bottom","ordlistclear"=>"order_clear","found"=>"found","recno"=>"recno","lastrec"=>"lastrec","bof"=>"bof","eof"=>"eof","deleted"=>"deleted",_=>unreachable!()};
+                    let helper=match id.as_str(){"dbclosearea"=>"close","dbgotop"=>"top","dbgobottom"=>"bottom","ordlistclear"=>"order_clear","found"=>"found","recno"=>"recno","lastrec"=>"lastrec","fcount"=>"fcount","bof"=>"bof","eof"=>"eof","deleted"=>"deleted",_=>unreachable!()};
                     out.push_str(&format!("    call hrdbf_app_{}\n",helper));
                     if matches!(id.as_str(),"dbclosearea"|"dbgotop"|"dbgobottom"|"ordlistclear"){out.push_str("    mov $1, %eax\n    xor %edx, %edx\n");}
                 }
@@ -15287,9 +15378,67 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             out.push_str("    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_ctod\n");
             if temp { out.push_str("    mov %rax, 8(%rsp)\n    mov (%rsp), %rdi\n    call hbc_freestr\n    mov 8(%rsp), %rax\n    add $16, %rsp\n"); }
         }
+        Expr::Call(id,args) if ["hb_flink","hb_flinksym","hb_flinkread","hb_memowrit","hb_dircreate","ferror"].iter().any(|b|is_builtin(id,b)) => {
+            if THREADS.with(|v|v.get()){eprintln!("error: Linux filesystem links/FError do not support threads in this increment");process::exit(1);}
+            out.push_str("    .globl _start\n");
+            if is_builtin(id,"ferror") {out.push_str("    mov hbc_ferror_value(%rip), %rax\n    xor %edx, %edx\n");}
+            else if args.is_empty() {
+                if !is_builtin(id,"hb_dircreate"){out.push_str("    movq $2, hbc_ferror_value(%rip)\n");}
+                if is_builtin(id,"hb_flinkread"){out.push_str("    xor %esi, %esi\n    call hbc_stralloc\n");}
+                else {out.push_str("    mov $-1, %rax\n    xor %edx, %edx\n");}
+            } else {
+                let guard=fresh_lbl();
+                out.push_str(&format!("    sub $64, %rsp\n    movq $0, (%rsp)\n    movq $0, 16(%rsp)\n    movq $0, 40(%rsp)\n    cmpq $0, hbc_seq_depth(%rip)\n    je .Lflinkevaluate{guard}\n    lea .Lflinkcatch{guard}(%rip), %rdi\n    call hbc_seq_push\n    movq $1, 40(%rsp)\n.Lflinkevaluate{guard}:\n"));
+                for (i,a) in args.iter().enumerate() {
+                    cg_value(a,env,sigs,strs,out,target);
+                    out.push_str("    mov %rax, 32(%rsp)\n    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_flink_cstr\n");
+                    out.push_str(&format!("    mov %rax, {}(%rsp)\n    mov %rdx, {}(%rsp)\n",i*16,i*16+8));
+                    if expr_ty(a,env,sigs)==Ty::StrOwn&&!matches!(a,Expr::Var(_)){out.push_str("    mov 32(%rsp), %rdi\n    call hbc_freestr\n");}
+                }
+                out.push_str(&format!("    cmpq $0, 40(%rsp)\n    je .Lflinkinvoke{guard}\n    call hbc_seq_pop\n.Lflinkinvoke{guard}:\n    mov (%rsp), %rdi\n"));
+                if is_builtin(id,"hb_flinkread"){out.push_str("    call hbc_flink_read\n");}
+                else if is_builtin(id,"hb_dircreate"){out.push_str("    call hbc_flink_dir\n");}
+                else if is_builtin(id,"hb_memowrit"){out.push_str("    mov 16(%rsp), %rsi\n    mov 24(%rsp), %rdx\n    call hbc_flink_memo\n");}
+                else {out.push_str(&format!("    mov 16(%rsp), %rsi\n    mov ${}, %edx\n    call hbc_flink_pair\n",if is_builtin(id,"hb_flink"){86}else{88}));}
+                out.push_str("    mov %rax, 48(%rsp)\n    mov %rdx, 56(%rsp)\n");
+                for i in 0..args.len(){out.push_str(&format!("    mov {}(%rsp), %rdi\n    call hbc_freestr\n",i*16));}
+                out.push_str(&format!("    mov 48(%rsp), %rax\n    mov 56(%rsp), %rdx\n    add $64, %rsp\n    jmp .Lflinkdone{guard}\n.Lflinkcatch{guard}:\n"));
+                for i in 0..args.len(){out.push_str(&format!("    mov {}(%rsp), %rdi\n    test %rdi, %rdi\n    je .Lflinkskip{guard}_{i}\n    call hbc_freestr\n.Lflinkskip{guard}_{i}:\n",i*16));}
+                out.push_str(&format!("    add $64, %rsp\n    jmp hbc_seq_unwind\n.Lflinkdone{guard}:\n"));
+            }
+        }
+        Expr::Call(id,args) if is_builtin(id,"hb_sha1") || is_builtin(id,"hb_hmac_sha1") => {
+            if THREADS.with(|v|v.get()){eprintln!("error: SHA1/HMAC does not support threads in this increment");process::exit(1);}
+            let nstr=if is_builtin(id,"hb_sha1"){1}else{2};let guard=fresh_lbl();
+            out.push_str(&format!("    sub $128, %rsp\n    movq $0, (%rsp)\n    movq $0, 16(%rsp)\n    movq $0, 32(%rsp)\n    movq $0, 40(%rsp)\n    cmpq $0, hbc_seq_depth(%rip)\n    je .Lsha_eval{guard}\n    lea .Lsha_catch{guard}(%rip), %rdi\n    call hbc_seq_push\n    movq $1, 40(%rsp)\n.Lsha_eval{guard}:\n"));
+            for (i,a) in args[..nstr].iter().enumerate(){
+                cg_value(a,env,sigs,strs,out,target);
+                out.push_str("    mov %rax, 48(%rsp)\n    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_strcpy\n");
+                out.push_str(&format!("    mov %rax, {}(%rsp)\n    mov %rdx, {}(%rsp)\n",i*16,i*16+8));
+                if expr_ty(a,env,sigs)==Ty::StrOwn && !matches!(a,Expr::Var(_)){out.push_str("    mov 48(%rsp), %rdi\n    call hbc_freestr\n");}
+            }
+            if args.len()>nstr {cg_expr(&args[nstr],env,sigs,strs,out,target);out.push_str("    mov %rax, 32(%rsp)\n");}
+            out.push_str(&format!("    cmpq $0, 40(%rsp)\n    je .Lsha_invoke{guard}\n    call hbc_seq_pop\n.Lsha_invoke{guard}:\n    mov (%rsp), %rdi\n    mov 8(%rsp), %rsi\n"));
+            if nstr==1{out.push_str("    lea 64(%rsp), %rdx\n    call hbc_sha1_digest\n");}
+            else{out.push_str("    mov 16(%rsp), %rdx\n    mov 24(%rsp), %rcx\n    lea 64(%rsp), %r8\n    call hbc_hmac_sha1_digest\n");}
+            out.push_str(&format!("    cmpq $0, 32(%rsp)\n    je .Lsha_hex{guard}\n    lea 64(%rsp), %rdi\n    mov $20, %esi\n    call hbc_strcpy\n    mov %rax, 96(%rsp)\n    mov %rdx, 104(%rsp)\n    jmp .Lsha_release{guard}\n.Lsha_hex{guard}:\n    mov $40, %esi\n    call hbc_stralloc\n    mov %rax, 96(%rsp)\n    mov %rdx, 104(%rsp)\n    mov %rax, %rsi\n    lea 64(%rsp), %rdi\n    call hbc_sha1_hex\n.Lsha_release{guard}:\n"));
+            for i in 0..nstr{out.push_str(&format!("    mov {}(%rsp), %rdi\n    call hbc_freestr\n",i*16));}
+            out.push_str(&format!("    mov 96(%rsp), %rax\n    mov 104(%rsp), %rdx\n    add $128, %rsp\n    jmp .Lsha_done{guard}\n.Lsha_catch{guard}:\n"));
+            for i in 0..nstr{out.push_str(&format!("    mov {}(%rsp), %rdi\n    test %rdi, %rdi\n    je .Lsha_skip{guard}_{i}\n    call hbc_freestr\n.Lsha_skip{guard}_{i}:\n",i*16));}
+            out.push_str(&format!("    add $128, %rsp\n    jmp hbc_seq_unwind\n.Lsha_done{guard}:\n"));
+        }
+        Expr::Call(id,_) if id=="hrbase_wait" => {
+            if THREADS.with(|v|v.get()){eprintln!("error: bare WAIT does not support threads in this increment");process::exit(1);}
+            out.push_str("    call hbc_base_wait\n");
+        }
+        Expr::Call(id,args) if is_builtin(id,"setcursor") => {
+            if let Some(a)=args.first(){cg_expr(a,env,sigs,strs,out,target);out.push_str("    mov %rax, %rdi\n    call hbc_cursor_set\n");}
+            else {out.push_str("    mov hbc_cursor_mode(%rip), %rax\n    xor %edx, %edx\n");}
+        }
         Expr::Call(id,args) if is_builtin(id,"inkey") => {
-            let ms=args.first().map(|a|inkey_literal_ms(a).expect("INKEY literal validated")).unwrap_or(0);
-            out.push_str(&format!("    mov ${}, %rdi\n    call hbc_inkey\n    xor %edx, %edx\n",ms));
+            let blocking=args.first().map_or(false,|a|num_lit(a).map_or(false,|(x,_)|x==0.0));
+            if blocking {out.push_str("    call hbc_inkey_block_linux\n    xor %edx, %edx\n");}
+            else {let ms=args.first().map(|a|inkey_literal_ms(a).expect("INKEY literal validated")).unwrap_or(0);out.push_str(&format!("    mov ${}, %rdi\n    call hbc_inkey\n    xor %edx, %edx\n",ms));}
         }
         Expr::Call(id,args) if is_builtin(id,"dirmake") => {
             if args.is_empty() {out.push_str(if matches!(target,Target::Windows){"    mov $-3, %rax\n"}else{"    mov $-2, %rax\n"});}
@@ -15348,6 +15497,17 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             }
             if setter {out.push_str("    mov $1, %eax\n    xor %edx, %edx\n");}
             else {out.push_str("    xor %edx, %edx\n");}
+        }
+        Expr::Call(id,args) if is_builtin(id,"fread") => {
+            cg_expr(&args[0],env,sigs,strs,out,target);
+            if expr_ty(&args[0],env,sigs)==Ty::Dyn {out.push_str("    call hbc_dyn_to_i64\n");}
+            let vn=if let Expr::ByRef(v)=&args[1] {v} else {unreachable!("checked")};
+            let v=env.iter().rev().find(|v|v.name==*vn).expect("checked");
+            if let Expr::Int(n)=&args[2] {out.push_str(&format!("    mov %rax, %rdi\n    mov -{}(%rbp), %rsi\n    mov -{}(%rbp), %r8\n    mov ${}, %edx\n    call hbc_fileio_read\n",v.off,v.off-8,n));}
+        }
+        Expr::Call(id,args) if is_builtin(id,"dispbox") => {
+            let data=box_gtstd::render(args);let k=fresh_lbl();
+            out.push_str(&format!("    .section .rodata\n.Lbox{k}:\n    .byte {}\n    .text\n    mov $1, %eax\n    mov $1, %edi\n    lea .Lbox{k}(%rip), %rsi\n    mov ${}, %edx\n    syscall\n    mov $1, %eax\n    xor %edx, %edx\n",data.iter().map(|v|v.to_string()).collect::<Vec<_>>().join(","),data.len()));
         }
         Expr::Call(id,args) if is_builtin(id,"fcreate") || is_builtin(id,"fopen") => {
             let a=&args[0]; let temp=expr_ty(a,env,sigs)==Ty::StrOwn&&!matches!(a,Expr::Var(_));
@@ -19151,12 +19311,16 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
                 let t = expr_ty(&args[0], env, sigs);
                 return t;
             }
-            if is_builtin(id,"dirmake") || is_builtin(id,"inkey") {return Ty::I64;}
+            if ["hb_flink","hb_flinksym","hb_flinkread","hb_memowrit","hb_dircreate","ferror"].iter().any(|b|is_builtin(id,b)) {return if is_builtin(id,"hb_flinkread"){Ty::StrOwn}else if is_builtin(id,"hb_memowrit"){Ty::Bool}else{Ty::I64};}
+            if is_builtin(id,"hb_sha1") || is_builtin(id,"hb_hmac_sha1") {return Ty::StrOwn;}
+            if id=="hrbase_wait" {return Ty::I64;}
+            if is_builtin(id,"setcursor") || is_builtin(id,"dirmake") || is_builtin(id,"inkey") {return Ty::I64;}
             if is_builtin(id,"file") {return Ty::Bool;}
             if id=="hrfile_setdefault"||id=="hrfile_setpath" {return Ty::Dyn;}
+            if is_builtin(id,"dispbox") {return Ty::Dyn;}
             if is_builtin(id,"freadstr") {return Ty::StrOwn;}
             if is_builtin(id,"fclose") {return Ty::Bool;}
-            if ["fcreate","fopen","fwrite"].iter().any(|b|is_builtin(id,b)) {return Ty::I64;}
+            if ["fread","fcreate","fopen","fwrite"].iter().any(|b|is_builtin(id,b)) {return Ty::I64;}
             if is_builtin(id,"hb_libname") || is_builtin(id,"hb_ps") || is_builtin(id, "os") || is_builtin(id, "curdir") || is_builtin(id, "chr") || is_builtin(id, "str") || is_builtin(id, "hb_ntos") || is_builtin(id, "padr") || is_builtin(id, "replicate") { return Ty::StrOwn; }
             if is_builtin(id, "round") { return Ty::F64; } // hk384-hk386
             if is_builtin(id, "iif") {
@@ -19294,7 +19458,7 @@ fn collect_byref_variants(funcs: &[Func]) -> std::collections::BTreeSet<(String,
                 let mask: Vec<bool> = args.iter().map(|a| matches!(a, Expr::ByRef(_))).collect();
                 // Extern C calls emit their `@` casillas inline at the
                 // call site (milestone 2.2); no callee variant exists.
-                if mask.iter().any(|b| *b) && !EXTERNS.with(|c| c.borrow().contains(id)) && !is_builtin(id, "hb_threadjoin") && !is_builtin(id, "hb_mutexsubscribe") && !is_builtin(id, "hb_mutexsubscribenow") && !is_builtin(id, "hb_mutexqueueinfo") && !is_builtin(id, "hb_threadonce") {
+                if mask.iter().any(|b| *b) && !EXTERNS.with(|c| c.borrow().contains(id)) && !is_builtin(id, "fread") && !is_builtin(id, "hb_threadjoin") && !is_builtin(id, "hb_mutexsubscribe") && !is_builtin(id, "hb_mutexsubscribenow") && !is_builtin(id, "hb_mutexqueueinfo") && !is_builtin(id, "hb_threadonce") {
                     out.insert((id.clone(), mask));
                 }
                 for a in args { if !matches!(a, Expr::ByRef(_)) { ex(a, out); } }
@@ -20409,10 +20573,23 @@ fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<Strin
             // for =,<,<=,>,>= and .T. for # on an unordered pair; the
             // setnp/setp guards below reproduce exactly that (> and >=
             // need no guard: the unordered CF=1 already answers .F.).
+            // A scalar-slot rhs (an F64 or I64 local: slot loads and
+            // cvtsi2sd only, no call and no %xmm1 clobber - the same
+            // verified set as the float +,-,* shuffle) lets the lhs stay
+            // in %xmm1 and skips the 16-byte stack round-trip. The
+            // ucomisd operand order is unchanged (lhs in %xmm1).
+            let scalar_slot_rhs = matches!(&**b, Expr::Var(_))
+                && matches!(expr_ty(b, env, sigs), Ty::F64 | Ty::I64);
             cg_f64_operand(a, env, sigs, strs, out, target);
-            out.push_str("    sub $16, %rsp\n    movsd %xmm0, (%rsp)\n");
-            cg_f64_operand(b, env, sigs, strs, out, target);
-            out.push_str("    movsd (%rsp), %xmm1\n    add $16, %rsp\n    ucomisd %xmm0, %xmm1\n");
+            if scalar_slot_rhs {
+                out.push_str("    movsd %xmm0, %xmm1\n");
+                cg_f64_operand(b, env, sigs, strs, out, target);
+                out.push_str("    ucomisd %xmm0, %xmm1\n");
+            } else {
+                out.push_str("    sub $16, %rsp\n    movsd %xmm0, (%rsp)\n");
+                cg_f64_operand(b, env, sigs, strs, out, target);
+                out.push_str("    movsd (%rsp), %xmm1\n    add $16, %rsp\n    ucomisd %xmm0, %xmm1\n");
+            }
             match op {
                 CmpOp::Eq | CmpOp::EqEq => out.push_str(&format!("    sete %al\n    setnp %cl\n    and %cl, %al\n    test %al, %al\n    jnz {}\n", true_label)),
                 CmpOp::Ne => out.push_str(&format!("    setne %al\n    setp %cl\n    or %cl, %al\n    test %al, %al\n    jnz {}\n", true_label)),
@@ -20960,10 +21137,15 @@ fn cg_print_items(es: &[Expr], inline: bool, raw: bool, stderr: bool, env: &[CgL
                 if !es.is_empty() {
                     out.push_str(&format!("    add ${}, %rsp\n", 16 * es.len()));
                 }
+                if target==Target::Linux && CURDIR_LINUX_NATIVE.with(|v|v.get()) && !THREADS.with(|v|v.get()) && !stderr && !raw {out.push_str("    call hbc_gtstd_finish\n");}
                 out.push_str("    movq $0, hbc_console_mode(%rip)\n");
                 if !stderr && !raw && DBF_USED.with(|v|v.get()) {
                     let fragment=out.split_off(render_start);
                     out.push_str(&fragment.replace("call hbc_print_dyn\n","call hbc_dbf_print_line\n"));
+                }
+                if target==Target::Linux && CURDIR_LINUX_NATIVE.with(|v|v.get()) && !THREADS.with(|v|v.get()) && !stderr && !raw {
+                    let fragment=out.split_off(render_start);
+                    out.push_str(&fragment.replace("    addq $1, hbc_pending(%rip)\n", "    call hbc_print_sep\n"));
                 }
                 if stderr {
                     // Route only the rendering fragment, never argument effects.
@@ -21039,9 +21221,108 @@ fn arena_return_rewind(marks: usize, f64_result: bool, out: &mut String) {
     });
 }
 
+// Per-statement trace elision: the trace slot is observed only by
+// operations that raise and by calls (error traces, ProcLine/ProcName in
+// callees), and every such statement writes its own location first, so a
+// statement that provably cannot raise and contains no call can skip its
+// trace write with byte-identical observable behaviour (stdout, stderr,
+// error callstacks, ProcLine results).
+fn expr_may_raise_or_call(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> bool {
+    let scalar = |t: Ty| matches!(t, Ty::I64 | Ty::F64 | Ty::Bool | Ty::NumLocal);
+    match e {
+        // A bare variable is silent only as a plain scalar local: a Dyn
+        // casilla materializes through hbc_dyn_to_log / hbc_dyn_to_i64 in
+        // logical and numeric contexts (named type errors, hk266/hk267),
+        // and an off==0 slot is a memvar - its reads call hrmacro_lookup
+        // and its writes cg_memvar_put. Both keep the trace write.
+        Expr::Var(id) => !matches!(env.iter().rev().find(|v| v.name == *id),
+            Some(v) if v.off > 0 && matches!(v.ty, Ty::I64 | Ty::F64 | Ty::Bool | Ty::NumLocal)),
+        Expr::Int(_) | Expr::Float(..) | Expr::FloatV(..) | Expr::Log(_) | Expr::Nil => false,
+        Expr::Bin(op, a, b) => {
+            let ta = expr_ty(a, env, sigs);
+            let tb = expr_ty(b, env, sigs);
+            if !scalar(ta) || !scalar(tb) { return true; }
+            match op {
+                '+' | '-' => expr_may_raise_or_call(a, env, sigs) || expr_may_raise_or_call(b, env, sigs)
+                    || CHECKED_I64.with(|c| c.get()),
+                // Numeric-local and float `*` carry the guarded decimal-sum
+                // call (hbc_f64range_error); plain I64 `*` can only raise
+                // under the checked overflow rule.
+                '*' => {
+                    if ta != Ty::I64 || tb != Ty::I64 { return true; }
+                    expr_may_raise_or_call(a, env, sigs) || expr_may_raise_or_call(b, env, sigs)
+                        || CHECKED_I64.with(|c| c.get())
+                }
+                // `/`, `%`, `^`: named error paths (division by zero, range).
+                _ => true,
+            }
+        }
+        Expr::Cmp(op, a, b) => {
+            if matches!(op, CmpOp::Contains) { return true; }
+            let ta = expr_ty(a, env, sigs);
+            let tb = expr_ty(b, env, sigs);
+            if !scalar(ta) || !scalar(tb) { return true; }
+            expr_may_raise_or_call(a, env, sigs) || expr_may_raise_or_call(b, env, sigs)
+        }
+        // Logical combinators coerce each operand: a Dyn operand goes
+        // through hbc_dyn_to_log and can raise the named type error, so
+        // only statically-Bool operands stay silent.
+        Expr::LAnd(a, b) | Expr::LOr(a, b) => {
+            if expr_ty(a, env, sigs) != Ty::Bool || expr_ty(b, env, sigs) != Ty::Bool { return true; }
+            expr_may_raise_or_call(a, env, sigs) || expr_may_raise_or_call(b, env, sigs)
+        }
+        Expr::LNot(a) => {
+            if expr_ty(a, env, sigs) != Ty::Bool { return true; }
+            expr_may_raise_or_call(a, env, sigs)
+        }
+        // Calls, indexing (bound checks), ++/-- (jo), sequences, strings
+        // and anything else keep their trace write.
+        _ => true,
+    }
+}
+
+fn stmt_may_raise_or_call(s: &Stmt, env: &[CgLocal], sigs: &[Sig]) -> bool {
+    let pure = |e: &Expr| !expr_may_raise_or_call(e, env, sigs);
+    match s {
+        Stmt::Assign(_, id, e) | Stmt::Local(_, id, e) => {
+            // off==0 targets are memvars: the store routes through
+            // cg_memvar_put (a call) even when the declared type is scalar.
+            let plain = matches!(env.iter().rev().find(|v| v.name == *id),
+                Some(v) if v.off > 0 && matches!(v.ty, Ty::I64 | Ty::F64 | Ty::Bool | Ty::NumLocal));
+            // Assignment context: a Dyn rhs (literal NIL included) stored
+            // into a scalar slot materializes through a coercion helper,
+            // so the rhs must be statically scalar as well as pure.
+            let rhs_scalar = matches!(expr_ty(e, env, sigs), Ty::I64 | Ty::F64 | Ty::Bool | Ty::NumLocal);
+            !(plain && pure(e) && rhs_scalar)
+        }
+        Stmt::Ret(_, e) => match e {
+            None => false,
+            Some(e) => !(pure(e) && matches!(expr_ty(e, env, sigs), Ty::I64 | Ty::F64 | Ty::Bool | Ty::NumLocal)),
+        },
+        // Logical context: the top-level condition feeds cg_cond_jump,
+        // whose fallback calls hbc_dyn_to_log for ANY Dyn-typed value
+        // (hk266 NIL, hk267 int, string). Purity of the expression is not
+        // enough - a literal NIL is pure yet Dyn - so a condition is
+        // silent only when its complete type is statically Bool.
+        Stmt::If(_, c, _, _) | Stmt::While(_, c, _) => {
+            !(pure(c) && expr_ty(c, env, sigs) == Ty::Bool)
+        }
+        // Numeric context: For bounds are checked I64, but guard on the
+        // type as well so no coercion helper can ever run untraced.
+        Stmt::For(_, _, a, b, _, _) => {
+            !(pure(a) && pure(b)
+                && expr_ty(a, env, sigs) == Ty::I64 && expr_ty(b, env, sigs) == Ty::I64)
+        }
+        Stmt::Exit(_) | Stmt::Loop(_) => false,
+        _ => true,
+    }
+}
+
 fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target, fname: &str, label: &mut usize, flow: &[CgFrame], slots: &[(usize, u8)], dyn_names: &std::collections::HashSet<String>, byref_names: &std::collections::HashSet<String>) {
     for (si, s) in stmts.iter().enumerate() {
-        trace_location(fname.split("__br").next().unwrap_or(fname), stmt_line(s), strs, out);
+        if stmt_may_raise_or_call(s, env, sigs) {
+            trace_location(fname.split("__br").next().unwrap_or(fname), stmt_line(s), strs, out);
+        }
         match s {
             Stmt::SendStmt(_, e) => {
                 cg_value(e, env, sigs, strs, out, target);
@@ -21580,7 +21861,12 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 *label += 1;
                 let amem = arena_loop_members(*n);
                 out.push_str(&format!(".Lwhile_{}_{}:\n", fname, id));
-                trace_location(fname.split("__br").next().unwrap_or(fname), stmt_line(s), strs, out);
+                // The While header re-emits per iteration under the same
+                // contextual rule as the statement gate above: a non-Bool
+                // condition coerces through hbc_dyn_to_log and can raise.
+                if expr_may_raise_or_call(cond, env, sigs) || expr_ty(cond, env, sigs) != Ty::Bool {
+                    trace_location(fname.split("__br").next().unwrap_or(fname), stmt_line(s), strs, out);
+                }
                 cg_cond_jump(cond, env, sigs, strs, out, target, &format!(".Lbody_{}_{}", fname, id));
                 out.push_str(&format!("    jmp .Lendw_{}_{}\n", fname, id));
                 out.push_str(&format!(".Lbody_{}_{}:\n", fname, id));
@@ -28404,6 +28690,7 @@ fn emit_sarr_desc(out: &mut String, strs: &mut Vec<String>, expr: &Expr) -> Stri
 }
 
 fn emit_asm(funcs: &[Func], sigs: &[Sig], externs: &[String], target: Target, instrument: bool) -> String {
+    box_gtstd::reset();
     compute_param_mut(funcs);
     let nclasses = CLASSES.with(|c| c.borrow().len());
     if nclasses > 0 && !matches!(target, Target::Linux | Target::Windows) {
@@ -28430,7 +28717,9 @@ fn emit_asm(funcs: &[Func], sigs: &[Sig], externs: &[String], target: Target, in
         out.push_str(match target {Target::Linux=>include_str!("../generated/hrfile_linux.s"),Target::Windows=>include_str!("../generated/hrfile_windows.s")});
     }
     out.push_str("# generated by hbc (PoC: Harbour syntax -> x86-64 assembly)\n");
-    out.push_str(CONSOLE_NUL_HELPER);
+    let gtstd_native=CURDIR_LINUX_NATIVE.with(|v|v.get())&&!THREADS.with(|v|v.get());
+    if gtstd_native {out.push_str(include_str!("gtstd_linux.s"));out.push_str(include_str!("../generated/hrgtstd.s"));}
+    else {out.push_str(CONSOLE_NUL_HELPER);}
     if DIRMAKE_USED.with(|v|v.get()) {
         // Original MIT implementation. Compiler strings are counted, not
         // necessarily terminated. Make one owned NUL-terminated OS snapshot.
@@ -28487,6 +28776,7 @@ fn emit_asm(funcs: &[Func], sigs: &[Sig], externs: &[String], target: Target, in
             out.push_str("    call hbc_fn_main\n");
             if MACRO_CONTEXT.with(|c|c.get()){out.push_str("    mov %rsp, %rdi\n    call hrmacro_destroy\n");}
             out.push_str("    call hbc_persistent_cleanup\n    call hbc_str_cache_flush\n");
+            if gtstd_native {out.push_str("    call hbc_gtstd_close\n");}
             out.push_str("    mov $60, %eax\n    xor %edi, %edi\n    syscall\n\n");
         }
         Target::Windows => {
@@ -31488,7 +31778,34 @@ hbc_free_lists: .skip 10240
     out = out.replace("@REG_SFREE_W@", if instrument { REG_SFREE_W } else { "" });
     out = out.replace("@REG_BAD_W@", if instrument { REG_BAD_W } else { "" });
     out = out.replace("@REG_DATA@", if instrument { REG_DATA } else { "" });
+    if gtstd_native {
+        // Keep the former helpers under private legacy names, for a narrow
+        // diff and to preserve every non-console caller's raw mode.
+        out=out.replace("hbc_pstrt:\n", "hbc_pstrt:\n    jmp hbc_print_str\nhbc_pstrt_legacy:\n");
+        let begin=out.find("\nhbc_print_i64:\n").expect("Linux numeric printer");
+        let end=out[begin..].find("\n# hbc_dyn_to_i64:").map(|n|begin+n).expect("Linux numeric printer end");
+        let numeric=out[begin..end].replace("    mov $1, %eax\n    mov $1, %edi\n    syscall\n", "    mov %rsi, %rax\n    call hbc_print_str\n");
+        out.replace_range(begin..end,&numeric);
+        // Fatal runtime helpers write raw diagnostics before panic_exit.
+        // Close deferred console lines before their first write, not after
+        // the diagnostic. Catchable branches jump away before these writes.
+        let exit = "    mov $60, %eax\n    mov $1, %edi\n    syscall";
+        let write = "    mov $1, %eax\n    mov $1, %edi\n    syscall";
+        out=out.split("\nhbc_").map(|block| {
+            if block.contains(exit) {
+                block.replace(write, &format!("    call hbc_gtstd_before_fatal\n{}",write))
+            } else {block.to_string()}
+        }).collect::<Vec<_>>().join("\nhbc_");
+    }
+    if out.contains("call hbc_base_wait") {
+        let helper=include_str!("base_wait_linux.s");
+        if gtstd_native {out.push_str(&helper.replace("    syscall\n", "    call hbc_gtstd_wait_write\n"));}
+        else {out.push_str(helper);}
+    }
+    if out.contains("call hbc_sha1_digest") || out.contains("call hbc_hmac_sha1_digest") {out.push_str(include_str!("../generated/hrsha1.s"));}
+    if out.contains("call hbc_base_wait") || out.contains("call hbc_inkey_block_linux") || out.contains("hbc_cursor_") {out.push_str(include_str!("cursor_linux.s"));}
     if out.contains("call hbc_fileio_") { out.push_str(include_str!("fileio_linux.s")); }
+    if out.contains("hbc_flink_") || out.contains("hbc_ferror_") {out.push_str(include_str!("flink_linux.s"));}
     if out.contains("call hbc_libname_linux") { out.push_str(include_str!("libname_linux.s")); }
     out = out.replace("@HEAP_OFF@", if MACHO_MODE.with(|v| v.get()) { "1" } else { "0" });
     if out.contains("call hbc_os_uname_linux") { out.push_str(OS_UNAME_LINUX_HELPER); }
@@ -31523,6 +31840,10 @@ hbc_free_lists: .skip 10240
         out = out.replace("@REG_ARENA_ALLOC@", "    decq hbc_mem_allocs(%rip)\n");
     }
         let mut result=finalize_trace(out,target);
+        if gtstd_native {
+            // A Dyn render can fail before restoring raw diagnostic mode.
+            result=result.replace("hbc_panic_exit:\n", "hbc_panic_exit:\n    movq $0, hbc_console_mode(%rip)\n");
+        }
         if THREADS.with(|c| c.get()) { result = finalize_threads(result, target); }
         if active {
             result=result.replace("    call hbc_fn_main\n", "    call hbc_fn_main\n    call hrdbf_app_close\n");
@@ -31879,6 +32200,45 @@ hbc_panic_exit:
             .replace("\n.popsection\n", "\n.text\n");
     }
     out
+}
+
+// Final native Linux assembly boundary pass, after all helper appenders.
+fn gtstd_terminal_boundaries(out: String) -> String {
+    // Include late fixed-message handlers as well as the early runtime.
+    // A final exit guard alone cannot preserve message-vs-pending-LF order.
+    let out=out.split("\nhbc_").map(|block| {
+        if block.contains("jmp hbc_panic_exit") || block.contains("mov $60, %eax") {
+            let write="    mov $1, %eax\n    mov $1, %edi\n    syscall";
+            block.replace(write,&format!("    call hbc_gtstd_before_fatal\n{}",write))
+        } else {block.to_string()}
+    }).collect::<Vec<_>>().join("\nhbc_");
+    let mut result=String::new();
+    let mut owner=String::new();
+    for line in out.lines() {
+        let t=line.trim();
+        if t.ends_with(':') && !t.starts_with('.') && !t.starts_with('#') {
+            owner=t.trim_end_matches(':').to_string();
+        }
+        // These terminal writers may be appended after finalize_trace and
+        // write their message on stderr before reaching their exit helper.
+        if t=="hrm_fail:" || t=="hbc_sdf_fail:" {
+            result.push_str(line);result.push_str("\n    call hbc_gtstd_before_fatal\n");continue;
+        }
+        // Generated DBF has diagnostic writes in app_open and field get/set
+        // as well as app_fail. Guard the syscall values at runtime: ordinary
+        // file IO is untouched, only stdout's pending state before stderr.
+        if t=="syscall" && owner.starts_with("hrdbf_") {
+            result.push_str("    call hbc_gtstd_before_dbf_system\n");
+        }
+        // A final safety boundary for every direct exit(60), regardless of
+        // argument setup order. Earlier diagnostic boundaries own ordering.
+        let compact=t.split_whitespace().collect::<String>();
+        if compact=="mov$60,%eax" || compact=="movl$60,%eax" {
+            result.push_str("    call hbc_gtstd_before_fatal\n");
+        }
+        result.push_str(line);result.push('\n');
+    }
+    result
 }
 
 fn emit_f64_consts(out: &mut String) {
@@ -35244,6 +35604,7 @@ fn main() {
         funcs.push(f);
     }
     funcs.extend(synth_new_funcs);
+    if let Err(e)=box_gtstd::validate(&funcs){eprintln!("error: {}",e);process::exit(1);}
     lift_thread_blocks(&mut funcs);
 
     // DBF field-name access (D1b): bare undeclared identifiers in a
@@ -35728,6 +36089,11 @@ hbc_aclone_alloc:
     jmp hbc_alloc
 "
     });
+    // This runs after every runtime producer (trace, macro, Str(Dyn), DBF,
+    // VAS), before pruning. Do not move it into the earlier emitter pass.
+    if target==Target::Linux && !macho && !THREADS.with(|v|v.get()) {
+        out=gtstd_terminal_boundaries(out);
+    }
     // Drop runtime helpers the program never reaches (src/prune.rs).
     let out = if no_prune { out } else { prune::prune(&out) };
     // Local rewrites of the stack-machine output (src/peep.rs).

@@ -25,6 +25,7 @@ hbc_fileio_open:
     mov %r14d, %edx
     mov $438, %r10d
     syscall
+    call hbc_ferror_set_result
     test %rax, %rax
     mov $-1, %r12
     cmovns %rax, %r12
@@ -40,17 +41,26 @@ hbc_fileio_open:
     ret
 # rdi=fd, rsi=string, rdx=count. Return bytes written or zero.
 hbc_fileio_write:
+    test %rdx, %rdx
+    jz .Lfileio_write_empty
     mov $1, %eax
     syscall
+    call hbc_ferror_set_result
     xor %ecx, %ecx
     test %rax, %rax
     cmovs %rcx, %rax
+    xor %edx, %edx
+    ret
+ .Lfileio_write_empty:
+    movq $13, hbc_ferror_value(%rip)
+    xor %eax, %eax
     xor %edx, %edx
     ret
 # rdi=fd. Return logical.
 hbc_fileio_close:
     mov $3, %eax
     syscall
+    call hbc_ferror_set_result
     test %rax, %rax
     sete %al
     movzbq %al, %rax
@@ -74,6 +84,7 @@ hbc_fileio_readstr:
     mov %r13, %rdx
     xor %eax, %eax
     syscall
+    call hbc_ferror_set_result
     xor %edx, %edx
     test %rax, %rax
     jle .Lfileio_read_done
@@ -88,6 +99,74 @@ hbc_fileio_readstr:
     mov %rdx, -8(%rbx)
     mov %rbx, %rax
     add $8, %rsp
+    pop %r13
+    pop %r12
+    pop %rbx
+    pop %rbp
+    ret
+
+# rdi=fd, rsi=owned mutable bytes, r8=buffer length, rdx=count.
+# The logical length and any untouched suffix remain unchanged.
+hbc_fileio_read:
+    cmp %r8, %rdx
+    ja .Lfileio_read_boundary
+    xor %eax, %eax
+    syscall
+    call hbc_ferror_set_result
+    xor %ecx, %ecx
+    test %rax, %rax
+    cmovs %rcx, %rax
+    xor %edx, %edx
+    ret
+.Lfileio_read_zero:
+    movq $0, hbc_ferror_value(%rip)
+    xor %eax, %eax
+    xor %edx, %edx
+    ret
+
+# Harbour permits count == logical length + 1, consuming an extra byte
+# without extending the logical string. Our allocations have no implicit
+# terminator cell: use one temporary for one read, then copy only valid cells.
+.Lfileio_read_boundary:
+    lea 1(%r8), %rcx
+    cmp %rcx, %rdx
+    jne .Lfileio_read_zero
+    push %rbp
+    mov %rsp, %rbp
+    push %rbx
+    push %r12
+    push %r13
+    push %r14
+    sub $32, %rsp
+    mov %rdi, %r12
+    mov %rsi, %r13
+    mov %r8, %r14
+    mov %rdx, 8(%rsp)
+    mov %rdx, %rsi
+    call hbc_stralloc
+    mov %rax, %rbx
+    mov %r12, %rdi
+    mov %rbx, %rsi
+    mov 8(%rsp), %rdx
+    xor %eax, %eax
+    syscall
+    call hbc_ferror_set_result
+    xor %ecx, %ecx
+    test %rax, %rax
+    cmovs %rcx, %rax
+    mov %rax, (%rsp)
+    cmp %r14, %rax
+    cmova %r14, %rax
+    mov %rax, %rcx
+    mov %rbx, %rsi
+    mov %r13, %rdi
+    rep movsb
+    mov %rbx, %rdi
+    call hbc_freestr
+    mov (%rsp), %rax
+    xor %edx, %edx
+    add $32, %rsp
+    pop %r14
     pop %r13
     pop %r12
     pop %rbx
