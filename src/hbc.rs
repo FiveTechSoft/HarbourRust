@@ -21081,9 +21081,108 @@ fn arena_return_rewind(marks: usize, f64_result: bool, out: &mut String) {
     });
 }
 
+// Per-statement trace elision: the trace slot is observed only by
+// operations that raise and by calls (error traces, ProcLine/ProcName in
+// callees), and every such statement writes its own location first, so a
+// statement that provably cannot raise and contains no call can skip its
+// trace write with byte-identical observable behaviour (stdout, stderr,
+// error callstacks, ProcLine results).
+fn expr_may_raise_or_call(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> bool {
+    let scalar = |t: Ty| matches!(t, Ty::I64 | Ty::F64 | Ty::Bool | Ty::NumLocal);
+    match e {
+        // A bare variable is silent only as a plain scalar local: a Dyn
+        // casilla materializes through hbc_dyn_to_log / hbc_dyn_to_i64 in
+        // logical and numeric contexts (named type errors, hk266/hk267),
+        // and an off==0 slot is a memvar - its reads call hrmacro_lookup
+        // and its writes cg_memvar_put. Both keep the trace write.
+        Expr::Var(id) => !matches!(env.iter().rev().find(|v| v.name == *id),
+            Some(v) if v.off > 0 && matches!(v.ty, Ty::I64 | Ty::F64 | Ty::Bool | Ty::NumLocal)),
+        Expr::Int(_) | Expr::Float(..) | Expr::FloatV(..) | Expr::Log(_) | Expr::Nil => false,
+        Expr::Bin(op, a, b) => {
+            let ta = expr_ty(a, env, sigs);
+            let tb = expr_ty(b, env, sigs);
+            if !scalar(ta) || !scalar(tb) { return true; }
+            match op {
+                '+' | '-' => expr_may_raise_or_call(a, env, sigs) || expr_may_raise_or_call(b, env, sigs)
+                    || CHECKED_I64.with(|c| c.get()),
+                // Numeric-local and float `*` carry the guarded decimal-sum
+                // call (hbc_f64range_error); plain I64 `*` can only raise
+                // under the checked overflow rule.
+                '*' => {
+                    if ta != Ty::I64 || tb != Ty::I64 { return true; }
+                    expr_may_raise_or_call(a, env, sigs) || expr_may_raise_or_call(b, env, sigs)
+                        || CHECKED_I64.with(|c| c.get())
+                }
+                // `/`, `%`, `^`: named error paths (division by zero, range).
+                _ => true,
+            }
+        }
+        Expr::Cmp(op, a, b) => {
+            if matches!(op, CmpOp::Contains) { return true; }
+            let ta = expr_ty(a, env, sigs);
+            let tb = expr_ty(b, env, sigs);
+            if !scalar(ta) || !scalar(tb) { return true; }
+            expr_may_raise_or_call(a, env, sigs) || expr_may_raise_or_call(b, env, sigs)
+        }
+        // Logical combinators coerce each operand: a Dyn operand goes
+        // through hbc_dyn_to_log and can raise the named type error, so
+        // only statically-Bool operands stay silent.
+        Expr::LAnd(a, b) | Expr::LOr(a, b) => {
+            if expr_ty(a, env, sigs) != Ty::Bool || expr_ty(b, env, sigs) != Ty::Bool { return true; }
+            expr_may_raise_or_call(a, env, sigs) || expr_may_raise_or_call(b, env, sigs)
+        }
+        Expr::LNot(a) => {
+            if expr_ty(a, env, sigs) != Ty::Bool { return true; }
+            expr_may_raise_or_call(a, env, sigs)
+        }
+        // Calls, indexing (bound checks), ++/-- (jo), sequences, strings
+        // and anything else keep their trace write.
+        _ => true,
+    }
+}
+
+fn stmt_may_raise_or_call(s: &Stmt, env: &[CgLocal], sigs: &[Sig]) -> bool {
+    let pure = |e: &Expr| !expr_may_raise_or_call(e, env, sigs);
+    match s {
+        Stmt::Assign(_, id, e) | Stmt::Local(_, id, e) => {
+            // off==0 targets are memvars: the store routes through
+            // cg_memvar_put (a call) even when the declared type is scalar.
+            let plain = matches!(env.iter().rev().find(|v| v.name == *id),
+                Some(v) if v.off > 0 && matches!(v.ty, Ty::I64 | Ty::F64 | Ty::Bool | Ty::NumLocal));
+            // Assignment context: a Dyn rhs (literal NIL included) stored
+            // into a scalar slot materializes through a coercion helper,
+            // so the rhs must be statically scalar as well as pure.
+            let rhs_scalar = matches!(expr_ty(e, env, sigs), Ty::I64 | Ty::F64 | Ty::Bool | Ty::NumLocal);
+            !(plain && pure(e) && rhs_scalar)
+        }
+        Stmt::Ret(_, e) => match e {
+            None => false,
+            Some(e) => !(pure(e) && matches!(expr_ty(e, env, sigs), Ty::I64 | Ty::F64 | Ty::Bool | Ty::NumLocal)),
+        },
+        // Logical context: the top-level condition feeds cg_cond_jump,
+        // whose fallback calls hbc_dyn_to_log for ANY Dyn-typed value
+        // (hk266 NIL, hk267 int, string). Purity of the expression is not
+        // enough - a literal NIL is pure yet Dyn - so a condition is
+        // silent only when its complete type is statically Bool.
+        Stmt::If(_, c, _, _) | Stmt::While(_, c, _) => {
+            !(pure(c) && expr_ty(c, env, sigs) == Ty::Bool)
+        }
+        // Numeric context: For bounds are checked I64, but guard on the
+        // type as well so no coercion helper can ever run untraced.
+        Stmt::For(_, _, a, b, _, _) => {
+            !(pure(a) && pure(b)
+                && expr_ty(a, env, sigs) == Ty::I64 && expr_ty(b, env, sigs) == Ty::I64)
+        }
+        Stmt::Exit(_) | Stmt::Loop(_) => false,
+        _ => true,
+    }
+}
+
 fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target, fname: &str, label: &mut usize, flow: &[CgFrame], slots: &[(usize, u8)], dyn_names: &std::collections::HashSet<String>, byref_names: &std::collections::HashSet<String>) {
     for (si, s) in stmts.iter().enumerate() {
-        trace_location(fname.split("__br").next().unwrap_or(fname), stmt_line(s), strs, out);
+        if stmt_may_raise_or_call(s, env, sigs) {
+            trace_location(fname.split("__br").next().unwrap_or(fname), stmt_line(s), strs, out);
+        }
         match s {
             Stmt::SendStmt(_, e) => {
                 cg_value(e, env, sigs, strs, out, target);
@@ -21622,7 +21721,12 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 *label += 1;
                 let amem = arena_loop_members(*n);
                 out.push_str(&format!(".Lwhile_{}_{}:\n", fname, id));
-                trace_location(fname.split("__br").next().unwrap_or(fname), stmt_line(s), strs, out);
+                // The While header re-emits per iteration under the same
+                // contextual rule as the statement gate above: a non-Bool
+                // condition coerces through hbc_dyn_to_log and can raise.
+                if expr_may_raise_or_call(cond, env, sigs) || expr_ty(cond, env, sigs) != Ty::Bool {
+                    trace_location(fname.split("__br").next().unwrap_or(fname), stmt_line(s), strs, out);
+                }
                 cg_cond_jump(cond, env, sigs, strs, out, target, &format!(".Lbody_{}_{}", fname, id));
                 out.push_str(&format!("    jmp .Lendw_{}_{}\n", fname, id));
                 out.push_str(&format!(".Lbody_{}_{}:\n", fname, id));
