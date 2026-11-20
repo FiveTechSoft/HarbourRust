@@ -13,6 +13,7 @@
     "-fno-unwind-tables",
     "-fno-ident",
     "-mno-red-zone",
+    "-fno-jump-tables",
     "-Wall",
     "-Wextra",
     "-Werror",
@@ -37,7 +38,7 @@
     "runtime/hrvalue.c": "bc4970cd86c7a2ac71ad8bd974908c4302aaa1b870fbaa3cba6ebaa5d83999d1",
     "runtime/hrvalue.h": "962dee2ca2d6f75dc45d4d6597a1e84e62568b869a897911c496501fdc8a4dfe"
   },
-  "asm_sha256": "6249d53ccdcbac0ebdced5c6a4c7f87dbff3d5ee0f1f5178086e38ebd93ca41f",
+  "asm_sha256": "0601d9c81304f12c53ea050b7fe685e4088f22d3e51650b5fa478b5a20036175",
   "labels": 1143,
   "undefined_symbols": [],
   "local_label_namespace": ".Lhrdbf_",
