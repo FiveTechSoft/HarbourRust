@@ -19,7 +19,19 @@ It uses the existing panic exit without changing trace generation or metadata.
 `mutants.py` requires successful Rust builds, then detects admission removal,
 missing clone before release, and missing independent result clone.
 
-Static F64/string/date inline assignments remain excluded. Array/container Dyn
+Static F64/string inline assignments remain excluded. Typed Date-local inline
+assignment is now supported on ordinary Linux. The former Date negative in
+`safety.py` is an oracle-positive row: the unchanged original and an observable
+companion are compared exactly against fresh Harbour in both assemblers. An
+untouched-NIL early-read Date local remains a neighboring build-rejection
+control, with Harbour acceptance recorded separately. All other controls remain.
+The gate still has 12 top-level rows; the Date row requires all named subchecks.
+
+Run with an explicit Harbour executable:
+
+    python3 tests/inline-dyn/safety.py --compiler ./hbc --hbmk2 /path/to/hbmk2 --output /new/output
+
+ Array/container Dyn
 values are rejected at runtime before the target is changed. This does not add
 arbitrary inline ownership, shared-array identity, or Date-in-Dyn support.
 No Cmp/Bin arms, workflows, manifests or expectations are changed.

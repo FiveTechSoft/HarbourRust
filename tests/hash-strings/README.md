@@ -6,7 +6,17 @@ separate executable oracle. P07 remains unchanged optional external test input.
 New admission: literal-string hash values, ordinary Linux without threads, via
 literal map initialization/reassignment, indexed write and hb_HSet. Indexed
 literal writes require literal/variable keys, not effectful keys. Direct owned
-string producers/variables and numeric keys keep their existing rejection.
+string producers/variables keep their existing rejection. Literal signed i64
+keys are now supported on ordinary Linux; variable numeric keys are not.
+`safety.py` upgrades its old numeric-key negative without dropping the original
+source: original and observable companion run exactly against fresh Harbour in
+both assemblers. The companion distinguishes integer 10 from string "10". A
+neighboring variable-key source must run in Harbour and be explicitly rejected
+in both compiler assembly modes. All other controls remain. The gate still has
+15 top-level rows; the numeric-key row requires all named subchecks.
+
+    python3 tests/hash-strings/safety.py --compiler ./hbc --hbmk2 /path/to/hbmk2 --output /new/output
+
 
 Existing accepted Dyn string values previously aliased storage. Mandatory
 pre-fix probe forces the owner's string-cache block to be reused: baseline
