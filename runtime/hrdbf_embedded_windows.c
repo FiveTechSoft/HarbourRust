@@ -29,6 +29,7 @@
 #define hrdbf_app_order_clear hrdbfw_app_order_clear
 #define hrdbf_app_found hrdbfw_app_found
 #define hrdbf_app_seek hrdbfw_app_seek
+#define hrdbf_app_seek_dyn hrdbfw_app_seek_dyn
 #define hrdbf_app_recno hrdbfw_app_recno
 #define hrdbf_app_lastrec hrdbfw_app_lastrec
 #define hrdbf_app_fcount hrdbfw_app_fcount

@@ -263,6 +263,12 @@ HR_SYSV uint64_t hrdbf_app_seek( const unsigned char * p, size_t n, uint64_t sof
    PHB_ITEM r = hr_doC( "DBSEEK", 3, k, s, l ); uint64_t v = hb_itemGetL( r );
    hb_itemRelease( r ); hb_itemRelease( k ); hb_itemRelease( s ); hb_itemRelease( l ); return v;
 }
+HR_SYSV uint64_t hrdbf_app_seek_dyn( uint64_t tag, uint64_t pay, uint64_t soft, uint64_t last )
+{
+   PHB_ITEM k = hr_item( tag, pay ), s = hb_itemPutL( NULL, soft != 0 ), l = hb_itemPutL( NULL, last != 0 );
+   PHB_ITEM r = hr_doC( "DBSEEK", 3, k, s, l ); uint64_t v = hb_itemGetL( r );
+   hb_itemRelease( r ); hb_itemRelease( k ); hb_itemRelease( s ); hb_itemRelease( l ); return v;
+}
 HR_SYSV uint64_t hrdbf_app_recno( void ) { return hr_num0( "RECNO" ); }
 HR_SYSV uint64_t hrdbf_app_lastrec( void ) { return hr_num0( "LASTREC" ); }
 HR_SYSV uint64_t hrdbf_app_fcount( void ) { return hr_num0( "FCOUNT" ); }
