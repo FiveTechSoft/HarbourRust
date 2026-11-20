@@ -28,9 +28,9 @@ for name,(old,new,test) in mutations.items():
   row['mutant_compiler_sha256']=h(w/'compiler');mb=run([w/'compiler',src,w/'mutant',*flags],w,'mutant-build');row['program_build_rc']=mb.returncode
   if mb.returncode==0:
    mr=run([w/'mutant'],w,'mutant-run');row.update(kind='runtime-difference',mutant_run_rc=mr.returncode,caught=mr.returncode!=124 and (mr.returncode,mr.stdout,mr.stderr)!=(cr.returncode,cr.stdout,cr.stderr),mutant_binary_sha256=h(w/'mutant'))
-  else:row.update(kind='build-rejection',caught=mb.returncode!=124)
+  else:row.update(kind='build-rejection',caught=False)
  rows.append(row)
  for f in [w/'control',w/'mutant',w/'compiler',w/'oracle']:
   if f.exists():f.unlink()
  print(row,flush=True);(out/'results.json').write_text(json.dumps(dict(compiler_sha256=h(Path(a.compiler)),runner_sha256=h(Path(__file__)),scope='Four own Rust-build-valid mutations: match selection, numeric kind, first string snapshot, loser release. Memory test is instrumentation, other controls exact Harbour. Build failures/timeouts never count as catches.',rows=rows),indent=2))
-assert all(r['compiler_build_rc']==0 and r['caught'] for r in rows)
+assert len(rows)==len(mutations) and all(r['compiler_build_rc']==0 and r.get('program_build_rc')==0 and r.get('kind')=='runtime-difference' and r.get('mutant_run_rc') not in (None,124) and r['caught'] for r in rows)
