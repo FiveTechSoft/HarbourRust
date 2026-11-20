@@ -14627,7 +14627,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                     out.push_str("    add $16, %rsp\n    mov $1, %eax\n    xor %edx, %edx\n");
                 },
                 "ordlistadd" | "dbseek" => {
-                    if id=="dbseek" && expr_ty(&args[0],env,sigs)==Ty::Dyn {
+                    if id=="dbseek" && !matches!(expr_ty(&args[0],env,sigs),Ty::Str|Ty::StrOwn) {
                         // cg_data_value normalizes the Dyn operand to an
                         // exclusively owned cell (Var reads clone). The runtime
                         // extracts the character bytes (length header at
