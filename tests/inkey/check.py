@@ -88,7 +88,7 @@ def reject(name,expr,msg,extra=None):
     d=out/('reject-'+name);d.mkdir();(d/'p.prg').write_text(prg(expr) if not extra else extra);r=run([compiler,d/'p.prg',d/'exe'],d,'build')
     assert r.returncode==1 and msg in r.stderr and not (d/'exe').exists(),(name,r.stderr);rows.append(dict(kind='rejection',name=name,passed=True))
 M=b'INKEY supports zero arguments or one numeric literal from 0.01'
-for name,expr in [('zero','inkey(0)'),('zerof','inkey(0.0)'),('neg','inkey(-1)'),('negf','inkey(-0.5)'),('nil','inkey(NIL)'),('str','inkey("a")'),('log','inkey(.t.)'),('huge','inkey(86401)'),('tiny-0.009','inkey(0.009)'),('tiny-0.0004','inkey(0.0004)'),('array','inkey({1})')]:reject(name,expr,M)
+for name,expr in [('neg','inkey(-1)'),('negf','inkey(-0.5)'),('nil','inkey(NIL)'),('str','inkey("a")'),('log','inkey(.t.)'),('huge','inkey(86401)'),('tiny-0.009','inkey(0.009)'),('tiny-0.0004','inkey(0.0004)'),('array','inkey({1})')]:reject(name,expr,M)
 reject('mask','inkey(1,0)',b'mask and extra arguments');reject('three','inkey(1,2,3)',b'mask and extra arguments')
 reject('runtime-var','inkey(n)',M,'function main()\nlocal n:=1,k\nk:=inkey(n)\n?k\nreturn nil\n')
 reject('unknown-shadow-unaffected','x',b'',None) if False else None

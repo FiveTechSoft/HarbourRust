@@ -42,3 +42,10 @@ de validacion y 6 perfiles rechazados. El forum original se ejecuta SIN
 modificar con un script del paquete (stdin vacio: 10.0 s en ambos).
 
 Limite: no hay forma de entregar una senal con handler a un programa compilado, asi que la rama EINTR del helper se revisa por codigo y no se ejercita por ejecucion; SIGSTOP/SIGCONT se mide y el kernel reinicia poll con el mismo deadline.
+
+## Ampliacion cursor-stdin
+
+INKEY(0) y (0.0), solo en Linux ordinario, ahora leen el siguiente byte no NUL
+y esperan indefinidamente al EOF. La ruta de tiempos positivos no cambia.
+Los antiguos rechazos zero/zerof se sustituyen por los casos bloqueantes
+del gate tests/cursor-stdin/check.py. Windows sigue rechazando cero.

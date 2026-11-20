@@ -2002,7 +2002,7 @@ const ASM_RESERVED: &[&str] = &[
     // hbc itself emits; a user function with one of these names would
     // collide with a helper symbol.
     "dtos", "stod", "year", "day", "month", "dow", "cdow", "cmonth", "dtoc", "sqrt", "exp", "log", "mod", "padc", "rat", "stuff", "isdigit", "isalpha", "isupper", "islower", "strzero", "ischar", "strzero_fix", "str_f64", "fmt_f64", "date_add", "date_diff", "date_days", "date_from_days", "seconds",
-    "strtran", "space", "substr", "date", "ctod", "date_pack", "date_render", "date_today", "dispbox", "curdir", "fread", "fcreate", "fopen", "fwrite", "fclose", "freadstr", "hb_libname", "hb_ps", "os", "dirmake", "inkey", "file", "hrfile_setdefault", "hrfile_setpath", "qout", "qqout", "outstd", "outerr", "empty", "procname", "min", "max", "str", "padr", "hb_ntos", "replicate", "aeval", "hb_isnumeric", "hb_isarray", "hb_isstring", "dfree", "upper", "lower", "left", "right", "at", "int", "abs", "padl", "val", "ascan", "aclone", "atail", "asort", "hb_bitand", "hb_bitor", "hb_bitxor", "hb_bitnot", "hb_bittest", "hb_bitset", "hb_bitreset", "eprint_str", "eprint_sep", "eprint_i64", "eprint_i64c", "eprint_dyn", "eprint_dynlit", "print_dynlit", "eprint_f64", "hb_eol", "procline", "asc", "trim", "ltrim", "rtrim", "alltrim", "chr", "trace_top", "print_trace", "panic_exit", "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_range_error", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
+    "strtran", "space", "substr", "date", "ctod", "date_pack", "date_render", "date_today", "dispbox", "setcursor", "curdir", "fread", "fcreate", "fopen", "fwrite", "fclose", "freadstr", "hb_libname", "hb_ps", "os", "dirmake", "inkey", "file", "hrfile_setdefault", "hrfile_setpath", "qout", "qqout", "outstd", "outerr", "empty", "procname", "min", "max", "str", "padr", "hb_ntos", "replicate", "aeval", "hb_isnumeric", "hb_isarray", "hb_isstring", "dfree", "upper", "lower", "left", "right", "at", "int", "abs", "padl", "val", "ascan", "aclone", "atail", "asort", "hb_bitand", "hb_bitor", "hb_bitxor", "hb_bitnot", "hb_bittest", "hb_bitset", "hb_bitreset", "eprint_str", "eprint_sep", "eprint_i64", "eprint_i64c", "eprint_dyn", "eprint_dynlit", "print_dynlit", "eprint_f64", "hb_eol", "procline", "asc", "trim", "ltrim", "rtrim", "alltrim", "chr", "trace_top", "print_trace", "panic_exit", "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_range_error", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
 ];
 
 fn dbf_result(id: &str) -> Option<Ty> {
@@ -7477,14 +7477,21 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 }
                 return Ok(Ty::Date);
             }
+            if is_builtin(id,"setcursor") {
+                if !CURDIR_LINUX_NATIVE.with(|v|v.get()) {return Err(format!("line {}: SetCursor is measured only on ordinary Linux GTSTD",n));}
+                if args.len()>1{return Err(format!("line {}: SetCursor takes zero or one typed integer argument",n));}
+                for a in args {if type_expr(a,env,sigs,n)?!=Ty::I64{return Err(format!("line {}: SetCursor requires a typed integer mode",n));}apply_moves(a,env,sigs,false);}
+                return Ok(Ty::I64);
+            }
             if is_builtin(id,"inkey") {
                 if !CURDIR_LINUX_NATIVE.with(|v|v.get()) && !INKEY_WIN.with(|v|v.get()) {
                     return Err(format!("line {}: INKEY supports ordinary Linux and Windows PE stdin only in this increment; Darwin and LLVM are not measured",n));
                 }
                 if args.len()>1 {return Err(format!("line {}: INKEY supports zero arguments or one numeric literal from 0.01 to 86400 seconds in this increment; mask and extra arguments are not covered",n));}
                 if let Some(a)=args.first() {
-                    if inkey_literal_ms(a).is_none() {
-                        return Err(format!("line {}: INKEY supports zero arguments or one numeric literal from 0.01 to 86400 seconds in this increment; zero, negative, NIL, non-numeric and runtime timeouts are not covered",n));
+                    let blocking=CURDIR_LINUX_NATIVE.with(|v|v.get()) && num_lit(a).map_or(false,|(x,_)|x==0.0);
+                    if inkey_literal_ms(a).is_none() && !blocking {
+                        return Err(format!("line {}: INKEY supports zero arguments or one numeric literal from 0.01 to 86400 seconds (also literal zero for blocking Linux stdin); negative, NIL, non-numeric and runtime timeouts are not covered",n));
                     }
                 }
                 INKEY_USED.with(|v|v.set(true));
@@ -11704,6 +11711,7 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
             if is_builtin(id,"seconds") { return; }
             if is_builtin(id,"ctod") { apply_moves(&args[0],env,sigs,false); return; }
             if is_builtin(id,"dirmake") {for a in args {apply_moves(a,env,sigs,false);}return;}
+            if is_builtin(id,"setcursor") {for a in args {apply_moves(a,env,sigs,false);}return;}
             if is_builtin(id,"inkey") {return;}
             if is_builtin(id,"file") || id=="hrfile_setdefault" || id=="hrfile_setpath" {
                 for a in args {apply_moves(a,env,sigs,false);}return;
@@ -15316,9 +15324,14 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             out.push_str("    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_ctod\n");
             if temp { out.push_str("    mov %rax, 8(%rsp)\n    mov (%rsp), %rdi\n    call hbc_freestr\n    mov 8(%rsp), %rax\n    add $16, %rsp\n"); }
         }
+        Expr::Call(id,args) if is_builtin(id,"setcursor") => {
+            if let Some(a)=args.first(){cg_expr(a,env,sigs,strs,out,target);out.push_str("    mov %rax, %rdi\n    call hbc_cursor_set\n");}
+            else {out.push_str("    mov hbc_cursor_mode(%rip), %rax\n    xor %edx, %edx\n");}
+        }
         Expr::Call(id,args) if is_builtin(id,"inkey") => {
-            let ms=args.first().map(|a|inkey_literal_ms(a).expect("INKEY literal validated")).unwrap_or(0);
-            out.push_str(&format!("    mov ${}, %rdi\n    call hbc_inkey\n    xor %edx, %edx\n",ms));
+            let blocking=args.first().map_or(false,|a|num_lit(a).map_or(false,|(x,_)|x==0.0));
+            if blocking {out.push_str("    call hbc_inkey_block_linux\n    xor %edx, %edx\n");}
+            else {let ms=args.first().map(|a|inkey_literal_ms(a).expect("INKEY literal validated")).unwrap_or(0);out.push_str(&format!("    mov ${}, %rdi\n    call hbc_inkey\n    xor %edx, %edx\n",ms));}
         }
         Expr::Call(id,args) if is_builtin(id,"dirmake") => {
             if args.is_empty() {out.push_str(if matches!(target,Target::Windows){"    mov $-3, %rax\n"}else{"    mov $-2, %rax\n"});}
@@ -19191,7 +19204,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
                 let t = expr_ty(&args[0], env, sigs);
                 return t;
             }
-            if is_builtin(id,"dirmake") || is_builtin(id,"inkey") {return Ty::I64;}
+            if is_builtin(id,"setcursor") || is_builtin(id,"dirmake") || is_builtin(id,"inkey") {return Ty::I64;}
             if is_builtin(id,"file") {return Ty::Bool;}
             if id=="hrfile_setdefault"||id=="hrfile_setpath" {return Ty::Dyn;}
             if is_builtin(id,"dispbox") {return Ty::Dyn;}
@@ -31647,6 +31660,7 @@ hbc_free_lists: .skip 10240
     out = out.replace("@REG_SFREE_W@", if instrument { REG_SFREE_W } else { "" });
     out = out.replace("@REG_BAD_W@", if instrument { REG_BAD_W } else { "" });
     out = out.replace("@REG_DATA@", if instrument { REG_DATA } else { "" });
+    if out.contains("call hbc_inkey_block_linux") || out.contains("hbc_cursor_") {out.push_str(include_str!("cursor_linux.s"));}
     if out.contains("call hbc_fileio_") { out.push_str(include_str!("fileio_linux.s")); }
     if out.contains("call hbc_libname_linux") { out.push_str(include_str!("libname_linux.s")); }
     out = out.replace("@HEAP_OFF@", if MACHO_MODE.with(|v| v.get()) { "1" } else { "0" });
