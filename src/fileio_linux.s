@@ -25,6 +25,7 @@ hbc_fileio_open:
     mov %r14d, %edx
     mov $438, %r10d
     syscall
+    call hbc_ferror_set_result
     test %rax, %rax
     mov $-1, %r12
     cmovns %rax, %r12
@@ -40,17 +41,26 @@ hbc_fileio_open:
     ret
 # rdi=fd, rsi=string, rdx=count. Return bytes written or zero.
 hbc_fileio_write:
+    test %rdx, %rdx
+    jz .Lfileio_write_empty
     mov $1, %eax
     syscall
+    call hbc_ferror_set_result
     xor %ecx, %ecx
     test %rax, %rax
     cmovs %rcx, %rax
+    xor %edx, %edx
+    ret
+ .Lfileio_write_empty:
+    movq $13, hbc_ferror_value(%rip)
+    xor %eax, %eax
     xor %edx, %edx
     ret
 # rdi=fd. Return logical.
 hbc_fileio_close:
     mov $3, %eax
     syscall
+    call hbc_ferror_set_result
     test %rax, %rax
     sete %al
     movzbq %al, %rax
@@ -74,6 +84,7 @@ hbc_fileio_readstr:
     mov %r13, %rdx
     xor %eax, %eax
     syscall
+    call hbc_ferror_set_result
     xor %edx, %edx
     test %rax, %rax
     jle .Lfileio_read_done
@@ -99,16 +110,16 @@ hbc_fileio_readstr:
 hbc_fileio_read:
     cmp %r8, %rdx
     ja .Lfileio_read_boundary
-    test %rdx, %rdx
-    jz .Lfileio_read_zero
     xor %eax, %eax
     syscall
+    call hbc_ferror_set_result
     xor %ecx, %ecx
     test %rax, %rax
     cmovs %rcx, %rax
     xor %edx, %edx
     ret
 .Lfileio_read_zero:
+    movq $0, hbc_ferror_value(%rip)
     xor %eax, %eax
     xor %edx, %edx
     ret
@@ -139,6 +150,7 @@ hbc_fileio_read:
     mov 8(%rsp), %rdx
     xor %eax, %eax
     syscall
+    call hbc_ferror_set_result
     xor %ecx, %ecx
     test %rax, %rax
     cmovs %rcx, %rax
