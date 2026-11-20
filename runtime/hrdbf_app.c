@@ -148,7 +148,7 @@ static size_t hrdbf_app_pad_ll(long long r,unsigned width,char *buf){
  while(m){tmp[n++]=(unsigned char)('0'+(m%10));m/=10;}
  len=0;
  if(neg)buf[len++]='-';
- if(width&&(size_t)width>n+len){for(i=n;i<(size_t)width-n-len;i++)buf[len++]='0';}
+ if(width&&(size_t)width>n+len){for(i=0;i<(size_t)width-n-len;i++)buf[len++]='0';}
  for(i=n;i>0;i--)buf[len++]=tmp[i-1];
  return len;
 }
