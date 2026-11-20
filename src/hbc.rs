@@ -20417,10 +20417,23 @@ fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<Strin
             // for =,<,<=,>,>= and .T. for # on an unordered pair; the
             // setnp/setp guards below reproduce exactly that (> and >=
             // need no guard: the unordered CF=1 already answers .F.).
+            // A scalar-slot rhs (an F64 or I64 local: slot loads and
+            // cvtsi2sd only, no call and no %xmm1 clobber - the same
+            // verified set as the float +,-,* shuffle) lets the lhs stay
+            // in %xmm1 and skips the 16-byte stack round-trip. The
+            // ucomisd operand order is unchanged (lhs in %xmm1).
+            let scalar_slot_rhs = matches!(&**b, Expr::Var(_))
+                && matches!(expr_ty(b, env, sigs), Ty::F64 | Ty::I64);
             cg_f64_operand(a, env, sigs, strs, out, target);
-            out.push_str("    sub $16, %rsp\n    movsd %xmm0, (%rsp)\n");
-            cg_f64_operand(b, env, sigs, strs, out, target);
-            out.push_str("    movsd (%rsp), %xmm1\n    add $16, %rsp\n    ucomisd %xmm0, %xmm1\n");
+            if scalar_slot_rhs {
+                out.push_str("    movsd %xmm0, %xmm1\n");
+                cg_f64_operand(b, env, sigs, strs, out, target);
+                out.push_str("    ucomisd %xmm0, %xmm1\n");
+            } else {
+                out.push_str("    sub $16, %rsp\n    movsd %xmm0, (%rsp)\n");
+                cg_f64_operand(b, env, sigs, strs, out, target);
+                out.push_str("    movsd (%rsp), %xmm1\n    add $16, %rsp\n    ucomisd %xmm0, %xmm1\n");
+            }
             match op {
                 CmpOp::Eq | CmpOp::EqEq => out.push_str(&format!("    sete %al\n    setnp %cl\n    and %cl, %al\n    test %al, %al\n    jnz {}\n", true_label)),
                 CmpOp::Ne => out.push_str(&format!("    setne %al\n    setp %cl\n    or %cl, %al\n    test %al, %al\n    jnz {}\n", true_label)),
