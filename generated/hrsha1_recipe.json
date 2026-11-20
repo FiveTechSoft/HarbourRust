@@ -1,0 +1,33 @@
+{
+  "compiler": "x86_64-w64-mingw32-gcc (GCC) 10-win32 20220113",
+  "flags": [
+    "-D_WIN64",
+    "-std=c99",
+    "-O2",
+    "-S",
+    "-mabi=sysv",
+    "-ffreestanding",
+    "-fno-builtin",
+    "-fno-stack-protector",
+    "-fno-asynchronous-unwind-tables",
+    "-fno-unwind-tables",
+    "-fno-ident",
+    "-mno-red-zone",
+    "-fno-pic",
+    "-mno-sse",
+    "-mno-mmx",
+    "-fno-tree-vectorize",
+    "-mno-stack-arg-probe",
+    "-minline-all-stringops",
+    "-mstringop-strategy=rep_byte",
+    "-fno-jump-tables",
+    "-mno-push-args",
+    "-fcf-protection=none",
+    "-Wall",
+    "-Wextra",
+    "-Werror"
+  ],
+  "source_sha256": "5b6d9bb04f8b7ac1306e05e683341db7db1ffeea794c4bd20d6681460e933e29",
+  "asm_sha256": "78beb10fb61fdc25cb51119682ecb3b7ecabb573143440d029fd7df4d831413e",
+  "external_calls": []
+}

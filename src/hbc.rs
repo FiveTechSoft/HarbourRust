@@ -2013,7 +2013,7 @@ const ASM_RESERVED: &[&str] = &[
     // hbc itself emits; a user function with one of these names would
     // collide with a helper symbol.
     "dtos", "stod", "year", "day", "month", "dow", "cdow", "cmonth", "dtoc", "sqrt", "exp", "log", "mod", "padc", "rat", "stuff", "isdigit", "isalpha", "isupper", "islower", "strzero", "ischar", "strzero_fix", "str_f64", "fmt_f64", "date_add", "date_diff", "date_days", "date_from_days", "seconds",
-    "strtran", "space", "substr", "date", "ctod", "date_pack", "date_render", "date_today", "dispbox", "hrbase_wait", "setcursor", "hb_flink", "hb_flinksym", "hb_flinkread", "hb_memowrit", "hb_dircreate", "ferror", "curdir", "fread", "fcreate", "fopen", "fwrite", "fclose", "freadstr", "hb_libname", "hb_ps", "os", "dirmake", "inkey", "file", "hrfile_setdefault", "hrfile_setpath", "qout", "qqout", "outstd", "outerr", "empty", "procname", "min", "max", "str", "padr", "hb_ntos", "replicate", "aeval", "hb_isnumeric", "hb_isarray", "hb_isstring", "dfree", "upper", "lower", "left", "right", "at", "int", "abs", "padl", "val", "ascan", "aclone", "atail", "asort", "hb_bitand", "hb_bitor", "hb_bitxor", "hb_bitnot", "hb_bittest", "hb_bitset", "hb_bitreset", "eprint_str", "eprint_sep", "eprint_i64", "eprint_i64c", "eprint_dyn", "eprint_dynlit", "print_dynlit", "eprint_f64", "hb_eol", "procline", "asc", "trim", "ltrim", "rtrim", "alltrim", "chr", "trace_top", "print_trace", "panic_exit", "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_range_error", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
+    "hb_sha1", "hb_hmac_sha1", "strtran", "space", "substr", "date", "ctod", "date_pack", "date_render", "date_today", "dispbox", "hrbase_wait", "setcursor", "hb_flink", "hb_flinksym", "hb_flinkread", "hb_memowrit", "hb_dircreate", "ferror", "curdir", "fread", "fcreate", "fopen", "fwrite", "fclose", "freadstr", "hb_libname", "hb_ps", "os", "dirmake", "inkey", "file", "hrfile_setdefault", "hrfile_setpath", "qout", "qqout", "outstd", "outerr", "empty", "procname", "min", "max", "str", "padr", "hb_ntos", "replicate", "aeval", "hb_isnumeric", "hb_isarray", "hb_isstring", "dfree", "upper", "lower", "left", "right", "at", "int", "abs", "padl", "val", "ascan", "aclone", "atail", "asort", "hb_bitand", "hb_bitor", "hb_bitxor", "hb_bitnot", "hb_bittest", "hb_bitset", "hb_bitreset", "eprint_str", "eprint_sep", "eprint_i64", "eprint_i64c", "eprint_dyn", "eprint_dynlit", "print_dynlit", "eprint_f64", "hb_eol", "procline", "asc", "trim", "ltrim", "rtrim", "alltrim", "chr", "trace_top", "print_trace", "panic_exit", "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_range_error", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
 ];
 
 fn dbf_result(id: &str) -> Option<Ty> {
@@ -7500,6 +7500,14 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 for a in args {if !matches!(type_expr(a,env,sigs,n)?,Ty::Str|Ty::StrOwn){return Err(format!("line {}: filesystem link builtin requires typed strings",n));}apply_moves(a,env,sigs,false);}
                 return Ok(if is_builtin(id,"hb_flinkread"){Ty::StrOwn}else if is_builtin(id,"hb_memowrit"){Ty::Bool}else{Ty::I64});
             }
+            if is_builtin(id,"hb_sha1") || is_builtin(id,"hb_hmac_sha1") {
+                let nstr=if is_builtin(id,"hb_sha1"){1}else{2};
+                if !CURDIR_LINUX_NATIVE.with(|v|v.get()) || THREADS.with(|v|v.get()) {return Err(format!("line {}: SHA1/HMAC is measured only on ordinary Linux without threads",n));}
+                if args.len()!=nstr && args.len()!=nstr+1 {return Err(format!("line {}: SHA1/HMAC requires typed string data/key and optional logical raw flag",n));}
+                for a in &args[..nstr] {if !matches!(type_expr(a,env,sigs,n)?,Ty::Str|Ty::StrOwn){return Err(format!("line {}: SHA1/HMAC data/key requires typed strings",n));}apply_moves(a,env,sigs,false);}
+                if args.len()>nstr && type_expr(&args[nstr],env,sigs,n)?!=Ty::Bool {return Err(format!("line {}: SHA1/HMAC raw flag requires a logical value",n));}
+                return Ok(Ty::StrOwn);
+            }
             if id=="hrbase_wait" {
                 if !args.is_empty()||!CURDIR_LINUX_NATIVE.with(|v|v.get())||THREADS.with(|v|v.get()) {return Err(format!("line {}: bare WAIT is measured only on ordinary Linux GTSTD",n));}return Ok(Ty::I64);
             }
@@ -11739,6 +11747,7 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
             if is_builtin(id,"dirmake") {for a in args {apply_moves(a,env,sigs,false);}return;}
             if ["hb_flink","hb_flinksym","hb_flinkread","hb_memowrit","hb_dircreate","ferror"].iter().any(|b|is_builtin(id,b)) {for a in args {apply_moves(a,env,sigs,false);}return;}
             if is_builtin(id,"setcursor") {for a in args {apply_moves(a,env,sigs,false);}return;}
+            if is_builtin(id,"hb_sha1") || is_builtin(id,"hb_hmac_sha1") {for a in args {apply_moves(a,env,sigs,false);}return;}
             if id=="hrbase_wait" {return;}
             if is_builtin(id,"inkey") {return;}
             if is_builtin(id,"file") || id=="hrfile_setdefault" || id=="hrfile_setpath" {
@@ -15396,6 +15405,26 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                 for i in 0..args.len(){out.push_str(&format!("    mov {}(%rsp), %rdi\n    test %rdi, %rdi\n    je .Lflinkskip{guard}_{i}\n    call hbc_freestr\n.Lflinkskip{guard}_{i}:\n",i*16));}
                 out.push_str(&format!("    add $64, %rsp\n    jmp hbc_seq_unwind\n.Lflinkdone{guard}:\n"));
             }
+        }
+        Expr::Call(id,args) if is_builtin(id,"hb_sha1") || is_builtin(id,"hb_hmac_sha1") => {
+            if THREADS.with(|v|v.get()){eprintln!("error: SHA1/HMAC does not support threads in this increment");process::exit(1);}
+            let nstr=if is_builtin(id,"hb_sha1"){1}else{2};let guard=fresh_lbl();
+            out.push_str(&format!("    sub $128, %rsp\n    movq $0, (%rsp)\n    movq $0, 16(%rsp)\n    movq $0, 32(%rsp)\n    movq $0, 40(%rsp)\n    cmpq $0, hbc_seq_depth(%rip)\n    je .Lsha_eval{guard}\n    lea .Lsha_catch{guard}(%rip), %rdi\n    call hbc_seq_push\n    movq $1, 40(%rsp)\n.Lsha_eval{guard}:\n"));
+            for (i,a) in args[..nstr].iter().enumerate(){
+                cg_value(a,env,sigs,strs,out,target);
+                out.push_str("    mov %rax, 48(%rsp)\n    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_strcpy\n");
+                out.push_str(&format!("    mov %rax, {}(%rsp)\n    mov %rdx, {}(%rsp)\n",i*16,i*16+8));
+                if expr_ty(a,env,sigs)==Ty::StrOwn && !matches!(a,Expr::Var(_)){out.push_str("    mov 48(%rsp), %rdi\n    call hbc_freestr\n");}
+            }
+            if args.len()>nstr {cg_expr(&args[nstr],env,sigs,strs,out,target);out.push_str("    mov %rax, 32(%rsp)\n");}
+            out.push_str(&format!("    cmpq $0, 40(%rsp)\n    je .Lsha_invoke{guard}\n    call hbc_seq_pop\n.Lsha_invoke{guard}:\n    mov (%rsp), %rdi\n    mov 8(%rsp), %rsi\n"));
+            if nstr==1{out.push_str("    lea 64(%rsp), %rdx\n    call hbc_sha1_digest\n");}
+            else{out.push_str("    mov 16(%rsp), %rdx\n    mov 24(%rsp), %rcx\n    lea 64(%rsp), %r8\n    call hbc_hmac_sha1_digest\n");}
+            out.push_str(&format!("    cmpq $0, 32(%rsp)\n    je .Lsha_hex{guard}\n    lea 64(%rsp), %rdi\n    mov $20, %esi\n    call hbc_strcpy\n    mov %rax, 96(%rsp)\n    mov %rdx, 104(%rsp)\n    jmp .Lsha_release{guard}\n.Lsha_hex{guard}:\n    mov $40, %esi\n    call hbc_stralloc\n    mov %rax, 96(%rsp)\n    mov %rdx, 104(%rsp)\n    mov %rax, %rsi\n    lea 64(%rsp), %rdi\n    call hbc_sha1_hex\n.Lsha_release{guard}:\n"));
+            for i in 0..nstr{out.push_str(&format!("    mov {}(%rsp), %rdi\n    call hbc_freestr\n",i*16));}
+            out.push_str(&format!("    mov 96(%rsp), %rax\n    mov 104(%rsp), %rdx\n    add $128, %rsp\n    jmp .Lsha_done{guard}\n.Lsha_catch{guard}:\n"));
+            for i in 0..nstr{out.push_str(&format!("    mov {}(%rsp), %rdi\n    test %rdi, %rdi\n    je .Lsha_skip{guard}_{i}\n    call hbc_freestr\n.Lsha_skip{guard}_{i}:\n",i*16));}
+            out.push_str(&format!("    add $128, %rsp\n    jmp hbc_seq_unwind\n.Lsha_done{guard}:\n"));
         }
         Expr::Call(id,_) if id=="hrbase_wait" => {
             if THREADS.with(|v|v.get()){eprintln!("error: bare WAIT does not support threads in this increment");process::exit(1);}
@@ -19282,6 +19311,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
                 return t;
             }
             if ["hb_flink","hb_flinksym","hb_flinkread","hb_memowrit","hb_dircreate","ferror"].iter().any(|b|is_builtin(id,b)) {return if is_builtin(id,"hb_flinkread"){Ty::StrOwn}else if is_builtin(id,"hb_memowrit"){Ty::Bool}else{Ty::I64};}
+            if is_builtin(id,"hb_sha1") || is_builtin(id,"hb_hmac_sha1") {return Ty::StrOwn;}
             if id=="hrbase_wait" {return Ty::I64;}
             if is_builtin(id,"setcursor") || is_builtin(id,"dirmake") || is_builtin(id,"inkey") {return Ty::I64;}
             if is_builtin(id,"file") {return Ty::Bool;}
@@ -31771,6 +31801,7 @@ hbc_free_lists: .skip 10240
         if gtstd_native {out.push_str(&helper.replace("    syscall\n", "    call hbc_gtstd_wait_write\n"));}
         else {out.push_str(helper);}
     }
+    if out.contains("call hbc_sha1_digest") || out.contains("call hbc_hmac_sha1_digest") {out.push_str(include_str!("../generated/hrsha1.s"));}
     if out.contains("call hbc_base_wait") || out.contains("call hbc_inkey_block_linux") || out.contains("hbc_cursor_") {out.push_str(include_str!("cursor_linux.s"));}
     if out.contains("call hbc_fileio_") { out.push_str(include_str!("fileio_linux.s")); }
     if out.contains("hbc_flink_") || out.contains("hbc_ferror_") {out.push_str(include_str!("flink_linux.s"));}
