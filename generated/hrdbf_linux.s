@@ -1455,22 +1455,22 @@ hrdbf_app_pad_ll:
 	subq	$40, %rsp
 	movq	%rdi, %r10
 	movl	%esi, %r11d
-	movq	%rdx, %r9
+	movq	%rdx, %r8
 	movq	%rdi, %rcx
 	testq	%rdi, %rdi
-	js	.Lhrdbf_332
+	js	.Lhrdbf_333
 	testq	%rdi, %rdi
 	jne	.Lhrdbf_313
 	movb	$48, (%rsp)
 	testl	%esi, %esi
 	jne	.Lhrdbf_314
-.Lhrdbf_331:
+.Lhrdbf_332:
 	movl	$1, %edi
-	movl	$1, %r8d
+	movl	$1, %r9d
 .Lhrdbf_315:
 	movq	%rsp, %rsi
 	leaq	-1(%rsp,%rdi), %rax
-	addq	%r9, %rcx
+	addq	%r8, %rcx
 	.p2align 4,,10
 	.p2align 3
 .Lhrdbf_322:
@@ -1481,7 +1481,7 @@ hrdbf_app_pad_ll:
 	subq	$1, %rax
 	cmpq	%rdx, %rsi
 	jne	.Lhrdbf_322
-	movq	%r8, %rax
+	movq	%r9, %rax
 	addq	$40, %rsp
 	ret
 	.p2align 4,,10
@@ -1489,42 +1489,43 @@ hrdbf_app_pad_ll:
 .Lhrdbf_314:
 	movl	%esi, %esi
 	cmpl	$1, %r11d
-	je	.Lhrdbf_331
-	xorl	%r10d, %r10d
+	je	.Lhrdbf_332
+	xorl	%ecx, %ecx
 	movl	$1, %edi
 .Lhrdbf_320:
 	subq	%rdi, %rsi
-	movq	%r10, %rcx
-	movq	%rsi, %rax
-	subq	%r10, %rax
-	cmpq	%rdi, %rax
-	jbe	.Lhrdbf_325
+	cmpq	%rcx, %rsi
+	je	.Lhrdbf_331
+	xorl	%eax, %eax
+	leaq	1(%rcx), %r10
+	leaq	(%r8,%rcx), %r9
+	subq	%rcx, %rsi
 	.p2align 4,,10
 	.p2align 3
 .Lhrdbf_321:
-	addq	$1, %rcx
-	movq	%rsi, %rax
-	leaq	(%rcx,%rdi), %r8
-	subq	%rcx, %rax
-	movb	$48, -1(%r9,%rcx)
-	movq	%r8, %rdx
-	subq	%r10, %rdx
+	movb	$48, (%r9,%rax)
+	leaq	(%r10,%rax), %rcx
+	movq	%rsi, %rdx
+	addq	$1, %rax
+	subq	%rax, %rdx
 	cmpq	%rax, %rdx
-	jb	.Lhrdbf_321
+	ja	.Lhrdbf_321
+.Lhrdbf_331:
+	leaq	(%rcx,%rdi), %r9
 	jmp	.Lhrdbf_315
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_332:
+.Lhrdbf_333:
 	negq	%rcx
 .Lhrdbf_313:
-	movabs	$-3689348814741910323, %r8
+	movabs	$-3689348814741910323, %r9
 	xorl	%edi, %edi
 	.p2align 4,,10
 	.p2align 3
 .Lhrdbf_316:
 	movq	%rcx, %rax
 	addq	$1, %rdi
-	mulq	%r8
+	mulq	%r9
 	movq	%rcx, %rax
 	shrq	$3, %rdx
 	leaq	(%rdx,%rdx,4), %rsi
@@ -1538,22 +1539,16 @@ hrdbf_app_pad_ll:
 	ja	.Lhrdbf_316
 	testq	%r10, %r10
 	jns	.Lhrdbf_323
-	movb	$45, (%r9)
+	movb	$45, (%r8)
 	movl	$1, %ecx
 .Lhrdbf_317:
 	testl	%r11d, %r11d
-	je	.Lhrdbf_325
+	je	.Lhrdbf_331
 	movl	%r11d, %esi
-	leaq	(%rcx,%rdi), %r8
-	movq	%rcx, %r10
-	cmpq	%r8, %rsi
-	ja	.Lhrdbf_320
-	jmp	.Lhrdbf_315
-	.p2align 4,,10
-	.p2align 3
-.Lhrdbf_325:
-	leaq	(%rcx,%rdi), %r8
-	jmp	.Lhrdbf_315
+	leaq	(%rcx,%rdi), %r9
+	cmpq	%r9, %rsi
+	jbe	.Lhrdbf_315
+	jmp	.Lhrdbf_320
 .Lhrdbf_323:
 	xorl	%ecx, %ecx
 	jmp	.Lhrdbf_317
@@ -1578,7 +1573,7 @@ hrdbf_file_append.part.0:
 	movl	$4, %eax
 	leaq	0(%rbp,%r12), %r14
 	cmpq	$67108864, %r14
-	ja	.Lhrdbf_333
+	ja	.Lhrdbf_334
 	movl	$9, %r13d
 	movq	%rdi, %rbx
 	movq	%rsi, %r15
@@ -1594,40 +1589,40 @@ hrdbf_file_append.part.0:
 	movq	%rax, %r13
 	movl	$8, %eax
 	cmpq	$4094, %rdx
-	jbe	.Lhrdbf_333
+	jbe	.Lhrdbf_334
 	testq	%r13, %r13
-	je	.Lhrdbf_333
+	je	.Lhrdbf_334
 	xorl	%edx, %edx
 	xorl	%eax, %eax
 	cmpq	$0, 2264(%rbx)
-	je	.Lhrdbf_338
+	je	.Lhrdbf_339
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_335:
+.Lhrdbf_336:
 	movq	2256(%rbx), %rcx
 	movzbl	(%rcx,%rax), %ecx
 	movb	%cl, 0(%r13,%rax)
 	leal	1(%rdx), %eax
 	movq	%rax, %rdx
 	cmpq	2264(%rbx), %rax
-	jb	.Lhrdbf_335
-.Lhrdbf_338:
+	jb	.Lhrdbf_336
+.Lhrdbf_339:
 	leaq	0(%r13,%rbp), %r8
 	xorl	%eax, %eax
 	cmpw	$0, 34(%rbx)
 	movq	%r8, %rdx
-	je	.Lhrdbf_337
+	je	.Lhrdbf_338
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_336:
+.Lhrdbf_337:
 	movb	$32, (%r8,%rax)
 	movzwl	34(%rbx), %ecx
 	addq	$1, %rax
 	movq	%rcx, %rdx
 	cmpl	%eax, %ecx
-	ja	.Lhrdbf_336
+	ja	.Lhrdbf_337
 	addq	%r8, %rdx
-.Lhrdbf_337:
+.Lhrdbf_338:
 	movb	$26, (%rdx)
 	xorl	%edx, %edx
 	movq	%rsp, %rsi
@@ -1635,7 +1630,7 @@ hrdbf_file_append.part.0:
 	movq	%rdx, %rdi
 	syscall
 	testq	%rax, %rax
-	js	.Lhrdbf_339
+	js	.Lhrdbf_340
 	movabs	$1749024623285053783, %rdx
 	movq	(%rsp), %rcx
 	movabs	$4137408090565272301, %rsi
@@ -1714,11 +1709,11 @@ hrdbf_file_append.part.0:
 	shrq	$2, %rdx
 	subq	%rdx, %rcx
 	cmpq	$1529, %rdi
-	jbe	.Lhrdbf_373
+	jbe	.Lhrdbf_374
 	subq	$9, %rsi
 	cmpq	$3, %rsi
 	adcq	$0, %r9
-.Lhrdbf_341:
+.Lhrdbf_342:
 	subl	$108, %r9d
 	movb	%sil, 2(%r13)
 	movl	$7, %edx
@@ -1733,56 +1728,56 @@ hrdbf_file_append.part.0:
 	movl	%eax, 4(%r13)
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_344:
+.Lhrdbf_345:
 	movq	2280(%rbx), %rdi
 	movq	%r9, %rax
 	syscall
 	cmpq	$-4, %rax
-	je	.Lhrdbf_344
+	je	.Lhrdbf_345
 	testq	%rax, %rax
-	jle	.Lhrdbf_339
+	jle	.Lhrdbf_340
 	cmpq	%rdx, %rax
-	ja	.Lhrdbf_339
+	ja	.Lhrdbf_340
 	addq	%rax, %rsi
 	addq	%rax, %r10
 	subq	%rax, %rdx
-	jne	.Lhrdbf_344
+	jne	.Lhrdbf_345
 	leaq	28(%r13), %rsi
 	movl	$18, %r9d
 	movl	$1, %edx
-.Lhrdbf_345:
+.Lhrdbf_346:
 	movq	2280(%rbx), %rdi
 	movl	$28, %r10d
 	movq	%r9, %rax
 	syscall
 	cmpq	$-4, %rax
-	je	.Lhrdbf_345
+	je	.Lhrdbf_346
 	cmpq	$1, %rax
-	jne	.Lhrdbf_339
+	jne	.Lhrdbf_340
 	movl	$18, %r9d
 	movq	%r8, %rsi
 	movq	%rbp, %r10
 	movq	%r12, %rdx
-.Lhrdbf_346:
+.Lhrdbf_347:
 	movq	2280(%rbx), %rdi
 	movq	%r9, %rax
 	syscall
 	cmpq	$-4, %rax
-	je	.Lhrdbf_346
+	je	.Lhrdbf_347
 	testq	%rax, %rax
-	jle	.Lhrdbf_339
+	jle	.Lhrdbf_340
 	cmpq	%rdx, %rax
-	ja	.Lhrdbf_339
+	ja	.Lhrdbf_340
 	addq	%rax, %rsi
 	addq	%rax, %r10
 	subq	%rax, %rdx
-	jne	.Lhrdbf_346
+	jne	.Lhrdbf_347
 	movq	2256(%rbx), %rdi
 	movq	2264(%rbx), %rsi
 	movl	$11, %eax
 	syscall
 	testq	%rax, %rax
-	js	.Lhrdbf_339
+	js	.Lhrdbf_340
 	movl	16(%rbx), %eax
 	xorl	%edx, %edx
 	movq	%r13, (%rbx)
@@ -1795,7 +1790,7 @@ hrdbf_file_append.part.0:
 	movq	%rdi, 24(%rbx)
 	movw	%dx, 38(%rbx)
 	movl	%edi, (%r15)
-.Lhrdbf_333:
+.Lhrdbf_334:
 	addq	$24, %rsp
 	popq	%rbx
 	popq	%rbp
@@ -1806,7 +1801,7 @@ hrdbf_file_append.part.0:
 	ret
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_339:
+.Lhrdbf_340:
 	movl	$11, %eax
 	xorl	%edx, %edx
 	movq	%r13, %rdi
@@ -1823,9 +1818,9 @@ hrdbf_file_append.part.0:
 	ret
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_373:
+.Lhrdbf_374:
 	addq	$3, %rsi
-	jmp	.Lhrdbf_341
+	jmp	.Lhrdbf_342
 	.size	hrdbf_file_append.part.0, .-hrdbf_file_append.part.0
 	.p2align 4
 	.type	hrntx_file_close.constprop.0, @function
@@ -1838,35 +1833,35 @@ hrntx_file_close.constprop.0:
 	movq	$0, hrdbf_app_order+16(%rip)
 	movq	$0, hrdbf_app_order+24(%rip)
 	testq	%rdi, %rdi
-	je	.Lhrdbf_375
+	je	.Lhrdbf_376
 	movq	hrdbf_app_order+48(%rip), %rsi
 	movl	$11, %eax
 	xorl	%edx, %edx
 	syscall
 	movl	$7, %r8d
 	testq	%rax, %rax
-	js	.Lhrdbf_375
+	js	.Lhrdbf_376
 	movq	$0, hrdbf_app_order+32(%rip)
 	xorl	%r8d, %r8d
 	movq	$0, hrdbf_app_order+48(%rip)
-.Lhrdbf_375:
+.Lhrdbf_376:
 	movq	hrdbf_app_order+40(%rip), %rdi
 	testq	%rdi, %rdi
-	je	.Lhrdbf_374
+	je	.Lhrdbf_375
 	movq	hrdbf_app_order+56(%rip), %rsi
 	movl	$11, %eax
 	xorl	%edx, %edx
 	syscall
 	testq	%rax, %rax
-	js	.Lhrdbf_379
+	js	.Lhrdbf_380
 	movq	$0, hrdbf_app_order+40(%rip)
 	movq	$0, hrdbf_app_order+56(%rip)
-.Lhrdbf_374:
+.Lhrdbf_375:
 	movl	%r8d, %eax
 	ret
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_379:
+.Lhrdbf_380:
 	movl	$7, %r8d
 	movl	%r8d, %eax
 	ret
@@ -1877,20 +1872,20 @@ hrdbf_local_dset.constprop.0:
 .Lhrdbf_entry_hrdbf_local_dset.constprop.0:
 	leaq	2090(%rdi), %rax
 	addq	$2249, %rdi
-	jmp	.Lhrdbf_385
+	jmp	.Lhrdbf_386
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_387:
+.Lhrdbf_388:
 	movb	%dl, (%rax)
 	addq	$1, %rax
 	addq	$1, %rsi
 	cmpq	%rdi, %rax
-	jnb	.Lhrdbf_386
-.Lhrdbf_385:
+	jnb	.Lhrdbf_387
+.Lhrdbf_386:
 	movzbl	(%rsi), %edx
 	testb	%dl, %dl
-	jne	.Lhrdbf_387
-.Lhrdbf_386:
+	jne	.Lhrdbf_388
+.Lhrdbf_387:
 	movb	$0, (%rax)
 	ret
 	.size	hrdbf_local_dset.constprop.0, .-hrdbf_local_dset.constprop.0
@@ -1906,10 +1901,10 @@ hrdbf_local_cxmark.isra.0:
 	movzbl	(%rdi), %edx
 	sall	%cl, %eax
 	testb	%al, %dl
-	jne	.Lhrdbf_388
+	jne	.Lhrdbf_389
 	orl	%eax, %edx
 	movb	%dl, (%rdi)
-.Lhrdbf_388:
+.Lhrdbf_389:
 	ret
 	.size	hrdbf_local_cxmark.isra.0, .-hrdbf_local_cxmark.isra.0
 	.p2align 4
@@ -1932,50 +1927,50 @@ hrcdx_open:
 	movq	$0, 16(%rdi)
 	movq	$0, 24(%rdi)
 	cmpq	$67106816, %rax
-	ja	.Lhrdbf_394
+	ja	.Lhrdbf_395
 	movq	%rsi, %r12
 	testq	%rsi, %rsi
-	je	.Lhrdbf_394
+	je	.Lhrdbf_395
 	movq	%rdx, %rbp
 	testl	$511, %edx
-	jne	.Lhrdbf_394
+	jne	.Lhrdbf_395
 	movq	%rcx, %r13
 	testq	%rcx, %rcx
-	je	.Lhrdbf_394
+	je	.Lhrdbf_395
 	cmpb	$0, 40(%rcx)
-	je	.Lhrdbf_394
+	je	.Lhrdbf_395
 	movq	%rdi, %rbx
 	movl	$1, %edx
 	movl	$224, %esi
 	movq	%r12, %rdi
 	call .Lhrdbf_entry_hrdbf_local_cxheader
 	testl	%eax, %eax
-	jne	.Lhrdbf_390
+	jne	.Lhrdbf_391
 	cmpw	$10, 12(%r12)
 	movl	$2, %eax
-	jne	.Lhrdbf_390
+	jne	.Lhrdbf_391
 	cmpw	$1, 510(%r12)
-	jne	.Lhrdbf_390
+	jne	.Lhrdbf_391
 	cmpb	$0, 512(%r12)
-	jne	.Lhrdbf_390
+	jne	.Lhrdbf_391
 	movl	(%r12), %r10d
 	cmpl	$1023, %r10d
-	jbe	.Lhrdbf_394
+	jbe	.Lhrdbf_395
 	testl	$511, %r10d
-	jne	.Lhrdbf_394
+	jne	.Lhrdbf_395
 	movl	%r10d, %edx
 	leaq	-512(%rbp), %r11
 	cmpq	%r11, %rdx
-	ja	.Lhrdbf_394
+	ja	.Lhrdbf_395
 	leaq	(%r12,%rdx), %rdi
 	cmpw	$3, (%rdi)
-	jne	.Lhrdbf_390
+	jne	.Lhrdbf_391
 	cmpw	$1, 2(%r12,%rdx)
-	jne	.Lhrdbf_390
+	jne	.Lhrdbf_391
 	cmpl	$-1, 4(%r12,%rdx)
-	jne	.Lhrdbf_394
+	jne	.Lhrdbf_395
 	cmpl	$-1, 8(%r12,%rdx)
-	jne	.Lhrdbf_394
+	jne	.Lhrdbf_395
 	leaq	64(%rsp), %rdx
 	movl	$10, %esi
 	movl	%r10d, 24(%rsp)
@@ -1984,7 +1979,7 @@ hrcdx_open:
 	movq	%rdi, 8(%rsp)
 	call .Lhrdbf_entry_hrdbf_local_cxleaf_header
 	testl	%eax, %eax
-	jne	.Lhrdbf_390
+	jne	.Lhrdbf_391
 	leaq	52(%rsp), %rax
 	xorl	%edx, %edx
 	movq	%r8, %r14
@@ -1997,58 +1992,58 @@ hrcdx_open:
 	call .Lhrdbf_entry_hrdbf_local_cxkey
 	popq	%rdx
 	testl	%eax, %eax
-	jne	.Lhrdbf_390
+	jne	.Lhrdbf_391
 	movl	80(%rsp), %eax
 	leal	24(%rax), %edx
 	movq	56(%rsp), %rax
 	subq	%rdx, %rax
 	movzwl	66(%rsp), %edx
 	cmpq	%rdx, %rax
-	jne	.Lhrdbf_394
+	jne	.Lhrdbf_395
 	movl	52(%rsp), %r8d
 	cmpl	$1023, %r8d
-	jbe	.Lhrdbf_394
+	jbe	.Lhrdbf_395
 	testl	$511, %r8d
-	jne	.Lhrdbf_394
+	jne	.Lhrdbf_395
 	movq	16(%rsp), %r11
 	movl	%r8d, %r9d
 	cmpq	%r9, %r11
-	jb	.Lhrdbf_394
+	jb	.Lhrdbf_395
 	leaq	-1024(%rbp), %rax
 	cmpq	%r9, %rax
-	jb	.Lhrdbf_394
+	jb	.Lhrdbf_395
 	movl	24(%rsp), %r10d
 	cmpl	%r10d, %r8d
-	je	.Lhrdbf_394
+	je	.Lhrdbf_395
 	leal	512(%r8), %r11d
 	cmpl	%r10d, %r11d
-	je	.Lhrdbf_394
+	je	.Lhrdbf_395
 	movabs	$-8646911293074243583, %rdx
 	xorl	%eax, %eax
-	jmp	.Lhrdbf_395
-.Lhrdbf_468:
+	jmp	.Lhrdbf_396
+.Lhrdbf_469:
 	movq	%rdx, %rsi
 	shrq	%cl, %rsi
 	movq	%rsi, %rcx
 	andb	$1, %cl
-	je	.Lhrdbf_432
+	je	.Lhrdbf_433
 	addq	$1, %rax
 	cmpq	$10, %rax
-	je	.Lhrdbf_467
-.Lhrdbf_395:
+	je	.Lhrdbf_468
+.Lhrdbf_396:
 	movzbl	96(%rsp,%rax), %ecx
 	movb	%cl, 8(%rsp)
 	subl	$32, %ecx
 	cmpb	$63, %cl
-	jbe	.Lhrdbf_468
-.Lhrdbf_432:
+	jbe	.Lhrdbf_469
+.Lhrdbf_433:
 	movl	$2, %eax
-	jmp	.Lhrdbf_390
+	jmp	.Lhrdbf_391
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_394:
+.Lhrdbf_395:
 	movl	$1, %eax
-.Lhrdbf_390:
+.Lhrdbf_391:
 	addq	$936, %rsp
 	popq	%rbx
 	popq	%rbp
@@ -2057,7 +2052,7 @@ hrcdx_open:
 	popq	%r14
 	popq	%r15
 	ret
-.Lhrdbf_467:
+.Lhrdbf_468:
 	leaq	(%r12,%r9), %rax
 	xorl	%edx, %edx
 	movl	$96, %esi
@@ -2065,84 +2060,84 @@ hrcdx_open:
 	movq	%rax, 24(%rsp)
 	call .Lhrdbf_entry_hrdbf_local_cxheader
 	testl	%eax, %eax
-	jne	.Lhrdbf_390
+	jne	.Lhrdbf_391
 	movzwl	510(%r12,%r9), %eax
 	leaq	-2(%rax), %rdx
 	cmpq	$254, %rdx
-	ja	.Lhrdbf_432
+	ja	.Lhrdbf_433
 	leaq	(%r11,%rax), %rdx
 	cmpb	$0, -1(%r12,%rdx)
-	jne	.Lhrdbf_432
+	jne	.Lhrdbf_433
 	cmpb	$0, (%r12,%rdx)
-	jne	.Lhrdbf_432
+	jne	.Lhrdbf_433
 	xorl	%edx, %edx
 	leaq	(%r12,%r11), %rdi
 	subq	$1, %rax
-.Lhrdbf_396:
+.Lhrdbf_397:
 	cmpb	$0, (%rdi,%rdx)
-	je	.Lhrdbf_432
+	je	.Lhrdbf_433
 	addq	$1, %rdx
 	cmpq	%rdx, %rax
-	ja	.Lhrdbf_396
+	ja	.Lhrdbf_397
 	movzwl	36(%r13), %ecx
 	xorl	%r11d, %r11d
 	movl	%ecx, 36(%rsp)
 	movzwl	%cx, %ecx
 	movq	%rcx, 40(%rsp)
-.Lhrdbf_397:
+.Lhrdbf_398:
 	cmpq	%r11, 40(%rsp)
-	jbe	.Lhrdbf_432
+	jbe	.Lhrdbf_433
 	movq	%r11, %rdx
 	salq	$4, %rdx
 	leaq	0(%r13,%rdx), %rcx
 	xorl	%edx, %edx
 	movq	%rcx, 8(%rsp)
-.Lhrdbf_406:
+.Lhrdbf_407:
 	movq	8(%rsp), %rcx
 	movzbl	42(%rcx,%rdx), %ecx
 	movb	%cl, 16(%rsp)
 	testb	%cl, %cl
-	je	.Lhrdbf_400
+	je	.Lhrdbf_401
 	leal	-97(%rcx), %esi
 	cmpb	$25, %sil
-	ja	.Lhrdbf_401
+	ja	.Lhrdbf_402
 	subl	$32, %ecx
 	movb	%cl, 16(%rsp)
-.Lhrdbf_401:
+.Lhrdbf_402:
 	movzbl	(%rdi,%rdx), %esi
 	leal	-97(%rsi), %ecx
 	cmpb	$25, %cl
-	ja	.Lhrdbf_402
+	ja	.Lhrdbf_403
 	subl	$32, %esi
-.Lhrdbf_402:
+.Lhrdbf_403:
 	cmpb	16(%rsp), %sil
-	jne	.Lhrdbf_400
+	jne	.Lhrdbf_401
 	addq	$1, %rdx
 	cmpq	%rdx, %rax
-	je	.Lhrdbf_398
+	je	.Lhrdbf_399
 	cmpq	$11, %rdx
-	jne	.Lhrdbf_406
+	jne	.Lhrdbf_407
 	cmpq	$11, %rax
-	jne	.Lhrdbf_400
-.Lhrdbf_404:
+	jne	.Lhrdbf_401
+.Lhrdbf_405:
 	cmpl	%r11d, 36(%rsp)
-	je	.Lhrdbf_432
+	je	.Lhrdbf_433
 	movq	8(%rsp), %rax
 	cmpb	$67, 53(%rax)
-	jne	.Lhrdbf_432
+	jne	.Lhrdbf_433
 	movzbl	54(%rax), %eax
 	cmpb	$-16, %al
-	ja	.Lhrdbf_431
+	ja	.Lhrdbf_432
 	cmpw	12(%r12,%r9), %ax
-	jne	.Lhrdbf_432
+	jne	.Lhrdbf_433
 	movl	16(%r13), %eax
 	cmpq	%r15, %rax
-	ja	.Lhrdbf_436
+	ja	.Lhrdbf_437
 	testq	%r14, %r14
-	jne	.Lhrdbf_438
+	jne	.Lhrdbf_439
 	testl	%eax, %eax
-	jne	.Lhrdbf_436
-.Lhrdbf_438:
+	jne	.Lhrdbf_437
+.Lhrdbf_439:
 	movq	%rbp, %r9
 	addq	$7, %rax
 	shrq	$9, %r9
@@ -2150,29 +2145,29 @@ hrcdx_open:
 	addq	$7, %r9
 	shrq	$3, %r9
 	cmpq	$0, 992(%rsp)
-	je	.Lhrdbf_436
+	je	.Lhrdbf_437
 	addq	%r9, %rax
 	cmpq	1000(%rsp), %rax
-	ja	.Lhrdbf_436
+	ja	.Lhrdbf_437
 	xorl	%edx, %edx
-.Lhrdbf_408:
+.Lhrdbf_409:
 	movq	992(%rsp), %rcx
 	movb	$0, (%rcx,%rdx)
 	addq	$1, %rdx
 	cmpq	%rdx, %rax
-	jne	.Lhrdbf_408
+	jne	.Lhrdbf_409
 	movzbl	(%rcx), %eax
 	testb	$1, %al
-	jne	.Lhrdbf_409
+	jne	.Lhrdbf_410
 	orl	$1, %eax
 	movb	%al, (%rcx)
-.Lhrdbf_409:
+.Lhrdbf_410:
 	testb	$2, %al
-	jne	.Lhrdbf_410
+	jne	.Lhrdbf_411
 	movq	992(%rsp), %rcx
 	orl	$2, %eax
 	movb	%al, (%rcx)
-.Lhrdbf_410:
+.Lhrdbf_411:
 	movq	992(%rsp), %rdi
 	movl	%r10d, %esi
 	shrl	$9, %r8d
@@ -2207,68 +2202,68 @@ hrcdx_open:
 	salq	$32, %rax
 	movq	%rax, 400(%rsp)
 	leaq	352(%rsp), %rax
-.Lhrdbf_411:
+.Lhrdbf_412:
 	movl	$0, 312(%rax)
 	addq	$4, %rax
 	movl	$0, 52(%rax)
 	cmpq	%rdx, %rax
-	jne	.Lhrdbf_411
+	jne	.Lhrdbf_412
 	movq	24(%rsp), %rax
 	xorl	%edx, %edx
 	leaq	352(%rsp), %rdi
 	movl	(%rax), %esi
 	call .Lhrdbf_entry_hrdbf_local_cxvisit
 	testl	%eax, %eax
-	je	.Lhrdbf_469
-.Lhrdbf_412:
+	je	.Lhrdbf_470
+.Lhrdbf_413:
 	movq	$0, (%rbx)
 	movq	$0, 8(%rbx)
 	movq	$0, 16(%rbx)
 	movq	$0, 24(%rbx)
-	jmp	.Lhrdbf_390
-.Lhrdbf_398:
+	jmp	.Lhrdbf_391
+.Lhrdbf_399:
 	cmpq	$11, %rax
-	je	.Lhrdbf_404
+	je	.Lhrdbf_405
 	movq	%r11, %rdx
 	salq	$4, %rdx
 	addq	%r13, %rdx
 	cmpb	$0, 42(%rdx,%rax)
-	je	.Lhrdbf_404
-.Lhrdbf_400:
+	je	.Lhrdbf_405
+.Lhrdbf_401:
 	addq	$1, %r11
-	jmp	.Lhrdbf_397
-.Lhrdbf_436:
+	jmp	.Lhrdbf_398
+.Lhrdbf_437:
 	movl	$3, %eax
-	jmp	.Lhrdbf_390
-.Lhrdbf_431:
+	jmp	.Lhrdbf_391
+.Lhrdbf_432:
 	movl	$5, %eax
-	jmp	.Lhrdbf_390
-.Lhrdbf_469:
+	jmp	.Lhrdbf_391
+.Lhrdbf_470:
 	movl	400(%rsp), %ecx
 	movl	$4, %eax
 	cmpl	16(%r13), %ecx
-	jne	.Lhrdbf_412
+	jne	.Lhrdbf_413
 	xorl	%edx, %edx
-	jmp	.Lhrdbf_414
-.Lhrdbf_470:
+	jmp	.Lhrdbf_415
+.Lhrdbf_471:
 	cmpq	$63, %rdx
-	ja	.Lhrdbf_439
-.Lhrdbf_414:
+	ja	.Lhrdbf_440
+.Lhrdbf_415:
 	movl	408(%rsp,%rdx,4), %eax
 	testl	%eax, %eax
-	je	.Lhrdbf_413
+	je	.Lhrdbf_414
 	xorl	%eax, %eax
 	cmpl	$-1, 664(%rsp,%rdx,4)
 	setne	%al
-.Lhrdbf_413:
+.Lhrdbf_414:
 	addq	$1, %rdx
 	testb	$1, %al
-	je	.Lhrdbf_470
-.Lhrdbf_439:
+	je	.Lhrdbf_471
+.Lhrdbf_440:
 	testl	%eax, %eax
-	jne	.Lhrdbf_412
+	jne	.Lhrdbf_413
 	movl	%ecx, 24(%rbx)
-	jmp	.Lhrdbf_390
+	jmp	.Lhrdbf_391
 	.size	hrcdx_open, .-hrcdx_open
 	.p2align 4
 	.type	hrdbf_local_put_number.isra.0, @function
@@ -2278,66 +2273,66 @@ hrdbf_local_put_number.isra.0:
 	movl	$3, %r10d
 	movl	%edx, %esi
 	cmpb	$78, %r11b
-	jne	.Lhrdbf_471
+	jne	.Lhrdbf_472
 	movzwl	%cx, %ecx
 	leaq	(%rdi,%rcx), %rdx
 	movzbl	%sil, %ecx
 	cmpl	%r9d, %ecx
-	jb	.Lhrdbf_492
+	jb	.Lhrdbf_493
 	subl	%r9d, %ecx
-	je	.Lhrdbf_477
+	je	.Lhrdbf_478
 	leal	-1(%rcx), %edi
 	movq	%rdx, %rax
 	addq	%rdx, %rdi
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_478:
+.Lhrdbf_479:
 	movq	%rax, %rsi
 	movb	$32, (%rax)
 	addq	$1, %rax
 	cmpq	%rdi, %rsi
-	jne	.Lhrdbf_478
-.Lhrdbf_477:
+	jne	.Lhrdbf_479
+.Lhrdbf_478:
 	testl	%r9d, %r9d
-	je	.Lhrdbf_476
+	je	.Lhrdbf_477
 	leal	-1(%r9), %eax
 	leaq	1(%r8,%rax), %rdi
 	movl	%ecx, %eax
 	subl	%r8d, %eax
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_479:
+.Lhrdbf_480:
 	movzbl	(%r8), %esi
 	leal	(%rax,%r8), %ecx
 	addq	$1, %r8
 	movb	%sil, (%rdx,%rcx)
 	cmpq	%rdi, %r8
-	jne	.Lhrdbf_479
-.Lhrdbf_476:
+	jne	.Lhrdbf_480
+.Lhrdbf_477:
 	xorl	%r10d, %r10d
-.Lhrdbf_471:
+.Lhrdbf_472:
 	movl	%r10d, %eax
 	ret
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_492:
+.Lhrdbf_493:
 	movq	%rdx, %rax
 	movzbl	%sil, %edx
 	addq	%rax, %rdx
 	testl	%ecx, %ecx
-	je	.Lhrdbf_476
+	je	.Lhrdbf_477
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_475:
+.Lhrdbf_476:
 	movb	$42, (%rax)
 	addq	$1, %rax
 	cmpq	%rax, %rdx
-	je	.Lhrdbf_476
+	je	.Lhrdbf_477
 	movb	$42, (%rax)
 	addq	$1, %rax
 	cmpq	%rax, %rdx
-	jne	.Lhrdbf_475
-	jmp	.Lhrdbf_476
+	jne	.Lhrdbf_476
+	jmp	.Lhrdbf_477
 	.size	hrdbf_local_put_number.isra.0, .-hrdbf_local_put_number.isra.0
 	.p2align 4
 	.type	hrdbf_write_number_scaled.part.0, @function
@@ -2352,52 +2347,52 @@ hrdbf_write_number_scaled.part.0:
 	subq	$112, %rsp
 	movzbl	13(%rsi), %r13d
 	cmpb	$17, %r13b
-	ja	.Lhrdbf_493
+	ja	.Lhrdbf_494
 	movzbl	12(%rsi), %r12d
 	movq	%rsi, %r10
 	cmpl	$17, %ecx
-	ja	.Lhrdbf_519
+	ja	.Lhrdbf_520
 	cmpb	%r12b, %r13b
-	jnb	.Lhrdbf_519
+	jnb	.Lhrdbf_520
 	movq	%rdi, %rbp
 	movq	%rdx, %rsi
 	xorl	%r8d, %r8d
 	testq	%rdx, %rdx
-	jns	.Lhrdbf_495
+	jns	.Lhrdbf_496
 	negq	%rsi
 	movl	$1, %r8d
-.Lhrdbf_495:
+.Lhrdbf_496:
 	movzbl	%r13b, %ebx
 	cmpl	%ebx, %ecx
-	jbe	.Lhrdbf_496
+	jbe	.Lhrdbf_497
 	subl	%ebx, %ecx
-	je	.Lhrdbf_497
+	je	.Lhrdbf_498
 	xorl	%eax, %eax
 	movl	$1, %edi
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_498:
+.Lhrdbf_499:
 	leaq	(%rdi,%rdi,4), %rdi
 	addl	$1, %eax
 	addq	%rdi, %rdi
 	cmpl	%eax, %ecx
-	jne	.Lhrdbf_498
+	jne	.Lhrdbf_499
 	movq	%rsi, %rax
 	xorl	%edx, %edx
 	divq	%rdi
 	shrq $1, %rdi
 	movq	%rax, %rsi
 	cmpq	%rdi, %rdx
-	jb	.Lhrdbf_499
-.Lhrdbf_497:
+	jb	.Lhrdbf_500
+.Lhrdbf_498:
 	addq	$1, %rsi
-.Lhrdbf_499:
+.Lhrdbf_500:
 	movabs	$-3689348814741910323, %r9
 	movq	%rsp, %rdi
 	xorl	%ecx, %ecx
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_504:
+.Lhrdbf_505:
 	movq	%rsi, %rax
 	movl	%ecx, %r11d
 	addq	$1, %rdi
@@ -2413,7 +2408,7 @@ hrdbf_write_number_scaled.part.0:
 	addl	$48, %eax
 	movb	%al, -1(%rdi)
 	cmpq	$9, %r14
-	ja	.Lhrdbf_504
+	ja	.Lhrdbf_505
 	movl	%ecx, %r9d
 	movl	$1, %edx
 	leal	1(%rbx), %esi
@@ -2428,43 +2423,43 @@ hrdbf_write_number_scaled.part.0:
 	leal	(%r9,%r8), %edx
 	addl	%edx, %esi
 	cmpl	%edi, %esi
-	ja	.Lhrdbf_547
+	ja	.Lhrdbf_548
 	testl	%r8d, %r8d
-	je	.Lhrdbf_510
+	je	.Lhrdbf_511
 	movb	$45, 48(%rsp)
-.Lhrdbf_510:
+.Lhrdbf_511:
 	cmpl	%ecx, %ebx
-	jb	.Lhrdbf_548
+	jb	.Lhrdbf_549
 	leal	1(%r8), %r9d
 	movl	%r8d, %r8d
 	movb	$48, 48(%rsp,%r8)
-.Lhrdbf_512:
+.Lhrdbf_513:
 	testb	%r13b, %r13b
-	je	.Lhrdbf_514
+	je	.Lhrdbf_515
 	cmpl	%ecx, %ebx
 	movl	%r9d, %edx
 	leal	1(%r9), %eax
 	cmovbe	%ebx, %ecx
 	movb	$46, 48(%rsp,%rdx)
 	subl	%ecx, %ebx
-	je	.Lhrdbf_515
+	je	.Lhrdbf_516
 	leal	1(%rbx,%r9), %edi
 	movl	%eax, %edx
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_516:
+.Lhrdbf_517:
 	movl	%edx, %esi
 	addl	$1, %edx
 	movb	$48, 48(%rsp,%rsi)
 	cmpl	%edx, %edi
-	jne	.Lhrdbf_516
+	jne	.Lhrdbf_517
 	addl	%ebx, %eax
-.Lhrdbf_515:
+.Lhrdbf_516:
 	leal	(%rcx,%rax), %r9d
 	leal	-1(%rcx,%rax), %esi
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_517:
+.Lhrdbf_518:
 	movl	%esi, %ecx
 	movl	%eax, %edx
 	subl	%eax, %ecx
@@ -2472,15 +2467,15 @@ hrdbf_write_number_scaled.part.0:
 	movzbl	(%rsp,%rcx), %ecx
 	movb	%cl, 48(%rsp,%rdx)
 	cmpl	%eax, %r9d
-	jne	.Lhrdbf_517
-.Lhrdbf_514:
+	jne	.Lhrdbf_518
+.Lhrdbf_515:
 	movzbl	11(%r10), %esi
 	leaq	48(%rsp), %r8
 	movl	%r14d, %ecx
 	movl	%r12d, %edx
 	movq	%rbp, %rdi
 	call .Lhrdbf_entry_hrdbf_local_put_number.isra.0
-.Lhrdbf_493:
+.Lhrdbf_494:
 	addq	$112, %rsp
 	popq	%rbx
 	popq	%rbp
@@ -2490,7 +2485,7 @@ hrdbf_write_number_scaled.part.0:
 	ret
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_519:
+.Lhrdbf_520:
 	addq	$112, %rsp
 	movl	$4, %eax
 	popq	%rbx
@@ -2501,64 +2496,64 @@ hrdbf_write_number_scaled.part.0:
 	ret
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_496:
-	jnb	.Lhrdbf_499
+.Lhrdbf_497:
+	jnb	.Lhrdbf_500
 	movl	%ebx, %edi
 	subl	%ecx, %edi
-	je	.Lhrdbf_499
+	je	.Lhrdbf_500
 	movabs	$1844674407370955161, %rdx
 	cmpq	%rdx, %rsi
-	ja	.Lhrdbf_500
+	ja	.Lhrdbf_501
 	xorl	%eax, %eax
-	jmp	.Lhrdbf_501
+	jmp	.Lhrdbf_502
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_503:
+.Lhrdbf_504:
 	cmpq	%rdx, %rsi
-	ja	.Lhrdbf_500
-.Lhrdbf_501:
+	ja	.Lhrdbf_501
+.Lhrdbf_502:
 	leaq	(%rsi,%rsi,4), %rsi
 	addl	$1, %eax
 	addq	%rsi, %rsi
 	cmpl	%eax, %edi
-	jne	.Lhrdbf_503
-	jmp	.Lhrdbf_499
-	.p2align 4,,10
-	.p2align 3
-.Lhrdbf_548:
-	testl	%r9d, %r9d
-	je	.Lhrdbf_523
-	movl	%edx, %r9d
-	addl	%r8d, %r11d
-	jmp	.Lhrdbf_513
+	jne	.Lhrdbf_504
+	jmp	.Lhrdbf_500
 	.p2align 4,,10
 	.p2align 3
 .Lhrdbf_549:
+	testl	%r9d, %r9d
+	je	.Lhrdbf_524
+	movl	%edx, %r9d
+	addl	%r8d, %r11d
+	jmp	.Lhrdbf_514
+	.p2align 4,,10
+	.p2align 3
+.Lhrdbf_550:
 	movl	%r11d, %eax
 	movl	%esi, %r8d
 	subl	%esi, %eax
 	movzbl	(%rsp,%rax), %eax
-.Lhrdbf_513:
+.Lhrdbf_514:
 	leal	1(%r8), %esi
 	movl	%r8d, %r8d
 	movb	%al, 48(%rsp,%r8)
 	cmpl	%esi, %edx
-	jne	.Lhrdbf_549
-	jmp	.Lhrdbf_512
+	jne	.Lhrdbf_550
+	jmp	.Lhrdbf_513
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_547:
+.Lhrdbf_548:
 	xorl	%eax, %eax
 	leaq	0(%rbp,%r14), %rdx
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_508:
+.Lhrdbf_509:
 	movb	$42, (%rdx,%rax)
 	addq	$1, %rax
 	cmpl	%eax, %edi
-	ja	.Lhrdbf_508
+	ja	.Lhrdbf_509
 	xorl	%eax, %eax
-.Lhrdbf_550:
+.Lhrdbf_551:
 	addq	$112, %rsp
 	popq	%rbx
 	popq	%rbp
@@ -2568,22 +2563,22 @@ hrdbf_write_number_scaled.part.0:
 	ret
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_500:
+.Lhrdbf_501:
 	movzwl	14(%r10), %edx
 	xorl	%eax, %eax
 	addq	%rbp, %rdx
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_502:
+.Lhrdbf_503:
 	movb	$42, (%rdx,%rax)
 	addq	$1, %rax
 	cmpl	%eax, %r12d
-	ja	.Lhrdbf_502
+	ja	.Lhrdbf_503
 	xorl	%eax, %eax
-	jmp	.Lhrdbf_550
-.Lhrdbf_523:
+	jmp	.Lhrdbf_551
+.Lhrdbf_524:
 	movl	%r8d, %r9d
-	jmp	.Lhrdbf_512
+	jmp	.Lhrdbf_513
 	.size	hrdbf_write_number_scaled.part.0, .-hrdbf_write_number_scaled.part.0
 	.p2align 4
 	.type	hrdbf_local_bn_shr_round, @function
@@ -2594,41 +2589,41 @@ hrdbf_local_bn_shr_round:
 	movl	%r9d, %esi
 	sall	$5, %esi
 	cmpl	%r8d, %esi
-	jbe	.Lhrdbf_596
+	jbe	.Lhrdbf_597
 	leal	-1(%r8), %edx
 	xorl	%r10d, %r10d
 	cmpl	%edx, %esi
-	ja	.Lhrdbf_597
-.Lhrdbf_558:
+	ja	.Lhrdbf_598
+.Lhrdbf_559:
 	cmpl	$1, %r8d
-	je	.Lhrdbf_559
+	je	.Lhrdbf_560
 	xorl	%ecx, %ecx
-	jmp	.Lhrdbf_562
+	jmp	.Lhrdbf_563
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_560:
+.Lhrdbf_561:
 	addl	$1, %ecx
 	cmpl	%ecx, %edx
-	je	.Lhrdbf_559
-.Lhrdbf_562:
+	je	.Lhrdbf_560
+.Lhrdbf_563:
 	cmpl	%ecx, %esi
-	jbe	.Lhrdbf_560
+	jbe	.Lhrdbf_561
 	movl	%ecx, %eax
 	shrl	$5, %eax
 	movl	(%rdi,%rax,4), %eax
 	shrl	%cl, %eax
 	andl	$1, %eax
-	je	.Lhrdbf_560
+	je	.Lhrdbf_561
 	testl	%r10d, %r10d
 	movl	$3, %edx
 	cmovne	%edx, %eax
-.Lhrdbf_573:
+.Lhrdbf_574:
 	cmpl	$31, %r8d
-	jbe	.Lhrdbf_567
+	jbe	.Lhrdbf_568
 	movl	%r8d, %r11d
 	shrl	$5, %r11d
 	cmpl	%r11d, %r9d
-	jbe	.Lhrdbf_569
+	jbe	.Lhrdbf_570
 	leal	-1(%r9), %ecx
 	movq	%rdi, %rdx
 	movl	%r11d, %esi
@@ -2636,18 +2631,18 @@ hrdbf_local_bn_shr_round:
 	leaq	4(%rdi,%rcx,4), %r10
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_568:
+.Lhrdbf_569:
 	movl	(%rdx,%rsi,4), %ecx
 	addq	$4, %rdx
 	movl	%ecx, -4(%rdx)
 	cmpq	%r10, %rdx
-	jne	.Lhrdbf_568
-.Lhrdbf_569:
+	jne	.Lhrdbf_569
+.Lhrdbf_570:
 	movl	%r9d, %edx
 	subl	%r11d, %edx
 	movl	%edx, 288(%rdi)
 	cmpl	%edx, %r9d
-	jbe	.Lhrdbf_567
+	jbe	.Lhrdbf_568
 	movl	%edx, %ecx
 	leal	-1(%r11), %esi
 	leaq	(%rdi,%rcx,4), %rdx
@@ -2655,36 +2650,36 @@ hrdbf_local_bn_shr_round:
 	leaq	4(%rdi,%rcx,4), %rcx
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_570:
+.Lhrdbf_571:
 	movl	$0, (%rdx)
 	addq	$4, %rdx
 	cmpq	%rcx, %rdx
-	jne	.Lhrdbf_570
-.Lhrdbf_567:
+	jne	.Lhrdbf_571
+.Lhrdbf_568:
 	andl	$31, %r8d
-	jne	.Lhrdbf_564
+	jne	.Lhrdbf_565
 	ret
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_597:
+.Lhrdbf_598:
 	movl	%edx, %eax
 	movl	%edx, %ecx
 	shrl	$5, %eax
 	movl	(%rdi,%rax,4), %r10d
 	shrl	%cl, %r10d
 	andl	$1, %r10d
-	jmp	.Lhrdbf_558
+	jmp	.Lhrdbf_559
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_596:
+.Lhrdbf_597:
 	xorl	%eax, %eax
 	testl	%esi, %esi
-	je	.Lhrdbf_553
+	je	.Lhrdbf_554
 	xorl	%r9d, %r9d
 	xorl	%ecx, %ecx
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_555:
+.Lhrdbf_556:
 	movl	%ecx, %edx
 	shrl	$5, %edx
 	movl	(%rdi,%rdx,4), %edx
@@ -2694,14 +2689,14 @@ hrdbf_local_bn_shr_round:
 	cmovne	%ecx, %r9d
 	addl	$1, %ecx
 	cmpl	%ecx, %esi
-	jne	.Lhrdbf_555
+	jne	.Lhrdbf_556
 	testl	%eax, %eax
-	je	.Lhrdbf_553
+	je	.Lhrdbf_554
 	xorl	%r10d, %r10d
 	xorl	%ecx, %ecx
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_556:
+.Lhrdbf_557:
 	movl	%ecx, %edx
 	shrl	$5, %edx
 	movl	(%rdi,%rdx,4), %edx
@@ -2710,10 +2705,10 @@ hrdbf_local_bn_shr_round:
 	andl	$1, %edx
 	addl	%edx, %r10d
 	cmpl	%ecx, %esi
-	jne	.Lhrdbf_556
+	jne	.Lhrdbf_557
 	subl	$1, %r8d
 	cmpl	%r9d, %r8d
-	ja	.Lhrdbf_553
+	ja	.Lhrdbf_554
 	sete	%al
 	xorl	%edx, %edx
 	cmpl	$1, %r10d
@@ -2721,23 +2716,23 @@ hrdbf_local_bn_shr_round:
 	andl	%eax, %edx
 	movl	$3, %eax
 	subl	%edx, %eax
-.Lhrdbf_553:
+.Lhrdbf_554:
 	movl	$1, 288(%rdi)
 	movl	$0, (%rdi)
 	ret
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_559:
+.Lhrdbf_560:
 	leal	(%r10,%r10), %eax
-	jmp	.Lhrdbf_573
+	jmp	.Lhrdbf_574
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_564:
+.Lhrdbf_565:
 	movl	288(%rdi), %ecx
 	pushq	%rbx
 	leal	-1(%rcx), %ebx
 	cmpl	$1, %ecx
-	jbe	.Lhrdbf_571
+	jbe	.Lhrdbf_572
 	movl	$32, %r10d
 	subl	$2, %ecx
 	movq	%rdi, %rdx
@@ -2745,7 +2740,7 @@ hrdbf_local_bn_shr_round:
 	leaq	4(%rdi,%rcx,4), %r11
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_572:
+.Lhrdbf_573:
 	movl	(%rdx), %esi
 	movl	4(%rdx), %r9d
 	movl	%r8d, %ecx
@@ -2756,23 +2751,23 @@ hrdbf_local_bn_shr_round:
 	orl	%r9d, %esi
 	movl	%esi, -4(%rdx)
 	cmpq	%rdx, %r11
-	jne	.Lhrdbf_572
+	jne	.Lhrdbf_573
 	movl	%ebx, %esi
 	movl	%r8d, %ecx
 	movl	(%rdi,%rsi,4), %edx
 	shrl	%cl, %edx
 	movl	%edx, (%rdi,%rsi,4)
 	testl	%edx, %edx
-	je	.Lhrdbf_598
+	je	.Lhrdbf_599
 	popq	%rbx
 	ret
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_598:
+.Lhrdbf_599:
 	movl	%ebx, 288(%rdi)
 	popq	%rbx
 	ret
-.Lhrdbf_571:
+.Lhrdbf_572:
 	movl	%r8d, %ecx
 	shrl	%cl, (%rdi,%rbx,4)
 	popq	%rbx
@@ -2787,7 +2782,7 @@ hrdbf_local_fdec:
 	movabs	$-3689348814741910323, %r9
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_600:
+.Lhrdbf_601:
 	movq	%rsi, %rax
 	movq	%rsi, %rcx
 	mulq	%r9
@@ -2802,55 +2797,55 @@ hrdbf_local_fdec:
 	movq	%rsi, %rax
 	movq	%rdx, %rsi
 	cmpq	$9, %rax
-	jbe	.Lhrdbf_610
+	jbe	.Lhrdbf_611
 	cmpl	$19, %r8d
-	jbe	.Lhrdbf_600
-.Lhrdbf_610:
+	jbe	.Lhrdbf_601
+.Lhrdbf_611:
 	leaq	2289(%rdi), %r10
 	leaq	2448(%rdi), %rsi
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_608:
+.Lhrdbf_609:
 	movb	%cl, 14(%rsp)
 	leal	-1(%r8), %r9d
 	movq	%r10, %rax
 	movb	$0, 15(%rsp)
-	jmp	.Lhrdbf_602
-	.p2align 4,,10
-	.p2align 3
-.Lhrdbf_604:
-	addq	$1, %rax
-	cmpq	%rsi, %rax
-	jnb	.Lhrdbf_603
-.Lhrdbf_602:
-	cmpb	$0, (%rax)
-	jne	.Lhrdbf_604
-	leaq	14(%rsp), %rdx
-	cmpq	%rsi, %rax
-	jb	.Lhrdbf_605
 	jmp	.Lhrdbf_603
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_606:
+.Lhrdbf_605:
+	addq	$1, %rax
+	cmpq	%rsi, %rax
+	jnb	.Lhrdbf_604
+.Lhrdbf_603:
+	cmpb	$0, (%rax)
+	jne	.Lhrdbf_605
+	leaq	14(%rsp), %rdx
+	cmpq	%rsi, %rax
+	jb	.Lhrdbf_606
+	jmp	.Lhrdbf_604
+	.p2align 4,,10
+	.p2align 3
+.Lhrdbf_607:
 	movb	%cl, (%rax)
 	addq	$1, %rax
 	leaq	1(%rdx), %rdi
 	cmpq	%rsi, %rax
-	jnb	.Lhrdbf_603
+	jnb	.Lhrdbf_604
 	movzbl	1(%rdx), %ecx
 	movq	%rdi, %rdx
-.Lhrdbf_605:
+.Lhrdbf_606:
 	testb	%cl, %cl
-	jne	.Lhrdbf_606
-.Lhrdbf_603:
+	jne	.Lhrdbf_607
+.Lhrdbf_604:
 	movb	$0, (%rax)
 	testl	%r9d, %r9d
-	je	.Lhrdbf_599
+	je	.Lhrdbf_600
 	leal	-2(%r8), %eax
 	movl	%r9d, %r8d
 	movzbl	16(%rsp,%rax), %ecx
-	jmp	.Lhrdbf_608
-.Lhrdbf_599:
+	jmp	.Lhrdbf_609
+.Lhrdbf_600:
 	addq	$56, %rsp
 	ret
 	.size	hrdbf_local_fdec, .-hrdbf_local_fdec
@@ -2866,68 +2861,68 @@ hrdbf_local_ferr:
 	pushq	%rbx
 	leaq	2448(%rdi), %rbx
 	movq	%r11, %rax
-	jmp	.Lhrdbf_618
+	jmp	.Lhrdbf_619
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_620:
+.Lhrdbf_621:
 	movb	%cl, (%rax)
 	addq	$1, %rax
 	addq	$1, %rsi
 	cmpq	%rbx, %rax
-	jnb	.Lhrdbf_619
-.Lhrdbf_618:
+	jnb	.Lhrdbf_620
+.Lhrdbf_619:
 	movzbl	(%rsi), %ecx
 	testb	%cl, %cl
-	jne	.Lhrdbf_620
-.Lhrdbf_619:
+	jne	.Lhrdbf_621
+.Lhrdbf_620:
 	movb	$0, (%rax)
 	movq	%r11, %rax
-	jmp	.Lhrdbf_622
+	jmp	.Lhrdbf_623
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_624:
+.Lhrdbf_625:
 	addq	$1, %rax
 	cmpq	%rbx, %rax
-	jnb	.Lhrdbf_623
-.Lhrdbf_622:
+	jnb	.Lhrdbf_624
+.Lhrdbf_623:
 	cmpb	$0, (%rax)
-	jne	.Lhrdbf_624
+	jne	.Lhrdbf_625
 	cmpq	%rax, %rbx
-	jbe	.Lhrdbf_623
+	jbe	.Lhrdbf_624
 	movl	$32, %esi
 	movl	$.Lhrdbf_C1, %ecx
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_625:
+.Lhrdbf_626:
 	movb	%sil, (%rax)
 	addq	$1, %rax
 	addq	$1, %rcx
 	cmpq	%rbx, %rax
-	jnb	.Lhrdbf_623
+	jnb	.Lhrdbf_624
 	movzbl	(%rcx), %esi
 	testb	%sil, %sil
-	jne	.Lhrdbf_625
-.Lhrdbf_623:
+	jne	.Lhrdbf_626
+.Lhrdbf_624:
 	movq	%rdx, %rsi
 	movb	$0, (%rax)
 	negq	%rsi
 	cmovs	%rdx, %rsi
 	call .Lhrdbf_entry_hrdbf_local_fdec
-	jmp	.Lhrdbf_626
+	jmp	.Lhrdbf_627
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_628:
+.Lhrdbf_629:
 	addq	$1, %r11
 	cmpq	%rbx, %r11
-	jnb	.Lhrdbf_627
-.Lhrdbf_626:
+	jnb	.Lhrdbf_628
+.Lhrdbf_627:
 	cmpb	$0, (%r11)
-	jne	.Lhrdbf_628
+	jne	.Lhrdbf_629
 	cmpq	%r11, %rbx
-	jbe	.Lhrdbf_627
+	jbe	.Lhrdbf_628
 	movb	$41, (%r11)
 	addq	$1, %r11
-.Lhrdbf_627:
+.Lhrdbf_628:
 	movb	$0, (%r11)
 	popq	%rbx
 	ret
@@ -2950,13 +2945,13 @@ hrdbf_fmt_harbour.part.0:
 	movl	%edx, 16(%rsp)
 	movq	%xmm0, 40(%rsp)
 	cmpq	$2047, %r9
-	je	.Lhrdbf_641
+	je	.Lhrdbf_642
 	movabs	$4503599627370495, %rax
 	andq	40(%rsp), %rax
 	movq	%rdi, %rbx
 	movq	%rax, 8(%rsp)
 	testq	%r9, %r9
-	je	.Lhrdbf_875
+	je	.Lhrdbf_876
 	btsq	$52, 8(%rsp)
 	movq	8(%rsp), %rax
 	movl	$2, %edi
@@ -2965,7 +2960,7 @@ hrdbf_fmt_harbour.part.0:
 	movl	%eax, %ecx
 	movl	%r9d, %r10d
 	shrq	$32, %rax
-.Lhrdbf_639:
+.Lhrdbf_640:
 	movl	%ecx, 48(%rsp)
 	movl	$340, %esi
 	xorl	%r8d, %r8d
@@ -2973,14 +2968,14 @@ hrdbf_fmt_harbour.part.0:
 	movl	%edi, 336(%rsp)
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_644:
+.Lhrdbf_645:
 	leal	-1(%rdi), %eax
 	leaq	48(%rsp), %rdx
 	leaq	52(%rsp,%rax,4), %r11
 	xorl	%eax, %eax
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_645:
+.Lhrdbf_646:
 	movl	(%rdx), %ecx
 	addq	$4, %rdx
 	leaq	(%rcx,%rcx,4), %rcx
@@ -2988,57 +2983,57 @@ hrdbf_fmt_harbour.part.0:
 	movl	%eax, -4(%rdx)
 	shrq	$32, %rax
 	cmpq	%r11, %rdx
-	jne	.Lhrdbf_645
+	jne	.Lhrdbf_646
 	testq	%rax, %rax
-	je	.Lhrdbf_646
+	je	.Lhrdbf_647
 	movl	%edi, %edx
 	movl	$1, %r8d
 	addl	$1, %edi
 	movl	%eax, 48(%rsp,%rdx,4)
-.Lhrdbf_646:
+.Lhrdbf_647:
 	subl	$1, %esi
-	jne	.Lhrdbf_644
+	jne	.Lhrdbf_645
 	testb	%r8b, %r8b
-	je	.Lhrdbf_648
+	je	.Lhrdbf_649
 	movl	%edi, 336(%rsp)
-.Lhrdbf_648:
+.Lhrdbf_649:
 	movl	%r10d, %esi
 	testl	%r9d, %r9d
-	js	.Lhrdbf_649
+	js	.Lhrdbf_650
 	leaq	48(%rsp), %rdi
 	call .Lhrdbf_entry_hrdbf_local_bn_shl
 	movl	336(%rsp), %eax
-.Lhrdbf_650:
+.Lhrdbf_651:
 	xorl	%ebp, %ebp
-	jmp	.Lhrdbf_654
+	jmp	.Lhrdbf_655
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_655:
+.Lhrdbf_656:
 	cmpq	$80, %rbp
-	je	.Lhrdbf_876
+	je	.Lhrdbf_877
 	leaq	48(%rsp), %rdi
 	call .Lhrdbf_entry_hrdbf_local_bn_divmod_1e9
 	movl	%eax, 1264(%rsp,%rbp,4)
 	movl	336(%rsp), %eax
 	addq	$1, %rbp
-.Lhrdbf_654:
+.Lhrdbf_655:
 	movl	%ebp, %r8d
 	cmpl	$1, %eax
-	jne	.Lhrdbf_655
+	jne	.Lhrdbf_656
 	movl	48(%rsp), %r9d
 	testl	%r9d, %r9d
-	jne	.Lhrdbf_655
+	jne	.Lhrdbf_656
 	testl	%ebp, %ebp
-	jne	.Lhrdbf_877
+	jne	.Lhrdbf_878
 	movl	16(%rsp), %eax
 	testl	%eax, %eax
-	je	.Lhrdbf_640
+	je	.Lhrdbf_641
 	addl	$2, %eax
 	cmpl	%eax, 36(%rsp)
-	jnb	.Lhrdbf_878
-.Lhrdbf_641:
+	jnb	.Lhrdbf_879
+.Lhrdbf_642:
 	xorl	%eax, %eax
-.Lhrdbf_633:
+.Lhrdbf_634:
 	addq	$2312, %rsp
 	popq	%rbx
 	popq	%rbp
@@ -3047,35 +3042,35 @@ hrdbf_fmt_harbour.part.0:
 	popq	%r14
 	popq	%r15
 	ret
-.Lhrdbf_875:
+.Lhrdbf_876:
 	testq	%rax, %rax
-	jne	.Lhrdbf_879
+	jne	.Lhrdbf_880
 	movl	16(%rsp), %eax
 	testl	%eax, %eax
-	je	.Lhrdbf_640
+	je	.Lhrdbf_641
 	addl	$2, %eax
 	cmpl	%eax, 36(%rsp)
-	jb	.Lhrdbf_641
+	jb	.Lhrdbf_642
 	movl	$11824, %ecx
 	leaq	2(%rdi), %rdx
 	movw	%cx, (%rdi)
 	movl	16(%rsp), %edi
 	leal	-1(%rdi), %ecx
 	leaq	3(%rbx,%rcx), %rcx
-.Lhrdbf_643:
+.Lhrdbf_644:
 	movb	$48, (%rdx)
 	addq	$1, %rdx
 	cmpq	%rdx, %rcx
-	jne	.Lhrdbf_643
-	jmp	.Lhrdbf_633
-.Lhrdbf_640:
+	jne	.Lhrdbf_644
+	jmp	.Lhrdbf_634
+.Lhrdbf_641:
 	movl	36(%rsp), %r10d
 	testl	%r10d, %r10d
-	je	.Lhrdbf_641
+	je	.Lhrdbf_642
 	movb	$48, (%rbx)
 	movl	$1, %eax
-	jmp	.Lhrdbf_633
-.Lhrdbf_879:
+	jmp	.Lhrdbf_634
+.Lhrdbf_880:
 	movq	8(%rsp), %rdx
 	movl	$-734, %r10d
 	movl	$-734, %r9d
@@ -3089,45 +3084,45 @@ hrdbf_fmt_harbour.part.0:
 	testq	%rdx, %rdx
 	movl	$0, %edx
 	cmove	%edx, %eax
-	jmp	.Lhrdbf_639
-.Lhrdbf_649:
+	jmp	.Lhrdbf_640
+.Lhrdbf_650:
 	negl	%esi
 	leaq	48(%rsp), %rdi
 	call .Lhrdbf_entry_hrdbf_local_bn_shr_round
 	movl	%eax, %r8d
 	movl	336(%rsp), %eax
 	cmpl	$1, %r8d
-	jbe	.Lhrdbf_650
+	jbe	.Lhrdbf_651
 	testl	%eax, %eax
-	je	.Lhrdbf_749
+	je	.Lhrdbf_750
 	leal	-1(%rax), %edx
 	movq	%rdi, %rsi
 	leaq	52(%rsp,%rdx,4), %rdi
 	movl	$1, %edx
-.Lhrdbf_653:
+.Lhrdbf_654:
 	movl	(%rsi), %ecx
 	addq	$4, %rsi
 	addq	%rcx, %rdx
 	movl	%edx, -4(%rsi)
 	shrq	$32, %rdx
 	cmpq	%rdi, %rsi
-	jne	.Lhrdbf_653
+	jne	.Lhrdbf_654
 	testq	%rdx, %rdx
-	je	.Lhrdbf_650
+	je	.Lhrdbf_651
 	leal	1(%rax), %edx
-.Lhrdbf_652:
+.Lhrdbf_653:
 	movl	$1, 48(%rsp,%rax,4)
 	movl	%edx, %eax
 	movl	%edx, 336(%rsp)
-	jmp	.Lhrdbf_650
-.Lhrdbf_876:
+	jmp	.Lhrdbf_651
+.Lhrdbf_877:
 	movl	$79, %r8d
-.Lhrdbf_658:
+.Lhrdbf_659:
 	movl	%r8d, %eax
 	movl	$1, %ecx
 	movl	$3435973837, %r9d
 	movl	1264(%rsp,%rax,4), %esi
-.Lhrdbf_662:
+.Lhrdbf_663:
 	movl	%esi, %eax
 	movl	%esi, %edx
 	movl	%ecx, %r12d
@@ -3142,7 +3137,7 @@ hrdbf_fmt_harbour.part.0:
 	movb	%dl, 959(%rsp,%rcx)
 	addq	$1, %rcx
 	cmpl	$9, %edi
-	ja	.Lhrdbf_662
+	ja	.Lhrdbf_663
 	leaq	1584(%rsp), %r13
 	leal	-1(%r12), %ecx
 	leaq	1585(%rsp), %rax
@@ -3150,30 +3145,30 @@ hrdbf_fmt_harbour.part.0:
 	leal	-1(%r12,%r13), %esi
 	addq	%rax, %rcx
 	movq	%r13, %rax
-	jmp	.Lhrdbf_664
-.Lhrdbf_880:
+	jmp	.Lhrdbf_665
+.Lhrdbf_881:
 	movl	%esi, %edx
 	subl	%eax, %edx
 	movzbl	960(%rsp,%rdx), %edx
-.Lhrdbf_664:
+.Lhrdbf_665:
 	movb	%dl, (%rax)
 	addq	$1, %rax
 	cmpq	%rax, %rcx
-	jne	.Lhrdbf_880
+	jne	.Lhrdbf_881
 	testl	%r8d, %r8d
-	je	.Lhrdbf_665
+	je	.Lhrdbf_666
 	leaq	1264(%rsp), %r14
 	leal	-1(%r8), %eax
 	movl	$3435973837, %r10d
 	leaq	(%r14,%rax,4), %rbp
-.Lhrdbf_667:
+.Lhrdbf_668:
 	movl	%r11d, %edi
 	movl	0(%rbp), %edx
 	addl	$9, %r11d
 	movl	%r11d, %ecx
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_666:
+.Lhrdbf_667:
 	movl	%edx, %eax
 	movl	%ecx, %esi
 	subl	$1, %ecx
@@ -3186,16 +3181,16 @@ hrdbf_fmt_harbour.part.0:
 	movb	%dl, 1584(%rsp,%rsi)
 	movl	%eax, %edx
 	cmpl	%edi, %ecx
-	jne	.Lhrdbf_666
+	jne	.Lhrdbf_667
 	leaq	-4(%rbp), %rax
 	cmpq	%r14, %rbp
-	je	.Lhrdbf_881
+	je	.Lhrdbf_882
 	movq	%rax, %rbp
-	jmp	.Lhrdbf_667
-.Lhrdbf_881:
+	jmp	.Lhrdbf_668
+.Lhrdbf_882:
 	leal	(%r8,%r8,8), %eax
 	addl	%eax, %r12d
-.Lhrdbf_665:
+.Lhrdbf_666:
 	leal	-341(%r12), %eax
 	xorl	%r8d, %r8d
 	movl	$340, %edi
@@ -3211,14 +3206,14 @@ hrdbf_fmt_harbour.part.0:
 	movl	%r8d, 640(%rsp)
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_669:
+.Lhrdbf_670:
 	leal	-1(%r8), %eax
 	leaq	352(%rsp), %rcx
 	leaq	356(%rsp,%rax,4), %rsi
 	xorl	%eax, %eax
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_670:
+.Lhrdbf_671:
 	movl	(%rcx), %edx
 	addq	$4, %rcx
 	leaq	(%rdx,%rdx,4), %rdx
@@ -3226,20 +3221,20 @@ hrdbf_fmt_harbour.part.0:
 	movl	%eax, -4(%rcx)
 	shrq	$32, %rax
 	cmpq	%rcx, %rsi
-	jne	.Lhrdbf_670
+	jne	.Lhrdbf_671
 	testq	%rax, %rax
-	je	.Lhrdbf_671
+	je	.Lhrdbf_672
 	movl	%r8d, %edx
 	movl	$1, %r9d
 	addl	$1, %r8d
 	movl	%eax, 352(%rsp,%rdx,4)
-.Lhrdbf_671:
+.Lhrdbf_672:
 	subl	$1, %edi
-	jne	.Lhrdbf_669
+	jne	.Lhrdbf_670
 	testb	%r9b, %r9b
-	je	.Lhrdbf_673
+	je	.Lhrdbf_674
 	movl	%r8d, 640(%rsp)
-.Lhrdbf_673:
+.Lhrdbf_674:
 	leal	339(%r15), %ebp
 	leaq	352(%rsp), %rdi
 	movl	%ebp, %esi
@@ -3250,7 +3245,7 @@ hrdbf_fmt_harbour.part.0:
 	cmpq	%rax, 8(%rsp)
 	sete	%al
 	andb	%al, %r9b
-	je	.Lhrdbf_674
+	je	.Lhrdbf_675
 	movl	$340, %r10d
 	xorl	%ebp, %ebp
 	movl	$2, %r11d
@@ -3261,14 +3256,14 @@ hrdbf_fmt_harbour.part.0:
 	movl	$2, 944(%rsp)
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_675:
+.Lhrdbf_676:
 	leal	-1(%r11), %eax
 	movq	%rdi, %rcx
 	leaq	(%r8,%rax,4), %rsi
 	xorl	%eax, %eax
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_676:
+.Lhrdbf_677:
 	movl	(%rcx), %edx
 	addq	$4, %rcx
 	leaq	(%rdx,%rdx,4), %rdx
@@ -3276,26 +3271,26 @@ hrdbf_fmt_harbour.part.0:
 	movl	%eax, -4(%rcx)
 	shrq	$32, %rax
 	cmpq	%rsi, %rcx
-	jne	.Lhrdbf_676
+	jne	.Lhrdbf_677
 	testq	%rax, %rax
-	je	.Lhrdbf_677
+	je	.Lhrdbf_678
 	movl	%r11d, %edx
 	movl	%r9d, %ebp
 	addl	$1, %r11d
 	movl	%eax, 656(%rsp,%rdx,4)
-.Lhrdbf_677:
+.Lhrdbf_678:
 	subl	$1, %r10d
-	jne	.Lhrdbf_675
+	jne	.Lhrdbf_676
 	testb	%bpl, %bpl
-	je	.Lhrdbf_679
+	je	.Lhrdbf_680
 	movl	%r11d, 944(%rsp)
-.Lhrdbf_679:
+.Lhrdbf_680:
 	leal	338(%r15), %esi
 	call .Lhrdbf_entry_hrdbf_local_bn_shl
-.Lhrdbf_680:
+.Lhrdbf_681:
 	leaq	960(%rsp), %r8
 	cmpl	$1, %r12d
-	je	.Lhrdbf_717
+	je	.Lhrdbf_718
 	leal	1(%r12), %eax
 	leaq	960(%rsp), %r8
 	movq	%rbx, 24(%rsp)
@@ -3304,13 +3299,13 @@ hrdbf_fmt_harbour.part.0:
 	leaq	1585(%rsp), %rbp
 	movl	$1, %r15d
 	movq	%r8, %rbx
-.Lhrdbf_713:
+.Lhrdbf_714:
 	movl	%r15d, 4(%rsp)
 	movq	%r13, %rdx
 	xorl	%esi, %esi
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_687:
+.Lhrdbf_688:
 	movzbl	(%rdx), %eax
 	leaq	(%rsi,%rsi,4), %rcx
 	addq	$1, %rdx
@@ -3318,17 +3313,17 @@ hrdbf_fmt_harbour.part.0:
 	cltq
 	leaq	(%rax,%rcx,2), %rsi
 	cmpq	%rdx, %rbp
-	jne	.Lhrdbf_687
+	jne	.Lhrdbf_688
 	cmpb	$53, 0(%rbp)
-	ja	.Lhrdbf_688
-	je	.Lhrdbf_882
-.Lhrdbf_689:
+	ja	.Lhrdbf_689
+	je	.Lhrdbf_883
+.Lhrdbf_690:
 	movl	32(%rsp), %r10d
 	movq	%r10, %rcx
 	subq	%r14, %rcx
 	cmpq	$9, %rsi
-	ja	.Lhrdbf_883
-.Lhrdbf_691:
+	ja	.Lhrdbf_884
+.Lhrdbf_692:
 	xorl	%edi, %edi
 	movq	%rsi, 960(%rsp)
 	shrq	$32, %rsi
@@ -3339,17 +3334,17 @@ hrdbf_fmt_harbour.part.0:
 	addl	$1, %edi
 	movl	%edi, 1248(%rsp)
 	testl	%ecx, %ecx
-	je	.Lhrdbf_695
+	je	.Lhrdbf_696
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_694:
+.Lhrdbf_695:
 	leal	-1(%rdi), %eax
 	movq	%rbx, %rcx
 	leaq	964(%rsp,%rax,4), %rsi
 	xorl	%eax, %eax
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_696:
+.Lhrdbf_697:
 	movl	(%rcx), %edx
 	addq	$4, %rcx
 	leaq	(%rdx,%rdx,4), %rdx
@@ -3357,69 +3352,69 @@ hrdbf_fmt_harbour.part.0:
 	movl	%eax, -4(%rcx)
 	shrq	$32, %rax
 	cmpq	%rcx, %rsi
-	jne	.Lhrdbf_696
+	jne	.Lhrdbf_697
 	testq	%rax, %rax
-	je	.Lhrdbf_697
+	je	.Lhrdbf_698
 	movl	%edi, %edx
 	movl	$1, %r11d
 	addl	$1, %edi
 	movl	%eax, 960(%rsp,%rdx,4)
-.Lhrdbf_697:
+.Lhrdbf_698:
 	addl	$1, %r9d
 	cmpl	%r10d, %r9d
-	jne	.Lhrdbf_694
+	jne	.Lhrdbf_695
 	testb	%r11b, %r11b
-	je	.Lhrdbf_695
+	je	.Lhrdbf_696
 	movl	%edi, 1248(%rsp)
-.Lhrdbf_695:
+.Lhrdbf_696:
 	movl	%r10d, %esi
 	movq	%rbx, %rdi
 	call .Lhrdbf_entry_hrdbf_local_bn_shl
 	movl	1248(%rsp), %esi
 	cmpl	944(%rsp), %esi
-	je	.Lhrdbf_700
-	jnb	.Lhrdbf_701
+	je	.Lhrdbf_701
+	jnb	.Lhrdbf_702
 	cmpl	640(%rsp), %esi
-	jne	.Lhrdbf_702
+	jne	.Lhrdbf_703
 	movl	$-1, %ecx
 	leal	-1(%rsi), %eax
-	jmp	.Lhrdbf_709
+	jmp	.Lhrdbf_710
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_712:
+.Lhrdbf_713:
 	movl	%eax, %edx
 	subl	$1, %eax
 	movl	352(%rsp,%rdx,4), %edi
 	cmpl	%edi, 960(%rsp,%rdx,4)
-	jne	.Lhrdbf_884
-.Lhrdbf_709:
+	jne	.Lhrdbf_885
+.Lhrdbf_710:
 	cmpl	$-1, %eax
-	jne	.Lhrdbf_712
-.Lhrdbf_708:
+	jne	.Lhrdbf_713
+.Lhrdbf_709:
 	testb	$1, 8(%rsp)
-	je	.Lhrdbf_864
-.Lhrdbf_702:
+	je	.Lhrdbf_865
+.Lhrdbf_703:
 	movl	%r14d, %eax
 	addq	$1, %r15
 	addq	$1, %r14
 	addq	$1, %rbp
 	cmpl	$17, %eax
-	ja	.Lhrdbf_865
+	ja	.Lhrdbf_866
 	cmpl	%r12d, %eax
-	jb	.Lhrdbf_713
-.Lhrdbf_865:
+	jb	.Lhrdbf_714
+.Lhrdbf_866:
 	movq	%rbx, %r8
 	movq	24(%rsp), %rbx
-.Lhrdbf_717:
+.Lhrdbf_718:
 	movl	$17, %eax
 	cmpl	%eax, %r12d
 	cmovbe	%r12d, %eax
 	movl	%eax, 4(%rsp)
-.Lhrdbf_715:
+.Lhrdbf_716:
 	movl	4(%rsp), %edi
 	xorl	%edx, %edx
 	xorl	%esi, %esi
-.Lhrdbf_718:
+.Lhrdbf_719:
 	movzbl	0(%r13,%rdx), %eax
 	leaq	(%rsi,%rsi,4), %rcx
 	addq	$1, %rdx
@@ -3427,35 +3422,35 @@ hrdbf_fmt_harbour.part.0:
 	cltq
 	leaq	(%rax,%rcx,2), %rsi
 	cmpl	%edx, %edi
-	ja	.Lhrdbf_718
+	ja	.Lhrdbf_719
 	movl	4(%rsp), %eax
 	cmpl	%r12d, %eax
-	jnb	.Lhrdbf_719
+	jnb	.Lhrdbf_720
 	cmpb	$53, 1584(%rsp,%rax)
-	ja	.Lhrdbf_720
-	jne	.Lhrdbf_719
-	testb	$1, %sil
+	ja	.Lhrdbf_721
 	jne	.Lhrdbf_720
+	testb	$1, %sil
+	jne	.Lhrdbf_721
 	movl	4(%rsp), %eax
 	addl	$1, %eax
 	cmpl	%r12d, %eax
-	jb	.Lhrdbf_721
-	jmp	.Lhrdbf_719
+	jb	.Lhrdbf_722
+	jmp	.Lhrdbf_720
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_885:
+.Lhrdbf_886:
 	addq	$1, %rax
 	cmpl	%eax, %r12d
-	jbe	.Lhrdbf_719
-.Lhrdbf_721:
+	jbe	.Lhrdbf_720
+.Lhrdbf_722:
 	cmpb	$48, 0(%r13,%rax)
-	je	.Lhrdbf_885
-.Lhrdbf_720:
+	je	.Lhrdbf_886
+.Lhrdbf_721:
 	addq	$1, %rsi
-.Lhrdbf_719:
+.Lhrdbf_720:
 	movabs	$-3689348814741910323, %r9
 	xorl	%ecx, %ecx
-.Lhrdbf_722:
+.Lhrdbf_723:
 	movq	%rsi, %rax
 	movl	%ecx, %edi
 	addq	$1, %r8
@@ -3471,43 +3466,43 @@ hrdbf_fmt_harbour.part.0:
 	addl	$48, %eax
 	movb	%al, -1(%r8)
 	cmpq	$9, %r10
-	ja	.Lhrdbf_722
+	ja	.Lhrdbf_723
 	cmpl	4(%rsp), %ecx
-	jbe	.Lhrdbf_723
+	jbe	.Lhrdbf_724
 	leal	-340(%r12), %eax
 	xorl	%ecx, %ecx
 	movl	%eax, 20(%rsp)
 	testl	%edi, %edi
-	je	.Lhrdbf_727
+	je	.Lhrdbf_728
 	leal	-1(%rdi), %eax
 	movl	%edi, %ecx
 	movq	%rax, %rdx
 	movzbl	960(%rsp,%rax), %eax
 	movl	%edx, %edi
-.Lhrdbf_723:
+.Lhrdbf_724:
 	xorl	%edx, %edx
-	jmp	.Lhrdbf_725
-.Lhrdbf_886:
+	jmp	.Lhrdbf_726
+.Lhrdbf_887:
 	movl	%edi, %eax
 	subl	%edx, %eax
 	movzbl	960(%rsp,%rax), %eax
-.Lhrdbf_725:
+.Lhrdbf_726:
 	movb	%al, 0(%r13,%rdx)
 	addq	$1, %rdx
 	cmpl	%ecx, %edx
-	jb	.Lhrdbf_886
+	jb	.Lhrdbf_887
 	cmpl	$1, %ecx
-	jbe	.Lhrdbf_726
-.Lhrdbf_887:
+	jbe	.Lhrdbf_727
+.Lhrdbf_888:
 	leal	-1(%rcx), %edx
 	cmpb	$48, 1584(%rsp,%rdx)
 	movq	%rdx, %rax
-	jne	.Lhrdbf_726
+	jne	.Lhrdbf_727
 	movl	%eax, %ecx
-.Lhrdbf_727:
+.Lhrdbf_728:
 	cmpl	$1, %ecx
-	ja	.Lhrdbf_887
-.Lhrdbf_726:
+	ja	.Lhrdbf_888
+.Lhrdbf_727:
 	movl	20(%rsp), %eax
 	movl	16(%rsp), %edi
 	movq	40(%rsp), %r8
@@ -3518,144 +3513,144 @@ hrdbf_fmt_harbour.part.0:
 	addq	%rdi, %rax
 	movl	%r8d, %edx
 	testq	%rax, %rax
-	jle	.Lhrdbf_888
+	jle	.Lhrdbf_889
 	movl	%ecx, %esi
 	cmpq	%rsi, %rax
-	jge	.Lhrdbf_732
+	jge	.Lhrdbf_733
 	cmpb	$52, 1584(%rsp,%rax)
 	movl	%eax, %ecx
-	jbe	.Lhrdbf_738
+	jbe	.Lhrdbf_739
 	leal	-1(%rax), %esi
 	movq	%rsi, %rax
 	addq	%r13, %rsi
 	subl	%esi, %eax
-	jmp	.Lhrdbf_735
-.Lhrdbf_734:
+	jmp	.Lhrdbf_736
+.Lhrdbf_735:
 	movb	$48, (%rsi)
 	leaq	-1(%rsi), %r10
 	cmpq	%rsi, %r13
-	je	.Lhrdbf_889
+	je	.Lhrdbf_890
 	movq	%r10, %rsi
-.Lhrdbf_735:
+.Lhrdbf_736:
 	movzbl	(%rsi), %r10d
 	leal	(%rax,%rsi), %r11d
 	cmpb	$57, %r10b
-	je	.Lhrdbf_734
+	je	.Lhrdbf_735
 	movl	%r11d, %eax
 	addl	$1, %r10d
 	movb	%r10b, 1584(%rsp,%rax)
-	jmp	.Lhrdbf_738
+	jmp	.Lhrdbf_739
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_700:
+.Lhrdbf_701:
 	leal	-1(%rsi), %eax
 	movl	%eax, %edx
-	jmp	.Lhrdbf_705
+	jmp	.Lhrdbf_706
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_707:
+.Lhrdbf_708:
 	movl	%edx, %ecx
 	subl	$1, %edx
 	movl	656(%rsp,%rcx,4), %edi
 	cmpl	%edi, 960(%rsp,%rcx,4)
-	jne	.Lhrdbf_890
-.Lhrdbf_705:
+	jne	.Lhrdbf_891
+.Lhrdbf_706:
 	cmpl	$-1, %edx
-	jne	.Lhrdbf_707
+	jne	.Lhrdbf_708
 	xorl	%ecx, %ecx
 	cmpl	%esi, 640(%rsp)
-	je	.Lhrdbf_709
-	jmp	.Lhrdbf_708
-.Lhrdbf_882:
+	je	.Lhrdbf_710
+	jmp	.Lhrdbf_709
+.Lhrdbf_883:
 	testb	$1, %sil
-	jne	.Lhrdbf_688
+	jne	.Lhrdbf_689
 	cmpl	%r14d, %r12d
-	jbe	.Lhrdbf_689
+	jbe	.Lhrdbf_690
 	movq	%r14, %rax
-	jmp	.Lhrdbf_690
-.Lhrdbf_891:
+	jmp	.Lhrdbf_691
+.Lhrdbf_892:
 	addq	$1, %rax
 	cmpl	%eax, %r12d
-	jbe	.Lhrdbf_689
-.Lhrdbf_690:
+	jbe	.Lhrdbf_690
+.Lhrdbf_691:
 	cmpb	$48, 0(%r13,%rax)
-	je	.Lhrdbf_891
-.Lhrdbf_688:
+	je	.Lhrdbf_892
+.Lhrdbf_689:
 	addq	$1, %rsi
-	jmp	.Lhrdbf_689
-.Lhrdbf_883:
+	jmp	.Lhrdbf_690
+.Lhrdbf_884:
 	movq	%rsi, %rdx
 	movl	$1, %r9d
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_692:
+.Lhrdbf_693:
 	movabs	$-3689348814741910323, %rax
 	movq	%rdx, %rdi
 	addl	$1, %r9d
 	mulq	%rdx
 	shrq	$3, %rdx
 	cmpq	$99, %rdi
-	ja	.Lhrdbf_692
+	ja	.Lhrdbf_693
 	cmpl	%r9d, 4(%rsp)
-	jnb	.Lhrdbf_691
+	jnb	.Lhrdbf_692
 	movabs	$-3689348814741910323, %rax
 	movq	%r10, %rcx
 	mulq	%rsi
 	subq	%r15, %rcx
 	movq	%rdx, %rsi
 	shrq	$3, %rsi
-	jmp	.Lhrdbf_691
-.Lhrdbf_890:
-	jnb	.Lhrdbf_706
+	jmp	.Lhrdbf_692
+.Lhrdbf_891:
+	jnb	.Lhrdbf_707
 	movl	$-1, %ecx
 	cmpl	640(%rsp), %esi
-	je	.Lhrdbf_709
-	jmp	.Lhrdbf_702
-.Lhrdbf_884:
-	jnb	.Lhrdbf_711
+	je	.Lhrdbf_710
+	jmp	.Lhrdbf_703
+.Lhrdbf_885:
+	jnb	.Lhrdbf_712
 	cmpl	$1, %ecx
-	je	.Lhrdbf_864
-.Lhrdbf_711:
+	je	.Lhrdbf_865
+.Lhrdbf_712:
 	testl	%ecx, %ecx
-	jne	.Lhrdbf_702
-	jmp	.Lhrdbf_708
-.Lhrdbf_701:
+	jne	.Lhrdbf_703
+	jmp	.Lhrdbf_709
+.Lhrdbf_702:
 	cmpl	640(%rsp), %esi
-	jne	.Lhrdbf_873
+	jne	.Lhrdbf_874
 	movl	$1, %ecx
 	leal	-1(%rsi), %eax
-	jmp	.Lhrdbf_709
-.Lhrdbf_873:
-	jnb	.Lhrdbf_702
-.Lhrdbf_864:
+	jmp	.Lhrdbf_710
+.Lhrdbf_874:
+	jnb	.Lhrdbf_703
+.Lhrdbf_865:
 	movq	%rbx, %r8
 	movq	24(%rsp), %rbx
-	jmp	.Lhrdbf_715
-.Lhrdbf_706:
+	jmp	.Lhrdbf_716
+.Lhrdbf_707:
 	cmpl	640(%rsp), %esi
-	jne	.Lhrdbf_873
+	jne	.Lhrdbf_874
 	movl	$1, %ecx
-	jmp	.Lhrdbf_709
-.Lhrdbf_892:
+	jmp	.Lhrdbf_710
+.Lhrdbf_893:
 	leal	-1(%rcx), %esi
 	cmpb	$48, 1584(%rsp,%rsi)
 	movq	%rsi, %rax
-	jne	.Lhrdbf_872
+	jne	.Lhrdbf_873
 	movl	%eax, %ecx
-.Lhrdbf_738:
+.Lhrdbf_739:
 	cmpl	$1, %ecx
-	jne	.Lhrdbf_892
-.Lhrdbf_737:
+	jne	.Lhrdbf_893
+.Lhrdbf_738:
 	xorl	%eax, %eax
 	movl	$0, %esi
 	cmpb	$48, 1584(%rsp)
 	movl	$1, %ecx
 	cmovne	%r8, %rax
 	cmove	%esi, %edx
-	jmp	.Lhrdbf_730
+	jmp	.Lhrdbf_731
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_674:
+.Lhrdbf_675:
 	subq	$1, %r14
 	xorl	%r11d, %r11d
 	movl	$340, %r10d
@@ -3668,14 +3663,14 @@ hrdbf_fmt_harbour.part.0:
 	movl	%r11d, 944(%rsp)
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_682:
+.Lhrdbf_683:
 	leal	-1(%r11), %eax
 	movq	%rdi, %rcx
 	leaq	(%r8,%rax,4), %rsi
 	xorl	%eax, %eax
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_683:
+.Lhrdbf_684:
 	movl	(%rcx), %edx
 	addq	$4, %rcx
 	leaq	(%rdx,%rdx,4), %rdx
@@ -3683,36 +3678,36 @@ hrdbf_fmt_harbour.part.0:
 	movl	%eax, -4(%rcx)
 	shrq	$32, %rax
 	cmpq	%rcx, %rsi
-	jne	.Lhrdbf_683
+	jne	.Lhrdbf_684
 	testq	%rax, %rax
-	je	.Lhrdbf_684
+	je	.Lhrdbf_685
 	movl	%r11d, %edx
 	movl	$1, %r9d
 	addl	$1, %r11d
 	movl	%eax, 656(%rsp,%rdx,4)
-.Lhrdbf_684:
+.Lhrdbf_685:
 	subl	$1, %r10d
-	jne	.Lhrdbf_682
+	jne	.Lhrdbf_683
 	testb	%r9b, %r9b
-	je	.Lhrdbf_686
+	je	.Lhrdbf_687
 	movl	%r11d, 944(%rsp)
-.Lhrdbf_686:
+.Lhrdbf_687:
 	movl	%ebp, %esi
 	call .Lhrdbf_entry_hrdbf_local_bn_shl
-	jmp	.Lhrdbf_680
-.Lhrdbf_732:
+	jmp	.Lhrdbf_681
+.Lhrdbf_733:
 	cmpl	$1, %ecx
-	je	.Lhrdbf_737
-.Lhrdbf_872:
+	je	.Lhrdbf_738
+.Lhrdbf_873:
 	movq	%r8, %rax
-.Lhrdbf_730:
+.Lhrdbf_731:
 	movl	20(%rsp), %r14d
 	movl	$1, %r8d
 	leal	1(%r14), %esi
 	testl	%r14d, %r14d
 	movslq	%esi, %rsi
 	cmovs	%r8, %rsi
-.Lhrdbf_739:
+.Lhrdbf_740:
 	movl	16(%rsp), %r8d
 	leaq	1(%rdi,%rsi), %rdi
 	testl	%r8d, %r8d
@@ -3723,34 +3718,34 @@ hrdbf_fmt_harbour.part.0:
 	cmpq	%rdi, %rsi
 	cmovg	%rdi, %rsi
 	cmpq	%rsi, %rax
-	jg	.Lhrdbf_641
+	jg	.Lhrdbf_642
 	testl	%edx, %edx
-	jne	.Lhrdbf_893
+	jne	.Lhrdbf_894
 	movq	%rbx, %rsi
 	movl	$1, %eax
-.Lhrdbf_741:
+.Lhrdbf_742:
 	movl	20(%rsp), %edi
 	testl	%edi, %edi
-	js	.Lhrdbf_742
+	js	.Lhrdbf_743
 	leal	1(%rdi), %eax
 	xorl	%esi, %esi
 	movslq	%eax, %r9
-.Lhrdbf_744:
+.Lhrdbf_745:
 	leal	(%rdx,%rsi), %edi
 	movl	$48, %r8d
 	cmpl	%ecx, %esi
-	jnb	.Lhrdbf_743
+	jnb	.Lhrdbf_744
 	movzbl	0(%r13,%rsi), %r8d
-.Lhrdbf_743:
+.Lhrdbf_744:
 	addq	$1, %rsi
 	movb	%r8b, (%rbx,%rdi)
 	cmpq	%rsi, %r9
-	jne	.Lhrdbf_744
+	jne	.Lhrdbf_745
 	addl	%edx, %eax
-.Lhrdbf_745:
+.Lhrdbf_746:
 	movl	16(%rsp), %r10d
 	testl	%r10d, %r10d
-	je	.Lhrdbf_633
+	je	.Lhrdbf_634
 	movl	20(%rsp), %r14d
 	movl	%eax, %edx
 	leal	1(%rax), %edi
@@ -3761,75 +3756,75 @@ hrdbf_fmt_harbour.part.0:
 	subl	%eax, %r14d
 	movslq	%esi, %rsi
 	movl	%r14d, %r9d
-	jmp	.Lhrdbf_747
-.Lhrdbf_767:
+	jmp	.Lhrdbf_748
+.Lhrdbf_768:
 	movl	%eax, %edx
-.Lhrdbf_747:
+.Lhrdbf_748:
 	movl	$48, %r8d
 	testq	%rsi, %rsi
-	js	.Lhrdbf_746
+	js	.Lhrdbf_747
 	leal	(%r9,%rdx), %eax
 	cmpl	%ecx, %eax
-	jnb	.Lhrdbf_746
+	jnb	.Lhrdbf_747
 	movzbl	0(%r13,%rsi), %r8d
-.Lhrdbf_746:
+.Lhrdbf_747:
 	leal	1(%rdx), %eax
 	movb	%r8b, (%rbx,%rdx)
 	addq	$1, %rsi
 	cmpl	%r10d, %eax
-	jne	.Lhrdbf_767
+	jne	.Lhrdbf_768
 	movl	16(%rsp), %eax
 	addl	%edi, %eax
-	jmp	.Lhrdbf_633
-.Lhrdbf_888:
-	jne	.Lhrdbf_729
+	jmp	.Lhrdbf_634
+.Lhrdbf_889:
+	jne	.Lhrdbf_730
 	cmpb	$52, 1584(%rsp)
-	jbe	.Lhrdbf_729
+	jbe	.Lhrdbf_730
 	negl	%esi
 	movb	$49, 1584(%rsp)
 	movq	%r8, %rax
 	movl	$1, %ecx
 	movl	%esi, 20(%rsp)
-	jmp	.Lhrdbf_730
-.Lhrdbf_729:
+	jmp	.Lhrdbf_731
+.Lhrdbf_730:
 	xorl	%edx, %edx
 	xorl	%eax, %eax
 	movl	$1, %esi
 	movl	$1, %ecx
 	movb	$48, 1584(%rsp)
 	movl	$0, 20(%rsp)
-	jmp	.Lhrdbf_739
-.Lhrdbf_893:
+	jmp	.Lhrdbf_740
+.Lhrdbf_894:
 	movb	$45, (%rbx)
 	leaq	1(%rbx), %rsi
 	movl	$2, %eax
-	jmp	.Lhrdbf_741
-.Lhrdbf_877:
-	subl	$1, %r8d
-	jmp	.Lhrdbf_658
+	jmp	.Lhrdbf_742
 .Lhrdbf_878:
+	subl	$1, %r8d
+	jmp	.Lhrdbf_659
+.Lhrdbf_879:
 	movl	16(%rsp), %edi
 	movl	$11824, %edx
 	movw	%dx, (%rbx)
 	leaq	2(%rbx), %rdx
 	leal	-1(%rdi), %ecx
 	leaq	3(%rbx,%rcx), %rcx
-.Lhrdbf_661:
+.Lhrdbf_662:
 	movb	$48, (%rdx)
 	addq	$1, %rdx
 	cmpq	%rcx, %rdx
-	jne	.Lhrdbf_661
-	jmp	.Lhrdbf_633
-.Lhrdbf_742:
+	jne	.Lhrdbf_662
+	jmp	.Lhrdbf_634
+.Lhrdbf_743:
 	movb	$48, (%rsi)
-	jmp	.Lhrdbf_745
-.Lhrdbf_749:
+	jmp	.Lhrdbf_746
+.Lhrdbf_750:
 	movl	$1, %edx
-	jmp	.Lhrdbf_652
-.Lhrdbf_889:
+	jmp	.Lhrdbf_653
+.Lhrdbf_890:
 	movb	$49, 1584(%rsp)
 	movl	%r9d, 20(%rsp)
-	jmp	.Lhrdbf_738
+	jmp	.Lhrdbf_739
 	.size	hrdbf_fmt_harbour.part.0, .-hrdbf_fmt_harbour.part.0
 	.p2align 4
 	.type	hrdbf_write_number_double.part.0, @function
@@ -3838,13 +3833,13 @@ hrdbf_write_number_double.part.0:
 	movzbl	13(%rsi), %edx
 	movl	$4, %eax
 	cmpb	$17, %dl
-	ja	.Lhrdbf_901
+	ja	.Lhrdbf_902
 	pushq	%rbp
 	pushq	%rbx
 	movq	%rsi, %rbx
 	subq	$408, %rsp
 	cmpb	12(%rsi), %dl
-	jnb	.Lhrdbf_894
+	jnb	.Lhrdbf_895
 	movq	%rdi, %rbp
 	movl	$400, %esi
 	movq	%rsp, %rdi
@@ -3852,21 +3847,21 @@ hrdbf_write_number_double.part.0:
 	movl	%eax, %r9d
 	movl	$5, %eax
 	testl	%r9d, %r9d
-	je	.Lhrdbf_894
+	je	.Lhrdbf_895
 	movzwl	14(%rbx), %ecx
 	movzbl	12(%rbx), %edx
 	movq	%rsp, %r8
 	movq	%rbp, %rdi
 	movzbl	11(%rbx), %esi
 	call .Lhrdbf_entry_hrdbf_local_put_number.isra.0
-.Lhrdbf_894:
+.Lhrdbf_895:
 	addq	$408, %rsp
 	popq	%rbx
 	popq	%rbp
 	ret
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_901:
+.Lhrdbf_902:
 	ret
 	.size	hrdbf_write_number_double.part.0, .-hrdbf_write_number_double.part.0
 	.p2align 4
@@ -3878,7 +3873,7 @@ hrdbf_local_ddec:
 	movabs	$-3689348814741910323, %r9
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_905:
+.Lhrdbf_906:
 	movq	%rsi, %rax
 	movq	%rsi, %rcx
 	mulq	%r9
@@ -3893,55 +3888,55 @@ hrdbf_local_ddec:
 	movq	%rsi, %rax
 	movq	%rdx, %rsi
 	cmpq	$9, %rax
-	jbe	.Lhrdbf_915
+	jbe	.Lhrdbf_916
 	cmpl	$19, %r8d
-	jbe	.Lhrdbf_905
-.Lhrdbf_915:
+	jbe	.Lhrdbf_906
+.Lhrdbf_916:
 	leaq	2090(%rdi), %r10
 	leaq	2249(%rdi), %rsi
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_913:
+.Lhrdbf_914:
 	movb	%cl, 14(%rsp)
 	leal	-1(%r8), %r9d
 	movq	%r10, %rax
 	movb	$0, 15(%rsp)
-	jmp	.Lhrdbf_907
-	.p2align 4,,10
-	.p2align 3
-.Lhrdbf_909:
-	addq	$1, %rax
-	cmpq	%rsi, %rax
-	jnb	.Lhrdbf_908
-.Lhrdbf_907:
-	cmpb	$0, (%rax)
-	jne	.Lhrdbf_909
-	leaq	14(%rsp), %rdx
-	cmpq	%rsi, %rax
-	jb	.Lhrdbf_910
 	jmp	.Lhrdbf_908
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_911:
+.Lhrdbf_910:
+	addq	$1, %rax
+	cmpq	%rsi, %rax
+	jnb	.Lhrdbf_909
+.Lhrdbf_908:
+	cmpb	$0, (%rax)
+	jne	.Lhrdbf_910
+	leaq	14(%rsp), %rdx
+	cmpq	%rsi, %rax
+	jb	.Lhrdbf_911
+	jmp	.Lhrdbf_909
+	.p2align 4,,10
+	.p2align 3
+.Lhrdbf_912:
 	movb	%cl, (%rax)
 	addq	$1, %rax
 	leaq	1(%rdx), %rdi
 	cmpq	%rsi, %rax
-	jnb	.Lhrdbf_908
+	jnb	.Lhrdbf_909
 	movzbl	1(%rdx), %ecx
 	movq	%rdi, %rdx
-.Lhrdbf_910:
+.Lhrdbf_911:
 	testb	%cl, %cl
-	jne	.Lhrdbf_911
-.Lhrdbf_908:
+	jne	.Lhrdbf_912
+.Lhrdbf_909:
 	movb	$0, (%rax)
 	testl	%r9d, %r9d
-	je	.Lhrdbf_904
+	je	.Lhrdbf_905
 	leal	-2(%r8), %eax
 	movl	%r9d, %r8d
 	movzbl	16(%rsp,%rax), %ecx
-	jmp	.Lhrdbf_913
-.Lhrdbf_904:
+	jmp	.Lhrdbf_914
+.Lhrdbf_905:
 	addq	$56, %rsp
 	ret
 	.size	hrdbf_local_ddec, .-hrdbf_local_ddec
@@ -3954,35 +3949,35 @@ hrdbf_local_dname:
 	leaq	2249(%rdi), %rdx
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_923:
+.Lhrdbf_924:
 	movl	%r8d, %eax
 	movzbl	(%rsi,%rax), %ecx
 	testb	%cl, %cl
-	je	.Lhrdbf_922
+	je	.Lhrdbf_923
 	leal	-32(%rcx), %eax
 	cmpb	$95, %al
 	leaq	2090(%rdi), %rax
 	cmovnb	%r9d, %ecx
-	jmp	.Lhrdbf_925
+	jmp	.Lhrdbf_926
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_927:
+.Lhrdbf_928:
 	addq	$1, %rax
 	cmpq	%rax, %rdx
-	jbe	.Lhrdbf_926
-.Lhrdbf_925:
+	jbe	.Lhrdbf_927
+.Lhrdbf_926:
 	cmpb	$0, (%rax)
-	jne	.Lhrdbf_927
+	jne	.Lhrdbf_928
 	cmpq	%rdx, %rax
-	jnb	.Lhrdbf_926
+	jnb	.Lhrdbf_927
 	movb	%cl, (%rax)
 	addq	$1, %rax
-.Lhrdbf_926:
+.Lhrdbf_927:
 	addl	$1, %r8d
 	movb	$0, (%rax)
 	cmpl	$11, %r8d
-	jne	.Lhrdbf_923
-.Lhrdbf_922:
+	jne	.Lhrdbf_924
+.Lhrdbf_923:
 	ret
 	.size	hrdbf_local_dname, .-hrdbf_local_dname
 	.section	.rodata
@@ -4002,65 +3997,65 @@ hrdbf_local_dhex:
 	addq	$2249, %rdi
 	movq	%rax, %rdx
 	movb	%cl, 14(%rsp)
-	jmp	.Lhrdbf_932
-	.p2align 4,,10
-	.p2align 3
-.Lhrdbf_934:
-	addq	$1, %rdx
-	cmpq	%rdi, %rdx
-	jnb	.Lhrdbf_933
-.Lhrdbf_932:
-	cmpb	$0, (%rdx)
-	jne	.Lhrdbf_934
-	leaq	14(%rsp), %r8
-	cmpq	%rdi, %rdx
-	jb	.Lhrdbf_935
 	jmp	.Lhrdbf_933
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_937:
+.Lhrdbf_935:
+	addq	$1, %rdx
+	cmpq	%rdi, %rdx
+	jnb	.Lhrdbf_934
+.Lhrdbf_933:
+	cmpb	$0, (%rdx)
+	jne	.Lhrdbf_935
+	leaq	14(%rsp), %r8
+	cmpq	%rdi, %rdx
+	jb	.Lhrdbf_936
+	jmp	.Lhrdbf_934
+	.p2align 4,,10
+	.p2align 3
+.Lhrdbf_938:
 	movb	%cl, (%rdx)
 	addq	$1, %rdx
 	leaq	1(%r8), %r9
 	cmpq	%rdi, %rdx
-	jnb	.Lhrdbf_933
+	jnb	.Lhrdbf_934
 	movzbl	1(%r8), %ecx
 	movq	%r9, %r8
-.Lhrdbf_935:
+.Lhrdbf_936:
 	testb	%cl, %cl
-	jne	.Lhrdbf_937
-.Lhrdbf_933:
+	jne	.Lhrdbf_938
+.Lhrdbf_934:
 	andl	$15, %esi
 	movb	$0, (%rdx)
 	movzbl	.Lhrdbf_C2(%rsi), %edx
 	movb	%dl, 14(%rsp)
-	jmp	.Lhrdbf_939
-	.p2align 4,,10
-	.p2align 3
-.Lhrdbf_941:
-	addq	$1, %rax
-	cmpq	%rdi, %rax
-	jnb	.Lhrdbf_940
-.Lhrdbf_939:
-	cmpb	$0, (%rax)
-	jne	.Lhrdbf_941
-	leaq	14(%rsp), %rdx
-	cmpq	%rdi, %rax
-	jb	.Lhrdbf_942
 	jmp	.Lhrdbf_940
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_943:
+.Lhrdbf_942:
+	addq	$1, %rax
+	cmpq	%rdi, %rax
+	jnb	.Lhrdbf_941
+.Lhrdbf_940:
+	cmpb	$0, (%rax)
+	jne	.Lhrdbf_942
+	leaq	14(%rsp), %rdx
+	cmpq	%rdi, %rax
+	jb	.Lhrdbf_943
+	jmp	.Lhrdbf_941
+	.p2align 4,,10
+	.p2align 3
+.Lhrdbf_944:
 	movb	%cl, (%rax)
 	addq	$1, %rax
 	addq	$1, %rdx
 	cmpq	%rdi, %rax
-	jnb	.Lhrdbf_940
-.Lhrdbf_942:
+	jnb	.Lhrdbf_941
+.Lhrdbf_943:
 	movzbl	(%rdx), %ecx
 	testb	%cl, %cl
-	jne	.Lhrdbf_943
-.Lhrdbf_940:
+	jne	.Lhrdbf_944
+.Lhrdbf_941:
 	movb	$0, (%rax)
 	addq	$16, %rsp
 	ret
@@ -4087,7 +4082,7 @@ hrdbf_top:
 	endbr64
 	cmpb	$0, 40(%rdi)
 	movl	$6, %eax
-	je	.Lhrdbf_952
+	je	.Lhrdbf_953
 	movl	16(%rdi), %eax
 	movq	$1, 24(%rdi)
 	testl	%eax, %eax
@@ -4095,7 +4090,7 @@ hrdbf_top:
 	movb	%al, 39(%rdi)
 	movb	%al, 38(%rdi)
 	xorl	%eax, %eax
-.Lhrdbf_952:
+.Lhrdbf_953:
 	ret
 	.size	hrdbf_top, .-hrdbf_top
 	.p2align 4
@@ -4107,13 +4102,13 @@ hrdbf_skip:
 	cmpb	$0, 40(%rdi)
 	movq	%rdi, %rax
 	movl	$6, %r8d
-	je	.Lhrdbf_955
+	je	.Lhrdbf_956
 	xorl	%r8d, %r8d
 	testq	%rsi, %rsi
-	je	.Lhrdbf_955
+	je	.Lhrdbf_956
 	movb	$0, 38(%rdi)
 	movq	24(%rdi), %rdx
-	jle	.Lhrdbf_957
+	jle	.Lhrdbf_958
 	movl	16(%rdi), %ecx
 	movq	%rcx, %r8
 	movq	%rcx, %rdi
@@ -4124,43 +4119,43 @@ hrdbf_skip:
 	cmpq	%rsi, %r8
 	cmovnb	%rdx, %rcx
 	movq	%rcx, 24(%rax)
-.Lhrdbf_959:
+.Lhrdbf_960:
 	movl	$1, %edx
 	testl	%edi, %edi
-	jne	.Lhrdbf_969
+	jne	.Lhrdbf_970
 	movb	%dl, 39(%rax)
 	xorl	%r8d, %r8d
-.Lhrdbf_955:
+.Lhrdbf_956:
 	movl	%r8d, %eax
 	ret
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_957:
+.Lhrdbf_958:
 	movq	%rsi, %rcx
 	negq	%rcx
 	cmpq	%rcx, %rdx
-	ja	.Lhrdbf_960
+	ja	.Lhrdbf_961
 	xorl	%edx, %edx
 	movq	$1, 24(%rdi)
 	xorl	%r8d, %r8d
 	movb	$1, 38(%rdi)
 	movb	%dl, 39(%rax)
-	jmp	.Lhrdbf_955
+	jmp	.Lhrdbf_956
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_969:
+.Lhrdbf_970:
 	cmpq	%rdi, 24(%rax)
 	seta	%dl
 	xorl	%r8d, %r8d
 	movb	%dl, 39(%rax)
-	jmp	.Lhrdbf_955
+	jmp	.Lhrdbf_956
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_960:
+.Lhrdbf_961:
 	addq	%rsi, %rdx
 	movq	%rdx, 24(%rdi)
 	movl	16(%rdi), %edi
-	jmp	.Lhrdbf_959
+	jmp	.Lhrdbf_960
 	.size	hrdbf_skip, .-hrdbf_skip
 	.p2align 4
 	.globl	hrdbf_get
@@ -4177,14 +4172,14 @@ hrdbf_get:
 	movq	$0, 16(%rdx)
 	movl	$0, 24(%rdx)
 	cmpb	$0, 40(%rdi)
-	je	.Lhrdbf_1049
-	testl	%esi, %esi
 	je	.Lhrdbf_1050
+	testl	%esi, %esi
+	je	.Lhrdbf_1051
 	movq	%rdx, %rcx
 	movzwl	36(%rdi), %edx
 	movq	%rdi, %rax
 	cmpl	%esi, %edx
-	jb	.Lhrdbf_1050
+	jb	.Lhrdbf_1051
 	leal	-1(%rsi), %edx
 	salq	$4, %rdx
 	addq	%rdi, %rdx
@@ -4197,7 +4192,7 @@ hrdbf_get:
 	movq	24(%rax), %rsi
 	movl	16(%rax), %r10d
 	cmpq	%r10, %rsi
-	ja	.Lhrdbf_1050
+	ja	.Lhrdbf_1051
 	movzwl	34(%rax), %r10d
 	subq	$1, %rsi
 	movzwl	56(%rdx), %edx
@@ -4207,92 +4202,92 @@ hrdbf_get:
 	addq	%rdx, %rsi
 	addq	(%rax), %rsi
 	cmpb	$67, %r8b
-	je	.Lhrdbf_1053
-	cmpb	$78, %r8b
 	je	.Lhrdbf_1054
+	cmpb	$78, %r8b
+	je	.Lhrdbf_1055
 	movzbl	(%rsi), %eax
 	cmpb	$68, %r8b
-	je	.Lhrdbf_1055
+	je	.Lhrdbf_1056
 	movl	%eax, %edx
 	andl	$-33, %edx
 	cmpb	$84, %dl
-	je	.Lhrdbf_996
+	je	.Lhrdbf_997
 	cmpb	$89, %dl
-	je	.Lhrdbf_996
+	je	.Lhrdbf_997
 	movl	%eax, %edx
 	andl	$-9, %edx
 	cmpb	$102, %dl
-	je	.Lhrdbf_1050
+	je	.Lhrdbf_1051
 	subl	$32, %eax
 	movl	$5, %r8d
 	cmpb	$46, %al
-	ja	.Lhrdbf_1049
+	ja	.Lhrdbf_1050
 	movabs	$-70645769568258, %rdx
 	btq	%rax, %rdx
-	jc	.Lhrdbf_1049
+	jc	.Lhrdbf_1050
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1050:
+.Lhrdbf_1051:
 	xorl	%r8d, %r8d
-.Lhrdbf_1049:
+.Lhrdbf_1050:
 	movl	%r8d, %eax
 	ret
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_996:
+.Lhrdbf_997:
 	xorl	%r8d, %r8d
 	movb	$1, 28(%rcx)
 	movl	%r8d, %eax
 	ret
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1053:
+.Lhrdbf_1054:
 	movq	%rsi, 8(%rcx)
 	xorl	%r8d, %r8d
-	jmp	.Lhrdbf_1049
+	jmp	.Lhrdbf_1050
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1054:
+.Lhrdbf_1055:
 	testl	%edi, %edi
-	je	.Lhrdbf_1050
+	je	.Lhrdbf_1051
 	movq	%rsi, %rdx
 	xorl	%eax, %eax
-	jmp	.Lhrdbf_975
+	jmp	.Lhrdbf_976
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_976:
+.Lhrdbf_977:
 	addl	$1, %eax
 	addq	$1, %rdx
 	cmpl	%eax, %edi
-	je	.Lhrdbf_1050
-.Lhrdbf_975:
+	je	.Lhrdbf_1051
+.Lhrdbf_976:
 	movzbl	(%rdx), %r8d
 	cmpb	$32, %r8b
-	je	.Lhrdbf_976
+	je	.Lhrdbf_977
 	pushq	%r15
 	pushq	%r14
 	pushq	%r13
 	pushq	%r12
 	pushq	%rbp
 	pushq	%rbx
-	jmp	.Lhrdbf_978
+	jmp	.Lhrdbf_979
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1002:
+.Lhrdbf_1003:
 	movl	%edx, %edi
-.Lhrdbf_978:
+.Lhrdbf_979:
 	cmpl	%edi, %eax
-	jnb	.Lhrdbf_977
+	jnb	.Lhrdbf_978
 	leal	-1(%rdi), %r10d
 	cmpb	$32, (%rsi,%r10)
 	movq	%r10, %rdx
-	je	.Lhrdbf_1002
+	je	.Lhrdbf_1003
 	leal	-43(%r8), %edx
 	andl	$253, %edx
-	jne	.Lhrdbf_1022
+	jne	.Lhrdbf_1023
 	cmpb	$45, %r8b
 	sete	%dl
-.Lhrdbf_1000:
+.Lhrdbf_1001:
 	movabs	$-9223372036854775808, %rbp
 	movl	%edx, %r12d
 	addl	$1, %eax
@@ -4300,12 +4295,12 @@ hrdbf_get:
 	testb	%dl, %dl
 	movabs	$9223372036854775807, %rdx
 	cmove	%rdx, %rbp
-.Lhrdbf_980:
+.Lhrdbf_981:
 	cmpl	%eax, %edi
-	jbe	.Lhrdbf_1007
+	jbe	.Lhrdbf_1008
 	movl	%eax, %edx
 	movzbl	(%rsi,%rdx), %r8d
-.Lhrdbf_999:
+.Lhrdbf_1000:
 	addl	$1, %eax
 	xorl	%edx, %edx
 	xorl	%r13d, %r13d
@@ -4315,27 +4310,27 @@ hrdbf_get:
 	xorl	%ebx, %ebx
 	movabs	$-3689348814741910323, %r14
 	subl	%esi, %r10d
-	jmp	.Lhrdbf_984
+	jmp	.Lhrdbf_985
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1056:
+.Lhrdbf_1057:
 	testl	%ebx, %ebx
-	jne	.Lhrdbf_1023
+	jne	.Lhrdbf_1024
 	movl	$1, %ebx
-.Lhrdbf_981:
+.Lhrdbf_982:
 	leal	(%r10,%rsi), %eax
 	cmpl	%eax, %edi
-	jbe	.Lhrdbf_983
+	jbe	.Lhrdbf_984
 	movzbl	(%rsi), %r8d
 	addq	$1, %rsi
-.Lhrdbf_984:
+.Lhrdbf_985:
 	movzbl	%r8b, %eax
 	cmpb	$46, %r8b
-	je	.Lhrdbf_1056
-.Lhrdbf_1023:
+	je	.Lhrdbf_1057
+.Lhrdbf_1024:
 	subl	$48, %eax
 	cmpl	$9, %eax
-	ja	.Lhrdbf_1007
+	ja	.Lhrdbf_1008
 	movl	%eax, %r15d
 	movq	%rbp, %rdx
 	subq	%r15, %rdx
@@ -4343,43 +4338,43 @@ hrdbf_get:
 	mulq	%r14
 	shrq	$3, %rdx
 	cmpq	%r11, %rdx
-	jb	.Lhrdbf_1013
+	jb	.Lhrdbf_1014
 	leaq	(%r11,%r11,4), %rax
 	movl	$1, %edx
 	leaq	-48(%r8,%rax,2), %r11
 	testl	%ebx, %ebx
-	je	.Lhrdbf_981
+	je	.Lhrdbf_982
 	addl	$1, %r13d
 	movl	%ebx, %edx
-	jmp	.Lhrdbf_981
+	jmp	.Lhrdbf_982
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1055:
+.Lhrdbf_1056:
 	leaq	8(%rsi), %rdx
 	movq	%rsi, %rax
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_993:
+.Lhrdbf_994:
 	cmpb	$32, (%rax)
-	jne	.Lhrdbf_1015
+	jne	.Lhrdbf_1016
 	addq	$1, %rax
 	cmpq	%rdx, %rax
-	jne	.Lhrdbf_993
-	jmp	.Lhrdbf_1050
-.Lhrdbf_1015:
+	jne	.Lhrdbf_994
+	jmp	.Lhrdbf_1051
+.Lhrdbf_1016:
 	xorl	%r9d, %r9d
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_992:
+.Lhrdbf_993:
 	movzbl	(%rsi), %eax
 	leal	-48(%rax), %edi
 	cmpb	$9, %dil
-	ja	.Lhrdbf_1016
+	ja	.Lhrdbf_1017
 	leal	(%r9,%r9,4), %edi
 	addq	$1, %rsi
 	leal	-48(%rax,%rdi,2), %r9d
 	cmpq	%rdx, %rsi
-	jne	.Lhrdbf_992
+	jne	.Lhrdbf_993
 	movl	%r9d, %esi
 	movl	$5, %r8d
 	imulq	$1374389535, %rsi, %rdx
@@ -4395,53 +4390,53 @@ hrdbf_get:
 	subl	%edx, %edi
 	leal	-1(%rax), %edx
 	cmpl	$9999, %r9d
-	jbe	.Lhrdbf_1049
+	jbe	.Lhrdbf_1050
 	cmpl	$11, %edx
-	ja	.Lhrdbf_1049
+	ja	.Lhrdbf_1050
 	testl	%edi, %edi
-	je	.Lhrdbf_1049
+	je	.Lhrdbf_1050
 	movzbl	hrdbf_local_days.1(%rdx), %r10d
 	cmpl	$2, %eax
-	je	.Lhrdbf_1057
-.Lhrdbf_994:
+	je	.Lhrdbf_1058
+.Lhrdbf_995:
 	movl	$5, %r8d
 	cmpl	%r10d, %edi
-	ja	.Lhrdbf_1049
+	ja	.Lhrdbf_1050
 	movl	%r9d, 24(%rcx)
 	xorl	%r8d, %r8d
-	jmp	.Lhrdbf_1049
-.Lhrdbf_983:
+	jmp	.Lhrdbf_1050
+.Lhrdbf_984:
 	movl	$5, %r8d
 	testl	%edx, %edx
-	je	.Lhrdbf_970
+	je	.Lhrdbf_971
 	cmpl	%r13d, %r9d
-	jb	.Lhrdbf_970
+	jb	.Lhrdbf_971
 	leal	1(%r13), %eax
-	jbe	.Lhrdbf_985
+	jbe	.Lhrdbf_986
 	movabs	$922337203685477580, %rsi
 	cmpq	%rsi, %r11
-	jbe	.Lhrdbf_986
-	jmp	.Lhrdbf_1013
+	jbe	.Lhrdbf_987
+	jmp	.Lhrdbf_1014
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_987:
+.Lhrdbf_988:
 	cmpq	%rsi, %r11
-	ja	.Lhrdbf_1013
-.Lhrdbf_986:
+	ja	.Lhrdbf_1014
+.Lhrdbf_987:
 	leaq	(%r11,%r11,4), %r11
 	movl	%eax, %edx
 	addl	$1, %eax
 	addq	%r11, %r11
 	cmpl	%edx, %r9d
-	jne	.Lhrdbf_987
+	jne	.Lhrdbf_988
 	testl	%r12d, %r12d
-	jne	.Lhrdbf_998
-.Lhrdbf_989:
-	movq	%r11, %rax
+	jne	.Lhrdbf_999
 .Lhrdbf_990:
+	movq	%r11, %rax
+.Lhrdbf_991:
 	movq	%rax, 16(%rcx)
 	xorl	%r8d, %r8d
-.Lhrdbf_970:
+.Lhrdbf_971:
 	popq	%rbx
 	movl	%r8d, %eax
 	popq	%rbp
@@ -4450,69 +4445,69 @@ hrdbf_get:
 	popq	%r14
 	popq	%r15
 	ret
-.Lhrdbf_1013:
+.Lhrdbf_1014:
 	movl	$4, %r8d
-	jmp	.Lhrdbf_970
-.Lhrdbf_977:
-	je	.Lhrdbf_972
+	jmp	.Lhrdbf_971
+.Lhrdbf_978:
+	je	.Lhrdbf_973
 	movabs	$9223372036854775807, %rbp
 	movl	%eax, %edx
 	xorl	%r12d, %r12d
 	movzbl	(%rsi,%rdx), %edx
 	leal	-43(%rdx), %r8d
 	andl	$253, %r8d
-	jne	.Lhrdbf_980
+	jne	.Lhrdbf_981
 	cmpb	$45, %dl
 	sete	%dl
-	jmp	.Lhrdbf_1000
+	jmp	.Lhrdbf_1001
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_972:
+.Lhrdbf_973:
 	xorl	%r8d, %r8d
-	jmp	.Lhrdbf_970
-.Lhrdbf_1007:
+	jmp	.Lhrdbf_971
+.Lhrdbf_1008:
 	movl	$5, %r8d
-	jmp	.Lhrdbf_970
-.Lhrdbf_1022:
+	jmp	.Lhrdbf_971
+.Lhrdbf_1023:
 	movabs	$9223372036854775807, %rbp
 	xorl	%r12d, %r12d
-	jmp	.Lhrdbf_999
-.Lhrdbf_1016:
+	jmp	.Lhrdbf_1000
+.Lhrdbf_1017:
 	movl	$5, %r8d
-	jmp	.Lhrdbf_1049
-.Lhrdbf_1057:
+	jmp	.Lhrdbf_1050
+.Lhrdbf_1058:
 	movl	$3518437209, %eax
 	imulq	%rax, %rsi
 	shrq	$45, %rsi
 	testb	$3, %sil
-	jne	.Lhrdbf_994
+	jne	.Lhrdbf_995
 	movl	$100, %r8d
 	movl	%esi, %eax
 	xorl	%edx, %edx
 	divl	%r8d
 	testl	%edx, %edx
-	jne	.Lhrdbf_995
+	jne	.Lhrdbf_996
 	movl	$400, %r8d
 	movl	%esi, %eax
 	xorl	%edx, %edx
 	divl	%r8d
 	testl	%edx, %edx
-	jne	.Lhrdbf_994
-.Lhrdbf_995:
+	jne	.Lhrdbf_995
+.Lhrdbf_996:
 	addl	$1, %r10d
-	jmp	.Lhrdbf_994
-.Lhrdbf_985:
+	jmp	.Lhrdbf_995
+.Lhrdbf_986:
 	testl	%r12d, %r12d
-	je	.Lhrdbf_989
+	je	.Lhrdbf_990
 	movl	$1, %edx
 	movq	%r11, %rax
 	salq	$63, %rdx
 	cmpq	%rdx, %r11
-	je	.Lhrdbf_990
-.Lhrdbf_998:
+	je	.Lhrdbf_991
+.Lhrdbf_999:
 	movq	%r11, %rax
 	negq	%rax
-	jmp	.Lhrdbf_990
+	jmp	.Lhrdbf_991
 	.size	hrdbf_get, .-hrdbf_get
 	.p2align 4
 	.globl	hrdbf_deleted
@@ -4522,12 +4517,12 @@ hrdbf_deleted:
 	endbr64
 	cmpb	$0, 40(%rdi)
 	movl	$6, %eax
-	je	.Lhrdbf_1058
+	je	.Lhrdbf_1059
 	movq	24(%rdi), %rax
 	movl	16(%rdi), %ecx
 	xorl	%edx, %edx
 	cmpq	%rcx, %rax
-	ja	.Lhrdbf_1060
+	ja	.Lhrdbf_1061
 	movzwl	34(%rdi), %edx
 	subq	$1, %rax
 	imulq	%rdx, %rax
@@ -4535,10 +4530,10 @@ hrdbf_deleted:
 	addq	(%rdi), %rax
 	cmpb	$42, (%rax,%rdx)
 	sete	%dl
-.Lhrdbf_1060:
+.Lhrdbf_1061:
 	movb	%dl, (%rsi)
 	xorl	%eax, %eax
-.Lhrdbf_1058:
+.Lhrdbf_1059:
 	ret
 	.size	hrdbf_deleted, .-hrdbf_deleted
 	.section	.rodata
@@ -4693,10 +4688,10 @@ hrdbf_open:
 	movl	$16842752, 116(%rsp)
 	movb	$0, 120(%rsp)
 	cmpq	$32, %rdx
-	jbe	.Lhrdbf_1139
+	jbe	.Lhrdbf_1140
 	cmpb	$3, (%rsi)
 	movq	%rsi, %r10
-	jne	.Lhrdbf_1140
+	jne	.Lhrdbf_1141
 	movl	4(%rsi), %ebx
 	movzwl	8(%rsi), %eax
 	movq	%rdx, %r11
@@ -4710,14 +4705,14 @@ hrdbf_open:
 	movw	%di, 114(%rsp)
 	movq	%rbx, (%rsp)
 	cmpw	$32, %ax
-	jbe	.Lhrdbf_1067
+	jbe	.Lhrdbf_1068
 	testl	%edi, %edi
 	sete	%dl
 	cmpq	%rbx, %r11
 	setb	%al
 	orb	%al, %dl
-	je	.Lhrdbf_1068
-.Lhrdbf_1067:
+	je	.Lhrdbf_1069
+.Lhrdbf_1068:
 	movl	$.Lhrdbf_C8, %esi
 	movq	%rbp, %rdi
 	call .Lhrdbf_entry_hrdbf_local_dset.constprop.0
@@ -4737,7 +4732,7 @@ hrdbf_open:
 	movq	%rbp, %rdi
 	call .Lhrdbf_entry_hrdbf_local_ddec
 	movl	$1, %eax
-.Lhrdbf_1063:
+.Lhrdbf_1064:
 	addq	$2344, %rsp
 	popq	%rbx
 	popq	%rbp
@@ -4746,7 +4741,7 @@ hrdbf_open:
 	popq	%r14
 	popq	%r15
 	ret
-.Lhrdbf_1068:
+.Lhrdbf_1069:
 	movq	(%rsp), %rcx
 	movq	%rsi, 40(%rsp)
 	leaq	32(%rsi), %rdi
@@ -4766,54 +4761,54 @@ hrdbf_open:
 	movq	%rax, 24(%rsp)
 	movl	$1, %eax
 	movl	%eax, %r10d
-.Lhrdbf_1092:
+.Lhrdbf_1093:
 	movzbl	(%rdi), %r12d
 	movq	%r13, %rsi
 	movzwl	8(%rsp), %ecx
 	salq	$5, %rsi
 	cmpb	$13, %r12b
-	je	.Lhrdbf_1141
-	cmpq	%r13, 24(%rsp)
 	je	.Lhrdbf_1142
-	cmpq	$129, %r13
+	cmpq	%r13, 24(%rsp)
 	je	.Lhrdbf_1143
+	cmpq	$129, %r13
+	je	.Lhrdbf_1144
 	movw	%r13w, 22(%rsp)
 	xorl	%eax, %eax
-	jmp	.Lhrdbf_1076
+	jmp	.Lhrdbf_1077
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1144:
+.Lhrdbf_1145:
 	movzbl	(%rdi,%rax), %r12d
-.Lhrdbf_1076:
+.Lhrdbf_1077:
 	movb	%r12b, 42(%rbx,%rax)
 	addq	$1, %rax
 	cmpq	$11, %rax
-	jne	.Lhrdbf_1144
+	jne	.Lhrdbf_1145
 	movzbl	-11(%r9), %r14d
 	testb	%r14b, %r14b
-	je	.Lhrdbf_1077
+	je	.Lhrdbf_1078
 	cmpl	$1, %r13d
-	jbe	.Lhrdbf_1078
+	jbe	.Lhrdbf_1079
 	leal	-1(%r13), %r12d
 	xorl	%esi, %esi
 	salq	$4, %r12
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1079:
+.Lhrdbf_1080:
 	movq	%r15, %rax
 	movl	%r14d, %edx
-	jmp	.Lhrdbf_1082
+	jmp	.Lhrdbf_1083
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1146:
+.Lhrdbf_1147:
 	movzbl	(%rax), %edx
 	addq	$1, %rax
-.Lhrdbf_1082:
+.Lhrdbf_1083:
 	leaq	(%rax,%r8), %rcx
 	cmpb	%dl, -1(%rcx,%rsi)
-	jne	.Lhrdbf_1145
-	cmpq	%r9, %rax
 	jne	.Lhrdbf_1146
+	cmpq	%r9, %rax
+	jne	.Lhrdbf_1147
 	movzwl	22(%rsp), %eax
 	movl	$.Lhrdbf_C45, %esi
 	movq	%rbp, %rdi
@@ -4829,14 +4824,14 @@ hrdbf_open:
 	movl	$.Lhrdbf_C46, %esi
 	call .Lhrdbf_entry_hrdbf_local_dcat
 	movl	$1, %eax
-	jmp	.Lhrdbf_1063
+	jmp	.Lhrdbf_1064
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1145:
+.Lhrdbf_1146:
 	addq	$16, %rsi
 	cmpq	%r12, %rsi
-	jne	.Lhrdbf_1079
-.Lhrdbf_1078:
+	jne	.Lhrdbf_1080
+.Lhrdbf_1079:
 	movzbl	11(%rdi), %edx
 	movzbl	16(%rdi), %eax
 	movw	%r10w, 3(%r9)
@@ -4845,19 +4840,19 @@ hrdbf_open:
 	movb	%al, 1(%r9)
 	movb	%cl, 2(%r9)
 	testb	%al, %al
-	je	.Lhrdbf_1147
-	cmpb	$67, %dl
 	je	.Lhrdbf_1148
-	cmpb	$78, %dl
+	cmpb	$67, %dl
 	je	.Lhrdbf_1149
-	cmpb	$76, %dl
+	cmpb	$78, %dl
 	je	.Lhrdbf_1150
+	cmpb	$76, %dl
+	je	.Lhrdbf_1151
 	cmpb	$68, %dl
-	jne	.Lhrdbf_1089
+	jne	.Lhrdbf_1090
 	movslq	8(%rsp), %rdx
 	salq	$4, %rdx
 	cmpw	$8, 134(%rsp,%rdx)
-	je	.Lhrdbf_1085
+	je	.Lhrdbf_1086
 	movzwl	22(%rsp), %eax
 	movl	$.Lhrdbf_C25, %esi
 	movq	%rbp, %rdi
@@ -4873,15 +4868,15 @@ hrdbf_open:
 	movl	$.Lhrdbf_C26, %esi
 	call .Lhrdbf_entry_hrdbf_local_dcat
 	movl	$1, %eax
-	jmp	.Lhrdbf_1063
+	jmp	.Lhrdbf_1064
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1139:
+.Lhrdbf_1140:
 	movl	$.Lhrdbf_C5, %esi
 	call .Lhrdbf_entry_hrdbf_local_dset.constprop.0
 	movl	$1, %eax
-	jmp	.Lhrdbf_1063
-.Lhrdbf_1140:
+	jmp	.Lhrdbf_1064
+.Lhrdbf_1141:
 	movl	$.Lhrdbf_C6, %esi
 	call .Lhrdbf_entry_hrdbf_local_dset.constprop.0
 	movzbl	(%r10), %esi
@@ -4891,14 +4886,14 @@ hrdbf_open:
 	movq	%rbp, %rdi
 	call .Lhrdbf_entry_hrdbf_local_dcat
 	movl	$2, %eax
-	jmp	.Lhrdbf_1063
-.Lhrdbf_1148:
+	jmp	.Lhrdbf_1064
+.Lhrdbf_1149:
 	testb	%cl, %cl
-	jne	.Lhrdbf_1151
-.Lhrdbf_1085:
+	jne	.Lhrdbf_1152
+.Lhrdbf_1086:
 	addl	%eax, %r10d
 	cmpl	$65535, %r10d
-	ja	.Lhrdbf_1152
+	ja	.Lhrdbf_1153
 	addq	$1, %r13
 	addq	$32, %rdi
 	addq	$16, %rbx
@@ -4908,18 +4903,18 @@ hrdbf_open:
 	addq	$16, %r9
 	movl	$1, %edx
 	cmpq	%r13, 32(%rsp)
-	jne	.Lhrdbf_1092
+	jne	.Lhrdbf_1093
 	movl	$.Lhrdbf_C30, %esi
 	movq	%rbp, %rdi
 	call .Lhrdbf_entry_hrdbf_local_dset.constprop.0
 	movl	$1, %eax
-	jmp	.Lhrdbf_1063
-.Lhrdbf_1149:
+	jmp	.Lhrdbf_1064
+.Lhrdbf_1150:
 	cmpb	$17, %cl
-	ja	.Lhrdbf_1109
+	ja	.Lhrdbf_1110
 	cmpb	%cl, %al
-	ja	.Lhrdbf_1085
-.Lhrdbf_1109:
+	ja	.Lhrdbf_1086
+.Lhrdbf_1110:
 	movzwl	22(%rsp), %eax
 	movl	$.Lhrdbf_C19, %esi
 	movq	%rbp, %rdi
@@ -4949,14 +4944,14 @@ hrdbf_open:
 	movq	%rbp, %rdi
 	call .Lhrdbf_entry_hrdbf_local_dcat
 	movl	$4, %eax
-	jmp	.Lhrdbf_1063
+	jmp	.Lhrdbf_1064
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1150:
+.Lhrdbf_1151:
 	movslq	8(%rsp), %rdx
 	salq	$4, %rdx
 	cmpw	$1, 134(%rsp,%rdx)
-	je	.Lhrdbf_1085
+	je	.Lhrdbf_1086
 	movzwl	22(%rsp), %eax
 	movl	$.Lhrdbf_C23, %esi
 	movq	%rbp, %rdi
@@ -4972,10 +4967,10 @@ hrdbf_open:
 	movl	$.Lhrdbf_C24, %esi
 	call .Lhrdbf_entry_hrdbf_local_dcat
 	movl	$1, %eax
-	jmp	.Lhrdbf_1063
+	jmp	.Lhrdbf_1064
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1142:
+.Lhrdbf_1143:
 	leal	1(%rcx), %r8d
 	movl	$1, %eax
 	testb	%dl, %dl
@@ -4991,34 +4986,34 @@ hrdbf_open:
 	movq	%rbp, %rdi
 	call .Lhrdbf_entry_hrdbf_local_dcat
 	movl	$1, %eax
-	jmp	.Lhrdbf_1063
-.Lhrdbf_1143:
+	jmp	.Lhrdbf_1064
+.Lhrdbf_1144:
 	movl	$.Lhrdbf_C13, %esi
 	movq	%rbp, %rdi
 	call .Lhrdbf_entry_hrdbf_local_dset.constprop.0
 	movl	$4, %eax
-	jmp	.Lhrdbf_1063
-.Lhrdbf_1141:
+	jmp	.Lhrdbf_1064
+.Lhrdbf_1142:
 	movl	%r10d, %ebx
 	movq	40(%rsp), %r10
 	testb	%dl, %dl
-	je	.Lhrdbf_1070
+	je	.Lhrdbf_1071
 	movw	%cx, 116(%rsp)
 	testw	%cx, %cx
-	je	.Lhrdbf_1070
+	je	.Lhrdbf_1071
 	addq	$1, %rsi
 	cmpl	%ebx, 16(%rsp)
-	je	.Lhrdbf_1094
-	jmp	.Lhrdbf_1153
+	je	.Lhrdbf_1095
+	jmp	.Lhrdbf_1154
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1095:
+.Lhrdbf_1096:
 	addq	$1, %rsi
 	cmpb	$0, -1(%r10,%rsi)
-	jne	.Lhrdbf_1154
-.Lhrdbf_1094:
+	jne	.Lhrdbf_1155
+.Lhrdbf_1095:
 	cmpq	(%rsp), %rsi
-	jb	.Lhrdbf_1095
+	jb	.Lhrdbf_1096
 	movl	%ebx, %ecx
 	movq	%r11, %rax
 	xorl	%edx, %edx
@@ -5027,25 +5022,25 @@ hrdbf_open:
 	movl	12(%rsp), %r13d
 	movq	%rax, %r12
 	cmpq	%rax, %r13
-	ja	.Lhrdbf_1155
+	ja	.Lhrdbf_1156
 	movq	%r13, %rax
 	imulq	%rcx, %rax
 	addq	(%rsp), %rax
 	cmpq	%rax, %r11
-	je	.Lhrdbf_1097
+	je	.Lhrdbf_1098
 	movq	%r11, %rdx
 	subq	%rax, %rdx
 	cmpq	$1, %rdx
-	jne	.Lhrdbf_1098
+	jne	.Lhrdbf_1099
 	cmpb	$26, (%r10,%rax)
-	je	.Lhrdbf_1097
-.Lhrdbf_1098:
+	je	.Lhrdbf_1098
+.Lhrdbf_1099:
 	movl	$.Lhrdbf_C38, %esi
 	movq	%rbp, %rdi
 	call .Lhrdbf_entry_hrdbf_local_dset.constprop.0
 	movl	$1, %eax
-	jmp	.Lhrdbf_1063
-.Lhrdbf_1077:
+	jmp	.Lhrdbf_1064
+.Lhrdbf_1078:
 	movl	$.Lhrdbf_C11, %esi
 	movq	%rbp, %rdi
 	call .Lhrdbf_entry_hrdbf_local_dset.constprop.0
@@ -5056,8 +5051,8 @@ hrdbf_open:
 	movq	%rbp, %rdi
 	call .Lhrdbf_entry_hrdbf_local_dcat
 	movl	$1, %eax
-	jmp	.Lhrdbf_1063
-.Lhrdbf_1147:
+	jmp	.Lhrdbf_1064
+.Lhrdbf_1148:
 	movzwl	22(%rsp), %eax
 	movl	$.Lhrdbf_C15, %esi
 	movq	%rbp, %rdi
@@ -5073,20 +5068,20 @@ hrdbf_open:
 	movl	$.Lhrdbf_C16, %esi
 	call .Lhrdbf_entry_hrdbf_local_dcat
 	movl	$1, %eax
-	jmp	.Lhrdbf_1063
-.Lhrdbf_1154:
+	jmp	.Lhrdbf_1064
+.Lhrdbf_1155:
 	movl	$.Lhrdbf_C34, %esi
 	movq	%rbp, %rdi
 	call .Lhrdbf_entry_hrdbf_local_dset.constprop.0
 	movl	$1, %eax
-	jmp	.Lhrdbf_1063
-.Lhrdbf_1152:
+	jmp	.Lhrdbf_1064
+.Lhrdbf_1153:
 	movl	$.Lhrdbf_C29, %esi
 	movq	%rbp, %rdi
 	call .Lhrdbf_entry_hrdbf_local_dset.constprop.0
 	movl	$4, %eax
-	jmp	.Lhrdbf_1063
-.Lhrdbf_1151:
+	jmp	.Lhrdbf_1064
+.Lhrdbf_1152:
 	movzwl	22(%rsp), %eax
 	movl	$.Lhrdbf_C17, %esi
 	movq	%rbp, %rdi
@@ -5102,8 +5097,8 @@ hrdbf_open:
 	movl	$.Lhrdbf_C18, %esi
 	call .Lhrdbf_entry_hrdbf_local_dcat
 	movl	$3, %eax
-	jmp	.Lhrdbf_1063
-.Lhrdbf_1153:
+	jmp	.Lhrdbf_1064
+.Lhrdbf_1154:
 	movl	$.Lhrdbf_C32, %esi
 	movq	%rbp, %rdi
 	call .Lhrdbf_entry_hrdbf_local_dset.constprop.0
@@ -5117,14 +5112,14 @@ hrdbf_open:
 	movq	%rbp, %rdi
 	call .Lhrdbf_entry_hrdbf_local_ddec
 	movl	$1, %eax
-	jmp	.Lhrdbf_1063
-.Lhrdbf_1070:
+	jmp	.Lhrdbf_1064
+.Lhrdbf_1071:
 	movl	$.Lhrdbf_C31, %esi
 	movq	%rbp, %rdi
 	call .Lhrdbf_entry_hrdbf_local_dset.constprop.0
 	movl	$1, %eax
-	jmp	.Lhrdbf_1063
-.Lhrdbf_1089:
+	jmp	.Lhrdbf_1064
+.Lhrdbf_1090:
 	movzwl	22(%rsp), %eax
 	movl	$.Lhrdbf_C15, %esi
 	movq	%rbp, %rdi
@@ -5155,8 +5150,8 @@ hrdbf_open:
 	movq	%rbp, %rdi
 	call .Lhrdbf_entry_hrdbf_local_dcat
 	movl	$3, %eax
-	jmp	.Lhrdbf_1063
-.Lhrdbf_1097:
+	jmp	.Lhrdbf_1064
+.Lhrdbf_1098:
 	cmpl	$0, 12(%rsp)
 	movq	(%rsp), %rbx
 	movq	%r10, 80(%rsp)
@@ -5168,31 +5163,31 @@ hrdbf_open:
 	movb	%al, 119(%rsp)
 	movb	%al, 118(%rsp)
 	testq	%r13, %r13
-	je	.Lhrdbf_1106
+	je	.Lhrdbf_1107
 	movq	%rbp, (%rsp)
 	movq	%rcx, %rbp
-.Lhrdbf_1105:
+.Lhrdbf_1106:
 	movzbl	(%rbx), %r12d
 	addq	$1, %r14
 	cmpb	$32, %r12b
-	je	.Lhrdbf_1100
+	je	.Lhrdbf_1101
 	cmpb	$42, %r12b
-	jne	.Lhrdbf_1156
-.Lhrdbf_1100:
+	jne	.Lhrdbf_1157
+.Lhrdbf_1101:
 	movq	%r14, 104(%rsp)
 	movl	$1, %r15d
-	jmp	.Lhrdbf_1104
-.Lhrdbf_1101:
+	jmp	.Lhrdbf_1105
+.Lhrdbf_1102:
 	addl	$1, %r15d
 	cmpl	8(%rsp), %r15d
-	ja	.Lhrdbf_1157
-.Lhrdbf_1104:
+	ja	.Lhrdbf_1158
+.Lhrdbf_1105:
 	leaq	48(%rsp), %rdx
 	movl	%r15d, %esi
 	leaq	80(%rsp), %rdi
 	call .Lhrdbf_entry_hrdbf_get
 	testl	%eax, %eax
-	je	.Lhrdbf_1101
+	je	.Lhrdbf_1102
 	movq	(%rsp), %rbp
 	movl	$.Lhrdbf_C39, %esi
 	movl	%eax, 8(%rsp)
@@ -5221,30 +5216,30 @@ hrdbf_open:
 	movl	(%rsp), %eax
 	salq	$4, %rdx
 	cmpb	$76, 133(%rsp,%rdx)
-	je	.Lhrdbf_1158
-.Lhrdbf_1103:
+	je	.Lhrdbf_1159
+.Lhrdbf_1104:
 	cmpb	$42, %r12b
-	jne	.Lhrdbf_1063
+	jne	.Lhrdbf_1064
 	movl	$.Lhrdbf_C44, %esi
 	movq	%rbp, %rdi
 	movl	%eax, (%rsp)
 	call .Lhrdbf_entry_hrdbf_local_dcat
 	movl	(%rsp), %eax
-	jmp	.Lhrdbf_1063
-.Lhrdbf_1157:
+	jmp	.Lhrdbf_1064
+.Lhrdbf_1158:
 	addq	%rbp, %rbx
 	cmpq	%r14, %r13
-	jne	.Lhrdbf_1105
+	jne	.Lhrdbf_1106
 	movq	(%rsp), %rbp
-.Lhrdbf_1106:
+.Lhrdbf_1107:
 	movl	$282, %ecx
 	movq	%rbp, %rdi
 	leaq	80(%rsp), %rsi
 	xorl	%eax, %eax
 	movq	$1, 104(%rsp)
 	rep movsq
-	jmp	.Lhrdbf_1063
-.Lhrdbf_1155:
+	jmp	.Lhrdbf_1064
+.Lhrdbf_1156:
 	movl	$.Lhrdbf_C35, %esi
 	movq	%rbp, %rdi
 	call .Lhrdbf_entry_hrdbf_local_dset.constprop.0
@@ -5261,8 +5256,8 @@ hrdbf_open:
 	movq	%rbp, %rdi
 	call .Lhrdbf_entry_hrdbf_local_dcat
 	movl	$1, %eax
-	jmp	.Lhrdbf_1063
-.Lhrdbf_1156:
+	jmp	.Lhrdbf_1064
+.Lhrdbf_1157:
 	movq	(%rsp), %rbp
 	movl	$.Lhrdbf_C39, %esi
 	movq	%rbp, %rdi
@@ -5280,13 +5275,13 @@ hrdbf_open:
 	movq	%rbp, %rdi
 	call .Lhrdbf_entry_hrdbf_local_dcat
 	movl	$5, %eax
-	jmp	.Lhrdbf_1063
-.Lhrdbf_1158:
+	jmp	.Lhrdbf_1064
+.Lhrdbf_1159:
 	movl	$.Lhrdbf_C43, %esi
 	movq	%rbp, %rdi
 	call .Lhrdbf_entry_hrdbf_local_dcat
 	movl	(%rsp), %eax
-	jmp	.Lhrdbf_1103
+	jmp	.Lhrdbf_1104
 	.size	hrdbf_open, .-hrdbf_open
 	.p2align 4
 	.globl	hrv_date
@@ -5323,21 +5318,21 @@ hrv_validate:
 	movzbl	%dil, %edx
 	movl	$4, %eax
 	cmpl	$12, %edx
-	ja	.Lhrdbf_1161
-	je	.Lhrdbf_1181
+	ja	.Lhrdbf_1162
+	je	.Lhrdbf_1182
 	cmpl	$5, %edx
-	je	.Lhrdbf_1164
+	je	.Lhrdbf_1165
 	shrq	$8, %rdi
-	jne	.Lhrdbf_1182
+	jne	.Lhrdbf_1183
 	xorl	%eax, %eax
 	cmpl	$11, %edx
-	jne	.Lhrdbf_1161
+	jne	.Lhrdbf_1162
 	movl	$4, %eax
 	cmpq	$99991231, %rsi
-	ja	.Lhrdbf_1161
+	ja	.Lhrdbf_1162
 	xorl	%eax, %eax
 	testq	%rsi, %rsi
-	je	.Lhrdbf_1161
+	je	.Lhrdbf_1162
 	movabs	$3777893186295716171, %rdx
 	movq	%rsi, %rax
 	mulq	%rdx
@@ -5346,7 +5341,7 @@ hrv_validate:
 	shrq	$11, %rcx
 	leal	-1(%rcx), %edx
 	cmpl	$9998, %edx
-	ja	.Lhrdbf_1161
+	ja	.Lhrdbf_1162
 	movabs	$2951479051793528259, %r8
 	movq	%rsi, %rax
 	shrq	$2, %rax
@@ -5370,13 +5365,13 @@ hrv_validate:
 	subq	%rax, %rsi
 	leal	-1(%rdx), %eax
 	cmpl	$11, %eax
-	ja	.Lhrdbf_1177
+	ja	.Lhrdbf_1178
 	testq	%rsi, %rsi
-	je	.Lhrdbf_1177
+	je	.Lhrdbf_1178
 	movl	hrdbf_local_days.0(,%rax,4), %eax
 	cmpl	$2, %edx
-	je	.Lhrdbf_1183
-.Lhrdbf_1166:
+	je	.Lhrdbf_1184
+.Lhrdbf_1167:
 	cmpl	%esi, %eax
 	setb	%al
 	movzbl	%al, %eax
@@ -5384,18 +5379,18 @@ hrv_validate:
 	ret
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1181:
+.Lhrdbf_1182:
 	movq	%rdi, %rcx
 	shrq	$32, %rcx
-	jne	.Lhrdbf_1161
+	jne	.Lhrdbf_1162
 	movq	%rdi, %rdx
 	shrq	$16, %rdx
-	jne	.Lhrdbf_1184
-.Lhrdbf_1161:
+	jne	.Lhrdbf_1185
+.Lhrdbf_1162:
 	ret
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1164:
+.Lhrdbf_1165:
 	movabs	$-9223372036854775803, %rax
 	movq	%rdi, %rdx
 	shrq	$63, %rdx
@@ -5406,9 +5401,9 @@ hrv_validate:
 	ret
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1184:
+.Lhrdbf_1185:
 	testb	$-1, %dh
-	jne	.Lhrdbf_1161
+	jne	.Lhrdbf_1162
 	movl	%edi, %eax
 	movzbl	%ah, %edi
 	cmpl	$17, %edi
@@ -5421,30 +5416,30 @@ hrv_validate:
 	ret
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1182:
+.Lhrdbf_1183:
 	ret
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1177:
+.Lhrdbf_1178:
 	movl	$4, %eax
 	ret
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1183:
+.Lhrdbf_1184:
 	testb	$3, %cl
-	jne	.Lhrdbf_1166
+	jne	.Lhrdbf_1167
 	imull	$-1030792151, %ecx, %ecx
 	movl	%ecx, %edx
 	rorl	$2, %edx
 	cmpl	$42949672, %edx
-	jbe	.Lhrdbf_1167
+	jbe	.Lhrdbf_1168
 	addl	$1, %eax
-	jmp	.Lhrdbf_1166
-.Lhrdbf_1167:
+	jmp	.Lhrdbf_1167
+.Lhrdbf_1168:
 	rorl	$4, %ecx
 	cmpl	$10737419, %ecx
 	adcl	$0, %eax
-	jmp	.Lhrdbf_1166
+	jmp	.Lhrdbf_1167
 	.size	hrv_validate, .-hrv_validate
 	.p2align 4
 	.globl	hrv_valtype
@@ -5455,9 +5450,9 @@ hrv_valtype:
 	movzbl	%dil, %edx
 	movl	$63, %eax
 	cmpb	$12, %dil
-	ja	.Lhrdbf_1185
+	ja	.Lhrdbf_1186
 	movzbl	hrdbf_local_CSWTCH.403(%rdx), %eax
-.Lhrdbf_1185:
+.Lhrdbf_1186:
 	ret
 	.size	hrv_valtype, .-hrv_valtype
 	.p2align 4
@@ -5471,28 +5466,28 @@ hrv_i64:
 	movq	%rdx, %r11
 	call .Lhrdbf_entry_hrv_validate
 	testl	%eax, %eax
-	jne	.Lhrdbf_1188
+	jne	.Lhrdbf_1189
 	movzbl	%r9b, %edx
 	cmpb	$12, %r9b
-	je	.Lhrdbf_1198
+	je	.Lhrdbf_1199
 	testl	%edx, %edx
-	je	.Lhrdbf_1191
+	je	.Lhrdbf_1192
 	cmpl	$9, %edx
-	je	.Lhrdbf_1191
+	je	.Lhrdbf_1192
 	movl	$1, %eax
-.Lhrdbf_1188:
-	ret
-	.p2align 4,,10
-	.p2align 3
-.Lhrdbf_1198:
-	testl	$65280, %r9d
-	jne	.Lhrdbf_1199
-.Lhrdbf_1191:
-	movq	%r10, (%r11)
+.Lhrdbf_1189:
 	ret
 	.p2align 4,,10
 	.p2align 3
 .Lhrdbf_1199:
+	testl	$65280, %r9d
+	jne	.Lhrdbf_1200
+.Lhrdbf_1192:
+	movq	%r10, (%r11)
+	ret
+	.p2align 4,,10
+	.p2align 3
+.Lhrdbf_1200:
 	movl	$2, %eax
 	ret
 	.size	hrv_i64, .-hrv_i64
@@ -5514,24 +5509,24 @@ hrv_equal:
 	subq	$40, %rsp
 	call .Lhrdbf_entry_hrv_validate
 	testl	%eax, %eax
-	jne	.Lhrdbf_1200
+	jne	.Lhrdbf_1201
 	movq	%r11, %rdi
 	movq	%rbp, %rsi
 	call .Lhrdbf_entry_hrv_validate
 	testl	%eax, %eax
-	jne	.Lhrdbf_1200
+	jne	.Lhrdbf_1201
 	movzbl	%r9b, %r13d
 	movzbl	%r11b, %r12d
 	cmpb	$11, %r9b
-	jne	.Lhrdbf_1202
+	jne	.Lhrdbf_1203
 	cmpl	$11, %r12d
-	jne	.Lhrdbf_1202
-.Lhrdbf_1213:
+	jne	.Lhrdbf_1203
+.Lhrdbf_1214:
 	xorl	%edx, %edx
 	cmpq	%rbp, %r10
 	sete	%dl
 	movl	%edx, (%rbx)
-.Lhrdbf_1200:
+.Lhrdbf_1201:
 	addq	$40, %rsp
 	popq	%rbx
 	popq	%rbp
@@ -5540,15 +5535,15 @@ hrv_equal:
 	ret
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1202:
+.Lhrdbf_1203:
 	cmpl	$1, %r13d
-	je	.Lhrdbf_1216
+	je	.Lhrdbf_1217
 	cmpl	$1, %r12d
-	je	.Lhrdbf_1216
+	je	.Lhrdbf_1217
 	cmpl	$3, %r13d
-	jne	.Lhrdbf_1205
+	jne	.Lhrdbf_1206
 	cmpl	$3, %r12d
-	jne	.Lhrdbf_1205
+	jne	.Lhrdbf_1206
 	testq	%r10, %r10
 	sete	%dl
 	testq	%rbp, %rbp
@@ -5556,83 +5551,83 @@ hrv_equal:
 	xorl	%ecx, %edx
 	movzbl	%dl, %edx
 	movl	%edx, (%rbx)
-	jmp	.Lhrdbf_1200
+	jmp	.Lhrdbf_1201
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1216:
+.Lhrdbf_1217:
 	xorl	%edx, %edx
 	cmpl	%r13d, %r12d
 	sete	%dl
 	movl	%edx, (%rbx)
-	jmp	.Lhrdbf_1200
+	jmp	.Lhrdbf_1201
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1205:
+.Lhrdbf_1206:
 	movq	%r9, %rdi
 	movq	%r10, %rsi
 	call .Lhrdbf_entry_hrv_validate
 	testl	%eax, %eax
-	jne	.Lhrdbf_1209
+	jne	.Lhrdbf_1210
 	cmpl	$12, %r13d
-	je	.Lhrdbf_1239
+	je	.Lhrdbf_1240
 	testl	%r13d, %r13d
-	je	.Lhrdbf_1208
+	je	.Lhrdbf_1209
 	cmpl	$9, %r13d
-	jne	.Lhrdbf_1209
-.Lhrdbf_1208:
+	jne	.Lhrdbf_1210
+.Lhrdbf_1209:
 	movq	%r11, %rdi
 	movq	%rbp, %rsi
 	call .Lhrdbf_entry_hrv_validate
 	testl	%eax, %eax
-	jne	.Lhrdbf_1209
+	jne	.Lhrdbf_1210
 	cmpl	$12, %r12d
-	je	.Lhrdbf_1240
+	je	.Lhrdbf_1241
 	testl	%r12d, %r12d
-	je	.Lhrdbf_1213
+	je	.Lhrdbf_1214
 	cmpl	$9, %r12d
-	je	.Lhrdbf_1213
+	je	.Lhrdbf_1214
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1209:
+.Lhrdbf_1210:
 	leaq	8(%rsp), %rcx
 	leaq	16(%rsp), %rdx
 	movq	%r9, %rdi
 	movq	%r10, %rsi
 	call .Lhrdbf_entry_hrv_to_double
 	testl	%eax, %eax
-	je	.Lhrdbf_1241
-.Lhrdbf_1215:
+	je	.Lhrdbf_1242
+.Lhrdbf_1216:
 	movl	$1, %eax
-	jmp	.Lhrdbf_1200
+	jmp	.Lhrdbf_1201
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1239:
+.Lhrdbf_1240:
 	testl	$65280, %r9d
-	je	.Lhrdbf_1208
-	jmp	.Lhrdbf_1209
+	je	.Lhrdbf_1209
+	jmp	.Lhrdbf_1210
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1241:
+.Lhrdbf_1242:
 	leaq	12(%rsp), %rcx
 	leaq	24(%rsp), %rdx
 	movq	%r11, %rdi
 	movq	%rbp, %rsi
 	call .Lhrdbf_entry_hrv_to_double
 	testl	%eax, %eax
-	jne	.Lhrdbf_1215
+	jne	.Lhrdbf_1216
 	xorl	%edx, %edx
 	movsd	16(%rsp), %xmm0
 	ucomisd	24(%rsp), %xmm0
 	setnp	%dl
 	cmovne	%eax, %edx
 	movl	%edx, (%rbx)
-	jmp	.Lhrdbf_1200
+	jmp	.Lhrdbf_1201
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1240:
+.Lhrdbf_1241:
 	testl	$65280, %r11d
-	je	.Lhrdbf_1213
-	jmp	.Lhrdbf_1209
+	je	.Lhrdbf_1214
+	jmp	.Lhrdbf_1210
 	.size	hrv_equal, .-hrv_equal
 	.p2align 4
 	.globl	hrv_compare
@@ -5650,43 +5645,43 @@ hrv_compare:
 	subq	$40, %rsp
 	call .Lhrdbf_entry_hrv_validate
 	testl	%eax, %eax
-	jne	.Lhrdbf_1242
+	jne	.Lhrdbf_1243
 	movq	%r10, %rdi
 	movq	%rbp, %rsi
 	call .Lhrdbf_entry_hrv_validate
 	testl	%eax, %eax
-	je	.Lhrdbf_1263
-.Lhrdbf_1242:
+	je	.Lhrdbf_1264
+.Lhrdbf_1243:
 	addq	$40, %rsp
 	popq	%rbp
 	popq	%r12
 	ret
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1263:
+.Lhrdbf_1264:
 	movq	%r9, %rdi
 	movq	%r12, %rsi
 	call .Lhrdbf_entry_hrv_validate
 	testl	%eax, %eax
-	jne	.Lhrdbf_1244
+	jne	.Lhrdbf_1245
 	movzbl	%r9b, %eax
 	cmpb	$12, %r9b
-	je	.Lhrdbf_1264
+	je	.Lhrdbf_1265
 	testl	%eax, %eax
-	je	.Lhrdbf_1246
+	je	.Lhrdbf_1247
 	cmpl	$9, %eax
-	je	.Lhrdbf_1246
+	je	.Lhrdbf_1247
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1244:
+.Lhrdbf_1245:
 	leaq	8(%rsp), %rcx
 	leaq	16(%rsp), %rdx
 	movq	%r9, %rdi
 	movq	%r12, %rsi
 	call .Lhrdbf_entry_hrv_to_double
 	testl	%eax, %eax
-	je	.Lhrdbf_1265
-.Lhrdbf_1252:
+	je	.Lhrdbf_1266
+.Lhrdbf_1253:
 	addq	$40, %rsp
 	movl	$1, %eax
 	popq	%rbp
@@ -5694,57 +5689,57 @@ hrv_compare:
 	ret
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1265:
+.Lhrdbf_1266:
 	leaq	12(%rsp), %rcx
 	leaq	24(%rsp), %rdx
 	movq	%r10, %rdi
 	movq	%rbp, %rsi
 	call .Lhrdbf_entry_hrv_to_double
 	testl	%eax, %eax
-	jne	.Lhrdbf_1252
+	jne	.Lhrdbf_1253
 	movsd	16(%rsp), %xmm1
 	movsd	24(%rsp), %xmm0
 	movq	$-1, %rdx
 	comisd	%xmm1, %xmm0
-	ja	.Lhrdbf_1253
+	ja	.Lhrdbf_1254
 	xorl	%edx, %edx
 	comisd	%xmm0, %xmm1
 	seta	%dl
-.Lhrdbf_1253:
+.Lhrdbf_1254:
 	movq	%rdx, (%r11)
-	jmp	.Lhrdbf_1242
+	jmp	.Lhrdbf_1243
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1264:
+.Lhrdbf_1265:
 	testl	$65280, %r9d
-	jne	.Lhrdbf_1244
-.Lhrdbf_1246:
+	jne	.Lhrdbf_1245
+.Lhrdbf_1247:
 	movq	%r10, %rdi
 	movq	%rbp, %rsi
 	call .Lhrdbf_entry_hrv_validate
 	testl	%eax, %eax
-	jne	.Lhrdbf_1244
+	jne	.Lhrdbf_1245
 	movzbl	%r10b, %edx
 	cmpb	$12, %r10b
-	je	.Lhrdbf_1266
+	je	.Lhrdbf_1267
 	testl	%edx, %edx
-	je	.Lhrdbf_1249
+	je	.Lhrdbf_1250
 	cmpl	$9, %edx
-	jne	.Lhrdbf_1244
-.Lhrdbf_1249:
+	jne	.Lhrdbf_1245
+.Lhrdbf_1250:
 	xorl	%edx, %edx
 	cmpq	%rbp, %r12
 	movq	$-1, %rcx
 	setg	%dl
 	cmovl	%rcx, %rdx
 	movq	%rdx, (%r11)
-	jmp	.Lhrdbf_1242
+	jmp	.Lhrdbf_1243
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1266:
+.Lhrdbf_1267:
 	testl	$65280, %r10d
-	je	.Lhrdbf_1249
-	jmp	.Lhrdbf_1244
+	je	.Lhrdbf_1250
+	jmp	.Lhrdbf_1245
 	.size	hrv_compare, .-hrv_compare
 	.p2align 4
 	.globl	hrv_empty
@@ -5757,23 +5752,23 @@ hrv_empty:
 	movq	%rdx, %r11
 	call .Lhrdbf_entry_hrv_validate
 	testl	%eax, %eax
-	jne	.Lhrdbf_1267
+	jne	.Lhrdbf_1268
 	movzbl	%r9b, %ecx
 	cmpb	$12, %r9b
-	ja	.Lhrdbf_1271
+	ja	.Lhrdbf_1272
 	movl	$1, %edx
 	salq	%cl, %rdx
 	testl	$6665, %edx
-	jne	.Lhrdbf_1269
+	jne	.Lhrdbf_1270
 	cmpl	$1, %ecx
-	je	.Lhrdbf_1272
-.Lhrdbf_1271:
+	je	.Lhrdbf_1273
+.Lhrdbf_1272:
 	movl	$1, %eax
-.Lhrdbf_1267:
+.Lhrdbf_1268:
 	ret
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1269:
+.Lhrdbf_1270:
 	xorl	%edx, %edx
 	testq	%r10, %r10
 	sete	%dl
@@ -5781,7 +5776,7 @@ hrv_empty:
 	ret
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1272:
+.Lhrdbf_1273:
 	movl	$1, (%r11)
 	ret
 	.size	hrv_empty, .-hrv_empty
@@ -5805,13 +5800,13 @@ hrv_render:
 	call .Lhrdbf_entry_hrv_validate
 	movl	%eax, %r8d
 	testl	%eax, %eax
-	jne	.Lhrdbf_1273
+	jne	.Lhrdbf_1274
 	movq	%r11, %rcx
 	movzbl	%r10b, %eax
 	cmpb	$11, %r10b
-	je	.Lhrdbf_1320
+	je	.Lhrdbf_1321
 	cmpl	$12, %eax
-	jne	.Lhrdbf_1299
+	jne	.Lhrdbf_1300
 	movl	%r10d, %r14d
 	movl	%r10d, %eax
 	negq	%rcx
@@ -5824,7 +5819,7 @@ hrv_render:
 	movl	%eax, %r10d
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1281:
+.Lhrdbf_1282:
 	movq	%rcx, %rax
 	movq	%rcx, %rdi
 	movl	%esi, %r12d
@@ -5839,86 +5834,86 @@ hrv_render:
 	movb	%dil, -1(%rsp,%rsi)
 	addq	$1, %rsi
 	cmpq	$9, %rax
-	ja	.Lhrdbf_1281
+	ja	.Lhrdbf_1282
 	cmpl	%r12d, %r10d
-	jb	.Lhrdbf_1321
+	jb	.Lhrdbf_1322
 	movl	$1, %esi
-.Lhrdbf_1282:
-	leal	1(%rsi,%r10), %eax
 .Lhrdbf_1283:
+	leal	1(%rsi,%r10), %eax
+.Lhrdbf_1284:
 	movq	%r11, %rdx
 	shrq	$63, %rdx
 	addl	%edx, %eax
 	movl	%r14d, %edx
 	cmpq	%rbx, %rdx
-	ja	.Lhrdbf_1284
+	ja	.Lhrdbf_1285
 	movq	%rdx, 0(%rbp)
 	cmpl	%r14d, %eax
-	ja	.Lhrdbf_1322
+	ja	.Lhrdbf_1323
 	subl	%eax, %r14d
-	je	.Lhrdbf_1292
+	je	.Lhrdbf_1293
 	leal	-1(%r14), %edx
 	movq	%r9, %rax
 	leaq	1(%r9,%rdx), %rdx
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1291:
+.Lhrdbf_1292:
 	movb	$32, (%rax)
 	addq	$1, %rax
 	cmpq	%rdx, %rax
-	jne	.Lhrdbf_1291
-.Lhrdbf_1292:
+	jne	.Lhrdbf_1292
+.Lhrdbf_1293:
 	testq	%r11, %r11
-	jns	.Lhrdbf_1290
+	jns	.Lhrdbf_1291
 	movl	%r14d, %eax
 	addl	$1, %r14d
 	movb	$45, (%r9,%rax)
-.Lhrdbf_1290:
+.Lhrdbf_1291:
 	testl	%esi, %esi
-	je	.Lhrdbf_1293
+	je	.Lhrdbf_1294
 	leal	-1(%rsi,%r10), %eax
 	leal	(%r14,%rax), %edi
-	jmp	.Lhrdbf_1295
+	jmp	.Lhrdbf_1296
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1303:
+.Lhrdbf_1304:
 	movl	%edx, %eax
-.Lhrdbf_1295:
+.Lhrdbf_1296:
 	movl	%edi, %edx
 	movl	$48, %ecx
 	subl	%eax, %edx
 	cmpl	%r12d, %eax
-	jnb	.Lhrdbf_1294
+	jnb	.Lhrdbf_1295
 	movl	%eax, %ecx
 	movzbl	(%rsp,%rcx), %ecx
-.Lhrdbf_1294:
+.Lhrdbf_1295:
 	movb	%cl, (%r9,%rdx)
 	leal	-1(%rax), %edx
 	cmpl	%r10d, %eax
-	jne	.Lhrdbf_1303
+	jne	.Lhrdbf_1304
 	addl	%esi, %r14d
-.Lhrdbf_1293:
+.Lhrdbf_1294:
 	testl	%r10d, %r10d
-	je	.Lhrdbf_1273
+	je	.Lhrdbf_1274
 	movl	%r14d, %eax
 	leal	(%r14,%r10), %esi
 	movb	$46, (%r9,%rax)
 	leal	-1(%r10), %eax
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1297:
+.Lhrdbf_1298:
 	movl	%esi, %edx
 	movl	$48, %ecx
 	subl	%eax, %edx
 	cmpl	%r12d, %eax
-	jnb	.Lhrdbf_1296
+	jnb	.Lhrdbf_1297
 	movl	%eax, %ecx
 	movzbl	(%rsp,%rcx), %ecx
-.Lhrdbf_1296:
+.Lhrdbf_1297:
 	movb	%cl, (%r9,%rdx)
 	subl	$1, %eax
-	jnb	.Lhrdbf_1297
-.Lhrdbf_1273:
+	jnb	.Lhrdbf_1298
+.Lhrdbf_1274:
 	addq	$32, %rsp
 	movl	%r8d, %eax
 	popq	%rbx
@@ -5929,16 +5924,16 @@ hrv_render:
 	ret
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1320:
+.Lhrdbf_1321:
 	cmpq	$7, %rbx
-	jbe	.Lhrdbf_1284
+	jbe	.Lhrdbf_1285
 	movq	$8, 0(%rbp)
 	testq	%r11, %r11
-	jne	.Lhrdbf_1277
+	jne	.Lhrdbf_1278
 	movl	$36, %edx
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1279:
+.Lhrdbf_1280:
 	movq	%rdx, %rax
 	shrq	%cl, %rax
 	andl	$1, %eax
@@ -5949,11 +5944,11 @@ hrv_render:
 	movb	%al, (%r9,%rcx)
 	addq	$1, %rcx
 	cmpq	$8, %rcx
-	jne	.Lhrdbf_1279
-	jmp	.Lhrdbf_1273
+	jne	.Lhrdbf_1280
+	jmp	.Lhrdbf_1274
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1299:
+.Lhrdbf_1300:
 	addq	$32, %rsp
 	movl	$1, %r8d
 	popq	%rbx
@@ -5965,21 +5960,21 @@ hrv_render:
 	ret
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1321:
+.Lhrdbf_1322:
 	movl	%r12d, %esi
 	subl	%r10d, %esi
 	testl	%r10d, %r10d
-	jne	.Lhrdbf_1282
+	jne	.Lhrdbf_1283
 	movl	%esi, %eax
-	jmp	.Lhrdbf_1283
+	jmp	.Lhrdbf_1284
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1284:
+.Lhrdbf_1285:
 	movl	$3, %r8d
-	jmp	.Lhrdbf_1273
+	jmp	.Lhrdbf_1274
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1277:
+.Lhrdbf_1278:
 	movq	%r11, %rax
 	movb	$47, 2(%r9)
 	movabs	$3777893186295716171, %rdx
@@ -6046,22 +6041,22 @@ hrv_render:
 	addl	$48, %ecx
 	movb	%dl, 6(%r9)
 	movb	%cl, 7(%r9)
-	jmp	.Lhrdbf_1273
+	jmp	.Lhrdbf_1274
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1322:
+.Lhrdbf_1323:
 	testl	%r14d, %r14d
-	je	.Lhrdbf_1273
+	je	.Lhrdbf_1274
 	leal	-1(%r14), %eax
 	leaq	1(%r9,%rax), %rax
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1287:
+.Lhrdbf_1288:
 	movb	$42, (%r9)
 	addq	$1, %r9
 	cmpq	%r9, %rax
-	jne	.Lhrdbf_1287
-	jmp	.Lhrdbf_1273
+	jne	.Lhrdbf_1288
+	jmp	.Lhrdbf_1274
 	.size	hrv_render, .-hrv_render
 	.p2align 4
 	.globl	hrv_arith
@@ -6086,28 +6081,28 @@ hrv_arith:
 	call .Lhrdbf_entry_hrv_validate
 	movl	%eax, %r10d
 	testl	%eax, %eax
-	jne	.Lhrdbf_1323
+	jne	.Lhrdbf_1324
 	movq	%r12, %rdi
 	movq	%r13, %rsi
 	call .Lhrdbf_entry_hrv_validate
 	movl	%eax, %r10d
 	testl	%eax, %eax
-	jne	.Lhrdbf_1323
+	jne	.Lhrdbf_1324
 	leal	-43(%rbx), %eax
 	movq	%r9, %r14
 	andl	$-3, %eax
 	movl	%eax, %r15d
-	je	.Lhrdbf_1363
+	je	.Lhrdbf_1364
 	cmpl	$42, %ebx
-	je	.Lhrdbf_1363
+	je	.Lhrdbf_1364
 	cmpl	$47, %ebx
-	je	.Lhrdbf_1338
+	je	.Lhrdbf_1339
 	cmpl	$37, %ebx
-	je	.Lhrdbf_1365
+	je	.Lhrdbf_1366
 	movl	$1, %r10d
 	cmpl	$94, %ebx
-	je	.Lhrdbf_1365
-.Lhrdbf_1323:
+	je	.Lhrdbf_1366
+.Lhrdbf_1324:
 	addq	$56, %rsp
 	movl	%r10d, %eax
 	popq	%rbx
@@ -6119,22 +6114,22 @@ hrv_arith:
 	ret
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1363:
+.Lhrdbf_1364:
 	movq	%r11, %rdi
 	movq	%rbp, %rsi
 	call .Lhrdbf_entry_hrv_validate
 	testl	%eax, %eax
-	jne	.Lhrdbf_1338
+	jne	.Lhrdbf_1339
 	movzbl	%r11b, %eax
 	cmpb	$12, %r11b
-	je	.Lhrdbf_1386
+	je	.Lhrdbf_1387
 	testl	%eax, %eax
-	je	.Lhrdbf_1329
+	je	.Lhrdbf_1330
 	cmpl	$9, %eax
-	je	.Lhrdbf_1329
+	je	.Lhrdbf_1330
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1338:
+.Lhrdbf_1339:
 	leaq	16(%rsp), %rcx
 	leaq	32(%rsp), %rdx
 	movq	%r11, %rdi
@@ -6142,7 +6137,7 @@ hrv_arith:
 	call .Lhrdbf_entry_hrv_to_double
 	movl	%eax, %r10d
 	testl	%eax, %eax
-	jne	.Lhrdbf_1323
+	jne	.Lhrdbf_1324
 	leaq	24(%rsp), %rcx
 	leaq	40(%rsp), %rdx
 	movq	%r12, %rdi
@@ -6150,56 +6145,56 @@ hrv_arith:
 	call .Lhrdbf_entry_hrv_to_double
 	movl	%eax, %r10d
 	testl	%eax, %eax
-	jne	.Lhrdbf_1323
+	jne	.Lhrdbf_1324
 	movsd	40(%rsp), %xmm1
 	cmpl	$43, %ebx
-	je	.Lhrdbf_1387
-	testl	%r15d, %r15d
 	je	.Lhrdbf_1388
-	cmpl	$42, %ebx
+	testl	%r15d, %r15d
 	je	.Lhrdbf_1389
+	cmpl	$42, %ebx
+	je	.Lhrdbf_1390
 	ucomisd	.Lhrdbf_C47(%rip), %xmm1
-	jp	.Lhrdbf_1364
-	je	.Lhrdbf_1358
-.Lhrdbf_1364:
+	jp	.Lhrdbf_1365
+	je	.Lhrdbf_1359
+.Lhrdbf_1365:
 	movsd	32(%rsp), %xmm0
 	movl	$517, %eax
 	divsd	%xmm1, %xmm0
-.Lhrdbf_1341:
+.Lhrdbf_1342:
 	movq	%rax, (%r14)
 	movsd	%xmm0, 8(%r14)
-	jmp	.Lhrdbf_1323
+	jmp	.Lhrdbf_1324
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1386:
+.Lhrdbf_1387:
 	testl	$65280, %r11d
-	jne	.Lhrdbf_1338
-.Lhrdbf_1329:
+	jne	.Lhrdbf_1339
+.Lhrdbf_1330:
 	movq	%r12, %rdi
 	movq	%r13, %rsi
 	call .Lhrdbf_entry_hrv_validate
 	movl	%eax, %r10d
 	testl	%eax, %eax
-	jne	.Lhrdbf_1338
+	jne	.Lhrdbf_1339
 	movzbl	%r12b, %eax
 	cmpb	$12, %r12b
-	je	.Lhrdbf_1390
+	je	.Lhrdbf_1391
 	testl	%eax, %eax
-	je	.Lhrdbf_1332
+	je	.Lhrdbf_1333
 	cmpl	$9, %eax
-	jne	.Lhrdbf_1338
-.Lhrdbf_1332:
+	jne	.Lhrdbf_1339
+.Lhrdbf_1333:
 	movq	$0, (%r14)
 	cmpl	$43, %ebx
-	je	.Lhrdbf_1391
-	testl	%r15d, %r15d
 	je	.Lhrdbf_1392
+	testl	%r15d, %r15d
+	je	.Lhrdbf_1393
 	imulq	%rbp, %r13
 	movq	%r13, 8(%r14)
-	jmp	.Lhrdbf_1323
+	jmp	.Lhrdbf_1324
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1365:
+.Lhrdbf_1366:
 	movq	%rsp, %rcx
 	leaq	8(%rsp), %rdx
 	movq	%r11, %rdi
@@ -6207,7 +6202,7 @@ hrv_arith:
 	call .Lhrdbf_entry_hrv_to_double
 	movl	%eax, %r10d
 	testl	%eax, %eax
-	jne	.Lhrdbf_1323
+	jne	.Lhrdbf_1324
 	leaq	4(%rsp), %rcx
 	leaq	16(%rsp), %rdx
 	movq	%r12, %rdi
@@ -6215,25 +6210,25 @@ hrv_arith:
 	call .Lhrdbf_entry_hrv_to_double
 	movl	%eax, %r10d
 	testl	%eax, %eax
-	jne	.Lhrdbf_1323
+	jne	.Lhrdbf_1324
 	movsd	16(%rsp), %xmm0
 	cmpl	$37, %ebx
-	jne	.Lhrdbf_1347
-	ucomisd	.Lhrdbf_C47(%rip), %xmm0
-	jp	.Lhrdbf_1348
 	jne	.Lhrdbf_1348
+	ucomisd	.Lhrdbf_C47(%rip), %xmm0
+	jp	.Lhrdbf_1349
+	jne	.Lhrdbf_1349
 	movq	$0, (%r14)
 	movq	$0, 8(%r14)
-	jmp	.Lhrdbf_1323
+	jmp	.Lhrdbf_1324
+	.p2align 4,,10
+	.p2align 3
+.Lhrdbf_1391:
+	testl	$65280, %r12d
+	je	.Lhrdbf_1333
+	jmp	.Lhrdbf_1339
 	.p2align 4,,10
 	.p2align 3
 .Lhrdbf_1390:
-	testl	$65280, %r12d
-	je	.Lhrdbf_1332
-	jmp	.Lhrdbf_1338
-	.p2align 4,,10
-	.p2align 3
-.Lhrdbf_1389:
 	movl	$255, %edx
 	movl	24(%rsp), %eax
 	addl	16(%rsp), %eax
@@ -6243,38 +6238,38 @@ hrv_arith:
 	mulsd	%xmm1, %xmm0
 	salq	$8, %rax
 	orq	$5, %rax
-	jmp	.Lhrdbf_1341
+	jmp	.Lhrdbf_1342
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1358:
+.Lhrdbf_1359:
 	movl	$5, %r10d
-	jmp	.Lhrdbf_1323
+	jmp	.Lhrdbf_1324
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1387:
+.Lhrdbf_1388:
 	addsd	32(%rsp), %xmm1
 	movapd	%xmm1, %xmm0
-.Lhrdbf_1384:
+.Lhrdbf_1385:
 	movl	24(%rsp), %eax
 	movl	16(%rsp), %edx
 	cmpl	%edx, %eax
 	cmovb	%rdx, %rax
 	salq	$8, %rax
 	orq	$5, %rax
-	jmp	.Lhrdbf_1341
+	jmp	.Lhrdbf_1342
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1388:
+.Lhrdbf_1389:
 	movsd	32(%rsp), %xmm0
 	subsd	%xmm1, %xmm0
-	jmp	.Lhrdbf_1384
+	jmp	.Lhrdbf_1385
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1391:
+.Lhrdbf_1392:
 	addq	%rbp, %r13
 	movq	%r13, 8(%r14)
-	jmp	.Lhrdbf_1323
-.Lhrdbf_1347:
+	jmp	.Lhrdbf_1324
+.Lhrdbf_1348:
 	movsd	8(%rsp), %xmm1
 	movq	%xmm0, %rcx
 	movabs	$9223372036854775807, %rax
@@ -6283,29 +6278,29 @@ hrv_arith:
 	andq	%rax, %rsi
 	andq	%rcx, %rax
 	testq	%rdx, %rdx
-	js	.Lhrdbf_1393
+	js	.Lhrdbf_1394
 	testq	%rsi, %rsi
-	jne	.Lhrdbf_1357
-.Lhrdbf_1352:
+	jne	.Lhrdbf_1358
+.Lhrdbf_1353:
 	movabs	$4607182418800017408, %rdx
 	testq	%rax, %rax
-	je	.Lhrdbf_1350
+	je	.Lhrdbf_1351
 	testq	%rcx, %rcx
 	movl	$0, %edx
 	movabs	$9218868437227405312, %rax
 	cmovs	%rax, %rdx
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1350:
+.Lhrdbf_1351:
 	movq	$517, (%r14)
 	movq	%rdx, 8(%r14)
-	jmp	.Lhrdbf_1323
-.Lhrdbf_1392:
+	jmp	.Lhrdbf_1324
+.Lhrdbf_1393:
 	subq	%r13, %rbp
 	xorl	%r10d, %r10d
 	movq	%rbp, 8(%r14)
-	jmp	.Lhrdbf_1323
-.Lhrdbf_1348:
+	jmp	.Lhrdbf_1324
+.Lhrdbf_1349:
 	movsd	8(%rsp), %xmm1
 	movsd	%xmm0, 32(%rsp)
 	movsd	%xmm1, 24(%rsp)
@@ -6318,25 +6313,25 @@ hrv_arith:
 	fstpl 40(%rsp)
 	fstp %st(0)
 	movq	40(%rsp), %rdx
-	jmp	.Lhrdbf_1350
-.Lhrdbf_1393:
+	jmp	.Lhrdbf_1351
+.Lhrdbf_1394:
 	testq	%rsi, %rsi
-	je	.Lhrdbf_1352
+	je	.Lhrdbf_1353
 	movabs	$4841369599423283199, %rdx
 	movq	%rax, %xmm2
 	cmpq	%rdx, %rax
-	ja	.Lhrdbf_1353
+	ja	.Lhrdbf_1354
 	cvttsd2siq	%xmm2, %rdx
 	pxor	%xmm1, %xmm1
 	cvtsi2sdq	%rdx, %xmm1
 	ucomisd	%xmm2, %xmm1
-	jp	.Lhrdbf_1360
-	je	.Lhrdbf_1353
-.Lhrdbf_1360:
+	jp	.Lhrdbf_1361
+	je	.Lhrdbf_1354
+.Lhrdbf_1361:
 	movl	$4095, %edx
 	salq	$51, %rdx
-	jmp	.Lhrdbf_1350
-.Lhrdbf_1357:
+	jmp	.Lhrdbf_1351
+.Lhrdbf_1358:
 	movsd	%xmm1, 24(%rsp)
 	movsd	%xmm0, 32(%rsp)
 	fldl 32(%rsp)
@@ -6353,8 +6348,8 @@ hrv_arith:
 	fstp %st(1)
 	fstpl 40(%rsp)
 	movq	40(%rsp), %rdx
-	jmp	.Lhrdbf_1350
-.Lhrdbf_1353:
+	jmp	.Lhrdbf_1351
+.Lhrdbf_1354:
 	movq	%rsi, 24(%rsp)
 	movsd	%xmm0, 32(%rsp)
 	fldl 32(%rsp)
@@ -6373,17 +6368,17 @@ hrv_arith:
 	movabs	$4841369599423283199, %rdx
 	movsd	40(%rsp), %xmm1
 	cmpq	%rdx, %rax
-	ja	.Lhrdbf_1385
+	ja	.Lhrdbf_1386
 	cvttsd2siq	%xmm2, %rax
 	testb	$1, %al
-	je	.Lhrdbf_1385
+	je	.Lhrdbf_1386
 	pxor	%xmm0, %xmm0
 	subsd	%xmm1, %xmm0
 	movq	%xmm0, %rdx
-	jmp	.Lhrdbf_1350
-.Lhrdbf_1385:
+	jmp	.Lhrdbf_1351
+.Lhrdbf_1386:
 	movq	%xmm1, %rdx
-	jmp	.Lhrdbf_1350
+	jmp	.Lhrdbf_1351
 	.size	hrv_arith, .-hrv_arith
 	.section	.rodata
 .Lhrdbf_C49:
@@ -6397,10 +6392,10 @@ hrv_error_name:
 	endbr64
 	movl	$.Lhrdbf_C49, %eax
 	cmpl	$5, %edi
-	ja	.Lhrdbf_1394
+	ja	.Lhrdbf_1395
 	movl	%edi, %edi
 	movq	hrdbf_local_CSWTCH.430(,%rdi,8), %rax
-.Lhrdbf_1394:
+.Lhrdbf_1395:
 	ret
 	.size	hrv_error_name, .-hrv_error_name
 	.p2align 4
@@ -6418,7 +6413,7 @@ hrdbf_fmt_fixed:
 	subq	$888, %rsp
 	movl	%esi, 4(%rsp)
 	cmpl	$32, %edx
-	ja	.Lhrdbf_1400
+	ja	.Lhrdbf_1401
 	movl	%edx, %ebx
 	movq	%xmm0, %rdx
 	movq	%xmm0, %rax
@@ -6429,37 +6424,37 @@ hrdbf_fmt_fixed:
 	andl	$2047, %edx
 	movq	%rdi, 8(%rsp)
 	cmpq	$2047, %rdx
-	je	.Lhrdbf_1400
+	je	.Lhrdbf_1401
 	movabs	$4503599627370495, %rcx
 	andq	%rcx, %rax
 	testq	%rdx, %rdx
-	je	.Lhrdbf_1495
+	je	.Lhrdbf_1496
 	btsq	$52, %rax
 	subl	$1075, %edx
 	movl	$2, %edi
 	movl	%eax, %ecx
 	movslq	%edx, %r9
 	shrq	$32, %rax
-.Lhrdbf_1404:
+.Lhrdbf_1405:
 	movl	%ecx, 224(%rsp)
 	leaq	224(%rsp), %r14
 	movl	%eax, 228(%rsp)
 	movl	%edi, 512(%rsp)
 	testl	%ebx, %ebx
-	je	.Lhrdbf_1411
+	je	.Lhrdbf_1412
 	xorl	%r10d, %r10d
 	xorl	%r8d, %r8d
 	leaq	224(%rsp), %r14
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1410:
+.Lhrdbf_1411:
 	leal	-1(%rdi), %eax
 	movq	%r14, %rdx
 	leaq	228(%rsp,%rax,4), %rsi
 	xorl	%eax, %eax
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1412:
+.Lhrdbf_1413:
 	movl	(%rdx), %ecx
 	addq	$4, %rdx
 	leaq	(%rcx,%rcx,4), %rcx
@@ -6467,87 +6462,87 @@ hrdbf_fmt_fixed:
 	movl	%eax, -4(%rdx)
 	shrq	$32, %rax
 	cmpq	%rdx, %rsi
-	jne	.Lhrdbf_1412
+	jne	.Lhrdbf_1413
 	testq	%rax, %rax
-	je	.Lhrdbf_1413
+	je	.Lhrdbf_1414
 	movl	%edi, %edx
 	movl	$1, %r10d
 	addl	$1, %edi
 	movl	%eax, 224(%rsp,%rdx,4)
-.Lhrdbf_1413:
+.Lhrdbf_1414:
 	addl	$1, %r8d
 	cmpl	%r8d, %ebx
-	jne	.Lhrdbf_1410
+	jne	.Lhrdbf_1411
 	testb	%r10b, %r10b
-	je	.Lhrdbf_1411
+	je	.Lhrdbf_1412
 	movl	%edi, 512(%rsp)
-.Lhrdbf_1411:
+.Lhrdbf_1412:
 	movl	%ebx, %esi
 	addq	%r9, %rsi
-	js	.Lhrdbf_1416
+	js	.Lhrdbf_1417
 	movq	%r14, %rdi
 	call .Lhrdbf_entry_hrdbf_local_bn_shl
 	movl	512(%rsp), %r10d
-.Lhrdbf_1417:
+.Lhrdbf_1418:
 	xorl	%r12d, %r12d
-	jmp	.Lhrdbf_1423
+	jmp	.Lhrdbf_1424
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1424:
+.Lhrdbf_1425:
 	cmpq	$48, %r12
-	je	.Lhrdbf_1496
+	je	.Lhrdbf_1497
 	movq	%r14, %rdi
 	call .Lhrdbf_entry_hrdbf_local_bn_divmod_1e9
 	movl	512(%rsp), %r10d
 	movl	%eax, 32(%rsp,%r12,4)
 	addq	$1, %r12
-.Lhrdbf_1423:
+.Lhrdbf_1424:
 	movl	%r12d, %r13d
 	cmpl	$1, %r10d
-	jne	.Lhrdbf_1424
+	jne	.Lhrdbf_1425
 	movl	224(%rsp), %eax
 	testl	%eax, %eax
-	jne	.Lhrdbf_1424
+	jne	.Lhrdbf_1425
 	testl	%r12d, %r12d
-	jne	.Lhrdbf_1497
+	jne	.Lhrdbf_1498
 	movl	$0, 32(%rsp)
 	movl	$48, %edx
 	movb	$48, 22(%rsp)
-.Lhrdbf_1429:
+.Lhrdbf_1430:
 	leal	-1(%r10), %eax
 	leaq	528(%rsp), %r14
 	movq	%rax, %r11
 	leaq	529(%rsp,%rax), %rcx
 	leal	-1(%r10,%r14), %esi
 	movq	%r14, %rax
-	jmp	.Lhrdbf_1432
+	jmp	.Lhrdbf_1433
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1498:
+.Lhrdbf_1499:
 	movl	%esi, %edx
 	subl	%eax, %edx
 	movzbl	22(%rsp,%rdx), %edx
-.Lhrdbf_1432:
+.Lhrdbf_1433:
 	movb	%dl, (%rax)
 	addq	$1, %rax
 	cmpq	%rax, %rcx
-	jne	.Lhrdbf_1498
+	jne	.Lhrdbf_1499
 	testl	%r13d, %r13d
-	je	.Lhrdbf_1433
+	je	.Lhrdbf_1434
 	leaq	32(%rsp), %r15
 	leal	-1(%r13), %eax
 	movl	$3435973837, %r9d
 	leaq	(%r15,%rax,4), %r12
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1435:
+.Lhrdbf_1436:
 	movl	%r11d, %edi
 	movl	(%r12), %edx
 	addl	$9, %r11d
 	movl	%r11d, %ecx
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1434:
+.Lhrdbf_1435:
 	movl	%edx, %eax
 	movl	%ecx, %esi
 	subl	$1, %ecx
@@ -6560,17 +6555,17 @@ hrdbf_fmt_fixed:
 	movb	%dl, 528(%rsp,%rsi)
 	movl	%eax, %edx
 	cmpl	%ecx, %edi
-	jne	.Lhrdbf_1434
+	jne	.Lhrdbf_1435
 	leaq	-4(%r12), %rax
 	cmpq	%r12, %r15
-	je	.Lhrdbf_1499
+	je	.Lhrdbf_1500
 	movq	%rax, %r12
-	jmp	.Lhrdbf_1435
+	jmp	.Lhrdbf_1436
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1400:
+.Lhrdbf_1401:
 	xorl	%eax, %eax
-.Lhrdbf_1397:
+.Lhrdbf_1398:
 	addq	$888, %rsp
 	popq	%rbx
 	popq	%rbp
@@ -6581,18 +6576,18 @@ hrdbf_fmt_fixed:
 	ret
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1495:
+.Lhrdbf_1496:
 	testq	%rax, %rax
-	jne	.Lhrdbf_1500
-	cmpq	$0, 8(%rsp)
 	jne	.Lhrdbf_1501
+	cmpq	$0, 8(%rsp)
+	jne	.Lhrdbf_1502
 	xorl	%edx, %edx
-.Lhrdbf_1405:
+.Lhrdbf_1406:
 	testl	%ebx, %ebx
-	je	.Lhrdbf_1406
+	je	.Lhrdbf_1407
 	leal	2(%rdx,%rbx), %esi
 	cmpl	4(%rsp), %esi
-	ja	.Lhrdbf_1400
+	ja	.Lhrdbf_1401
 	movl	%edx, %eax
 	movb	$48, 0(%rbp,%rax)
 	leal	2(%rdx), %eax
@@ -6601,65 +6596,65 @@ hrdbf_fmt_fixed:
 	movl	%eax, %edx
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1408:
+.Lhrdbf_1409:
 	movl	%edx, %ecx
 	addl	$1, %edx
 	movb	$48, 0(%rbp,%rcx)
 	cmpl	%edx, %esi
-	jne	.Lhrdbf_1408
+	jne	.Lhrdbf_1409
 	addl	%ebx, %eax
-	jmp	.Lhrdbf_1397
-.Lhrdbf_1501:
+	jmp	.Lhrdbf_1398
+.Lhrdbf_1502:
 	movl	4(%rsp), %edx
 	testl	%edx, %edx
-	je	.Lhrdbf_1400
+	je	.Lhrdbf_1401
 	movb	$45, 0(%rbp)
 	movl	$1, %edx
-	jmp	.Lhrdbf_1405
-.Lhrdbf_1416:
+	jmp	.Lhrdbf_1406
+.Lhrdbf_1417:
 	negl	%esi
 	movq	%r14, %rdi
 	call .Lhrdbf_entry_hrdbf_local_bn_shr_round
 	movl	512(%rsp), %r10d
 	cmpl	$3, %eax
-	je	.Lhrdbf_1502
+	je	.Lhrdbf_1503
 	cmpl	$2, %eax
-	jne	.Lhrdbf_1417
+	jne	.Lhrdbf_1418
 	movl	224(%rsp), %ecx
 	movl	%ecx, %edx
 	andl	$1, %edx
-	je	.Lhrdbf_1417
+	je	.Lhrdbf_1418
 	testl	%r10d, %r10d
-	je	.Lhrdbf_1450
-.Lhrdbf_1420:
+	je	.Lhrdbf_1451
+.Lhrdbf_1421:
 	xorl	%edx, %edx
 	movl	$1, %eax
-	jmp	.Lhrdbf_1422
+	jmp	.Lhrdbf_1423
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1503:
+.Lhrdbf_1504:
 	movl	(%r14,%rdx,4), %ecx
-.Lhrdbf_1422:
+.Lhrdbf_1423:
 	addq	%rcx, %rax
 	movl	%eax, (%r14,%rdx,4)
 	addq	$1, %rdx
 	shrq	$32, %rax
 	cmpl	%edx, %r10d
-	ja	.Lhrdbf_1503
+	ja	.Lhrdbf_1504
 	testq	%rax, %rax
-	je	.Lhrdbf_1417
+	je	.Lhrdbf_1418
 	movl	%r10d, %eax
 	addl	$1, %r10d
-.Lhrdbf_1419:
+.Lhrdbf_1420:
 	movl	%r10d, 512(%rsp)
 	movl	$1, 224(%rsp,%rax,4)
-	jmp	.Lhrdbf_1417
+	jmp	.Lhrdbf_1418
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1499:
+.Lhrdbf_1500:
 	leal	0(%r13,%r13,8), %eax
 	addl	%eax, %r10d
-.Lhrdbf_1433:
+.Lhrdbf_1434:
 	movl	%r10d, %eax
 	movl	$1, %edx
 	movq	8(%rsp), %rdi
@@ -6673,32 +6668,32 @@ hrdbf_fmt_fixed:
 	leal	(%rax,%rdi), %edx
 	addl	%ecx, %edx
 	cmpl	4(%rsp), %edx
-	ja	.Lhrdbf_1400
+	ja	.Lhrdbf_1401
 	xorl	%edx, %edx
 	testq	%rdi, %rdi
-	je	.Lhrdbf_1438
+	je	.Lhrdbf_1439
 	movb	$45, 0(%rbp)
 	movl	$1, %edx
-.Lhrdbf_1438:
+.Lhrdbf_1439:
 	cmpl	%r10d, %ebx
-	jnb	.Lhrdbf_1439
+	jnb	.Lhrdbf_1440
 	testl	%eax, %eax
-	je	.Lhrdbf_1455
+	je	.Lhrdbf_1456
 	addl	%edx, %eax
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1441:
+.Lhrdbf_1442:
 	movzbl	(%r14), %esi
 	movl	%edx, %ecx
 	addl	$1, %edx
 	addq	$1, %r14
 	movb	%sil, 0(%rbp,%rcx)
 	cmpl	%eax, %edx
-	jne	.Lhrdbf_1441
-.Lhrdbf_1440:
+	jne	.Lhrdbf_1442
+.Lhrdbf_1441:
 	testl	%ebx, %ebx
-	je	.Lhrdbf_1397
-.Lhrdbf_1442:
+	je	.Lhrdbf_1398
+.Lhrdbf_1443:
 	cmpl	%r10d, %ebx
 	movl	%r10d, %edi
 	leal	1(%rax), %edx
@@ -6706,42 +6701,42 @@ hrdbf_fmt_fixed:
 	cmovbe	%ebx, %edi
 	movb	$46, 0(%rbp,%rcx)
 	subl	%edi, %ebx
-	je	.Lhrdbf_1443
+	je	.Lhrdbf_1444
 	leal	1(%rbx,%rax), %esi
 	movl	%edx, %eax
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1444:
+.Lhrdbf_1445:
 	movl	%eax, %ecx
 	addl	$1, %eax
 	movb	$48, 0(%rbp,%rcx)
 	cmpl	%esi, %eax
-	jne	.Lhrdbf_1444
+	jne	.Lhrdbf_1445
 	addl	%ebx, %edx
-.Lhrdbf_1443:
+.Lhrdbf_1444:
 	subl	%edi, %r10d
 	leal	(%rdi,%rdx), %eax
 	subl	%edx, %r10d
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1445:
+.Lhrdbf_1446:
 	leal	(%r10,%rdx), %esi
 	movl	%edx, %ecx
 	addl	$1, %edx
 	movzbl	528(%rsp,%rsi), %esi
 	movb	%sil, 0(%rbp,%rcx)
 	cmpl	%eax, %edx
-	jne	.Lhrdbf_1445
-	jmp	.Lhrdbf_1397
-.Lhrdbf_1496:
+	jne	.Lhrdbf_1446
+	jmp	.Lhrdbf_1398
+.Lhrdbf_1497:
 	movl	220(%rsp), %ecx
 	movl	$47, %r13d
-.Lhrdbf_1427:
+.Lhrdbf_1428:
 	movl	$1, %esi
 	movl	$3435973837, %r8d
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1430:
+.Lhrdbf_1431:
 	movl	%ecx, %eax
 	movl	%ecx, %edx
 	movl	%esi, %r10d
@@ -6756,9 +6751,9 @@ hrdbf_fmt_fixed:
 	movb	%dl, 21(%rsp,%rsi)
 	addq	$1, %rsi
 	cmpl	$9, %edi
-	ja	.Lhrdbf_1430
-	jmp	.Lhrdbf_1429
-.Lhrdbf_1500:
+	ja	.Lhrdbf_1431
+	jmp	.Lhrdbf_1430
+.Lhrdbf_1501:
 	movl	%eax, %ecx
 	shrq	$32, %rax
 	movl	$0, %edx
@@ -6768,38 +6763,38 @@ hrdbf_fmt_fixed:
 	addl	$2, %edi
 	testq	%rax, %rax
 	cmove	%edx, %eax
-	jmp	.Lhrdbf_1404
-.Lhrdbf_1406:
+	jmp	.Lhrdbf_1405
+.Lhrdbf_1407:
 	leal	1(%rdx), %eax
 	cmpl	4(%rsp), %eax
-	ja	.Lhrdbf_1400
+	ja	.Lhrdbf_1401
 	movb	$48, 0(%rbp,%rdx)
-	jmp	.Lhrdbf_1397
-.Lhrdbf_1439:
+	jmp	.Lhrdbf_1398
+.Lhrdbf_1440:
 	movb	$48, 0(%rbp,%rdx)
 	leal	1(%rdx), %eax
-	jmp	.Lhrdbf_1442
-.Lhrdbf_1502:
+	jmp	.Lhrdbf_1443
+.Lhrdbf_1503:
 	testl	%r10d, %r10d
-	je	.Lhrdbf_1449
+	je	.Lhrdbf_1450
 	movl	224(%rsp), %ecx
-	jmp	.Lhrdbf_1420
-.Lhrdbf_1455:
+	jmp	.Lhrdbf_1421
+.Lhrdbf_1456:
 	movl	%edx, %eax
-	jmp	.Lhrdbf_1440
-.Lhrdbf_1450:
+	jmp	.Lhrdbf_1441
+.Lhrdbf_1451:
 	xorl	%eax, %eax
 	movl	%edx, %r10d
-	jmp	.Lhrdbf_1419
-.Lhrdbf_1449:
+	jmp	.Lhrdbf_1420
+.Lhrdbf_1450:
 	xorl	%eax, %eax
 	movl	$1, %r10d
-	jmp	.Lhrdbf_1419
-.Lhrdbf_1497:
+	jmp	.Lhrdbf_1420
+.Lhrdbf_1498:
 	leal	-1(%r12), %eax
 	movl	32(%rsp,%rax,4), %ecx
 	movq	%rax, %r13
-	jmp	.Lhrdbf_1427
+	jmp	.Lhrdbf_1428
 	.size	hrdbf_fmt_fixed, .-hrdbf_fmt_fixed
 	.p2align 4
 	.globl	hrdbf_fmt_harbour
@@ -6808,11 +6803,11 @@ hrdbf_fmt_harbour:
 .Lhrdbf_entry_hrdbf_fmt_harbour:
 	endbr64
 	cmpl	$32, %edx
-	ja	.Lhrdbf_1505
+	ja	.Lhrdbf_1506
 	jmp .Lhrdbf_entry_hrdbf_fmt_harbour.part.0
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1505:
+.Lhrdbf_1506:
 	xorl	%eax, %eax
 	ret
 	.size	hrdbf_fmt_harbour, .-hrdbf_fmt_harbour
@@ -6824,41 +6819,41 @@ hrdbf_write_char:
 	endbr64
 	cmpb	$67, 11(%rsi)
 	movl	$3, %eax
-	jne	.Lhrdbf_1506
+	jne	.Lhrdbf_1507
 	movzwl	14(%rsi), %eax
 	addq	%rax, %rdi
 	movzbl	12(%rsi), %eax
 	cmpq	%rcx, %rax
 	cmovbe	%rax, %rcx
 	testq	%rcx, %rcx
-	je	.Lhrdbf_1508
+	je	.Lhrdbf_1509
 	xorl	%eax, %eax
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1509:
+.Lhrdbf_1510:
 	movzbl	(%rdx,%rax), %r8d
 	movb	%r8b, (%rdi,%rax)
 	addq	$1, %rax
 	cmpq	%rax, %rcx
-	jne	.Lhrdbf_1509
+	jne	.Lhrdbf_1510
 	movzbl	12(%rsi), %eax
-.Lhrdbf_1508:
+.Lhrdbf_1509:
 	cmpq	%rcx, %rax
-	jbe	.Lhrdbf_1511
+	jbe	.Lhrdbf_1512
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1510:
+.Lhrdbf_1511:
 	movb	$32, (%rdi,%rcx)
 	movzbl	12(%rsi), %eax
 	addq	$1, %rcx
 	cmpq	%rcx, %rax
-	ja	.Lhrdbf_1510
-.Lhrdbf_1511:
+	ja	.Lhrdbf_1511
+.Lhrdbf_1512:
 	xorl	%eax, %eax
 	ret
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1506:
+.Lhrdbf_1507:
 	ret
 	.size	hrdbf_write_char, .-hrdbf_write_char
 	.p2align 4
@@ -6868,11 +6863,11 @@ hrdbf_write_number_scaled:
 .Lhrdbf_entry_hrdbf_write_number_scaled:
 	endbr64
 	cmpb	$78, 11(%rsi)
-	jne	.Lhrdbf_1520
+	jne	.Lhrdbf_1521
 	jmp .Lhrdbf_entry_hrdbf_write_number_scaled.part.0
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1520:
+.Lhrdbf_1521:
 	movl	$3, %eax
 	ret
 	.size	hrdbf_write_number_scaled, .-hrdbf_write_number_scaled
@@ -6883,11 +6878,11 @@ hrdbf_write_number_double:
 .Lhrdbf_entry_hrdbf_write_number_double:
 	endbr64
 	cmpb	$78, 11(%rsi)
-	jne	.Lhrdbf_1522
+	jne	.Lhrdbf_1523
 	jmp .Lhrdbf_entry_hrdbf_write_number_double.part.0
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1522:
+.Lhrdbf_1523:
 	movl	$3, %eax
 	ret
 	.size	hrdbf_write_number_double, .-hrdbf_write_number_double
@@ -6900,11 +6895,11 @@ hrdbf_write_date:
 	cmpb	$68, 11(%rsi)
 	movl	%edx, %ecx
 	movl	$3, %r8d
-	jne	.Lhrdbf_1523
+	jne	.Lhrdbf_1524
 	movzwl	14(%rsi), %eax
 	addq	%rdi, %rax
 	testl	%edx, %edx
-	je	.Lhrdbf_1538
+	je	.Lhrdbf_1539
 	movl	%edx, %r9d
 	movl	$5, %r8d
 	imulq	$1374389535, %r9, %rsi
@@ -6920,25 +6915,25 @@ hrdbf_write_date:
 	subl	%esi, %edi
 	leal	-1(%rdx), %esi
 	cmpl	$11, %esi
-	ja	.Lhrdbf_1523
+	ja	.Lhrdbf_1524
 	cmpl	$9999, %ecx
-	jbe	.Lhrdbf_1523
+	jbe	.Lhrdbf_1524
 	testl	%edi, %edi
-	je	.Lhrdbf_1523
+	je	.Lhrdbf_1524
 	leal	-2(%rdx), %ecx
 	movl	$31, %r10d
 	cmpl	$9, %ecx
-	jbe	.Lhrdbf_1539
-.Lhrdbf_1527:
+	jbe	.Lhrdbf_1540
+.Lhrdbf_1528:
 	movl	$3518437209, %esi
 	imulq	%r9, %rsi
 	shrq	$45, %rsi
 	cmpl	$2, %edx
-	je	.Lhrdbf_1540
-.Lhrdbf_1528:
+	je	.Lhrdbf_1541
+.Lhrdbf_1529:
 	movl	$5, %r8d
 	cmpl	%edi, %r10d
-	jb	.Lhrdbf_1523
+	jb	.Lhrdbf_1524
 	imulq	$1801439851, %r9, %rcx
 	movl	$3435973837, %r9d
 	shrq	$54, %rcx
@@ -6999,43 +6994,43 @@ hrdbf_write_date:
 	movl	%edi, %edx
 	addl	$48, %edx
 	movb	%dl, 7(%rax)
-.Lhrdbf_1523:
+.Lhrdbf_1524:
 	movl	%r8d, %eax
 	ret
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1538:
+.Lhrdbf_1539:
 	leaq	8(%rax), %rdx
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1526:
+.Lhrdbf_1527:
 	movb	$32, (%rax)
 	addq	$1, %rax
 	cmpq	%rdx, %rax
-	jne	.Lhrdbf_1526
+	jne	.Lhrdbf_1527
 	xorl	%r8d, %r8d
-	jmp	.Lhrdbf_1523
-	.p2align 4,,10
-	.p2align 3
-.Lhrdbf_1539:
-	movl	hrdbf_local_CSWTCH.439(,%rcx,4), %r10d
-	jmp	.Lhrdbf_1527
+	jmp	.Lhrdbf_1524
 	.p2align 4,,10
 	.p2align 3
 .Lhrdbf_1540:
+	movl	hrdbf_local_CSWTCH.439(,%rcx,4), %r10d
+	jmp	.Lhrdbf_1528
+	.p2align 4,,10
+	.p2align 3
+.Lhrdbf_1541:
 	testb	$3, %sil
-	jne	.Lhrdbf_1528
+	jne	.Lhrdbf_1529
 	imull	$-1030792151, %esi, %ecx
 	movl	%ecx, %r8d
 	rorl	$2, %r8d
 	cmpl	$42949672, %r8d
-	ja	.Lhrdbf_1529
+	ja	.Lhrdbf_1530
 	rorl	$4, %ecx
 	cmpl	$10737418, %ecx
-	ja	.Lhrdbf_1528
-.Lhrdbf_1529:
+	ja	.Lhrdbf_1529
+.Lhrdbf_1530:
 	addl	$1, %r10d
-	jmp	.Lhrdbf_1528
+	jmp	.Lhrdbf_1529
 	.size	hrdbf_write_date, .-hrdbf_write_date
 	.p2align 4
 	.globl	hrdbf_write_logical
@@ -7045,7 +7040,7 @@ hrdbf_write_logical:
 	endbr64
 	cmpb	$76, 11(%rsi)
 	movl	$3, %eax
-	jne	.Lhrdbf_1541
+	jne	.Lhrdbf_1542
 	cmpb	$1, %dl
 	movzwl	14(%rsi), %edx
 	sbbl	%eax, %eax
@@ -7053,7 +7048,7 @@ hrdbf_write_logical:
 	addl	$84, %eax
 	movb	%al, (%rdi,%rdx)
 	xorl	%eax, %eax
-.Lhrdbf_1541:
+.Lhrdbf_1542:
 	ret
 	.size	hrdbf_write_logical, .-hrdbf_write_logical
 	.p2align 4
@@ -7066,31 +7061,31 @@ hrdbf_write_blank:
 	movzwl	14(%rsi), %edx
 	leal	-67(%rax), %ecx
 	cmpb	$1, %cl
-	jbe	.Lhrdbf_1553
+	jbe	.Lhrdbf_1554
 	andl	$-3, %eax
 	cmpb	$76, %al
-	jne	.Lhrdbf_1552
-.Lhrdbf_1553:
+	jne	.Lhrdbf_1553
+.Lhrdbf_1554:
 	movzbl	12(%rsi), %ecx
 	testl	%ecx, %ecx
-	je	.Lhrdbf_1551
+	je	.Lhrdbf_1552
 	leaq	(%rdi,%rdx), %rax
 	subl	$1, %ecx
 	leaq	1(%rdi,%rdx), %rdx
 	addq	%rcx, %rdx
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1550:
+.Lhrdbf_1551:
 	movb	$32, (%rax)
 	addq	$1, %rax
 	cmpq	%rdx, %rax
-	jne	.Lhrdbf_1550
-.Lhrdbf_1551:
+	jne	.Lhrdbf_1551
+.Lhrdbf_1552:
 	xorl	%eax, %eax
 	ret
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1552:
+.Lhrdbf_1553:
 	movl	$3, %eax
 	ret
 	.size	hrdbf_write_blank, .-hrdbf_write_blank
@@ -7122,7 +7117,7 @@ hrdbf_file_close:
 	movl	$16842752, 36(%rdi)
 	movb	$0, 40(%rdi)
 	movl	$0, 2272(%rdi)
-	je	.Lhrdbf_1564
+	je	.Lhrdbf_1565
 	xorl	%edx, %edx
 	movq	2280(%rdi), %rdi
 	movl	$3, %eax
@@ -7131,32 +7126,32 @@ hrdbf_file_close:
 	movb	$0, 2288(%r8)
 	movq	$0, 2280(%r8)
 	testq	%rax, %rax
-	js	.Lhrdbf_1570
-.Lhrdbf_1564:
+	js	.Lhrdbf_1571
+.Lhrdbf_1565:
 	xorl	%r9d, %r9d
-.Lhrdbf_1563:
+.Lhrdbf_1564:
 	movq	2256(%r8), %rdi
 	testq	%rdi, %rdi
-	je	.Lhrdbf_1561
+	je	.Lhrdbf_1562
 	movq	2264(%r8), %rsi
 	movl	$11, %eax
 	xorl	%edx, %edx
 	syscall
 	testq	%rax, %rax
-	js	.Lhrdbf_1566
+	js	.Lhrdbf_1567
 	movq	$0, 2256(%r8)
 	movq	$0, 2264(%r8)
-.Lhrdbf_1561:
+.Lhrdbf_1562:
 	movl	%r9d, %eax
 	ret
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1570:
+.Lhrdbf_1571:
 	movl	$7, %r9d
-	jmp	.Lhrdbf_1563
+	jmp	.Lhrdbf_1564
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1566:
+.Lhrdbf_1567:
 	movl	$7, %r9d
 	movl	%r9d, %eax
 	ret
@@ -7208,14 +7203,14 @@ hrdbf_file_open.part.0:
 	addq	$524290, %rdx
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1572:
+.Lhrdbf_1573:
 	movq	%r8, %rax
 	syscall
 	movq	%rax, %r12
 	cmpq	$-4, %rax
-	je	.Lhrdbf_1572
+	je	.Lhrdbf_1573
 	testq	%rax, %rax
-	js	.Lhrdbf_1610
+	js	.Lhrdbf_1611
 	movl	$8, %r8d
 	xorl	%ebx, %ebx
 	movl	$2, %edx
@@ -7227,17 +7222,17 @@ hrdbf_file_open.part.0:
 	movq	%rax, %r13
 	movq	%rax, %rdx
 	testq	%rax, %rax
-	js	.Lhrdbf_1608
+	js	.Lhrdbf_1609
 	cmpq	$32, %rax
-	jle	.Lhrdbf_1611
+	jle	.Lhrdbf_1612
 	cmpq	$67108864, %rax
-	jg	.Lhrdbf_1612
+	jg	.Lhrdbf_1613
 	movq	%r8, %rax
 	movq	%rbx, %rsi
 	movq	%rbx, %rdx
 	syscall
 	testq	%rax, %rax
-	js	.Lhrdbf_1613
+	js	.Lhrdbf_1614
 	movq	%r13, 2264(%rbp)
 	xorl	%r9d, %r9d
 	movq	%rbx, %rdi
@@ -7248,9 +7243,9 @@ hrdbf_file_open.part.0:
 	movq	$-1, %r8
 	syscall
 	cmpq	$-4095, %rax
-	jb	.Lhrdbf_1581
+	jb	.Lhrdbf_1582
 	movq	$0, 2256(%rbp)
-.Lhrdbf_1582:
+.Lhrdbf_1583:
 	movq	$0, 2264(%rbp)
 	movq	%rbp, %rdi
 	movl	$.Lhrdbf_C54, %esi
@@ -7262,15 +7257,15 @@ hrdbf_file_open.part.0:
 	syscall
 	movl	$8, %r10d
 	testq	%rax, %rax
-	js	.Lhrdbf_1609
+	js	.Lhrdbf_1610
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1576:
+.Lhrdbf_1577:
 	movq	%rbp, %rdi
 	call .Lhrdbf_entry_hrdbf_file_close
 	testl	%eax, %eax
 	cmovne	%eax, %r10d
-.Lhrdbf_1571:
+.Lhrdbf_1572:
 	addq	$24, %rsp
 	movl	%r10d, %eax
 	popq	%rbx
@@ -7280,90 +7275,90 @@ hrdbf_file_open.part.0:
 	ret
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1616:
+.Lhrdbf_1617:
 	movq	%rax, %rdx
 	movl	$.Lhrdbf_C55, %esi
-.Lhrdbf_1608:
+.Lhrdbf_1609:
 	movq	%rbp, %rdi
 	call .Lhrdbf_entry_hrdbf_local_ferr
-.Lhrdbf_1607:
+.Lhrdbf_1608:
 	movl	$3, %eax
 	movq	%r12, %rdi
 	movq	%rbx, %rsi
 	movq	%rbx, %rdx
 	syscall
 	movl	$7, %r10d
-	jmp	.Lhrdbf_1576
+	jmp	.Lhrdbf_1577
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1581:
+.Lhrdbf_1582:
 	movq	%rax, 2256(%rbp)
 	movq	%rax, %rsi
 	testq	%rax, %rax
-	je	.Lhrdbf_1582
+	je	.Lhrdbf_1583
 	movq	2264(%rbp), %rdx
 	xorl	%r8d, %r8d
 	xorl	%ebx, %ebx
 	testq	%rdx, %rdx
-	jne	.Lhrdbf_1583
+	jne	.Lhrdbf_1584
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1584:
+.Lhrdbf_1585:
 	leaq	15(%rsp), %rsi
 	xorl	%r8d, %r8d
 	movl	$1, %edx
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1587:
+.Lhrdbf_1588:
 	movq	%r8, %rax
 	movq	%r12, %rdi
 	syscall
 	movq	%rax, %rbx
 	cmpq	$-4, %rax
-	je	.Lhrdbf_1587
+	je	.Lhrdbf_1588
 	testq	%rax, %rax
-	jne	.Lhrdbf_1614
+	jne	.Lhrdbf_1615
 	movq	2264(%rbp), %rdx
 	movq	2256(%rbp), %rsi
 	movq	%rbp, %rdi
 	call .Lhrdbf_entry_hrdbf_open
 	movl	%eax, %r10d
 	testl	%eax, %eax
-	jne	.Lhrdbf_1589
+	jne	.Lhrdbf_1590
 	movl	2272(%rbp), %eax
 	testl	%eax, %eax
-	jne	.Lhrdbf_1615
+	jne	.Lhrdbf_1616
 	movl	$3, %eax
 	movq	%r12, %rdi
 	movq	%rbx, %rsi
 	movq	%rbx, %rdx
 	syscall
 	testq	%rax, %rax
-	jns	.Lhrdbf_1571
-	jmp	.Lhrdbf_1609
+	jns	.Lhrdbf_1572
+	jmp	.Lhrdbf_1610
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1617:
+.Lhrdbf_1618:
 	movq	2256(%rbp), %rsi
-.Lhrdbf_1583:
+.Lhrdbf_1584:
 	addq	%r8, %rsi
 	subq	%r8, %rdx
 	movq	%rbx, %rax
 	movq	%r12, %rdi
 	syscall
 	cmpq	$-4, %rax
-	je	.Lhrdbf_1585
+	je	.Lhrdbf_1586
 	testq	%rax, %rax
-	jle	.Lhrdbf_1616
+	jle	.Lhrdbf_1617
 	addq	%rax, %r8
-.Lhrdbf_1585:
+.Lhrdbf_1586:
 	movq	2264(%rbp), %rdx
 	cmpq	%r8, %rdx
-	ja	.Lhrdbf_1617
-	jmp	.Lhrdbf_1584
+	ja	.Lhrdbf_1618
+	jmp	.Lhrdbf_1585
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1612:
+.Lhrdbf_1613:
 	movq	%rbp, %rdi
 	movl	$.Lhrdbf_C52, %esi
 	call .Lhrdbf_entry_hrdbf_local_fset
@@ -7380,9 +7375,9 @@ hrdbf_file_open.part.0:
 	syscall
 	movl	$4, %r10d
 	testq	%rax, %rax
-	jns	.Lhrdbf_1576
-	jmp	.Lhrdbf_1609
-.Lhrdbf_1614:
+	jns	.Lhrdbf_1577
+	jmp	.Lhrdbf_1610
+.Lhrdbf_1615:
 	movq	%rbp, %rdi
 	movl	$.Lhrdbf_C56, %esi
 	call .Lhrdbf_entry_hrdbf_local_fset
@@ -7391,12 +7386,12 @@ hrdbf_file_open.part.0:
 	movq	%r8, %rsi
 	movq	%r8, %rdx
 	syscall
-.Lhrdbf_1609:
+.Lhrdbf_1610:
 	movl	$7, %r10d
-	jmp	.Lhrdbf_1576
+	jmp	.Lhrdbf_1577
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1611:
+.Lhrdbf_1612:
 	movq	%rbp, %rdi
 	movl	$.Lhrdbf_C5, %esi
 	call .Lhrdbf_entry_hrdbf_local_fset
@@ -7407,33 +7402,33 @@ hrdbf_file_open.part.0:
 	syscall
 	movl	$1, %r10d
 	testq	%rax, %rax
-	jns	.Lhrdbf_1576
-	jmp	.Lhrdbf_1609
-.Lhrdbf_1610:
+	jns	.Lhrdbf_1577
+	jmp	.Lhrdbf_1610
+.Lhrdbf_1611:
 	movq	%rax, %rdx
 	movl	$.Lhrdbf_C50, %esi
 	movq	%rbp, %rdi
 	call .Lhrdbf_entry_hrdbf_local_ferr
 	movl	$7, %r10d
-	jmp	.Lhrdbf_1571
-.Lhrdbf_1613:
+	jmp	.Lhrdbf_1572
+.Lhrdbf_1614:
 	movl	$.Lhrdbf_C51, %esi
 	movq	%rbp, %rdi
 	call .Lhrdbf_entry_hrdbf_local_fset
-	jmp	.Lhrdbf_1607
-.Lhrdbf_1589:
+	jmp	.Lhrdbf_1608
+.Lhrdbf_1590:
 	movl	$3, %eax
 	movq	%r12, %rdi
 	movq	%rbx, %rsi
 	movq	%rbx, %rdx
 	syscall
 	testq	%rax, %rax
-	jns	.Lhrdbf_1576
-	jmp	.Lhrdbf_1609
-.Lhrdbf_1615:
+	jns	.Lhrdbf_1577
+	jmp	.Lhrdbf_1610
+.Lhrdbf_1616:
 	movq	%r12, 2280(%rbp)
 	movb	$1, 2288(%rbp)
-	jmp	.Lhrdbf_1571
+	jmp	.Lhrdbf_1572
 	.size	hrdbf_file_open.part.0, .-hrdbf_file_open.part.0
 	.p2align 4
 	.type	hrdbf_app_exit, @function
@@ -7455,14 +7450,14 @@ hrdbf_app_fail:
 	xorl	%edx, %edx
 	cmpb	$0, (%rdi)
 	movq	%rdi, %rsi
-	je	.Lhrdbf_1620
+	je	.Lhrdbf_1621
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1621:
+.Lhrdbf_1622:
 	addq	$1, %rdx
 	cmpb	$0, (%rsi,%rdx)
-	jne	.Lhrdbf_1621
-.Lhrdbf_1620:
+	jne	.Lhrdbf_1622
+.Lhrdbf_1621:
 	movl	$1, %eax
 	movl	$2, %edi
 	syscall
@@ -7488,14 +7483,14 @@ hrdbf_app_get_ord.part.0:
 	movq	%rsp, %rdx
 	call .Lhrdbf_entry_hrdbf_get
 	testl	%eax, %eax
-	jne	.Lhrdbf_1638
+	jne	.Lhrdbf_1639
 	movzbl	(%rsp), %eax
 	cmpb	$67, %al
-	je	.Lhrdbf_1639
-	cmpb	$78, %al
 	je	.Lhrdbf_1640
-	cmpb	$68, %al
+	cmpb	$78, %al
 	je	.Lhrdbf_1641
+	cmpb	$68, %al
+	je	.Lhrdbf_1642
 	movzbl	28(%rsp), %edx
 	addq	$288, %rsp
 	movl	$3, %eax
@@ -7503,23 +7498,23 @@ hrdbf_app_get_ord.part.0:
 	ret
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1639:
+.Lhrdbf_1640:
 	movq	8(%rsp), %rdi
 	movzbl	1(%rsp), %esi
 	testq	%rdi, %rdi
-	je	.Lhrdbf_1642
-.Lhrdbf_1627:
+	je	.Lhrdbf_1643
+.Lhrdbf_1628:
 	call	*%rbx
 	movq	%rax, %rdx
 	testq	%rax, %rax
-	je	.Lhrdbf_1643
+	je	.Lhrdbf_1644
 	addq	$288, %rsp
 	movl	$4, %eax
 	popq	%rbx
 	ret
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1641:
+.Lhrdbf_1642:
 	movl	24(%rsp), %edx
 	addq	$288, %rsp
 	movl	$11, %eax
@@ -7527,7 +7522,7 @@ hrdbf_app_get_ord.part.0:
 	ret
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1640:
+.Lhrdbf_1641:
 	movzbl	2(%rsp), %eax
 	movzbl	1(%rsp), %edx
 	salq	$8, %rax
@@ -7540,25 +7535,25 @@ hrdbf_app_get_ord.part.0:
 	ret
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1642:
+.Lhrdbf_1643:
 	leaq	32(%rsp), %rax
 	leaq	(%rax,%rsi), %rdx
 	testq	%rsi, %rsi
-	je	.Lhrdbf_1630
+	je	.Lhrdbf_1631
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1629:
+.Lhrdbf_1630:
 	movb	$32, (%rax)
 	addq	$1, %rax
 	cmpq	%rdx, %rax
-	jne	.Lhrdbf_1629
-.Lhrdbf_1630:
+	jne	.Lhrdbf_1630
+.Lhrdbf_1631:
 	leaq	32(%rsp), %rdi
-	jmp	.Lhrdbf_1627
-.Lhrdbf_1638:
+	jmp	.Lhrdbf_1628
+.Lhrdbf_1639:
 	movl	$.Lhrdbf_C57, %edi
 	call .Lhrdbf_entry_hrdbf_app_fail
-.Lhrdbf_1643:
+.Lhrdbf_1644:
 	movl	$.Lhrdbf_C58, %edi
 	call .Lhrdbf_entry_hrdbf_app_fail
 	.size	hrdbf_app_get_ord.part.0, .-hrdbf_app_get_ord.part.0
@@ -7581,26 +7576,26 @@ hrdbf_app_get_ord.part.0:
 hrdbf_app_require_writable:
 .Lhrdbf_entry_hrdbf_app_require_writable:
 	cmpb	$0, hrdbf_app_state+40(%rip)
-	je	.Lhrdbf_1649
+	je	.Lhrdbf_1650
 	movl	hrdbf_app_state+2272(%rip), %eax
 	testl	%eax, %eax
-	je	.Lhrdbf_1650
+	je	.Lhrdbf_1651
 	cmpq	$0, hrdbf_app_order(%rip)
-	jne	.Lhrdbf_1651
+	jne	.Lhrdbf_1652
 	movl	hrdbf_app_state+16(%rip), %eax
 	cmpq	%rax, hrdbf_app_state+24(%rip)
-	ja	.Lhrdbf_1652
+	ja	.Lhrdbf_1653
 	ret
-.Lhrdbf_1649:
+.Lhrdbf_1650:
 	movl	$.Lhrdbf_C59, %edi
 	call .Lhrdbf_entry_hrdbf_app_fail
-.Lhrdbf_1652:
+.Lhrdbf_1653:
 	movl	$.Lhrdbf_C62, %edi
 	call .Lhrdbf_entry_hrdbf_app_fail
-.Lhrdbf_1651:
+.Lhrdbf_1652:
 	movl	$.Lhrdbf_C61, %edi
 	call .Lhrdbf_entry_hrdbf_app_fail
-.Lhrdbf_1650:
+.Lhrdbf_1651:
 	movl	$.Lhrdbf_C60, %edi
 	call .Lhrdbf_entry_hrdbf_app_fail
 	.size	hrdbf_app_require_writable, .-hrdbf_app_require_writable
@@ -7622,27 +7617,27 @@ hrdbf_file_open:
 	movl	$16842752, 36(%rdi)
 	movb	$0, 40(%rdi)
 	movl	$0, 2272(%rdi)
-	jne	.Lhrdbf_1654
+	jne	.Lhrdbf_1655
 	movq	2256(%rdi), %rdi
 	testq	%rdi, %rdi
-	je	.Lhrdbf_1656
+	je	.Lhrdbf_1657
 	movq	2264(%r8), %rsi
 	movl	$11, %eax
 	xorl	%edx, %edx
 	syscall
 	testq	%rax, %rax
-	js	.Lhrdbf_1653
-.Lhrdbf_1662:
+	js	.Lhrdbf_1654
+.Lhrdbf_1663:
 	movq	$0, 2256(%r8)
 	movq	$0, 2264(%r8)
-.Lhrdbf_1656:
+.Lhrdbf_1657:
 	movl	%r9d, %edx
 	movq	%r10, %rsi
 	movq	%r8, %rdi
 	jmp .Lhrdbf_entry_hrdbf_file_open.part.0
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1654:
+.Lhrdbf_1655:
 	xorl	%edx, %edx
 	movq	2280(%rdi), %rdi
 	movl	$3, %eax
@@ -7652,27 +7647,27 @@ hrdbf_file_open:
 	movq	2256(%r8), %rdi
 	movq	$0, 2280(%r8)
 	testq	%rax, %rax
-	js	.Lhrdbf_1666
+	js	.Lhrdbf_1667
 	testq	%rdi, %rdi
-	je	.Lhrdbf_1656
+	je	.Lhrdbf_1657
 	movq	2264(%r8), %rsi
 	movl	$11, %eax
 	syscall
 	testq	%rax, %rax
-	jns	.Lhrdbf_1662
-.Lhrdbf_1653:
+	jns	.Lhrdbf_1663
+.Lhrdbf_1654:
 	movl	$7, %eax
 	ret
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1666:
+.Lhrdbf_1667:
 	testq	%rdi, %rdi
-	je	.Lhrdbf_1653
+	je	.Lhrdbf_1654
 	movq	2264(%r8), %rsi
 	movl	$11, %eax
 	syscall
 	testq	%rax, %rax
-	js	.Lhrdbf_1653
+	js	.Lhrdbf_1654
 	movq	$0, 2256(%r8)
 	movl	$7, %eax
 	movq	$0, 2264(%r8)
@@ -7688,17 +7683,17 @@ hrdbf_file_write_record:
 	movq	%rdi, %r8
 	movl	$6, %eax
 	testl	%edx, %edx
-	je	.Lhrdbf_1667
+	je	.Lhrdbf_1668
 	cmpb	$0, 2288(%rdi)
-	je	.Lhrdbf_1667
+	je	.Lhrdbf_1668
 	cmpb	$0, 40(%rdi)
-	je	.Lhrdbf_1667
+	je	.Lhrdbf_1668
 	movl	$1, %eax
 	testq	%rsi, %rsi
-	je	.Lhrdbf_1667
+	je	.Lhrdbf_1668
 	movl	16(%rdi), %edx
 	cmpq	%rsi, %rdx
-	jb	.Lhrdbf_1667
+	jb	.Lhrdbf_1668
 	leaq	-1(%rsi), %r10
 	movzwl	34(%rdi), %edx
 	movzwl	32(%rdi), %eax
@@ -7709,31 +7704,31 @@ hrdbf_file_write_record:
 	movq	2256(%rdi), %rsi
 	addq	%r10, %rsi
 	testq	%rdx, %rdx
-	je	.Lhrdbf_1671
+	je	.Lhrdbf_1672
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1669:
+.Lhrdbf_1670:
 	movq	2280(%r8), %rdi
 	movq	%r9, %rax
 	syscall
 	cmpq	$-4, %rax
-	je	.Lhrdbf_1669
+	je	.Lhrdbf_1670
 	testq	%rax, %rax
-	jle	.Lhrdbf_1677
+	jle	.Lhrdbf_1678
 	cmpq	%rdx, %rax
-	ja	.Lhrdbf_1677
+	ja	.Lhrdbf_1678
 	addq	%rax, %rsi
 	addq	%rax, %r10
 	subq	%rax, %rdx
-	jne	.Lhrdbf_1669
-.Lhrdbf_1671:
+	jne	.Lhrdbf_1670
+.Lhrdbf_1672:
 	xorl	%eax, %eax
 	ret
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1677:
+.Lhrdbf_1678:
 	movl	$7, %eax
-.Lhrdbf_1667:
+.Lhrdbf_1668:
 	ret
 	.size	hrdbf_file_write_record, .-hrdbf_file_write_record
 	.p2align 4
@@ -7744,15 +7739,15 @@ hrdbf_file_append:
 	endbr64
 	movl	2272(%rdi), %eax
 	testl	%eax, %eax
-	je	.Lhrdbf_1686
+	je	.Lhrdbf_1687
 	cmpb	$0, 2288(%rdi)
-	je	.Lhrdbf_1686
+	je	.Lhrdbf_1687
 	cmpb	$0, 40(%rdi)
-	je	.Lhrdbf_1686
+	je	.Lhrdbf_1687
 	jmp .Lhrdbf_entry_hrdbf_file_append.part.0
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1686:
+.Lhrdbf_1687:
 	movl	$6, %eax
 	ret
 	.size	hrdbf_file_append, .-hrdbf_file_append
@@ -7789,13 +7784,13 @@ hrntx_seek:
 	cmpq	%rdx, %rax
 	cmovbe	%rax, %rdx
 	testl	%r11d, %r11d
-	je	.Lhrdbf_1693
+	je	.Lhrdbf_1694
 	movq	(%rdi), %r9
 	movq	16(%rdi), %r8
 	xorl	%r10d, %r10d
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1698:
+.Lhrdbf_1699:
 	movl	%r11d, %edi
 	subl	%r10d, %edi
 	shrl $1, %edi
@@ -7803,54 +7798,54 @@ hrntx_seek:
 	movl	4(%r8,%rax,8), %ecx
 	movq	%rax, %rdi
 	testq	%rdx, %rdx
-	je	.Lhrdbf_1711
+	je	.Lhrdbf_1712
 	xorl	%eax, %eax
 	addq	%r9, %rcx
-	jmp	.Lhrdbf_1697
+	jmp	.Lhrdbf_1698
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1695:
+.Lhrdbf_1696:
 	addq	$1, %rax
 	cmpq	%rax, %rdx
-	je	.Lhrdbf_1711
-.Lhrdbf_1697:
+	je	.Lhrdbf_1712
+.Lhrdbf_1698:
 	movzbl	(%rsi,%rax), %r14d
 	cmpb	%r14b, (%rcx,%rax)
-	je	.Lhrdbf_1695
-	jnb	.Lhrdbf_1711
+	je	.Lhrdbf_1696
+	jnb	.Lhrdbf_1712
 	leal	1(%rdi), %r10d
-.Lhrdbf_1694:
+.Lhrdbf_1695:
 	cmpl	%r11d, %r10d
-	jb	.Lhrdbf_1698
+	jb	.Lhrdbf_1699
 	movl	24(%rbx), %r11d
 	cmpl	%r10d, %r11d
-	jbe	.Lhrdbf_1702
+	jbe	.Lhrdbf_1703
 	movl	%r10d, %eax
 	leaq	(%r8,%rax,8), %rax
-.Lhrdbf_1701:
+.Lhrdbf_1702:
 	movl	4(%rax), %ecx
 	testq	%rdx, %rdx
-	je	.Lhrdbf_1703
+	je	.Lhrdbf_1704
 	xorl	%eax, %eax
 	addq	%r9, %rcx
-	jmp	.Lhrdbf_1704
+	jmp	.Lhrdbf_1705
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1736:
+.Lhrdbf_1737:
 	addq	$1, %rax
 	cmpq	%rax, %rdx
-	je	.Lhrdbf_1703
-.Lhrdbf_1704:
+	je	.Lhrdbf_1704
+.Lhrdbf_1705:
 	movzbl	(%rsi,%rax), %edi
 	cmpb	%dil, (%rcx,%rax)
-	je	.Lhrdbf_1736
-.Lhrdbf_1702:
+	je	.Lhrdbf_1737
+.Lhrdbf_1703:
 	testl	%ebp, %ebp
-	je	.Lhrdbf_1692
+	je	.Lhrdbf_1693
 	testl	%r12d, %r12d
-	jne	.Lhrdbf_1737
+	jne	.Lhrdbf_1738
 	movl	%r10d, %r11d
-.Lhrdbf_1692:
+.Lhrdbf_1693:
 	popq	%rbx
 	movl	%r11d, %eax
 	popq	%rbp
@@ -7860,20 +7855,20 @@ hrntx_seek:
 	ret
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1711:
+.Lhrdbf_1712:
 	movl	%edi, %r11d
-	jmp	.Lhrdbf_1694
-.Lhrdbf_1703:
+	jmp	.Lhrdbf_1695
+.Lhrdbf_1704:
 	movl	$1, 0(%r13)
 	movl	%r10d, %r11d
 	testl	%r12d, %r12d
-	je	.Lhrdbf_1692
+	je	.Lhrdbf_1693
 	movl	24(%rbx), %r11d
 	cmpl	%r10d, %r11d
-	jbe	.Lhrdbf_1705
+	jbe	.Lhrdbf_1706
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1710:
+.Lhrdbf_1711:
 	movl	%r11d, %edi
 	subl	%r10d, %edi
 	shrl $1, %edi
@@ -7881,26 +7876,26 @@ hrntx_seek:
 	movl	4(%r8,%rax,8), %ecx
 	movq	%rax, %rdi
 	testq	%rdx, %rdx
-	je	.Lhrdbf_1706
+	je	.Lhrdbf_1707
 	xorl	%eax, %eax
 	addq	%r9, %rcx
-	jmp	.Lhrdbf_1709
+	jmp	.Lhrdbf_1710
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1707:
+.Lhrdbf_1708:
 	addq	$1, %rax
 	cmpq	%rax, %rdx
-	je	.Lhrdbf_1706
-.Lhrdbf_1709:
+	je	.Lhrdbf_1707
+.Lhrdbf_1710:
 	movzbl	(%rsi,%rax), %ebx
 	cmpb	%bl, (%rcx,%rax)
-	je	.Lhrdbf_1707
-	jb	.Lhrdbf_1706
+	je	.Lhrdbf_1708
+	jb	.Lhrdbf_1707
 	movl	%edi, %r11d
-.Lhrdbf_1708:
+.Lhrdbf_1709:
 	cmpl	%r11d, %r10d
-	jb	.Lhrdbf_1710
-.Lhrdbf_1705:
+	jb	.Lhrdbf_1711
+.Lhrdbf_1706:
 	leal	-1(%r10), %r11d
 	popq	%rbx
 	popq	%rbp
@@ -7911,10 +7906,10 @@ hrntx_seek:
 	ret
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1706:
+.Lhrdbf_1707:
 	leal	1(%rdi), %r10d
-	jmp	.Lhrdbf_1708
-.Lhrdbf_1737:
+	jmp	.Lhrdbf_1709
+.Lhrdbf_1738:
 	leal	-1(%r10), %eax
 	testl	%r10d, %r10d
 	popq	%rbx
@@ -7925,15 +7920,15 @@ hrntx_seek:
 	popq	%r14
 	movl	%r11d, %eax
 	ret
-.Lhrdbf_1693:
+.Lhrdbf_1694:
 	movl	24(%rdi), %r11d
 	testl	%r11d, %r11d
-	je	.Lhrdbf_1692
+	je	.Lhrdbf_1693
 	movq	16(%rdi), %r8
 	movq	(%rdi), %r9
 	xorl	%r10d, %r10d
 	movq	%r8, %rax
-	jmp	.Lhrdbf_1701
+	jmp	.Lhrdbf_1702
 	.size	hrntx_seek, .-hrntx_seek
 	.section	.rodata
 .Lhrdbf_C63:
@@ -7952,30 +7947,30 @@ hrdbf_app_close:
 	movq	$0, hrdbf_app_order+16(%rip)
 	movq	$0, hrdbf_app_order+24(%rip)
 	testq	%rdi, %rdi
-	je	.Lhrdbf_1739
+	je	.Lhrdbf_1740
 	movq	hrdbf_app_order+48(%rip), %rsi
 	movl	$11, %eax
 	xorl	%edx, %edx
 	syscall
 	movl	$7, %r8d
 	testq	%rax, %rax
-	js	.Lhrdbf_1739
+	js	.Lhrdbf_1740
 	movq	$0, hrdbf_app_order+32(%rip)
 	xorl	%r8d, %r8d
 	movq	$0, hrdbf_app_order+48(%rip)
-.Lhrdbf_1739:
+.Lhrdbf_1740:
 	movq	hrdbf_app_order+40(%rip), %rdi
 	testq	%rdi, %rdi
-	je	.Lhrdbf_1740
+	je	.Lhrdbf_1741
 	movq	hrdbf_app_order+56(%rip), %rsi
 	movl	$11, %eax
 	xorl	%edx, %edx
 	syscall
 	testq	%rax, %rax
-	js	.Lhrdbf_1751
+	js	.Lhrdbf_1752
 	movq	$0, hrdbf_app_order+40(%rip)
 	movq	$0, hrdbf_app_order+56(%rip)
-.Lhrdbf_1740:
+.Lhrdbf_1741:
 	cmpb	$0, hrdbf_app_state+2288(%rip)
 	movq	$0, hrdbf_app_state(%rip)
 	movq	$0, hrdbf_app_state+8(%rip)
@@ -7984,7 +7979,7 @@ hrdbf_app_close:
 	movl	$16842752, hrdbf_app_state+36(%rip)
 	movb	$0, hrdbf_app_state+40(%rip)
 	movl	$0, hrdbf_app_state+2272(%rip)
-	je	.Lhrdbf_1745
+	je	.Lhrdbf_1746
 	xorl	%edx, %edx
 	movq	hrdbf_app_state+2280(%rip), %rdi
 	movl	$3, %eax
@@ -7993,47 +7988,47 @@ hrdbf_app_close:
 	movb	$0, hrdbf_app_state+2288(%rip)
 	movq	$0, hrdbf_app_state+2280(%rip)
 	testq	%rax, %rax
-	js	.Lhrdbf_1758
-.Lhrdbf_1745:
+	js	.Lhrdbf_1759
+.Lhrdbf_1746:
 	movq	hrdbf_app_state+2256(%rip), %rdi
 	xorl	%r9d, %r9d
 	testq	%rdi, %rdi
-	je	.Lhrdbf_1743
-.Lhrdbf_1742:
+	je	.Lhrdbf_1744
+.Lhrdbf_1743:
 	movq	hrdbf_app_state+2264(%rip), %rsi
 	movl	$11, %eax
 	xorl	%edx, %edx
 	syscall
 	testq	%rax, %rax
-	js	.Lhrdbf_1746
+	js	.Lhrdbf_1747
 	movq	$0, hrdbf_app_state+2256(%rip)
 	orl	%r9d, %r8d
 	movq	$0, hrdbf_app_state+2264(%rip)
-.Lhrdbf_1743:
+.Lhrdbf_1744:
 	movl	$0, hrdbf_app_found_flag(%rip)
 	movl	$0, hrdbf_app_order_active(%rip)
 	movq	$0, hrdbf_app_pos(%rip)
 	testl	%r8d, %r8d
-	jne	.Lhrdbf_1748
+	jne	.Lhrdbf_1749
 	ret
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1758:
+.Lhrdbf_1759:
 	movq	hrdbf_app_state+2256(%rip), %rdi
 	testq	%rdi, %rdi
-	je	.Lhrdbf_1746
+	je	.Lhrdbf_1747
 	movl	$7, %r9d
-	jmp	.Lhrdbf_1742
+	jmp	.Lhrdbf_1743
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1751:
+.Lhrdbf_1752:
 	movl	$7, %r8d
-	jmp	.Lhrdbf_1740
-.Lhrdbf_1746:
+	jmp	.Lhrdbf_1741
+.Lhrdbf_1747:
 	movl	$0, hrdbf_app_found_flag(%rip)
 	movl	$0, hrdbf_app_order_active(%rip)
 	movq	$0, hrdbf_app_pos(%rip)
-.Lhrdbf_1748:
+.Lhrdbf_1749:
 	movl	$.Lhrdbf_C63, %edi
 	call .Lhrdbf_entry_hrdbf_app_fail
 	.size	hrdbf_app_close, .-hrdbf_app_close
@@ -8074,27 +8069,27 @@ hrdbf_app_open:
 	movq	%rdi, %rbx
 	movq	%rcx, %rbp
 	testq	%rdx, %rdx
-	je	.Lhrdbf_1760
+	je	.Lhrdbf_1761
 	cmpb	$0, hrdbf_app_state+40(%rip)
-	jne	.Lhrdbf_1808
-.Lhrdbf_1760:
+	jne	.Lhrdbf_1809
+.Lhrdbf_1761:
 	leaq	-1(%rsi), %rax
 	cmpq	$4094, %rax
-	ja	.Lhrdbf_1809
+	ja	.Lhrdbf_1810
 	xorl	%r9d, %r9d
-	jmp	.Lhrdbf_1761
+	jmp	.Lhrdbf_1762
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1789:
+.Lhrdbf_1790:
 	movq	%r10, %r9
-.Lhrdbf_1761:
+.Lhrdbf_1762:
 	movzbl	(%rbx,%r9), %eax
 	testb	%al, %al
-	je	.Lhrdbf_1810
+	je	.Lhrdbf_1811
 	leaq	1(%r9), %r10
 	movb	%al, (%rsp,%r9)
 	cmpq	%r10, %rsi
-	jne	.Lhrdbf_1789
+	jne	.Lhrdbf_1790
 	movq	hrdbf_app_order+32(%rip), %r13
 	movb	$0, (%rsp,%r10)
 	movq	$0, hrdbf_app_order(%rip)
@@ -8102,7 +8097,7 @@ hrdbf_app_open:
 	movq	$0, hrdbf_app_order+16(%rip)
 	movq	$0, hrdbf_app_order+24(%rip)
 	testq	%r13, %r13
-	je	.Lhrdbf_1811
+	je	.Lhrdbf_1812
 	movl	$11, %r12d
 	movq	hrdbf_app_order+48(%rip), %rsi
 	xorl	%edx, %edx
@@ -8110,21 +8105,21 @@ hrdbf_app_open:
 	movq	%r12, %rax
 	syscall
 	testq	%rax, %rax
-	js	.Lhrdbf_1766
+	js	.Lhrdbf_1767
 	movq	hrdbf_app_order+40(%rip), %rdi
 	movq	$0, hrdbf_app_order+32(%rip)
 	movq	$0, hrdbf_app_order+48(%rip)
 	testq	%rdi, %rdi
-	je	.Lhrdbf_1770
+	je	.Lhrdbf_1771
 	movq	hrdbf_app_order+56(%rip), %rsi
 	movq	%r12, %rax
 	syscall
 	testq	%rax, %rax
-	js	.Lhrdbf_1769
-.Lhrdbf_1771:
+	js	.Lhrdbf_1770
+.Lhrdbf_1772:
 	movq	$0, hrdbf_app_order+40(%rip)
 	movq	$0, hrdbf_app_order+56(%rip)
-.Lhrdbf_1770:
+.Lhrdbf_1771:
 	movl	$0, hrdbf_app_found_flag(%rip)
 	xorl	%eax, %eax
 	testq	%rbp, %rbp
@@ -8136,37 +8131,37 @@ hrdbf_app_open:
 	xorl	%eax, %eax
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1773:
+.Lhrdbf_1774:
 	movzbl	(%rbx,%rax), %esi
 	movq	%rax, %rdx
 	addq	$1, %rax
 	cmpb	$47, %sil
 	cmove	%rax, %rcx
 	cmpq	%rdx, %r9
-	jne	.Lhrdbf_1773
+	jne	.Lhrdbf_1774
 	cmpq	%r10, %rcx
-	jnb	.Lhrdbf_1774
+	jnb	.Lhrdbf_1775
 	movq	%rcx, %rax
-	jmp	.Lhrdbf_1776
+	jmp	.Lhrdbf_1777
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1790:
+.Lhrdbf_1791:
 	movq	%rdx, %rax
-.Lhrdbf_1776:
+.Lhrdbf_1777:
 	cmpb	$46, (%rbx,%rax)
 	leaq	1(%rax), %rdx
 	cmove	%rax, %r10
 	cmpq	%r9, %rax
-	jne	.Lhrdbf_1790
-.Lhrdbf_1774:
+	jne	.Lhrdbf_1791
+.Lhrdbf_1775:
 	subq	%rcx, %r10
 	leaq	(%rbx,%rcx), %rdi
 	movl	$0, %edx
 	movq	%r10, hrdbf_app_baselen(%rip)
-	je	.Lhrdbf_1781
+	je	.Lhrdbf_1782
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1777:
+.Lhrdbf_1778:
 	movzbl	(%rdi,%rdx), %eax
 	leal	-97(%rax), %esi
 	leal	-32(%rax), %ecx
@@ -8175,8 +8170,8 @@ hrdbf_app_open:
 	addq	$1, %rdx
 	movb	%al, hrdbf_app_basename-1(%rdx)
 	cmpq	%rdx, %r10
-	jne	.Lhrdbf_1777
-.Lhrdbf_1781:
+	jne	.Lhrdbf_1778
+.Lhrdbf_1782:
 	xorl	%r10d, %r10d
 	movl	$hrdbf_app_state, %edi
 	testq	%r8, %r8
@@ -8184,13 +8179,13 @@ hrdbf_app_open:
 	setne	%r10b
 	call .Lhrdbf_entry_hrdbf_file_close
 	testl	%eax, %eax
-	jne	.Lhrdbf_1778
+	jne	.Lhrdbf_1779
 	movl	%r10d, %edx
 	movq	%rsp, %rsi
 	movl	$hrdbf_app_state, %edi
 	call .Lhrdbf_entry_hrdbf_file_open.part.0
 	testl	%eax, %eax
-	jne	.Lhrdbf_1778
+	jne	.Lhrdbf_1779
 	addq	$4104, %rsp
 	popq	%rbx
 	popq	%rbp
@@ -8199,72 +8194,72 @@ hrdbf_app_open:
 	ret
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1766:
+.Lhrdbf_1767:
 	movq	hrdbf_app_order+40(%rip), %rdi
 	testq	%rdi, %rdi
-	je	.Lhrdbf_1769
+	je	.Lhrdbf_1770
 	movq	hrdbf_app_order+56(%rip), %rsi
 	movq	%r12, %rax
 	syscall
 	testq	%rax, %rax
-	js	.Lhrdbf_1769
+	js	.Lhrdbf_1770
 	movq	$0, hrdbf_app_order+40(%rip)
 	movq	$0, hrdbf_app_order+56(%rip)
-.Lhrdbf_1769:
+.Lhrdbf_1770:
 	movl	$.Lhrdbf_C68, %edi
 	call .Lhrdbf_entry_hrdbf_app_fail
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1811:
+.Lhrdbf_1812:
 	movq	hrdbf_app_order+40(%rip), %rdi
 	testq	%rdi, %rdi
-	je	.Lhrdbf_1770
+	je	.Lhrdbf_1771
 	movq	hrdbf_app_order+56(%rip), %rsi
 	movl	$11, %eax
 	movq	%r13, %rdx
 	syscall
 	testq	%rax, %rax
-	jns	.Lhrdbf_1771
-	jmp	.Lhrdbf_1769
-.Lhrdbf_1810:
+	jns	.Lhrdbf_1772
+	jmp	.Lhrdbf_1770
+.Lhrdbf_1811:
 	movl	$.Lhrdbf_C67, %edi
 	call .Lhrdbf_entry_hrdbf_app_fail
-.Lhrdbf_1809:
+.Lhrdbf_1810:
 	movl	$.Lhrdbf_C66, %edi
 	call .Lhrdbf_entry_hrdbf_app_fail
-.Lhrdbf_1808:
+.Lhrdbf_1809:
 	movl	$.Lhrdbf_C65, %edi
 	call .Lhrdbf_entry_hrdbf_app_fail
-.Lhrdbf_1778:
+.Lhrdbf_1779:
 	cmpb	$0, hrdbf_app_state+2289(%rip)
 	movl	$hrdbf_app_state+2289, %r8d
 	movl	$hrdbf_app_state+2090, %edx
 	cmove	%rdx, %r8
 	cmpb	$0, (%r8)
-	jne	.Lhrdbf_1784
+	jne	.Lhrdbf_1785
 	subl	$2, %eax
 	movl	$.Lhrdbf_C64, %r8d
 	cmpl	$6, %eax
-	ja	.Lhrdbf_1784
+	ja	.Lhrdbf_1785
 	movq	hrdbf_local_CSWTCH.468(,%rax,8), %r8
-.Lhrdbf_1784:
-	xorl	%edx, %edx
 .Lhrdbf_1785:
+	xorl	%edx, %edx
+.Lhrdbf_1786:
 	addq	$1, %rdx
 	cmpb	$0, .Lhrdbf_C69(%rdx)
-	jne	.Lhrdbf_1785
+	jne	.Lhrdbf_1786
 	movl	$1, %eax
 	movl	$2, %edi
 	movl	$.Lhrdbf_C69, %esi
 	syscall
 	xorl	%edx, %edx
 	cmpb	$0, (%r8)
-	je	.Lhrdbf_1786
-.Lhrdbf_1787:
+	je	.Lhrdbf_1787
+.Lhrdbf_1788:
 	addq	$1, %rdx
 	cmpb	$0, (%r8,%rdx)
-	jne	.Lhrdbf_1787
-.Lhrdbf_1786:
+	jne	.Lhrdbf_1788
+.Lhrdbf_1787:
 	movl	$1, %r9d
 	movl	$2, %edi
 	movq	%r8, %rsi
@@ -8283,14 +8278,14 @@ hrdbf_app_top:
 .Lhrdbf_entry_hrdbf_app_top:
 	endbr64
 	cmpb	$0, hrdbf_app_state+40(%rip)
-	je	.Lhrdbf_1819
+	je	.Lhrdbf_1820
 	cmpq	$0, hrdbf_app_order(%rip)
 	movl	$0, hrdbf_app_found_flag(%rip)
-	je	.Lhrdbf_1814
+	je	.Lhrdbf_1815
 	movl	hrdbf_app_order_active(%rip), %edx
 	testl	%edx, %edx
-	jne	.Lhrdbf_1815
-.Lhrdbf_1814:
+	jne	.Lhrdbf_1816
+.Lhrdbf_1815:
 	movl	hrdbf_app_state+16(%rip), %eax
 	movq	$1, hrdbf_app_state+24(%rip)
 	testl	%eax, %eax
@@ -8300,15 +8295,15 @@ hrdbf_app_top:
 	ret
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1815:
+.Lhrdbf_1816:
 	movl	hrdbf_app_order+24(%rip), %edx
 	movq	$0, hrdbf_app_pos(%rip)
 	movq	%rdx, %rax
 	testq	%rdx, %rdx
-	je	.Lhrdbf_1817
+	je	.Lhrdbf_1818
 	movq	hrdbf_app_order+16(%rip), %rcx
 	movl	(%rcx), %ecx
-.Lhrdbf_1818:
+.Lhrdbf_1819:
 	testq	%rdx, %rdx
 	movq	%rcx, hrdbf_app_state+24(%rip)
 	sete	hrdbf_app_state+39(%rip)
@@ -8317,11 +8312,11 @@ hrdbf_app_top:
 	ret
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1817:
+.Lhrdbf_1818:
 	movl	hrdbf_app_state+16(%rip), %ecx
 	addq	$1, %rcx
-	jmp	.Lhrdbf_1818
-.Lhrdbf_1819:
+	jmp	.Lhrdbf_1819
+.Lhrdbf_1820:
 	movl	$.Lhrdbf_C59, %edi
 	call .Lhrdbf_entry_hrdbf_app_fail
 	.size	hrdbf_app_top, .-hrdbf_app_top
@@ -8332,53 +8327,53 @@ hrdbf_app_bottom:
 .Lhrdbf_entry_hrdbf_app_bottom:
 	endbr64
 	cmpb	$0, hrdbf_app_state+40(%rip)
-	je	.Lhrdbf_1829
+	je	.Lhrdbf_1830
 	cmpq	$0, hrdbf_app_order(%rip)
 	movl	$0, hrdbf_app_found_flag(%rip)
-	je	.Lhrdbf_1822
+	je	.Lhrdbf_1823
 	movl	hrdbf_app_order_active(%rip), %eax
 	testl	%eax, %eax
-	je	.Lhrdbf_1822
+	je	.Lhrdbf_1823
 	movl	hrdbf_app_order+24(%rip), %esi
 	movq	%rsi, %rdx
 	testl	%esi, %esi
-	jne	.Lhrdbf_1830
+	jne	.Lhrdbf_1831
 	movq	$0, hrdbf_app_pos(%rip)
 	xorl	%ecx, %ecx
-.Lhrdbf_1826:
+.Lhrdbf_1827:
 	movl	hrdbf_app_state+16(%rip), %eax
 	addq	$1, %rax
-.Lhrdbf_1827:
+.Lhrdbf_1828:
 	cmpq	%rsi, %rcx
 	setnb	%cl
 	testl	%edx, %edx
 	sete	%dl
-.Lhrdbf_1824:
+.Lhrdbf_1825:
 	movq	%rax, hrdbf_app_state+24(%rip)
 	movb	%cl, hrdbf_app_state+39(%rip)
 	movb	%dl, hrdbf_app_state+38(%rip)
 	ret
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1830:
+.Lhrdbf_1831:
 	leal	-1(%rsi), %ecx
 	movq	%rcx, hrdbf_app_pos(%rip)
 	cmpq	%rsi, %rcx
-	jnb	.Lhrdbf_1826
+	jnb	.Lhrdbf_1827
 	movq	hrdbf_app_order+16(%rip), %rax
 	movl	(%rax,%rcx,8), %eax
-	jmp	.Lhrdbf_1827
+	jmp	.Lhrdbf_1828
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1822:
+.Lhrdbf_1823:
 	movl	hrdbf_app_state+16(%rip), %edx
 	movl	$1, %eax
 	testl	%edx, %edx
 	cmovne	%rdx, %rax
 	sete	%dl
 	movl	%edx, %ecx
-	jmp	.Lhrdbf_1824
-.Lhrdbf_1829:
+	jmp	.Lhrdbf_1825
+.Lhrdbf_1830:
 	movl	$.Lhrdbf_C59, %edi
 	call .Lhrdbf_entry_hrdbf_app_fail
 	.size	hrdbf_app_bottom, .-hrdbf_app_bottom
@@ -8390,77 +8385,77 @@ hrdbf_app_skip:
 	endbr64
 	cmpb	$0, hrdbf_app_state+40(%rip)
 	movq	%rdi, %rsi
-	je	.Lhrdbf_1846
+	je	.Lhrdbf_1847
 	cmpq	$0, hrdbf_app_order(%rip)
 	movl	$0, hrdbf_app_found_flag(%rip)
-	je	.Lhrdbf_1833
+	je	.Lhrdbf_1834
 	movl	hrdbf_app_order_active(%rip), %eax
 	testl	%eax, %eax
-	je	.Lhrdbf_1833
+	je	.Lhrdbf_1834
 	testq	%rdi, %rdi
-	je	.Lhrdbf_1831
+	je	.Lhrdbf_1832
 	movb	$0, hrdbf_app_state+38(%rip)
 	movl	hrdbf_app_order+24(%rip), %eax
 	movq	hrdbf_app_pos(%rip), %rdx
-	jle	.Lhrdbf_1836
+	jle	.Lhrdbf_1837
 	movq	%rax, %rcx
 	subq	%rdx, %rcx
 	cmpq	%rdi, %rcx
-	jb	.Lhrdbf_1842
+	jb	.Lhrdbf_1843
 	addq	%rdx, %rsi
 	cmpq	%rax, %rsi
 	setnb	%dl
-.Lhrdbf_1837:
-	movq	%rsi, hrdbf_app_pos(%rip)
 .Lhrdbf_1838:
+	movq	%rsi, hrdbf_app_pos(%rip)
+.Lhrdbf_1839:
 	cmpq	%rax, %rsi
-	jnb	.Lhrdbf_1840
+	jnb	.Lhrdbf_1841
 	movq	hrdbf_app_order+16(%rip), %rax
 	movl	(%rax,%rsi,8), %eax
-.Lhrdbf_1841:
+.Lhrdbf_1842:
 	movq	%rax, hrdbf_app_state+24(%rip)
 	movb	%dl, hrdbf_app_state+39(%rip)
-.Lhrdbf_1831:
+.Lhrdbf_1832:
 	ret
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1833:
+.Lhrdbf_1834:
 	movl	$hrdbf_app_state, %edi
 	jmp .Lhrdbf_entry_hrdbf_skip
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1842:
+.Lhrdbf_1843:
 	movq	%rax, %rsi
 	movl	$1, %edx
-	jmp	.Lhrdbf_1837
+	jmp	.Lhrdbf_1838
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1840:
+.Lhrdbf_1841:
 	movl	hrdbf_app_state+16(%rip), %eax
 	addq	$1, %rax
-	jmp	.Lhrdbf_1841
+	jmp	.Lhrdbf_1842
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1836:
+.Lhrdbf_1837:
 	movq	%rdi, %rcx
 	negq	%rcx
 	cmpq	%rdx, %rcx
-	jbe	.Lhrdbf_1839
+	jbe	.Lhrdbf_1840
 	testq	%rax, %rax
 	movb	$1, hrdbf_app_state+38(%rip)
 	movq	$0, hrdbf_app_pos(%rip)
 	sete	%dl
 	xorl	%esi, %esi
-	jmp	.Lhrdbf_1838
+	jmp	.Lhrdbf_1839
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1839:
+.Lhrdbf_1840:
 	addq	%rdx, %rsi
 	cmpq	%rax, %rsi
 	movq	%rsi, hrdbf_app_pos(%rip)
 	setnb	%dl
-	jmp	.Lhrdbf_1838
-.Lhrdbf_1846:
+	jmp	.Lhrdbf_1839
+.Lhrdbf_1847:
 	movl	$.Lhrdbf_C59, %edi
 	call .Lhrdbf_entry_hrdbf_app_fail
 	.size	hrdbf_app_skip, .-hrdbf_app_skip
@@ -8500,48 +8495,48 @@ hrdbf_app_order_add:
 	orq	$0, (%rsp)
 	subq	$40, %rsp
 	cmpb	$0, hrdbf_app_state+40(%rip)
-	je	.Lhrdbf_1974
+	je	.Lhrdbf_1975
 	cmpq	$0, hrdbf_app_order(%rip)
-	jne	.Lhrdbf_1975
+	jne	.Lhrdbf_1976
 	leaq	-1(%rsi), %rax
 	cmpq	$4090, %rax
-	ja	.Lhrdbf_1976
+	ja	.Lhrdbf_1977
 	xorl	%ecx, %ecx
 	xorl	%eax, %eax
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1850:
+.Lhrdbf_1851:
 	movzbl	(%rdi,%rax), %edx
 	testb	%dl, %dl
-	je	.Lhrdbf_1977
+	je	.Lhrdbf_1978
 	movb	%dl, 32(%rsp,%rax)
 	addq	$1, %rax
 	cmpb	$47, %dl
 	leaq	32(%rsp), %r8
 	cmove	%rax, %rcx
 	cmpq	%rsi, %rax
-	jne	.Lhrdbf_1850
+	jne	.Lhrdbf_1851
 	movl	hrdbf_app_cdx(%rip), %ebp
 	cmpq	%rsi, %rcx
-	jnb	.Lhrdbf_1853
+	jnb	.Lhrdbf_1854
 	movq	%rsi, %rdx
 	movq	%rcx, %rax
 	xorl	%r9d, %r9d
 	movl	$1, %r10d
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1855:
+.Lhrdbf_1856:
 	cmpb	$46, (%rdi,%rax)
 	cmove	%rax, %rdx
 	cmove	%r10d, %r9d
 	addq	$1, %rax
 	cmpq	%rax, %rsi
-	jne	.Lhrdbf_1855
+	jne	.Lhrdbf_1856
 	testl	%ebp, %ebp
-	jne	.Lhrdbf_1978
+	jne	.Lhrdbf_1979
 	testl	%r9d, %r9d
-	je	.Lhrdbf_1858
-.Lhrdbf_1910:
+	je	.Lhrdbf_1859
+.Lhrdbf_1911:
 	movq	hrdbf_app_order+32(%rip), %r10
 	movb	$0, 32(%rsp,%rax)
 	movq	$0, hrdbf_app_order(%rip)
@@ -8549,7 +8544,7 @@ hrdbf_app_order_add:
 	movq	$0, hrdbf_app_order+16(%rip)
 	movq	$0, hrdbf_app_order+24(%rip)
 	testq	%r10, %r10
-	je	.Lhrdbf_1979
+	je	.Lhrdbf_1980
 	movl	$11, %r9d
 	movq	hrdbf_app_order+48(%rip), %rsi
 	xorl	%edx, %edx
@@ -8557,36 +8552,36 @@ hrdbf_app_order_add:
 	movq	%r9, %rax
 	syscall
 	testq	%rax, %rax
-	js	.Lhrdbf_1980
+	js	.Lhrdbf_1981
 	movq	hrdbf_app_order+40(%rip), %rdi
 	movq	$0, hrdbf_app_order+32(%rip)
 	movq	$0, hrdbf_app_order+48(%rip)
 	testq	%rdi, %rdi
-	je	.Lhrdbf_1868
+	je	.Lhrdbf_1869
 	movq	hrdbf_app_order+56(%rip), %rsi
 	movq	%r9, %rax
 	syscall
 	testq	%rax, %rax
-	js	.Lhrdbf_1907
-.Lhrdbf_1872:
+	js	.Lhrdbf_1908
+.Lhrdbf_1873:
 	movq	$0, hrdbf_app_order+40(%rip)
 	movq	$0, hrdbf_app_order+56(%rip)
-.Lhrdbf_1868:
+.Lhrdbf_1869:
 	xorl	%r10d, %r10d
 	movl	$257, %r9d
 	movl	$524288, %edx
 	movq	$-100, %rdi
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1873:
+.Lhrdbf_1874:
 	movq	%r9, %rax
 	movq	%r8, %rsi
 	syscall
 	movq	%rax, %rbx
 	cmpq	$-4, %rax
-	je	.Lhrdbf_1873
+	je	.Lhrdbf_1874
 	testq	%rax, %rax
-	js	.Lhrdbf_1907
+	js	.Lhrdbf_1908
 	movl	$8, %r8d
 	xorl	%esi, %esi
 	movl	$2, %edx
@@ -8595,10 +8590,10 @@ hrdbf_app_order_add:
 	syscall
 	movq	%rax, %r12
 	testq	%rax, %rax
-	js	.Lhrdbf_1874
+	js	.Lhrdbf_1875
 	leaq	-2048(%rax), %rax
 	cmpq	$67106816, %rax
-	ja	.Lhrdbf_1875
+	ja	.Lhrdbf_1876
 	cmpl	$1, %ebp
 	movq	%r12, %rax
 	sbbq	%rcx, %rcx
@@ -8608,12 +8603,12 @@ hrdbf_app_order_add:
 	idivq	%rcx
 	movq	%rdx, %r13
 	testq	%rdx, %rdx
-	jne	.Lhrdbf_1875
+	jne	.Lhrdbf_1876
 	movq	%r8, %rax
 	movq	%rdx, %rsi
 	syscall
 	testq	%rax, %rax
-	js	.Lhrdbf_1878
+	js	.Lhrdbf_1879
 	movq	%r12, hrdbf_app_order+48(%rip)
 	xorl	%r9d, %r9d
 	movq	%r13, %rdi
@@ -8624,51 +8619,51 @@ hrdbf_app_order_add:
 	movq	$-1, %r8
 	syscall
 	cmpq	$-4095, %rax
-	jb	.Lhrdbf_1879
+	jb	.Lhrdbf_1880
 	movq	$0, hrdbf_app_order+32(%rip)
-.Lhrdbf_1880:
+.Lhrdbf_1881:
 	movq	$0, hrdbf_app_order+48(%rip)
-	jmp	.Lhrdbf_1970
+	jmp	.Lhrdbf_1971
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1978:
+.Lhrdbf_1979:
 	movq	hrdbf_app_baselen(%rip), %r11
 	subq	%rcx, %rdx
 	cmpq	%r11, %rdx
-	je	.Lhrdbf_1911
-.Lhrdbf_1860:
+	je	.Lhrdbf_1912
+.Lhrdbf_1861:
 	movq	%rsi, %rax
 	testl	%r9d, %r9d
-	jne	.Lhrdbf_1910
-.Lhrdbf_1909:
+	jne	.Lhrdbf_1911
+.Lhrdbf_1910:
 	movb	$46, 32(%rsp,%rsi)
 	leaq	2(%rsi), %rdx
 	movl	$100, %eax
 	movb	$99, 33(%rsp,%rsi)
-.Lhrdbf_1908:
+.Lhrdbf_1909:
 	movb	%al, 32(%rsp,%rdx)
 	leaq	4(%rsi), %rax
 	movb	$120, 35(%rsp,%rsi)
-	jmp	.Lhrdbf_1910
+	jmp	.Lhrdbf_1911
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1875:
+.Lhrdbf_1876:
 	movl	$3, %eax
 	movq	%rbx, %rdi
 	movq	%rsi, %rdx
-.Lhrdbf_1973:
+.Lhrdbf_1974:
 	syscall
 	movl	$1, %r10d
 	testq	%rax, %rax
-	js	.Lhrdbf_1972
-.Lhrdbf_1884:
+	js	.Lhrdbf_1973
+.Lhrdbf_1885:
 	movq	hrdbf_app_order+32(%rip), %r9
 	movq	$0, hrdbf_app_order(%rip)
 	movq	$0, hrdbf_app_order+8(%rip)
 	movq	$0, hrdbf_app_order+16(%rip)
 	movq	$0, hrdbf_app_order+24(%rip)
 	testq	%r9, %r9
-	je	.Lhrdbf_1900
+	je	.Lhrdbf_1901
 	movl	$11, %r8d
 	movq	hrdbf_app_order+48(%rip), %rsi
 	xorl	%edx, %edx
@@ -8676,105 +8671,105 @@ hrdbf_app_order_add:
 	movq	%r8, %rax
 	syscall
 	testq	%rax, %rax
-	js	.Lhrdbf_1901
+	js	.Lhrdbf_1902
 	movq	hrdbf_app_order+40(%rip), %rdi
 	movq	$0, hrdbf_app_order+32(%rip)
 	movq	$0, hrdbf_app_order+48(%rip)
 	testq	%rdi, %rdi
-	je	.Lhrdbf_1903
+	je	.Lhrdbf_1904
 	movq	hrdbf_app_order+56(%rip), %rsi
 	movq	%r8, %rax
 	syscall
 	testq	%rax, %rax
-	js	.Lhrdbf_1907
-.Lhrdbf_1905:
+	js	.Lhrdbf_1908
+.Lhrdbf_1906:
 	movq	$0, hrdbf_app_order+40(%rip)
 	movq	$0, hrdbf_app_order+56(%rip)
-.Lhrdbf_1903:
+.Lhrdbf_1904:
 	cmpl	$0, hrdbf_app_cdx(%rip)
-	je	.Lhrdbf_1907
+	je	.Lhrdbf_1908
 	movl	$.Lhrdbf_C71, %edi
 	cmpl	$3, %r10d
-	je	.Lhrdbf_1871
+	je	.Lhrdbf_1872
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1907:
+.Lhrdbf_1908:
 	movl	$.Lhrdbf_C72, %edi
-.Lhrdbf_1871:
+.Lhrdbf_1872:
 	call .Lhrdbf_entry_hrdbf_app_fail
-	.p2align 4,,10
-	.p2align 3
-.Lhrdbf_1979:
-	movq	hrdbf_app_order+40(%rip), %rdi
-	testq	%rdi, %rdi
-	je	.Lhrdbf_1868
-	movq	hrdbf_app_order+56(%rip), %rsi
-	movl	$11, %eax
-	movq	%r10, %rdx
-	syscall
-	testq	%rax, %rax
-	jns	.Lhrdbf_1872
-	jmp	.Lhrdbf_1907
 	.p2align 4,,10
 	.p2align 3
 .Lhrdbf_1980:
 	movq	hrdbf_app_order+40(%rip), %rdi
 	testq	%rdi, %rdi
-	je	.Lhrdbf_1907
+	je	.Lhrdbf_1869
+	movq	hrdbf_app_order+56(%rip), %rsi
+	movl	$11, %eax
+	movq	%r10, %rdx
+	syscall
+	testq	%rax, %rax
+	jns	.Lhrdbf_1873
+	jmp	.Lhrdbf_1908
+	.p2align 4,,10
+	.p2align 3
+.Lhrdbf_1981:
+	movq	hrdbf_app_order+40(%rip), %rdi
+	testq	%rdi, %rdi
+	je	.Lhrdbf_1908
 	movq	hrdbf_app_order+56(%rip), %rsi
 	movq	%r9, %rax
 	syscall
 	testq	%rax, %rax
-	js	.Lhrdbf_1907
-.Lhrdbf_1904:
+	js	.Lhrdbf_1908
+.Lhrdbf_1905:
 	movq	$0, hrdbf_app_order+40(%rip)
 	movq	$0, hrdbf_app_order+56(%rip)
-	jmp	.Lhrdbf_1907
+	jmp	.Lhrdbf_1908
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1858:
+.Lhrdbf_1859:
 	movb	$46, 32(%rsp,%rsi)
 	leaq	2(%rsi), %rdx
 	xorl	%ebp, %ebp
 	movl	$116, %eax
 	movb	$110, 33(%rsp,%rsi)
-	jmp	.Lhrdbf_1908
-.Lhrdbf_1901:
+	jmp	.Lhrdbf_1909
+.Lhrdbf_1902:
 	movq	hrdbf_app_order+40(%rip), %rdi
 	testq	%rdi, %rdi
-	je	.Lhrdbf_1907
+	je	.Lhrdbf_1908
 	movq	hrdbf_app_order+56(%rip), %rsi
 	movq	%r8, %rax
 	syscall
 	testq	%rax, %rax
-	jns	.Lhrdbf_1904
-	jmp	.Lhrdbf_1907
-.Lhrdbf_1886:
+	jns	.Lhrdbf_1905
+	jmp	.Lhrdbf_1908
+.Lhrdbf_1887:
 	movl	$3, %eax
 	movq	%r9, %rsi
 	movq	%r9, %rdx
 	syscall
-.Lhrdbf_1972:
+.Lhrdbf_1973:
 	movl	$7, %r10d
-	jmp	.Lhrdbf_1884
-.Lhrdbf_1853:
+	jmp	.Lhrdbf_1885
+.Lhrdbf_1854:
 	testl	%ebp, %ebp
-	je	.Lhrdbf_1858
+	je	.Lhrdbf_1859
 	movq	%rsi, %r11
 	subq	%rcx, %r11
 	cmpq	%r11, hrdbf_app_baselen(%rip)
-	jne	.Lhrdbf_1909
+	jne	.Lhrdbf_1910
 	xorl	%r9d, %r9d
-.Lhrdbf_1911:
+.Lhrdbf_1912:
 	testq	%r11, %r11
-	je	.Lhrdbf_1861
+	je	.Lhrdbf_1862
 	movl	$1, %r10d
 	xorl	%edx, %edx
 	leaq	(%rdi,%rcx), %r12
 	xorl	%ebx, %ebx
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1864:
+.Lhrdbf_1865:
 	movzbl	(%r12,%rdx), %eax
 	leal	-97(%rax), %edi
 	leal	-32(%rax), %ecx
@@ -8784,76 +8779,76 @@ hrdbf_app_order_add:
 	cmovne	%ebx, %r10d
 	addq	$1, %rdx
 	cmpq	%r11, %rdx
-	jne	.Lhrdbf_1864
+	jne	.Lhrdbf_1865
 	testl	%r10d, %r10d
-	je	.Lhrdbf_1860
-.Lhrdbf_1861:
+	je	.Lhrdbf_1861
+.Lhrdbf_1862:
 	movl	$.Lhrdbf_C76, %edi
 	call .Lhrdbf_entry_hrdbf_app_fail
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1874:
+.Lhrdbf_1875:
 	movl	$3, %eax
 	movq	%rsi, %rdx
 	syscall
 	movl	$7, %r10d
-	jmp	.Lhrdbf_1884
-.Lhrdbf_1900:
+	jmp	.Lhrdbf_1885
+.Lhrdbf_1901:
 	movq	hrdbf_app_order+40(%rip), %rdi
 	testq	%rdi, %rdi
-	je	.Lhrdbf_1903
+	je	.Lhrdbf_1904
 	movq	hrdbf_app_order+56(%rip), %rsi
 	movl	$11, %eax
 	movq	%r9, %rdx
 	syscall
 	testq	%rax, %rax
-	jns	.Lhrdbf_1905
-	jmp	.Lhrdbf_1907
-.Lhrdbf_1879:
+	jns	.Lhrdbf_1906
+	jmp	.Lhrdbf_1908
+.Lhrdbf_1880:
 	movq	%rax, hrdbf_app_order+32(%rip)
 	movq	%rax, %rsi
 	testq	%rax, %rax
-	je	.Lhrdbf_1880
+	je	.Lhrdbf_1881
 	movq	hrdbf_app_order+48(%rip), %rdx
 	xorl	%r8d, %r8d
 	xorl	%r9d, %r9d
 	testq	%rdx, %rdx
-	jne	.Lhrdbf_1881
-	jmp	.Lhrdbf_1882
+	jne	.Lhrdbf_1882
+	jmp	.Lhrdbf_1883
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1981:
+.Lhrdbf_1982:
 	movq	hrdbf_app_order+32(%rip), %rsi
-.Lhrdbf_1881:
+.Lhrdbf_1882:
 	addq	%r8, %rsi
 	subq	%r8, %rdx
 	movq	%r9, %rax
 	movq	%rbx, %rdi
 	syscall
 	cmpq	$-4, %rax
-	je	.Lhrdbf_1885
+	je	.Lhrdbf_1886
 	testq	%rax, %rax
-	jle	.Lhrdbf_1886
+	jle	.Lhrdbf_1887
 	addq	%rax, %r8
-.Lhrdbf_1885:
+.Lhrdbf_1886:
 	movq	hrdbf_app_order+48(%rip), %rdx
 	cmpq	%r8, %rdx
-	ja	.Lhrdbf_1981
-.Lhrdbf_1882:
+	ja	.Lhrdbf_1982
+.Lhrdbf_1883:
 	leaq	31(%rsp), %rsi
 	xorl	%r8d, %r8d
 	movl	$1, %edx
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1887:
+.Lhrdbf_1888:
 	movq	%r8, %rax
 	movq	%rbx, %rdi
 	syscall
 	movq	%rax, %r12
 	cmpq	$-4, %rax
-	je	.Lhrdbf_1887
+	je	.Lhrdbf_1888
 	testq	%rax, %rax
-	jne	.Lhrdbf_1888
+	jne	.Lhrdbf_1889
 	cmpl	$1, %ebp
 	movl	hrdbf_app_state+16(%rip), %esi
 	movq	hrdbf_app_order+48(%rip), %rax
@@ -8862,7 +8857,7 @@ hrdbf_app_order_add:
 	leaq	0(,%rsi,8), %r15
 	addq	$512, %rcx
 	cmpq	$8388608, %rsi
-	ja	.Lhrdbf_1890
+	ja	.Lhrdbf_1891
 	xorl	%edx, %edx
 	addq	$7, %rsi
 	movl	$3, %r13d
@@ -8883,11 +8878,11 @@ hrdbf_app_order_add:
 	movq	%rsi, hrdbf_app_order+56(%rip)
 	syscall
 	cmpq	$-4095, %rax
-	jb	.Lhrdbf_1891
+	jb	.Lhrdbf_1892
 	movq	$0, hrdbf_app_order+40(%rip)
-.Lhrdbf_1892:
+.Lhrdbf_1893:
 	movq	$0, hrdbf_app_order+56(%rip)
-.Lhrdbf_1970:
+.Lhrdbf_1971:
 	xorl	%edx, %edx
 	movl	$3, %eax
 	movq	%rbx, %rdi
@@ -8895,33 +8890,33 @@ hrdbf_app_order_add:
 	syscall
 	movl	$8, %r10d
 	testq	%rax, %rax
-	jns	.Lhrdbf_1884
-	jmp	.Lhrdbf_1972
-.Lhrdbf_1888:
+	jns	.Lhrdbf_1885
+	jmp	.Lhrdbf_1973
+.Lhrdbf_1889:
 	movl	$3, %eax
 	movq	%r8, %rsi
 	movq	%r8, %rdx
 	syscall
 	movl	$7, %r10d
-	jmp	.Lhrdbf_1884
-.Lhrdbf_1878:
+	jmp	.Lhrdbf_1885
+.Lhrdbf_1879:
 	movl	$3, %eax
 	syscall
 	movl	$7, %r10d
-	jmp	.Lhrdbf_1884
-.Lhrdbf_1890:
+	jmp	.Lhrdbf_1885
+.Lhrdbf_1891:
 	movl	$3, %eax
 	movq	%r12, %rsi
 	movq	%r12, %rdx
 	syscall
 	movl	$4, %r10d
 	testq	%rax, %rax
-	jns	.Lhrdbf_1884
-	jmp	.Lhrdbf_1972
-.Lhrdbf_1891:
+	jns	.Lhrdbf_1885
+	jmp	.Lhrdbf_1973
+.Lhrdbf_1892:
 	movq	%rax, hrdbf_app_order+40(%rip)
 	testq	%rax, %rax
-	je	.Lhrdbf_1892
+	je	.Lhrdbf_1893
 	testl	%ebp, %ebp
 	movl	$hrntx_open, %edx
 	movl	$hrcdx_open, %r10d
@@ -8940,28 +8935,28 @@ hrdbf_app_order_add:
 	popq	%rdx
 	popq	%rcx
 	testl	%eax, %eax
-	je	.Lhrdbf_1896
+	je	.Lhrdbf_1897
 	cmpl	$5, %eax
 	movq	%rbx, %rdi
 	movq	%r13, %rax
 	movq	%r12, %rsi
 	movq	%r12, %rdx
-	jne	.Lhrdbf_1973
+	jne	.Lhrdbf_1974
 	syscall
 	movl	$3, %r10d
 	testq	%rax, %rax
-	jns	.Lhrdbf_1884
-	jmp	.Lhrdbf_1972
+	jns	.Lhrdbf_1885
+	jmp	.Lhrdbf_1973
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1896:
+.Lhrdbf_1897:
 	movq	%r13, %rax
 	movq	%rbx, %rdi
 	movq	%r12, %rsi
 	movq	%r12, %rdx
 	syscall
 	testq	%rax, %rax
-	js	.Lhrdbf_1972
+	js	.Lhrdbf_1973
 	movl	$1, hrdbf_app_order_active(%rip)
 	call .Lhrdbf_entry_hrdbf_app_top
 	addq	$4136, %rsp
@@ -8973,16 +8968,16 @@ hrdbf_app_order_add:
 	popq	%r14
 	popq	%r15
 	ret
-.Lhrdbf_1977:
+.Lhrdbf_1978:
 	movl	$.Lhrdbf_C75, %edi
 	call .Lhrdbf_entry_hrdbf_app_fail
-.Lhrdbf_1974:
+.Lhrdbf_1975:
 	movl	$.Lhrdbf_C59, %edi
 	call .Lhrdbf_entry_hrdbf_app_fail
-.Lhrdbf_1976:
+.Lhrdbf_1977:
 	movl	$.Lhrdbf_C74, %edi
 	call .Lhrdbf_entry_hrdbf_app_fail
-.Lhrdbf_1975:
+.Lhrdbf_1976:
 	movl	$.Lhrdbf_C73, %edi
 	call .Lhrdbf_entry_hrdbf_app_fail
 	.size	hrdbf_app_order_add, .-hrdbf_app_order_add
@@ -8993,14 +8988,14 @@ hrdbf_app_order_clear:
 .Lhrdbf_entry_hrdbf_app_order_clear:
 	endbr64
 	cmpb	$0, hrdbf_app_state+40(%rip)
-	je	.Lhrdbf_1996
+	je	.Lhrdbf_1997
 	movq	hrdbf_app_order+32(%rip), %r9
 	movq	$0, hrdbf_app_order(%rip)
 	movq	$0, hrdbf_app_order+8(%rip)
 	movq	$0, hrdbf_app_order+16(%rip)
 	movq	$0, hrdbf_app_order+24(%rip)
 	testq	%r9, %r9
-	je	.Lhrdbf_1997
+	je	.Lhrdbf_1998
 	movl	$11, %r8d
 	movq	hrdbf_app_order+48(%rip), %rsi
 	xorl	%edx, %edx
@@ -9008,54 +9003,54 @@ hrdbf_app_order_clear:
 	movq	%r8, %rax
 	syscall
 	testq	%rax, %rax
-	js	.Lhrdbf_1987
+	js	.Lhrdbf_1988
 	movq	hrdbf_app_order+40(%rip), %rdi
 	movq	$0, hrdbf_app_order+32(%rip)
 	movq	$0, hrdbf_app_order+48(%rip)
 	testq	%rdi, %rdi
-	je	.Lhrdbf_1991
+	je	.Lhrdbf_1992
 	movq	hrdbf_app_order+56(%rip), %rsi
 	movq	%r8, %rax
 	syscall
 	testq	%rax, %rax
-	js	.Lhrdbf_1990
-.Lhrdbf_1992:
+	js	.Lhrdbf_1991
+.Lhrdbf_1993:
 	movq	$0, hrdbf_app_order+40(%rip)
 	movq	$0, hrdbf_app_order+56(%rip)
-.Lhrdbf_1991:
+.Lhrdbf_1992:
 	movl	$0, hrdbf_app_order_active(%rip)
 	movq	$0, hrdbf_app_pos(%rip)
 	ret
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1987:
+.Lhrdbf_1988:
 	movq	hrdbf_app_order+40(%rip), %rdi
 	testq	%rdi, %rdi
-	je	.Lhrdbf_1990
+	je	.Lhrdbf_1991
 	movq	hrdbf_app_order+56(%rip), %rsi
 	movq	%r8, %rax
 	syscall
 	testq	%rax, %rax
-	js	.Lhrdbf_1990
+	js	.Lhrdbf_1991
 	movq	$0, hrdbf_app_order+40(%rip)
 	movq	$0, hrdbf_app_order+56(%rip)
-.Lhrdbf_1990:
+.Lhrdbf_1991:
 	movl	$.Lhrdbf_C68, %edi
 	call .Lhrdbf_entry_hrdbf_app_fail
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_1997:
+.Lhrdbf_1998:
 	movq	hrdbf_app_order+40(%rip), %rdi
 	testq	%rdi, %rdi
-	je	.Lhrdbf_1991
+	je	.Lhrdbf_1992
 	movq	hrdbf_app_order+56(%rip), %rsi
 	movl	$11, %eax
 	movq	%r9, %rdx
 	syscall
 	testq	%rax, %rax
-	jns	.Lhrdbf_1992
-	jmp	.Lhrdbf_1990
-.Lhrdbf_1996:
+	jns	.Lhrdbf_1993
+	jmp	.Lhrdbf_1991
+.Lhrdbf_1997:
 	movl	$.Lhrdbf_C59, %edi
 	call .Lhrdbf_entry_hrdbf_app_fail
 	.size	hrdbf_app_order_clear, .-hrdbf_app_order_clear
@@ -9066,10 +9061,10 @@ hrdbf_app_found:
 .Lhrdbf_entry_hrdbf_app_found:
 	endbr64
 	cmpb	$0, hrdbf_app_state+40(%rip)
-	je	.Lhrdbf_2000
+	je	.Lhrdbf_2001
 	movl	hrdbf_app_found_flag(%rip), %eax
 	ret
-.Lhrdbf_2000:
+.Lhrdbf_2001:
 	movl	$.Lhrdbf_C59, %edi
 	call .Lhrdbf_entry_hrdbf_app_fail
 	.size	hrdbf_app_found, .-hrdbf_app_found
@@ -9086,12 +9081,12 @@ hrdbf_app_seek:
 	endbr64
 	subq	$16, %rsp
 	cmpb	$0, hrdbf_app_state+40(%rip)
-	je	.Lhrdbf_2008
+	je	.Lhrdbf_2009
 	cmpq	$0, hrdbf_app_order(%rip)
-	je	.Lhrdbf_2003
+	je	.Lhrdbf_2004
 	movl	hrdbf_app_order_active(%rip), %eax
 	testl	%eax, %eax
-	je	.Lhrdbf_2003
+	je	.Lhrdbf_2004
 	xorl	%r8d, %r8d
 	testq	%rcx, %rcx
 	leaq	12(%rsp), %r9
@@ -9110,10 +9105,10 @@ hrdbf_app_seek:
 	movq	%rsi, %rcx
 	movl	%edx, hrdbf_app_found_flag(%rip)
 	cmpq	%rsi, %rax
-	jb	.Lhrdbf_2009
+	jb	.Lhrdbf_2010
 	movl	hrdbf_app_state+16(%rip), %edi
 	addq	$1, %rdi
-.Lhrdbf_2006:
+.Lhrdbf_2007:
 	cmpq	%rsi, %rax
 	movq	%rdi, hrdbf_app_state+24(%rip)
 	movslq	%edx, %rax
@@ -9124,14 +9119,14 @@ hrdbf_app_seek:
 	ret
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_2009:
+.Lhrdbf_2010:
 	movq	hrdbf_app_order+16(%rip), %rdi
 	movl	(%rdi,%rax,8), %edi
-	jmp	.Lhrdbf_2006
-.Lhrdbf_2003:
+	jmp	.Lhrdbf_2007
+.Lhrdbf_2004:
 	movl	$.Lhrdbf_C77, %edi
 	call .Lhrdbf_entry_hrdbf_app_fail
-.Lhrdbf_2008:
+.Lhrdbf_2009:
 	movl	$.Lhrdbf_C59, %edi
 	call .Lhrdbf_entry_hrdbf_app_fail
 	.size	hrdbf_app_seek, .-hrdbf_app_seek
@@ -9150,59 +9145,59 @@ hrdbf_app_seek_dyn:
 	pushq	%r12
 	subq	$296, %rsp
 	cmpb	$0, hrdbf_app_state+40(%rip)
-	je	.Lhrdbf_2048
+	je	.Lhrdbf_2049
 	cmpq	$0, hrdbf_app_order(%rip)
-	je	.Lhrdbf_2012
+	je	.Lhrdbf_2013
 	movl	hrdbf_app_order_active(%rip), %eax
 	testl	%eax, %eax
-	je	.Lhrdbf_2012
+	je	.Lhrdbf_2013
 	movq	%rdx, %r12
 	movzbl	%dil, %edx
 	movq	%rdi, %rax
 	cmpl	$12, %edx
-	ja	.Lhrdbf_2014
+	ja	.Lhrdbf_2015
 	movq	%rsi, %rdi
 	movq	%rcx, %r13
-	notrack jmp	*.Lhrdbf_2016(,%rdx,8)
+	notrack jmp	*.Lhrdbf_2017(,%rdx,8)
 	.section	.rodata
 	.align 8
 	.align 4
-.Lhrdbf_2016:
-	.quad	.Lhrdbf_2028
-	.quad	.Lhrdbf_2014
-	.quad	.Lhrdbf_2019
-	.quad	.Lhrdbf_2014
-	.quad	.Lhrdbf_2019
-	.quad	.Lhrdbf_2018
-	.quad	.Lhrdbf_2014
-	.quad	.Lhrdbf_2014
-	.quad	.Lhrdbf_2014
-	.quad	.Lhrdbf_2028
-	.quad	.Lhrdbf_2014
-	.quad	.Lhrdbf_2014
+.Lhrdbf_2017:
+	.quad	.Lhrdbf_2029
 	.quad	.Lhrdbf_2015
+	.quad	.Lhrdbf_2020
+	.quad	.Lhrdbf_2015
+	.quad	.Lhrdbf_2020
+	.quad	.Lhrdbf_2019
+	.quad	.Lhrdbf_2015
+	.quad	.Lhrdbf_2015
+	.quad	.Lhrdbf_2015
+	.quad	.Lhrdbf_2029
+	.quad	.Lhrdbf_2015
+	.quad	.Lhrdbf_2015
+	.quad	.Lhrdbf_2016
 	.text
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_2015:
+.Lhrdbf_2016:
 	movzbl	%ah, %edx
 	pxor	%xmm0, %xmm0
 	cvtsi2sdq	%rsi, %xmm0
 	leal	-1(%rdx), %eax
 	testl	%edx, %edx
-	je	.Lhrdbf_2026
+	je	.Lhrdbf_2027
 	movsd	.Lhrdbf_C0(%rip), %xmm1
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_2027:
+.Lhrdbf_2028:
 	divsd	%xmm1, %xmm0
 	subl	$1, %eax
-	jnb	.Lhrdbf_2027
-.Lhrdbf_2026:
+	jnb	.Lhrdbf_2028
+.Lhrdbf_2027:
 	comisd	.Lhrdbf_C79(%rip), %xmm0
 	movabs	$9223372036854775807, %rdi
-	jbe	.Lhrdbf_2047
-.Lhrdbf_2028:
+	jbe	.Lhrdbf_2048
+.Lhrdbf_2029:
 	movzwl	hrdbf_app_order+28(%rip), %esi
 	movq	%rsp, %rdx
 	call .Lhrdbf_entry_hrdbf_app_pad_ll
@@ -9217,7 +9212,7 @@ hrdbf_app_seek_dyn:
 	ret
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_2014:
+.Lhrdbf_2015:
 	movl	hrdbf_app_order+24(%rip), %ecx
 	movl	hrdbf_app_state+16(%rip), %edx
 	movl	$0, hrdbf_app_found_flag(%rip)
@@ -9235,9 +9230,9 @@ hrdbf_app_seek_dyn:
 	ret
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_2019:
+.Lhrdbf_2020:
 	testq	%rsi, %rsi
-	je	.Lhrdbf_2049
+	je	.Lhrdbf_2050
 	movq	-8(%rsi), %rsi
 	addq	$296, %rsp
 	movq	%r12, %rdx
@@ -9246,39 +9241,39 @@ hrdbf_app_seek_dyn:
 	jmp .Lhrdbf_entry_hrdbf_app_seek
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_2018:
+.Lhrdbf_2019:
 	testq	%rax, %rax
-	jns	.Lhrdbf_2022
+	jns	.Lhrdbf_2023
 	movq	(%rsi), %rdi
-.Lhrdbf_2022:
+.Lhrdbf_2023:
 	movq	%rdi, %xmm0
 	comisd	.Lhrdbf_C79(%rip), %xmm0
 	movabs	$9223372036854775807, %rdi
-	ja	.Lhrdbf_2028
-.Lhrdbf_2047:
+	ja	.Lhrdbf_2029
+.Lhrdbf_2048:
 	movsd	.Lhrdbf_C80(%rip), %xmm1
 	addq	$1, %rdi
 	comisd	%xmm0, %xmm1
-	ja	.Lhrdbf_2028
+	ja	.Lhrdbf_2029
 	pxor	%xmm1, %xmm1
 	comisd	%xmm0, %xmm1
-	ja	.Lhrdbf_2050
+	ja	.Lhrdbf_2051
 	addsd	.Lhrdbf_C81(%rip), %xmm0
 	cvttsd2siq	%xmm0, %rdi
-	jmp	.Lhrdbf_2028
+	jmp	.Lhrdbf_2029
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_2050:
+.Lhrdbf_2051:
 	subsd	.Lhrdbf_C81(%rip), %xmm0
 	cvttsd2siq	%xmm0, %rdi
-	jmp	.Lhrdbf_2028
-.Lhrdbf_2012:
+	jmp	.Lhrdbf_2029
+.Lhrdbf_2013:
 	movl	$.Lhrdbf_C77, %edi
 	call .Lhrdbf_entry_hrdbf_app_fail
-.Lhrdbf_2048:
+.Lhrdbf_2049:
 	movl	$.Lhrdbf_C59, %edi
 	call .Lhrdbf_entry_hrdbf_app_fail
-.Lhrdbf_2049:
+.Lhrdbf_2050:
 	movl	$.Lhrdbf_C78, %edi
 	call .Lhrdbf_entry_hrdbf_app_fail
 	.size	hrdbf_app_seek_dyn, .-hrdbf_app_seek_dyn
@@ -9289,10 +9284,10 @@ hrdbf_app_recno:
 .Lhrdbf_entry_hrdbf_app_recno:
 	endbr64
 	cmpb	$0, hrdbf_app_state+40(%rip)
-	je	.Lhrdbf_2053
+	je	.Lhrdbf_2054
 	movq	hrdbf_app_state+24(%rip), %rax
 	ret
-.Lhrdbf_2053:
+.Lhrdbf_2054:
 	movl	$.Lhrdbf_C59, %edi
 	call .Lhrdbf_entry_hrdbf_app_fail
 	.size	hrdbf_app_recno, .-hrdbf_app_recno
@@ -9303,10 +9298,10 @@ hrdbf_app_lastrec:
 .Lhrdbf_entry_hrdbf_app_lastrec:
 	endbr64
 	cmpb	$0, hrdbf_app_state+40(%rip)
-	je	.Lhrdbf_2056
+	je	.Lhrdbf_2057
 	movl	hrdbf_app_state+16(%rip), %eax
 	ret
-.Lhrdbf_2056:
+.Lhrdbf_2057:
 	movl	$.Lhrdbf_C59, %edi
 	call .Lhrdbf_entry_hrdbf_app_fail
 	.size	hrdbf_app_lastrec, .-hrdbf_app_lastrec
@@ -9317,10 +9312,10 @@ hrdbf_app_fcount:
 .Lhrdbf_entry_hrdbf_app_fcount:
 	endbr64
 	cmpb	$0, hrdbf_app_state+40(%rip)
-	je	.Lhrdbf_2059
+	je	.Lhrdbf_2060
 	movzwl	hrdbf_app_state+36(%rip), %eax
 	ret
-.Lhrdbf_2059:
+.Lhrdbf_2060:
 	movl	$.Lhrdbf_C59, %edi
 	call .Lhrdbf_entry_hrdbf_app_fail
 	.size	hrdbf_app_fcount, .-hrdbf_app_fcount
@@ -9331,57 +9326,57 @@ hrdbf_app_goto:
 .Lhrdbf_entry_hrdbf_app_goto:
 	endbr64
 	cmpb	$0, hrdbf_app_state+40(%rip)
-	je	.Lhrdbf_2071
+	je	.Lhrdbf_2072
 	movl	$0, hrdbf_app_found_flag(%rip)
 	movl	hrdbf_app_state+16(%rip), %edx
 	testq	%rdi, %rdi
-	jle	.Lhrdbf_2062
+	jle	.Lhrdbf_2063
 	xorl	%eax, %eax
 	cmpq	%rdx, %rdi
-	ja	.Lhrdbf_2062
-.Lhrdbf_2063:
+	ja	.Lhrdbf_2063
+.Lhrdbf_2064:
 	cmpq	$0, hrdbf_app_order(%rip)
 	movq	%rdi, hrdbf_app_state+24(%rip)
 	movb	%al, hrdbf_app_state+39(%rip)
 	movb	%al, hrdbf_app_state+38(%rip)
-	je	.Lhrdbf_2060
+	je	.Lhrdbf_2061
 	movl	hrdbf_app_order_active(%rip), %eax
 	testl	%eax, %eax
-	jne	.Lhrdbf_2072
-.Lhrdbf_2060:
+	jne	.Lhrdbf_2073
+.Lhrdbf_2061:
 	ret
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_2062:
+.Lhrdbf_2063:
 	leaq	1(%rdx), %rdi
 	movl	$1, %eax
-	jmp	.Lhrdbf_2063
+	jmp	.Lhrdbf_2064
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_2072:
+.Lhrdbf_2073:
 	movl	hrdbf_app_order+24(%rip), %ecx
 	testl	%ecx, %ecx
-	je	.Lhrdbf_2069
+	je	.Lhrdbf_2070
 	movq	hrdbf_app_order+16(%rip), %rsi
 	xorl	%eax, %eax
-	jmp	.Lhrdbf_2067
+	jmp	.Lhrdbf_2068
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_2066:
+.Lhrdbf_2067:
 	addq	$1, %rax
 	cmpq	%rcx, %rax
-	je	.Lhrdbf_2065
-.Lhrdbf_2067:
+	je	.Lhrdbf_2066
+.Lhrdbf_2068:
 	movl	(%rsi,%rax,8), %edx
 	cmpq	%rdx, %rdi
-	jne	.Lhrdbf_2066
-.Lhrdbf_2065:
+	jne	.Lhrdbf_2067
+.Lhrdbf_2066:
 	movq	%rax, hrdbf_app_pos(%rip)
 	ret
-.Lhrdbf_2069:
+.Lhrdbf_2070:
 	xorl	%eax, %eax
-	jmp	.Lhrdbf_2065
-.Lhrdbf_2071:
+	jmp	.Lhrdbf_2066
+.Lhrdbf_2072:
 	movl	$.Lhrdbf_C59, %edi
 	call .Lhrdbf_entry_hrdbf_app_fail
 	.size	hrdbf_app_goto, .-hrdbf_app_goto
@@ -9392,42 +9387,42 @@ hrdbf_app_ordselect:
 .Lhrdbf_entry_hrdbf_app_ordselect:
 	endbr64
 	cmpb	$0, hrdbf_app_state+40(%rip)
-	je	.Lhrdbf_2083
+	je	.Lhrdbf_2084
 	cmpq	$1, %rdi
-	jne	.Lhrdbf_2075
+	jne	.Lhrdbf_2076
 	cmpq	$0, hrdbf_app_order(%rip)
-	je	.Lhrdbf_2075
+	je	.Lhrdbf_2076
 	movl	hrdbf_app_order+24(%rip), %ecx
 	movq	hrdbf_app_state+24(%rip), %rsi
 	movl	$1, hrdbf_app_order_active(%rip)
 	testl	%ecx, %ecx
-	je	.Lhrdbf_2081
+	je	.Lhrdbf_2082
 	movq	hrdbf_app_order+16(%rip), %rdi
 	xorl	%eax, %eax
-	jmp	.Lhrdbf_2080
+	jmp	.Lhrdbf_2081
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_2079:
+.Lhrdbf_2080:
 	addq	$1, %rax
 	cmpq	%rax, %rcx
-	je	.Lhrdbf_2078
-.Lhrdbf_2080:
+	je	.Lhrdbf_2079
+.Lhrdbf_2081:
 	movl	(%rdi,%rax,8), %edx
 	cmpq	%rdx, %rsi
-	jne	.Lhrdbf_2079
+	jne	.Lhrdbf_2080
 	movq	%rax, hrdbf_app_pos(%rip)
 	ret
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_2075:
+.Lhrdbf_2076:
 	movl	$0, hrdbf_app_order_active(%rip)
 	ret
-.Lhrdbf_2081:
+.Lhrdbf_2082:
 	xorl	%ecx, %ecx
-.Lhrdbf_2078:
+.Lhrdbf_2079:
 	movq	%rcx, hrdbf_app_pos(%rip)
 	ret
-.Lhrdbf_2083:
+.Lhrdbf_2084:
 	movl	$.Lhrdbf_C59, %edi
 	call .Lhrdbf_entry_hrdbf_app_fail
 	.size	hrdbf_app_ordselect, .-hrdbf_app_ordselect
@@ -9438,10 +9433,10 @@ hrdbf_app_bof:
 .Lhrdbf_entry_hrdbf_app_bof:
 	endbr64
 	cmpb	$0, hrdbf_app_state+40(%rip)
-	je	.Lhrdbf_2086
+	je	.Lhrdbf_2087
 	movzbl	hrdbf_app_state+38(%rip), %eax
 	ret
-.Lhrdbf_2086:
+.Lhrdbf_2087:
 	movl	$.Lhrdbf_C59, %edi
 	call .Lhrdbf_entry_hrdbf_app_fail
 	.size	hrdbf_app_bof, .-hrdbf_app_bof
@@ -9452,10 +9447,10 @@ hrdbf_app_eof:
 .Lhrdbf_entry_hrdbf_app_eof:
 	endbr64
 	cmpb	$0, hrdbf_app_state+40(%rip)
-	je	.Lhrdbf_2089
+	je	.Lhrdbf_2090
 	movzbl	hrdbf_app_state+39(%rip), %eax
 	ret
-.Lhrdbf_2089:
+.Lhrdbf_2090:
 	movl	$.Lhrdbf_C59, %edi
 	call .Lhrdbf_entry_hrdbf_app_fail
 	.size	hrdbf_app_eof, .-hrdbf_app_eof
@@ -9466,12 +9461,12 @@ hrdbf_app_deleted:
 .Lhrdbf_entry_hrdbf_app_deleted:
 	endbr64
 	cmpb	$0, hrdbf_app_state+40(%rip)
-	je	.Lhrdbf_2094
+	je	.Lhrdbf_2095
 	movq	hrdbf_app_state+24(%rip), %rax
 	movl	hrdbf_app_state+16(%rip), %edx
 	xorl	%r8d, %r8d
 	cmpq	%rdx, %rax
-	ja	.Lhrdbf_2090
+	ja	.Lhrdbf_2091
 	movzwl	hrdbf_app_state+34(%rip), %edx
 	subq	$1, %rax
 	xorl	%r8d, %r8d
@@ -9480,10 +9475,10 @@ hrdbf_app_deleted:
 	addq	hrdbf_app_state(%rip), %rax
 	cmpb	$42, (%rax,%rdx)
 	sete	%r8b
-.Lhrdbf_2090:
+.Lhrdbf_2091:
 	movq	%r8, %rax
 	ret
-.Lhrdbf_2094:
+.Lhrdbf_2095:
 	movl	$.Lhrdbf_C59, %edi
 	call .Lhrdbf_entry_hrdbf_app_fail
 	.size	hrdbf_app_deleted, .-hrdbf_app_deleted
@@ -9495,24 +9490,24 @@ hrdbf_app_get:
 	endbr64
 	subq	$8, %rsp
 	cmpb	$0, hrdbf_app_state+40(%rip)
-	je	.Lhrdbf_2101
+	je	.Lhrdbf_2102
 	testq	%rdi, %rdi
-	jle	.Lhrdbf_2099
+	jle	.Lhrdbf_2100
 	movzwl	hrdbf_app_state+36(%rip), %eax
 	cmpq	%rax, %rdi
-	jle	.Lhrdbf_2102
-.Lhrdbf_2099:
+	jle	.Lhrdbf_2103
+.Lhrdbf_2100:
 	xorl	%edx, %edx
 	movl	$1, %eax
 	addq	$8, %rsp
 	ret
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_2102:
+.Lhrdbf_2103:
 	call .Lhrdbf_entry_hrdbf_app_get_ord.part.0
 	addq	$8, %rsp
 	ret
-.Lhrdbf_2101:
+.Lhrdbf_2102:
 	movl	$.Lhrdbf_C59, %edi
 	call .Lhrdbf_entry_hrdbf_app_fail
 	.size	hrdbf_app_get, .-hrdbf_app_get
@@ -9526,37 +9521,37 @@ hrdbf_app_get_name:
 	pushq	%r12
 	pushq	%rbp
 	pushq	%rbx
-	je	.Lhrdbf_2104
+	je	.Lhrdbf_2105
 	movzwl	hrdbf_app_state+36(%rip), %ebx
 	movq	%rdi, %r10
 	movq	%rsi, %r9
 	movq	%rbx, %rbp
 	testl	%ebx, %ebx
-	je	.Lhrdbf_2106
+	je	.Lhrdbf_2107
 	movq	%rdx, %r12
 	movl	$hrdbf_app_state+42, %esi
 	xorl	%r11d, %r11d
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_2117:
+.Lhrdbf_2118:
 	xorl	%eax, %eax
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_2107:
+.Lhrdbf_2108:
 	cmpb	$0, (%rsi,%rax)
-	je	.Lhrdbf_2108
+	je	.Lhrdbf_2109
 	addq	$1, %rax
 	cmpq	$11, %rax
-	jne	.Lhrdbf_2107
-.Lhrdbf_2108:
+	jne	.Lhrdbf_2108
+.Lhrdbf_2109:
 	cmpq	%rax, %r9
-	je	.Lhrdbf_2129
-.Lhrdbf_2110:
+	je	.Lhrdbf_2130
+.Lhrdbf_2111:
 	addl	$1, %r11d
 	addq	$16, %rsi
 	cmpl	%r11d, %ebx
-	jne	.Lhrdbf_2117
-.Lhrdbf_2106:
+	jne	.Lhrdbf_2118
+.Lhrdbf_2107:
 	movl	$1, %ebx
 	movl	$2, %edi
 	movl	$hrdbf_app_pre_field, %esi
@@ -9581,18 +9576,18 @@ hrdbf_app_get_name:
 	syscall
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_2129:
+.Lhrdbf_2130:
 	testq	%r9, %r9
-	je	.Lhrdbf_2111
+	je	.Lhrdbf_2112
 	xorl	%ecx, %ecx
-	jmp	.Lhrdbf_2115
+	jmp	.Lhrdbf_2116
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_2130:
+.Lhrdbf_2131:
 	addq	$1, %rcx
 	cmpq	%rcx, %r9
-	je	.Lhrdbf_2111
-.Lhrdbf_2115:
+	je	.Lhrdbf_2112
+.Lhrdbf_2116:
 	movzbl	(%r10,%rcx), %eax
 	leal	-97(%rax), %edi
 	leal	-32(%rax), %edx
@@ -9604,29 +9599,29 @@ hrdbf_app_get_name:
 	cmpb	$26, %r8b
 	cmovb	%edi, %edx
 	cmpb	%al, %dl
-	je	.Lhrdbf_2130
+	je	.Lhrdbf_2131
 	cmpq	%rcx, %r9
-	jne	.Lhrdbf_2110
+	jne	.Lhrdbf_2111
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_2111:
+.Lhrdbf_2112:
 	leal	1(%r11), %edi
 	cmpq	%rbp, %rdi
-	jle	.Lhrdbf_2131
+	jle	.Lhrdbf_2132
 	popq	%rbx
 	xorl	%edx, %edx
 	movl	$1, %eax
 	popq	%rbp
 	popq	%r12
 	ret
-.Lhrdbf_2131:
+.Lhrdbf_2132:
 	movq	%r12, %rsi
 	call .Lhrdbf_entry_hrdbf_app_get_ord.part.0
 	popq	%rbx
 	popq	%rbp
 	popq	%r12
 	ret
-.Lhrdbf_2104:
+.Lhrdbf_2105:
 	movl	$.Lhrdbf_C59, %edi
 	call .Lhrdbf_entry_hrdbf_app_fail
 	.size	hrdbf_app_get_name, .-hrdbf_app_get_name
@@ -9658,10 +9653,10 @@ hrdbf_app_fieldput:
 	subq	$8, %rsp
 	call .Lhrdbf_entry_hrdbf_app_require_writable
 	testq	%r10, %r10
-	jle	.Lhrdbf_2133
+	jle	.Lhrdbf_2134
 	movzwl	hrdbf_app_state+36(%rip), %eax
 	cmpq	%r10, %rax
-	jl	.Lhrdbf_2133
+	jl	.Lhrdbf_2134
 	movq	hrdbf_app_state+24(%rip), %rsi
 	movzwl	hrdbf_app_state+34(%rip), %edx
 	leaq	-1(%r10), %rdi
@@ -9677,136 +9672,136 @@ hrdbf_app_fieldput:
 	movzbl	21(%r10), %edx
 	addq	hrdbf_app_state+2256(%rip), %rax
 	cmpb	$76, %dl
-	je	.Lhrdbf_2135
-	ja	.Lhrdbf_2136
+	je	.Lhrdbf_2136
+	ja	.Lhrdbf_2137
 	cmpb	$67, %dl
-	je	.Lhrdbf_2137
+	je	.Lhrdbf_2138
 	cmpb	$68, %dl
-	jne	.Lhrdbf_2139
+	jne	.Lhrdbf_2140
 	cmpl	$11, %ecx
-	je	.Lhrdbf_2194
+	je	.Lhrdbf_2195
 	cmpl	$1, %ecx
-	jne	.Lhrdbf_2139
+	jne	.Lhrdbf_2140
 	movzbl	22(%r10), %ecx
 	movzwl	24(%r10), %edx
 	testl	%ecx, %ecx
-	je	.Lhrdbf_2148
+	je	.Lhrdbf_2149
 	addq	%rdx, %rax
 	subl	$1, %ecx
 	leaq	1(%rax), %rdx
 	addq	%rdx, %rcx
-	jmp	.Lhrdbf_2159
+	jmp	.Lhrdbf_2160
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_2195:
+.Lhrdbf_2196:
 	addq	$1, %rdx
-.Lhrdbf_2159:
+.Lhrdbf_2160:
 	movb	$32, (%rax)
 	movq	%rdx, %rax
 	cmpq	%rcx, %rdx
-	jne	.Lhrdbf_2195
-.Lhrdbf_2144:
+	jne	.Lhrdbf_2196
+.Lhrdbf_2145:
 	movq	hrdbf_app_state+24(%rip), %rsi
-.Lhrdbf_2148:
+.Lhrdbf_2149:
 	movl	$hrdbf_app_state, %edi
 	call .Lhrdbf_entry_hrdbf_file_write_record
 	testl	%eax, %eax
-	jne	.Lhrdbf_2196
+	jne	.Lhrdbf_2197
 	addq	$8, %rsp
 	popq	%rbx
 	popq	%r12
 	ret
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_2136:
+.Lhrdbf_2137:
 	cmpb	$78, %dl
-	jne	.Lhrdbf_2139
+	jne	.Lhrdbf_2140
 	cmpl	$12, %ecx
-	je	.Lhrdbf_2197
-	testl	%ecx, %ecx
-	je	.Lhrdbf_2167
-	cmpl	$9, %ecx
-	je	.Lhrdbf_2167
-	cmpl	$5, %ecx
 	je	.Lhrdbf_2198
+	testl	%ecx, %ecx
+	je	.Lhrdbf_2168
+	cmpl	$9, %ecx
+	je	.Lhrdbf_2168
+	cmpl	$5, %ecx
+	je	.Lhrdbf_2199
 	cmpl	$1, %ecx
-	jne	.Lhrdbf_2139
+	jne	.Lhrdbf_2140
 	salq	$4, %rdi
 	movzbl	hrdbf_app_state+54(%rdi), %ecx
 	movzwl	hrdbf_app_state+56(%rdi), %edx
 	testl	%ecx, %ecx
-	je	.Lhrdbf_2148
+	je	.Lhrdbf_2149
 	addq	%rax, %rdx
 	subl	$1, %ecx
 	leaq	1(%rdx), %rax
 	addq	%rax, %rcx
-	jmp	.Lhrdbf_2157
+	jmp	.Lhrdbf_2158
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_2199:
+.Lhrdbf_2200:
 	addq	$1, %rax
-.Lhrdbf_2157:
+.Lhrdbf_2158:
 	movb	$32, (%rdx)
 	movq	%rax, %rdx
 	cmpq	%rax, %rcx
-	jne	.Lhrdbf_2199
-	jmp	.Lhrdbf_2144
+	jne	.Lhrdbf_2200
+	jmp	.Lhrdbf_2145
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_2137:
+.Lhrdbf_2138:
 	leal	-2(%rcx), %edx
 	andl	$-3, %edx
-	je	.Lhrdbf_2200
+	je	.Lhrdbf_2201
 	cmpl	$1, %ecx
-	jne	.Lhrdbf_2139
+	jne	.Lhrdbf_2140
 	movzbl	22(%r10), %ecx
 	movzwl	24(%r10), %edx
 	testl	%ecx, %ecx
-	je	.Lhrdbf_2148
+	je	.Lhrdbf_2149
 	addq	%rdx, %rax
 	subl	$1, %ecx
 	leaq	1(%rax), %rdx
 	addq	%rdx, %rcx
-	jmp	.Lhrdbf_2149
-	.p2align 4,,10
-	.p2align 3
-.Lhrdbf_2201:
-	addq	$1, %rdx
-.Lhrdbf_2149:
-	movb	$32, (%rax)
-	movq	%rdx, %rax
-	cmpq	%rcx, %rdx
-	jne	.Lhrdbf_2201
-	jmp	.Lhrdbf_2144
-	.p2align 4,,10
-	.p2align 3
-.Lhrdbf_2135:
-	cmpl	$3, %ecx
-	je	.Lhrdbf_2202
-	cmpl	$1, %ecx
-	jne	.Lhrdbf_2139
-	movzbl	22(%r10), %ecx
-	movzwl	24(%r10), %edx
-	testl	%ecx, %ecx
-	je	.Lhrdbf_2148
-	addq	%rdx, %rax
-	subl	$1, %ecx
-	leaq	1(%rax), %rdx
-	addq	%rdx, %rcx
-	jmp	.Lhrdbf_2162
-	.p2align 4,,10
-	.p2align 3
-.Lhrdbf_2203:
-	addq	$1, %rdx
-.Lhrdbf_2162:
-	movb	$32, (%rax)
-	movq	%rdx, %rax
-	cmpq	%rcx, %rdx
-	jne	.Lhrdbf_2203
-	jmp	.Lhrdbf_2144
+	jmp	.Lhrdbf_2150
 	.p2align 4,,10
 	.p2align 3
 .Lhrdbf_2202:
+	addq	$1, %rdx
+.Lhrdbf_2150:
+	movb	$32, (%rax)
+	movq	%rdx, %rax
+	cmpq	%rcx, %rdx
+	jne	.Lhrdbf_2202
+	jmp	.Lhrdbf_2145
+	.p2align 4,,10
+	.p2align 3
+.Lhrdbf_2136:
+	cmpl	$3, %ecx
+	je	.Lhrdbf_2203
+	cmpl	$1, %ecx
+	jne	.Lhrdbf_2140
+	movzbl	22(%r10), %ecx
+	movzwl	24(%r10), %edx
+	testl	%ecx, %ecx
+	je	.Lhrdbf_2149
+	addq	%rdx, %rax
+	subl	$1, %ecx
+	leaq	1(%rax), %rdx
+	addq	%rdx, %rcx
+	jmp	.Lhrdbf_2163
+	.p2align 4,,10
+	.p2align 3
+.Lhrdbf_2204:
+	addq	$1, %rdx
+.Lhrdbf_2163:
+	movb	$32, (%rax)
+	movq	%rdx, %rax
+	cmpq	%rcx, %rdx
+	jne	.Lhrdbf_2204
+	jmp	.Lhrdbf_2145
+	.p2align 4,,10
+	.p2align 3
+.Lhrdbf_2203:
 	cmpq	$1, %r12
 	movzwl	24(%r10), %ecx
 	sbbl	%edx, %edx
@@ -9814,10 +9809,10 @@ hrdbf_app_fieldput:
 	addl	$84, %edx
 	movb	%dl, (%rax,%rcx)
 	movq	hrdbf_app_state+24(%rip), %rsi
-	jmp	.Lhrdbf_2148
+	jmp	.Lhrdbf_2149
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_2200:
+.Lhrdbf_2201:
 	movzwl	24(%r10), %ecx
 	movzbl	22(%r10), %edx
 	addq	%rax, %rcx
@@ -9825,86 +9820,86 @@ hrdbf_app_fieldput:
 	cmpq	%rax, %rdx
 	cmovbe	%rdx, %rax
 	testq	%rax, %rax
-	je	.Lhrdbf_2142
+	je	.Lhrdbf_2143
 	movq	%rcx, %rsi
 	leaq	(%r12,%rax), %r8
 	subq	%r12, %rsi
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_2143:
+.Lhrdbf_2144:
 	movzbl	(%r12), %edx
 	movb	%dl, (%rsi,%r12)
 	addq	$1, %r12
 	cmpq	%r8, %r12
-	jne	.Lhrdbf_2143
+	jne	.Lhrdbf_2144
 	movq	%rdi, %rdx
 	salq	$4, %rdx
 	movzbl	hrdbf_app_state+54(%rdx), %edx
-.Lhrdbf_2142:
+.Lhrdbf_2143:
 	cmpq	%rdx, %rax
-	jnb	.Lhrdbf_2144
+	jnb	.Lhrdbf_2145
 	salq	$4, %rdi
 	leaq	hrdbf_app_state+32(%rdi), %rsi
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_2145:
+.Lhrdbf_2146:
 	movb	$32, (%rcx,%rax)
 	movzbl	22(%rsi), %edx
 	addq	$1, %rax
 	cmpq	%rdx, %rax
-	jb	.Lhrdbf_2145
-	jmp	.Lhrdbf_2144
+	jb	.Lhrdbf_2146
+	jmp	.Lhrdbf_2145
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_2194:
+.Lhrdbf_2195:
 	movl	%r12d, %edx
 	movq	%r8, %rsi
 	movq	%rax, %rdi
 	call .Lhrdbf_entry_hrdbf_write_date
-.Lhrdbf_2151:
+.Lhrdbf_2152:
 	cmpl	$3, %eax
-	je	.Lhrdbf_2139
+	je	.Lhrdbf_2140
 	testl	%eax, %eax
-	je	.Lhrdbf_2144
+	je	.Lhrdbf_2145
 	movl	$.Lhrdbf_C84, %edi
 	call .Lhrdbf_entry_hrdbf_app_fail
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_2197:
+.Lhrdbf_2198:
 	movzbl	%bh, %ecx
 	movq	%r12, %rdx
 	movq	%r8, %rsi
 	movq	%rax, %rdi
 	call .Lhrdbf_entry_hrdbf_write_number_scaled.part.0
-	jmp	.Lhrdbf_2151
+	jmp	.Lhrdbf_2152
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_2167:
+.Lhrdbf_2168:
 	xorl	%ecx, %ecx
 	movq	%r12, %rdx
 	movq	%r8, %rsi
 	movq	%rax, %rdi
 	call .Lhrdbf_entry_hrdbf_write_number_scaled.part.0
-	jmp	.Lhrdbf_2151
+	jmp	.Lhrdbf_2152
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_2198:
+.Lhrdbf_2199:
 	testq	%rbx, %rbx
-	jns	.Lhrdbf_2155
+	jns	.Lhrdbf_2156
 	movq	(%r12), %r12
-.Lhrdbf_2155:
+.Lhrdbf_2156:
 	movq	%r12, %xmm0
 	movq	%r8, %rsi
 	movq	%rax, %rdi
 	call .Lhrdbf_entry_hrdbf_write_number_double.part.0
-	jmp	.Lhrdbf_2151
-.Lhrdbf_2139:
+	jmp	.Lhrdbf_2152
+.Lhrdbf_2140:
 	movl	$.Lhrdbf_C83, %edi
 	call .Lhrdbf_entry_hrdbf_app_fail
-.Lhrdbf_2133:
+.Lhrdbf_2134:
 	movl	$.Lhrdbf_C82, %edi
 	call .Lhrdbf_entry_hrdbf_app_fail
-.Lhrdbf_2196:
+.Lhrdbf_2197:
 	movl	$.Lhrdbf_C85, %edi
 	call .Lhrdbf_entry_hrdbf_app_fail
 	.size	hrdbf_app_fieldput, .-hrdbf_app_fieldput
@@ -9924,30 +9919,30 @@ hrdbf_app_set_name:
 	call .Lhrdbf_entry_hrdbf_app_require_writable
 	movzwl	hrdbf_app_state+36(%rip), %r11d
 	testl	%r11d, %r11d
-	je	.Lhrdbf_2205
+	je	.Lhrdbf_2206
 	movl	$hrdbf_app_state+42, %esi
 	xorl	%r9d, %r9d
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_2215:
+.Lhrdbf_2216:
 	xorl	%eax, %eax
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_2206:
+.Lhrdbf_2207:
 	cmpb	$0, (%rsi,%rax)
-	je	.Lhrdbf_2207
+	je	.Lhrdbf_2208
 	addq	$1, %rax
 	cmpq	$11, %rax
-	jne	.Lhrdbf_2206
-.Lhrdbf_2207:
+	jne	.Lhrdbf_2207
+.Lhrdbf_2208:
 	cmpq	%rax, %r10
-	je	.Lhrdbf_2228
-.Lhrdbf_2209:
+	je	.Lhrdbf_2229
+.Lhrdbf_2210:
 	addl	$1, %r9d
 	addq	$16, %rsi
 	cmpl	%r9d, %r11d
-	jne	.Lhrdbf_2215
-.Lhrdbf_2205:
+	jne	.Lhrdbf_2216
+.Lhrdbf_2206:
 	movl	$1, %ebp
 	movl	$2, %edi
 	movl	$hrdbf_app_pre_field, %esi
@@ -9972,18 +9967,18 @@ hrdbf_app_set_name:
 	syscall
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_2228:
+.Lhrdbf_2229:
 	testq	%r10, %r10
-	je	.Lhrdbf_2210
+	je	.Lhrdbf_2211
 	xorl	%ecx, %ecx
-	jmp	.Lhrdbf_2214
+	jmp	.Lhrdbf_2215
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_2229:
+.Lhrdbf_2230:
 	addq	$1, %rcx
 	cmpq	%rcx, %r10
-	je	.Lhrdbf_2210
-.Lhrdbf_2214:
+	je	.Lhrdbf_2211
+.Lhrdbf_2215:
 	movzbl	(%rbx,%rcx), %eax
 	leal	-97(%rax), %edi
 	leal	-32(%rax), %edx
@@ -9995,10 +9990,10 @@ hrdbf_app_set_name:
 	cmpb	$26, %r8b
 	cmovb	%edi, %edx
 	cmpb	%al, %dl
-	je	.Lhrdbf_2229
+	je	.Lhrdbf_2230
 	cmpq	%rcx, %r10
-	jne	.Lhrdbf_2209
-.Lhrdbf_2210:
+	jne	.Lhrdbf_2210
+.Lhrdbf_2211:
 	popq	%rbx
 	movq	%r12, %rdx
 	leal	1(%r9), %edi
@@ -10019,41 +10014,41 @@ hrdbf_app_append:
 	endbr64
 	subq	$24, %rsp
 	cmpb	$0, hrdbf_app_state+40(%rip)
-	je	.Lhrdbf_2238
+	je	.Lhrdbf_2239
 	movl	hrdbf_app_state+2272(%rip), %eax
 	testl	%eax, %eax
-	je	.Lhrdbf_2239
+	je	.Lhrdbf_2240
 	cmpq	$0, hrdbf_app_order(%rip)
-	jne	.Lhrdbf_2240
+	jne	.Lhrdbf_2241
 	movl	hrdbf_app_state+16(%rip), %eax
 	cmpq	%rax, hrdbf_app_state+24(%rip)
-	ja	.Lhrdbf_2241
+	ja	.Lhrdbf_2242
 	cmpb	$0, hrdbf_app_state+2288(%rip)
-	je	.Lhrdbf_2236
+	je	.Lhrdbf_2237
 	leaq	12(%rsp), %rsi
 	movl	$hrdbf_app_state, %edi
 	call .Lhrdbf_entry_hrdbf_file_append.part.0
 	testl	%eax, %eax
-	jne	.Lhrdbf_2236
+	jne	.Lhrdbf_2237
 	movl	$0, hrdbf_app_found_flag(%rip)
 	movl	12(%rsp), %eax
 	addq	$24, %rsp
 	ret
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_2236:
+.Lhrdbf_2237:
 	movl	$.Lhrdbf_C86, %edi
 	call .Lhrdbf_entry_hrdbf_app_fail
-.Lhrdbf_2238:
+.Lhrdbf_2239:
 	movl	$.Lhrdbf_C59, %edi
 	call .Lhrdbf_entry_hrdbf_app_fail
-.Lhrdbf_2241:
+.Lhrdbf_2242:
 	movl	$.Lhrdbf_C62, %edi
 	call .Lhrdbf_entry_hrdbf_app_fail
-.Lhrdbf_2240:
+.Lhrdbf_2241:
 	movl	$.Lhrdbf_C61, %edi
 	call .Lhrdbf_entry_hrdbf_app_fail
-.Lhrdbf_2239:
+.Lhrdbf_2240:
 	movl	$.Lhrdbf_C60, %edi
 	call .Lhrdbf_entry_hrdbf_app_fail
 	.size	hrdbf_app_append, .-hrdbf_app_append
@@ -10074,11 +10069,11 @@ hrdbf_app_render:
 	leaq	8(%rsp), %r8
 	call .Lhrdbf_entry_hrv_render
 	testl	%eax, %eax
-	jne	.Lhrdbf_2245
+	jne	.Lhrdbf_2246
 	movq	8(%rsp), %rax
 	addq	$24, %rsp
 	ret
-.Lhrdbf_2245:
+.Lhrdbf_2246:
 	movl	$.Lhrdbf_C87, %edi
 	call .Lhrdbf_entry_hrdbf_app_fail
 	.size	hrdbf_app_render, .-hrdbf_app_render
@@ -10101,32 +10096,32 @@ hrdbf_app_integer:
 	movq	%rsi, %r10
 	call .Lhrdbf_entry_hrv_validate
 	testl	%eax, %eax
-	jne	.Lhrdbf_2247
+	jne	.Lhrdbf_2248
 	movzbl	%r9b, %eax
 	cmpb	$12, %r9b
-	je	.Lhrdbf_2263
+	je	.Lhrdbf_2264
 	testl	%eax, %eax
-	je	.Lhrdbf_2255
+	je	.Lhrdbf_2256
 	cmpl	$9, %eax
-	jne	.Lhrdbf_2251
-.Lhrdbf_2255:
+	jne	.Lhrdbf_2252
+.Lhrdbf_2256:
 	movq	%r10, %rax
 	addq	$8, %rsp
 	ret
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_2263:
+.Lhrdbf_2264:
 	testl	$65280, %r9d
-	je	.Lhrdbf_2255
-.Lhrdbf_2250:
+	je	.Lhrdbf_2256
+.Lhrdbf_2251:
 	movl	$.Lhrdbf_C88, %edi
 	call .Lhrdbf_entry_hrdbf_app_fail
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_2247:
+.Lhrdbf_2248:
 	cmpl	$2, %eax
-	je	.Lhrdbf_2250
-.Lhrdbf_2251:
+	je	.Lhrdbf_2251
+.Lhrdbf_2252:
 	movl	$.Lhrdbf_C89, %edi
 	call .Lhrdbf_entry_hrdbf_app_fail
 	.size	hrdbf_app_integer, .-hrdbf_app_integer
@@ -10145,11 +10140,11 @@ hrdbf_app_equal:
 	leaq	12(%rsp), %r8
 	call .Lhrdbf_entry_hrv_equal
 	testl	%eax, %eax
-	jne	.Lhrdbf_2267
+	jne	.Lhrdbf_2268
 	movslq	12(%rsp), %rax
 	addq	$24, %rsp
 	ret
-.Lhrdbf_2267:
+.Lhrdbf_2268:
 	movl	$.Lhrdbf_C90, %edi
 	call .Lhrdbf_entry_hrdbf_app_fail
 	.size	hrdbf_app_equal, .-hrdbf_app_equal
@@ -10167,34 +10162,34 @@ hrdbf_app_compare:
 	subq	$40, %rsp
 	movq	%rsi, %r9
 	cmpb	$11, %dil
-	jne	.Lhrdbf_2269
+	jne	.Lhrdbf_2270
 	cmpb	$11, %dl
-	je	.Lhrdbf_2276
-.Lhrdbf_2269:
+	je	.Lhrdbf_2277
+.Lhrdbf_2270:
 	leaq	24(%rsp), %r8
 	movq	%r9, %rsi
 	call .Lhrdbf_entry_hrv_compare
 	testl	%eax, %eax
-	jne	.Lhrdbf_2277
+	jne	.Lhrdbf_2278
 	movq	24(%rsp), %rax
 	addq	$40, %rsp
 	ret
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_2276:
+.Lhrdbf_2277:
 	movq	%rcx, 8(%rsp)
 	movq	%rdx, (%rsp)
 	call .Lhrdbf_entry_hrv_validate
 	movq	(%rsp), %rdx
 	movq	8(%rsp), %rcx
 	testl	%eax, %eax
-	jne	.Lhrdbf_2271
+	jne	.Lhrdbf_2272
 	movq	%rdx, %rdi
 	movq	%rcx, %rsi
 	movq	%rcx, (%rsp)
 	call .Lhrdbf_entry_hrv_validate
 	testl	%eax, %eax
-	jne	.Lhrdbf_2271
+	jne	.Lhrdbf_2272
 	movq	(%rsp), %rcx
 	xorl	%eax, %eax
 	movq	$-1, %rdx
@@ -10203,10 +10198,10 @@ hrdbf_app_compare:
 	cmovb	%rdx, %rax
 	addq	$40, %rsp
 	ret
-.Lhrdbf_2277:
+.Lhrdbf_2278:
 	movl	$.Lhrdbf_C90, %edi
 	call .Lhrdbf_entry_hrdbf_app_fail
-.Lhrdbf_2271:
+.Lhrdbf_2272:
 	movl	$.Lhrdbf_C91, %edi
 	call .Lhrdbf_entry_hrdbf_app_fail
 	.size	hrdbf_app_compare, .-hrdbf_app_compare
@@ -10225,76 +10220,76 @@ hrdbf_app_empty:
 	movq	%rsi, %r9
 	leal	-2(%r10), %eax
 	andl	$-3, %eax
-	jne	.Lhrdbf_2279
+	jne	.Lhrdbf_2280
 	movq	-8(%rsi), %rdx
 	testq	%rdx, %rdx
-	je	.Lhrdbf_2289
+	je	.Lhrdbf_2290
 	movabs	$-4294977025, %rcx
 	addq	%rsi, %rdx
-	jmp	.Lhrdbf_2281
+	jmp	.Lhrdbf_2282
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_2301:
+.Lhrdbf_2302:
 	btq	%rax, %rcx
-	jc	.Lhrdbf_2293
+	jc	.Lhrdbf_2294
 	addq	$1, %r9
 	cmpq	%r9, %rdx
-	je	.Lhrdbf_2289
-.Lhrdbf_2281:
+	je	.Lhrdbf_2290
+.Lhrdbf_2282:
 	movzbl	(%r9), %eax
 	cmpb	$32, %al
-	jbe	.Lhrdbf_2301
-.Lhrdbf_2293:
+	jbe	.Lhrdbf_2302
+.Lhrdbf_2294:
 	xorl	%eax, %eax
 	ret
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_2279:
+.Lhrdbf_2280:
 	cmpl	$8, %r10d
-	je	.Lhrdbf_2302
-	cmpl	$5, %r10d
 	je	.Lhrdbf_2303
+	cmpl	$5, %r10d
+	je	.Lhrdbf_2304
 	cmpl	$7, %r10d
-	je	.Lhrdbf_2293
+	je	.Lhrdbf_2294
 	subq	$8, %rsp
 	call .Lhrdbf_entry_hrv_validate
 	testl	%eax, %eax
-	jne	.Lhrdbf_2286
+	jne	.Lhrdbf_2287
 	cmpl	$12, %r10d
-	ja	.Lhrdbf_2286
+	ja	.Lhrdbf_2287
 	movl	$1, %eax
 	movl	%r10d, %ecx
 	salq	%cl, %rax
 	testl	$6665, %eax
-	jne	.Lhrdbf_2287
+	jne	.Lhrdbf_2288
 	cmpl	$1, %r10d
-	je	.Lhrdbf_2294
-.Lhrdbf_2286:
+	je	.Lhrdbf_2295
+.Lhrdbf_2287:
 	movl	$.Lhrdbf_C92, %edi
 	call .Lhrdbf_entry_hrdbf_app_fail
 	.p2align 4,,10
 	.p2align 3
-.Lhrdbf_2289:
+.Lhrdbf_2290:
 	movl	$1, %eax
-	ret
-	.p2align 4,,10
-	.p2align 3
-.Lhrdbf_2302:
-	movl	$1, %eax
-	testq	%rsi, %rsi
-	je	.Lhrdbf_2298
-	xorl	%eax, %eax
-	cmpq	$0, -8(%rsi)
-	sete	%al
-	ret
-.Lhrdbf_2298:
 	ret
 	.p2align 4,,10
 	.p2align 3
 .Lhrdbf_2303:
+	movl	$1, %eax
+	testq	%rsi, %rsi
+	je	.Lhrdbf_2299
+	xorl	%eax, %eax
+	cmpq	$0, -8(%rsi)
+	sete	%al
+	ret
+.Lhrdbf_2299:
+	ret
+	.p2align 4,,10
+	.p2align 3
+.Lhrdbf_2304:
 	testq	%rdi, %rdi
-	js	.Lhrdbf_2304
-.Lhrdbf_2285:
+	js	.Lhrdbf_2305
+.Lhrdbf_2286:
 	movq	%r9, %xmm0
 	xorl	%eax, %eax
 	movl	$0, %edx
@@ -10302,19 +10297,19 @@ hrdbf_app_empty:
 	setnp	%al
 	cmovne	%rdx, %rax
 	ret
-.Lhrdbf_2304:
+.Lhrdbf_2305:
 	movq	(%rsi), %r9
-	jmp	.Lhrdbf_2285
-.Lhrdbf_2287:
+	jmp	.Lhrdbf_2286
+.Lhrdbf_2288:
 	xorl	%eax, %eax
 	testq	%r9, %r9
 	sete	%al
-.Lhrdbf_2278:
+.Lhrdbf_2279:
 	addq	$8, %rsp
 	ret
-.Lhrdbf_2294:
+.Lhrdbf_2295:
 	movl	$1, %eax
-	jmp	.Lhrdbf_2278
+	jmp	.Lhrdbf_2279
 	.size	hrdbf_app_empty, .-hrdbf_app_empty
 	.section	.rodata
 	.align 8
@@ -10337,22 +10332,22 @@ hrdbf_app_arith:
 	movq	%rsp, %r9
 	call .Lhrdbf_entry_hrv_arith
 	cmpl	$5, %eax
-	je	.Lhrdbf_2310
-	cmpl	$1, %eax
 	je	.Lhrdbf_2311
+	cmpl	$1, %eax
+	je	.Lhrdbf_2312
 	testl	%eax, %eax
-	jne	.Lhrdbf_2312
+	jne	.Lhrdbf_2313
 	movq	(%rsp), %rax
 	movq	8(%rsp), %rdx
 	addq	$24, %rsp
 	ret
-.Lhrdbf_2310:
+.Lhrdbf_2311:
 	movl	$.Lhrdbf_C93, %edi
 	call .Lhrdbf_entry_hrdbf_app_fail
-.Lhrdbf_2312:
+.Lhrdbf_2313:
 	movl	$.Lhrdbf_C95, %edi
 	call .Lhrdbf_entry_hrdbf_app_fail
-.Lhrdbf_2311:
+.Lhrdbf_2312:
 	movl	$.Lhrdbf_C94, %edi
 	call .Lhrdbf_entry_hrdbf_app_fail
 	.size	hrdbf_app_arith, .-hrdbf_app_arith
