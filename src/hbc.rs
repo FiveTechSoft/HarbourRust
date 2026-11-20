@@ -5889,6 +5889,23 @@ fn find_set_into(e: &Expr, roots: &[String]) -> Option<String> {
     }
 }
 
+// Literal integer hash keys carry a separate kind bit, never user string
+// spelling. Only the measured ordinary-Linux profile can admit this route.
+thread_local! { static HASH_I64_LITERAL: std::cell::Cell<bool> = const {std::cell::Cell::new(false)}; }
+fn hash_i64_literal(e:&Expr)->bool {
+    let yes=matches!(e,Expr::Int(v) if v.parse::<i64>().is_ok()) && DECIMAL_LOCAL_PROFILE.with(|v|v.get()) && !MACRO_CONTEXT.with(|v|v.get());
+    if yes { HASH_I64_LITERAL.with(|v|v.set(true)); }
+    yes
+}
+fn cg_hash_key(e:&Expr, env:&[CgLocal], sigs:&[Sig], strs:&mut Vec<String>, out:&mut String, target:Target) {
+    if let Expr::Int(i)=e {
+        // Immutable rodata needs no scratch buffer that a nested RHS could
+        // overwrite. All 64 integer bits survive, including values >2^53.
+        let k=strs.len();strs.push(format!("{:016X}",i.parse::<i64>().expect("checked literal hash key") as u64));
+        out.push_str(&format!("    lea .Lstr{}(%rip), %rax\n    movabs $0x8000000000000010, %rdx\n",k));
+    } else { cg_value(e,env,sigs,strs,out,target); }
+}
+
 fn expr_mentions(e: &Expr, name: &str) -> bool {
     match e {
         Expr::Seq(es) => es.iter().any(|e| expr_mentions(e, name)),
@@ -6934,7 +6951,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 if !matches!(&args[0], Expr::Var(_)) || type_expr(&args[0], env, sigs, n)? != Ty::Hash {
                     return Err(format!("line {}: `hb_HHasKey` expects a hash variable (its slot is passed by address)", n));
                 }
-                if !matches!(type_expr(&args[1], env, sigs, n)?, Ty::Str | Ty::StrOwn) {
+                if !matches!(type_expr(&args[1], env, sigs, n)?, Ty::Str | Ty::StrOwn) && !hash_i64_literal(&args[1]) {
                     return Err(format!("line {}: hash keys are strings in this increment", n));
                 }
                 return Ok(Ty::Bool);
@@ -9118,7 +9135,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                     if v.moved {
                         return Err(format!("line {}: use of moved value `{}`", n, id));
                     }
-                    if it != Ty::Str && it != Ty::StrOwn {
+                    if it != Ty::Str && it != Ty::StrOwn && !hash_i64_literal(ie) {
                         return Err(format!("line {}: hash keys are strings in this increment", n));
                     }
                     Ok(Ty::Dyn)
@@ -11258,10 +11275,10 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                         }
                         // Value first, then the key (probe h4).
                         let vt = type_expr(e, env, sigs, *n)?;
-                        if !matches!(vt, Ty::I64 | Ty::Bool | Ty::Dyn) && !(matches!(e,Expr::Str(_)) && matches!(ie,Expr::Str(_)|Expr::Var(_)) && CURDIR_LINUX_NATIVE.with(|v|v.get()) && !THREADS.with(|v|v.get())) {
+                        if !matches!(vt, Ty::I64 | Ty::Bool | Ty::Dyn) && !(matches!(e,Expr::Str(_)) && (matches!(ie,Expr::Str(_)|Expr::Var(_)) || matches!(ie,Expr::Int(_)) && DECIMAL_LOCAL_PROFILE.with(|v|v.get())) && CURDIR_LINUX_NATIVE.with(|v|v.get()) && !THREADS.with(|v|v.get())) {
                             return Err(format!("line {}: hash values are tagged scalars (integer, logical or NIL) in this increment", n));
                         }
-                        if !matches!(type_expr(ie, env, sigs, *n)?, Ty::Str | Ty::StrOwn) {
+                        if !matches!(type_expr(ie, env, sigs, *n)?, Ty::Str | Ty::StrOwn) && !hash_i64_literal(ie) {
                             return Err(format!("line {}: hash keys are strings in this increment", n));
                         }
                         apply_moves(e, env, sigs, true);
@@ -15233,7 +15250,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                         // error condition (hk209: the dialog hangs headless)
                         // - the registered clean bound-error exit, NOT a
                         // silent "U" read.
-                        cg_value(ie, env, sigs, strs, out, target);
+                        cg_hash_key(ie, env, sigs, strs, out, target);
                         out.push_str(&format!("    mov %rax, %rsi\n    lea -{}(%rbp), %rdi\n    call hbc_hget\n", var.off));
                         out.push_str("    test %rax, %rax\n    je 85f\n    mov (%rax), %r10\n    jmp 86f\n85:\n    call hbc_bound_error\n86:\n");
                         vt_classify_scalar(strs, out);
@@ -16240,7 +16257,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             // An owned key temporary (e.g. hb_HHasKey(h, keys[i])) is
             // freed right after the call - the helper only reads it
             // (leak found and fixed in iteration 52; t544).
-            cg_value(&args[1], env, sigs, strs, out, target);
+            cg_hash_key(&args[1], env, sigs, strs, out, target);
             let temp_key = expr_ty(&args[1], env, sigs) == Ty::StrOwn && !matches!(&args[1], Expr::Var(_));
             if temp_key {
                 out.push_str("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
@@ -17968,7 +17985,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                 // hangs headless (probes h3/h3c) - registered failure-mode
                 // difference, same error condition. The lookup never
                 // mutates the hash.
-                cg_value(ie, env, sigs, strs, out, target);
+                cg_hash_key(ie, env, sigs, strs, out, target);
                 out.push_str("    mov %rax, %rsi\n");
                 let temp_key = expr_ty(ie, env, sigs) == Ty::StrOwn && !matches!(&**ie, Expr::Var(_));
                 if temp_key {
@@ -24175,7 +24192,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                         out.push_str("    mov %rax, %rdx\n    mov $3, %eax\n");
                     }
                     out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
-                    cg_value(ie, env, sigs, strs, out, target);
+                    cg_hash_key(ie, env, sigs, strs, out, target);
                     out.push_str("    mov %rax, %rsi\n");
                     let temp_key = expr_ty(ie, env, sigs) == Ty::StrOwn && !matches!(ie, Expr::Var(_));
                     if temp_key {
@@ -25182,8 +25199,11 @@ hbc_hash_value_release:
 # and hbc_hsetcasematch need no change. Block bytes: 16 + 40*cap.
 
 # hbc_hhash: rdi = key bytes, rsi = length. Returns eax = FNV-1a 32 over
-# ASCII-uppercase-folded bytes. Leaf: clobbers rax, rcx, r8 only.
+# ASCII-uppercase-folded physical bytes. The high length bit is the
+# private literal-i64 kind, not part of byte count. Leaf: clobbers
+# rax, rcx, r8 and rsi (its kind bit is cleared).
 hbc_hhash:
+    btr $63, %rsi
     mov $0x811c9dc5, %eax
     xor %ecx, %ecx
 1: cmp %rsi, %rcx
@@ -25246,10 +25266,14 @@ hbc_hfind:
     jne 92f
     mov (%rax), %rdi
     xor %ecx, %ecx
-93: cmp %r13, %rcx
+93: mov %r13, %r11
+    btr $63, %r11
+    cmp %r11, %rcx
     jae 94f
     movzbl (%rdi,%rcx), %r8d
     movzbl (%r12,%rcx), %r9d
+    test %r13, %r13
+    js 95f
     cmpq $0, -16(%r14)
     jne 95f
     cmp $97, %r8b
@@ -25535,6 +25559,7 @@ hbc_hput:
     jmp 49f
 30: mov %r14, %rdi
     mov %r15, %rsi
+    btr $63, %rsi
     call hbc_strcpy
 36: mov %rax, %r14
     test %r12, %r12
@@ -36227,6 +36252,19 @@ fn main() {
                 process::exit(1);
             }
         }
+    }
+
+    // Existing enumeration APIs have a string-only result ABI. The case
+    // mutation API also has an older numeric-flag contract, not Harbour
+    // logical flags. Until their own increments, reject either combination
+    // with new integer keys before any emission. Never expose encoded bytes.
+    if HASH_I64_LITERAL.with(|v|v.get()) {
+        let mut enumeration=false;let mut case_mutation=false;
+        for f in &funcs { visit_stmts_ref(&f.stmts,&mut |s| {if matches!(s,Stmt::HSetCaseMatch(..)) {case_mutation=true;}},&mut |e| {
+            if matches!(e,Expr::Call(id,_) if is_builtin(id,"hb_hkeys") || is_builtin(id,"hb_hkeyat")) { enumeration=true; }
+        }); }
+        if case_mutation { eprintln!("error: Limit: literal integer hash keys cannot be combined with hb_HSetCaseMatch in this increment");process::exit(1); }
+        if enumeration { eprintln!("error: Limit: literal integer hash keys cannot be combined with hb_HKeys/hb_HKeyAt in this increment (their result ABI is string-only)");process::exit(1); }
     }
 
     // I1 supplies conservative proof to the I2 arena eligibility consumer.
