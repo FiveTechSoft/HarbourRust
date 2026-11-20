@@ -31737,9 +31737,22 @@ hbc_free_lists: .skip 10240
         let end=out[begin..].find("\n# hbc_dyn_to_i64:").map(|n|begin+n).expect("Linux numeric printer end");
         let numeric=out[begin..end].replace("    mov $1, %eax\n    mov $1, %edi\n    syscall\n", "    mov %rsi, %rax\n    call hbc_print_str\n");
         out.replace_range(begin..end,&numeric);
-
+        // Fatal runtime helpers write raw diagnostics before panic_exit.
+        // Close deferred console lines before their first write, not after
+        // the diagnostic. Catchable branches jump away before these writes.
+        let exit = "    mov $60, %eax\n    mov $1, %edi\n    syscall";
+        let write = "    mov $1, %eax\n    mov $1, %edi\n    syscall";
+        out=out.split("\nhbc_").map(|block| {
+            if block.contains(exit) {
+                block.replace(write, &format!("    call hbc_gtstd_before_fatal\n{}",write))
+            } else {block.to_string()}
+        }).collect::<Vec<_>>().join("\nhbc_");
     }
-    if out.contains("call hbc_base_wait") {out.push_str(include_str!("base_wait_linux.s"));}
+    if out.contains("call hbc_base_wait") {
+        let helper=include_str!("base_wait_linux.s");
+        if gtstd_native {out.push_str(&helper.replace("    syscall\n", "    call hbc_gtstd_wait_write\n"));}
+        else {out.push_str(helper);}
+    }
     if out.contains("call hbc_base_wait") || out.contains("call hbc_inkey_block_linux") || out.contains("hbc_cursor_") {out.push_str(include_str!("cursor_linux.s"));}
     if out.contains("call hbc_fileio_") { out.push_str(include_str!("fileio_linux.s")); }
     if out.contains("hbc_flink_") || out.contains("hbc_ferror_") {out.push_str(include_str!("flink_linux.s"));}
