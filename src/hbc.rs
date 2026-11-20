@@ -9329,7 +9329,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                     return Err(format!("line {}: hash keys are strings in this increment", n));
                 }
                 let vt = type_expr(v, env, sigs, n)?;
-                if !matches!(vt, Ty::I64 | Ty::Bool | Ty::Dyn) {
+                if !matches!(vt, Ty::I64 | Ty::Bool | Ty::Dyn) && !(matches!(v,Expr::Str(_)) && CURDIR_LINUX_NATIVE.with(|v|v.get()) && !THREADS.with(|v|v.get())) {
                     return Err(format!("line {}: hash values are tagged scalars (integer, logical or NIL) in this increment", n));
                 }
             }
@@ -11118,7 +11118,8 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 if !matches!(type_expr(ke, env, sigs, *n)?, Ty::Str | Ty::StrOwn) {
                     return Err(format!("line {}: hash keys are strings in this increment", n));
                 }
-                if !matches!(type_expr(ve, env, sigs, *n)?, Ty::I64 | Ty::Dyn) {
+                let vt=type_expr(ve, env, sigs, *n)?;
+                if !matches!(vt, Ty::I64 | Ty::Dyn) && !(matches!(ve,Expr::Str(_)) && CURDIR_LINUX_NATIVE.with(|v|v.get()) && !THREADS.with(|v|v.get())) {
                     return Err(format!("line {}: hash values are tagged scalars (integer or NIL) in this increment", n));
                 }
                 apply_moves(ve, env, sigs, true);
@@ -11191,7 +11192,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                         }
                         // Value first, then the key (probe h4).
                         let vt = type_expr(e, env, sigs, *n)?;
-                        if !matches!(vt, Ty::I64 | Ty::Bool | Ty::Dyn) {
+                        if !matches!(vt, Ty::I64 | Ty::Bool | Ty::Dyn) && !(matches!(e,Expr::Str(_)) && matches!(ie,Expr::Str(_)|Expr::Var(_)) && CURDIR_LINUX_NATIVE.with(|v|v.get()) && !THREADS.with(|v|v.get())) {
                             return Err(format!("line {}: hash values are tagged scalars (integer, logical or NIL) in this increment", n));
                         }
                         if !matches!(type_expr(ie, env, sigs, *n)?, Ty::Str | Ty::StrOwn) {
@@ -21516,6 +21517,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                             out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
                             cg_value(v, env, sigs, strs, out, target);
                     cg_dbf_scalar_container(v,env,sigs,out);
+                            if matches!(v,Expr::Str(_)) { out.push_str("    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_strcpy\n    mov %rax, %rdx\n    mov $4, %eax\n"); }
                             if expr_ty(v, env, sigs) == Ty::I64 {
                                 cg_i64_tagged(out);
                             }
@@ -21524,7 +21526,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                             }
                             out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
                             out.push_str(&format!("    lea -{}(%rbp), %rdi\n    mov 16(%rsp), %rsi\n    mov 24(%rsp), %rdx\n    mov %rsp, %rcx\n    call hbc_hput\n", off));
-                            if expr_ty(v,env,sigs)==Ty::Dyn && dyn_expr_owned(v) { cg_dyn_stack_release(out,0,false); }
+                            if (expr_ty(v,env,sigs)==Ty::Dyn && dyn_expr_owned(v)) || matches!(v,Expr::Str(_)) { cg_dyn_stack_release(out,0,false); }
                             out.push_str("    add $32, %rsp\n");
                         }
                         env.push(CgLocal { name: id.clone(), ty: t, off });
@@ -22703,6 +22705,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                             out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
                             cg_value(v, env, sigs, strs, out, target);
                     cg_dbf_scalar_container(v,env,sigs,out);
+                            if matches!(v,Expr::Str(_)) { out.push_str("    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_strcpy\n    mov %rax, %rdx\n    mov $4, %eax\n"); }
                             if expr_ty(v, env, sigs) == Ty::I64 {
                                 cg_i64_tagged(out);
                             }
@@ -22711,7 +22714,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                             }
                             out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
                             out.push_str(&format!("    lea -{}(%rbp), %rdi\n    mov 16(%rsp), %rsi\n    mov 24(%rsp), %rdx\n    mov %rsp, %rcx\n    call hbc_hput\n", off));
-                            if expr_ty(v,env,sigs)==Ty::Dyn && dyn_expr_owned(v) { cg_dyn_stack_release(out,0,false); }
+                            if (expr_ty(v,env,sigs)==Ty::Dyn && dyn_expr_owned(v)) || matches!(v,Expr::Str(_)) { cg_dyn_stack_release(out,0,false); }
                             out.push_str("    add $32, %rsp\n");
                         }
                         continue;
@@ -23777,6 +23780,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 let temp_key = expr_ty(ke, env, sigs) == Ty::StrOwn && !matches!(ke, Expr::Var(_));
                 out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
                 cg_value(ve, env, sigs, strs, out, target);
+                if matches!(ve,Expr::Str(_)) { out.push_str("    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_strcpy\n    mov %rax, %rdx\n    mov $4, %eax\n"); }
                 if expr_ty(ve, env, sigs) == Ty::I64 {
                     cg_i64_tagged(out);
                 }
@@ -23785,7 +23789,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 }
                 out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
                 out.push_str(&format!("    lea -{}(%rbp), %rdi\n    mov 16(%rsp), %rsi\n    mov 24(%rsp), %rdx\n    mov %rsp, %rcx\n    call hbc_hput\n", var.off));
-                if expr_ty(ve,env,sigs)==Ty::Dyn && dyn_expr_owned(ve) { cg_dyn_stack_release(out,0,false); }
+                if (expr_ty(ve,env,sigs)==Ty::Dyn && dyn_expr_owned(ve)) || matches!(ve,Expr::Str(_)) { cg_dyn_stack_release(out,0,false); }
                 out.push_str("    add $16, %rsp\n");
                 if temp_key {
                     out.push_str("    mov (%rsp), %rdi\n    call hbc_freestr\n");
@@ -24067,7 +24071,8 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                     // the temporaries stay owned here.
                     cg_value(e, env, sigs, strs, out, target);
                     cg_dbf_scalar_container(e,env,sigs,out);
-                    if expr_ty(e, env, sigs) == Ty::I64 {
+                    if matches!(e,Expr::Str(_)) { out.push_str("    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_strcpy\n    mov %rax, %rdx\n    mov $4, %eax\n"); }
+                if expr_ty(e, env, sigs) == Ty::I64 {
                         cg_i64_tagged(out);
                     }
                     if expr_ty(e, env, sigs) == Ty::Bool {
@@ -24082,11 +24087,11 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                         // the bytes, so the temporary is freed right after.
                         out.push_str("    sub $16, %rsp\n    mov %rsi, (%rsp)\n");
                         out.push_str(&format!("    lea -{}(%rbp), %rdi\n    lea 16(%rsp), %rcx\n    call hbc_hput\n    mov (%rsp), %rdi\n    call hbc_freestr\n    add $16, %rsp\n", v.off));
-                        if expr_ty(e,env,sigs)==Ty::Dyn && dyn_expr_owned(e) { cg_dyn_stack_release(out,0,false); }
+                        if (expr_ty(e,env,sigs)==Ty::Dyn && dyn_expr_owned(e)) || matches!(e,Expr::Str(_)) { cg_dyn_stack_release(out,0,false); }
                         out.push_str("    add $16, %rsp\n");
                     } else {
                         out.push_str(&format!("    lea -{}(%rbp), %rdi\n    mov %rsp, %rcx\n    call hbc_hput\n", v.off));
-                        if expr_ty(e,env,sigs)==Ty::Dyn && dyn_expr_owned(e) { cg_dyn_stack_release(out,0,false); }
+                        if (expr_ty(e,env,sigs)==Ty::Dyn && dyn_expr_owned(e)) || matches!(e,Expr::Str(_)) { cg_dyn_stack_release(out,0,false); }
                         out.push_str("    add $16, %rsp\n");
                     }
                 } else if v.ty == Ty::DArr || v.ty == Ty::DArrRef {
@@ -25027,7 +25032,38 @@ hbc_array4m:
     ret
 ";
 
+// This new limit uses the existing raw writer and fatal/trace exit. Only
+// the native console profile needs its existing early-close boundary.
+fn hash_helpers() -> String {
+    HASH_HELPERS.replace("    # @HASH_FATAL_CLOSE@\n", if CURDIR_LINUX_NATIVE.with(|v|v.get()) && !THREADS.with(|v|v.get()) { "    call hbc_gtstd_before_fatal\n" } else { "" })
+}
+
 const HASH_HELPERS: &str = r"
+# Hash values have independent ownership. Snapshot before dropping an old
+# entry, including h[k] := h[k] and hash clone/copy/merge paths.
+hbc_hash_value_clone:
+    cmp $2, %rax
+    je .Lhashvc_string
+    cmp $4, %rax
+    je .Lhashvc_string
+    jmp hbc_float_clone
+.Lhashvc_string:
+    mov %rdx, %rdi
+    mov -8(%rdx), %rsi
+    sub $8, %rsp
+    call hbc_strcpy
+    add $8, %rsp
+    mov %rax, %rdx
+    mov $4, %eax
+    ret
+hbc_hash_value_release:
+    cmp $4, %rax
+    je .Lhashvr_string
+    jmp hbc_float_release
+.Lhashvr_string:
+    mov %rdx, %rdi
+    jmp hbc_freestr
+
 # --- hashes (v1): insertion-ordered, string-keyed maps -----------------
 # The slot holds {data pointer, live pair count}; null/0 is the empty
 # hash (probe h2). Block layout: capacity header (in pairs) at the base,
@@ -25369,7 +25405,7 @@ hbc_hput:
     mov %rdx, %r15
     mov (%rcx), %rax
     mov 8(%rcx), %rdx
-    call hbc_float_clone
+    call hbc_hash_value_clone
     mov %rax, -112(%rbp)
     mov %rdx, -104(%rbp)
     lea -112(%rbp), %rcx
@@ -25393,7 +25429,7 @@ hbc_hput:
     mov 16(%rax), %r10
     mov 24(%rax), %rdx
     mov %r10, %rax
-    call hbc_float_release
+    call hbc_hash_value_release
     mov -96(%rbp), %rax
     mov -48(%rbp), %rcx
     mov (%rcx), %r8
@@ -25529,7 +25565,7 @@ hbc_hfree:
     lea (%rbx,%rax), %rcx
     mov 16(%rcx), %rax
     mov 24(%rcx), %rdx
-    call hbc_float_release
+    call hbc_hash_value_release
     inc %r13
     jmp 20b
 21: mov %rbx, %rdi
@@ -25578,7 +25614,7 @@ hbc_hdel:
     call hbc_freestr
     mov 16(%rbx), %rax
     mov 24(%rbx), %rdx
-    call hbc_float_release
+    call hbc_hash_value_release
 65: lea 1(%r14), %rax
     cmp %r13, %rax
     jae 66f
@@ -25824,6 +25860,22 @@ hbc_hvalues:
     sub $16, %rsp
     mov (%rdi), %r12
     mov 8(%rdi), %r13
+    # Numeric-flat HValues cannot own string payloads. Reject before
+    # allocating a result rather than return an alias or leak a copy.
+    xor %ecx, %ecx
+.Lhvalues_preflight:
+    cmp %r13, %rcx
+    jae .Lhvalues_numeric
+    mov %rcx, %rax
+    shl $5, %rax
+    mov 16(%r12,%rax), %rax
+    cmp $2, %rax
+    je hbc_hvalues_string_error
+    cmp $4, %rax
+    je hbc_hvalues_string_error
+    inc %rcx
+    jmp .Lhvalues_preflight
+.Lhvalues_numeric:
     mov $0x0FFFFFFFFFFFFFFF, %rax
     cmp %rax, %r13
     ja hbc_oom
@@ -25858,6 +25910,18 @@ hbc_hvalues:
     pop %rbx
     pop %rbp
     ret
+
+hbc_hvalues_string_error:
+    and $-16, %rsp
+    sub $32, %rsp
+    # @HASH_FATAL_CLOSE@
+    movq $0, hbc_pending(%rip)
+    lea .Lhvalues_limit_msg(%rip), %rax
+    mov $62, %edx
+    call hbc_write_bytes
+    jmp hbc_panic_exit
+.Lhvalues_limit_msg:
+    .byte 76,105,109,105,116,58,32,104,98,95,72,86,97,108,117,101,115,32,119,105,116,104,32,115,116,114,105,110,103,32,118,97,108,117,101,115,32,105,115,32,110,111,116,32,105,110,32,116,104,105,115,32,105,110,99,114,101,109,101,110,116,10
 
 # hbc_hcasematch: rdi = hash slot address. Returns rax = the hash's
 # CaseMatch flag: 1 = case-sensitive byte-exact key matching (the
@@ -26028,7 +26092,7 @@ hbc_hdelat:
     add %r12, %rax
     mov 24(%rax), %rdx
     mov 16(%rax), %rax
-    call hbc_float_release
+    call hbc_hash_value_release
     mov 8(%rbx), %r9
 857: lea 1(%r13), %rax
     cmp %r9, %rax
@@ -26076,7 +26140,7 @@ hbc_hfill:
     mov (%rdi),%rbx
     mov 8(%rdi),%r12
     mov %rsi,%rax
-    call hbc_float_clone
+    call hbc_hash_value_clone
     mov %rax,-48(%rbp)
     mov %rdx,-56(%rbp)
     xor %r13d,%r13d
@@ -26088,10 +26152,10 @@ hbc_hfill:
     add %rbx,%r14
     mov 16(%r14),%rax
     mov 24(%r14),%rdx
-    call hbc_float_release
+    call hbc_hash_value_release
     mov -48(%rbp),%rax
     mov -56(%rbp),%rdx
-    call hbc_float_clone
+    call hbc_hash_value_clone
     mov %rax,16(%r14)
     mov %rdx,24(%r14)
     inc %r13
@@ -26099,7 +26163,7 @@ hbc_hfill:
 .Lhf_done:
     mov -48(%rbp),%rax
     mov -56(%rbp),%rdx
-    call hbc_float_release
+    call hbc_hash_value_release
     add $24,%rsp
     pop %r15
     pop %r14
@@ -26141,7 +26205,7 @@ hbc_hclear:
     add %r12, %rax
     mov 24(%rax), %rdx
     mov 16(%rax), %rax
-    call hbc_float_release
+    call hbc_hash_value_release
     inc %r13
     jmp 862b
 863: mov %r12, %rdi
@@ -29376,7 +29440,7 @@ hbc_obj_drop_pending:
             out.push_str(IDLESLEEP_WIN);
             out.push_str(CTOR_HELPERS);
             out.push_str(ARRAY3_HELPER);
-            out.push_str(HASH_HELPERS);
+            out.push_str(&hash_helpers());
             out.push_str("\n    .section .rdata,\"r\"\n");
             emit_strings(&mut out, &strs);
     emit_f64_consts(&mut out);
@@ -31805,7 +31869,7 @@ hbc_free_lists: .skip 10240
 "#);
     out.push_str(CTOR_HELPERS);
     out.push_str(ARRAY3_HELPER);
-    out.push_str(HASH_HELPERS);
+    out.push_str(&hash_helpers());
     out.push_str(F64_HELPER);
     out.push_str(IDLESLEEP_LINUX);
     out.push_str("\n    .section .rodata\n");
