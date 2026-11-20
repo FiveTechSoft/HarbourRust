@@ -4673,6 +4673,11 @@ thread_local! {
     // THREADS is discovered during typing and can otherwise arrive too late.
     static DECIMAL_LOCAL_PROFILE: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
 }
+// Same pre-fixpoint ordinary-Linux/no-thread proof as the decimal LOCAL
+// increment. Only mixed static numeric Min/Max admission uses this predicate.
+fn minmax_mixed_tys(a:Ty,b:Ty)->bool {
+    DECIMAL_LOCAL_PROFILE.with(|v|v.get()) && a!=b && matches!(a,Ty::I64|Ty::F64) && matches!(b,Ty::I64|Ty::F64)
+}
 fn byref_param(function: &str, index: usize) -> bool {
     BYREF_PARAMS.with(|m|m.borrow().get(function).map_or(false,|v|v.contains(&index)))
 }
@@ -6517,6 +6522,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 if (a == Ty::Dyn || b == Ty::Dyn) && matches!(a, Ty::I64 | Ty::F64 | Ty::Dyn) && matches!(b, Ty::I64 | Ty::F64 | Ty::Dyn) {
                     return Ok(Ty::Dyn);
                 }
+                if minmax_mixed_tys(a,b) { return Ok(Ty::Dyn); }
                 if a != b || !matches!(a, Ty::I64 | Ty::F64 | Ty::Bool) {
                     return Err(format!("line {}: `{}` needs matching integer, float or logical arguments; mixed numeric/Dyn/other types are not in this increment", n, id));
                 }
@@ -19321,7 +19327,10 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             if is_bitop(id) { return Ty::I64; }
             if is_builtin(id, "min") || is_builtin(id, "max") {
                 let ta = expr_ty(&args[0], env, sigs);
-                if args.len() == 2 && (ta == Ty::Dyn || expr_ty(&args[1], env, sigs) == Ty::Dyn) { return Ty::Dyn; }
+                if args.len() == 2 {
+                    let tb=expr_ty(&args[1],env,sigs);
+                    if ta==Ty::Dyn || tb==Ty::Dyn || minmax_mixed_tys(ta,tb) { return Ty::Dyn; }
+                }
                 return ta;
             }
             if is_builtin(id, "empty") || is_builtin(id, "hb_isnumeric") || is_builtin(id, "hb_isarray") || is_builtin(id, "hb_isstring") { return Ty::Bool; }
@@ -38387,12 +38396,21 @@ fn cg_dyn_abs(a:&Expr,env:&[CgLocal],sigs:&[Sig],strs:&mut Vec<String>,out:&mut 
 // first item wins a tie, like the typed forms); the chosen snapshot is the
 // result and the other is released. Under an active TRY a landing pad releases
 // the first snapshot when the second operand throws.
+// Min/Max returns the selected original item, including I64 display
+// provenance. Arithmetic snapshots deliberately erase it, so don't reuse
+// that conversion for static I64 inputs here.
+fn cg_minmax_snapshot(e:&Expr,env:&[CgLocal],sigs:&[Sig],strs:&mut Vec<String>,out:&mut String,target:Target) {
+    if expr_ty(e,env,sigs)==Ty::I64 {
+        cg_expr(e,env,sigs,strs,out,target);
+        cg_i64_tagged(out);
+    } else { cg_mul_snapshot(e,env,sigs,strs,out,target); }
+}
 fn cg_dyn_minmax(is_max:bool,a:&Expr,b:&Expr,env:&[CgLocal],sigs:&[Sig],strs:&mut Vec<String>,out:&mut String,target:Target) {
     let k=fresh_lbl();
     let (ji,jf)=if is_max {("jge","jae")} else {("jle","jbe")};
-    cg_mul_snapshot(a,env,sigs,strs,out,target);
+    cg_minmax_snapshot(a,env,sigs,strs,out,target);
     out.push_str(&format!("    sub $80, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n    movq $1, 16(%rsp)\n    movq $0, 24(%rsp)\n    movq $0, 48(%rsp)\n    cmpq $0, hbc_seq_depth(%rip)\n    je .Lmm_eval{k}\n    lea .Lmm_catch{k}(%rip), %rdi\n    call hbc_seq_push\n    movq $1, 48(%rsp)\n.Lmm_eval{k}:\n"));
-    cg_mul_snapshot(b,env,sigs,strs,out,target);
+    cg_minmax_snapshot(b,env,sigs,strs,out,target);
     out.push_str(&format!("    mov %rax, 16(%rsp)\n    mov %rdx, 24(%rsp)\n    cmpq $0, 48(%rsp)\n    je .Lmm_chk{k}\n    call hbc_seq_pop\n.Lmm_chk{k}:\n    movq $0, 72(%rsp)\n"));
     for (tag,pay,dbl,bit,l) in [(0,8,56,1,"a"),(16,24,64,2,"b")] {
         out.push_str(&format!("    mov {tag}(%rsp), %rax\n    mov {pay}(%rsp), %rdx\n    cmp $5, %al\n    je .Lmm_{l}f{k}\n    @HBC_TAG_KIND@cmpq $0, {tag}(%rsp)@HBC_TAG_END@\n    je .Lmm_{l}i{k}\n    @HBC_TAG_KIND@cmpq $9, {tag}(%rsp)@HBC_TAG_END@\n    jne .Lmm_err{k}\n.Lmm_{l}i{k}:\n    cvtsi2sd %rdx, %xmm0\n    movsd %xmm0, {dbl}(%rsp)\n    orq ${bit}, 72(%rsp)\n    jmp .Lmm_{l}d{k}\n.Lmm_{l}f{k}:\n    call hbc_float_unpack\n    movsd %xmm0, {dbl}(%rsp)\n.Lmm_{l}d{k}:\n"));
