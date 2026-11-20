@@ -519,14 +519,22 @@ fn cg_div_operand(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String
     out.push_str("    mov 24(%rsp), %rax\n    movsd 16(%rsp), %xmm0\n    add $32, %rsp\n    mov $2, %ecx\n");
 }
 
+// Discard a completed prefix immediately. Nothing remains pending when the
+// following expression throws; variables are borrowed and never released here.
+fn cg_seq_discard(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target) {
+    let t = expr_ty(e, env, sigs);
+    if t == Ty::F64 { cg_f64_load(e, env, sigs, strs, out, target); }
+    else { cg_value(e, env, sigs, strs, out, target); }
+    if t == Ty::StrOwn && !matches!(e, Expr::Var(_)) {
+        out.push_str("    mov %rax, %rdi\n    call hbc_freestr\n");
+    }
+}
+
 fn cg_f64_load(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target) {
     match e {
         Expr::Set(..) => unreachable!("inline `:=` is restricted to integer/logical values in this increment (checked)"),
         Expr::Seq(es) => {
-            for e in &es[..es.len()-1] {
-                if expr_ty(e, env, sigs) == Ty::F64 { cg_f64_load(e, env, sigs, strs, out, target); }
-                else { cg_value(e, env, sigs, strs, out, target); }
-            }
+            for e in &es[..es.len()-1] { cg_seq_discard(e, env, sigs, strs, out, target); }
             cg_f64_load(es.last().expect("nonempty"), env, sigs, strs, out, target);
         }
 
@@ -6322,8 +6330,11 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 // consumer already handles Dyn values (parexpr's
                 // `( y := 10, y )`). Owned Dyn temporaries keep the limit.
                 let dyn_var = t == Ty::Dyn && matches!(e, Expr::Var(_));
-                if !matches!(t, Ty::I64 | Ty::Bool | Ty::F64 | Ty::Str) && !nil_output && !dyn_var {
-                    return Err(format!("line {}: parenthesized comma expressions support numeric/logical/borrowed-string results only in this increment; owned, Dyn, array and block results remain a named limit", n));
+                if !matches!(t, Ty::I64 | Ty::Bool | Ty::F64 | Ty::Str | Ty::StrOwn) && !nil_output && !dyn_var {
+                    return Err(format!("line {}: parenthesized comma expressions support numeric/logical/string results only in this increment; owned Dyn, array and block results remain a named limit", n));
+                }
+                if t == Ty::StrOwn && (!CURDIR_LINUX_NATIVE.with(|v|v.get()) || THREADS.with(|v|v.get())) {
+                    return Err(format!("line {}: owned-string comma lists are measured only on ordinary Linux without threads", n));
                 }
                 apply_moves(e, &mut local, sigs, false);
                 last = t;
@@ -14446,6 +14457,17 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                     out.push_str(&format!("    lea .Lstr{}(%rip), %rax\n", idx));
                     out.push_str(&format!("    mov ${}, %edx\n", s.as_bytes().len()));
                 } else { cg_value(e, env, sigs, strs, out, target); }
+                // A sequence owns a fresh final string, including a variable
+                // borrowed from a local/static slot. Consumers may release it
+                // without invalidating that slot; inner calls still consume
+                // their own arguments under the ordinary move rules.
+                if t == Ty::StrOwn {
+                    if i+1 < es.len() && !matches!(e, Expr::Var(_)) {
+                        out.push_str("    mov %rax, %rdi\n    call hbc_freestr\n");
+                    } else if i+1 == es.len() && matches!(e, Expr::Var(_)) {
+                        out.push_str("    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_strcpy\n");
+                    }
+                }
                 if i+1<es.len() && t==Ty::Dyn && dyn_expr_owned(e) {
                     out.push_str("    sub $16,%rsp\n    mov %rax,(%rsp)\n    mov %rdx,8(%rsp)\n");
                     cg_dyn_stack_release(out,0,false);
@@ -19429,12 +19451,20 @@ fn byref_names_in(stmts: &[Stmt]) -> std::collections::HashSet<String> {
 // accumulator. Syntactic, shared by the checker and the layout so both
 // pick the same slot kind.
 fn concat_assigned_in(stmts: &[Stmt]) -> std::collections::HashSet<String> {
+    fn owned_assign(e: &Expr) -> bool {
+        match e {
+            // A comma list carries its final expression's allocation kind;
+            // prefixes cannot decide the destination's storage.
+            Expr::Seq(es) => es.last().map_or(false, owned_assign),
+            Expr::Bin('+', _, _) => true,
+            Expr::Call(f, _) if is_builtin(f,"freadstr") => true,
+            _ => false,
+        }
+    }
     fn st(stmts: &[Stmt], out: &mut std::collections::HashSet<String>) {
         for s in stmts {
             match s {
-                Stmt::Assign(_, id, Expr::Bin('+', _, _)) => { out.insert(id.clone()); }
-                // FReadStr replaces its destination with an owned buffer.
-                Stmt::Assign(_, id, Expr::Call(f, _)) if is_builtin(f,"freadstr") => { out.insert(id.clone()); }
+                Stmt::Assign(_, id, e) if owned_assign(e) => { out.insert(id.clone()); }
                 Stmt::If(_, _, t, el) => { st(t, out); st(el, out); }
                 Stmt::While(_, _, b) | Stmt::For(_, _, _, _, _, b) | Stmt::ForEach(_, _, _, b) => st(b, out),
                 Stmt::Switch(_, _, arms, otherwise) => { for (_, _, b) in arms { st(b, out); } if let Some((_, ob)) = otherwise { st(ob, out); } }
@@ -20714,7 +20744,7 @@ fn cg_print_items(es: &[Expr], inline: bool, raw: bool, stderr: bool, env: &[CgL
                     if cg_iif_out_rawdyn(e, env, sigs).is_some() || darr2_child(e, env) || darrs_elem(e, env) || renders_empty(e) { return 0; }
                     match expr_ty(e, env, sigs) {
                         Ty::Dyn => 1,
-                        Ty::StrOwn if matches!(e, Expr::Call(..) | Expr::Bin(..)) => 2,
+                        Ty::StrOwn if matches!(e, Expr::Call(..) | Expr::Bin(..) | Expr::Seq(..)) => 2,
                         _ => 0,
                     }
                 };
@@ -38314,3 +38344,22 @@ hbc_os_uname_linux:
 .Los_uname_offsets: .long 0,130,260
 .text
 "#;
+
+#[cfg(test)]
+mod seq_owned_tests {
+    use super::*;
+    #[test]
+    fn accumulator_storage_follows_only_final_list_result() {
+        let concat=Expr::Bin('+',Box::new(Expr::Var("s".into())),Box::new(Expr::Str("x".into())));
+        let positive=vec![Stmt::Assign(1,"s".into(),Expr::Seq(vec![Expr::Int("1".into()),Expr::Seq(vec![concat.clone()])]))];
+        assert!(concat_assigned_in(&positive).contains("s"));
+        let prefix_only=vec![Stmt::Assign(1,"s".into(),Expr::Seq(vec![concat,Expr::Int("1".into())]))];
+        assert!(!concat_assigned_in(&prefix_only).contains("s"));
+    }
+    #[test]
+    fn final_owned_variable_is_copied_not_moved() {
+        let mut env=vec![Local{name:"s".into(),ty:Ty::StrOwn,moved:false,ro:false,byref:false}];
+        apply_moves(&Expr::Seq(vec![Expr::Int("1".into()),Expr::Var("s".into())]),&mut env,&[],true);
+        assert!(!env[0].moved);
+    }
+}
