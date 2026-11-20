@@ -1,3 +1,4 @@
+mod box_gtstd;
 // hbc - PoC compiler: Harbour syntax (closed subset) -> x86-64 assembly.
 //
 // Pipeline: hbc does tokenizing, parsing, semantic analysis (types AND
@@ -2001,7 +2002,7 @@ const ASM_RESERVED: &[&str] = &[
     // hbc itself emits; a user function with one of these names would
     // collide with a helper symbol.
     "dtos", "stod", "year", "day", "month", "dow", "cdow", "cmonth", "dtoc", "sqrt", "exp", "log", "mod", "padc", "rat", "stuff", "isdigit", "isalpha", "isupper", "islower", "strzero", "ischar", "strzero_fix", "str_f64", "fmt_f64", "date_add", "date_diff", "date_days", "date_from_days", "seconds",
-    "strtran", "space", "substr", "date", "ctod", "date_pack", "date_render", "date_today", "curdir", "fread", "fcreate", "fopen", "fwrite", "fclose", "freadstr", "hb_libname", "hb_ps", "os", "dirmake", "inkey", "file", "hrfile_setdefault", "hrfile_setpath", "qout", "qqout", "outstd", "outerr", "empty", "procname", "min", "max", "str", "padr", "hb_ntos", "replicate", "aeval", "hb_isnumeric", "hb_isarray", "hb_isstring", "dfree", "upper", "lower", "left", "right", "at", "int", "abs", "padl", "val", "ascan", "aclone", "atail", "asort", "hb_bitand", "hb_bitor", "hb_bitxor", "hb_bitnot", "hb_bittest", "hb_bitset", "hb_bitreset", "eprint_str", "eprint_sep", "eprint_i64", "eprint_i64c", "eprint_dyn", "eprint_dynlit", "print_dynlit", "eprint_f64", "hb_eol", "procline", "asc", "trim", "ltrim", "rtrim", "alltrim", "chr", "trace_top", "print_trace", "panic_exit", "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_range_error", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
+    "strtran", "space", "substr", "date", "ctod", "date_pack", "date_render", "date_today", "dispbox", "curdir", "fread", "fcreate", "fopen", "fwrite", "fclose", "freadstr", "hb_libname", "hb_ps", "os", "dirmake", "inkey", "file", "hrfile_setdefault", "hrfile_setpath", "qout", "qqout", "outstd", "outerr", "empty", "procname", "min", "max", "str", "padr", "hb_ntos", "replicate", "aeval", "hb_isnumeric", "hb_isarray", "hb_isstring", "dfree", "upper", "lower", "left", "right", "at", "int", "abs", "padl", "val", "ascan", "aclone", "atail", "asort", "hb_bitand", "hb_bitor", "hb_bitxor", "hb_bitnot", "hb_bittest", "hb_bitset", "hb_bitreset", "eprint_str", "eprint_sep", "eprint_i64", "eprint_i64c", "eprint_dyn", "eprint_dynlit", "print_dynlit", "eprint_f64", "hb_eol", "procline", "asc", "trim", "ltrim", "rtrim", "alltrim", "chr", "trace_top", "print_trace", "panic_exit", "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_range_error", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
 ];
 
 fn dbf_result(id: &str) -> Option<Ty> {
@@ -6536,6 +6537,11 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 if expr_mentions(&args[0],vn) {return Err(format!("line {}: FRead cannot alias its buffer in the handle expression",n));}
                 if !matches!(&args[2],Expr::Int(v) if v.parse::<u64>().map_or(false,|v|v<=1048576)) {return Err(format!("line {}: FRead count must be a literal in 0..1048576",n));}
                 return Ok(Ty::I64);
+            }
+            if is_builtin(id,"dispbox") {
+                if !CURDIR_LINUX_NATIVE.with(|v|v.get()) {return Err(format!("line {}: literal GTSTD boxes are measured only on ordinary Linux",n));}
+                box_gtstd::shape(args).map_err(|e|format!("line {}: {}",n,e))?;
+                return Ok(Ty::Dyn);
             }
             if ["fcreate","fopen","fwrite","fclose","freadstr"].iter().any(|b|is_builtin(id,b)) {
                 if !CURDIR_LINUX_NATIVE.with(|v|v.get()) { return Err(format!("line {}: typed file I/O is measured only on ordinary Linux",n)); }
@@ -11612,6 +11618,7 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
         Expr::Call(id, args) => {
             if dbf_result(id).is_some(){for a in args{apply_moves(a,env,sigs,false);}return;}
 
+            if is_builtin(id,"dispbox") {return;} // validated inert literal expressions
             if is_builtin(id, "hb_memcheck") {
                 return;
             }
@@ -15377,6 +15384,10 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             let vn=if let Expr::ByRef(v)=&args[1] {v} else {unreachable!("checked")};
             let v=env.iter().rev().find(|v|v.name==*vn).expect("checked");
             if let Expr::Int(n)=&args[2] {out.push_str(&format!("    mov %rax, %rdi\n    mov -{}(%rbp), %rsi\n    mov -{}(%rbp), %r8\n    mov ${}, %edx\n    call hbc_fileio_read\n",v.off,v.off-8,n));}
+        }
+        Expr::Call(id,args) if is_builtin(id,"dispbox") => {
+            let data=box_gtstd::render(args);let k=fresh_lbl();
+            out.push_str(&format!("    .section .rodata\n.Lbox{k}:\n    .byte {}\n    .text\n    mov $1, %eax\n    mov $1, %edi\n    lea .Lbox{k}(%rip), %rsi\n    mov ${}, %edx\n    syscall\n    mov $1, %eax\n    xor %edx, %edx\n",data.iter().map(|v|v.to_string()).collect::<Vec<_>>().join(","),data.len()));
         }
         Expr::Call(id,args) if is_builtin(id,"fcreate") || is_builtin(id,"fopen") => {
             let a=&args[0]; let temp=expr_ty(a,env,sigs)==Ty::StrOwn&&!matches!(a,Expr::Var(_));
@@ -19183,6 +19194,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             if is_builtin(id,"dirmake") || is_builtin(id,"inkey") {return Ty::I64;}
             if is_builtin(id,"file") {return Ty::Bool;}
             if id=="hrfile_setdefault"||id=="hrfile_setpath" {return Ty::Dyn;}
+            if is_builtin(id,"dispbox") {return Ty::Dyn;}
             if is_builtin(id,"freadstr") {return Ty::StrOwn;}
             if is_builtin(id,"fclose") {return Ty::Bool;}
             if ["fread","fcreate","fopen","fwrite"].iter().any(|b|is_builtin(id,b)) {return Ty::I64;}
@@ -28550,6 +28562,7 @@ fn emit_sarr_desc(out: &mut String, strs: &mut Vec<String>, expr: &Expr) -> Stri
 }
 
 fn emit_asm(funcs: &[Func], sigs: &[Sig], externs: &[String], target: Target, instrument: bool) -> String {
+    box_gtstd::reset();
     compute_param_mut(funcs);
     let nclasses = CLASSES.with(|c| c.borrow().len());
     if nclasses > 0 && !matches!(target, Target::Linux | Target::Windows) {
@@ -35388,6 +35401,7 @@ fn main() {
         funcs.push(f);
     }
     funcs.extend(synth_new_funcs);
+    if let Err(e)=box_gtstd::validate(&funcs){eprintln!("error: {}",e);process::exit(1);}
     lift_thread_blocks(&mut funcs);
 
     // DBF field-name access (D1b): bare undeclared identifiers in a
