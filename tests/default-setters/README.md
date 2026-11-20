@@ -1,4 +1,4 @@
-# Scalar default setters, work in progress
+# Scalar default setters, ordinary Linux
 
 Own MIT implementation and probes; external Harbour executable oracle only.
 
@@ -32,6 +32,14 @@ required to expose the borrowing mutant.
 
 No Bin/Cmp or statement/error-call trace emission changes. Existing trace
 helpers and PROC metadata are untouched. No workflow, manifest, expectations
-or external PRGs changed. Broad regression and postcommit builds still pending.
+or external PRGs changed. Broad regression and postcommit build identities are recorded in the review archive, separately from these focused scripts.
 Twenty pinned originals whose first errors are these setters were tested in
 scratch: zero acceptance changes; first-error movement is not an unlock claim.
+
+
+Run with fresh output directories:
+
+    python3 tests/default-setters/check.py --compiler ./hbc --baseline /base/hbc --hbmk2 /path/to/hbmk2 --output /new/exact
+    python3 tests/default-setters/safety.py --compiler ./hbc --output /new/safety
+    python3 tests/default-setters/diagnostic.py --compiler ./hbc --hbmk2 /path/to/hbmk2 --output /new/diagnostic
+    python3 tests/default-setters/mutants.py --compiler ./hbc --rustc /path/to/rustc --hbmk2 /path/to/hbmk2 --output /new/mutants
