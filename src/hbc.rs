@@ -6361,11 +6361,13 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
             // the value is the NEW content. This increment restricts the
             // new content to integers/logicals in the portable subset.
             // Ordinary Linux additionally admits scalar Dyn into a Dyn
-            // slot, returning an independent owned snapshot. Static float,
-            // string, date and container shapes remain named limits.
+            // slot, returning an independent owned snapshot, and Date into
+            // an existing Date slot. Static float, string and container
+            // shapes remain named limits.
             let t = type_expr(rhs, env, sigs, n)?;
             let dyn_inline = t==Ty::Dyn && DECIMAL_LOCAL_PROFILE.with(|v|v.get());
-            if !matches!(t, Ty::I64 | Ty::Bool) && !dyn_inline {
+            let date_inline = t==Ty::Date && DECIMAL_LOCAL_PROFILE.with(|v|v.get()) && env.iter().any(|v|v.name==*id && v.ty==Ty::Date);
+            if !matches!(t, Ty::I64 | Ty::Bool) && !dyn_inline && !date_inline {
                 return Err(format!("line {}: inline `:=` in an expression supports integer/logical values only in this increment; floats, strings, Dyn, arrays and blocks remain a named limit", n));
             }
             let idx = match env.iter().position(|v| v.name == *id) {
@@ -9791,6 +9793,43 @@ fn foreach_lv_readonly(stmts: &[Stmt], name: &str) -> bool {
         Stmt::For(_, _, _, _, _, b) | Stmt::ForEach(_, _, _, b) => foreach_lv_readonly(b, name),
         _ => true,
     })
+}
+
+// A bare LOCAL whose first mention is an unconditional Date store never
+// exposes its initial NIL. Narrow only this dominated, non-byref shape.
+// Unknown/control-flow forms fail closed; the existing Date checker still
+// rejects all later non-Date stores. No inference invokes type_expr here.
+fn narrow_bare_date_locals(funcs:&mut [Func]) {
+    if !DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get()) { return; }
+    fn date_producer(e:&Expr,name:&str)->bool {
+        !expr_mentions(e,name) && matches!(e,Expr::Call(id,_) if ["date","stod","ctod"].iter().any(|b|is_builtin(id,b)))
+    }
+    fn first_store(s:&Stmt,name:&str)->bool {
+        match s {
+            Stmt::Assign(_,id,e) if id==name => date_producer(e,name),
+            Stmt::Print(_,es,_) => {
+                for e in es {
+                    if !expr_mentions(e,name) { continue; }
+                    return matches!(e,Expr::Set(id,r) if id==name && date_producer(r,name));
+                }
+                false
+            }
+            _ => false,
+        }
+    }
+    for f in funcs {
+        let mut byrefs=std::collections::HashSet::new();
+        visit_stmts_ref(&f.stmts,&mut |_|{},&mut |e| {if let Expr::ByRef(id)=e {byrefs.insert(id.clone());}});
+        for i in 0..f.stmts.len() {
+            let name=match &f.stmts[i] {Stmt::Local(_,id,Expr::Nil) if !byrefs.contains(id)=>id.clone(),_=>continue};
+            let first=f.stmts[i+1..].iter().find(|s|stmt_mentions(s,&name));
+            if first.map_or(false,|s|first_store(s,&name)) {
+                if let Stmt::Local(_,_,e)=&mut f.stmts[i] {
+                    *e=Expr::Call("stod".to_string(),vec![Expr::Str(String::new())]);
+                }
+            }
+        }
+    }
 }
 
 // Bare `local i` (or `local i := NIL`) whose FIRST mention in the same
@@ -14513,7 +14552,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             // Inline assignment (parexpr): evaluate the right side, store
             // it into the variable's slot, and leave the NEW content in
             // rax as the expression's value. The checker restricts the
-            // target to plain I64/Bool locals and Dyn slots. The bounded
+            // target to plain I64/Bool/Date locals and Dyn slots. The bounded
             // scalar Dyn branch below owns both slot and result; static
             // float/string and by-reference stores remain excluded.
             let v = env.iter().find(|v| v.name == *id).expect("checked");
@@ -35779,6 +35818,7 @@ fn main() {
         });
     }
     DECIMAL_LOCAL_PROFILE.with(|v|v.set(CURDIR_LINUX_NATIVE.with(|v|v.get()) && !decimal_thread_profile));
+    narrow_bare_date_locals(&mut funcs);
     if let Err(e)=box_gtstd::validate(&funcs){eprintln!("error: {}",e);process::exit(1);}
     lift_thread_blocks(&mut funcs);
 
