@@ -127,6 +127,15 @@ uint64_t hrdbf_app_seek(const unsigned char*p,size_t n,uint64_t soft,uint64_t la
  if(!(x->bytes&&hrdbf_app_order_active))hrdbf_app_fail("hbc: DBF index seek requires an open index\n");
  hrdbf_app_pos=hrntx_seek(x,p,n,soft!=0,last!=0,&found);hrdbf_app_found_flag=found;hrdbf_app_order_sync();hrdbf_app_state.area.bof=!hrdbf_app_cdx&&!x->count;return found;
 }
+/* Dyn-string seek entry: a field read or a Dyn local carrying a character
+ * value (owned or borrowed cell, length header at payload[-1]). Numeric or
+ * other Dyn kinds are a clean typed failure; Harbour's numeric-to-string
+ * key conversion is a separate increment. */
+uint64_t hrdbf_app_seek_dyn(uint64_t tag,uint64_t pay,uint64_t soft,uint64_t last){
+ unsigned k=(unsigned)(tag&255u);hrdbf_app_require();
+ if((k!=HRV_STR_OWN&&k!=HRV_STR_BORROW)||!pay)hrdbf_app_fail("hbc: DBF index seek expects a character key value\n");
+ return hrdbf_app_seek((const unsigned char*)pay,(size_t)((const uint64_t*)pay)[-1],soft,last);
+}
 uint64_t hrdbf_app_recno(void){hrdbf_app_require();return hrdbf_app_state.area.recno;}
 uint64_t hrdbf_app_lastrec(void){hrdbf_app_require();return hrdbf_app_state.area.count;}
 uint64_t hrdbf_app_fcount(void){hrdbf_app_require();return hrdbf_app_state.area.nfields;}

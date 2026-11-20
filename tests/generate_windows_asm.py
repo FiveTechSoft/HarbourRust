@@ -42,7 +42,7 @@ for label in re.findall(r'^([A-Za-z_.$][A-Za-z0-9_.$]*):',s,re.M):
   s=re.sub(r'(?<![A-Za-z0-9_.$])'+re.escape(label)+r'(?![A-Za-z0-9_.$])','hrdbfw_local_'+label,s)
 assert not re.search(r'__chkstk|__stack_chk|GOT|PLT|\.seh|\.cfi|\.eh_frame',s)
 # Export compiler-facing internal ABI wrappers. The C bodies use Win64.
-arity={'close':0,'open':5,'top':0,'bottom':0,'skip':1,'order_add':2,'order_clear':0,'found':0,'seek':4,'recno':0,'lastrec':0,'fcount':0,'goto':1,'ordselect':1,'bof':0,'eof':0,'deleted':0,'fieldput':3,'append':0,'render':3,'integer':2,'equal':4,'compare':4,'empty':2,'unsupported':0}
+arity={'close':0,'open':5,'top':0,'bottom':0,'skip':1,'order_add':2,'order_clear':0,'found':0,'seek':4,'seek_dyn':4,'recno':0,'lastrec':0,'fcount':0,'goto':1,'ordselect':1,'bof':0,'eof':0,'deleted':0,'fieldput':3,'append':0,'render':3,'integer':2,'equal':4,'compare':4,'empty':2,'unsupported':0}
 s+='\n.text\n'
 for name,n in arity.items():
  s+='\nhrdbf_app_'+name+':\n    push %rbp\n    mov %rsp, %rbp\n    sub $'+str(48 if n>=5 else 32)+', %rsp\n'
