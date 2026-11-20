@@ -9647,14 +9647,18 @@ fn has_dbf_read(e: &Expr) -> bool {
     }
 }
 
-// Return-type unification (probe n2): an i64 return and a NIL return in
-// the same function unify to Dyn ({tag,payload}); Harbour's mixed returns
-// are supported, not registered as a static-model difference.
+// Return-type unification: numeric/NIL returns share Dyn ({tag,payload}).
+// Ordinary Linux also supports mixed string/logical with Dyn; other
+// profiles retain an explicit limit until their caller ABI is verified.
 fn unify_ret(ret: Option<Ty>, t: Ty, n: usize) -> Result<Ty, String> {
     match (ret, t) {
         (None, t) => Ok(t),
         (Some(p), t) if p == t => Ok(t),
         (Some(Ty::I64|Ty::F64), Ty::Dyn) | (Some(Ty::Dyn), Ty::I64|Ty::F64) => Ok(Ty::Dyn),
+        (Some(Ty::Str|Ty::StrOwn|Ty::Bool),Ty::Dyn) | (Some(Ty::Dyn),Ty::Str|Ty::StrOwn|Ty::Bool) => {
+            if !DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get()) {return Err(format!("line {}: mixed string/logical Dyn returns require ordinary Linux without threads or PRIVATE/PUBLIC/macro context",n));}
+            Ok(Ty::Dyn)
+        },
         // A rodata string and an owned string unify to owned (the caller
         // always owns the result; a rodata return point emits a copy).
         (Some(Ty::Str), Ty::StrOwn) | (Some(Ty::StrOwn), Ty::Str) => Ok(Ty::StrOwn),
@@ -21929,6 +21933,22 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 if let Expr::Var(src) = e {
                     if env.iter().rev().any(|x| x.name == *src && x.ty == Ty::RefStrOwn) {
                         out.push_str("    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_strcpy\n");
+                    }
+                }
+                // Mixed typed string/logical -> Dyn uses the existing
+                // caller-owned tagged ABI. StrOwn transfer and byref copy
+                // above keep their old ownership rules; rodata needs a copy.
+                let mixed_ret_sig=sigs.iter().find(|sg|sg.name==fname).or_else(|| {
+                    let (base,mask)=fname.rsplit_once("__br")?;
+                    if mask.is_empty() || !mask.bytes().all(|b|b==b'0'||b==b'1') {return None;}
+                    sigs.iter().find(|sg|sg.name==base)
+                });
+                if mixed_ret_sig.map_or(false,|sg|sg.ret==Some(Ty::Dyn)) {
+                    match expr_ty(e,env,sigs) {
+                        Ty::Str => out.push_str("    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_strcpy\n    mov %rax, %rdx\n    mov $4, %eax\n"),
+                        Ty::StrOwn => out.push_str("    mov %rax, %rdx\n    mov $4, %eax\n"),
+                        Ty::Bool => out.push_str("    mov %rax, %rdx\n    mov $3, %eax\n"),
+                        _ => {}
                     }
                 }
                 // A Dyn return hands the caller its own clone of any

@@ -1,0 +1,21 @@
+{
+  "bool-value-first": "function Main()\nlocal a:=Pick(.t.),b:=Pick(.f.)\n? ValType(a),a\n? ValType(b),b\nreturn nil\nfunction Pick(flag)\nif flag\nreturn .t.\nendif\nreturn nil\n",
+  "bool-nil-first": "function Main()\nlocal a:=Pick(.t.),b:=Pick(.f.)\n? ValType(a),a\n? ValType(b),b\nreturn nil\nfunction Pick(flag)\nif flag\nreturn nil\nendif\nreturn .t.\n",
+  "bool-false-value-first": "function Main()\nlocal a:=Pick(.t.),b:=Pick(.f.)\n? ValType(a),a\n? ValType(b),b\nreturn nil\nfunction Pick(flag)\nif flag\nreturn .f.\nendif\nreturn nil\n",
+  "bool-false-nil-first": "function Main()\nlocal a:=Pick(.t.),b:=Pick(.f.)\n? ValType(a),a\n? ValType(b),b\nreturn nil\nfunction Pick(flag)\nif flag\nreturn nil\nendif\nreturn .f.\n",
+  "literal-value-first": "function Main()\nlocal a:=Pick(.t.),b:=Pick(.f.)\n? ValType(a),a\n? ValType(b),b\nreturn nil\nfunction Pick(flag)\nif flag\nreturn \"abc\"\nendif\nreturn nil\n",
+  "literal-nil-first": "function Main()\nlocal a:=Pick(.t.),b:=Pick(.f.)\n? ValType(a),a\n? ValType(b),b\nreturn nil\nfunction Pick(flag)\nif flag\nreturn nil\nendif\nreturn \"abc\"\n",
+  "empty-value-first": "function Main()\nlocal a:=Pick(.t.),b:=Pick(.f.)\n? ValType(a),a\n? ValType(b),b\nreturn nil\nfunction Pick(flag)\nif flag\nreturn \"\"\nendif\nreturn nil\n",
+  "empty-nil-first": "function Main()\nlocal a:=Pick(.t.),b:=Pick(.f.)\n? ValType(a),a\n? ValType(b),b\nreturn nil\nfunction Pick(flag)\nif flag\nreturn nil\nendif\nreturn \"\"\n",
+  "own-value-first": "function Main()\nlocal a:=Pick(.t.),b:=Pick(.f.)\n? ValType(a),a\n? ValType(b),b\nreturn nil\nfunction Pick(flag)\nif flag\nreturn Replicate(\"Ab\",4)\nendif\nreturn nil\n",
+  "own-nil-first": "function Main()\nlocal a:=Pick(.t.),b:=Pick(.f.)\n? ValType(a),a\n? ValType(b),b\nreturn nil\nfunction Pick(flag)\nif flag\nreturn nil\nendif\nreturn Replicate(\"Ab\",4)\n",
+  "byte-value-first": "function Main()\nlocal a:=Pick(.t.),b:=Pick(.f.)\n? ValType(a),a\n? ValType(b),b\nreturn nil\nfunction Pick(flag)\nif flag\nreturn hb_BChar(255)\nendif\nreturn nil\n",
+  "byte-nil-first": "function Main()\nlocal a:=Pick(.t.),b:=Pick(.f.)\n? ValType(a),a\n? ValType(b),b\nreturn nil\nfunction Pick(flag)\nif flag\nreturn nil\nendif\nreturn hb_BChar(255)\n",
+  "local-owner": "function Main()\nlocal a:=Pick(.t.),b:=Replicate(\"Z\",64)\n? a,b,ValType(a)\nreturn nil\nfunction Pick(flag)\nlocal s:=Replicate(\"A\",64)\nif flag\nreturn s\nendif\nreturn nil\n",
+  "nested": "function Main()\nlocal a:=Wrap(.t.)\n? a,ValType(a)\n? Wrap(.f.)\nreturn nil\nfunction Pick(flag)\nif flag\nreturn Replicate(\"x\",8)\nendif\nreturn nil\nfunction Wrap(flag)\nreturn Pick(flag)\n",
+  "cache-reuse": "function Main()\nlocal a:=Pick(.t.),b:=Replicate(\"Z\",64)\n? a,b\nreturn nil\nfunction Pick(flag)\nlocal s:=Replicate(\"A\",64)\nif flag\nreturn s\nendif\nreturn nil\n",
+  "byref-string": "function Main()\nlocal s:=Replicate(\"A\",64),a:=Pick(@s,.t.)\ns:=Replicate(\"Z\",64)\n? a,s\nreturn nil\nfunction Pick(s,flag)\nif flag\nreturn Upper(s)\nendif\nreturn nil\n",
+  "call-argument": "function Main()\nShow(Pick(.t.))\nreturn nil\nfunction Pick(flag)\nif flag\nreturn Replicate(\"A\",64)\nendif\nreturn nil\nfunction Show(x)\n? ValType(x),x\nreturn nil\n",
+  "byref-name-marker": "function Main()\nlocal s:=Replicate(\"A\",64),a:=Pick__br10(@s,.t.)\ns:=Replicate(\"Z\",64)\n? a,s\nreturn nil\nfunction Pick__br10(s,flag)\nif flag\nreturn Upper(s)\nendif\nreturn nil\n",
+  "name-marker": "function Main()\nlocal a:=Pick__br10(.t.),b:=Pick__br10(.f.)\n? ValType(a),a\n? ValType(b),b\nreturn nil\nfunction Pick__br10(flag)\nif flag\nreturn \"abc\"\nendif\nreturn nil\n"
+}
