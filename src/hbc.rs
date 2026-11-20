@@ -6331,7 +6331,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 // `( y := 10, y )`). Owned Dyn temporaries keep the limit.
                 let dyn_var = t == Ty::Dyn && matches!(e, Expr::Var(_));
                 if !matches!(t, Ty::I64 | Ty::Bool | Ty::F64 | Ty::Str | Ty::StrOwn) && !nil_output && !dyn_var {
-                    return Err(format!("line {}: parenthesized comma expressions support numeric/logical/string results only in this increment; owned Dyn, array and block results remain a named limit", n));
+                    return Err(format!("line {}: parenthesized comma expressions support numeric/logical/borrowed-string results only in the portable subset; ordinary Linux additionally accepts typed owned strings; owned Dyn, array and block results remain a named limit", n));
                 }
                 if t == Ty::StrOwn && (!CURDIR_LINUX_NATIVE.with(|v|v.get()) || THREADS.with(|v|v.get())) {
                     return Err(format!("line {}: owned-string comma lists are measured only on ordinary Linux without threads", n));
