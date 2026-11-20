@@ -6555,6 +6555,12 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 }
                 match &args[1] {
                     Expr::Int(v) if v.parse::<u32>().ok().map_or(false, |v| v < 64) => {}
+                    Expr::Var(v) => {
+                        let t=type_expr(&args[1],env,sigs,n)?;
+                        if t==Ty::Dyn {
+                            if !DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get()) || static_dyn(v) || is_sarr(v) {return Err(format!("line {}: Dyn bit index requires ordinary Linux non-macro local storage; PRIVATE/PUBLIC, static, threads and macro contexts are outside this increment",n));}
+                        } else if t!=Ty::I64 {return Err(format!("line {}: bit index variable must be I64 or local Dyn containing an integer; no F64 coercion in this increment",n));}
+                    }
                     _ => return Err(format!("line {}: `{}` bit index must be a literal from 0 to 63; dynamic/out-of-range semantics are not in this increment",n,id)),
                 }
                 return Ok(if is_builtin(id,"hb_bittest") {Ty::Bool} else {Ty::I64});
@@ -17477,9 +17483,24 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
         }
         Expr::Call(id,args) if is_bitindex(id) => {
             cg_expr(&args[0],env,sigs,strs,out,target);
-            let bit = match &args[1] { Expr::Int(v) => v.parse::<u32>().expect("checked"), _ => unreachable!("checked") };
             let op = if is_builtin(id,"hb_bittest") {"bt"} else if is_builtin(id,"hb_bitset") {"bts"} else {"btr"};
-            out.push_str(&format!("    {} ${}, %rax\n",op,bit));
+            if let Expr::Int(v)=&args[1] {
+                let bit=v.parse::<u32>().expect("checked");
+                out.push_str(&format!("    {} ${}, %rax\n",op,bit));
+            } else {
+                // Only a checked I64 or local Dyn variable reaches this arm. Its load
+                // cannot allocate or throw; no owned temporary crosses it.
+                out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n");
+                cg_expr(&args[1],env,sigs,strs,out,target);
+                if expr_ty(&args[1],env,sigs)==Ty::Dyn {
+                    let k=fresh_lbl();
+                    // Borrow an integer tag only. No F64 truncation and no
+                    // untyped payload reinterpretation. Restore the spill
+                    // before entering the existing type-error route.
+                    out.push_str(&format!("    @HBC_TAG_KIND@test %rax, %rax@HBC_TAG_END@\n    je .Lbidxok{k}\n    @HBC_TAG_KIND@cmp $9, %rax@HBC_TAG_END@\n    je .Lbidxok{k}\n    add $16, %rsp\n    jmp hbc_type_error\n.Lbidxok{k}:\n    mov %rdx, %rax\n"));
+                }
+                out.push_str(&format!("    mov %rax, %rcx\n    mov (%rsp), %rax\n    add $16, %rsp\n    {} %rcx, %rax\n",op));
+            }
             if is_builtin(id,"hb_bittest") { out.push_str("    setc %al\n    movzbq %al, %rax\n"); }
         }
         Expr::Call(id, args) if is_bitop(id) => {

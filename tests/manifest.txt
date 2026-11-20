@@ -1067,7 +1067,7 @@ neg tests/t1073_bitops_float_neg.prg arguments must be integers
 neg tests/t1074_bitops_arity_neg.prg needs at least two argument(s)
 neg tests/t1075_bitnot_arity_neg.prg needs exactly one argument(s)
 pos2 tests/t1076_bitindex_values.prg tests/expectations/qout/t1076_bitindex_values.linux.out tests/expectations/qout/t1076_bitindex_values.windows.out
-neg tests/t1077_bitindex_dynamic_neg.prg bit index must be a literal from 0 to 63
+pos2 tests/t1077_bitindex_dynamic_neg.prg tests/expectations/qout/t1077_bitindex_dynamic.linux.out tests/expectations/qout/t1077_bitindex_dynamic.windows.out
 neg tests/t1078_bitindex_range_neg.prg bit index must be a literal from 0 to 63
 neg tests/t1079_bitindex_type_neg.prg value must be an integer
 neg tests/t1080_bitindex_arity_neg.prg takes two arguments
