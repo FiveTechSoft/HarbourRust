@@ -798,6 +798,15 @@ thread_local! {
     // named rejection (it would expose the block's own parameters).
     static CUR_FN: std::cell::RefCell<String> = std::cell::RefCell::new(String::new());
     static IN_BLOCK: std::cell::Cell<bool> = std::cell::Cell::new(false);
+    // Codeblock captures (bounded increment: direct codeblock literals in
+    // AScan). The checker resolves each free name in the enclosing scope,
+    // registers the resolved captures and the per-parameter element types
+    // per block id; codegen reads both when emitting the block function
+    // and its call sites. CAPTURE_MODE is None outside AScan's block
+    // argument (captures stay a named rejection everywhere else).
+    static BLOCK_CAPTURES: std::cell::RefCell<std::collections::HashMap<usize, Vec<(String, Ty)>>> = std::cell::RefCell::new(std::collections::HashMap::new());
+    static BLOCK_PARAM_TYS: std::cell::RefCell<std::collections::HashMap<usize, Vec<Ty>>> = std::cell::RefCell::new(std::collections::HashMap::new());
+    static CAPTURE_MODE: std::cell::Cell<Option<u8>> = std::cell::Cell::new(None); // 0: integer elements, 1: string elements
     static TRACE_LINE: std::cell::Cell<usize> = std::cell::Cell::new(0);
     static PROC_METADATA_LINES: std::cell::Cell<bool> = std::cell::Cell::new(true);
     static TRACE_OFFSET: std::cell::Cell<usize> = std::cell::Cell::new(0);
@@ -7581,16 +7590,28 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                     return Err(format!("line {}: `AScan` expects an array variable (the slot is passed by address)",n));
                 }
                 let ta = type_expr(&args[0],env,sigs,n)?;
+                // A direct codeblock literal gets the capture context: the
+                // element type decides the block parameter typing (integer
+                // arrays hand I64 elements, string arrays hand Str
+                // elements) and free names resolve as captures in the
+                // enclosing scope. Anything else keeps the no-capture rule.
+                let elem = match ta { Ty::DArr => 0u8, Ty::DArrS => 1u8, _ => 0u8 };
+                let block_direct = matches!(&args[1], Expr::BlockLit(..));
+                CAPTURE_MODE.set(if block_direct { Some(elem) } else { None });
                 let tb = type_expr(&args[1],env,sigs,n)?;
+                CAPTURE_MODE.set(None);
                 match (ta, tb) {
                     (Ty::DArr, Ty::I64) | (Ty::DArrS, Ty::Str) | (Ty::DArrS, Ty::StrOwn) => {}
                     // AScan(a, {|x[, i]| <logical>}) (issue #1 3.4): the block
-                    // gets each integer element (and its 1-based position);
-                    // the first .T. wins. A non-integer element is a clean
-                    // runtime type error (integer block parameters).
+                    // gets each element (and its 1-based position); the
+                    // first .T. wins. Integer arrays deliver I64 elements
+                    // (a non-integer cell is a clean runtime type error);
+                    // string arrays deliver the element as a borrowed Str.
                     (Ty::DArr, Ty::Block(1 | 2, BRet::Bool)) => {}
-                    (Ty::DArr, Ty::Block(_, BRet::Bool)) => return Err(format!("line {}: `AScan` codeblock takes one or two parameters (element, position)",n)),
-                    (Ty::DArr, Ty::Block(..)) => return Err(format!("line {}: `AScan` codeblock must return a logical (a final comparison) in this increment",n)),
+                    (Ty::DArrS, Ty::Block(1 | 2, BRet::Bool)) if block_direct => {}
+                    (Ty::DArrS, Ty::Block(..)) => return Err(format!("line {}: `AScan` over a string array takes a direct codeblock literal in this increment (its parameters are typed by the element family)",n)),
+                    (Ty::DArr, Ty::Block(_, BRet::Bool)) | (Ty::DArrS, Ty::Block(_, BRet::Bool)) => return Err(format!("line {}: `AScan` codeblock takes one or two parameters (element, position)",n)),
+                    (Ty::DArr, Ty::Block(..)) | (Ty::DArrS, Ty::Block(..)) => return Err(format!("line {}: `AScan` codeblock must return a logical (a final comparison) in this increment",n)),
                     _ => return Err(format!("line {}: `AScan` needs an integer array with an integer target or a string array with a string target in this increment",n)),
                 }
                 return Ok(Ty::I64);
@@ -9449,9 +9470,9 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 Some(_) => Err(format!("line {}: four-level indexing needs an array of arrays of arrays of arrays; `{}` is not one", n, id)),
             }
         }
-        Expr::BlockLit(_, params, body) => {
+        Expr::BlockLit(id, params, body) => {
             let prev_block = IN_BLOCK.with(|c| c.replace(true));
-            let r = check_block_body(params, body, sigs, n);
+            let r = check_block_body(*id, params, body, env, sigs, n);
             IN_BLOCK.with(|c| c.set(prev_block));
             r
         }
@@ -9557,21 +9578,68 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
 
 // Free VARIABLE names used inside an expression (callees are not variables).
 // The codeblock body check (Expr::BlockLit arm), extracted so the IN_BLOCK
-// guard restores on every path.
-fn check_block_body(params: &[String], body: &[Expr], sigs: &mut Vec<Sig>, n: usize) -> Result<Ty, String> {
-    // v1: no captures - the body sees ONLY its parameters (probe
-    // c3 captures a function local in Harbour; that is the next
-    // increment, not this one). Parameters are integers here.
-    for e in body {
-        let mut found = Vec::new();
-        free_vars(e, &mut found);
-        for v in found {
-            if !params.iter().any(|p| *p == v) {
-                return Err(format!("line {}: codeblock captures are not in this increment (`{}` is not a codeblock parameter)", n, v));
+// guard restores on every path. A direct codeblock in AScan resolves its
+// remaining free names as captures in the enclosing scope (read-only:
+// assignment through a capture is a named rejection); everywhere else the
+// no-capture rule stays.
+fn check_block_body(id: usize, params: &[String], body: &[Expr], env: &[Local], sigs: &mut Vec<Sig>, n: usize) -> Result<Ty, String> {
+    // Parameter typing: the FIRST parameter is AScan's element (integer
+    // arrays deliver I64, string arrays deliver a borrowed Str); a second
+    // parameter is the 1-based position (integer); without the context
+    // parameters are integers (the historical rule).
+    let pty = |i: usize| match CAPTURE_MODE.get() {
+        Some(0) => Ty::I64,
+        Some(1) if i == 0 => Ty::Str,
+        _ => Ty::I64,
+    };
+    // Captures: free names that are not parameters. Read-only, 16-byte
+    // casillas only (string borrows, integers, Dyn); anything else (or a
+    // moved local) is a named rejection.
+    let mut caps: Vec<(String, Ty)> = Vec::new();
+    if CAPTURE_MODE.get().is_some() {
+        for e in body {
+            let mut found = Vec::new();
+            free_vars(e, &mut found);
+            for v in found {
+                if params.iter().any(|p| *p == v) || caps.iter().any(|(c, _)| *c == v) {
+                    continue;
+                }
+                match env.iter().rev().find(|x| x.name == v) {
+                    Some(loc) => {
+                        if loc.moved {
+                            return Err(format!("line {}: codeblock capture of the moved value `{}` is not in this increment", n, v));
+                        }
+                        if loc.byref {
+                            return Err(format!("line {}: codeblock capture of the `@`-parameter `{}` is not in this increment", n, v));
+                        }
+                        if !matches!(loc.ty, Ty::Str | Ty::StrOwn | Ty::I64 | Ty::Dyn) {
+                            return Err(format!("line {}: codeblock capture of `{}` ({}) is not in this increment (strings, integers and Dyn casillas only)", n, v, ty_name(loc.ty)));
+                        }
+                        caps.push((v, loc.ty));
+                    }
+                    None => return Err(format!("line {}: codeblock captures are not in this increment (`{}` is not a codeblock parameter)", n, v)),
+                }
+            }
+        }
+        if !caps.is_empty() {
+            BLOCK_CAPTURES.with(|m| m.borrow_mut().insert(id, caps.clone()));
+        }
+    } else {
+        for e in body {
+            let mut found = Vec::new();
+            free_vars(e, &mut found);
+            for v in found {
+                if !params.iter().any(|p| *p == v) {
+                    return Err(format!("line {}: codeblock captures are not in this increment (`{}` is not a codeblock parameter)", n, v));
+                }
             }
         }
     }
-    let mut benv: Vec<Local> = params.iter().map(|p| Local { name: p.clone(), ty: Ty::I64, moved: false, ro: false, byref: false }).collect();
+    BLOCK_PARAM_TYS.with(|m| m.borrow_mut().insert(id, (0..params.len()).map(|i| pty(i)).collect()));
+    let mut benv: Vec<Local> = params.iter().enumerate().map(|(i, p)| Local { name: p.clone(), ty: pty(i), moved: false, ro: false, byref: false }).collect();
+    for (cname, cty) in &caps {
+        benv.push(Local { name: cname.clone(), ty: *cty, moved: false, ro: true, byref: false });
+    }
     for (i, e) in body.iter().enumerate() {
         let t = type_expr(e, &mut benv, sigs, n)?;
         // A discarded non-final NIL-producing call runs for its effect
@@ -16250,16 +16318,30 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                 }
                 Ty::Block(k, _) => {
                     // Block scan: (%rsp) holds the 0-based position across
-                    // the indirect calls. Each element converts through
-                    // hbc_dyn_to_i64 (integer tags only, else type error)
-                    // and is passed like an Eval argument; a 2-parameter
-                    // block also gets the 1-based position.
+                    // the indirect calls. Integer arrays convert each cell
+                    // through hbc_dyn_to_i64 (integer tags only, else type
+                    // error); string arrays hand the element as a borrowed
+                    // {ptr, len} Str pair. Each element is passed like an
+                    // Eval argument; a 2-parameter block also gets the
+                    // 1-based position. Blocks with captures receive the
+                    // owner's %rbp in %r10 right before the call.
+                    let is_str = expr_ty(&args[0], env, sigs) == Ty::DArrS;
+                    let blk_id = match &args[1] { Expr::BlockLit(id, _, _) => Some(*id), _ => None };
+                    let has_caps = blk_id.map(|id| !BLOCK_CAPTURES.with(|m| m.borrow().get(&id).map(|v| v.is_empty()).unwrap_or(true))).unwrap_or(false);
                     let l = fresh_lbl();
-                    out.push_str(&format!("    sub $16, %rsp\n    movq $0, (%rsp)\n.Lascb{l}:\n    mov (%rsp), %r8\n    cmp -{cnt}(%rbp), %r8\n    jae .Lascbz{l}\n    mov -{ptr}(%rbp), %r9\n    shl $4, %r8\n    add %r8, %r9\n    mov (%r9), %rax\n    mov 8(%r9), %rdx\n    call hbc_dyn_to_i64\n    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n", l=l, cnt=var.off-8, ptr=var.off));
+                    out.push_str(&format!("    sub $16, %rsp\n    movq $0, (%rsp)\n.Lascb{l}:\n    mov (%rsp), %r8\n    cmp -{cnt}(%rbp), %r8\n    jae .Lascbz{l}\n    mov -{ptr}(%rbp), %r9\n    shl $4, %r8\n    add %r8, %r9\n", l=l, cnt=var.off-8, ptr=var.off));
+                    if is_str {
+                        out.push_str("    mov 8(%r9), %rax\n    test %rax, %rax\n    jnz 81f\n    xor %edx, %edx\n    jmp 82f\n81:  mov -8(%rax), %rdx\n82:  sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+                    } else {
+                        out.push_str("    mov (%r9), %rax\n    mov 8(%r9), %rdx\n    call hbc_dyn_to_i64\n    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+                    }
                     if k == 2 {
                         out.push_str("    mov 16(%rsp), %rax\n    inc %rax\n    sub $16, %rsp\n    mov %rax, (%rsp)\n    movq $0, 8(%rsp)\n");
                     }
                     cg_expr(&args[1],env,sigs,strs,out,target);
+                    if has_caps {
+                        out.push_str("    mov %rbp, %r10\n");
+                    }
                     out.push_str(&format!("    mov %rax, %r11\n    call *%r11\n    add ${a}, %rsp\n    test %rax, %rax\n    jnz .Lascbf{l}\n    incq (%rsp)\n    jmp .Lascb{l}\n.Lascbf{l}:\n    mov (%rsp), %rax\n    inc %rax\n    jmp .Lascbe{l}\n.Lascbz{l}:\n    xor %eax, %eax\n.Lascbe{l}:\n    add $16, %rsp\n    xor %edx, %edx\n", a=16*k, l=l));
                 }
                 _ => {
@@ -24862,17 +24944,37 @@ fn collect_blocks_stmts(stmts: &[Stmt], out: &mut Vec<(usize, Vec<String>, Vec<E
 
 // Emit one block as a function with the standard convention: parameters
 // copied from the caller's argument slots, body expressions evaluated in
-// order, the LAST one's value returned in %rax (probe c4). Integer
-// parameters and bodies only in this increment (checked in analysis), so
-// no strings, no drops, no heap.
-fn emit_block(owner: &str, id: usize, params: &[String], body: &[Expr], sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target) {
+// order, the LAST one's value returned in %rax (probe c4). AScan blocks
+// additionally receive the OWNER's %rbp in %r10 and copy their captures
+// from it in the prologue (read-only borrows; the block runs strictly
+// inside the owner's frame lifetime). Parameters keep their analysis
+// types (I64 elements or borrowed Str elements).
+fn emit_block(owner: &str, id: usize, params: &[String], body: &[Expr], sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target, caps: &[(String, usize, Ty)]) {
     let mut lenv: Vec<CgLocal> = Vec::new();
     let mut frame = 0usize;
-    for p in params {
-        frame += size_of(Ty::I64);
-        lenv.push(CgLocal { name: p.clone(), ty: Ty::I64, off: frame });
+    let ptys = BLOCK_PARAM_TYS.with(|m| m.borrow().get(&id).cloned());
+    for (i, p) in params.iter().enumerate() {
+        let ty = ptys.as_ref().and_then(|v| v.get(i).copied()).unwrap_or(Ty::I64);
+        frame += size_of(ty);
+        lenv.push(CgLocal { name: p.clone(), ty, off: frame });
     }
-    let n = lenv.len();
+    let np = params.len();
+    // The owner's frame pointer arrives in %r10 (set at the callsite when
+    // captures exist). Parked in the block's own frame before any helper
+    // call can clobber the register; each capture reloads it. Each capture
+    // tuple carries the OWNER's slot offset (source) and type; the block
+    // reserves its own slot (destination) right above the parked ctx
+    // pointer. Parameter source offsets stay keyed to the parameter count:
+    // the caller pushes exactly the parameters.
+    let ctx_off = frame + 8;
+    let mut cap_offs: Vec<(String, usize)> = Vec::new();
+    let mut f = ctx_off;
+    for (cname, _, cty) in caps {
+        f += size_of(*cty);
+        cap_offs.push((cname.clone(), f));
+        lenv.push(CgLocal { name: cname.clone(), ty: *cty, off: f });
+    }
+    frame = f;
     let trace_off = frame + if MACRO_CONTEXT.with(|c|c.get()){64}else{48};
     frame = trace_off;
     out.push_str(&format!("hbc_blk_{}:\n", id));
@@ -24882,6 +24984,16 @@ fn emit_block(owner: &str, id: usize, params: &[String], body: &[Expr], sigs: &[
     if frame > 0 {
         out.push_str(&format!("    sub ${}, %rsp\n", frame));
     }
+    if !caps.is_empty() {
+        out.push_str(&format!("    mov %r10, -{}(%rbp)\n", ctx_off));
+        for (cname, ooff, cty) in caps {
+            let off = cap_offs.iter().find(|(n, _)| n == cname).map(|(_, o)| *o).expect("checked capture");
+            let _ = cty;
+            out.push_str(&format!("    mov -{}(%rbp), %r10\n", ctx_off));
+            out.push_str(&format!("    mov -{}(%r10), %rax\n    mov -{}(%r10), %rdx\n", ooff, ooff - 8));
+            out.push_str(&format!("    mov %rax, -{}(%rbp)\n    mov %rdx, -{}(%rbp)\n", off, off - 8));
+        }
+    }
     PROC_NAME.with(|v| *v.borrow_mut() = format!("(b){}", owner.split("__br").next().unwrap_or(owner).to_ascii_uppercase()));
     // hb_PValue never reaches a codeblock body (named checker rejection);
     // the marker keeps a missed case a panic, never a silent miscompile.
@@ -24889,8 +25001,9 @@ fn emit_block(owner: &str, id: usize, params: &[String], body: &[Expr], sigs: &[
     trace_link(trace_off, strs, out);
     let block_line = TRACE_BLOCK_LINES.with(|m| m.borrow().get(&id).copied()).unwrap_or(0);
     trace_location(&format!("<block#{}>", id), block_line, strs, out);
-    for (k, v) in lenv.iter().enumerate() {
-        let src = 16 * (n - k);
+    for (k, p) in params.iter().enumerate() {
+        let v = lenv.iter().find(|l| l.name == *p).expect("checked parameter");
+        let src = 16 * (np - k);
         out.push_str(&format!("    mov {}(%rbp), %rax\n    mov {}(%rbp), %rdx\n", src,src+8));
         out.push_str(&format!("    mov %rax, -{}(%rbp)\n    mov %rdx, -{}(%rbp)\n", v.off,v.off-8));
     }
@@ -25208,13 +25321,22 @@ fn cg_func(f: &Func, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, tar
     }
     out.push_str("    leave\n    ret\n\n");
     // Block literals used by this function are emitted right after it.
+    // Captures registered by the analysis map to THIS frame's slots: the
+    // tuple (name, owner offset, type) is the capture contract the block
+    // prologue consumes (source offsets into the owner's %rbp).
     let mut blocks = Vec::new();
     collect_blocks_stmts(&f.stmts, &mut blocks);
     // Overflow stubs of this function's statements (ovf_jump); reached only
     // by their jumps, with this function's frame.
     out.push_str(&OVF_STUBS.with(|o| std::mem::take(&mut *o.borrow_mut())));
     for (id, ps, body) in blocks {
-        emit_block(&f.name, id, &ps, &body, sigs, strs, out, target);
+        let mut caps: Vec<(String, usize, Ty)> = Vec::new();
+        for (cname, _) in BLOCK_CAPTURES.with(|m| m.borrow().get(&id).cloned()).unwrap_or_default() {
+            let loc = lenv.iter().find(|l| l.name == cname)
+                .unwrap_or_else(|| panic!("block #{} capture `{}` has no slot in `{}`", id, cname, f.name));
+            caps.push((cname, loc.off, loc.ty));
+        }
+        emit_block(&f.name, id, &ps, &body, sigs, strs, out, target, &caps);
     }
     out.push_str(&OVF_STUBS.with(|o| std::mem::take(&mut *o.borrow_mut())));
     let avend=AVIEW_FRAME_END.with(|c|c.get());
