@@ -1,5 +1,5 @@
 function show(x)
-return QQOut(x)
+return OutStd(x)
 function exercise()
 local i
 local a := AllTrim("12345678")
