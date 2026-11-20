@@ -36151,6 +36151,10 @@ fn main() {
                     fs::write(format!("{}.runtime.s",pos[1]), llvm_darwin::arm64()).unwrap();
                     return;
                 }
+                if target == Target::Linux && cfg!(all(target_os="macos",target_arch="x86_64")) {
+                    fs::write(format!("{}.runtime.s",pos[1]), llvm_darwin::intel()).unwrap();
+                    return;
+                }
                 let mut rt = emit_asm(&[], &[], &[], target, false);
                 rt = rt.replace("call hbc_fn_main", "call ll_main");
                 rt.push_str("\n.globl hbc_trace_top\n");
