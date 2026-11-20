@@ -64,6 +64,14 @@ known failures and the history of published increments.
 
 ## Active development
 
+- **Loop register promotion (20 November).** `src/loopreg.rs` keeps the
+  frame slots of call-free FOR/WHILE loops in registers, loading them before
+  the loop and storing them back on every exit (`--no-loopreg` turns it
+  off). A 200-million-iteration integer loop uses 21-22 % less CPU on native
+  Windows 11 (two independent measures agree). It applies to 17 of the 152
+  manifest loops today; those rows give identical output with and without
+  it, plain and with `--instrument`. Details:
+  [docs/LOOPREG-2026-11-20.md](docs/LOOPREG-2026-11-20.md).
 - **Peephole pass (19 November).** `src/peep.rs` rewrites exact local
   patterns of the stack-machine output after pruning: operand spills through
   the stack become a register move, and double jumps, jumps to the next
