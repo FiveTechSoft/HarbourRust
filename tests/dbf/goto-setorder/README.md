@@ -26,6 +26,12 @@ Semantics measured against real Harbour (native Windows probes o1-o5):
   (`hbc: DBF index seek requires an open index`) and exits 1. The
   messages differ, so that case is a registered difference and stays
   outside this gate.
+- `dbSeek` with a Dyn character value (bare field read or a Dyn local,
+  g06): byte-identical, including the index cursor after the seek. A
+  non-character key value (e.g. a numeric field against the
+  character-key index) is a clean typed failure in hbc
+  (`hbc: DBF index seek expects a character key value`), while Harbour
+  converts the number to its string form; registered difference.
 
 Runtime: new `hrdbf_app_goto`, `hrdbf_app_fcount`, `hrdbf_app_ordselect`
 in `runtime/hrdbf_app.c` (active-order flag; seek/top/bottom/skip fall

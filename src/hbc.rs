@@ -14618,20 +14618,24 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                     out.push_str("    add $16, %rsp\n    mov $1, %eax\n    xor %edx, %edx\n");
                 },
                 "ordlistadd" | "dbseek" => {
-                    cg_value(&args[0],env,sigs,strs,out,target);
-                    out.push_str("    sub $48, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n    movq $0, 16(%rsp)\n    movq $0, 24(%rsp)\n");
-                    for (i,a) in args.iter().enumerate().skip(1){cg_value(a,env,sigs,strs,out,target);out.push_str(&format!("    mov %rax, {}(%rsp)\n",8+i*8));}
                     if id=="dbseek" && expr_ty(&args[0],env,sigs)==Ty::Dyn {
-                        // (tag,payload) cell in slots 0/8: the runtime takes the
-                        // cell, extracts the character bytes (length header at
-                        // payload[-1]) and releases nothing; the owned cell is
-                        // released after the call like any Dyn consumer. SysV
-                        // arg order (tag, payload, soft, last) like every other
-                        // hrdbf_app_* call; the Windows blob re-marshals.
+                        // cg_data_value normalizes the Dyn operand to an
+                        // exclusively owned cell (Var reads clone). The runtime
+                        // extracts the character bytes (length header at
+                        // payload[-1]); the owned cell is released after the
+                        // call like any Dyn consumer. SysV arg order (tag,
+                        // payload, soft, last) like every other hrdbf_app_* call;
+                        // the Windows blob re-marshals.
+                        cg_data_value(&args[0],env,sigs,strs,out,target);
+                        out.push_str("    sub $48, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n    movq $0, 16(%rsp)\n    movq $0, 24(%rsp)\n");
+                        for (i,a) in args.iter().enumerate().skip(1){cg_value(a,env,sigs,strs,out,target);out.push_str(&format!("    mov %rax, {}(%rsp)\n",8+i*8));}
                         out.push_str("    mov (%rsp), %rdi\n    mov 8(%rsp), %rsi\n    mov 16(%rsp), %rdx\n    mov 24(%rsp), %rcx\n    call hrdbf_app_seek_dyn\n");
                         out.push_str("    mov %rax, 32(%rsp)\n");
                         cg_dyn_stack_release(out,0,false);
                     } else {
+                    cg_value(&args[0],env,sigs,strs,out,target);
+                    out.push_str("    sub $48, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n    movq $0, 16(%rsp)\n    movq $0, 24(%rsp)\n");
+                    for (i,a) in args.iter().enumerate().skip(1){cg_value(a,env,sigs,strs,out,target);out.push_str(&format!("    mov %rax, {}(%rsp)\n",8+i*8));}
                         out.push_str("    mov (%rsp), %rdi\n    mov 8(%rsp), %rsi\n    mov 16(%rsp), %rdx\n    mov 24(%rsp), %rcx\n");
                         out.push_str(if id=="ordlistadd"{"    call hrdbf_app_order_add\n"}else{"    call hrdbf_app_seek\n"});
                         out.push_str("    mov %rax, 32(%rsp)\n");
