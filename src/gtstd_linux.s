@@ -83,3 +83,16 @@ hbc_gtstd_wait_write:
     pop %rcx
     pop %rax
     ret
+
+# Called only around generated DBF syscalls, not user OutErr. A generated
+# write to stderr is a terminal diagnostic. Preserve argument registers.
+hbc_gtstd_before_dbf_system:
+    cmp $1, %eax
+    jne .Lgtstd_dbf_not_write
+    cmp $2, %edi
+    jne .Lgtstd_dbf_not_write
+    sub $8, %rsp
+    call hbc_gtstd_before_fatal
+    add $8, %rsp
+.Lgtstd_dbf_not_write:
+    ret

@@ -72,3 +72,25 @@ DispBox currently rejects any mixed output/control/variables. Thus DispBox
 followed by QOut/BS/CR/LF is a named build rejection on baseline and candidate,
 not a supported shared-cursor operation. The isolated ordered literal-box
 contract and its regression suite remain unchanged.
+
+V3 adds a final assembly boundary pass after every helper producer (including
+VAS), before pruning. Macro and Str(Dyn) terminal writers close at entry,
+before their stderr diagnostics. Generated DBF syscalls check for write(2)
+to stderr and close before that write. This is not user OutErr. Every direct
+exit(60), with either argument order and GNU mov/movl spelling, also closes
+as a final safeguard. This last close does not replace the earlier diagnostic
+boundary, because ordering would be wrong. The original trace finalizer and
+print_trace remain unchanged.
+
+terminal_inventory.py inspects final unpruned ASM for four helper producers
+on Linux and PE, including late macro, Str(Dyn) and DBF. It enumerates direct
+exit and panic edges, late diagnostic entries and DBF syscall guards. This
+is static evidence, not a runtime claim. PE is an unchanged-renderer control.
+External linked-library process exits are not part of this emitted-ASM claim.
+
+The late-route tests preserve separate stdout/stderr/rc and also execute with
+stderr merged into stdout to verify order. Four emitted-ASM mutants remove
+an early diagnostic boundary while leaving the final exit safeguard intact;
+raw stdout alone would miss this bad ordering, the merged-channel gate catches
+it. DBF open failure and invalid field ordinal are included as registered
+failure-mode comparisons, not claimed equal to Harbour's modal error UI.

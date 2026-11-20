@@ -32152,6 +32152,37 @@ hbc_panic_exit:
     out
 }
 
+// Final native Linux assembly boundary pass, after all helper appenders.
+fn gtstd_terminal_boundaries(out: String) -> String {
+    let mut result=String::new();
+    let mut owner=String::new();
+    for line in out.lines() {
+        let t=line.trim();
+        if t.ends_with(':') && !t.starts_with('.') && !t.starts_with('#') {
+            owner=t.trim_end_matches(':').to_string();
+        }
+        // These terminal writers may be appended after finalize_trace and
+        // write their message on stderr before reaching their exit helper.
+        if t=="hrm_fail:" || t=="hbc_sdf_fail:" {
+            result.push_str(line);result.push_str("\n    call hbc_gtstd_before_fatal\n");continue;
+        }
+        // Generated DBF has diagnostic writes in app_open and field get/set
+        // as well as app_fail. Guard the syscall values at runtime: ordinary
+        // file IO is untouched, only stdout's pending state before stderr.
+        if t=="syscall" && owner.starts_with("hrdbf_") {
+            result.push_str("    call hbc_gtstd_before_dbf_system\n");
+        }
+        // A final safety boundary for every direct exit(60), regardless of
+        // argument setup order. Earlier diagnostic boundaries own ordering.
+        let compact=t.split_whitespace().collect::<String>();
+        if compact=="mov$60,%eax" || compact=="movl$60,%eax" {
+            result.push_str("    call hbc_gtstd_before_fatal\n");
+        }
+        result.push_str(line);result.push('\n');
+    }
+    result
+}
+
 fn emit_f64_consts(out: &mut String) {
     F64_CONSTS.with(|c| {
         let v = c.borrow();
@@ -35998,6 +36029,11 @@ hbc_aclone_alloc:
     jmp hbc_alloc
 "
     });
+    // This runs after every runtime producer (trace, macro, Str(Dyn), DBF,
+    // VAS), before pruning. Do not move it into the earlier emitter pass.
+    if target==Target::Linux && !macho && !THREADS.with(|v|v.get()) {
+        out=gtstd_terminal_boundaries(out);
+    }
     // Drop runtime helpers the program never reaches (src/prune.rs).
     let out = if no_prune { out } else { prune::prune(&out) };
     // runtime/hrharbour_rdd.c (a separate object) reports Harbour errors
