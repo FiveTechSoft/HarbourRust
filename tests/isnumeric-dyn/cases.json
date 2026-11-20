@@ -1,0 +1,21 @@
+{
+  "int": "function Main()\nlocal x := hb_defaultValue(nil,7)\n? hb_isnumeric(x)\n? ValType(x)\nreturn nil\n",
+  "zero": "function Main()\nlocal x := hb_defaultValue(nil,0)\n? hb_isnumeric(x)\n? ValType(x)\nreturn nil\n",
+  "neg": "function Main()\nlocal x := hb_defaultValue(nil,-19)\n? hb_isnumeric(x)\n? ValType(x)\nreturn nil\n",
+  "float": "function Main()\nlocal x := hb_defaultValue(nil,1.25)\n? hb_isnumeric(x)\n? ValType(x)\nreturn nil\n",
+  "false": "function Main()\nlocal x := hb_defaultValue(nil,.f.)\n? hb_isnumeric(x)\n? ValType(x)\nreturn nil\n",
+  "true": "function Main()\nlocal x := hb_defaultValue(nil,.t.)\n? hb_isnumeric(x)\n? ValType(x)\nreturn nil\n",
+  "str": "function Main()\nlocal x := hb_defaultValue(nil,\"42\")\n? hb_isnumeric(x)\n? ValType(x)\nreturn nil\n",
+  "empty": "function Main()\nlocal x := hb_defaultValue(nil,\"\")\n? hb_isnumeric(x)\n? ValType(x)\nreturn nil\n",
+  "nil": "function Main()\nlocal x := hb_defaultValue(nil,nil)\n? hb_isnumeric(x)\n? ValType(x)\nreturn nil\n",
+  "float-negative": "function Main()\nlocal x := hb_defaultValue(nil,-1.25)\n? hb_isnumeric(x)\n? ValType(x)\nreturn nil\n",
+  "float-zero": "function Main()\nlocal x := hb_defaultValue(nil,0.00)\n? hb_isnumeric(x)\n? ValType(x)\nreturn nil\n",
+  "i64min": "function Main()\nlocal x := hb_defaultValue(nil,(-9223372036854775807 - 1))\n? hb_isnumeric(x)\n? ValType(x)\nreturn nil\n",
+  "i64max": "function Main()\nlocal x := hb_defaultValue(nil,9223372036854775807)\n? hb_isnumeric(x)\n? ValType(x)\nreturn nil\n",
+  "float-small": "function Main()\nlocal x := hb_defaultValue(nil,0.00001)\n? hb_isnumeric(x)\n? ValType(x)\nreturn nil\n",
+  "str-own": "function Main()\nlocal x := hb_defaultValue(nil,Replicate(\"x\",8))\n? hb_isnumeric(x)\n? ValType(x)\nreturn nil\n",
+  "reuse": "function Main()\nlocal x := hb_defaultValue(nil,1.25)\n? hb_isnumeric(x),hb_isnumeric(x),ValType(x)\nreturn nil\n",
+  "nested": "function Main()\nlocal x := hb_defaultValue(nil,hb_defaultValue(nil,3.75))\n? hb_isnumeric(x),ValType(x)\nreturn nil\n",
+  "parameter": "function Main()\nlocal x := hb_defaultValue(nil,2.50)\n? Test(x)\n? ValType(x)\nreturn nil\nfunction Test(x)\nreturn hb_isnumeric(x)\n",
+  "sequence": "function Main()\nlocal x := hb_defaultValue(nil,2.50)\n? (hb_isnumeric(x),ValType(x))\nreturn nil\n"
+}

@@ -1,0 +1,8 @@
+{
+  "int": "function Main()\nlocal x\nx:=7\n? hb_isnumeric(x),ValType(x)\nreturn nil\n",
+  "float": "function Main()\nlocal x\nx:=1.25\n? hb_isnumeric(x),ValType(x)\nreturn nil\n",
+  "bool": "function Main()\nlocal x\nx:=.t.\n? hb_isnumeric(x),ValType(x)\nreturn nil\n",
+  "nil": "function Main()\nlocal x\nx:=nil\n? hb_isnumeric(x),ValType(x)\nreturn nil\n",
+  "string": "function Main()\nlocal x\nx:=\"123\"\n? hb_isnumeric(x),ValType(x)\nreturn nil\n",
+  "owned": "function Main()\nlocal x\nx:=Replicate(\"x\",16)\n? hb_isnumeric(x),ValType(x)\nreturn nil\n"
+}

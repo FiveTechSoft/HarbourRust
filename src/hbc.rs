@@ -6745,15 +6745,15 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                         // measured static types only (verifier blockvar /
                         // hashvar panics: Block and Hash have no tag-test
                         // representation here), never a moved owner
-                        // (verifier movedowner), never Dyn.
+                        // (verifier movedowner). Dyn is a borrowed tag test.
                         match env.iter().rev().find(|x| x.name == *v) {
                             Some(x) if x.moved => return Err(format!("line {}: use of moved value `{}`", n, v)),
                             Some(x) => match x.ty {
                                 // ains P2 stage 1: hb_isarray over a Dyn
                                 // variable dispatches on the runtime tag
-                                // (6 or 8). hb_isnumeric stays unmeasured.
+                                // (6 or 8). hb_isnumeric also admits a Dyn variable.
                                 Ty::Dyn if is_builtin(id, "hb_isarray") => {}
-                                Ty::Dyn => return Err(format!("line {}: `{}` over a Dyn variable is not measured in this PoC (cell reads stay in place: `{}`(a[i]))", n, id, id)),
+                                Ty::Dyn => {},
                                 Ty::I64 | Ty::F64 | Ty::Bool | Ty::Str | Ty::StrOwn | Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::DArrRef | Ty::DArrRef2 | Ty::DArrDyn | Ty::AView | Ty::Arr(_) => {}
                                 _ => return Err(format!("line {}: `{}` over this variable type is not measured in this PoC", n, id)),
                             },
@@ -15118,11 +15118,15 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                         Ty::Bool | Ty::Str | Ty::StrOwn => konst(out, false),
                         Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::DArrRef | Ty::DArrRef2 | Ty::DArrDyn | Ty::AView | Ty::Arr(_) => konst(out, !want_num),
                         // ains P2 stage 1: a Dyn variable dispatches on
-                        // its runtime tag word (the checker admits
-                        // hb_isarray only, so want_num is false here).
+                        // its runtime tag word. Numeric also includes heap float
+                        // kind5; this extension is local to a Dyn variable,
+                        // leaving the existing indexed-cell route unchanged.
                         Ty::Dyn => {
                             out.push_str(&format!("    mov -{}(%rbp), %r10\n", var.off));
                             classify_tag(out, want_num);
+                            if want_num {
+                                out.push_str("    cmpb $5, %r10b\n    sete %dl\n    or %dl, %al\n    movzbq %al, %rax\n");
+                            }
                         }
                         Ty::RefDyn => {
                             out.push_str(&format!("    mov -{}(%rbp), %r10\n    mov (%r10), %r10\n", var.off));
