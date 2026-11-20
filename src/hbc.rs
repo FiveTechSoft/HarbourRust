@@ -32154,6 +32154,14 @@ hbc_panic_exit:
 
 // Final native Linux assembly boundary pass, after all helper appenders.
 fn gtstd_terminal_boundaries(out: String) -> String {
+    // Include late fixed-message handlers as well as the early runtime.
+    // A final exit guard alone cannot preserve message-vs-pending-LF order.
+    let out=out.split("\nhbc_").map(|block| {
+        if block.contains("jmp hbc_panic_exit") || block.contains("mov $60, %eax") {
+            let write="    mov $1, %eax\n    mov $1, %edi\n    syscall";
+            block.replace(write,&format!("    call hbc_gtstd_before_fatal\n{}",write))
+        } else {block.to_string()}
+    }).collect::<Vec<_>>().join("\nhbc_");
     let mut result=String::new();
     let mut owner=String::new();
     for line in out.lines() {

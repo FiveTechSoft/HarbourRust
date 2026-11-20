@@ -94,3 +94,14 @@ an early diagnostic boundary while leaving the final exit safeguard intact;
 raw stdout alone would miss this bad ordering, the merged-channel gate catches
 it. DBF open failure and invalid field ordinal are included as registered
 failure-mode comparisons, not claimed equal to Harbour's modal error UI.
+
+The final pass also guards fixed-message stdout writers in any final helper
+block that ends in panic or exit60. This includes late space-range errors,
+which a direct-exit-only audit misses. terminal_inventory.py checks those
+writes as well as final exit boundaries. terminal_routes.py injects a jump
+into each of 35 no-argument terminal handlers after Main leaves a pending LF.
+Each candidate must exit1 with LF before its diagnostic. A mutant removes
+that handler's local close but leaves shared panic/final safeguards intact.
+All 35 mutants must change merged bytes. These are cold ASM-entry tests, not
+claims that 35 original PRGs reach those error paths. The four real-source
+late-route tests independently cover macro, Str(Dyn), DBF open and DBF ordinal.

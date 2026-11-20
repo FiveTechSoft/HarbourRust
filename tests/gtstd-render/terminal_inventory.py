@@ -26,5 +26,12 @@ for name,s in programs.items():
     row=dict(case=name,target=target,line=i+1,owner=owner,kind=kind,guarded=ok,context=lines[max(0,i-3):i+4]);sites.append(row)
     if not ok:problems.append(row)
    if t and not t.startswith('#'):prev=t
+  if target=='linux':
+   for block in re.split(r'(?m)(?=^hbc_[A-Za-z0-9_]+:)',asm.read_text()):
+    if 'jmp hbc_panic_exit' not in block and not re.search(r'mov[lq]?\s+\$60,\s*%eax',block):continue
+    write='    mov $1, %eax\n    mov $1, %edi\n    syscall'
+    for found in re.finditer(re.escape(write),block):
+     before=block[:found.start()].rstrip().splitlines()
+     if not before or before[-1].strip()!='call hbc_gtstd_before_fatal':problems.append(dict(case=name,target=target,kind='early-terminal-write-unclosed',owner=block.splitlines()[0]))
   rows.append(dict(case=name,target=target,asm_sha256=hashlib.sha256(asm.read_bytes()).hexdigest(),sites=sites))
 result=dict(compiler_sha256=hashlib.sha256(Path(a.compiler).read_bytes()).hexdigest(),runner_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),scope='Final --no-prune assembly from four representative producers, Linux and PE. Static route guards, not execution proof. PE remains old renderer and is a control, no new close inserted. All helper appenders included. External library process exits outside emitted assembly are not a claim.',rows=rows,failures=problems);(out/'results.json').write_text(json.dumps(result,indent=2));print('sites',sum(len(r['sites']) for r in rows),'failures',len(problems));raise SystemExit(bool(problems))
