@@ -1,4 +1,5 @@
 mod box_gtstd;
+mod llvm_darwin;
 // hbc - PoC compiler: Harbour syntax (closed subset) -> x86-64 assembly.
 //
 // Pipeline: hbc does tokenizing, parsing, semantic analysis (types AND
@@ -36143,6 +36144,13 @@ fn main() {
         if FILE_USED.with(|v|v.get()) {eprintln!("error: FILE/SET DEFAULT/PATH are not implemented by the experimental LLVM backend");process::exit(1);}
         match llvm_scalar::emit(&funcs, &sigs, target, llvm_trace) {
             Ok(ir) => { fs::write(pos[1], ir).unwrap();
+                // The unchanged feasibility workflow builds this compiler on Darwin
+                // ARM64, while keeping --target=linux for the portable LLVM AST.
+                // Choose only the sidecar ABI by host; native emitters are untouched.
+                if target == Target::Linux && cfg!(all(target_os="macos",target_arch="aarch64")) {
+                    fs::write(format!("{}.runtime.s",pos[1]), llvm_darwin::arm64()).unwrap();
+                    return;
+                }
                 let mut rt = emit_asm(&[], &[], &[], target, false);
                 rt = rt.replace("call hbc_fn_main", "call ll_main");
                 rt.push_str("\n.globl hbc_trace_top\n");
