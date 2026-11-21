@@ -7755,6 +7755,16 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 if !args.is_empty() { return Err(format!("line {}: `time` takes no arguments",n)); }
                 return Ok(Ty::StrOwn);
             }
+            if is_builtin(id,"descend") {
+                if args.len()!=1 { return Err(format!("line {}: `Descend` takes one argument in this increment",n)); }
+                match type_expr(&args[0],env,sigs,n)? {
+                    Ty::Str | Ty::StrOwn => return Ok(Ty::StrOwn),
+                    Ty::Date => return Ok(Ty::I64),
+                    Ty::Bool => return Ok(Ty::Bool),
+                    Ty::I64 | Ty::F64 => return Ok(Ty::F64),
+                    other => return Err(format!("line {}: `Descend` takes a string, date, logical or number in this increment ({})", n, ty_name(other))),
+                }
+            }
             if is_builtin(id,"ctod") {
                 if args.len()!=1 { return Err(format!("line {}: `ctod` takes one argument",n)); }
                 if !matches!(type_expr(&args[0],env,sigs,n)?,Ty::Str|Ty::StrOwn) {
@@ -12150,6 +12160,10 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
             if is_builtin(id,"date") { return; }
             if is_builtin(id,"seconds") { return; }
             if is_builtin(id,"time") { return; }
+            if is_builtin(id, "descend") {
+                apply_moves(&args[0], env, sigs, false);
+                return;
+            }
             if is_builtin(id,"ctod") { apply_moves(&args[0],env,sigs,false); return; }
             if is_builtin(id,"dirmake") {for a in args {apply_moves(a,env,sigs,false);}return;}
             if ["hb_flink","hb_flinksym","hb_flinkread","hb_memowrit","hb_dircreate","ferror"].iter().any(|b|is_builtin(id,b)) {for a in args {apply_moves(a,env,sigs,false);}return;}
@@ -15884,6 +15898,39 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
         }
         Expr::Call(id,_) if is_builtin(id,"time") => {
             out.push_str("    call hbc_time_str\n");
+        }
+        Expr::Call(id,args) if is_builtin(id,"descend") => {
+            // Descend(x): strings map every byte to 256-b (owned copy),
+            // dates invert the packed civil date around 5231808, numbers
+            // negate as double (default 10.2 metadata) and logicals flip.
+            match expr_ty(&args[0], env, sigs) {
+                Ty::Str | Ty::StrOwn => {
+                    let temp = expr_ty(&args[0],env,sigs)==Ty::StrOwn && !matches!(&args[0],Expr::Var(_));
+                    cg_value(&args[0],env,sigs,strs,out,target);
+                    if temp { out.push_str("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n"); }
+                    out.push_str("    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_descend_str\n");
+                    if temp {
+                        out.push_str("    mov %rax, 16(%rsp)\n    mov %rdx, 24(%rsp)\n    mov (%rsp), %rdi\n    call hbc_freestr\n    mov 16(%rsp), %rax\n    mov 24(%rsp), %rdx\n    add $32, %rsp\n");
+                    }
+                }
+                Ty::Date => {
+                    cg_value(&args[0],env,sigs,strs,out,target);
+                    out.push_str("    mov %rax, %rdi\n    call hbc_descend_date\n");
+                }
+                Ty::Bool => {
+                    cg_expr(&args[0],env,sigs,strs,out,target);
+                    out.push_str("    xor $1, %eax\n");
+                }
+                _ => {
+                    if expr_ty(&args[0],env,sigs)==Ty::F64 {
+                        cg_f64_load(&args[0],env,sigs,strs,out,target);
+                    } else {
+                        cg_expr(&args[0],env,sigs,strs,out,target);
+                        out.push_str("    cvtsi2sd %rax, %xmm0\n");
+                    }
+                    out.push_str("    call hbc_descend_num\n");
+                }
+            }
         }
         Expr::Call(id,args) if is_builtin(id,"ctod") => {
             let temp=expr_ty(&args[0],env,sigs)==Ty::StrOwn && !matches!(&args[0],Expr::Var(_));
@@ -19899,6 +19946,14 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             if is_builtin(id,"date") || is_builtin(id,"ctod") { return Ty::Date; }
             if is_builtin(id, "seconds") { return Ty::F64; }
             if is_builtin(id, "time") { return Ty::StrOwn; }
+            if is_builtin(id, "descend") {
+                return match expr_ty(&args[0],env,sigs) {
+                    Ty::Str | Ty::StrOwn => Ty::StrOwn,
+                    Ty::Date => Ty::I64,
+                    Ty::Bool => Ty::Bool,
+                    _ => Ty::F64,
+                };
+            }
             if is_builtin(id, "valtype") || is_builtin(id, "hb_eol") || is_builtin(id, "procname") { return Ty::Str; } // hk88-hk92
             if ["ltrim", "rtrim", "alltrim", "trim"].iter().any(|b| is_builtin(id,b)) { return Ty::StrOwn; }
             if is_builtin(id,"substr") { return Ty::StrOwn; }
@@ -32921,7 +32976,7 @@ fn finalize_trace(mut out: String, target: Target) -> String {
     if macro_mode {
         out.push_str(&macro_helpers(target));
     }
-    if ["ctod", "date_today", "date_render", "stod", "dtos", "year", "day", "month", "dow", "cdow", "cmonth", "dtoc", "date_add", "date_diff", "date_days", "date_from_days"].iter().any(|name| out.contains(&format!("call hbc_{}",name))) {
+    if ["ctod", "date_today", "date_render", "stod", "dtos", "year", "day", "month", "dow", "cdow", "cmonth", "dtoc", "date_add", "date_diff", "date_days", "date_from_days", "descend_date"].iter().any(|name| out.contains(&format!("call hbc_{}",name))) {
         out.push_str(DATE_PORT_HELPERS);
     }
     if matches!(target, Target::Linux) && !MACHO_MODE.with(|v| v.get()) && (out.contains("call hbc_date_today") || out.contains("call hbc_seconds") || out.contains("call hbc_time_str")) {
@@ -32939,6 +32994,9 @@ fn finalize_trace(mut out: String, target: Target) -> String {
     }
     if out.contains("call hbc_time_str") {
         out.push_str(if MACHO_MODE.with(|v| v.get()) { TIME_DARWIN } else { match target {Target::Windows=>TIME_WINDOWS,_=>TIME_LINUX} });
+    }
+    if out.contains("call hbc_descend_str") || out.contains("call hbc_descend_date") || out.contains("call hbc_descend_num") {
+        out.push_str(DESCEND_HELPER);
     }
     // Add private stderr variants only when used. No mutable routing state:
     // nested OutStd/QOut and controlled diagnostics retain their destination.
@@ -39002,13 +39060,77 @@ hbc_seconds:
     ret
 "#;
 
+const DESCEND_HELPER: &str = r#"
+    .text
+# hbc_descend_str: borrowed rdi/rsi -> OWNED copy with every byte mapped
+# to 256-b (Harbour hb_strDescend; a single NUL byte maps to NUL, which
+# the formula already produces).
+hbc_descend_str:
+    push %rbp
+    mov %rsp, %rbp
+    push %rbx
+    push %r12
+    push %r13
+    sub $8, %rsp
+    mov %rdi, %r13
+    mov %rsi, %r12
+    call hbc_stralloc
+    mov %rax, %rbx
+    mov %r12, %rcx
+    mov %r13, %rsi
+    mov %rbx, %rdi
+.Ldesc_scalar:
+    test %rcx, %rcx
+    jz .Ldesc_done
+    movzbl (%rsi), %eax
+    mov $256, %r10d
+    sub %eax, %r10d
+    mov %r10b, (%rdi)
+    inc %rsi
+    inc %rdi
+    dec %rcx
+    jnz .Ldesc_scalar
+.Ldesc_done:
+    mov %rbx, %rax
+    mov %r12, %rdx
+    add $8, %rsp
+    pop %r13
+    pop %r12
+    pop %rbx
+    pop %rbp
+    ret
+
+# hbc_descend_date: rdi = packed civil date -> rax/rdx = 5231808 - julian
+# day (Harbour hb_retnl over hb_itemGetDL). The julian day is the
+# Hinnant day number plus the 1970-01-01 anchor (JDN 2440588).
+hbc_descend_date:
+    push %rbx
+    mov %rdi, %rbx
+    call hbc_date_days
+    add $2440588, %rax
+    mov $5231808, %r10d
+    sub %rax, %r10d
+    mov %r10, %rax
+    xor %edx, %edx
+    pop %rbx
+    ret
+
+# hbc_descend_num: xmm0 = value -> xmm0 = -value (double), rdi = the
+# default 10.2 metadata like hbc_seconds.
+hbc_descend_num:
+    xorpd %xmm1, %xmm1
+    subsd %xmm0, %xmm1
+    movaps %xmm1, %xmm0
+    mov $655362, %edi
+    ret
+"#;
+
 const TIME_LINUX: &str = r#"
     .text
 # hbc_time_str: rax/rdx = owned "HH:MM:SS" (8 bytes), local 24-hour time
 # of day. Same local-wall-clock base as hbc_seconds (UTC epoch plus
 # hbc_tz_off, wrapped into 0..86399), formatted with two digits per
-# field and ':' separators. A failed clock read formats 00:00:00.
-hbc_time_str:
+# field and ':' separators. A failed clock read formats 00:00:00.hbc_time_str:
     push %rbp
     mov %rsp, %rbp
     sub $32, %rsp
