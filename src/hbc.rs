@@ -1,3 +1,4 @@
+mod bin_concat;
 mod optional_empty;
 mod cell_len;
 mod method_valtype;
@@ -18822,6 +18823,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             // (StrOwn slot, print item, comparison, hash key - the
             // established consumers free non-Var StrOwn).
             if *op == '+' && matches!(expr_ty(a, env, sigs), Ty::Str | Ty::StrOwn) {
+                if bin_concat::selected(a,b,env,sigs) {bin_concat::emit(a,b,env,sigs,strs,out,target);return;}
                 // I2: the outermost concat of an eligible assignment is the
                 // root. The flag is taken HERE, at arm entry, before the
                 // operands evaluate: nested concats (temps) see it cleared
