@@ -27,8 +27,10 @@ written to the evidence directory the gate prints.
 - **th04b_wait**: `hb_threadWait(th)` returns numeric 1 once finished,
   and a later wait with a timeout returns 1 immediately.
 - **th05b_join_ret**: a string return crosses the join as an owned value.
-- **th11b_wait_to**: `hb_threadWait(th, 0.1)` on a busy worker returns 0
-  on timeout; the later join still returns the finished thread.
+- **th11b_wait_to**: `hb_threadWait(th, 0.1)` returns0 while Main owns a mutex
+  needed by the worker. Main releases it only after the wait,so the worker
+  cannot finish early on a fast CPU. The later join returns the finished
+  thread. No iteration count or sleep establishes ordering.
 - **th12b_detach**: `hb_threadDetach(th)` returns .T.; a join on a
   detached handle returns .F.
 - **th18b_exitwait**: Main exiting does not wait for running threads.
@@ -72,3 +74,22 @@ Main silent until after the join.
   A failing worker ends alone (its join yields NIL); a failing main thread
   exits 1. Single-thread programs keep the macro-context check, with
   byte-identical assembly.
+
+## Strict timeout repeat control
+
+`python3 tests/threads/check_wait_timeout.py --compiler ./hbc
+--hbmk2 /path/to/hbmk2 --output /new/evidence` compiles th11b with external
+Harbour-mt and with both Linux assembler paths. Each runs30times;every run
+requires rc0,full original stdout and empty stderr. No tolerance,REJ or
+inventory count is added. Native Mac battery still runs the same program.
+
+Review of other th-prefixed probes:th04b first waits without timeout,so its
+second timed wait observes an already-finished worker. th30b uses an explicit
+notify/subscribe handoff,with a10s safety deadline. th18b_exitwait still uses
+50Miterations:its stdout is stable,but the claim that Main does not wait is
+not a strong speed-independent test. That separate weakness is not fixed
+by the th11b change. Other timing assumptions outside th*:mt07/mt08 delay
+notify/notifyAll with3Miterations;mt21/mt22 delay SubscribeNow delivery with
+20Miterations;mt05/mt16/mt20 also use busy-waits. ton02 uses a Probe handshake
+but relies on30Miterations to overlap two once calls. These require separate
+barrier-based work,not larger loop counts or looser expected outputs.
