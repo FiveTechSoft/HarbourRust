@@ -32,7 +32,7 @@ for src in sorted((gate/'rejects').glob('*.prg')):
 # CHECKED_I64 functions (STATIC/@): Dyn+Dyn integer overflow must stop, never wrap
 for nm,src_t in [('static-overflow','function main()\nlocal a,b\nstatic z := 0\na := 9223372036854775807\nb := 1\n? a+b\nreturn nil\n')]:
  w=out/nm;w.mkdir();(w/'p.prg').write_text(src_t);c=raw([compiler,w/'p.prg',w/'ours'],w,'build');r=raw([w/'ours'],w,'run') if c.returncode==0 else None
- add(nm,'checked-i64-overflow',r is not None and b'Limit: static/byref integer arithmetic needs numeric promotion' in r.stdout+r.stderr and b'-9223372036854775808' not in r.stdout)
+ add(nm,'checked-i64-overflow',r is not None and b'Limit: integer overflow needs numeric promotion' in r.stdout+r.stderr and b'-9223372036854775808' not in r.stdout)
 # float Dyn: the former known limit (a*b, 1.5 * 2) is now the positive byte-exact programs/float-dyn.prg row above
 shapes={
 'assign':('d := "pp"\ne2 := "qq"','s := d+e2',False),

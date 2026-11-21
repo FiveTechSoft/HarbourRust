@@ -1921,3 +1921,12 @@ neg tests/t1709_nested_move_neg_loop.prg is moved inside the
 pos2 tests/cb-logical/programs/ascan_block.prg tests/cb-logical/expected/ascan_block.linux.out tests/cb-logical/expected/ascan_block.windows.out
 pos2 tests/str-concat-assign/programs/accumulate.prg tests/str-concat-assign/expected/accumulate.linux.out tests/str-concat-assign/expected/accumulate.windows.out
 pos2 tests/loopreg/programs/edges.prg tests/loopreg/expected/edges.linux.out tests/loopreg/expected/edges.windows.out
+posx tests/i64-overflow/add.prg 1 Limit: integer overflow needs numeric promotion\nCallstack:\n  at main (tests/i64-overflow/add.prg:4)\n
+posx tests/i64-overflow/sub.prg 1 Limit: integer overflow needs numeric promotion\nCallstack:\n  at main (tests/i64-overflow/sub.prg:4)\n
+posx tests/i64-overflow/mul.prg 1 Limit: integer overflow needs numeric promotion\nCallstack:\n  at main (tests/i64-overflow/mul.prg:4)\n
+posx tests/i64-overflow/neg.prg 1 Limit: integer overflow needs numeric promotion\nCallstack:\n  at main (tests/i64-overflow/neg.prg:4)\n
+posx tests/i64-overflow/cell.prg 1 Limit: integer overflow needs numeric promotion\nCallstack:\n  at main (tests/i64-overflow/cell.prg:5)\n
+posx tests/i64-overflow/private.prg 1 Limit: integer overflow needs numeric promotion\nCallstack:\n  at main (tests/i64-overflow/private.prg:4)\n
+posx tests/i64-overflow/dyn.prg 1 Limit: integer overflow needs numeric promotion\nCallstack:\n  at main (tests/i64-overflow/dyn.prg:6)\n
+posx tests/i64-overflow/loop.prg 1 Limit: integer overflow needs numeric promotion\nCallstack:\n  at main (tests/i64-overflow/loop.prg:6)\n
+posx tests/i64-overflow/callee.prg 1 Limit: integer overflow needs numeric promotion\nCallstack:\n  at bump (tests/i64-overflow/callee.prg:12)\n  at main (tests/i64-overflow/callee.prg:4)\n
