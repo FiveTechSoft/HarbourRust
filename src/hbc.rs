@@ -1,3 +1,4 @@
+mod optional_empty;
 mod box_gtstd;
 mod llvm_darwin;
 // hbc - PoC compiler: Harbour syntax (closed subset) -> x86-64 assembly.
@@ -4712,6 +4713,7 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
     // Once defaulted, a parameter keeps the tagged slot in later rounds, so the
     // fixpoint stays monotone (mutual recursion without evidence, t694).
     DEFAULT_DYN.with(|m|for (name,i) in m.borrow().iter(){if *name==f.name && *i<n {pin[*i]=Some(Ty::Dyn);}});
+    for i in 0..n { if optional_empty::parameter(&f.name,i) {pin[i]=Some(Ty::AView);} }
     // Method functions: the implicit leading `Self` parameter is pinned
     // to the defining class (no body evidence needed).
     if let Some(ci) = METHOD_CLASS.with(|m| m.borrow().get(&f.name).copied()) {
@@ -5770,7 +5772,7 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
         // any scalar pin. A float, array, hash or codeblock pin conflicts
         // with the NIL fill by name: Dyn has no such payload in this
         // increment (the float-payload representation decision is pending).
-        if nil_ev.get(i).copied().unwrap_or(false) {
+        if nil_ev.get(i).copied().unwrap_or(false) && !optional_empty::parameter(&f.name,i) {
             pin[i] = match pin[i] {
                 None | Some(Ty::Dyn) => Some(Ty::Dyn),
                 Some(Ty::I64) | Some(Ty::Bool) | Some(Ty::Str) | Some(Ty::StrOwn) | Some(Ty::F64) => Some(Ty::Dyn),
@@ -7322,6 +7324,9 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 return Ok(match bk { BRet::Int => Ty::I64, BRet::Nil => Ty::Dyn, BRet::Bool => Ty::Bool });
             }
             if is_builtin(id, "iif") {
+                if let Some(p)=optional_empty::selected(e) {
+                    if optional_empty::current(p) && env.iter().rev().any(|v|v.name==p&&v.ty==Ty::AView&&!v.moved) {return Ok(Ty::AView);}
+                }
                 // iif(cond, a, b) (oracle hk321): LAZY - only the chosen
                 // branch evaluates (side effects on the dead branch do
                 // not happen). Branches unify: identical scalar types,
@@ -8462,6 +8467,13 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 // named rejections - never a silent fallback to the owned
                 // move contract.
                 if sig_aview[i] {
+                    if optional_empty::parameter(id,i) {
+                        if matches!(a,Expr::Nil){continue;}
+                        if matches!(a,Expr::Var(v) if module_static::current(v).is_some() || is_sarr(v)){return Err(format!("line {}: persistent array sources for optional empty-array views remain outside this increment",n));}
+                        if !matches!(a,Expr::Var(v) if env.iter().rev().any(|x|x.name==*v&&matches!(x.ty,Ty::Arr(_)|Ty::DArr|Ty::DArrU|Ty::DArr2|Ty::DArr3|Ty::DArr4|Ty::DArrS|Ty::DArrDyn|Ty::AView))) {
+                            return Err(format!("line {}: optional empty-array view takes NIL, an omitted argument or an array variable; dynamic sources, temporaries and by-reference arguments remain outside this increment",n));
+                        }
+                    }
                     if let Expr::ByRef(vn) = a {
                         return Err(format!("line {}: `@{}` on an array-view parameter would alias the view - array views are read-only and non-owning (ains piece 1b)", n, vn));
                     }
@@ -15149,6 +15161,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             }
         }
         Expr::Call(id, args) if is_builtin(id, "iif") => {
+            if let Some(off)=optional_empty::active(e,env){optional_empty::emit_select(off,out);return;}
             // iif(cond, a, b) (oracle hk321): LAZY branch selection.
             // The false side falls through, the true side sits behind
             // the conditional jump; both leave the result on the same
@@ -17901,6 +17914,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             let mut dd_checks: Vec<(usize, bool)> = Vec::new();
             for (ai, a) in args.iter().enumerate() {
                 if psig.as_ref().and_then(|p|p.get(ai)) == Some(&Ty::AView) {
+                    if optional_empty::parameter(id,ai)&&matches!(a,Expr::Nil){optional_empty::emit_nil(out);continue;}
                     match a {
                         Expr::Var(v) => {
                             let root=env.iter().rev().find(|x|x.name==*v).expect("checked");
@@ -18140,8 +18154,8 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             // arguments only - the padded positions are never `@`, and the
             // variant label must match collect_byref_variants exactly.
             let total = psig.as_ref().map(|p| p.len()).unwrap_or(args.len());
-            for _ in args.len()..total {
-                out.push_str("    sub $16, %rsp\n    movq $1, (%rsp)\n    movq $0, 8(%rsp)\n");
+            for i in args.len()..total {
+                if optional_empty::parameter(id,i){optional_empty::emit_nil(out);}else{out.push_str("    sub $16, %rsp\n    movq $1, (%rsp)\n    movq $0, 8(%rsp)\n");}
             }
             if !dd_checks.is_empty() {
                 // Runtime screen of defaulted-Dyn parameters. A tag-13 casilla is NOT handed over: after every
@@ -19769,6 +19783,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             if is_builtin(id,"hb_osdriveseparator") || is_builtin(id,"hb_base64encode") || is_builtin(id,"hb_asciiupper") || is_builtin(id,"hb_strtohex") || is_builtin(id,"hb_dirsepadd") || is_builtin(id,"getenv") || is_builtin(id,"hb_libname") || is_builtin(id,"hb_ps") || is_builtin(id, "os") || is_builtin(id, "curdir") || is_builtin(id, "chr") || is_builtin(id, "str") || is_builtin(id, "hb_ntos") || is_builtin(id, "padr") || is_builtin(id, "replicate") { return Ty::StrOwn; }
             if is_builtin(id, "round") { return Ty::F64; } // hk384-hk386
             if is_builtin(id, "iif") {
+                if optional_empty::active(e,env).is_some(){return Ty::AView;}
                 // Branch unification mirrors the checker (oracle hk321).
                 let ta = expr_ty(&args[1], env, sigs);
                 let tb = expr_ty(&args[2], env, sigs);
@@ -22004,6 +22019,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                         out.push_str(&format!("    movsd %xmm0, -{}(%rbp)\n    mov %rdi, -{}(%rbp)\n", off, off - 8));
                     }
                     Ty::Arr(_) => cg_array_value(e, off, env, sigs, strs, out, target),
+                    Ty::AView => {cg_value(e,env,sigs,strs,out,target);out.push_str(&format!("    mov %rax, -{}(%rbp)\n",off));},
                     Ty::Obj(_) => {
                         if matches!(e, Expr::Nil) {
                             // Bare local (possibly checker-narrowed): the
@@ -36366,6 +36382,7 @@ fn main() {
     // summed lattice height and the round count is bounded by `cap`
     // below. Reaching the cap means the monotonicity argument broke -
     // an explicit diagnostic, never a silent assumption.
+    optional_empty::analyze(&funcs);
     let cap = 2 + 4 * funcs.iter().map(|f| f.params.len() + 1).sum::<usize>();
     // A single inline-IF return can carry its own concrete base-case
     // anchor before recursive signatures exist (stock recursiv.prg).
@@ -36496,12 +36513,12 @@ fn main() {
                 // rejection fires - never a silent fallback to the owned
                 // contract. Evidence with only whole reads (t412) stays
                 // on its old measured contract.
-                if view[fi].aview[i] || ptys[i]==Ty::AView || (evidence && aview_safe[fi][i]) || (evidence && !aview_intent[fi][i]) {
+                if optional_empty::parameter(&f.name,i) || view[fi].aview[i] || ptys[i]==Ty::AView || (evidence && aview_safe[fi][i]) || (evidence && !aview_intent[fi][i]) {
                     view[fi].aview[i] = true;
                     ptys[i] = Ty::AView;
                 }
             }
-            if f.params.iter().enumerate().any(|(i,_)| view[fi].aview[i] && !aview_intent[fi][i]) {
+            if f.params.iter().enumerate().any(|(i,_)| view[fi].aview[i] && !aview_intent[fi][i] && !optional_empty::parameter(&f.name,i)) {
                 if first_err.is_none() { first_err = Some(format!("array-view parameter of `{}` cannot escape, mutate, be captured, or pass to an unknown/owned route (ains piece 1b)", f.name)); }
             }
             // Parameters enter the frame as owned locals: integer arguments copy,
