@@ -32,6 +32,8 @@ use std::fs;
 use std::process;
 
 thread_local! {
+    // Frame owners use a separate linked stack, never a language TRY slot.
+    static FRAME_UNWIND: std::cell::Cell<bool> = const {std::cell::Cell::new(false)};
     // Addresses of mixed-type iif nodes that sit in a position whose
     // consumer takes ownership of the tagged cell (output argument,
     // assignment/initializer of a dynamic variable, return value).
@@ -24999,6 +25001,7 @@ fn cg_func(f: &Func, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, tar
 
     let trace_off = frame + if MACRO_CONTEXT.with(|c|c.get()){64}else{48};
     frame = trace_off;
+    let unwind_off = if FRAME_UNWIND.with(|v|v.get()) && !darr_slots.is_empty() {frame+=48;Some(frame)} else {None};
     AVIEW_FRAME_END.with(|c| c.set((frame+15)&!15));
     let avframe=fresh_lbl();
     out.push_str(&format!("hbc_fn_{}:\n", lbl));
@@ -25055,6 +25058,11 @@ fn cg_func(f: &Func, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, tar
     let mut walk_frame = params_frame;
     let mut label = 0usize;
     let byref_names = byref_names_in(&f.stmts);
+    if let Some(off)=unwind_off {
+        // Register initialized owners with a frame-local linked record.
+        // Language handlers snapshot this top without consuming a TRY pad.
+        out.push_str(&format!("    lea -{off}(%rbp), %r11\n    mov hbc_frame_top(%rip), %rax\n    mov %rax, 0(%r11)\n    mov %rbp, 8(%r11)\n    mov %rsp, 16(%r11)\n    lea .Lfucatch_{lbl}(%rip), %rax\n    mov %rax, 24(%r11)\n    movq $0, 32(%r11)\n    mov %r11, hbc_frame_top(%rip)\n"));
+    }
     cg_stmts(&f.stmts, &mut env, &mut walk_frame, sigs, strs, out, target, &lbl, &mut label, &[], &darr_slots, &f.dyn_names, &byref_names);
     ARENA_CUR.with(|c| *c.borrow_mut() = None);
     // Free every dynamic array still owned on this exit path. A slot is
@@ -25064,6 +25072,11 @@ fn cg_func(f: &Func, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, tar
     // any path tracking in codegen. The return value was moved to the
     // output registers (and its slot nulled) before this point.
     out.push_str(&format!(".Lret_{}:\n", lbl));
+    if let Some(off)=unwind_off {
+        // Unlink before cleanup on either path, so propagation visits only
+        // still-live outer frames. No exception is popped or replaced.
+        out.push_str(&format!("    mov -{off}(%rbp), %r11\n    mov %r11, hbc_frame_top(%rip)\n    jmp .Lfuclean_{lbl}\n.Lfucatch_{lbl}:\n    movq $2, -{}(%rbp)\n.Lfuclean_{lbl}:\n",off-32));
+    }
     // The return value waits on the stack while the frees run: hbc_free
     // clobbers rax (and rdx on Windows) and a slot still owned here must
     // not destroy it. A FLOAT return rides xmm0/rdi (63zd convention):
@@ -25160,6 +25173,9 @@ fn cg_func(f: &Func, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, tar
         out.push_str("    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    add $16, %rsp\n");
     }
     trace_unlink(trace_off, out);
+    if let Some(off)=unwind_off {
+        out.push_str(&format!("    cmpq $2, -{}(%rbp)\n    je hbc_seq_unwind\n",off-32));
+    }
     out.push_str("    leave\n    ret\n\n");
     // Block literals used by this function are emitted right after it.
     let mut blocks = Vec::new();
@@ -29307,6 +29323,8 @@ fn emit_sarr_desc(out: &mut String, strs: &mut Vec<String>, expr: &Expr) -> Stri
 
 fn emit_asm(funcs: &[Func], sigs: &[Sig], externs: &[String], target: Target, instrument: bool) -> String {
     box_gtstd::reset();
+    let mut recoverable=false;
+    for f in funcs {visit_stmts_ref(&f.stmts,&mut |s|{if matches!(s,Stmt::Try(..)){recoverable=true;}},&mut |_|{});}
     compute_param_mut(funcs);
     let nclasses = CLASSES.with(|c| c.borrow().len());
     if nclasses > 0 && !matches!(target, Target::Linux | Target::Windows) {
@@ -29324,6 +29342,7 @@ fn emit_asm(funcs: &[Func], sigs: &[Sig], externs: &[String], target: Target, in
         process::exit(1);
     }
     if STR_DYN.with(|c|c.get())&&!THREADS.with(|c|c.get()){MACRO_CONTEXT.with(|c|c.set(true));}
+    FRAME_UNWIND.with(|v|v.set(recoverable && matches!(target,Target::Linux|Target::Windows) && !MACHO_MODE.with(|v|v.get()) && !THREADS.with(|c|c.get()) && !MACRO_CONTEXT.with(|c|c.get())));
     if MACRO_CONTEXT.with(|c|c.get())&&THREADS.with(|c|c.get()){eprintln!("error: MEMVAR/macro contexts with threads are outside this stage");process::exit(1);}
     let mut out = String::new();
     if FILE_USED.with(|v|v.get()) {
@@ -32660,6 +32679,13 @@ const SEQ_MACRO_UNWIND: &str = r"    mov 72(%r11), %rsi
 ";
 
 fn finalize_trace(mut out: String, target: Target) -> String {
+    if FRAME_UNWIND.with(|v|v.get()) {
+        out=out.replace("    imul $80, %rax\n    lea hbc_seq_pads", "    imul $96, %rax\n    lea hbc_seq_pads")
+            .replace("hbc_seq_pads: .skip 20480", "hbc_seq_pads: .skip 24576");
+        out=out.replace("    incq hbc_seq_depth(%rip)\n    ret", "    mov hbc_frame_top(%rip), %rax\n    mov %rax, 80(%r11)\n    incq hbc_seq_depth(%rip)\n    ret");
+        out=out.replace("    dec %eax\n    mov %eax, hbc_seq_depth(%rip)\n    imul $96, %rax\n    lea hbc_seq_pads(%rip), %r11\n    add %rax, %r11\n    mov 0(%r11), %rbx", "    dec %eax\n    imul $96, %rax\n    lea hbc_seq_pads(%rip), %r11\n    add %rax, %r11\n    mov hbc_frame_top(%rip), %rax\n    cmp 80(%r11), %rax\n    jne .Lfupropagate\n    decq hbc_seq_depth(%rip)\n    mov 0(%r11), %rbx");
+        out.push_str("\n.text\n.Lfupropagate:\n    mov 0(%rax), %r11\n    mov %r11, hbc_frame_top(%rip)\n    mov 8(%rax), %rbp\n    mov 16(%rax), %rsp\n    jmp *24(%rax)\n.bss\n.align 8\nhbc_frame_top: .quad 0\n.text\n");
+    }
     out.push_str(dyn_float::HELPERS);
     if out.contains("call hbc_str_dyn_fail") {
         out.push_str(&str_dyn_fail_helper(target));

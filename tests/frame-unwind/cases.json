@@ -1,0 +1,170 @@
+{
+  "mul3-literal": {
+    "helpers": "function Work(x)\nlocal copy,result\ncopy:=x\nresult:=copy*3\nreturn result\n",
+    "call": "result:=Work(\"abcdef\")",
+    "count": 113,
+    "caught": 113,
+    "baseline_leak": true
+  },
+  "mul3-calculated": {
+    "helpers": "function Work(x)\nlocal copy,result\ncopy:=x\nresult:=copy*3\nreturn result\n",
+    "call": "result:=Work(\"abc\"+Str(i,3))",
+    "count": 113,
+    "caught": 113,
+    "baseline_leak": true
+  },
+  "mul3-nil": {
+    "helpers": "function Work(x)\nlocal copy,result\ncopy:=x\nresult:=copy*3\nreturn result\n",
+    "call": "result:=Work(NIL)",
+    "count": 113,
+    "caught": 113,
+    "baseline_leak": false
+  },
+  "mul3-logical": {
+    "helpers": "function Work(x)\nlocal copy,result\ncopy:=x\nresult:=copy*3\nreturn result\n",
+    "call": "result:=Work(.T.)",
+    "count": 113,
+    "caught": 113,
+    "baseline_leak": false
+  },
+  "sub1-literal": {
+    "helpers": "function Work(x)\nlocal copy,result\ncopy:=x\nresult:=copy-1\nreturn result\n",
+    "call": "result:=Work(\"abcdef\")",
+    "count": 113,
+    "caught": 113,
+    "baseline_leak": true
+  },
+  "sub1-calculated": {
+    "helpers": "function Work(x)\nlocal copy,result\ncopy:=x\nresult:=copy-1\nreturn result\n",
+    "call": "result:=Work(\"abc\"+Str(i,3))",
+    "count": 113,
+    "caught": 113,
+    "baseline_leak": true
+  },
+  "sub1-nil": {
+    "helpers": "function Work(x)\nlocal copy,result\ncopy:=x\nresult:=copy-1\nreturn result\n",
+    "call": "result:=Work(NIL)",
+    "count": 113,
+    "caught": 113,
+    "baseline_leak": false
+  },
+  "sub1-logical": {
+    "helpers": "function Work(x)\nlocal copy,result\ncopy:=x\nresult:=copy-1\nreturn result\n",
+    "call": "result:=Work(.T.)",
+    "count": 113,
+    "caught": 113,
+    "baseline_leak": false
+  },
+  "div2-literal": {
+    "helpers": "function Work(x)\nlocal copy,result\ncopy:=x\nresult:=copy/2\nreturn result\n",
+    "call": "result:=Work(\"abcdef\")",
+    "count": 113,
+    "caught": 113,
+    "baseline_leak": true
+  },
+  "div2-calculated": {
+    "helpers": "function Work(x)\nlocal copy,result\ncopy:=x\nresult:=copy/2\nreturn result\n",
+    "call": "result:=Work(\"abc\"+Str(i,3))",
+    "count": 113,
+    "caught": 113,
+    "baseline_leak": true
+  },
+  "div2-nil": {
+    "helpers": "function Work(x)\nlocal copy,result\ncopy:=x\nresult:=copy/2\nreturn result\n",
+    "call": "result:=Work(NIL)",
+    "count": 113,
+    "caught": 113,
+    "baseline_leak": false
+  },
+  "div2-logical": {
+    "helpers": "function Work(x)\nlocal copy,result\ncopy:=x\nresult:=copy/2\nreturn result\n",
+    "call": "result:=Work(.T.)",
+    "count": 113,
+    "caught": 113,
+    "baseline_leak": false
+  },
+  "mul1p5-literal": {
+    "helpers": "function Work(x)\nlocal copy,result\ncopy:=x\nresult:=copy*1.5\nreturn result\n",
+    "call": "result:=Work(\"abcdef\")",
+    "count": 113,
+    "caught": 113,
+    "baseline_leak": true
+  },
+  "mul1p5-calculated": {
+    "helpers": "function Work(x)\nlocal copy,result\ncopy:=x\nresult:=copy*1.5\nreturn result\n",
+    "call": "result:=Work(\"abc\"+Str(i,3))",
+    "count": 113,
+    "caught": 113,
+    "baseline_leak": true
+  },
+  "mul1p5-nil": {
+    "helpers": "function Work(x)\nlocal copy,result\ncopy:=x\nresult:=copy*1.5\nreturn result\n",
+    "call": "result:=Work(NIL)",
+    "count": 113,
+    "caught": 113,
+    "baseline_leak": false
+  },
+  "mul1p5-logical": {
+    "helpers": "function Work(x)\nlocal copy,result\ncopy:=x\nresult:=copy*1.5\nreturn result\n",
+    "call": "result:=Work(.T.)",
+    "count": 113,
+    "caught": 113,
+    "baseline_leak": false
+  },
+  "break-typed-slot": {
+    "helpers": "function Work(x)\nlocal copy:=Upper(x)\nBreak(copy)\nreturn 0\n",
+    "call": "result:=Work(\"abc\")",
+    "count": 113,
+    "caught": 113,
+    "baseline_leak": false
+  },
+  "two-owned-locals": {
+    "helpers": "function Work(x)\nlocal a:=Upper(x),b:=Lower(x)\nBreak(\"error\")\nreturn 0\n",
+    "call": "result:=Work(\"abc\"+Str(i))",
+    "count": 113,
+    "caught": 113,
+    "baseline_leak": true
+  },
+  "array-bound": {
+    "helpers": "function Work(x)\nlocal copy:=Upper(x),a:={1},index:=2\nreturn a[index]\n",
+    "call": "result:=Work(\"abc\")",
+    "count": 113,
+    "caught": 113,
+    "baseline_leak": true
+  },
+  "same-frame-catch": {
+    "helpers": "function Work(x)\nlocal copy,result\ncopy:=x\nTRY\nresult:=copy*3\nCATCH\nEND\nreturn 0\n",
+    "call": "result:=Work(\"abc\"+Str(i))",
+    "count": 113,
+    "caught": 0,
+    "baseline_leak": false
+  },
+  "rethrow": {
+    "helpers": "function Work(x)\nlocal copy,result\ncopy:=x\nTRY\nresult:=copy*3\nCATCH\nBreak(\"again\")\nEND\nreturn 0\n",
+    "call": "result:=Work(\"abc\"+Str(i))",
+    "count": 113,
+    "caught": 113,
+    "baseline_leak": true
+  },
+  "finally": {
+    "helpers": "function Work(x)\nlocal copy,result\ncopy:=x\nTRY\nresult:=copy*3\nFINALLY\ncopy:=NIL\nEND\nreturn 0\n",
+    "call": "result:=Work(\"abc\"+Str(i))",
+    "count": 113,
+    "caught": 113,
+    "baseline_leak": true
+  },
+  "recursive270": {
+    "helpers": "function Work(n)\nlocal copy:=\"x\"+Str(n),result\nif n>0\nresult:=Work(n-1)\nreturn result\nendif\nBreak(\"end\")\nreturn 0\n",
+    "call": "result:=Work(270)",
+    "count": 5,
+    "caught": 5,
+    "baseline_leak": false
+  },
+  "normal-owner-return": {
+    "helpers": "function Work(x)\nlocal copy:=Upper(x)\nreturn Len(copy)\n",
+    "call": "result:=Work(\"abc\"+Str(i))",
+    "count": 113,
+    "caught": 0,
+    "baseline_leak": false
+  }
+}
