@@ -69,7 +69,7 @@ known failures and the history of published increments.
   crosses or ends on a 32-byte boundary, like GNU as
   `-mbranches-within-32B-boundaries`. On a Skylake Xeon, tight integer loops
   no longer swing up to 43 % in cycles with the position of their jumps; the
-  spread is 4 % at most. `.text` grows 1.7 %. `HASM_BRANCH_ALIGN=0` restores
+  spread is 4 % at most. `.text` grows 1.7-2.0 %. `HASM_BRANCH_ALIGN=0` restores
   the previous bytes. Details:
   [docs/HASM-BRANCH-ALIGN-2026-11-21.md](docs/HASM-BRANCH-ALIGN-2026-11-21.md).
 - **Integer overflow stops (21 November).** Fixed-i64 `+`, `-`, `*`, unary

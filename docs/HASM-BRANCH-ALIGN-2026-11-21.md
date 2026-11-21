@@ -45,6 +45,9 @@ Padding only adds bytes, so the lower bounds of
 
 Native Windows 11, Xeon W-2140B (Skylake, JCC erratum), hbc's own PE
 output from main 24fd8472 (overflow check with per-statement stubs).
+The branch was later rebased onto 90c3e2cc, whose only `src/hasm.rs`
+change adds `cvttsd2sil`; the behaviour, placement and unit-test checks
+below were repeated after the rebase with the same results.
 Process cycles, minimum of 7 runs; CPU time agrees on every binary.
 Each loop was built in three layouts: as written, and with one or three
 extra `local` declarations before the loop, which move every jump.
@@ -62,8 +65,10 @@ With padding the spread across layouts is 4 % at most; without it, up to
 5.81 G), within 3 %. In its single luckiest layout, `b1b_int_bounded` is
 3 % faster unpadded.
 
-Over the 1197 manifest programs that build for Windows, `.text` grows by
-1.7 % (4 737 824 to 4 819 392 bytes).
+`.text` grows by 1.7 % over the 1197 manifest programs that build for
+Windows (4 737 824 to 4 819 392 bytes, PE section headers read by
+`objdump`). It grows by 2.0 % over the 1209 Linux builds (6 855 062 to
+6 990 679 bytes, ELF section headers parsed directly).
 
 ## Verified (native Windows 11)
 
