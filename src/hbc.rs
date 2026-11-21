@@ -24821,12 +24821,13 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                     let wk = fresh_lbl();
                     if dyn_value {
                         // The owned pair waits across the index evaluation
-                        // in a 64-byte frame under a sequence landing pad:
-                        // the index may call, and that call may raise under
-                        // the user's TRY. The pad releases the pair and
-                        // resumes the unwind; an out-of-range index releases
-                        // it on the error path before the bound error.
-                        out.push_str(&format!("    sub $64, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n    movq $0, 16(%rsp)\n    cmpq $0, hbc_seq_depth(%rip)\n    je .Lwsg{}\n    lea .Lwspad{}(%rip), %rdi\n    call hbc_seq_push\n    movq $1, 16(%rsp)\n.Lwsg{}:\n", wk,wk,wk));
+                        // in a 64-byte frame guarded by the aux stack (own
+                        // 256-entry counter, no TRY pad consumed): the index
+                        // may call, and that call may raise under the user's
+                        // TRY; hbc_seq_unwind drains the guard and releases
+                        // the pair. An out-of-range index releases it on the
+                        // error path before the bound error.
+                        out.push_str(&format!("    sub $64, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n    movq $0, 16(%rsp)\n    cmpq $0, hbc_seq_depth(%rip)\n    je .Lwsg{}\n    mov (%rsp), %rdi\n    mov 8(%rsp), %rsi\n    call hbc_aux_push\n    movq $1, 16(%rsp)\n.Lwsg{}:\n", wk,wk));
                     } else {
                         out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
                     }
@@ -24837,7 +24838,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                         cg_expr(ie, env, sigs, strs, out, target);
                     }
                     if dyn_value {
-                        out.push_str(&format!("    mov %rax, 24(%rsp)\n    cmpq $0, 16(%rsp)\n    je .Lwsn{}\n    call hbc_seq_pop\n.Lwsn{}:\n    mov 24(%rsp), %rcx\n    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n", wk,wk));
+                        out.push_str(&format!("    mov %rax, 24(%rsp)\n    cmpq $0, 16(%rsp)\n    je .Lwsn{}\n    call hbc_aux_pop\n.Lwsn{}:\n    mov 24(%rsp), %rcx\n    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n", wk,wk));
                         if v.ty == Ty::DArrRef {
                             out.push_str(&format!("    mov -{}(%rbp), %r11\n    cmp $1, %rcx\n    jl .Lwsbnd{}\n    cmp 8(%r11), %rcx\n    jg .Lwsbnd{}\n", v.off,wk,wk));
                             out.push_str("    mov (%r11), %r11\n");
@@ -24851,7 +24852,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                         // address waits in the frame.
                         out.push_str(&format!("    dec %rcx\n    shl $4, %rcx\n    add %r11, %rcx\n    mov %rcx, 24(%rsp)\n    mov %rax, 32(%rsp)\n    mov %rdx, 40(%rsp)\n    @HBC_TAG_KIND@cmpq $4, (%rcx)@HBC_TAG_END@\n    jne .Lwof{}\n    mov 8(%rcx), %rdi\n    test %rdi, %rdi\n    jz .Lwof{}\n    call hbc_freestr\n.Lwof{}:\n    mov 24(%rsp), %rcx\n    mov (%rcx), %rax\n    mov 8(%rcx), %rdx\n    call hbc_float_release\n    mov 24(%rsp), %rcx\n    mov 32(%rsp), %rax\n    mov 40(%rsp), %rdx\n    mov %rax, (%rcx)\n    mov %rdx, 8(%rcx)\n    add $64, %rsp\n    jmp .Lwsdone{}\n", wk,wk,wk,wk));
                         out.push_str(&format!(".Lwsbnd{}:\n    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    call hbc_float_release\n    @HBC_TAG_KIND@cmpq $4, (%rsp)@HBC_TAG_END@\n    jne .Lwsnf{}\n    mov 8(%rsp), %rdi\n    test %rdi, %rdi\n    jz .Lwsnf{}\n    call hbc_freestr\n.Lwsnf{}:\n    add $64, %rsp\n    call hbc_bound_error\n", wk,wk,wk,wk));
-                        out.push_str(&format!(".Lwspad{}:\n    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    call hbc_float_release\n    @HBC_TAG_KIND@cmpq $4, (%rsp)@HBC_TAG_END@\n    jne .Lwspf{}\n    mov 8(%rsp), %rdi\n    test %rdi, %rdi\n    jz .Lwspf{}\n    call hbc_freestr\n.Lwspf{}:\n    add $64, %rsp\n    jmp hbc_seq_unwind\n.Lwsdone{}:\n", wk,wk,wk,wk,wk));
+                        out.push_str(&format!(".Lwsdone{}:\n", wk));
                     } else {
                         out.push_str("    mov %rax, %rcx\n    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    add $16, %rsp\n");
                         if v.ty == Ty::DArrRef {
@@ -32571,6 +32572,66 @@ hbc_seq_pop:
     decq hbc_seq_depth(%rip)
     ret
 
+# --- ArrSet owned-value guard stack (separate from the 256 TRY pads) ---
+# The ArrSet string/Dyn store keeps its owned RHS pair across the index
+# evaluation, and the index may call code that throws under a user TRY.
+# The guard must not consume a TRY pad: it records the sequence depth at
+# entry in its own 256-entry stack of 32-byte pads (+0 recorded depth,
+# +8 tag, +16 payload). hbc_seq_unwind drains every guard recorded above
+# the depth it unwinds to, releasing the pair exactly once; the normal
+# path pops the guard before the bounds check.
+hbc_aux_push:
+    mov hbc_aux_depth(%rip), %eax
+    cmp $256, %eax
+    jae hbc_seq_overflow
+    shl $5, %eax
+    lea hbc_aux_pads(%rip), %r11
+    add %rax, %r11
+    mov hbc_seq_depth(%rip), %rax
+    mov %rax, 0(%r11)
+    mov %rdi, 8(%r11)
+    mov %rsi, 16(%r11)
+    movq $0, 24(%r11)
+    incq hbc_aux_depth(%rip)
+    ret
+
+hbc_aux_pop:
+    decq hbc_aux_depth(%rip)
+    ret
+
+# hbc_aux_drain: release every guard pad recorded above the current
+# hbc_seq_depth. Called from hbc_seq_unwind with the consumed TRY pad
+# pointer in %r11 (preserved by the caller). Tag/payload are re-read
+# from the pad memory after the release calls, so only %rbx must be
+# saved here.
+hbc_aux_drain:
+    push %rbx
+.Lauxdrain:
+    mov hbc_aux_depth(%rip), %eax
+    test %eax, %eax
+    jz .Lauxdone
+    dec %eax
+    shl $5, %eax
+    lea hbc_aux_pads(%rip), %rbx
+    add %rax, %rbx
+    mov 0(%rbx), %rax
+    cmp hbc_seq_depth(%rip), %rax
+    jle .Lauxdone
+    mov 8(%rbx), %rax
+    mov 16(%rbx), %rdx
+    decq hbc_aux_depth(%rip)
+    call hbc_float_release
+    @HBC_TAG_KIND@cmpq $4, 8(%rbx)@HBC_TAG_END@
+    jne .Lauxdrain
+    mov 16(%rbx), %rdi
+    test %rdi, %rdi
+    jz .Lauxdrain
+    call hbc_freestr
+    jmp .Lauxdrain
+.Lauxdone:
+    pop %rbx
+    ret
+
 # hbc_seq_exc_take: -> rax = tag, rdx = payload of the innermost pending
 # exception; pops it. Called first thing by a CATCH handler (CatchBind).
 hbc_seq_exc_take:
@@ -32614,6 +32675,11 @@ hbc_seq_unwind:
     imul $80, %rax
     lea hbc_seq_pads(%rip), %r11
     add %rax, %r11
+    push %r11
+    push %r11
+    call hbc_aux_drain
+    pop %r11
+    pop %r11
     mov 0(%r11), %rbx
     mov 8(%r11), %rbp
     mov 16(%r11), %r12
@@ -32705,7 +32771,9 @@ hbc_seq_overflow:
     .align 8
 hbc_seq_depth: .skip 8
 hbc_seq_exc_depth: .skip 8
+hbc_aux_depth: .skip 8
 hbc_seq_pads: .skip 20480
+hbc_aux_pads: .skip 8192
 hbc_seq_exc: .skip 4096
     .bss
     .align 8
@@ -33007,7 +33075,7 @@ fn finalize_trace(mut out: String, target: Target) -> String {
         out=out.replace("    imul $80, %rax\n    lea hbc_seq_pads", "    imul $96, %rax\n    lea hbc_seq_pads")
             .replace("hbc_seq_pads: .skip 20480", "hbc_seq_pads: .skip 24576");
         out=out.replace("    incq hbc_seq_depth(%rip)\n    ret", "    mov hbc_frame_top(%rip), %rax\n    mov %rax, 80(%r11)\n    incq hbc_seq_depth(%rip)\n    ret");
-        out=out.replace("    dec %eax\n    mov %eax, hbc_seq_depth(%rip)\n    imul $96, %rax\n    lea hbc_seq_pads(%rip), %r11\n    add %rax, %r11\n    mov 0(%r11), %rbx", "    dec %eax\n    imul $96, %rax\n    lea hbc_seq_pads(%rip), %r11\n    add %rax, %r11\n    mov hbc_frame_top(%rip), %rax\n    cmp 80(%r11), %rax\n    jne .Lfupropagate\n    decq hbc_seq_depth(%rip)\n    mov 0(%r11), %rbx");
+        out=out.replace("    dec %eax\n    mov %eax, hbc_seq_depth(%rip)\n    imul $96, %rax\n    lea hbc_seq_pads(%rip), %r11\n    add %rax, %r11\n    push %r11\n    push %r11\n    call hbc_aux_drain\n    pop %r11\n    pop %r11\n    mov 0(%r11), %rbx", "    dec %eax\n    imul $96, %rax\n    lea hbc_seq_pads(%rip), %r11\n    add %rax, %r11\n    mov hbc_frame_top(%rip), %rax\n    cmp 80(%r11), %rax\n    jne .Lfupropagate\n    decq hbc_seq_depth(%rip)\n    push %r11\n    push %r11\n    call hbc_aux_drain\n    pop %r11\n    pop %r11\n    mov 0(%r11), %rbx");
         out.push_str("\n.text\n.Lfupropagate:\n    mov 0(%rax), %r11\n    mov %r11, hbc_frame_top(%rip)\n    mov 8(%rax), %rbp\n    mov 16(%rax), %rsp\n    jmp *24(%rax)\n.bss\n.align 8\nhbc_frame_top: .quad 0\n.text\n");
     }
     out.push_str(dyn_float::HELPERS);
@@ -36140,6 +36208,66 @@ hbc_seq_pop:
     decq hbc_seq_depth(%rip)
     ret
 
+# --- ArrSet owned-value guard stack (separate from the 256 TRY pads) ---
+# The ArrSet string/Dyn store keeps its owned RHS pair across the index
+# evaluation, and the index may call code that throws under a user TRY.
+# The guard must not consume a TRY pad: it records the sequence depth at
+# entry in its own 256-entry stack of 32-byte pads (+0 recorded depth,
+# +8 tag, +16 payload). hbc_seq_unwind drains every guard recorded above
+# the depth it unwinds to, releasing the pair exactly once; the normal
+# path pops the guard before the bounds check.
+hbc_aux_push:
+    mov hbc_aux_depth(%rip), %eax
+    cmp $256, %eax
+    jae hbc_seq_overflow
+    shl $5, %eax
+    lea hbc_aux_pads(%rip), %r11
+    add %rax, %r11
+    mov hbc_seq_depth(%rip), %rax
+    mov %rax, 0(%r11)
+    mov %rdi, 8(%r11)
+    mov %rsi, 16(%r11)
+    movq $0, 24(%r11)
+    incq hbc_aux_depth(%rip)
+    ret
+
+hbc_aux_pop:
+    decq hbc_aux_depth(%rip)
+    ret
+
+# hbc_aux_drain: release every guard pad recorded above the current
+# hbc_seq_depth. Called from hbc_seq_unwind with the consumed TRY pad
+# pointer in %r11 (preserved by the caller). Tag/payload are re-read
+# from the pad memory after the release calls, so only %rbx must be
+# saved here.
+hbc_aux_drain:
+    push %rbx
+.Lauxdrain:
+    mov hbc_aux_depth(%rip), %eax
+    test %eax, %eax
+    jz .Lauxdone
+    dec %eax
+    shl $5, %eax
+    lea hbc_aux_pads(%rip), %rbx
+    add %rax, %rbx
+    mov 0(%rbx), %rax
+    cmp hbc_seq_depth(%rip), %rax
+    jle .Lauxdone
+    mov 8(%rbx), %rax
+    mov 16(%rbx), %rdx
+    decq hbc_aux_depth(%rip)
+    call hbc_float_release
+    @HBC_TAG_KIND@cmpq $4, 8(%rbx)@HBC_TAG_END@
+    jne .Lauxdrain
+    mov 16(%rbx), %rdi
+    test %rdi, %rdi
+    jz .Lauxdrain
+    call hbc_freestr
+    jmp .Lauxdrain
+.Lauxdone:
+    pop %rbx
+    ret
+
 # hbc_seq_exc_take: -> rax = tag, rdx = payload of the innermost pending
 # exception; pops it. Called first thing by a CATCH handler (CatchBind).
 hbc_seq_exc_take:
@@ -36183,6 +36311,11 @@ hbc_seq_unwind:
     imul $80, %rax
     lea hbc_seq_pads(%rip), %r11
     add %rax, %r11
+    push %r11
+    push %r11
+    call hbc_aux_drain
+    pop %r11
+    pop %r11
     mov 0(%r11), %rbx
     mov 8(%r11), %rbp
     mov 16(%r11), %r12
@@ -36269,7 +36402,9 @@ hbc_seq_overflow:
     .align 8
 hbc_seq_depth: .skip 8
 hbc_seq_exc_depth: .skip 8
+hbc_aux_depth: .skip 8
 hbc_seq_pads: .skip 20480
+hbc_aux_pads: .skip 8192
 hbc_seq_exc: .skip 4096
     .data
 @REG_DATA@    .text
