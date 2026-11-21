@@ -7751,6 +7751,10 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 if !args.is_empty() { return Err(format!("line {}: `seconds` takes no arguments",n)); }
                 return Ok(Ty::F64);
             }
+            if is_builtin(id,"time") {
+                if !args.is_empty() { return Err(format!("line {}: `time` takes no arguments",n)); }
+                return Ok(Ty::StrOwn);
+            }
             if is_builtin(id,"ctod") {
                 if args.len()!=1 { return Err(format!("line {}: `ctod` takes one argument",n)); }
                 if !matches!(type_expr(&args[0],env,sigs,n)?,Ty::Str|Ty::StrOwn) {
@@ -12145,6 +12149,7 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
             }
             if is_builtin(id,"date") { return; }
             if is_builtin(id,"seconds") { return; }
+            if is_builtin(id,"time") { return; }
             if is_builtin(id,"ctod") { apply_moves(&args[0],env,sigs,false); return; }
             if is_builtin(id,"dirmake") {for a in args {apply_moves(a,env,sigs,false);}return;}
             if ["hb_flink","hb_flinksym","hb_flinkread","hb_memowrit","hb_dircreate","ferror"].iter().any(|b|is_builtin(id,b)) {for a in args {apply_moves(a,env,sigs,false);}return;}
@@ -15876,6 +15881,9 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
         }
         Expr::Call(id,_) if is_builtin(id,"seconds") => {
             out.push_str("    call hbc_seconds\n");
+        }
+        Expr::Call(id,_) if is_builtin(id,"time") => {
+            out.push_str("    call hbc_time_str\n");
         }
         Expr::Call(id,args) if is_builtin(id,"ctod") => {
             let temp=expr_ty(&args[0],env,sigs)==Ty::StrOwn && !matches!(&args[0],Expr::Var(_));
@@ -19890,6 +19898,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             if is_builtin(id, "asc") || is_builtin(id, "len") || is_builtin(id, "hb_memcheck") || is_builtin(id, "procline") { return Ty::I64; }
             if is_builtin(id,"date") || is_builtin(id,"ctod") { return Ty::Date; }
             if is_builtin(id, "seconds") { return Ty::F64; }
+            if is_builtin(id, "time") { return Ty::StrOwn; }
             if is_builtin(id, "valtype") || is_builtin(id, "hb_eol") || is_builtin(id, "procname") { return Ty::Str; } // hk88-hk92
             if ["ltrim", "rtrim", "alltrim", "trim"].iter().any(|b| is_builtin(id,b)) { return Ty::StrOwn; }
             if is_builtin(id,"substr") { return Ty::StrOwn; }
@@ -32915,7 +32924,7 @@ fn finalize_trace(mut out: String, target: Target) -> String {
     if ["ctod", "date_today", "date_render", "stod", "dtos", "year", "day", "month", "dow", "cdow", "cmonth", "dtoc", "date_add", "date_diff", "date_days", "date_from_days"].iter().any(|name| out.contains(&format!("call hbc_{}",name))) {
         out.push_str(DATE_PORT_HELPERS);
     }
-    if matches!(target, Target::Linux) && !MACHO_MODE.with(|v| v.get()) && (out.contains("call hbc_date_today") || out.contains("call hbc_seconds")) {
+    if matches!(target, Target::Linux) && !MACHO_MODE.with(|v| v.get()) && (out.contains("call hbc_date_today") || out.contains("call hbc_seconds") || out.contains("call hbc_time_str")) {
         out.push_str(TZ_LINUX);
     }
     if out.contains("call hbc_date_today") {
@@ -32927,6 +32936,9 @@ fn finalize_trace(mut out: String, target: Target) -> String {
     }
     if out.contains("call hbc_seconds") {
         out.push_str(if MACHO_MODE.with(|v| v.get()) { SECONDS_DARWIN } else { match target {Target::Windows=>SECONDS_WINDOWS,_=>SECONDS_LINUX} });
+    }
+    if out.contains("call hbc_time_str") {
+        out.push_str(if MACHO_MODE.with(|v| v.get()) { TIME_DARWIN } else { match target {Target::Windows=>TIME_WINDOWS,_=>TIME_LINUX} });
     }
     // Add private stderr variants only when used. No mutable routing state:
     // nested OutStd/QOut and controlled diagnostics retain their destination.
@@ -38986,6 +38998,197 @@ hbc_seconds:
     divsd %xmm2, %xmm1
     addsd %xmm1, %xmm0
     mov $655362, %edi
+    leave
+    ret
+"#;
+
+const TIME_LINUX: &str = r#"
+    .text
+# hbc_time_str: rax/rdx = owned "HH:MM:SS" (8 bytes), local 24-hour time
+# of day. Same local-wall-clock base as hbc_seconds (UTC epoch plus
+# hbc_tz_off, wrapped into 0..86399), formatted with two digits per
+# field and ':' separators. A failed clock read formats 00:00:00.
+hbc_time_str:
+    push %rbp
+    mov %rsp, %rbp
+    sub $32, %rsp
+    xor %edi, %edi
+    lea -16(%rbp), %rsi
+    mov $228, %eax
+    syscall
+    test %rax, %rax
+    jz .Ltime_lgot
+    movq $0, -16(%rbp)
+.Ltime_lgot:
+    mov -16(%rbp), %rdi
+    call hbc_tz_off
+    add %rax, -16(%rbp)
+.Ltime_neg:
+    cmpq $0, -16(%rbp)
+    jge .Ltime_pos
+    addq $86400, -16(%rbp)
+    jmp .Ltime_neg
+.Ltime_pos:
+    mov -16(%rbp), %rax
+    xor %edx, %edx
+    mov $86400, %ecx
+    div %rcx
+    mov %rdx, %rax
+    # hour = sec / 3600
+    xor %edx, %edx
+    mov $3600, %ecx
+    div %rcx
+    mov %rax, %r8
+    mov %rdx, %r9
+    # minute = rem / 60
+    mov %r9, %rax
+    xor %edx, %edx
+    mov $60, %ecx
+    div %rcx
+    mov %rax, %r10
+    mov %rdx, %r11
+    # hour digits
+    mov %r8, %rax
+    xor %edx, %edx
+    mov $10, %ecx
+    div %rcx
+    add $48, %eax
+    add $48, %edx
+    mov %al, -24(%rbp)
+    mov %dl, -23(%rbp)
+    movb $58, -22(%rbp)
+    # minute digits
+    mov %r10, %rax
+    xor %edx, %edx
+    mov $10, %ecx
+    div %rcx
+    add $48, %eax
+    add $48, %edx
+    mov %al, -21(%rbp)
+    mov %dl, -20(%rbp)
+    movb $58, -19(%rbp)
+    # second digits
+    mov %r11, %rax
+    xor %edx, %edx
+    mov $10, %ecx
+    div %rcx
+    add $48, %eax
+    add $48, %edx
+    mov %al, -18(%rbp)
+    mov %dl, -17(%rbp)
+    lea -24(%rbp), %rdi
+    mov $8, %esi
+    call hbc_strcpy
+    leave
+    ret
+"#;
+
+const TIME_DARWIN: &str = r#"
+    .text
+# hbc_time_str on Darwin: gettimeofday (UTC, like the seconds helper),
+# whole seconds, wrapped into the UTC day (no TZ query, matching the
+# Darwin seconds helper); a failed read formats 00:00:00.
+hbc_time_str:
+    push %rbp
+    mov %rsp, %rbp
+    sub $48, %rsp
+    lea -48(%rbp), %rdi
+    xor %esi, %esi
+    mov $96, %eax
+    syscall
+    test %rax, %rax
+    jz .Ltime_dgot
+    movq $0, -48(%rbp)
+.Ltime_dgot:
+    mov -48(%rbp), %rax
+    mov $86400, %ecx
+    div %rcx
+    mov %rdx, %rax
+    xor %edx, %edx
+    mov $3600, %ecx
+    div %rcx
+    mov %rax, %r8
+    mov %rdx, %r9
+    mov %r9, %rax
+    xor %edx, %edx
+    mov $60, %ecx
+    div %rcx
+    mov %rax, %r10
+    mov %rdx, %r11
+    mov %r8, %rax
+    xor %edx, %edx
+    mov $10, %ecx
+    div %rcx
+    add $48, %eax
+    add $48, %edx
+    mov %al, -40(%rbp)
+    mov %dl, -39(%rbp)
+    movb $58, -38(%rbp)
+    mov %r10, %rax
+    xor %edx, %edx
+    mov $10, %ecx
+    div %rcx
+    add $48, %eax
+    add $48, %edx
+    mov %al, -37(%rbp)
+    mov %dl, -36(%rbp)
+    movb $58, -35(%rbp)
+    mov %r11, %rax
+    xor %edx, %edx
+    mov $10, %ecx
+    div %rcx
+    add $48, %eax
+    add $48, %edx
+    mov %al, -34(%rbp)
+    mov %dl, -33(%rbp)
+    lea -40(%rbp), %rdi
+    mov $8, %esi
+    call hbc_strcpy
+    leave
+    ret
+"#;
+
+const TIME_WINDOWS: &str = r#"
+    .text
+# hbc_time_str: rax/rdx = owned "HH:MM:SS" (8 bytes) from GetLocalTime.
+# The 16-byte SYSTEMTIME lives at -48(%rbp), ABOVE the 32-byte shadow
+# space of the call (rsp = rbp-64, shadow = rbp-64..rbp-48); the result
+# bytes live at -24..-17(%rbp). wHour/wMinute/wSecond at +8/+10/+12.
+hbc_time_str:
+    push %rbp
+    mov %rsp, %rbp
+    sub $64, %rsp
+    lea -48(%rbp), %rcx
+    call GetLocalTime
+    movzwl -40(%rbp), %eax
+    xor %edx, %edx
+    mov $10, %ecx
+    div %ecx
+    add $48, %eax
+    add $48, %edx
+    mov %al, -24(%rbp)
+    mov %dl, -23(%rbp)
+    movb $58, -22(%rbp)
+    movzwl -38(%rbp), %eax
+    xor %edx, %edx
+    mov $10, %ecx
+    div %ecx
+    add $48, %eax
+    add $48, %edx
+    mov %al, -21(%rbp)
+    mov %dl, -20(%rbp)
+    movb $58, -19(%rbp)
+    movzwl -36(%rbp), %eax
+    xor %edx, %edx
+    mov $10, %ecx
+    div %ecx
+    add $48, %eax
+    add $48, %edx
+    mov %al, -18(%rbp)
+    mov %dl, -17(%rbp)
+    lea -24(%rbp), %rdi
+    mov $8, %esi
+    call hbc_strcpy
     leave
     ret
 "#;
