@@ -1,5 +1,6 @@
 mod optional_empty;
 mod cell_len;
+mod method_valtype;
 mod box_gtstd;
 mod llvm_darwin;
 // hbc - PoC compiler: Harbour syntax (closed subset) -> x86-64 assembly.
@@ -4715,6 +4716,7 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
     // fixpoint stays monotone (mutual recursion without evidence, t694).
     DEFAULT_DYN.with(|m|for (name,i) in m.borrow().iter(){if *name==f.name && *i<n {pin[*i]=Some(Ty::Dyn);}});
     for i in 0..n { if optional_empty::parameter(&f.name,i) || cell_len::parameter(&f.name,i) {pin[i]=Some(Ty::AView);} }
+    for i in 0..n {if method_valtype::parameter(&f.name,i) {pin[i]=Some(Ty::Dyn);}}
     // Method functions: the implicit leading `Self` parameter is pinned
     // to the defining class (no body evidence needed).
     if let Some(ci) = METHOD_CLASS.with(|m| m.borrow().get(&f.name).copied()) {
@@ -4978,6 +4980,7 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
         }
     }
     fn walk(f: &Func, e: &Expr, sigs: &[Sig], lit: &[(String, Ty)], pin: &mut Vec<Option<Ty>>, printed: &mut Vec<ParamUse>, n: usize) -> Result<(), String> {
+        if method_valtype::active(&f.name,e) {return Ok(());}
         match e {
             Expr::Seq(es) => { for e in es { walk(f, e, sigs, lit, pin, printed, n)?; } Ok(()) }
             // Inline assignment (parexpr): a write alone pins nothing;
@@ -6879,6 +6882,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 return Ok(Ty::Bool);
             }
             if is_builtin(id, "valtype") {
+                if method_valtype::active(&CUR_FN.with(|c|c.borrow().clone()),e) {return method_valtype::check(e,env,sigs,n);}
                 // ValType(x): a one-character type tag (hk88-hk92). Borrows
                 // its argument; the argument evaluates fully with its
                 // effects (hk89). Only measured shapes: literals, plain
@@ -8348,6 +8352,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                     return Err(format!("line {}: unknown function `{}` (must be defined before use; a C extension function is declared with EXTERNAL and its object linked - docs/EXTEND-BRIDGE.md)", n, id));
                 }
             };
+            if method_valtype::parameter(id,0) && (args.len()!=1 || args.iter().any(|a|matches!(a,Expr::ByRef(_)))) {return Err(format!("line {}: method ValType observer `{}` needs one typed object, not omitted or byref",n,id));}
             let sig_string_copy = sigs[si].string_iter_copy.clone();
             let (sig_params, sig_borrowed, sig_arr_moved, sig_aview, sig_ret, sig_inferred) = {
                 let s = &sigs[si];
@@ -8669,6 +8674,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 // operand through the Dyn route (a float payload is combined by kind).
                 if sig_params[i] == Ty::Dyn { mark_dynplus(a, env, sigs, n); }
                 let ta = type_expr(a, env, sigs, n)?;
+                if method_valtype::parameter(id,i) {method_valtype::argument(id,a,ta,n)?;}
                 if dd_call && matches!(ta, Ty::Obj(_)) && !DEFAULT_DYN.with(|m| m.borrow().contains(&(sigs[si].name.clone(), i))) {
                     return Err(format!("line {}: an object argument (argument {}) in a call to `{}`, which has a parameter without type evidence, is outside the dynamic increment in this increment (the boundary screen for object values could not release its reference)", n, i + 1, id));
                 }
@@ -15393,6 +15399,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             }
         }
         Expr::Call(id, args) if is_builtin(id, "valtype") => {
+            if method_valtype::active(&CUR_FN.with(|c|c.borrow().clone()),e) {method_valtype::emit(e,env,sigs,strs,out,target);return;}
             // ValType(x) (hk88-hk92): a one-character tag as a 1-byte
             // string (rax=ptr, rdx=1). Static types classify at compile
             // time; Dyn casillas at runtime: a scalar casilla {tag,
@@ -36391,6 +36398,7 @@ fn main() {
     // an explicit diagnostic, never a silent assumption.
     optional_empty::analyze(&funcs);
     cell_len::analyze(&funcs);
+    method_valtype::analyze(&funcs);
     let cap = 2 + 4 * funcs.iter().map(|f| f.params.len() + 1).sum::<usize>();
     // A single inline-IF return can carry its own concrete base-case
     // anchor before recursive signatures exist (stock recursiv.prg).
