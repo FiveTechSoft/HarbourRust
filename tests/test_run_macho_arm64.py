@@ -105,18 +105,18 @@ class RealCompilerTest(unittest.TestCase):
 
 
 class TimingTests(unittest.TestCase):
-    def test_no_named_rejections_on_either_target(self):
+    def test_dyn_increment_is_named_on_either_mac_target(self):
         try:
             for target in ('macho', 'macho-arm64'):
                 m.configure_target(target)
-                self.assertEqual(m.EXPECTED_REJ, {})
+                self.assertEqual(m.EXPECTED_REJ, m.DYN_INC_REJ)
                 self.assertEqual(m.TARGET, '--target=' + target)
         finally:
             m.configure_target('macho-arm64')
 
     def test_empty_map_has_no_stale_names(self):
-        self.assertEqual(m.EXPECTED_REJ, {})
-        self.assertEqual(m.stale_named_rejections([]), [])
+        with patch.object(m,'EXPECTED_REJ',{}):
+            self.assertEqual(m.stale_named_rejections([]), [])
 
     def test_all_native_windows_and_noop_guard(self):
         for row, window in m.IDLESLEEP_WINDOWS.items():
@@ -143,7 +143,17 @@ class ManifestInventoryTests(unittest.TestCase):
         rows=self.manifest_rows()
         self.assertEqual(len(rows),m.EXPECTED_MANIFEST_ROWS)
         self.assertEqual(len({tuple(l.split(' ')[:2]) for l in rows}),len(rows))
-        self.assertEqual(len(rows)+m.FILE_POSITIVES+m.DBF_TESTS+m.THREAD_PROGRAMS+m.EXT_DEMOS,1322)
+        self.assertEqual(len(rows)+m.FILE_POSITIVES+m.DBF_TESTS+m.THREAD_PROGRAMS+m.EXT_DEMOS,1323)
+
+    def test_dyn_increment_named_rejection_is_target_scoped(self):
+        try:
+            m.configure_target('linux')
+            self.assertNotIn('tests/t896_inc_dyn_neg.prg',m.EXPECTED_REJ)
+            for target in ('macho','macho-arm64'):
+                m.configure_target(target)
+                self.assertEqual(m.EXPECTED_REJ,m.DYN_INC_REJ)
+        finally:
+            m.configure_target('macho-arm64')
 
     def test_real_main_preflight_reaches_smoke_for_both_targets(self):
         # Exercise main(), not a second implementation of its count guard.

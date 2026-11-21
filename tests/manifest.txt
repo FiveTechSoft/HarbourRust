@@ -889,7 +889,7 @@ pos2 tests/t891_inc_effects.prg tests/expectations/qout/t891_inc_effects.linux.o
 pos2 tests/t892_inc_effects.prg tests/expectations/qout/t892_inc_effects.linux.out tests/expectations/qout/t892_inc_effects.windows.out
 neg tests/t894_inc_capture_neg.prg codeblock captures are not in
 neg tests/t895_inc_float_neg.prg integer variable lvalues only
-neg tests/t896_inc_dyn_neg.prg integer variable lvalues only
+posx tests/t896_inc_dyn_neg.prg 1 Type error: NIL used as a number\nCallstack:\n  at main (tests/t896_inc_dyn_neg.prg:3)
 neg tests/t897_inc_elem_neg.prg requires a variable lvalue
 neg tests/t898_inc_literal_neg.prg requires a variable lvalue
 neg tests/t899_inc_readonly_neg.prg read-only variable

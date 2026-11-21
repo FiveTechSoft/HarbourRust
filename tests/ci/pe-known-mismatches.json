@@ -169,6 +169,14 @@
       "stderr": "error: line 5: CurDir is measured only on the ordinary Linux backend in this increment\n",
       "source_sha256": "6ad1c510d73361b22883837187df421894496c6da4f1e6ecce306b910b5174ef",
       "reason": "CurDir is outside the PE backend; includes diagnostic precedence differences."
+    },
+    {
+      "kind": "posx",
+      "source": "tests/t896_inc_dyn_neg.prg",
+      "rc": 1,
+      "stderr": "error: line 3: Dyn expression ++/-- requires ordinary Linux non-macro local storage; PRIVATE/PUBLIC, static, shared and byref storage are outside this increment\n",
+      "source_sha256": "9214a921a519c97e5952d6f69f2a7efda0f398a4f65a326f04daeed9fafa86c4",
+      "reason": "New Linux-only Dyn integer expression increment: NIL is a catchable/runtime kind error on Linux; PE remains an explicit compile-time profile limit. Not PE runtime support."
     }
   ]
 }

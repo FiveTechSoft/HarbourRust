@@ -18,17 +18,19 @@ KINDS = ('pos', 'posx', 'pos2', 'posx2', 'streams', 'streams2')
 
 # Expected suite shape (docs/ARM64-NATIVE-2026-11-16.md, run 43985696680):
 # the totals are fixed and every backend rejection must be named here.
-# No named compile-time rejections in this increment: hb_idleSleep got
+# hb_idleSleep got
 # its Darwin lowering (Linux 35 -> libSystem _nanosleep wrapper, also
 # reached by the __a64_linux_syscall dispatcher), so the five
 # tests/idlesleep-linux rows run natively like every other row.
-# EXPECTED_REJ stays as the fail-closed machinery for future named
+# t896 has a named Dyn increment profile rejection on both Mac targets.
+# EXPECTED_REJ is fail-closed machinery for named
 # limits: a row only counts as REJ when the compiler exits normally
 # (rc 1, never a signal) with the named diagnostic; a crash, an abnormal
 # rc or a different message is a FAIL, never an expected rejection. A
 # named REJ that stops rejecting with its diagnostic fails the battery
 # (stale name). An empty map makes ANY rejection unexpected (fail).
-EXPECTED_REJ = {}
+DYN_INC_REJ = {'tests/t896_inc_dyn_neg.prg': 'Dyn expression ++/-- requires ordinary Linux non-macro local storage'}
+EXPECTED_REJ = dict(DYN_INC_REJ)
 # The idlesleep rows print identical bytes whether nanosleep really
 # slept or the lowering silently no-ops (wrong number, ENOSYS), so each
 # positive-sleep row also carries a wall-clock floor on the native run
@@ -46,7 +48,8 @@ IDLESLEEP_WINDOWS = {
 # so both targets run the rows with the same windows and no named REJ.
 
 def configure_target(target):
-    global TARGET
+    global TARGET, EXPECTED_REJ
+    EXPECTED_REJ = {} if target == 'linux' else dict(DYN_INC_REJ)
     TARGET = '--target=' + target
 
 FILE_POSITIVES = 6
@@ -64,8 +67,9 @@ TARGET = '--target=macho-arm64'  # --target=macho runs the same battery on Intel
 # tests/threads/programs gains ts01_str_dyn (Str(Dyn) in threads): 38.
 # Mixed scalar iif makes t989 and t1002 positive rows (+2).
 # Variable I64 bit index makes t1077 a positive row (+1).
-# Full total:1265+6+4+38+9 =1322,0 REJ on both targets.
-EXPECTED_MANIFEST_ROWS = 1265
+# Dyn integer expression increment makes t896 runtime-error positive (+1).
+# Full total:1266+6+4+38+9 =1323,1 named REJ on both Mac targets.
+EXPECTED_MANIFEST_ROWS = 1266
 # Post-run m_clie.dbf SHA-256 per DBF acceptance test (generated on Linux,
 # stdout checked against the committed expectations). t4 appends records:
 # dbAppend rewrites the header last-update date (bytes 1-3, YY MM DD of the
