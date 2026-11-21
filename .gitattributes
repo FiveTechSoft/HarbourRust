@@ -85,3 +85,8 @@ tests/descend-func/expected/** -text
 
 # Byte-exact Harbour 3.2 output for the hb_ATokens() pins.
 tests/atokens-func/expected/** -text
+
+# Byte-exact reference output for the black-box TRANSFORM pins.
+tests/transform-bb/expected/** -text
+tests/transform-bb/logs/** -text
+tests/transform-bb/evidence/** -text

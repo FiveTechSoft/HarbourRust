@@ -2039,7 +2039,7 @@ const ASM_RESERVED: &[&str] = &[
     // hbc itself emits; a user function with one of these names would
     // collide with a helper symbol.
     "dtos", "stod", "year", "day", "month", "dow", "cdow", "cmonth", "dtoc", "sqrt", "exp", "log", "mod", "padc", "rat", "stuff", "isdigit", "isalpha", "isupper", "islower", "strzero", "ischar", "strzero_fix", "str_f64", "fmt_f64", "date_add", "date_diff", "date_days", "date_from_days", "seconds",
-    "hb_osdriveseparator", "hb_base64encode", "hb_stod", "hb_hextonum", "hb_asciiupper", "hb_strtohex", "hb_dirsepadd", "getenv", "hb_at", "hb_bchar", "hb_bcode", "__defaultnil", "hb_default", "hb_defaultvalue", "hb_sha1", "hb_hmac_sha1", "strtran", "space", "substr", "date", "ctod", "date_pack", "date_render", "date_today", "dispbox", "hrbase_wait", "setcursor", "hb_flink", "hb_flinksym", "hb_flinkread", "hb_memowrit", "hb_dircreate", "ferror", "curdir", "fread", "fcreate", "fopen", "fwrite", "fclose", "freadstr", "hb_libname", "hb_ps", "os", "dirmake", "inkey", "file", "hrfile_setdefault", "hrfile_setpath", "qout", "qqout", "outstd", "outerr", "empty", "procname", "min", "max", "str", "padr", "hb_ntos", "replicate", "aeval", "hb_isnumeric", "hb_isarray", "hb_isstring", "dfree", "upper", "lower", "left", "right", "at", "int", "abs", "padl", "val", "ascan", "aclone", "atail", "asort", "hb_bitand", "hb_bitor", "hb_bitxor", "hb_bitnot", "hb_bittest", "hb_bitset", "hb_bitreset", "eprint_str", "eprint_sep", "eprint_i64", "eprint_i64c", "eprint_dyn", "eprint_dynlit", "print_dynlit", "eprint_f64", "hb_eol", "procline", "asc", "trim", "ltrim", "rtrim", "alltrim", "chr", "trace_top", "print_trace", "panic_exit", "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_range_error", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
+    "hb_osdriveseparator", "hb_base64encode", "hb_stod", "hb_hextonum", "hb_asciiupper", "hb_strtohex", "hb_dirsepadd", "getenv", "hb_at", "hb_bchar", "hb_bcode", "__defaultnil", "hb_default", "hb_defaultvalue", "hb_sha1", "hb_hmac_sha1", "tr_dims", "tr_apply", "strtran", "space", "substr", "date", "ctod", "date_pack", "date_render", "date_today", "dispbox", "hrbase_wait", "setcursor", "hb_flink", "hb_flinksym", "hb_flinkread", "hb_memowrit", "hb_dircreate", "ferror", "curdir", "fread", "fcreate", "fopen", "fwrite", "fclose", "freadstr", "hb_libname", "hb_ps", "os", "dirmake", "inkey", "file", "hrfile_setdefault", "hrfile_setpath", "qout", "qqout", "outstd", "outerr", "empty", "procname", "min", "max", "str", "padr", "hb_ntos", "replicate", "aeval", "hb_isnumeric", "hb_isarray", "hb_isstring", "dfree", "upper", "lower", "left", "right", "at", "int", "abs", "padl", "val", "ascan", "aclone", "atail", "asort", "hb_bitand", "hb_bitor", "hb_bitxor", "hb_bitnot", "hb_bittest", "hb_bitset", "hb_bitreset", "eprint_str", "eprint_sep", "eprint_i64", "eprint_i64c", "eprint_dyn", "eprint_dynlit", "print_dynlit", "eprint_f64", "hb_eol", "procline", "asc", "trim", "ltrim", "rtrim", "alltrim", "chr", "trace_top", "print_trace", "panic_exit", "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_range_error", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
 ];
 
 fn dbf_result(id: &str) -> Option<Ty> {
@@ -7776,6 +7776,23 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 for a in args {if !matches!(type_expr(a,env,sigs,n)?,Ty::Str|Ty::StrOwn){return Err(format!("line {}: filesystem link builtin requires typed strings",n));}apply_moves(a,env,sigs,false);}
                 return Ok(if is_builtin(id,"hb_flinkread"){Ty::StrOwn}else if is_builtin(id,"hb_memowrit"){Ty::Bool}else{Ty::I64});
             }
+            if is_builtin(id,"transform") {
+                // Transform(value, picture): typed numeric, string, date and
+                // logical values with a typed string picture. Dyn values and
+                // pictures keep a named rejection. Clean-room, black-box
+                // observed rules only (tests/transform-bb/README.md).
+                if !CURDIR_LINUX_NATIVE.with(|v|v.get()) || THREADS.with(|v|v.get()) {return Err(format!("line {}: Transform is measured only on ordinary Linux without threads",n));}
+                if args.len()!=2 {return Err(format!("line {}: `Transform` takes a typed value and a typed string picture in this increment",n));}
+                let vt=type_expr(&args[0],env,sigs,n)?;
+                if !matches!(vt,Ty::I64|Ty::F64|Ty::Str|Ty::StrOwn|Ty::Date|Ty::Bool) {return Err(format!("line {}: `Transform` takes a typed number, string, date or logical value in this increment ({})",n,ty_name(vt)));}
+                let pt=type_expr(&args[1],env,sigs,n)?;
+                if !matches!(pt,Ty::Str|Ty::StrOwn) {return Err(format!("line {}: `Transform` picture must be a typed string in this increment ({})",n,ty_name(pt)));}
+                let owned=|e:&Expr,ty:Ty|ty==Ty::StrOwn && !matches!(e,Expr::Var(_));
+                if owned(&args[0],vt) && owned(&args[1],pt) {return Err(format!("line {}: `Transform` with two owned temporaries is outside this increment; bind one to a local",n));}
+                if matches!(vt,Ty::Str|Ty::StrOwn) && !matches!(&args[1],Expr::Var(_)|Expr::Str(_)) {return Err(format!("line {}: `Transform` with a string value needs a variable or literal picture in this increment (a call could free or change the borrowed value, or throw past an owned temporary)",n));}
+                for a in args {apply_moves(a,env,sigs,false);}
+                return Ok(Ty::StrOwn);
+            }
             if is_builtin(id,"hb_sha1") || is_builtin(id,"hb_hmac_sha1") {
                 let nstr=if is_builtin(id,"hb_sha1"){1}else{2};
                 if !CURDIR_LINUX_NATIVE.with(|v|v.get()) || THREADS.with(|v|v.get()) {return Err(format!("line {}: SHA1/HMAC is measured only on ordinary Linux without threads",n));}
@@ -12169,6 +12186,7 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
             if is_builtin(id,"dirmake") {for a in args {apply_moves(a,env,sigs,false);}return;}
             if ["hb_flink","hb_flinksym","hb_flinkread","hb_memowrit","hb_dircreate","ferror"].iter().any(|b|is_builtin(id,b)) {for a in args {apply_moves(a,env,sigs,false);}return;}
             if is_builtin(id,"setcursor") {for a in args {apply_moves(a,env,sigs,false);}return;}
+            if is_builtin(id,"transform") {for a in args {apply_moves(a,env,sigs,false);}return;}
             if is_builtin(id,"hb_sha1") || is_builtin(id,"hb_hmac_sha1") {for a in args {apply_moves(a,env,sigs,false);}return;}
             if id=="hrbase_wait" {return;}
             if is_builtin(id,"inkey") {return;}
@@ -15958,6 +15976,57 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                 for i in 0..args.len(){out.push_str(&format!("    mov {}(%rsp), %rdi\n    test %rdi, %rdi\n    je .Lflinkskip{guard}_{i}\n    call hbc_freestr\n.Lflinkskip{guard}_{i}:\n",i*16));}
                 out.push_str(&format!("    add $64, %rsp\n    jmp hbc_seq_unwind\n.Lflinkdone{guard}:\n"));
             }
+        }
+        Expr::Call(id,args) if is_builtin(id,"transform") => {
+            // Frame: 0/8 value (int | double+meta | text ptr/len), 16/24 picture,
+            // 32 numeric request, 40/48 rendered text, 56 result, 64 sign.
+            // The value is rendered to text first (Str with the picture
+            // width, DToC), hrtransform.s only lays the text out.
+            let vt=expr_ty(&args[0],env,sigs);
+            let vown=vt==Ty::StrOwn && !matches!(&args[0],Expr::Var(_));
+            let pown=expr_ty(&args[1],env,sigs)==Ty::StrOwn && !matches!(&args[1],Expr::Var(_));
+            let k=fresh_lbl();
+            out.push_str("    sub $96, %rsp\n    movq $0, 64(%rsp)\n");
+            match vt {
+                Ty::Str|Ty::StrOwn => {
+                    cg_value(&args[0],env,sigs,strs,out,target);
+                    out.push_str("    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+                }
+                Ty::Date => {
+                    cg_value(&args[0],env,sigs,strs,out,target);
+                    out.push_str("    mov %rax, (%rsp)\n    movq $0, 8(%rsp)\n");
+                }
+                Ty::Bool => {
+                    cg_expr(&args[0],env,sigs,strs,out,target);
+                    out.push_str("    test %eax, %eax\n    mov $70, %ecx\n    mov $84, %edx\n    cmovne %edx, %ecx\n    mov %ecx, (%rsp)\n");
+                }
+                Ty::F64 => {
+                    cg_f64_load(&args[0],env,sigs,strs,out,target);
+                    out.push_str("    movsd %xmm0, (%rsp)\n    mov %rdi, 8(%rsp)\n");
+                }
+                _ => {
+                    cg_expr(&args[0],env,sigs,strs,out,target);
+                    out.push_str("    cvtsi2sd %rax, %xmm0\n    movsd %xmm0, (%rsp)\n    mov $655360, %edi\n    mov %rdi, 8(%rsp)\n");
+                }
+            }
+            cg_value(&args[1],env,sigs,strs,out,target);
+            out.push_str("    mov %rax, 16(%rsp)\n    mov %rdx, 24(%rsp)\n");
+            // the date is rendered only now: nothing owned exists while the picture evaluates
+            if vt==Ty::Date {out.push_str("    mov (%rsp), %rdi\n    call hbc_dtoc\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");}
+            if matches!(vt,Ty::I64|Ty::F64) {
+                out.push_str(&format!("    mov 16(%rsp), %rdi\n    mov 24(%rsp), %rsi\n    call hbc_tr_dims\n    mov %rax, 32(%rsp)\n    movsd (%rsp), %xmm0\n    xorpd %xmm1, %xmm1\n    ucomisd %xmm1, %xmm0\n    jp .Ltrpos{k}\n    jae .Ltrpos{k}\n    movq $1, 64(%rsp)\n    mov 32(%rsp), %rax\n    shr $41, %rax\n    test $1, %eax\n    jz .Ltrpos{k}\n    xorpd %xmm1, %xmm1\n    subsd %xmm0, %xmm1\n    movaps %xmm1, %xmm0\n.Ltrpos{k}:\n    mov 32(%rsp), %rax\n    mov 8(%rsp), %rdi\n    mov %rax, %rdx\n    shr $24, %rdx\n    and $65535, %edx\n    mov %rax, %rsi\n    and $16777215, %esi\n    inc %rsi\n    mov $3, %ecx\n    shr $40, %rax\n    test $1, %eax\n    jz .Ltrfmt{k}\n    xor %ecx, %ecx\n.Ltrfmt{k}:\n    call hbc_str_f64\n    mov %rax, 40(%rsp)\n    mov %rdx, 48(%rsp)\n"));
+            } else if vt==Ty::Bool {
+                out.push_str("    lea (%rsp), %rax\n    mov %rax, 40(%rsp)\n    movq $1, 48(%rsp)\n");
+            } else {
+                out.push_str("    mov (%rsp), %rax\n    mov %rax, 40(%rsp)\n    mov 8(%rsp), %rax\n    mov %rax, 48(%rsp)\n");
+            }
+            let kind=match vt { Ty::I64|Ty::F64=>1, Ty::Date=>2, Ty::Bool=>3, _=>0 };
+            // pass 1 measures, pass 2 fills the exact allocation
+            out.push_str(&format!("    mov 64(%rsp), %rdi\n    shl $8, %rdi\n    or ${kind}, %rdi\n    mov 40(%rsp), %rsi\n    mov 48(%rsp), %rdx\n    mov 16(%rsp), %rcx\n    mov 24(%rsp), %r8\n    xor %r9d, %r9d\n    call hbc_tr_apply\n    mov %rax, 72(%rsp)\n    mov %rax, %rsi\n    call hbc_stralloc\n    mov %rax, 56(%rsp)\n    mov 64(%rsp), %rdi\n    shl $8, %rdi\n    or ${kind}, %rdi\n    mov 40(%rsp), %rsi\n    mov 48(%rsp), %rdx\n    mov 16(%rsp), %rcx\n    mov 24(%rsp), %r8\n    mov 56(%rsp), %r9\n    call hbc_tr_apply\n"));
+            if matches!(vt,Ty::I64|Ty::F64) {out.push_str("    mov 40(%rsp), %rdi\n    call hbc_freestr\n");}
+            else if vt==Ty::Date || vown {out.push_str("    mov (%rsp), %rdi\n    call hbc_freestr\n");}
+            if pown {out.push_str("    mov 16(%rsp), %rdi\n    call hbc_freestr\n");}
+            out.push_str("    mov 56(%rsp), %rax\n    mov 72(%rsp), %rdx\n    add $96, %rsp\n");
         }
         Expr::Call(id,args) if is_builtin(id,"hb_sha1") || is_builtin(id,"hb_hmac_sha1") => {
             if THREADS.with(|v|v.get()){eprintln!("error: SHA1/HMAC does not support threads in this increment");process::exit(1);}
@@ -19984,6 +20053,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
                 return t;
             }
             if ["hb_flink","hb_flinksym","hb_flinkread","hb_memowrit","hb_dircreate","ferror"].iter().any(|b|is_builtin(id,b)) {return if is_builtin(id,"hb_flinkread"){Ty::StrOwn}else if is_builtin(id,"hb_memowrit"){Ty::Bool}else{Ty::I64};}
+            if is_builtin(id,"transform") {return Ty::StrOwn;}
             if is_builtin(id,"hb_sha1") || is_builtin(id,"hb_hmac_sha1") {return Ty::StrOwn;}
             if id=="hrbase_wait" {return Ty::I64;}
             if is_builtin(id,"setcursor") || is_builtin(id,"dirmake") || is_builtin(id,"inkey") {return Ty::I64;}
@@ -32830,6 +32900,7 @@ hbc_free_lists: .skip 10240
         else {out.push_str(helper);}
     }
     if out.contains("call hbc_sha1_digest") || out.contains("call hbc_hmac_sha1_digest") {out.push_str(include_str!("../generated/hrsha1.s"));}
+    if out.contains("call hbc_tr_dims") || out.contains("call hbc_tr_apply") {out.push_str(include_str!("../generated/hrtransform.s"));}
     if out.contains("call hbc_base_wait") || out.contains("call hbc_inkey_block_linux") || out.contains("hbc_cursor_") {out.push_str(include_str!("cursor_linux.s"));}
     if out.contains("call hbc_fileio_") { out.push_str(include_str!("fileio_linux.s")); }
     if out.contains("hbc_flink_") || out.contains("hbc_ferror_") {out.push_str(include_str!("flink_linux.s"));}
