@@ -16465,7 +16465,12 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             if expr_ty(&args[0],env,sigs) == Ty::DArrS {
                 out.push_str(&format!("    mov -{}(%rbp), %rax\n    test %rax, %rax\n    jle .LatS{}\n    mov -{}(%rbp), %r11\n    dec %rax\n    shl $4, %rax\n    add %rax, %r11\n    mov 8(%r11), %rdi\n    mov -8(%rdi), %rsi\n    call hbc_strcpy\n    mov %rax, %rdx\n    mov $4, %eax\n    jmp .LatSe{}\n.LatS{}:\n    mov $1, %eax\n    xor %edx, %edx\n.LatSe{}:\n", var.off-8, l, var.off, l, l, l));
             } else {
-                out.push_str(&format!("    mov -{}(%rbp), %rax\n    test %rax, %rax\n    jle .LatI{}\n    mov -{}(%rbp), %r11\n    dec %rax\n    shl $4, %rax\n    add %rax, %r11\n    mov 8(%r11), %rdx\n    mov (%r11), %rax\n    call hbc_float_clone\n    jmp .LatIe{}\n.LatI{}:\n    mov $1, %eax\n    xor %edx, %edx\n.LatIe{}:\n", var.off-8, l, var.off, l, l, l));
+                // The returned pair leaves the cell: floats AND strings
+                // (tag 2/4) are cloned so the consumer owns its copy while
+                // the cell keeps its own (the flat destructor frees tag 4).
+                out.push_str(&format!("    mov -{}(%rbp), %rax\n    test %rax, %rax\n    jle .LatI{}\n    mov -{}(%rbp), %r11\n    dec %rax\n    shl $4, %rax\n    add %rax, %r11\n    mov 8(%r11), %rdx\n    mov (%r11), %rax\n", var.off-8, l, var.off));
+                cg_dyn_clone_if_str(out);
+                out.push_str(&format!("    jmp .LatIe{}\n.LatI{}:\n    mov $1, %eax\n    xor %edx, %edx\n.LatIe{}:\n", l, l, l));
             }
         }
         Expr::Call(id,args) if is_builtin(id,"asort") => {
@@ -23727,7 +23732,10 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                     // (i64 -> {0, v}, NIL/Dyn -> copied pair).
                     cg_expr(e, env, sigs, strs, out, target);
                     cg_dbf_scalar_container(e,env,sigs,out);
-                    if expr_ty(e,env,sigs)==Ty::Dyn && !dyn_expr_owned(e) {out.push_str("    call hbc_float_clone\n");}
+                    // Boundary clone for a borrowed Dyn value: floats AND
+                    // strings (tag 2/4) - the appended cell must own an
+                    // exclusive copy (the flat destructor frees tag 4).
+                    if expr_ty(e,env,sigs)==Ty::Dyn && !dyn_expr_owned(e) {cg_dyn_clone_if_str(out);}
                     if expr_ty(e, env, sigs) == Ty::I64 {
                         cg_i64_tagged(out);
                     }
@@ -24805,24 +24813,60 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                     if expr_ty(e, env, sigs) == Ty::Bool {
                         out.push_str("    mov %rax, %rdx\n    mov $3, %eax\n");
                     }
-                    if expr_ty(e,env,sigs)==Ty::Dyn && !dyn_expr_owned(e) {out.push_str("    call hbc_float_clone\n");}
-                    out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+                    let dyn_value = expr_ty(e,env,sigs)==Ty::Dyn;
+                    // Boundary clone for a borrowed Dyn value: floats AND
+                    // strings (tag 2/4) - the written cell must own an
+                    // exclusive copy (the flat destructor frees tag 4).
+                    if dyn_value && !dyn_expr_owned(e) {cg_dyn_clone_if_str(out);}
+                    let wk = fresh_lbl();
+                    if dyn_value {
+                        // The owned pair waits across the index evaluation
+                        // in a 64-byte frame under a sequence landing pad:
+                        // the index may call, and that call may raise under
+                        // the user's TRY. The pad releases the pair and
+                        // resumes the unwind; an out-of-range index releases
+                        // it on the error path before the bound error.
+                        out.push_str(&format!("    sub $64, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n    movq $0, 16(%rsp)\n    cmpq $0, hbc_seq_depth(%rip)\n    je .Lwsg{}\n    lea .Lwspad{}(%rip), %rdi\n    call hbc_seq_push\n    movq $1, 16(%rsp)\n.Lwsg{}:\n", wk,wk,wk));
+                    } else {
+                        out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+                    }
                     if expr_ty(ie, env, sigs) == Ty::Dyn {
                         cg_expr(ie, env, sigs, strs, out, target);
                         out.push_str("    call hbc_dyn_to_i64\n");
                     } else {
                         cg_expr(ie, env, sigs, strs, out, target);
                     }
-                    out.push_str("    mov %rax, %rcx\n    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    add $16, %rsp\n");
-                    if v.ty == Ty::DArrRef {
-                        out.push_str(&format!("    mov -{}(%rbp), %r11\n    cmp $1, %rcx\n    jl 83f\n    cmp 8(%r11), %rcx\n    jg 83f\n", v.off));
-                        out.push_str("    mov (%r11), %r11\n");
+                    if dyn_value {
+                        out.push_str(&format!("    mov %rax, 24(%rsp)\n    cmpq $0, 16(%rsp)\n    je .Lwsn{}\n    call hbc_seq_pop\n.Lwsn{}:\n    mov 24(%rsp), %rcx\n    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n", wk,wk));
+                        if v.ty == Ty::DArrRef {
+                            out.push_str(&format!("    mov -{}(%rbp), %r11\n    cmp $1, %rcx\n    jl .Lwsbnd{}\n    cmp 8(%r11), %rcx\n    jg .Lwsbnd{}\n", v.off,wk,wk));
+                            out.push_str("    mov (%r11), %r11\n");
+                        } else {
+                            out.push_str(&format!("    cmp $1, %rcx\n    jl .Lwsbnd{}\n    cmp -{}(%rbp), %rcx\n    jg .Lwsbnd{}\n", wk, v.off - 8, wk));
+                            out.push_str(&format!("    mov -{}(%rbp), %r11\n", v.off));
+                        }
+                        // The overwritten casilla can hold an owned tag-4
+                        // string: free it (and any marked float) BEFORE the
+                        // new pair lands. freestr clobbers rcx, so the cell
+                        // address waits in the frame.
+                        out.push_str(&format!("    dec %rcx\n    shl $4, %rcx\n    add %r11, %rcx\n    mov %rcx, 24(%rsp)\n    mov %rax, 32(%rsp)\n    mov %rdx, 40(%rsp)\n    @HBC_TAG_KIND@cmpq $4, (%rcx)@HBC_TAG_END@\n    jne .Lwof{}\n    mov 8(%rcx), %rdi\n    test %rdi, %rdi\n    jz .Lwof{}\n    call hbc_freestr\n.Lwof{}:\n    mov 24(%rsp), %rcx\n    mov (%rcx), %rax\n    mov 8(%rcx), %rdx\n    call hbc_float_release\n    mov 24(%rsp), %rcx\n    mov 32(%rsp), %rax\n    mov 40(%rsp), %rdx\n    mov %rax, (%rcx)\n    mov %rdx, 8(%rcx)\n    add $64, %rsp\n    jmp .Lwsdone{}\n", wk,wk,wk,wk));
+                        out.push_str(&format!(".Lwsbnd{}:\n    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    call hbc_float_release\n    @HBC_TAG_KIND@cmpq $4, (%rsp)@HBC_TAG_END@\n    jne .Lwsnf{}\n    mov 8(%rsp), %rdi\n    test %rdi, %rdi\n    jz .Lwsnf{}\n    call hbc_freestr\n.Lwsnf{}:\n    add $64, %rsp\n    call hbc_bound_error\n", wk,wk,wk,wk));
+                        out.push_str(&format!(".Lwspad{}:\n    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    call hbc_float_release\n    @HBC_TAG_KIND@cmpq $4, (%rsp)@HBC_TAG_END@\n    jne .Lwspf{}\n    mov 8(%rsp), %rdi\n    test %rdi, %rdi\n    jz .Lwspf{}\n    call hbc_freestr\n.Lwspf{}:\n    add $64, %rsp\n    jmp hbc_seq_unwind\n.Lwsdone{}:\n", wk,wk,wk,wk,wk));
                     } else {
-                        out.push_str(&format!("    cmp $1, %rcx\n    jl 83f\n    cmp -{}(%rbp), %rcx\n    jg 83f\n", v.off - 8));
-                        out.push_str(&format!("    mov -{}(%rbp), %r11\n", v.off));
+                        out.push_str("    mov %rax, %rcx\n    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    add $16, %rsp\n");
+                        if v.ty == Ty::DArrRef {
+                            out.push_str(&format!("    mov -{}(%rbp), %r11\n    cmp $1, %rcx\n    jl 83f\n    cmp 8(%r11), %rcx\n    jg 83f\n", v.off));
+                            out.push_str("    mov (%r11), %r11\n");
+                        } else {
+                            out.push_str(&format!("    cmp $1, %rcx\n    jl 83f\n    cmp -{}(%rbp), %rcx\n    jg 83f\n", v.off - 8));
+                            out.push_str(&format!("    mov -{}(%rbp), %r11\n", v.off));
+                        }
+                        // The overwritten casilla can hold an owned tag-4
+                        // string (a previous Dyn write): free it before the
+                        // scalar lands, then release any marked float.
+                        out.push_str(&format!("    dec %rcx\n    shl $4, %rcx\n    add %r11, %rcx\n    sub $32,%rsp\n    mov %rax,(%rsp)\n    mov %rdx,8(%rsp)\n    mov %rcx,16(%rsp)\n    @HBC_TAG_KIND@cmpq $4, (%rcx)@HBC_TAG_END@\n    jne .Lwof{}\n    mov 8(%rcx), %rdi\n    test %rdi, %rdi\n    jz .Lwof{}\n    call hbc_freestr\n.Lwof{}:\n    mov 16(%rsp), %rcx\n    mov (%rcx),%rax\n    mov 8(%rcx),%rdx\n    call hbc_float_release\n    mov (%rsp),%rax\n    mov 8(%rsp),%rdx\n    mov 16(%rsp),%rcx\n    add $32,%rsp\n    mov %rax, (%rcx)\n    mov %rdx, 8(%rcx)\n    jmp 84f\n", wk,wk,wk));
+                        out.push_str("83:\n    call hbc_bound_error\n84:\n");
                     }
-                    out.push_str("    dec %rcx\n    shl $4, %rcx\n    add %r11, %rcx\n    sub $32,%rsp\n    mov %rax,(%rsp)\n    mov %rdx,8(%rsp)\n    mov %rcx,16(%rsp)\n    mov (%rcx),%rax\n    mov 8(%rcx),%rdx\n    call hbc_float_release\n    mov (%rsp),%rax\n    mov 8(%rsp),%rdx\n    mov 16(%rsp),%rcx\n    add $32,%rsp\n    mov %rax, (%rcx)\n    mov %rdx, 8(%rcx)\n    jmp 84f\n");
-                    out.push_str("83:\n    call hbc_bound_error\n84:\n");
                 } else {
                 let k = match v.ty { Ty::Arr(k) => k, _ => unreachable!("checked") };
                 // Value FIRST, then the index: both Harbour (probe adv2,
@@ -27106,6 +27150,20 @@ hbc_aclone_i:
     mov (%r13,%r10), %rax
     mov 8(%r13,%r10), %rdx
     call hbc_float_clone
+    # An owned (tag-4) or borrowed (tag-2) string payload must not be
+    # shared between source and clone: copy it, like aclone_s does; the
+    # clone's cell owns the fresh copy under tag 4.
+    cmp $2, %al
+    je .Laclone_str
+    cmp $4, %al
+    jne .Laclone_cell_done
+.Laclone_str:
+    mov %rdx, %rdi
+    mov -8(%rdx), %rsi
+    call hbc_strcpy
+    mov %rax, %rdx
+    mov $4, %eax
+.Laclone_cell_done:
     mov %rbx, %r10
     shl $4, %r10
     mov %rax, (%r13,%r10)
