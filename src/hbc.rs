@@ -20285,7 +20285,7 @@ fn cg_ext_call(id: &str, args: &[Expr], env: &[CgLocal], sigs: &[Sig], strs: &mu
 }
 
 // An Obj-typed call/send result is a FRESH owned reference at the call
-// site (every function retains an Obj return for its caller; hrobj_new
+// site (borrowed returns are retained, fresh returns transfer; hrobj_new
 // starts at 1). Vars and everything else are shared and need a retain.
 fn obj_fresh(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> bool {
     matches!(e, Expr::Call(..) | Expr::Send(..)) && matches!(expr_ty(e, env, sigs), Ty::Obj(_))
@@ -22373,9 +22373,10 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 out.push_str(&format!("    jmp .Lret_{}\n", fname));
                 } else {
                 cg_value(e, env, sigs, strs, out, target);
-                if matches!(expr_ty(e, env, sigs), Ty::Obj(_)) {
-                    // The caller receives its OWN reference (fresh); the
-                    // epilogue still releases the callee's slots.
+                if matches!(expr_ty(e, env, sigs), Ty::Obj(_)) && !obj_fresh(e, env, sigs) {
+                    // Borrowed locals/Self need a caller reference before the
+                    // epilogue releases slots. Call/send results already own
+                    // that reference and transfer it without an extra retain.
                     out.push_str("    mov %rax, %r10\n    mov %rax, %rdi\n    call hrobj_retain\n    mov %r10, %rax\n");
                 }
                 // Mixed int/NIL returns unify to Dyn (probe n2): an i64
