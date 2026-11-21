@@ -7765,6 +7765,24 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                     other => return Err(format!("line {}: `Descend` takes a string, date, logical or number in this increment ({})", n, ty_name(other))),
                 }
             }
+            if is_builtin(id,"hb_atokens") {
+                // hb_ATokens(s [, cDelim]) (Harbour 3.2 hbtoken.c, flags 0):
+                // the tokens of s over a 1..n-character string delimiter;
+                // empty tokens are preserved (",a," -> {"", "a", ""}), the
+                // delimiter run is NOT collapsed when a delimiter string is
+                // passed, and without a delimiter the result is the single
+                // whole-string token ({"s"}; the empty string -> {""}).
+                // Quote/EOL flag modes need the third argument and stay a
+                // named rejection.
+                if args.is_empty() || args.len() > 2 { return Err(format!("line {}: `hb_ATokens` takes one or two arguments in this increment",n)); }
+                if !matches!(type_expr(&args[0],env,sigs,n)?, Ty::Str | Ty::StrOwn) {
+                    return Err(format!("line {}: `hb_ATokens` expects a string as its first argument",n));
+                }
+                if args.len()==2 && !matches!(type_expr(&args[1],env,sigs,n)?, Ty::Str | Ty::StrOwn) {
+                    return Err(format!("line {}: `hb_ATokens` expects a string separator in this increment",n));
+                }
+                return Ok(Ty::DArrS);
+            }
             if is_builtin(id,"ctod") {
                 if args.len()!=1 { return Err(format!("line {}: `ctod` takes one argument",n)); }
                 if !matches!(type_expr(&args[0],env,sigs,n)?,Ty::Str|Ty::StrOwn) {
@@ -12164,6 +12182,10 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
                 apply_moves(&args[0], env, sigs, false);
                 return;
             }
+            if is_builtin(id,"hb_atokens") {
+                for a in args { apply_moves(a,env,sigs,false); }
+                return;
+            }
             if is_builtin(id,"ctod") { apply_moves(&args[0],env,sigs,false); return; }
             if is_builtin(id,"dirmake") {for a in args {apply_moves(a,env,sigs,false);}return;}
             if ["hb_flink","hb_flinksym","hb_flinkread","hb_memowrit","hb_dircreate","ferror"].iter().any(|b|is_builtin(id,b)) {for a in args {apply_moves(a,env,sigs,false);}return;}
@@ -15931,6 +15953,30 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                     out.push_str("    call hbc_descend_num\n");
                 }
             }
+        }
+        Expr::Call(id,args) if is_builtin(id,"hb_atokens") => {
+            // hb_ATokens(s [, cDelim]): value and separator borrow; owned
+            // temporaries release after the call. The result is a DArrS
+            // (cells pointer + count, hbc_aclone_s convention). Slots:
+            // 0/8 result, 16/24 first operand, 32/40 separator.
+            let temp0 = expr_ty(&args[0],env,sigs)==Ty::StrOwn && !matches!(&args[0],Expr::Var(_));
+            let temp1 = args.len()==2 && expr_ty(&args[1],env,sigs)==Ty::StrOwn && !matches!(&args[1],Expr::Var(_));
+            cg_value(&args[0],env,sigs,strs,out,target);
+            out.push_str("    sub $48, %rsp\n    mov %rax, 16(%rsp)\n    mov %rdx, 24(%rsp)\n");
+            if args.len()==2 {
+                cg_value(&args[1],env,sigs,strs,out,target);
+                out.push_str("    mov 16(%rsp), %rdi\n    mov 24(%rsp), %rsi\n    mov %rdx, %rcx\n    mov %rax, %rdx\n    call hbc_atokens\n");
+            } else {
+                out.push_str("    mov 16(%rsp), %rdi\n    mov 24(%rsp), %rsi\n    xor %edx, %edx\n    xor %ecx, %ecx\n    call hbc_atokens\n");
+            }
+            out.push_str("    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+            if temp1 {
+                out.push_str("    mov 32(%rsp), %rdi\n    call hbc_freestr\n");
+            }
+            if temp0 {
+                out.push_str("    mov 16(%rsp), %rdi\n    call hbc_freestr\n");
+            }
+            out.push_str("    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    add $48, %rsp\n");
         }
         Expr::Call(id,args) if is_builtin(id,"ctod") => {
             let temp=expr_ty(&args[0],env,sigs)==Ty::StrOwn && !matches!(&args[0],Expr::Var(_));
@@ -19954,6 +20000,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
                     _ => Ty::F64,
                 };
             }
+            if is_builtin(id, "hb_atokens") { return Ty::DArrS; }
             if is_builtin(id, "valtype") || is_builtin(id, "hb_eol") || is_builtin(id, "procname") { return Ty::Str; } // hk88-hk92
             if ["ltrim", "rtrim", "alltrim", "trim"].iter().any(|b| is_builtin(id,b)) { return Ty::StrOwn; }
             if is_builtin(id,"substr") { return Ty::StrOwn; }
@@ -32998,6 +33045,9 @@ fn finalize_trace(mut out: String, target: Target) -> String {
     if out.contains("call hbc_descend_str") || out.contains("call hbc_descend_date") || out.contains("call hbc_descend_num") {
         out.push_str(DESCEND_HELPER);
     }
+    if out.contains("call hbc_atokens") {
+        out.push_str(ATOKENS_HELPER);
+    }
     // Add private stderr variants only when used. No mutable routing state:
     // nested OutStd/QOut and controlled diagnostics retain their destination.
     if out.contains("call hbc_eprint_") {
@@ -39057,6 +39107,201 @@ hbc_seconds:
     addsd %xmm1, %xmm0
     mov $655362, %edi
     leave
+    ret
+"#;
+
+const ATOKENS_HELPER: &str = r#"
+    .text
+# hbc_atokens: borrowed rdi/rsi = string ptr/len, rdx/rcx = delimiter
+# ptr/len. -> rax = DArrS cells pointer, rdx = count (hbc_aclone_s
+# convention). Harbour 3.2 hbtoken.c with flags 0: with an EXPLICIT
+# delimiter string a token boundary is a full 1..n-byte delimiter match,
+# empty tokens are preserved and runs are NOT collapsed (",a," ->
+# {"", "a", ""}); WITHOUT a delimiter the delimiter is the single space
+# (hbtoken.c 248-252), a delimiter RUN counts once and the edges are
+# trimmed ("uno  dos" -> {"uno", "dos"}; "" -> {""}). Each token becomes
+# an owned string cell (tag 2, data pointer).
+# Slots: -8 token index, -16 block base, -24 start, -32 count,
+# -40 position, -48 collapse flag, -52 space byte.
+hbc_atokens:
+    push %rbp
+    mov %rsp, %rbp
+    push %rbx
+    push %r12
+    push %r13
+    push %r14
+    push %r15
+    sub $56, %rsp
+    mov %rdi, %rbx
+    mov %rsi, %r12
+    mov %rdx, %r13
+    mov %rcx, %r14
+    movq $0, -48(%rbp)
+    test %r14, %r14
+    jnz .Ltok_have
+    movb $32, -52(%rbp)
+    lea -52(%rbp), %r13
+    mov $1, %r14
+    movq $1, -48(%rbp)
+.Ltok_ltrim:
+    test %r12, %r12
+    jz .Ltok_have
+    movzbl (%rbx), %eax
+    cmp $32, %eax
+    jne .Ltok_rtrim
+    inc %rbx
+    dec %r12
+    jmp .Ltok_ltrim
+.Ltok_rtrim:
+    test %r12, %r12
+    jz .Ltok_have
+    movzbl -1(%rbx,%r12), %eax
+    cmp $32, %eax
+    jne .Ltok_have
+    dec %r12
+    jmp .Ltok_rtrim
+.Ltok_have:
+    # ---- count ----
+    mov $1, %r15
+    xor %r9, %r9
+.Ltok_cloop:
+    cmp %r12, %r9
+    jae .Ltok_cdone
+    lea (%rbx,%r9), %r10
+    movzbl (%r10), %eax
+    movzbl (%r13), %ecx
+    cmp %ecx, %eax
+    jne .Ltok_cnext
+    cmp $1, %r14
+    je .Ltok_chit
+    xor %r8, %r8
+.Ltok_cmem:
+    cmp %r14, %r8
+    jae .Ltok_chit
+    movzbl (%r10,%r8), %eax
+    movzbl (%r13,%r8), %ecx
+    cmp %ecx, %eax
+    jne .Ltok_cnext
+    inc %r8
+    jmp .Ltok_cmem
+.Ltok_chit:
+    inc %r15
+    cmpq $0, -48(%rbp)
+    jne .Ltok_cadv
+    lea (%r9,%r14), %r9
+    jmp .Ltok_cloop
+.Ltok_cadv:
+    lea 1(%r9), %rax
+    cmp %r12, %rax
+    jae .Ltok_cadv2
+    movzbl (%r13), %ecx
+    movzbl (%rbx,%rax), %eax
+    cmp %ecx, %eax
+    jne .Ltok_cadv2
+    inc %r9
+    jmp .Ltok_cadv
+.Ltok_cadv2:
+    lea (%r9,%r14), %r9
+    jmp .Ltok_cloop
+.Ltok_cnext:
+    inc %r9
+    jmp .Ltok_cloop
+.Ltok_cdone:
+    mov %r15, -32(%rbp)
+    # ---- cells block ----
+    mov %r15, %rdi
+    shl $4, %rdi
+    add $8, %rdi
+    jc hbc_oom
+    call hbc_aclone_alloc
+    mov %r15, (%rax)
+    mov %rax, -16(%rbp)
+    lea 8(%rax), %r15
+    movq $0, -8(%rbp)
+    movq $0, -24(%rbp)
+    movq $0, -40(%rbp)
+    test %r14, %r14
+    jz .Ltok_ftail
+.Ltok_floop:
+    mov -40(%rbp), %r9
+    cmp %r12, %r9
+    jae .Ltok_ftail
+    lea (%rbx,%r9), %r10
+    movzbl (%r10), %eax
+    movzbl (%r13), %ecx
+    cmp %ecx, %eax
+    jne .Ltok_fnext
+    cmp $1, %r14
+    je .Ltok_fhit
+    xor %r8, %r8
+.Ltok_fmem:
+    cmp %r14, %r8
+    jae .Ltok_fhit
+    movzbl (%r10,%r8), %eax
+    movzbl (%r13,%r8), %ecx
+    cmp %ecx, %eax
+    jne .Ltok_fnext
+    inc %r8
+    jmp .Ltok_fmem
+.Ltok_fhit:
+    mov -24(%rbp), %rax
+    mov %r9, %rcx
+    sub %rax, %rcx
+    mov %rax, %r11
+    lea (%rbx,%r11), %rdi
+    mov %rcx, %rsi
+    call hbc_strcpy
+    mov -8(%rbp), %rcx
+    shl $4, %rcx
+    movq $2, (%r15,%rcx)
+    mov %rax, 8(%r15,%rcx)
+    incq -8(%rbp)
+    mov -40(%rbp), %r9
+    cmpq $0, -48(%rbp)
+    jne .Ltok_fadv
+    lea (%r9,%r14), %r9
+    jmp .Ltok_fstore
+.Ltok_fadv:
+    lea 1(%r9), %rax
+    cmp %r12, %rax
+    jae .Ltok_fadv2
+    movzbl (%r13), %ecx
+    movzbl (%rbx,%rax), %eax
+    cmp %ecx, %eax
+    jne .Ltok_fadv2
+    inc %r9
+    jmp .Ltok_fadv
+.Ltok_fadv2:
+    lea (%r9,%r14), %r9
+.Ltok_fstore:
+    mov %r9, -24(%rbp)
+    mov %r9, -40(%rbp)
+    jmp .Ltok_floop
+.Ltok_fnext:
+    mov -40(%rbp), %r9
+    inc %r9
+    mov %r9, -40(%rbp)
+    jmp .Ltok_floop
+.Ltok_ftail:
+    mov -24(%rbp), %rax
+    mov %r12, %rcx
+    sub %rax, %rcx
+    lea (%rbx,%rax), %rdi
+    mov %rcx, %rsi
+    call hbc_strcpy
+    mov -8(%rbp), %rcx
+    shl $4, %rcx
+    movq $2, (%r15,%rcx)
+    mov %rax, 8(%r15,%rcx)
+    mov %r15, %rax
+    mov -32(%rbp), %rdx
+    lea -40(%rbp), %rsp
+    pop %r15
+    pop %r14
+    pop %r13
+    pop %r12
+    pop %rbx
+    pop %rbp
     ret
 "#;
 

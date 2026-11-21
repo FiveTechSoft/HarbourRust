@@ -85,3 +85,6 @@ tests/time-func/expected/** -text
 
 # Byte-exact Harbour 3.2 output for the Descend() pins.
 tests/descend-func/expected/** -text
+
+# Byte-exact Harbour 3.2 output for the hb_ATokens() pins.
+tests/atokens-func/expected/** -text
