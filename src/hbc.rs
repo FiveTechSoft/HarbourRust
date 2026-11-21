@@ -4693,7 +4693,10 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
     let n = f.params.len();
     let mut pin: Vec<Option<Ty>> = vec![None; n];
     let mut lit: Vec<(String, Ty)> = Vec::new(); // literal-initialized locals
-    let mut printed: Vec<bool> = vec![false; n]; // params printed as a whole-variable item
+    #[derive(Clone,Default)]
+    struct ParamUse { printed:bool, len_line:Option<usize> }
+    // Keep whole-variable print and weak Len evidence together during the walk.
+    let mut printed: Vec<ParamUse> = vec![ParamUse::default(); n];
     // Root-reference parameters keep tagged storage regardless of how their
     // current value is used. Their full body still passes ordinary checking.
     for(i,p)in f.params.iter().enumerate(){if root_param(&f.name,p){pin[i]=Some(Ty::Dyn);}}
@@ -4962,7 +4965,7 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
             _ => Ok(()),
         }
     }
-    fn walk(f: &Func, e: &Expr, sigs: &[Sig], lit: &[(String, Ty)], pin: &mut Vec<Option<Ty>>, printed: &mut Vec<bool>, n: usize) -> Result<(), String> {
+    fn walk(f: &Func, e: &Expr, sigs: &[Sig], lit: &[(String, Ty)], pin: &mut Vec<Option<Ty>>, printed: &mut Vec<ParamUse>, n: usize) -> Result<(), String> {
         match e {
             Expr::Seq(es) => { for e in es { walk(f, e, sigs, lit, pin, printed, n)?; } Ok(()) }
             // Inline assignment (parexpr): a write alone pins nothing;
@@ -5038,7 +5041,7 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
                 if is_output_call(id) {
                     for a in args {
                         if let Expr::Var(v) = a {
-                            if let Some(i) = is_param(f, v) { printed[i] = true; }
+                            if let Some(i) = is_param(f, v) { printed[i].printed = true; }
                         }
                         walk(f, a, sigs, lit, pin, printed, n)?;
                     }
@@ -5068,6 +5071,13 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
                             // parameter is a four-level array (hk111).
                             pin_vars(f, &Expr::Var(v.clone()), Ty::DArr4, pin, n)?;
                         }
+                        // Len is weak collection evidence. Defer a direct
+                        // parameter until string evidence from the full body
+                        // is known, independently of statement order.
+                        Expr::Var(v) if is_param(f,v).is_some() => {
+                            let i=is_param(f,v).unwrap();
+                            if printed[i].len_line.is_none() {printed[i].len_line=Some(n);}
+                        },
                         _ => pin_vars(f, &args[0], Ty::DArr, pin, n)?,
                     }
                     return walk(f, &args[0], sigs, lit, pin, printed, n);
@@ -5342,7 +5352,7 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
             _ => Ok(()),
         }
     }
-    fn walk_stmts(f: &Func, stmts: &[Stmt], sigs: &[Sig], lit: &mut Vec<(String, Ty)>, pin: &mut Vec<Option<Ty>>, printed: &mut Vec<bool>, nil_ret: bool) -> Result<(), String> {
+    fn walk_stmts(f: &Func, stmts: &[Stmt], sigs: &[Sig], lit: &mut Vec<(String, Ty)>, pin: &mut Vec<Option<Ty>>, printed: &mut Vec<ParamUse>, nil_ret: bool) -> Result<(), String> {
         for st in stmts {
             match st {
                 Stmt::MemvarDecl(..)=>{},
@@ -5384,7 +5394,7 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
                         // string, an integer, .T./.F. or NIL through a
                         // print-only parameter.
                         if let Expr::Var(v) = e {
-                            if let Some(idx) = is_param(f, v) { printed[idx] = true; }
+                            if let Some(idx) = is_param(f, v) { printed[idx].printed = true; }
                         }
                         walk(f, e, sigs, lit, pin, printed, *n)?;
                     }
@@ -5678,6 +5688,11 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
     }
     let nil_ret = any_nil_ret(&f.stmts);
     walk_stmts(f, &f.stmts, sigs, &mut lit, &mut pin, &mut printed, nil_ret)?;
+    for i in 0..n {
+        if let Some(line)=printed[i].len_line {
+            if !matches!(pin[i],Some(Ty::Str|Ty::StrOwn)) {pin_vars(f,&Expr::Var(f.params[i].clone()),Ty::DArr,&mut pin,line)?;}
+        }
+    }
     // Report the first uninferable parameter, but return the partial pins:
     // one uninferable parameter must not mask the evidence of the others
     // (an i64 placeholder for a string parameter turned a later
@@ -5730,7 +5745,7 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
         // order-independently (hk260/hk261). Print-only still wins over
         // a float argument: Dyn has no float payload (covered limit at
         // the call site).
-        if pin[i].is_none() && printed[i] {
+        if pin[i].is_none() && printed[i].printed {
             pin[i] = Some(Ty::Dyn);
         }
         // A float argument as the SOLE evidence pins F64.
