@@ -1,6 +1,8 @@
 """Byte-compare the candidate with the pinned pre-optimization assembler.
 Run from any directory: python3 check.py --repo CHECKOUT --output NEW_DIR.
 No compiler source, executable or working-tree state is mutated.
+Branch padding (JCC erratum) is switched off for the comparison: the
+baseline predates it, and HASM_BRANCH_ALIGN=0 restores the old bytes.
 """
 from pathlib import Path
 import argparse,json,os,random,subprocess
@@ -33,4 +35,4 @@ for name,target in [('numeric','1f'),('expression','$done+0'),('constant','ALIAS
  add(name,s)
 add('layout-dependent','.text\n.globl _start\n_start:\nmov $target, %rax\njmp target\n.rept 200\nnop\n.endr\ntarget:\nret\n')
 for i,s in enumerate(['.text\n_start:\njmp missing\n','.text\n_start:\nnonsense %rax\n','.text\n_start:\njmp 7f\n']):add('reject-'+str(i),s)
-(r/'list.txt').write_text('\n'.join(names)+'\n');run(r/'compare',r/'list.txt');(r/'summary.json').write_text(json.dumps({'fixtures':len(names),'baseline':'710a3cb','targets':['ELF','PE'],'normalization':'only PE timestamp and checksum'},indent=2)+'\n')
+(r/'list.txt').write_text('\n'.join(names)+'\n');run(r/'compare',r/'list.txt',env={**os.environ,'HASM_BRANCH_ALIGN':'0'});(r/'summary.json').write_text(json.dumps({'fixtures':len(names),'baseline':'710a3cb','targets':['ELF','PE'],'normalization':'only PE timestamp and checksum'},indent=2)+'\n')

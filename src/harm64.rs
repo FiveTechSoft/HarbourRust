@@ -2083,7 +2083,7 @@ pub fn assemble_macho_arm64_ext(src: &str, ext: Option<&str>) -> Result<Vec<u8>,
         p: Parser { consts: HashMap::new(), labels: HashMap::new(), numlabels: HashMap::new(), seq: Cell::new(0) },
         text: Vec::new(), rodata: Vec::new(), data: Vec::new(), bss: Vec::new(), note: Vec::new(),
         has_gnu_stack: false, cur: Sec::Text, secstack: Vec::new(),
-        text_align: 1, rod_align: 1, dat_align: 1, bss_align: 1,
+        text_align: 1, rod_align: 1, dat_align: 1, bss_align: 1, branch_align: false,
     };
     for (ln, raw) in expanded.lines().enumerate() {
         a.parse_line(raw).map_err(|e| format!("line {}: {}: {}", ln + 1, raw.trim(), e))?;

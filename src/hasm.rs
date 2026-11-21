@@ -1,6 +1,11 @@
 // hasm.rs — mini-ensamblador del subconjunto x86-64 que emite hbc + escritor ELF64.
 // Objetivo: salida byte-idéntica a `as -o fixed.o x.s && ld -s -o out fixed.o`
 // (binutils 2.45, layout medido empíricamente). Sin dependencias externas.
+// Excepción deliberada: por defecto los saltos directos y los pares fusionados
+// cmp/test+jcc se acolchan con NOPs para no cruzar ni acabar en una frontera
+// de 32 bytes (JCC erratum de Skylake; misma regla que GNU as
+// -mbranches-within-32B-boundaries, pero solo con NOPs). HASM_BRANCH_ALIGN=0
+// lo desactiva y devuelve la salida byte-idéntica a as sin esa opción.
 
 use std::cell::Cell;
 use std::collections::HashMap;
@@ -294,6 +299,7 @@ struct Asm {
     rod_align: u32,
     dat_align: u32,
     bss_align: u32,
+    branch_align: bool,
 }
 
 impl Asm {
@@ -1502,6 +1508,41 @@ fn is_jump(mnem: &str) -> bool {
 fn jump_short_len(mnem: &str) -> u64 { let _ = mnem; 2 }
 fn jump_near_len(mnem: &str) -> u64 { if mnem == "jmp" { 5 } else { 6 } }
 
+// Saltos que se acolchan: jmp/jcc directos (los tipos jcc+jmp por defecto de
+// GNU as -malign-branch). Indirectos, call y ret no.
+fn padded_jump(it: &TItem) -> Option<&str> {
+    match it {
+        TItem::Ins { mnem, ops, .. } if is_jump(mnem) && matches!(ops.as_slice(), [Op::Imm(_)]) => Some(mnem),
+        _ => None,
+    }
+}
+
+// Par fusionable con el jcc siguiente (tipo "fused" de GNU as, reglas de
+// macro-fusión de Sandy Bridge en adelante). Memoria con inmediato no fusiona.
+fn fuses_with(first: &TItem, jcc: &str) -> bool {
+    let (mnem, ops) = match first { TItem::Ins { mnem, ops, lock: false } => (mnem, ops), _ => return false };
+    if jcc == "jmp" { return false; }
+    let has_mem = ops.iter().any(|o| matches!(o, Op::Mem { .. }));
+    let has_imm = ops.iter().any(|o| matches!(o, Op::Imm(_)));
+    if has_mem && has_imm { return false; }
+    let cc = &jcc[1..];
+    let sign_or_parity = matches!(cc, "o" | "no" | "s" | "ns" | "p" | "np" | "pe" | "po");
+    let carry = matches!(cc, "b" | "c" | "nae" | "ae" | "nb" | "nc" | "be" | "na" | "a" | "nbe");
+    match suffix_width(mnem).0 {
+        "test" | "and" => true,
+        "cmp" | "add" | "sub" => !sign_or_parity,
+        "inc" | "dec" => !sign_or_parity && !carry,
+        _ => false,
+    }
+}
+
+// NOPs que hacen falta para que `len` bytes que empiezan en `off` no crucen ni
+// acaben en una frontera de 32 bytes.
+fn branch_pad(off: u64, len: u64) -> u64 {
+    let end = off + len;
+    if off / 32 != (end - 1) / 32 || end % 32 == 0 { 32 - off % 32 } else { 0 }
+}
+
 // ---------------------------------------------------------------- layout + ELF
 
 struct Layout {
@@ -1631,16 +1672,39 @@ impl Asm {
         let enc = Enc { resolve: &resolve };
         let mut bytes = Vec::with_capacity(l.text_size as usize + 16);
         let mut offs = Vec::with_capacity(self.text.len());
+        let jlen = |j: usize, m: &str| if near[j] { jump_near_len(m) } else { jump_short_len(m) };
         for (i, it) in self.text.iter().enumerate() {
-            offs.push(bytes.len() as u64);
             match it {
                 TItem::P2 { bits, maxskip } => {
+                    offs.push(bytes.len() as u64);
                     let al = 1u64 << bits;
                     let pad = (((bytes.len() as u64) + al - 1) & !(al - 1)) - bytes.len() as u64;
                     let do_fill = match maxskip { Some(ms) => pad <= *ms as u64, None => true };
                     if do_fill { bytes.extend_from_slice(&nop_fill(pad as usize)); }
                 }
                 TItem::Ins { mnem, ops, lock } => {
+                    // Acolchado de saltos (JCC erratum): antes de un salto
+                    // directo, o del primer miembro de un par fusionado. Nunca
+                    // tras un TItem::Raw (prefijos o datos pegados a la
+                    // instrucción). El offset del item se anota tras el pad,
+                    // así relax y encode_jump ven la misma dirección.
+                    if self.branch_align && !matches!(i.checked_sub(1).map(|k| &self.text[k]), Some(TItem::Raw(_))) {
+                        let unit = if let Some(m) = padded_jump(it) {
+                            Some(jlen(i, m))
+                        } else if let Some(m) = self.text.get(i + 1).and_then(padded_jump).filter(|m| fuses_with(it, m)) {
+                            let b = match &inv[i] {
+                                Some(b) => b.clone(),
+                                None => encode_ins(&enc, mnem, ops, *lock, l.text_va + bytes.len() as u64, near[i])
+                                    .map_err(|e| format!("item {} ({} {:?}): {}", i, mnem, ops, e))?,
+                            };
+                            Some(b.len() as u64 + jlen(i + 1, m))
+                        } else { None };
+                        if let Some(n) = unit {
+                            let pad = branch_pad(bytes.len() as u64, n);
+                            bytes.extend_from_slice(&nop_fill(pad as usize));
+                        }
+                    }
+                    offs.push(bytes.len() as u64);
                     if let Some(b) = &inv[i] {
                         bytes.extend_from_slice(b);
                     } else {
@@ -1651,6 +1715,7 @@ impl Asm {
                     }
                 }
                 TItem::Raw(d) => {
+                    offs.push(bytes.len() as u64);
                     match d {
                         DItem::Bytes(b) => bytes.extend_from_slice(b),
                         DItem::Align(n) => {
@@ -2337,6 +2402,7 @@ fn assemble_target(src: &str, pe: bool) -> Result<Vec<u8>, String> {
         text: Vec::new(), rodata: Vec::new(), data: Vec::new(), bss: Vec::new(), note: Vec::new(),
         has_gnu_stack: false, cur: Sec::Text, secstack: Vec::new(),
         text_align: 1, rod_align: 1, dat_align: 1, bss_align: 1,
+        branch_align: std::env::var("HASM_BRANCH_ALIGN").map_or(true, |v| v != "0"),
     };
     for (ln, raw) in expanded.lines().enumerate() {
         a.parse_line(raw).map_err(|e| format!("línea {}: {}: {}", ln + 1, raw.trim(), e))?;
@@ -2381,7 +2447,7 @@ mod gcc_sse_forms_tests {
 mod safe_shorten_tests {
     use super::*;
     fn asm(src:&str)->Asm {
-        let mut a=Asm{p:Parser{consts:HashMap::new(),labels:HashMap::new(),numlabels:HashMap::new(),seq:Cell::new(0)},text:vec![],rodata:vec![],data:vec![],bss:vec![],note:vec![],has_gnu_stack:false,cur:Sec::Text,secstack:vec![],text_align:1,rod_align:1,dat_align:1,bss_align:1};
+        let mut a=Asm{p:Parser{consts:HashMap::new(),labels:HashMap::new(),numlabels:HashMap::new(),seq:Cell::new(0)},text:vec![],rodata:vec![],data:vec![],bss:vec![],note:vec![],has_gnu_stack:false,cur:Sec::Text,secstack:vec![],text_align:1,rod_align:1,dat_align:1,bss_align:1,branch_align:false};
         for l in expand_rept(src).unwrap().lines(){a.parse_line(l).unwrap();}a
     }
     #[test]fn signed_dividend_extension_aliases() {
@@ -2417,5 +2483,56 @@ mod pe_dbf_encoder_tests {
             assert!(assemble_pe(&format!(".text\n.globl _start\n_start:\ncall {}\ncall ExitProcess\n",name)).is_ok());
         }
         assert!(assemble_pe(".text\n.globl _start\n_start:\ncall NotAnApprovedFileApi\n").is_err());
+    }
+}
+
+#[cfg(test)]
+mod branch_align_tests {
+    use super::*;
+    // Text bytes of an ELF built with branch padding on or off.
+    fn text(src: &str, on: bool) -> Vec<u8> {
+        let mut a = Asm { p: Parser { consts: HashMap::new(), labels: HashMap::new(), numlabels: HashMap::new(), seq: Cell::new(0) },
+            text: vec![], rodata: vec![], data: vec![], bss: vec![], note: vec![], has_gnu_stack: false, cur: Sec::Text, secstack: vec![],
+            text_align: 1, rod_align: 1, dat_align: 1, bss_align: 1, branch_align: on };
+        for l in expand_rept(&format!(".text\n.globl _start\n_start:\n{}", src)).unwrap().lines() { a.parse_line(l).unwrap(); }
+        let elf = a.finish(false).unwrap();
+        let mut end = elf.len();
+        while end > 0x1000 && elf[end - 1] == 0 { end -= 1; }
+        elf[0x1000..end].to_vec()
+    }
+    #[test] fn jump_ending_on_boundary_moves_past_it() {
+        let t = text(".rept 30\nnop\n.endr\njmp _start\nret", true);
+        assert_eq!(&t[30..32], &nop_fill(2)[..]);
+        assert_eq!(t[32], 0xEB);
+        assert_eq!(t[33] as i8, -34);
+    }
+    #[test] fn jump_inside_a_chunk_is_untouched() {
+        let s = ".rept 20\nnop\n.endr\njmp _start\nret";
+        assert_eq!(text(s, true), text(s, false));
+    }
+    #[test] fn padding_that_breaks_rel8_makes_the_jump_near() {
+        // Unpadded, the jmp sits at 126 with rel8 -128. Padding moves it to
+        // 128, out of rel8 reach: it must become E9 with the right rel32.
+        let off = text(".rept 126\nnop\n.endr\njmp _start\nret", false);
+        assert_eq!((off[126], off[127] as i8), (0xEB, -128));
+        let t = text(".rept 126\nnop\n.endr\njmp _start\nret", true);
+        assert_eq!(t[128], 0xE9);
+        assert_eq!(i32::from_le_bytes(t[129..133].try_into().unwrap()), -133);
+    }
+    #[test] fn fused_pair_is_kept_together() {
+        let t = text(".rept 28\nnop\n.endr\ncmp %rax, %rbx\nje _start\nret", true);
+        assert_eq!(&t[28..32], &nop_fill(4)[..]);
+        assert_eq!(&t[32..35], &[0x48, 0x39, 0xC3]);
+        assert_eq!(t[35], 0x74);
+    }
+    #[test] fn add_then_jo_pads_only_the_jump() {
+        let t = text(".rept 28\nnop\n.endr\nadd %rax, %rbx\njo _start\nret", true);
+        assert_eq!(&t[28..31], &[0x48, 0x01, 0xC3]);
+        assert_eq!(&t[31], &0x90);
+        assert_eq!(t[32], 0x70);
+    }
+    #[test] fn nothing_is_inserted_after_raw_bytes() {
+        let s = ".rept 30\nnop\n.endr\n.byte 0x2e\njmp _start\nret";
+        assert_eq!(text(s, true), text(s, false));
     }
 }
