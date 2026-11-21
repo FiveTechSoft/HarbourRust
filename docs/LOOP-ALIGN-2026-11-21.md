@@ -1,5 +1,10 @@
 # Promoted loop heads aligned to 32 bytes (21 November 2026)
 
+**Status: draft, not a fix.** Head alignment helps one benchmark and is
+neutral on three, but on another loop body it made things worse. It is not
+a mitigation for the layout effect described below; see "What it does not
+do".
+
 ## Change
 
 `src/loopreg.rs` now puts `.p2align 5` before the head label of every loop
@@ -14,19 +19,11 @@ inside a loop body keeps the enclosing loop from qualifying, and the
 inner loop's alignment must not change whether the outer loop is promoted.
 `--no-loopreg` turns this off as well.
 
-## Why
+## Measured on main
 
-On this machine (Xeon W-2140B, Skylake, affected by the JCC erratum) a
-tight loop's speed depends on where its code lands. The same promoted
-loop ran 1.22x slower in the default layout than with its head aligned.
-Aligning the head gave the same result as GNU as with
-`-mbranches-within-32B-boundaries`: 3.71 G cycles each for the first loop
-below, 5.60 G each for `b1_int` with the overflow check from #15.
-
-## Cost and gain
-
-Process cycles and CPU time on native Windows 11, minimum of 7 runs. The
-two methods agree.
+Process cycles and CPU time on native Windows 11 (Xeon W-2140B, Skylake),
+minimum of 7 runs. Both are measured on the same binary, so they rule out
+timing noise but not layout effects.
 
 | loop | before | after | change |
 |---|---|---|---|
@@ -35,9 +32,22 @@ two methods agree.
 | `bench/b1b_int_bounded.prg` at 800 M | 5.44 G | 5.43 G | 0 % |
 | `bench/b3_call.prg` (not promoted) | 3.15 G | 3.15 G | 0 % |
 
-With the overflow check of PR #15 on top, the first loop goes from
-5.76 G to 4.73 G, `b1_int` from 7.24 G to 5.60 G and `b1b_int_bounded`
-from 8.56 G to 7.90 G.
+## What it does not do
+
+This CPU is affected by the JCC erratum: a jump that crosses or ends on a
+32-byte boundary runs slowly. Aligning the head fixes where the loop
+starts, but each jump inside the body still lands wherever the body's
+length puts it. With a different body (the per-statement overflow stubs
+stacked on #15), the same alignment made `b1b_int_bounded` slower,
+5.83 G → 8.01 G. Assembling instead with GNU as
+`-mbranches-within-32B-boundaries`, which pads each jump, gave the fast
+figure in every variant tried: 3.74 G, 4.31 G and 5.49 G for the three
+promoted loops on main.
+
+The robust form is jump padding in the internal assembler, the same thing
+GNU as does. It would change the bytes of every x86 binary and grow the
+code, and it pays off only on CPUs affected by the erratum. That is a
+decision for the maintainers; this branch does not do it.
 
 ## Verification (native Windows 11)
 
@@ -51,6 +61,6 @@ from 8.56 G to 7.90 G.
 - `rustc --test`: loopreg tests updated for the directive, plus one test
   showing that nested loops are both promoted and both aligned. The 2
   `llvm_darwin` failures are the Windows CRLF ones that #14 fixes.
-- Not run locally: Linux execution, `--external-as` (no mingw `as` on this
-  machine's PATH) and the macOS targets. The CI gates and a macOS dispatch
-  cover them.
+- CI gates pass on Linux and Windows. A macOS dispatch on this branch
+  reports `PASS 1322, REJ 1` on both Mac targets; the REJ is the named
+  rejection already on main.

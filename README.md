@@ -65,11 +65,12 @@ known failures and the history of published increments.
 ## Active development
 
 - **Promoted loop heads aligned (21 November).** `src/loopreg.rs` puts
-  `.p2align 5` before each loop head it promotes, so a tight loop's speed
-  no longer depends on where its code lands (Skylake JCC erratum). One
-  500-million-iteration loop takes 18 % fewer cycles; the other benchmarks
-  are unchanged (two independent measures agree). Only the 17 promoted
-  loops change, with identical output. Details:
+  `.p2align 5` before each loop head it promotes. On main, one
+  500-million-iteration loop takes 18 % fewer cycles and three other
+  benchmarks are unchanged; on a different loop body the same alignment
+  made a loop slower, so it is not a fix for the Skylake JCC layout effect
+  (jump padding would be). Only the 17 promoted loops change, with
+  identical output. Details:
   [docs/LOOP-ALIGN-2026-11-21.md](docs/LOOP-ALIGN-2026-11-21.md).
 - **Loop register promotion (20 November).** `src/loopreg.rs` keeps the
   frame slots of call-free FOR/WHILE loops in registers, loading them before
