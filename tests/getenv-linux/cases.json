@@ -1,0 +1,21 @@
+{
+  "present": "function Main()\nlocal v:=GetEnv(\"HR_GETENV_A\")\n? ValType(v),Len(v),v\nreturn nil\n",
+  "absent": "function Main()\nlocal v:=GetEnv(\"HR_GETENV_MISSING\")\n? ValType(v),Len(v),v\nreturn nil\n",
+  "empty-value": "function Main()\nlocal v:=GetEnv(\"HR_GETENV_EMPTY\")\n? ValType(v),Len(v),v\nreturn nil\n",
+  "empty-key": "function Main()\nlocal v:=GetEnv(\"\")\n? ValType(v),Len(v),v\nreturn nil\n",
+  "equals": "function Main()\nlocal v:=GetEnv(\"HR_GETENV_A=x\")\n? ValType(v),Len(v),v\nreturn nil\n",
+  "case": "function Main()\nlocal v:=GetEnv(\"hr_getenv_a\")\n? ValType(v),Len(v),v\nreturn nil\n",
+  "nul-suffix": "function Main()\nlocal v:=GetEnv(\"HR_GETENV_A\"+Chr(0)+\"junk\")\n? ValType(v),Len(v),v\nreturn nil\n",
+  "utf8": "function Main()\nlocal v:=GetEnv(\"HR_GETENV_UTF8\")\n? ValType(v),Len(v),v\nreturn nil\n",
+  "long": "function Main()\nlocal v:=GetEnv(\"HR_GETENV_LONG\")\n? ValType(v),Len(v),v\nreturn nil\n",
+  "prefix": "function Main()\nlocal v:=GetEnv(\"HR_GETENV_\")\n? ValType(v),Len(v),v\nreturn nil\n",
+  "shortenv": "function Main()\nlocal v:=GetEnv(\"HR_GETENV_A_MORE\")\n? ValType(v),Len(v),v\nreturn nil\n",
+  "leadingnul": "function Main()\nlocal v:=GetEnv(Chr(0)+\"HR_GETENV_A\")\n? ValType(v),Len(v),v\nreturn nil\n",
+  "largeenv": "function Main()\nlocal v:=GetEnv(\"HR_GETENV_BIG\")\n? ValType(v),Len(v),v\nreturn nil\n",
+  "parameter": "function Pick(k)\nreturn GetEnv(k)\nfunction Main()\n? Pick(\"HR_GETENV_A\")\nreturn nil\n",
+  "retained-key": "function Main()\nlocal k:=\"HR_GETENV_A\",v:=GetEnv(k)\n? k,v,GetEnv(k)\nreturn nil\n",
+  "cache-reuse": "function Main()\nlocal a:=GetEnv(\"HR_GETENV_A\"),b:=GetEnv(\"HR_GETENV_A\"),c:=\"\"\na:=\"changed\"\nc:=Replicate(\"Z\",5)\n? a,b,c,GetEnv(\"HR_GETENV_A\")\nreturn nil\n",
+  "init": "INIT PROCEDURE First()\n? GetEnv(\"HR_GETENV_A\")\nreturn\nfunction Main()\n? GetEnv(\"HR_GETENV_UTF8\")\nreturn nil\n",
+  "effect-once": "function Key(n)\nn++\nreturn \"HR_GETENV_A\"\nfunction Main()\nlocal n:=0,v:=GetEnv(Key(@n))\n? n,v\nreturn nil\n",
+  "catch-key": "function Key()\nlocal x:=0,y:=0.0\ny:=1/x\nreturn \"HR_GETENV_A\"\nfunction Main()\nlocal e\nTRY\n? GetEnv(Key())\nCATCH e\n? \"caught\"\nEND\nreturn nil\n"
+}
