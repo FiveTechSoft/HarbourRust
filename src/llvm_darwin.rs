@@ -5,7 +5,8 @@ pub fn intel() -> String { include_str!("llvm_darwin_intel.s").into() }
 
 #[cfg(test)] mod tests {
     #[test] fn complete_intel_scalar_abi() {
-        let s=super::intel();
+        // A Windows checkout with core.autocrlf stores the .s files with CRLF.
+        let s=super::intel().replace("\r\n","\n");
         for n in ["nl","sep","str","pstrt","pflush","pdrop","psep","int","computed","inc_error","bound_error"] {
             assert!(s.contains(&format!(".globl _rt_{}\n_rt_{}:",n,n)),"{}",n);
         }
@@ -13,7 +14,7 @@ pub fn intel() -> String { include_str!("llvm_darwin_intel.s").into() }
         assert!(s.contains("call _ll_main"));
     }
     #[test] fn complete_scalar_abi_and_no_reserved_platform_register() {
-        let s=super::arm64();
+        let s=super::arm64().replace("\r\n","\n");
         for n in ["nl","sep","str","pstrt","pflush","pdrop","psep","int","computed","inc_error","bound_error"] {
             assert!(s.contains(&format!(".globl _rt_{}\n_rt_{}:",n,n)),"{}",n);
         }

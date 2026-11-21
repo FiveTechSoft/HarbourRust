@@ -1,0 +1,10 @@
+{
+  "basic": "function Main()\nlocal v:=hb_osDriveSeparator()\n? ValType(v),Len(v),\"[\"+v+\"]\"\nreturn nil\n",
+  "retained": "function Main()\nlocal a:=hb_osDriveSeparator(),b:=hb_osDriveSeparator()\na:=\"changed\"\n? a,Len(b),\"[\"+b+\"]\"\nreturn nil\n",
+  "cache-reuse": "function Main()\nlocal a:=hb_osDriveSeparator(),b:=\"\",c:=hb_osDriveSeparator()\na:=\"changed\"\nb:=Replicate(\"Z\",1)\n? a,b,Len(c),\"[\"+c+\"]\"\nreturn nil\n",
+  "return": "function Pick()\nreturn hb_osDriveSeparator()\nfunction Main()\nlocal a:=Pick()\n? ValType(a),Len(a),\"[\"+a+\"]\"\nreturn nil\n",
+  "concat": "function Main()\n? \"a\"+hb_osDriveSeparator()+\"b\",hb_osDriveSeparator()+hb_osDriveSeparator()\nreturn nil\n",
+  "compare": "function Main()\n? hb_osDriveSeparator()==\"\",hb_osDriveSeparator()==\":\"\nreturn nil\n",
+  "init": "INIT PROCEDURE Boot()\n? Len(hb_osDriveSeparator())\nreturn\nfunction Main()\n? \"main\",Len(hb_osDriveSeparator())\nreturn nil\n",
+  "nested": "function Main()\n? Len(Upper(hb_osDriveSeparator())),Len(hb_DirSepAdd(hb_osDriveSeparator()))\nreturn nil\n"
+}
