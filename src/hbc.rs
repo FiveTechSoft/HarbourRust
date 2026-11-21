@@ -7699,27 +7699,6 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 for a in &args[1..] {if type_expr(a,env,sigs,n)?!=Ty::I64 {return Err(format!("line {}: Dyn SubStr position/length must be typed integers in this increment",n));}apply_moves(a,env,sigs,false);}
                 return Ok(Ty::StrOwn);
             }
-            if is_builtin(id,"transform") {
-                // Transform(n, pic): the numeric path of Harbour 3.2's
-                // transfrm.c, transcribed in runtime/hrtransform.c. The
-                // value is an integer or a float; the picture is a string
-                // literal (plain 9/#/$/* templates - @ functions stay a
-                // named rejection). The result owns its text.
-                if args.len()!=2 { return Err(format!("line {}: `Transform` takes two arguments in this increment",n)); }
-                if !matches!(type_expr(&args[0],env,sigs,n)?, Ty::I64 | Ty::F64) {
-                    return Err(format!("line {}: `Transform` takes an integer or a float as its first argument in this increment",n));
-                }
-                match &args[1] {
-                    Expr::Str(pic) => {
-                        if pic.contains('@') {
-                            return Err(format!("line {}: `@` picture functions are not in this increment (plain 9/#/$/* templates only)",n));
-                        }
-                    }
-                    _ => return Err(format!("line {}: `Transform` takes a string literal picture in this increment",n)),
-                }
-                type_expr(&args[1],env,sigs,n)?;
-                return Ok(Ty::StrOwn);
-            }
             if is_builtin(id,"substr") {
                 if !(2..=3).contains(&args.len()) { return Err(format!("line {}: `substr` takes 2 or 3 arguments in this increment",n)); }
                 if !matches!(type_expr(&args[0],env,sigs,n)?,Ty::Str|Ty::StrOwn) {
@@ -12215,10 +12194,6 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
                 for a in args { apply_moves(a,env,sigs,false); }
                 return;
             }
-            if is_builtin(id,"transform") {
-                for a in args { apply_moves(a,env,sigs,false); }
-                return;
-            }
             if is_output_call(id) {
                 for a in args { apply_moves(a, env, sigs, false); }
                 return;
@@ -15832,36 +15807,6 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             }
         }
         Expr::Call(id,args) if is_builtin(id,"substr") && expr_ty(&args[0],env,sigs)==Ty::Dyn => {cg_dyn_substr(args,env,sigs,strs,out,target);}
-        Expr::Call(id,args) if is_builtin(id,"transform") => {
-            // Transform(n, picStr): runtime/hrtransform.c applies the
-            // Harbour 3.2 numeric template. Value first (F64 through
-            // cg_f64_load with its item metadata in rdi; I64 through the
-            // pinned long-item defaults inside the helper), then the
-            // picture (borrowed; an owned non-variable picture is
-            // released after the call). Slots: 0=value/meta, 8=meta/x,
-            // 16=pic ptr, 24=pic len, 32/40=result.
-            let isf64 = expr_ty(&args[0],env,sigs)==Ty::F64;
-            let own_pic = expr_ty(&args[1],env,sigs)==Ty::StrOwn && !matches!(&args[1],Expr::Var(_));
-            if isf64 {
-                cg_f64_load(&args[0],env,sigs,strs,out,target);
-                out.push_str("    sub $48, %rsp\n    mov %rdi, (%rsp)\n    movsd %xmm0, 8(%rsp)\n");
-            } else {
-                cg_expr(&args[0],env,sigs,strs,out,target);
-                out.push_str("    sub $48, %rsp\n    mov %rax, (%rsp)\n");
-            }
-            cg_value(&args[1],env,sigs,strs,out,target);
-            out.push_str("    mov %rax, 16(%rsp)\n    mov %rdx, 24(%rsp)\n    mov %rdx, %rcx\n");
-            if isf64 {
-                out.push_str("    mov 16(%rsp), %rdx\n    movsd 8(%rsp), %xmm0\n    mov (%rsp), %r8\n    mov $1, %edi\n    xor %esi, %esi\n    call hbc_transform\n");
-            } else {
-                out.push_str("    mov 16(%rsp), %rdx\n    mov (%rsp), %rsi\n    movq $0, %r8\n    xor %edi, %edi\n    call hbc_transform\n");
-            }
-            out.push_str("    mov %rax, 32(%rsp)\n    mov %rdx, 40(%rsp)\n");
-            if own_pic {
-                out.push_str("    mov 16(%rsp), %rdi\n    call hbc_freestr\n");
-            }
-            out.push_str("    mov 32(%rsp), %rax\n    mov 40(%rsp), %rdx\n    add $48, %rsp\n");
-        }
         Expr::Call(id,args) if is_builtin(id,"substr") => {
             // Snapshot the source before later arguments can mutate/reassign
             // its owner, matching Harbour's retained argument value. Numeric
@@ -20042,7 +19987,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             if is_builtin(id,"fclose") {return Ty::Bool;}
             if ["fread","fcreate","fopen","fwrite"].iter().any(|b|is_builtin(id,b)) {return Ty::I64;}
             if is_builtin(id,"hb_hextonum") {return Ty::I64;}
-            if is_builtin(id,"hb_osdriveseparator") || is_builtin(id,"hb_base64encode") || is_builtin(id,"hb_asciiupper") || is_builtin(id,"hb_strtohex") || is_builtin(id,"hb_dirsepadd") || is_builtin(id,"getenv") || is_builtin(id,"hb_libname") || is_builtin(id,"hb_ps") || is_builtin(id, "os") || is_builtin(id, "curdir") || is_builtin(id, "chr") || is_builtin(id, "str") || is_builtin(id, "hb_ntos") || is_builtin(id, "padr") || is_builtin(id, "replicate") || is_builtin(id, "transform") { return Ty::StrOwn; }
+            if is_builtin(id,"hb_osdriveseparator") || is_builtin(id,"hb_base64encode") || is_builtin(id,"hb_asciiupper") || is_builtin(id,"hb_strtohex") || is_builtin(id,"hb_dirsepadd") || is_builtin(id,"getenv") || is_builtin(id,"hb_libname") || is_builtin(id,"hb_ps") || is_builtin(id, "os") || is_builtin(id, "curdir") || is_builtin(id, "chr") || is_builtin(id, "str") || is_builtin(id, "hb_ntos") || is_builtin(id, "padr") || is_builtin(id, "replicate") { return Ty::StrOwn; }
             if is_builtin(id, "round") { return Ty::F64; } // hk384-hk386
             if is_builtin(id, "iif") {
                 if optional_empty::active(e,env).is_some(){return Ty::AView;}
@@ -33010,9 +32955,6 @@ fn finalize_trace(mut out: String, target: Target) -> String {
     }
     if out.contains("call hbc_str_f64") {
         out.push_str(&f64_fmt_helper());
-    }
-    if out.contains("call hbc_transform") {
-        out.push_str(include_str!("../generated/hrtransform.s"));
     }
     // The trace record carries a macro-context pointer only in macro mode.
     // Keep non-macro/MT sequence pads byte-for-byte free of macro accesses.

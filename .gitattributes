@@ -77,9 +77,6 @@ tests/loopreg/expected/** -text
 # Byte-exact Harbour 3.2 output for string codeblocks with captures.
 tests/ascan-str-capture/expected/** -text
 
-# Byte-exact Harbour 3.2 output for numeric TRANSFORM pins.
-tests/transform-num/expected/** -text
-
 # Byte-exact Harbour 3.2 output for the Time() assertions.
 tests/time-func/expected/** -text
 

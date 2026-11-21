@@ -701,7 +701,7 @@ fn fits_i32(v: i64) -> bool { (i32::MIN as i64..=i32::MAX as i64).contains(&v) }
 fn suffix_width(m: &str) -> (&str, Option<u8>) {
     // mnemónicos con significado propio que terminan en letra de sufijo: no tocar
     const EXACT: &[&str] = &[
-        "ret","leave","cqto","cqo","cltq","cdqe","cvtsi2sdl","cvtsi2sdq","cvttsd2siq","cvttsd2sil","syscall","pause","endbr64","nop","ud2","rep movsb","rep movsq","rep stosb",
+        "ret","leave","cqto","cqo","cltq","cdqe","cvtsi2sdl","cvtsi2sdq","cvttsd2siq","syscall","pause","endbr64","nop","ud2","rep movsb","rep movsq","rep stosb",
         "fyl2x","fscale","frndint","fld1","f2xm1","fprem","fnstsw",
         "fldl","fstpl","fld","fstp","fxch","faddp","fsub","fmul",
         "movsd","addsd","subsd","mulsd","divsd","ucomisd","xorpd","cvtsi2sd","cvttsd2si","roundsd",
@@ -812,7 +812,6 @@ fn encode_into(e: &Enc, out: &mut Vec<u8>, ripp: &mut RipPatches, mnem0: &str, o
         // cvtsi2sdl converts a 32-bit source (no REX.W).
         "cvtsi2sdq" => { return encode_sse(e, out, ripp, "cvtsi2sd", ops); }
         "cvttsd2siq" => { return encode_sse(e, out, ripp, "cvttsd2si", ops); }
-        "cvttsd2sil" => { return encode_sse(e, out, ripp, "cvttsd2si32", ops); }
         "cvtsi2sdl" => {
             let dc = if let Op::Xmm(d) = &ops[1] { *d } else { return Err("cvtsi2sdl dst".into()) };
             out.push(0xF2);
@@ -1427,17 +1426,6 @@ fn encode_sse(e: &Enc, out: &mut Vec<u8>, ripp: &mut RipPatches, m: &str, ops: &
             out.push(0xF2);
             let sc = if let Op::Xmm(s) = src { *s } else { return Err("cvttsd2si src".into()) };
             if let Some(r) = rex_byte(true, dc, 0, sc, false) { out.push(r); }
-            out.extend_from_slice(&[0x0F, 0x2C]);
-            out.push(modrm(3, dc, sc));
-            Ok(())
-        }
-        // 32-bit destination: no REX.W (GCC `cvttsd2sil %xmmN, %rX`).
-        "cvttsd2si32" => {
-            let (src, dst) = (&ops[0], &ops[1]);
-            let dc = if let Op::Reg(c, _, _) = dst { *c } else { return Err("cvttsd2si32 dst".into()) };
-            out.push(0xF2);
-            let sc = if let Op::Xmm(s) = src { *s } else { return Err("cvttsd2si32 src".into()) };
-            if let Some(r) = rex_byte(false, dc, 0, sc, false) { out.push(r); }
             out.extend_from_slice(&[0x0F, 0x2C]);
             out.push(modrm(3, dc, sc));
             Ok(())
