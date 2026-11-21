@@ -4231,6 +4231,13 @@ thread_local! {
     // calling convention.
     static EXTERNS: std::cell::RefCell<std::collections::HashSet<String>> = std::cell::RefCell::new(std::collections::HashSet::new());
     static CHECKED_I64: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+    // One entry per statement being generated, innermost last: Some((name,
+    // line, stub label)) when the statement skipped its trace write. An
+    // overflow jump inside such a statement goes to a stub of its own that
+    // writes the location first (OVF_STUBS, emitted after the function).
+    static OVF_SITES: std::cell::RefCell<Vec<Option<(String, usize, Option<String>)>>> = const { std::cell::RefCell::new(Vec::new()) };
+    static OVF_STUBS: std::cell::RefCell<String> = const { std::cell::RefCell::new(String::new()) };
+    static OVF_SEQ: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
     static NUM_LOCALS: std::cell::RefCell<std::collections::HashSet<String>> = std::cell::RefCell::new(std::collections::HashSet::new());
 }
 fn mixed_local(id: &str) -> bool { NUM_LOCALS.with(|s| s.borrow().contains(id)) }
@@ -18247,7 +18254,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             }
             // The cell keeps its old value when the result does not fit.
             if CHECKED_I64.with(|c| c.get()) {
-                out.push_str("    jo hbc_static_overflow\n");
+                out.push_str(&ovf_jump());
             }
             out.push_str("    mov %rax, -8(%r11,%r10,8)\n    jmp 82f\n81:\n    call hbc_bound_error\n82:\n");
         }
@@ -18706,7 +18713,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                     _ => unreachable!("checked"),
                 }
                 if CHECKED_I64.with(|c| c.get()) {
-                    out.push_str("    jo hbc_static_overflow\n");
+                    out.push_str(&ovf_jump());
                 }
                 return;
             }
@@ -18737,7 +18744,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                     _ => unreachable!("checked"),
                 }
                 if CHECKED_I64.with(|c| c.get()) {
-                    out.push_str("    jo hbc_static_overflow\n");
+                    out.push_str(&ovf_jump());
                 }
                 return;
             }
@@ -18771,7 +18778,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                 _ => unreachable!(),
             }
             if matches!(op, '+' | '-' | '*') && CHECKED_I64.with(|c|c.get()) {
-                out.push_str("    jo hbc_static_overflow\n");
+                out.push_str(&ovf_jump());
             }
         }
     }
@@ -21688,15 +21695,15 @@ fn expr_may_raise_or_call(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> bool {
             let tb = expr_ty(b, env, sigs);
             if !scalar(ta) || !scalar(tb) { return true; }
             match op {
-                '+' | '-' => expr_may_raise_or_call(a, env, sigs) || expr_may_raise_or_call(b, env, sigs)
-                    || CHECKED_I64.with(|c| c.get()),
+                // A checked I64 overflow does not count: its jump goes
+                // through a stub that writes the statement's location
+                // (ovf_jump), so the statement still stops at the right line.
+                '+' | '-' => expr_may_raise_or_call(a, env, sigs) || expr_may_raise_or_call(b, env, sigs),
                 // Numeric-local and float `*` carry the guarded decimal-sum
-                // call (hbc_f64range_error); plain I64 `*` can only raise
-                // under the checked overflow rule.
+                // call (hbc_f64range_error).
                 '*' => {
                     if ta != Ty::I64 || tb != Ty::I64 { return true; }
                     expr_may_raise_or_call(a, env, sigs) || expr_may_raise_or_call(b, env, sigs)
-                        || CHECKED_I64.with(|c| c.get())
                 }
                 // `/`, `%`, `^`: named error paths (division by zero, range).
                 _ => true,
@@ -21763,11 +21770,48 @@ fn stmt_may_raise_or_call(s: &Stmt, env: &[CgLocal], sigs: &[Sig]) -> bool {
     }
 }
 
-fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target, fname: &str, label: &mut usize, flow: &[CgFrame], slots: &[(usize, u8)], dyn_names: &std::collections::HashSet<String>, byref_names: &std::collections::HashSet<String>) {
-    for (si, s) in stmts.iter().enumerate() {
-        if stmt_may_raise_or_call(s, env, sigs) {
-            trace_location(fname.split("__br").next().unwrap_or(fname), stmt_line(s), strs, out);
+// The jump an overflowing fixed-i64 operation takes. In a statement that
+// wrote its trace it goes straight to the handler; in one that skipped it
+// (overflow being its only way to stop) it goes to the statement's stub.
+fn ovf_jump() -> String {
+    OVF_SITES.with(|v| match v.borrow_mut().last_mut() {
+        Some(Some((_, _, lbl))) => {
+            let l = lbl.get_or_insert_with(|| {
+                let n = OVF_SEQ.with(|c| { let n = c.get(); c.set(n + 1); n });
+                format!(".Lovs{}", n)
+            });
+            format!("    jo {}\n", l)
         }
+        _ => "    jo hbc_static_overflow\n".to_string(),
+    })
+}
+
+// Close the innermost statement entry; if one of its operations used the
+// stub, emit it: write the statement's location, then stop.
+fn ovf_stmt_end(strs: &mut Vec<String>) {
+    if let Some(Some((name, line, Some(lbl)))) = OVF_SITES.with(|v| v.borrow_mut().pop()) {
+        let saved = TRACE_LINE.with(|v| v.get());
+        let mut stub = format!("{}:\n", lbl);
+        trace_location(&name, line, strs, &mut stub);
+        TRACE_LINE.with(|v| v.set(saved));
+        stub.push_str("    jmp hbc_static_overflow\n");
+        OVF_STUBS.with(|o| o.borrow_mut().push_str(&stub));
+    }
+}
+
+fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target, fname: &str, label: &mut usize, flow: &[CgFrame], slots: &[(usize, u8)], dyn_names: &std::collections::HashSet<String>, byref_names: &std::collections::HashSet<String>) {
+    // The arms below `continue`, so a statement's overflow entry is closed
+    // at the top of the next iteration and after the loop.
+    let mut open = false;
+    for (si, s) in stmts.iter().enumerate() {
+        if open { ovf_stmt_end(strs); }
+        let traced = stmt_may_raise_or_call(s, env, sigs);
+        let name = fname.split("__br").next().unwrap_or(fname);
+        if traced {
+            trace_location(name, stmt_line(s), strs, out);
+        }
+        OVF_SITES.with(|v| v.borrow_mut().push(if traced { None } else { Some((name.to_string(), stmt_line(s), None)) }));
+        open = true;
         match s {
             Stmt::SendStmt(_, e) => {
                 cg_value(e, env, sigs, strs, out, target);
@@ -24704,6 +24748,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
             }
         }
     }
+    if open { ovf_stmt_end(strs); }
 }
 
 // Collect every block literal in a statement tree (deterministic order).
@@ -25109,9 +25154,13 @@ fn cg_func(f: &Func, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, tar
     // Block literals used by this function are emitted right after it.
     let mut blocks = Vec::new();
     collect_blocks_stmts(&f.stmts, &mut blocks);
+    // Overflow stubs of this function's statements (ovf_jump); reached only
+    // by their jumps, with this function's frame.
+    out.push_str(&OVF_STUBS.with(|o| std::mem::take(&mut *o.borrow_mut())));
     for (id, ps, body) in blocks {
         emit_block(&f.name, id, &ps, &body, sigs, strs, out, target);
     }
+    out.push_str(&OVF_STUBS.with(|o| std::mem::take(&mut *o.borrow_mut())));
     let avend=AVIEW_FRAME_END.with(|c|c.get());
     out.push_str(&format!(".set .Lavframe{}, {}\n",avframe,(avend+15)&!15));
 

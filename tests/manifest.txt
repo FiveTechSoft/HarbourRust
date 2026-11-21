@@ -1928,3 +1928,5 @@ posx tests/i64-overflow/neg.prg 1 Limit: integer overflow needs numeric promotio
 posx tests/i64-overflow/cell.prg 1 Limit: integer overflow needs numeric promotion\nCallstack:\n  at main (tests/i64-overflow/cell.prg:5)\n
 posx tests/i64-overflow/private.prg 1 Limit: integer overflow needs numeric promotion\nCallstack:\n  at main (tests/i64-overflow/private.prg:4)\n
 posx tests/i64-overflow/dyn.prg 1 Limit: integer overflow needs numeric promotion\nCallstack:\n  at main (tests/i64-overflow/dyn.prg:6)\n
+posx tests/i64-overflow/loop.prg 1 Limit: integer overflow needs numeric promotion\nCallstack:\n  at main (tests/i64-overflow/loop.prg:6)\n
+posx tests/i64-overflow/callee.prg 1 Limit: integer overflow needs numeric promotion\nCallstack:\n  at bump (tests/i64-overflow/callee.prg:12)\n  at main (tests/i64-overflow/callee.prg:4)\n
