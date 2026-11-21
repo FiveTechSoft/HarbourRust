@@ -1,4 +1,5 @@
 mod optional_empty;
+mod cell_len;
 mod box_gtstd;
 mod llvm_darwin;
 // hbc - PoC compiler: Harbour syntax (closed subset) -> x86-64 assembly.
@@ -4713,7 +4714,7 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
     // Once defaulted, a parameter keeps the tagged slot in later rounds, so the
     // fixpoint stays monotone (mutual recursion without evidence, t694).
     DEFAULT_DYN.with(|m|for (name,i) in m.borrow().iter(){if *name==f.name && *i<n {pin[*i]=Some(Ty::Dyn);}});
-    for i in 0..n { if optional_empty::parameter(&f.name,i) {pin[i]=Some(Ty::AView);} }
+    for i in 0..n { if optional_empty::parameter(&f.name,i) || cell_len::parameter(&f.name,i) {pin[i]=Some(Ty::AView);} }
     // Method functions: the implicit leading `Self` parameter is pinned
     // to the defining class (no body evidence needed).
     if let Some(ci) = METHOD_CLASS.with(|m| m.borrow().get(&f.name).copied()) {
@@ -6343,7 +6344,7 @@ fn aview_stmts_safe(ss: &[Stmt], p: &str, sigs: &[Sig], strict: bool) -> bool {
 fn aview_array_evidence(ss: &[Stmt], p: &str) -> bool {
     fn ex(e: &Expr,p: &str) -> bool { match e {
         Expr::Index(_,i) => ex(i,p),
-        Expr::Call(id,aa) => (["valtype","hb_isnumeric","hb_isarray","hb_ntos"].iter().any(|b|is_builtin(id,b)) && matches!(aa.first(),Some(Expr::Index(v,_)) if v == p)) || aa.iter().any(|a|ex(a,p)),
+        Expr::Call(id,aa) => cell_len::evidence(id,aa,p) || (["valtype","hb_isnumeric","hb_isarray","hb_ntos"].iter().any(|b|is_builtin(id,b)) && matches!(aa.first(),Some(Expr::Index(v,_)) if v == p)) || aa.iter().any(|a|ex(a,p)),
         Expr::Seq(aa) | Expr::ArrLit(aa) => aa.iter().any(|a|ex(a,p)),
         Expr::Bin(_,a,b) | Expr::Cmp(_,a,b) | Expr::LAnd(a,b) | Expr::LOr(a,b) => ex(a,p)||ex(b,p),
         Expr::LNot(a) | Expr::Set(_,a) => ex(a,p),
@@ -16422,7 +16423,11 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                     let var = env.iter().rev().find(|x| x.name == *v).expect("checked");
                     match var.ty {
                         Ty::DArrDyn | Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::Hash => out.push_str(&format!("    mov -{}(%rbp), %rax\n", var.off - 8)),
-                        Ty::AView => out.push_str(&format!("    mov -{}(%rbp), %rax\n    mov 16(%rax), %rax\n", var.off)),
+                        Ty::AView => {
+                            out.push_str(&format!("    mov -{}(%rbp), %rax\n", var.off));
+                            if cell_len::parameter(&CUR_FN.with(|c|c.borrow().clone()),0) {out.push_str("    cmpq $7, (%rax)\n    je hbc_len_error\n");}
+                            out.push_str("    mov 16(%rax), %rax\n");
+                        },
                         Ty::DArrRef | Ty::DArrRef2 => out.push_str(&format!("    mov -{}(%rbp), %rax\n    mov 8(%rax), %rax\n", var.off)),
                         Ty::RefDyn => out.push_str(&format!("    mov -{}(%rbp), %r11\n    @HBC_TAG_KIND@cmpq $8, (%r11)@HBC_TAG_END@\n    jne hbc_len_error\n    mov 8(%r11), %rax\n    mov -8(%rax), %rax\n",var.off)),
                         Ty::Arr(k) => out.push_str(&format!("    mov ${}, %rax\n", k)),
@@ -17924,8 +17929,10 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                         Expr::Index(v,ie) => {
                             let root=env.iter().rev().find(|x|x.name==*v).expect("checked");
                             cg_aview_cell(root,ie,env,sigs,strs,out,target);
+                            if cell_len::parameter(id,ai) {cell_len::emit_cell(out);} else {
                             let ok=fresh_lbl();
                             out.push_str(&format!("    @HBC_TAG_KIND@cmp $6, %rax@HBC_TAG_END@\n    je .Lavarg{}\n    call hbc_param_error\n.Lavarg{}:\n    mov %rdx, %rax\n",ok,ok));
+                            }
                         }
                         _=>unreachable!("view boundary checked"),
                     }
@@ -36383,6 +36390,7 @@ fn main() {
     // below. Reaching the cap means the monotonicity argument broke -
     // an explicit diagnostic, never a silent assumption.
     optional_empty::analyze(&funcs);
+    cell_len::analyze(&funcs);
     let cap = 2 + 4 * funcs.iter().map(|f| f.params.len() + 1).sum::<usize>();
     // A single inline-IF return can carry its own concrete base-case
     // anchor before recursive signatures exist (stock recursiv.prg).
