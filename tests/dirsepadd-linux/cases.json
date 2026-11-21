@@ -1,0 +1,18 @@
+{
+  "empty": "function Main()\nlocal v:=hb_DirSepAdd(\"\")\n? ValType(v),Len(v),v\nreturn nil\n",
+  "relative": "function Main()\nlocal v:=hb_DirSepAdd(\"abc\")\n? ValType(v),Len(v),v\nreturn nil\n",
+  "trailing": "function Main()\nlocal v:=hb_DirSepAdd(\"abc/\")\n? ValType(v),Len(v),v\nreturn nil\n",
+  "root": "function Main()\nlocal v:=hb_DirSepAdd(\"/\")\n? ValType(v),Len(v),v\nreturn nil\n",
+  "double": "function Main()\nlocal v:=hb_DirSepAdd(\"abc//\")\n? ValType(v),Len(v),v\nreturn nil\n",
+  "backslash": "function Main()\nlocal v:=hb_DirSepAdd(\"abc\"+Chr(92))\n? ValType(v),Len(v),v\nreturn nil\n",
+  "space": "function Main()\nlocal v:=hb_DirSepAdd(\"abc \")\n? ValType(v),Len(v),v\nreturn nil\n",
+  "nul": "function Main()\nlocal v:=hb_DirSepAdd(\"abc\"+Chr(0)+\"tail\")\n? ValType(v),Len(v),v\nreturn nil\n",
+  "nul-last": "function Main()\nlocal v:=hb_DirSepAdd(\"abc\"+Chr(0))\n? ValType(v),Len(v),v\nreturn nil\n",
+  "utf8": "function Main()\nlocal v:=hb_DirSepAdd(\"caf\u00e9\")\n? ValType(v),Len(v),v\nreturn nil\n",
+  "long": "function Main()\nlocal v:=hb_DirSepAdd(Replicate(\"a\",70000))\n? ValType(v),Len(v),v\nreturn nil\n",
+  "retained": "function Main()\nlocal k:=\"abc\",v:=hb_DirSepAdd(k)\n? k,v,hb_DirSepAdd(k)\nreturn nil\n",
+  "cache-reuse": "function Main()\nlocal a:=hb_DirSepAdd(\"abc\"),b:=hb_DirSepAdd(a),c:=\"\"\na:=\"changed\"\nc:=Replicate(\"Z\",4)\n? a,b,c\nreturn nil\n",
+  "parameter": "function Pick(k)\nreturn hb_DirSepAdd(k)\nfunction Main()\n? Pick(\"abc\")\nreturn nil\n",
+  "effect": "function Key(n)\nn++\nreturn \"abc\"\nfunction Main()\nlocal n:=0,v:=hb_DirSepAdd(Key(@n))\n? n,v\nreturn nil\n",
+  "throw": "function Key()\nlocal n:=0,f:=0.0\nf:=1/n\nreturn \"abc\"\nfunction Main()\nlocal e\nTRY\n? hb_DirSepAdd(Key())\nCATCH e\n? \"caught\"\nEND\nreturn nil\n"
+}
