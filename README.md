@@ -64,6 +64,13 @@ known failures and the history of published increments.
 
 ## Active development
 
+- **Integer overflow stops (21 November).** Fixed-i64 `+`, `-`, `*`, unary
+  minus and `op=` no longer wrap silently outside STATIC/by-reference
+  functions: they stop with `Limit: integer overflow needs numeric
+  promotion` and the callstack, where Harbour would promote to a double.
+  Tight call-free integer loops pay about 30 % for the check; loops with a
+  call pay nothing measurable. Details:
+  [docs/I64-OVERFLOW-2026-11-21.md](docs/I64-OVERFLOW-2026-11-21.md).
 - **Loop register promotion (20 November).** `src/loopreg.rs` keeps the
   frame slots of call-free FOR/WHILE loops in registers, loading them before
   the loop and storing them back on every exit (`--no-loopreg` turns it

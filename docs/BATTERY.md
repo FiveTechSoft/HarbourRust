@@ -4004,10 +4004,11 @@ oracle (t1355) is unchanged and still byte-exact. The verifier harness
 uses ErrorBlock/BEGIN SEQUENCE only to capture the error - no
 byte-exact error-output claim between runtimes; the HR clean trace
 format is the registered failure-mode difference (t133 family).
-Overflow note (registered I64 limit, unchanged): `a[1] += 1` on
-MAXINT64 wraps (Harbour promotes to a double print) - the scalar
-`x op= e` model, numeric promotion parked with the numeric-cell
-decision.
+Overflow note (registered I64 limit): `a[1] += 1` on MAXINT64 wrapped
+at the time (Harbour promotes to a double print). Since 2026-11-21 it
+stops with `Limit: integer overflow needs numeric promotion` instead
+(docs/I64-OVERFLOW-2026-11-21.md); numeric promotion stays parked with
+the numeric-cell decision.
 
 Direct self-recursion return inference (t1358-t1360, 2026-10-31, fib
 piece): a recursive call precedes the RETURN whose expression feeds

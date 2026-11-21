@@ -18152,6 +18152,10 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                 '*' => out.push_str("    imul %rcx, %rax\n"),
                 _ => unreachable!("checked"),
             }
+            // The cell keeps its old value when the result does not fit.
+            if CHECKED_I64.with(|c| c.get()) {
+                out.push_str("    jo hbc_static_overflow\n");
+            }
             out.push_str("    mov %rax, -8(%r11,%r10,8)\n    jmp 82f\n81:\n    call hbc_bound_error\n82:\n");
         }
         Expr::Index(id, ie) => {
@@ -24733,9 +24737,11 @@ fn cg_func(f: &Func, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, tar
         if let Some(mask)=byref {if let Some(sg)=sigs.iter().find(|s|s.name==f.name) {for(i,p)in f.params.iter().enumerate(){if mask.get(i).copied().unwrap_or(false)&&sg.params[i]==Ty::I64 {refs.insert(p.clone());}}}}
         *c.borrow_mut()=refs;
     });
-    // Fixed-i64 persistent or borrowed storage cannot silently wrap.
-    // Full numeric promotion in these slots remains a named boundary.
-    CHECKED_I64.with(|c| c.set(f.stmts.iter().any(|s| matches!(s, Stmt::Static(..))) || byref.map(|m|m.iter().any(|b|*b)).unwrap_or(false)));
+    // Fixed-i64 arithmetic never wraps silently: an overflowing +, -, *,
+    // unary minus or a[i] op= e stops with a named limit. Harbour would
+    // promote the value to a double; full numeric promotion remains a
+    // named boundary.
+    CHECKED_I64.with(|c| c.set(true));
     if byref.is_none() {
         for st in &f.stmts {
             if let Stmt::Static(_, id, value) = st {
@@ -30931,7 +30937,7 @@ hbc_persistent_scalar_limit:
 
 hbc_static_overflow:
     lea .Lstaticovmsg(%rip), %rsi
-    mov $63, %edx
+    mov $48, %edx
     mov $1, %eax
     mov $1, %edi
     syscall
@@ -32730,7 +32736,7 @@ fn emit_strings(out: &mut String, strs: &[String]) {
     // "Error: division by zero\n" (24 bytes; EG_ZERODIV, probe hk294)
     out.push_str(".Ldiv0msg:\n    .byte 69,114,114,111,114,58,32,100,105,118,105,115,105,111,110,32,98,121,32,122,101,114,111,10\n");
     out.push_str(".Lpersistmsg:\n    .byte 76,105,109,105,116,58,32,112,101,114,115,105,115,116,101,110,116,32,83,84,65,84,73,67,32,115,116,111,114,101,115,32,110,101,101,100,32,111,119,110,101,100,32,115,99,97,108,97,114,32,112,97,121,108,111,97,100,115,10\n");
-    out.push_str(".Lstaticovmsg:\n    .byte 76,105,109,105,116,58,32,115,116,97,116,105,99,47,98,121,114,101,102,32,105,110,116,101,103,101,114,32,97,114,105,116,104,109,101,116,105,99,32,110,101,101,100,115,32,110,117,109,101,114,105,99,32,112,114,111,109,111,116,105,111,110,10\n");
+    out.push_str(".Lstaticovmsg:\n    .byte 76,105,109,105,116,58,32,105,110,116,101,103,101,114,32,111,118,101,114,102,108,111,119,32,110,101,101,100,115,32,110,117,109,101,114,105,99,32,112,114,111,109,111,116,105,111,110,10\n");
     out.push_str(".Lincmsg:\n    .byte 76,105,109,105,116,58,32,105,110,99,114,101,109,101,110,116,32,111,118,101,114,102,108,111,119,32,110,101,101,100,115,32,110,117,109,101,114,105,99,32,112,114,111,109,111,116,105,111,110,10\n");
     out.push_str(".Lspace_range_msg:\n    .byte 69,114,114,111,114,58,32,83,112,97,99,101,32,70,54,52,32,99,111,117,110,116,32,111,117,116,32,111,102,32,73,54,52,32,114,97,110,103,101,10\n");
     out.push_str(".Lf64rangemsg:\n    .byte 69,114,114,111,114,58,32,102,108,111,97,116,32,102,105,101,108,100,32,111,117,116,32,111,102,32,114,97,110,103,101,10\n");
@@ -34676,7 +34682,7 @@ hbc_static_overflow:
     and $-16, %rsp
     sub $48, %rsp
     lea .Lstaticovmsg(%rip), %rax
-    mov $63, %edx
+    mov $48, %edx
     call hbc_print_str
     mov $1, %ecx
     call ExitProcess
