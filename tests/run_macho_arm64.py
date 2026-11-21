@@ -69,8 +69,9 @@ TARGET = '--target=macho-arm64'  # --target=macho runs the same battery on Intel
 # Variable I64 bit index makes t1077 a positive row (+1).
 # Dyn integer expression increment makes t896 runtime-error positive (+1).
 # Integer overflow stops: tests/i64-overflow adds 7 posx rows (+7).
-# Full total:1273+6+4+38+9 =1330,1 named REJ on both Mac targets.
-EXPECTED_MANIFEST_ROWS = 1273
+# Overflow stubs: loop.prg and callee.prg stop in untraced statements (+2).
+# Full total:1275+6+4+38+9 =1332,1 named REJ on both Mac targets.
+EXPECTED_MANIFEST_ROWS = 1275
 # Post-run m_clie.dbf SHA-256 per DBF acceptance test (generated on Linux,
 # stdout checked against the committed expectations). t4 appends records:
 # dbAppend rewrites the header last-update date (bytes 1-3, YY MM DD of the
