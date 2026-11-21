@@ -2024,7 +2024,7 @@ const ASM_RESERVED: &[&str] = &[
     // hbc itself emits; a user function with one of these names would
     // collide with a helper symbol.
     "dtos", "stod", "year", "day", "month", "dow", "cdow", "cmonth", "dtoc", "sqrt", "exp", "log", "mod", "padc", "rat", "stuff", "isdigit", "isalpha", "isupper", "islower", "strzero", "ischar", "strzero_fix", "str_f64", "fmt_f64", "date_add", "date_diff", "date_days", "date_from_days", "seconds",
-    "hb_base64encode", "hb_stod", "hb_hextonum", "hb_asciiupper", "hb_strtohex", "hb_dirsepadd", "getenv", "hb_at", "hb_bchar", "hb_bcode", "__defaultnil", "hb_default", "hb_defaultvalue", "hb_sha1", "hb_hmac_sha1", "strtran", "space", "substr", "date", "ctod", "date_pack", "date_render", "date_today", "dispbox", "hrbase_wait", "setcursor", "hb_flink", "hb_flinksym", "hb_flinkread", "hb_memowrit", "hb_dircreate", "ferror", "curdir", "fread", "fcreate", "fopen", "fwrite", "fclose", "freadstr", "hb_libname", "hb_ps", "os", "dirmake", "inkey", "file", "hrfile_setdefault", "hrfile_setpath", "qout", "qqout", "outstd", "outerr", "empty", "procname", "min", "max", "str", "padr", "hb_ntos", "replicate", "aeval", "hb_isnumeric", "hb_isarray", "hb_isstring", "dfree", "upper", "lower", "left", "right", "at", "int", "abs", "padl", "val", "ascan", "aclone", "atail", "asort", "hb_bitand", "hb_bitor", "hb_bitxor", "hb_bitnot", "hb_bittest", "hb_bitset", "hb_bitreset", "eprint_str", "eprint_sep", "eprint_i64", "eprint_i64c", "eprint_dyn", "eprint_dynlit", "print_dynlit", "eprint_f64", "hb_eol", "procline", "asc", "trim", "ltrim", "rtrim", "alltrim", "chr", "trace_top", "print_trace", "panic_exit", "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_range_error", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
+    "hb_osdriveseparator", "hb_base64encode", "hb_stod", "hb_hextonum", "hb_asciiupper", "hb_strtohex", "hb_dirsepadd", "getenv", "hb_at", "hb_bchar", "hb_bcode", "__defaultnil", "hb_default", "hb_defaultvalue", "hb_sha1", "hb_hmac_sha1", "strtran", "space", "substr", "date", "ctod", "date_pack", "date_render", "date_today", "dispbox", "hrbase_wait", "setcursor", "hb_flink", "hb_flinksym", "hb_flinkread", "hb_memowrit", "hb_dircreate", "ferror", "curdir", "fread", "fcreate", "fopen", "fwrite", "fclose", "freadstr", "hb_libname", "hb_ps", "os", "dirmake", "inkey", "file", "hrfile_setdefault", "hrfile_setpath", "qout", "qqout", "outstd", "outerr", "empty", "procname", "min", "max", "str", "padr", "hb_ntos", "replicate", "aeval", "hb_isnumeric", "hb_isarray", "hb_isstring", "dfree", "upper", "lower", "left", "right", "at", "int", "abs", "padl", "val", "ascan", "aclone", "atail", "asort", "hb_bitand", "hb_bitor", "hb_bitxor", "hb_bitnot", "hb_bittest", "hb_bitset", "hb_bitreset", "eprint_str", "eprint_sep", "eprint_i64", "eprint_i64c", "eprint_dyn", "eprint_dynlit", "print_dynlit", "eprint_f64", "hb_eol", "procline", "asc", "trim", "ltrim", "rtrim", "alltrim", "chr", "trace_top", "print_trace", "panic_exit", "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_range_error", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
 ];
 
 fn dbf_result(id: &str) -> Option<Ty> {
@@ -6728,6 +6728,11 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 if !DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get()) || EXTERNS.with(|v|!v.borrow().is_empty()) {return Err(format!("line {}: GetEnv requires ordinary Linux without threads, macros or C extensions in this increment",n));}
                 if args.len()!=1 {return Err(format!("line {}: GetEnv requires exactly one typed string in this increment",n));}
                 if !matches!(type_expr(&args[0],env,sigs,n)?,Ty::Str|Ty::StrOwn) {return Err(format!("line {}: GetEnv requires a typed string key in this increment",n));}
+                return Ok(Ty::StrOwn);
+            }
+            if is_builtin(id,"hb_osdriveseparator") {
+                if !DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get()) {return Err(format!("line {}: hb_osDriveSeparator requires ordinary Linux without threads or macros in this increment",n));}
+                if !args.is_empty() {return Err(format!("line {}: hb_osDriveSeparator takes no arguments in this increment",n));}
                 return Ok(Ty::StrOwn);
             }
             if is_builtin(id,"hb_libname") || is_builtin(id,"hb_ps") {
@@ -12043,7 +12048,7 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
                 for a in args { apply_moves(a,env,sigs,false); }
                 return;
             }
-            if is_builtin(id,"hb_ps") || is_builtin(id,"os") || is_builtin(id,"curdir") { return; } // admitted args are inert literals only
+            if is_builtin(id,"hb_osdriveseparator") || is_builtin(id,"hb_ps") || is_builtin(id,"os") || is_builtin(id,"curdir") { return; } // admitted args are inert literals only
             if is_builtin(id,"replicate") {
                 for a in args { apply_moves(a,env,sigs,false); }
                 return;
@@ -15920,6 +15925,11 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             if expr_ty(&args[0],env,sigs)==Ty::StrOwn && !matches!(&args[0],Expr::Var(_)) {out.push_str("    mov (%rsp), %rdi\n    call hbc_freestr\n");}
             out.push_str("    mov 8(%rsp), %rax\n    mov 16(%rsp), %rdx\n    add $32, %rsp\n");
         }
+        Expr::Call(id,args) if is_builtin(id,"hb_osdriveseparator") => {
+            let _=args;
+            let i=strs.len();strs.push(String::new());
+            out.push_str(&format!("    lea .Lstr{}(%rip), %rdi\n    xor %esi, %esi\n    call hbc_strcpy\n",i));
+        }
         Expr::Call(id,args) if is_builtin(id,"hb_ps") => {
             let _=args;
             let i=strs.len();strs.push("/".to_string());
@@ -19743,7 +19753,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             if is_builtin(id,"fclose") {return Ty::Bool;}
             if ["fread","fcreate","fopen","fwrite"].iter().any(|b|is_builtin(id,b)) {return Ty::I64;}
             if is_builtin(id,"hb_hextonum") {return Ty::I64;}
-            if is_builtin(id,"hb_base64encode") || is_builtin(id,"hb_asciiupper") || is_builtin(id,"hb_strtohex") || is_builtin(id,"hb_dirsepadd") || is_builtin(id,"getenv") || is_builtin(id,"hb_libname") || is_builtin(id,"hb_ps") || is_builtin(id, "os") || is_builtin(id, "curdir") || is_builtin(id, "chr") || is_builtin(id, "str") || is_builtin(id, "hb_ntos") || is_builtin(id, "padr") || is_builtin(id, "replicate") { return Ty::StrOwn; }
+            if is_builtin(id,"hb_osdriveseparator") || is_builtin(id,"hb_base64encode") || is_builtin(id,"hb_asciiupper") || is_builtin(id,"hb_strtohex") || is_builtin(id,"hb_dirsepadd") || is_builtin(id,"getenv") || is_builtin(id,"hb_libname") || is_builtin(id,"hb_ps") || is_builtin(id, "os") || is_builtin(id, "curdir") || is_builtin(id, "chr") || is_builtin(id, "str") || is_builtin(id, "hb_ntos") || is_builtin(id, "padr") || is_builtin(id, "replicate") { return Ty::StrOwn; }
             if is_builtin(id, "round") { return Ty::F64; } // hk384-hk386
             if is_builtin(id, "iif") {
                 // Branch unification mirrors the checker (oracle hk321).
