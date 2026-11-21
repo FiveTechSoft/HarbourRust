@@ -1,0 +1,17 @@
+from common import *
+a=setup();rows=[]
+cases={
+'noargs':'function Main()\n? hb_SToD()\nreturn nil\n',
+'extra':'function Main()\n? hb_SToD("ABC",":")\nreturn nil\n',
+'nil':'function Main()\n? hb_SToD(NIL)\nreturn nil\n',
+'int':'function Main()\n? hb_SToD(7)\nreturn nil\n',
+'logical':'function Main()\n? hb_SToD(.t.)\nreturn nil\n',
+'dyn':'function Main()\nlocal k\nk:="HR_GETENV_A"\n? hb_SToD(k)\nreturn nil\n',
+'private':'function Main()\nPRIVATE k:="HR_GETENV_A"\n? hb_SToD("HR_GETENV_A")\nreturn nil\n',
+'macro':'function Main()\nlocal k:="1+2"\n? &(k),hb_SToD("HR_GETENV_A")\nreturn nil\n',
+}
+for name,s in cases.items():
+ w=a.output/name;w.mkdir();p=w/'p.prg';p.write_text(s);b=run([a.compiler,p,w/'ours','--target=linux'],w,'build');assert b.returncode==1 and b'SToD' in b.stderr and not(w/'ours').exists(),(name,b);rows.append(dict(name=name,build_rc=b.returncode,source_sha256=h(p),ok=True));print(name,'rejected',flush=True)
+for target in ['windows','macho','macho-arm64','llvm','threads']:
+ w=a.output/target;w.mkdir();p=w/'p.prg';p.write_text('function Main()\n? hb_SToD("HR_GETENV_A")\nreturn nil\n'+('function Unused()\nreturn hb_threadSelf()\n' if target=='threads' else ''));flags=['--target='+('linux' if target in ['llvm','threads'] else target)]+(['--experimental-llvm'] if target=='llvm' else []);b=run([a.compiler,p,w/'ours.s',*flags],w,'build');assert b.returncode==1 and b'hb_SToD requires ordinary Linux' in b.stderr and not(w/'ours.s').exists(),(target,b);rows.append(dict(name=target,build_rc=b.returncode,source_sha256=h(p),ok=True));print(target,'rejected',flush=True)
+finish(a,rows,'13named build limits,no rejected binary executed. Narrow1typedstringarg;Extra arguments deliberately rejected although oracle ignores them. Noargs/nonstring oracle errors are not implemented runtime. Ordinary Linux only,no threads/macro/memvars.')

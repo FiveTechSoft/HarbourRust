@@ -1,0 +1,20 @@
+{
+  "valid": "function Main()\nlocal d:=hb_SToD(\"19990430\")\n? ValType(d),DToS(d),Year(d),Month(d),Day(d)\nreturn nil\n",
+  "leap": "function Main()\nlocal d:=hb_SToD(\"20000229\")\n? ValType(d),DToS(d),Year(d),Month(d),Day(d)\nreturn nil\n",
+  "badleap": "function Main()\nlocal d:=hb_SToD(\"19000229\")\n? ValType(d),DToS(d),Year(d),Month(d),Day(d)\nreturn nil\n",
+  "empty": "function Main()\nlocal d:=hb_SToD(\"\")\n? ValType(d),DToS(d),Year(d),Month(d),Day(d)\nreturn nil\n",
+  "short": "function Main()\nlocal d:=hb_SToD(\"202401\")\n? ValType(d),DToS(d),Year(d),Month(d),Day(d)\nreturn nil\n",
+  "long": "function Main()\n? DToS(hb_SToD(\"20240101\"+Replicate(\"x\",70000)))\nreturn nil\n",
+  "space": "function Main()\nlocal d:=hb_SToD(\" 20240101\")\n? ValType(d),DToS(d),Year(d),Month(d),Day(d)\nreturn nil\n",
+  "nondigit": "function Main()\nlocal d:=hb_SToD(\"2024x101\")\n? ValType(d),DToS(d),Year(d),Month(d),Day(d)\nreturn nil\n",
+  "nul": "function Main()\nlocal d:=hb_SToD(\"20240101\"+Chr(0)+\"tail\")\n? ValType(d),DToS(d),Year(d),Month(d),Day(d)\nreturn nil\n",
+  "yearzero": "function Main()\nlocal d:=hb_SToD(\"00000101\")\n? ValType(d),DToS(d),Year(d),Month(d),Day(d)\nreturn nil\n",
+  "max": "function Main()\nlocal d:=hb_SToD(\"99991231\")\n? ValType(d),DToS(d),Year(d),Month(d),Day(d)\nreturn nil\n",
+  "min": "function Main()\nlocal d:=hb_SToD(\"00010101\")\n? ValType(d),DToS(d),Year(d),Month(d),Day(d)\nreturn nil\n",
+  "temporary": "function Main()\n? DToS(hb_SToD(Upper(\"20240101tail\")))\nreturn nil\n",
+  "retained": "function Main()\nlocal s:=\"20240101\",a:=hb_SToD(s),b:=hb_SToD(s)\n? s,DToS(a),DToS(b)\nreturn nil\n",
+  "parameter": "function Pick(s)\nreturn hb_SToD(s)\nfunction Main()\n? DToS(Pick(\"20240101\"))\nreturn nil\n",
+  "effect": "function Key(n)\nn++\nreturn \"20240101\"\nfunction Main()\nlocal n:=0,d:=hb_SToD(Key(@n))\n? n,DToS(d)\nreturn nil\n",
+  "throw": "function Key()\nlocal n:=0,f:=0.0\nf:=1/n\nreturn \"20240101\"\nfunction Main()\nlocal e\nTRY\n? DToS(hb_SToD(Key()))\nCATCH e\n? \"caught\"\nEND\nreturn nil\n",
+  "date-grid": "function Main()\nlocal y:=0,m:=0,d:=0,t:=\"\"\nfor y:=0 to 2400 step 100\nfor m:=0 to 13\nfor d:=0 to 32\nt:=StrZero(y,4)+StrZero(m,2)+StrZero(d,2)\n? t,DToS(hb_SToD(t))\nnext\nnext\nnext\nreturn nil\n"
+}
