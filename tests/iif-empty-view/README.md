@@ -56,3 +56,8 @@ Windows, Mach-O y LLVM mantienen sus límites anteriores.
 Los intentos inválidos de preparación y sus repeticiones se conservan en la
 entrega. Las pruebas no leen código fuente de Harbour. Los módulos Rust
 contrafactuales se construyen de forma aislada, no sobre el árbol del producto.
+
+El caso `empty-array-dyn` del banco anterior `iif-dyn-scalar/safety.py` cambia
+explícitamente de rechazo a aceptación comparada con Harbour. Sus otros once
+controles quedan intactos. Ahora ese banco requiere `--hbmk2`; no se modifica
+ningún workflow. El fallo crudo anterior se conserva fuera del árbol de pruebas.

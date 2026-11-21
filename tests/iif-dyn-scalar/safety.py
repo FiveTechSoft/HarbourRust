@@ -2,7 +2,7 @@
 """Own MIT memory/unwind and named-boundary checks, no oracle claim."""
 from pathlib import Path
 import argparse,subprocess,json,hashlib,os
-p=argparse.ArgumentParser();p.add_argument('--compiler',required=True);p.add_argument('--output',required=True);a=p.parse_args();cc=Path(a.compiler).resolve();out=Path(a.output).resolve();out.mkdir(exist_ok=False);env=dict(os.environ,PATH='/tmp/toolchain/bin:'+os.environ['PATH']);rows=[]
+p=argparse.ArgumentParser();p.add_argument('--compiler',required=True);p.add_argument('--hbmk2',required=True);p.add_argument('--output',required=True);a=p.parse_args();cc=Path(a.compiler).resolve();out=Path(a.output).resolve();out.mkdir(exist_ok=False);env=dict(os.environ,PATH='/tmp/toolchain/bin:'+os.environ['PATH']);rows=[]
 def h(p):return hashlib.sha256(p.read_bytes()).hexdigest()
 def run(cmd,w,label):
  r=subprocess.run(list(map(str,cmd)),env=env,capture_output=True,timeout=30)
@@ -24,5 +24,14 @@ negative={
 }
 for name,text in negative.items():
  expected=b'`iif` branches' if name in ['array-typed','empty-array-dyn'] else b'only supported directly'
- w=out/name;w.mkdir();src=w/'p.prg';src.write_text(text);b=run([cc,src,w/'p','--target=linux'],w,'build');rows.append(dict(name=name,kind='shape-rejection',source_sha256=h(src),build_rc=b.returncode,ok=b.returncode==1 and expected in b.stderr and not (w/'p').exists()))
-report=dict(compiler_sha256=h(cc),runner_sha256=h(Path(__file__)),scope='Three lifetime modes with1000 string/F64 borrow/own/overwrite loops plus2000 catches, warmup then allocation delta0. Five excluded profiles and four static scope/shape limits. Not Harbour parity.',rows=rows);(out/'results.json').write_text(json.dumps(report,indent=2));print([x for x in rows if not x['ok']]);assert all(x['ok'] for x in rows)
+ w=out/name;w.mkdir();src=w/'p.prg';src.write_text(text);b=run([cc,src,w/'p','--target=linux'],w,'build')
+ if name=='empty-array-dyn':
+  # Superseded rejection: the bounded optional read-only view now admits this exact form.
+  ob=run([a.hbmk2,src,'-quiet','-gtstd','-w0','-o'+str(w/'oracle')],w,'oracle-build');r=run([w/'p'],w,'run') if b.returncode==0 else None;o=run([w/'oracle'],w,'oracle-run') if ob.returncode==0 else None
+  row=dict(name=name,kind='superseded-rejection-oracle-acceptance',source_sha256=h(src),build_rc=b.returncode,oracle_build_rc=ob.returncode,ok=bool(r and o and r.returncode==o.returncode==0 and r.stdout==o.stdout and r.stderr==o.stderr))
+  for label in ['p','oracle']:
+   e=w/label
+   if e.exists():row[label+'_binary_sha256']=h(e);e.unlink()
+  rows.append(row)
+ else:rows.append(dict(name=name,kind='shape-rejection',source_sha256=h(src),build_rc=b.returncode,ok=b.returncode==1 and expected in b.stderr and not (w/'p').exists()))
+report=dict(compiler_sha256=h(cc),runner_sha256=h(Path(__file__)),scope='Three lifetime modes with1000 string/F64 borrow/own/overwrite loops plus2000 catches, warmup then allocation delta0. Five excluded profiles, three static scope/shape limits, and one visibly superseded rejection now compared exactly to external Harbour. Lifetime counters are not Harbour parity.',rows=rows);(out/'results.json').write_text(json.dumps(report,indent=2));print([x for x in rows if not x['ok']]);assert all(x['ok'] for x in rows)
