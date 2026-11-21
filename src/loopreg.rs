@@ -37,7 +37,8 @@
 // Win64 entries, hbc_wthr_entry and the process entry, never return to C.)
 // Every output form already appears in
 // the generated code with a register operand, so the ELF/PE/Mach-O writers
-// and the ARM64 translator see no new instruction shapes.
+// and the ARM64 translator see no new instruction shapes. Each promoted
+// head is also aligned with `.p2align 5` (see the end of `loopreg`).
 
 use std::collections::{HashMap, HashSet};
 
@@ -310,6 +311,7 @@ pub fn loopreg(asm: &str) -> String {
     let mut lines: Vec<String> = asm.split('\n').map(|s| s.to_string()).collect();
     let heads: Vec<String> = lines.iter().filter(|l| is_label(l) && head_end(l).is_some()).cloned().collect();
     let mut uid = 0;
+    let mut promoted: Vec<String> = Vec::new();
     // innermost first: a later head never encloses an earlier one
     for head in heads.iter().rev() {
         let h = match lines.iter().position(|l| l == head) { Some(h) => h, None => continue };
@@ -330,6 +332,19 @@ pub fn loopreg(asm: &str) -> String {
         if let Some(new) = promote(&lines, h, e, &outside, uid) {
             uid += 1;
             lines.splice(h..e, new);
+            promoted.push(head.clone());
+        }
+    }
+    // Align each promoted loop head to 32 bytes. Without it the speed of a
+    // tight loop depends on where the code happens to land: on Skylake
+    // (JCC erratum) the same loop measured up to 1.3x slower in an unlucky
+    // spot. The head is reached only by fall-through from outside, so the
+    // padding NOPs run once per loop entry. Inserted after every promotion,
+    // because a directive inside a loop body keeps the enclosing loop from
+    // qualifying. The ARM64 translator ignores text alignment.
+    for head in &promoted {
+        if let Some(h) = lines.iter().position(|l| l == head) {
+            lines.insert(h, "    .p2align 5".to_string());
         }
     }
     lines.join("\n")
@@ -364,7 +379,7 @@ mod tests {
     #[test]
     fn counter_and_accumulator_in_registers() {
         let o = loopreg(LOOP);
-        assert!(o.contains("    mov -16(%rbp), %r8\n    mov -32(%rbp), %r9\n    mov -56(%rbp), %r10\n    mov -8(%rbp), %rsi\n    mov -24(%rbp), %rdi\n.Lforc_f_0:"), "{}", o);
+        assert!(o.contains("    mov -16(%rbp), %r8\n    mov -32(%rbp), %r9\n    mov -56(%rbp), %r10\n    mov -8(%rbp), %rsi\n    mov -24(%rbp), %rdi\n    .p2align 5\n.Lforc_f_0:"), "{}", o);
         assert!(o.contains("    add %r8, %rax\n"), "{}", o);
         assert!(o.contains("    cmp %r10, %rax\n    jg .Llr0_0\n"), "{}", o);
         assert!(o.contains("    jo .Llr0_1\n"), "{}", o);
@@ -392,7 +407,7 @@ mod tests {
         let s = LOOP.replace("    ret\n", "    lea -32(%rbp), %rax\n    ret\n").replace("    mov %rdx, -24(%rbp)\n", "    movl $0, -12(%rbp)\n");
         let o = loopreg(&s);
         assert!(o.contains("    mov -32(%rbp), %rax\n    add -16(%rbp), %rax\n"), "{}", o);
-        assert!(o.contains("    mov -56(%rbp), %r8\n    mov -8(%rbp), %r9\n.Lforc_f_0:"), "{}", o);
+        assert!(o.contains("    mov -56(%rbp), %r8\n    mov -8(%rbp), %r9\n    .p2align 5\n.Lforc_f_0:"), "{}", o);
     }
 
     #[test]
@@ -400,6 +415,35 @@ mod tests {
         let s = LOOP.replace("    mov %rdx, -24(%rbp)\n", "    mov %r8, %rcx\n");
         let o = loopreg(&s);
         assert!(o.contains("    mov -16(%rbp), %r9\n"), "{}", o);
+    }
+
+    #[test]
+    fn nested_loops_both_promoted_and_aligned() {
+        // the inner loop's alignment must not keep the outer loop from qualifying
+        let s = "f:
+.Lwhile_f_2:
+    mov -80(%rbp), %rax
+    cmp $0, %rax
+    je .Lendw_f_2
+.Lwhile_f_1:
+    mov -16(%rbp), %rax
+    cmp $0, %rax
+    je .Lendw_f_1
+    sub $1, %rax
+    mov %rax, -16(%rbp)
+    jmp .Lwhile_f_1
+.Lendw_f_1:
+    mov -80(%rbp), %rax
+    sub $1, %rax
+    mov %rax, -80(%rbp)
+    jmp .Lwhile_f_2
+.Lendw_f_2:
+    ret
+";
+        let o = loopreg(s);
+        assert_eq!(o.matches("    .p2align 5\n").count(), 2, "{}", o);
+        assert!(o.contains("    mov %r10, %r8\n    .p2align 5\n.Lwhile_f_1:"), "{}", o);
+        assert!(o.contains("    mov -16(%rbp), %r10\n    .p2align 5\n.Lwhile_f_2:") && o.contains(".Llr1_0:"), "{}", o);
     }
 
     #[test]
