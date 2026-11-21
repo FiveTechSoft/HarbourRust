@@ -7692,7 +7692,6 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 }
                 return Ok(Ty::StrOwn);
             }
-<<<<<<< HEAD
             if is_builtin(id,"substr") && (2..=3).contains(&args.len()) && (matches!(&args[0],Expr::Var(v) if env.iter().rev().any(|l|l.name==*v&&l.ty==Ty::Dyn)) || matches!(&args[0],Expr::Call(id,_) if is_builtin(id,"hb_defaultvalue"))) {
                 if !DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get()) {return Err(format!("line {}: Dyn SubStr requires ordinary Linux without threads or macros in this increment",n));}
                 if type_expr(&args[0],env,sigs,n)?!=Ty::Dyn {return Err(format!("line {}: Dyn SubStr source changed type during checking",n));}
