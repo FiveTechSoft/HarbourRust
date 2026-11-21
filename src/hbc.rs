@@ -6443,6 +6443,12 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 .ok_or_else(|| format!("line {}: undefined variable `{}`", n, id))?;
             if v.moved { return Err(format!("line {}: use of moved value `{}`", n, id)); }
             if v.ro { return Err(format!("line {}: expression ++/-- cannot modify read-only variable `{}`", n, id)); }
+            if v.ty==Ty::Dyn {
+                if !DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get()) || v.byref || static_dyn(id) || is_sarr(id) {
+                    return Err(format!("line {}: Dyn expression ++/-- requires ordinary Linux non-macro local storage; PRIVATE/PUBLIC, static, shared and byref storage are outside this increment",n));
+                }
+                return Ok(Ty::I64);
+            }
             if v.ty != Ty::I64 {
                 return Err(format!("line {}: expression ++/-- supports integer variable lvalues only; floats, Dyn and other lvalues remain a named limit", n));
             }
@@ -14835,6 +14841,13 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
         }
         Expr::Inc(id, delta, prefix) => {
             let v = env.iter().rev().find(|v| v.name == *id).expect("checked");
+            if v.ty==Ty::Dyn {
+                let k=fresh_lbl();
+                out.push_str(&format!("    lea -{}(%rbp), %r10\n    mov (%r10), %rdx\n    test %rdx, %rdx\n    je .Ldyninc{k}\n    cmp $9, %rdx\n    jne hbc_type_error\n.Ldyninc{k}:\n    cmp $9, %rdx\n    sete %dl\n    movzbq %dl, %rdx\n    mov 8(%r10), %rax\n    mov %rax, %r11\n",v.off));
+                out.push_str(if *delta>0 {"    add $1, %r11\n"} else {"    sub $1, %r11\n"});
+                out.push_str("    jo hbc_inc_overflow\n    movq $0, (%r10)\n    mov %r11, 8(%r10)\n");
+                if *prefix {out.push_str("    mov %r11, %rax\n    xor %edx, %edx\n");}
+            } else {
             if v.ty == Ty::RefI64 {
                 out.push_str(&format!("    mov -{}(%rbp), %r10\n", v.off));
             } else {
@@ -14846,6 +14859,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             out.push_str("    jo hbc_inc_overflow\n    mov %r11, (%r10)\n");
             if v.ty==Ty::I64 || i64_meta_ref(v) {out.push_str("    movq $0, 8(%r10)\n");}
             if *prefix { out.push_str("    mov %r11, %rax\n    xor %edx, %edx\n"); }
+            }
         }
         Expr::Var(id) if env.iter().rev().any(|v|v.name==*id&&v.off==0)=>{
             let ix=strs.len();strs.push(id.clone());cg_memvar_context(out);

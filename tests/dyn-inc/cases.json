@@ -1,0 +1,22 @@
+{
+  "ppx-positive": "function Main()\nlocal x,y\nx:=7\ny:=++x\n? ValType(x),x,ValType(y),y\nreturn nil\n",
+  "ppx-negative": "function Main()\nlocal x,y\nx:=-7\ny:=++x\n? ValType(x),x,ValType(y),y\nreturn nil\n",
+  "ppx-zero": "function Main()\nlocal x,y\nx:=0\ny:=++x\n? ValType(x),x,ValType(y),y\nreturn nil\n",
+  "ppx-wide": "function Main()\nlocal x,y\nx:=10000000000\ny:=++x\n? ValType(x),x,ValType(y),y\nreturn nil\n",
+  "xpp-positive": "function Main()\nlocal x,y\nx:=7\ny:=x++\n? ValType(x),x,ValType(y),y\nreturn nil\n",
+  "xpp-negative": "function Main()\nlocal x,y\nx:=-7\ny:=x++\n? ValType(x),x,ValType(y),y\nreturn nil\n",
+  "xpp-zero": "function Main()\nlocal x,y\nx:=0\ny:=x++\n? ValType(x),x,ValType(y),y\nreturn nil\n",
+  "xpp-wide": "function Main()\nlocal x,y\nx:=10000000000\ny:=x++\n? ValType(x),x,ValType(y),y\nreturn nil\n",
+  "mmx-positive": "function Main()\nlocal x,y\nx:=7\ny:=--x\n? ValType(x),x,ValType(y),y\nreturn nil\n",
+  "mmx-negative": "function Main()\nlocal x,y\nx:=-7\ny:=--x\n? ValType(x),x,ValType(y),y\nreturn nil\n",
+  "mmx-zero": "function Main()\nlocal x,y\nx:=0\ny:=--x\n? ValType(x),x,ValType(y),y\nreturn nil\n",
+  "mmx-wide": "function Main()\nlocal x,y\nx:=10000000000\ny:=--x\n? ValType(x),x,ValType(y),y\nreturn nil\n",
+  "xmm-positive": "function Main()\nlocal x,y\nx:=7\ny:=x--\n? ValType(x),x,ValType(y),y\nreturn nil\n",
+  "xmm-negative": "function Main()\nlocal x,y\nx:=-7\ny:=x--\n? ValType(x),x,ValType(y),y\nreturn nil\n",
+  "xmm-zero": "function Main()\nlocal x,y\nx:=0\ny:=x--\n? ValType(x),x,ValType(y),y\nreturn nil\n",
+  "xmm-wide": "function Main()\nlocal x,y\nx:=10000000000\ny:=x--\n? ValType(x),x,ValType(y),y\nreturn nil\n",
+  "twice": "function Main()\nlocal x,y\nx:=7\ny:=x++ + x++\n? y,x\n? ++x + --x,x\nreturn nil\n",
+  "parameter-default": "function Main()\n? Pick(7),Pick(nil)\nreturn nil\nfunction Pick(x)\nhb_default(@x,1)\nreturn --x\n",
+  "reassigned": "function Main()\nlocal x,y\nx:=7\ny:=x++\nx:=41\n? ++x,y,x\nreturn nil\n",
+  "nil-guard": "function Main()\nlocal x,y,e\nTRY\ny:=x++\n? \"unexpected\"\nCATCH e\n? \"caught\",x\nEND\nreturn nil\n"
+}
