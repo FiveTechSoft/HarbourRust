@@ -94,6 +94,8 @@ thread_local! {
     static DIRMAKE_WIN: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
     static INKEY_WIN: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
     static CURDIR_LINUX_NATIVE: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+// Ordinary native backend (Linux or Windows, not Mach-O, not LLVM).
+static ORDINARY_NATIVE: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
     static MACHO_MODE: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
     static MACHO_ARM64: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
 }
@@ -8194,7 +8196,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 // logical values with a typed string picture. Dyn values and
                 // pictures keep a named rejection. Clean-room, black-box
                 // observed rules only (tests/transform-bb/README.md).
-                if !CURDIR_LINUX_NATIVE.with(|v|v.get()) || THREADS.with(|v|v.get()) {return Err(format!("line {}: Transform is measured only on ordinary Linux without threads",n));}
+                if !ORDINARY_NATIVE.with(|v|v.get()) || THREADS.with(|v|v.get()) {return Err(format!("line {}: Transform is measured only on ordinary Linux or Windows native without threads",n));}
                 if args.len()!=2 {return Err(format!("line {}: `Transform` takes a typed value and a typed string picture in this increment",n));}
                 let vt=type_expr(&args[0],env,sigs,n)?;
                 if !matches!(vt,Ty::I64|Ty::F64|Ty::Str|Ty::StrOwn|Ty::Date|Ty::Bool) {return Err(format!("line {}: `Transform` takes a typed number, string, date or logical value in this increment ({})",n,ty_name(vt)));}
@@ -34138,6 +34140,12 @@ fn finalize_trace(mut out: String, target: Target) -> String {
     if out.contains("call hbc_asort_b") {
         out.push_str(ASORT_BLOCK_HELPER);
     }
+    // The clean-room Transform layout blob: the ordinary-Linux finalize
+    // path appends it earlier (inside the gtstd block), so this only
+    // fires on Windows native, where it was missing.
+    if (out.contains("call hbc_tr_dims") || out.contains("call hbc_tr_apply")) && !out.contains("hbc_tr_dims:") {
+        out.push_str(include_str!("../generated/hrtransform.s"));
+    }
     // Add private stderr variants only when used. No mutable routing state:
     // nested OutStd/QOut and controlled diagnostics retain their destination.
     if out.contains("call hbc_eprint_") {
@@ -37987,6 +37995,7 @@ fn main() {
     MACHO_MODE.with(|v| v.set(macho));
     MACHO_ARM64.with(|v| v.set(macho_arm64));
     CURDIR_LINUX_NATIVE.with(|v| v.set(!macho && !llvm && matches!(target, Target::Linux)));
+    ORDINARY_NATIVE.with(|v| v.set(!macho && !llvm));
     DIRMAKE_WIN.with(|v| v.set(!macho && !llvm && matches!(target, Target::Windows)));
     INKEY_WIN.with(|v| v.set(!macho && !llvm && matches!(target, Target::Windows)));
     DBF_NATIVE.with(|v| v.set(!llvm));

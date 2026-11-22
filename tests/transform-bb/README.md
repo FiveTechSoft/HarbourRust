@@ -1,9 +1,15 @@
 # Transform() - clean-room, black-box
 
 `Transform(value, picture)` for typed numbers, strings, dates and logicals
-with a typed string picture, on ordinary Linux (no threads) only. Dyn
-values or pictures, two owned-temporary arguments, Windows, Mac and LLVM
-keep named rejections.
+with a typed string picture, on ordinary Linux or Windows native (no
+threads). Dyn values or pictures, two owned-temporary arguments, Mac and
+LLVM keep named rejections. The Windows admission is measured against
+native Windows Harbour 3.2.0dev: `transform_num.prg` is byte-exact
+(`expected/transform_num.windows.out`, CRLF) and
+`transform_types_windows.prg` pins the typed date/logical/string shapes.
+The text program stays a Linux-pin-only run: its bare `local c, d` slot
+needs the Linux decimal-profile date narrowing, which is out of the
+Windows scope.
 
 Provenance: written only from the attached table of 49 observed
 input/output pairs of Harbour 3.2.1dev (r2610242111) run as a black box.
