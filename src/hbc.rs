@@ -10626,6 +10626,38 @@ fn foreach_string_body_safe(stmts: &[Stmt]) -> bool {
     })
 }
 
+// A STATIC-ARRAY `for each` variable materializes a plain i64 copy
+// (tag-0 pair) every iteration: reads are ordinary values. The only
+// forbidden forms are stores THROUGH the variable name (assignment
+// targets; reads anywhere are fine - a copy cannot alias the collection).
+fn foreach_lv_int_ok(stmts: &[Stmt], name: &str) -> bool {
+    fn targets(e: &Expr, name: &str) -> bool {
+        match e {
+            Expr::Set(v, _) => v == name,
+            Expr::Inc(v, _, _) => v == name,
+            Expr::IdxCompound(v, _, _, _) => v == name,
+            Expr::Seq(es) => es.iter().any(|e| targets(e, name)),
+            _ => false,
+        }
+    }
+    stmts.iter().all(|s| match s {
+        Stmt::Assign(_, id, _) | Stmt::Local(_, id, _) | Stmt::Static(_, id, _) => id != name,
+        Stmt::ArrSet(_, id, _, _) | Stmt::AAdd(_, id, _) | Stmt::ASize(_, id, _) => id != name,
+        Stmt::AIns(_, id, _) | Stmt::ADel(_, id, _) => id != name,
+        Stmt::AAddSub(_, id, _, _) | Stmt::ASizeSub(_, id, _, _) => id != name,
+        Stmt::AAddSub2(_, id, _, _, _) | Stmt::ASizeSub2(_, id, _, _, _) => id != name,
+        Stmt::AAddSub3(_, id, _, _, _, _) | Stmt::ASizeSub3(_, id, _, _, _, _) => id != name,
+        Stmt::If(_, c, a, b) => !targets(c, name) && foreach_lv_int_ok(a, name) && foreach_lv_int_ok(b, name),
+        Stmt::While(_, c, b) => !targets(c, name) && foreach_lv_int_ok(b, name),
+        Stmt::For(_, lv, a, bnd, _, b) => lv != name && !targets(a, name) && !targets(bnd, name) && foreach_lv_int_ok(b, name),
+        Stmt::ForEach(_, lv, _, b) => lv != name && foreach_lv_int_ok(b, name),
+        Stmt::Print(_, es, _) => es.iter().all(|e| !targets(e, name)),
+        Stmt::Ret(_, Some(e)) => !targets(e, name),
+        Stmt::CallStmt(_, e) => !targets(e, name),
+        _ => true,
+    })
+}
+
 fn foreach_lv_readonly(stmts: &[Stmt], name: &str) -> bool {
     fn mentions(e: &Expr, name: &str) -> bool {
         match e {
@@ -11361,14 +11393,18 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                     if !matches!(coll, Expr::Var(_) | Expr::Call(..) | Expr::Index3(..)) && !sub && !sub2 && !sub3 && !sub_mid {
                     return Err(format!("line {}: `for each` iterates a variable or a function result in this increment (assign the expression to a variable first)", n));
                 }
-                if matches!(ct, Ty::Arr(_)) {
-                    return Err(format!("line {}: `for each` over fixed-size stack arrays is not in this increment; use a dynamic array collection (the native iterator requires tagged cells)", n));
+                // A fixed-size stack array of integers iterates too: the
+                // element rebuilds as a tag-0 pair each iteration (the
+                // codegen's static-i64-array path; an all-strings literal
+                // types DArrS, so Arr(k) cells are always i64).
+                if matches!(ct, Ty::Arr(_)) && !matches!(coll, Expr::Var(_)) {
+                    return Err(format!("line {}: `for each` over a fixed-size stack array needs a variable collection in this increment (assign the expression to a variable first)", n));
                 }
                 let string_iter = matches!(ct, Ty::Str | Ty::StrOwn);
                 if string_iter && (!matches!(coll, Expr::Var(_)) || !foreach_string_body_safe(body)) {
                     return Err(format!("line {}: string `for each` requires a variable collection and an observation-only body (print, pure string/scalar observations, if, exit, loop or bare return); storage, mutation, user calls and nested iteration are not in this increment", n));
                 }
-                if !matches!(ct, Ty::DArr | Ty::DArrU | Ty::DArrS | Ty::Hash | Ty::Str | Ty::StrOwn) {
+                if !matches!(ct, Ty::DArr | Ty::DArrU | Ty::DArrS | Ty::Hash | Ty::Str | Ty::StrOwn | Ty::Arr(_)) {
                     return Err(format!("line {}: `for each` needs a flat or string array or a hash in this increment", n));
                 }
                 let kp = match env.iter().position(|v| v.name == *var) {
@@ -11410,6 +11446,8 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 }
                 let lv_ok = if string_iter {
                     true // The stricter observation-only proof above covers every body form.
+                } else if matches!(ct, Ty::Arr(_)) {
+                    foreach_lv_int_ok(body, var)
                 } else if sub_mid {
                     foreach_barr_lv_ok(body, var)
                 } else {
@@ -23749,8 +23787,19 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 // directly from the 16-byte array cells, the value
                 // words of the 32-byte hash entries, or a tag-0 pair
                 // for static i64 arrays.
-                *frame += 16;
-                let coll_off = *frame;
+                // A fixed-size stack array iterates in place: the cells
+                // are the OWNER's own frame slot (no snapshot copy; the
+                // length is the static k, patched into the loop-end test).
+                let static_arr = matches!(coll, Expr::Var(ref cn) if matches!(env.iter().rev().find(|v| v.name == *cn).map(|v| v.ty), Some(Ty::Arr(_))));
+                let static_len = if static_arr {
+                    match env.iter().rev().find(|v| match coll { Expr::Var(cn) => v.name == *cn, _ => false }).map(|v| v.ty) { Some(Ty::Arr(k)) => k, _ => unreachable!("static_arr") }
+                } else { 0 };
+                let coll_off = if static_arr {
+                    match coll { Expr::Var(cn) => env.iter().rev().find(|v| v.name == *cn).expect("checked").off, _ => unreachable!("static_arr") }
+                } else {
+                    *frame += 16;
+                    *frame
+                };
                 if matches!(coll, Expr::Call(..)) {
                     let fl = fresh_lbl();
                     match expr_ty(coll, env, sigs) {
@@ -23954,12 +24003,14 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                     } else {
                         cg_value(coll, env, sigs, strs, out, target);
                     }
-                } else {
+                } else if !static_arr {
                     cg_value(coll, env, sigs, strs, out, target);
                 }
-                out.push_str(&format!("    mov %rax, -{}(%rbp)
+                if !static_arr {
+                    out.push_str(&format!("    mov %rax, -{}(%rbp)
     mov %rdx, -{}(%rbp)
 ", coll_off, coll_off - 8));
+                }
                 *frame += 8;
                 let idx_off = *frame;
                 out.push_str(&format!("    movq $1, -{}(%rbp)
@@ -23980,10 +24031,17 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 out.push_str(&format!(".Lfec_{}_{}:
 ", fname, id));
                 trace_location(fname.split("__br").next().unwrap_or(fname), stmt_line(s), strs, out);
-                out.push_str(&format!("    mov -{}(%rbp), %rax
+                if static_arr {
+                    out.push_str(&format!("    mov -{}(%rbp), %rax
+    cmp ${}, %rax
+    jg .Lfee_{}_{}
+", idx_off, static_len, fname, id));
+                } else {
+                    out.push_str(&format!("    mov -{}(%rbp), %rax
     cmp -{}(%rbp), %rax
     jg .Lfee_{}_{}
 ", idx_off, coll_off - 8, fname, id));
+                }
                 if amem.is_some() { out.push_str("    call hbc_arena_mark\n"); }
                 out.push_str(&format!("    mov -{}(%rbp), %r11
     mov -{}(%rbp), %rax
@@ -23999,11 +24057,12 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 } else {
                 match ct {
                     Ty::Str | Ty::StrOwn => out.push_str("    add %r11, %rax\n    mov $1, %edx\n"),
-                    Ty::Arr(_) => out.push_str("    shl $3, %rax
+                    Ty::Arr(_) => out.push_str(&format!("    shl $3, %rax
+    lea -{}(%rbp), %r11
     add %r11, %rax
     mov (%rax), %rdx
     xor %eax, %eax
-"),
+", coll_off)),
                     Ty::Hash => out.push_str("    shl $5, %rax
     add %r11, %rax
     mov 16(%rax), %rcx

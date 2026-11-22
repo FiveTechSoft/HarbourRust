@@ -103,3 +103,6 @@ tests/user-overrides/expected/** -text
 tests/user-overrides/expected/internal_valtype.windows.out -text
 
 tests/json-safety/expected/** -text
+
+# Byte-exact Harbour 3.2 output for the static foreach pins.
+tests/foreach-static/expected/** -text
