@@ -43,16 +43,16 @@ struct hrt_buf {
 static void hrt_put(struct hrt_buf *b, const char *s, hrt_u64 n)
 {
     hrt_u64 i;
-    if (b->len + n > b->cap) {
+    if (!b->p || b->len + n > b->cap) {
         hrt_u64 nc = b->cap ? b->cap : 256;
         char *np;
         while (nc < b->len + n)
             nc *= 2;
-        /* the hbc string convention: a 16-byte {len, cap} header, data
+        /* the hbc string convention: a 16-byte {cap, len} header, data
            at +16, freed by hbc_freestr */
         np = (char *)hbc_alloc(nc + 16);
         *(hrt_u64 *)np = nc;
-        ((hrt_u64 *)np)[1] = nc;
+        ((hrt_u64 *)np)[1] = b->len;
         np += 16;
         for (i = 0; i < b->len; i++)
             np[i] = b->p[i];
@@ -64,6 +64,7 @@ static void hrt_put(struct hrt_buf *b, const char *s, hrt_u64 n)
     for (i = 0; i < n; i++)
         b->p[b->len + i] = s[i];
     b->len += n;
+    ((hrt_u64 *)b->p)[-1] = b->len;
 }
 
 static void hrt_putc(struct hrt_buf *b, char c)
@@ -384,78 +385,64 @@ static int hrt_hex4(struct hrt_jd *jd, hrt_u64 *out)
 
 static int hrt_dec_string(struct hrt_jd *jd, struct hrt_pair *out)
 {
-    /* the opening quote is already consumed */
-    hrt_u64 cap = 64;
-    char *data = (char *)hbc_alloc(cap + 16);
-    hrt_u64 n = 0;
+    /* Every path, including escapes, uses the same capacity/length owner. */
+    struct hrt_buf b = { (char *)0, 0, 0 };
     while (jd->pos < jd->len) {
-        unsigned char c = (unsigned char)jd->s[jd->pos];
+        unsigned char c = (unsigned char)jd->s[jd->pos++];
         if (c == '"') {
-            jd->pos++;
-            *(hrt_u64 *)(data - 16) = n;
-            ((hrt_u64 *)(data - 16))[1] = n;
+            /* The empty string still has an owned, initialized header. */
+            hrt_put(&b, "", 0);
             out->tag = 4;
-            out->payload = (hrt_u64)data;
+            out->payload = (hrt_u64)b.p;
             return 1;
         }
+        if (c < 0x20) goto bad;
         if (c == '\\') {
-            int e = -1;
+            int e;
             hrt_u64 cp;
-            jd->pos++;
-            if (jd->pos >= jd->len) { hbc_freestr(data); return 0; }
-            switch (jd->s[jd->pos]) {
-            case '"': e = '"'; break;
-            case '\\': e = '\\'; break;
-            case '/': e = '/'; break;
+            if (jd->pos >= jd->len) goto bad;
+            e = (unsigned char)jd->s[jd->pos++];
+            switch (e) {
+            case '"': case '\\': case '/': break;
             case 'b': e = 8; break;
             case 'f': e = 12; break;
             case 'n': e = 10; break;
             case 'r': e = 13; break;
             case 't': e = 9; break;
-            case 'u': {
-                hrt_u64 k;
-                jd->pos++;
-                if (!hrt_hex4(jd, &cp)) { hbc_freestr(data); return 0; }
-                /* the codepoint emits as UTF-8 (the standard JSON
-                   interchange form); the console-codepage mapping of the
-                   oracle machine is an environment-dependent divergence */
+            case 'u':
+                if (!hrt_hex4(jd, &cp)) goto bad;
+                if (cp >= 0xD800 && cp <= 0xDBFF) {
+                    hrt_u64 low;
+                    if (jd->len - jd->pos < 2 || jd->s[jd->pos] != '\\' || jd->s[jd->pos+1] != 'u') goto bad;
+                    jd->pos += 2;
+                    if (!hrt_hex4(jd, &low) || low < 0xDC00 || low > 0xDFFF) goto bad;
+                    cp = 0x10000 + ((cp - 0xD800) << 10) + low - 0xDC00;
+                } else if (cp >= 0xDC00 && cp <= 0xDFFF) goto bad;
                 if (cp < 0x80) {
-                    data[n++] = (char)cp;
+                    hrt_putc(&b, (char)cp);
                 } else if (cp < 0x800) {
-                    data[n++] = (char)(0xC0 | (cp >> 6));
-                    data[n++] = (char)(0x80 | (cp & 0x3F));
+                    hrt_putc(&b, (char)(0xC0 | (cp >> 6)));
+                    hrt_putc(&b, (char)(0x80 | (cp & 0x3F)));
+                } else if (cp < 0x10000) {
+                    hrt_putc(&b, (char)(0xE0 | (cp >> 12)));
+                    hrt_putc(&b, (char)(0x80 | ((cp >> 6) & 0x3F)));
+                    hrt_putc(&b, (char)(0x80 | (cp & 0x3F)));
                 } else {
-                    data[n++] = (char)(0xE0 | (cp >> 12));
-                    data[n++] = (char)(0x80 | ((cp >> 6) & 0x3F));
-                    data[n++] = (char)(0x80 | (cp & 0x3F));
+                    hrt_putc(&b, (char)(0xF0 | (cp >> 18)));
+                    hrt_putc(&b, (char)(0x80 | ((cp >> 12) & 0x3F)));
+                    hrt_putc(&b, (char)(0x80 | ((cp >> 6) & 0x3F)));
+                    hrt_putc(&b, (char)(0x80 | (cp & 0x3F)));
                 }
-                (void)k;
-                jd->pos++;
                 continue;
+            default: goto bad;
             }
-            default:
-                hbc_freestr(data);
-                return 0;
-            }
-            data[n++] = (char)e;
-            jd->pos++;
-            continue;
+            hrt_putc(&b, (char)e);
+        } else {
+            hrt_putc(&b, (char)c);
         }
-        if (n + 4 > cap) {
-            hrt_u64 nc = cap * 2;
-            char *np = (char *)hbc_alloc(nc + 16);
-            hrt_u64 k;
-            np += 16;
-            for (k = 0; k < n; k++)
-                np[k] = data[k];
-            hbc_freestr(data);
-            data = np;
-            cap = nc;
-        }
-        data[n++] = (char)c;
-        jd->pos++;
     }
-    hbc_freestr(data);
+bad:
+    if (b.p) hbc_freestr(b.p);
     return 0;
 }
 

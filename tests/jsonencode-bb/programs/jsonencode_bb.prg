@@ -3,7 +3,7 @@ function main()
  local a := {1, "x", .F.}
  local n := 42
  local s := "ab" + Chr(34) + "cd" + Chr(92) + "e"
- local d := Date()
+ local d := SToD("20261122")
  local f := 2.5
  local b := .T.
  local n1 := {{1, 2}, {3}}
