@@ -90,3 +90,6 @@ tests/atokens-func/expected/** -text
 tests/transform-bb/expected/** -text
 tests/transform-bb/logs/** -text
 tests/transform-bb/evidence/** -text
+
+# Byte-exact Harbour 3.2 output for the ASort block pins.
+tests/asort-block/expected/** -text

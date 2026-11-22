@@ -819,6 +819,9 @@ thread_local! {
     static BLOCK_CAPTURES: std::cell::RefCell<std::collections::HashMap<usize, Vec<(String, Ty)>>> = std::cell::RefCell::new(std::collections::HashMap::new());
     static BLOCK_PARAM_TYS: std::cell::RefCell<std::collections::HashMap<usize, Vec<Ty>>> = std::cell::RefCell::new(std::collections::HashMap::new());
     static CAPTURE_MODE: std::cell::Cell<Option<u8>> = std::cell::Cell::new(None); // 0: integer elements, 1: string elements
+    // Comparator mode (ASort's bOrder block): EVERY block parameter is an
+    // element (x and y), not just the first one.
+    static COMPARATOR_MODE: std::cell::Cell<bool> = std::cell::Cell::new(false);
     static TRACE_LINE: std::cell::Cell<usize> = std::cell::Cell::new(0);
     static PROC_METADATA_LINES: std::cell::Cell<bool> = std::cell::Cell::new(true);
     static TRACE_OFFSET: std::cell::Cell<usize> = std::cell::Cell::new(0);
@@ -7874,19 +7877,44 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 return Ok(Ty::Dyn);
             }
             if is_builtin(id, "asort") {
-                if args.is_empty() || args.len()>3 {
-                    return Err(format!("line {}: `ASort` takes one to three arguments in this increment",n));
+                // ASort(a [, start [, count [, bOrder]]]): the array slot
+                // passes by address like the other array builtins; start
+                // and count stay 1-based integers (NIL in place works like
+                // the oracle ASort(a, nil, nil, block)). A direct codeblock
+                // literal as the fourth argument is the comparator: it gets
+                // the two ELEMENTS (x, y) and TRUE places x before y
+                // (oracle {3,1,2} with {x, y| x > y} -> 3 2 1). The element
+                // family decides the comparator parameter typing, exactly
+                // like AScan's block; captures resolve read-only in the
+                // enclosing scope.
+                if args.is_empty() || args.len()>4 {
+                    return Err(format!("line {}: `ASort` takes one to four arguments in this increment",n));
                 }
                 if !matches!(&args[0], Expr::Var(_)) {
                     return Err(format!("line {}: `ASort` expects an array variable (the slot is passed by address)",n));
                 }
-                match type_expr(&args[0],env,sigs,n)? {
+                let ta = type_expr(&args[0],env,sigs,n)?;
+                match ta {
                     Ty::DArr | Ty::DArrS => {}
                     _ => return Err(format!("line {}: `ASort` supports flat integer or string arrays in this increment",n)),
                 }
-                for a in &args[1..] {
+                let block_pos = if args.len()==4 { Some(3usize) } else { None };
+                for (i, a) in args.iter().enumerate() {
+                    if i==0 || Some(i)==block_pos { continue; }
                     if !matches!(type_expr(a,env,sigs,n)?, Ty::I64 | Ty::Dyn) {
                         return Err(format!("line {}: `ASort` start/count are integers in this increment",n));
+                    }
+                }
+                if let Some(bi) = block_pos {
+                    let elem = if ta == Ty::DArrS { 1u8 } else { 0u8 };
+                    COMPARATOR_MODE.with(|c| c.set(true));
+                    CAPTURE_MODE.set(Some(elem));
+                    let tb = type_expr(&args[bi],env,sigs,n)?;
+                    CAPTURE_MODE.set(None);
+                    COMPARATOR_MODE.with(|c| c.set(false));
+                    match tb {
+                        Ty::Block(2, BRet::Bool) => {}
+                        _ => return Err(format!("line {}: `ASort` codeblock takes two parameters (element, element) and must return a logical in this increment",n)),
                     }
                 }
                 return Ok(Ty::Dyn);
@@ -10073,10 +10101,13 @@ fn check_block_body(id: usize, params: &[String], body: &[Expr], env: &[Local], 
     // Parameter typing: the FIRST parameter is AScan's element (integer
     // arrays deliver I64, string arrays deliver a borrowed Str); a second
     // parameter is the 1-based position (integer); without the context
-    // parameters are integers (the historical rule).
+    // parameters are integers (the historical rule). COMPARATOR_MODE
+    // (ASort's bOrder) types EVERY parameter as an element.
+    let comparator = COMPARATOR_MODE.get();
     let pty = |i: usize| match CAPTURE_MODE.get() {
         Some(0) => Ty::I64,
-        Some(1) if i == 0 => Ty::Str,
+        Some(1) if i == 0 && !comparator => Ty::Str,
+        Some(1) if comparator => Ty::Str,
         _ => Ty::I64,
     };
     // Captures: free names that are not parameters. Read-only, 16-byte
@@ -17208,17 +17239,49 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
         Expr::Call(id,args) if is_builtin(id,"asort") => {
             let av = match &args[0] { Expr::Var(v) => v.clone(), _ => unreachable!("checked") };
             let var = env.iter().rev().find(|x| x.name == *av).expect("checked");
-            let helper = if expr_ty(&args[0],env,sigs) == Ty::DArrS { "hbc_asort_s" } else { "hbc_asort_i" };
-            out.push_str("    sub $32, %rsp\n");
-            if args.len() >= 2 {
-                cg_expr(&args[1],env,sigs,strs,out,target);
-                out.push_str("    mov %rax, (%rsp)\n");
-            } else { out.push_str("    movq $1, (%rsp)\n"); }
-            if args.len() == 3 {
-                cg_expr(&args[2],env,sigs,strs,out,target);
-                out.push_str("    mov %rax, 8(%rsp)\n");
-            } else { out.push_str("    movq $-1, 8(%rsp)\n"); }
-            out.push_str(&format!("    mov -{}(%rbp), %rdi\n    mov -{}(%rbp), %rsi\n    mov (%rsp), %rdx\n    mov 8(%rsp), %rcx\n    call {}\n    add $32, %rsp\n    mov $1, %eax\n    xor %edx, %edx\n", var.off, var.off-8, helper));
+            if args.len()==4 {
+                // Block sort: the helper gets the cells, the clamped
+                // start/count and the block function pointer; blocks with
+                // captures receive the owner's %rbp in %r10 before the
+                // sort (each block call reloads it from the helper's own
+                // slot). The element family travels in %r9.
+                let is_str = expr_ty(&args[0],env,sigs) == Ty::DArrS;
+                let blk_id = match &args[3] { Expr::BlockLit(bid, _, _) => *bid, _ => unreachable!("checked") };
+                let has_caps = !BLOCK_CAPTURES.with(|m| m.borrow().get(&blk_id).map(|v| v.is_empty()).unwrap_or(true));
+                out.push_str("    sub $32, %rsp\n");
+                // A literal NIL in the start/count slots is the oracle's
+                // default (ASort(a, nil, nil, block) sorts everything).
+                if matches!(&args[1], Expr::Nil) {
+                    out.push_str("    movq $1, (%rsp)\n");
+                } else {
+                    cg_expr(&args[1],env,sigs,strs,out,target);
+                    out.push_str("    mov %rax, (%rsp)\n");
+                }
+                if matches!(&args[2], Expr::Nil) {
+                    out.push_str("    movq $-1, 8(%rsp)\n");
+                } else {
+                    cg_expr(&args[2],env,sigs,strs,out,target);
+                    out.push_str("    mov %rax, 8(%rsp)\n");
+                }
+                cg_expr(&args[3],env,sigs,strs,out,target);
+                out.push_str(&format!("    mov %rax, %r8\n    mov -{}(%rbp), %rdi\n    mov -{}(%rbp), %rsi\n    mov (%rsp), %rdx\n    mov 8(%rsp), %rcx\n", var.off, var.off-8));
+                if has_caps {
+                    out.push_str("    mov %rbp, %r10\n");
+                }
+                out.push_str(&format!("    mov ${}, %r9\n    call hbc_asort_b\n    add $32, %rsp\n    mov $1, %eax\n    xor %edx, %edx\n", if is_str {1} else {0}));
+            } else {
+                let helper = if expr_ty(&args[0],env,sigs) == Ty::DArrS { "hbc_asort_s" } else { "hbc_asort_i" };
+                out.push_str("    sub $32, %rsp\n");
+                if args.len() >= 2 {
+                    cg_expr(&args[1],env,sigs,strs,out,target);
+                    out.push_str("    mov %rax, (%rsp)\n");
+                } else { out.push_str("    movq $1, (%rsp)\n"); }
+                if args.len() == 3 {
+                    cg_expr(&args[2],env,sigs,strs,out,target);
+                    out.push_str("    mov %rax, 8(%rsp)\n");
+                } else { out.push_str("    movq $-1, 8(%rsp)\n"); }
+                out.push_str(&format!("    mov -{}(%rbp), %rdi\n    mov -{}(%rbp), %rsi\n    mov (%rsp), %rdx\n    mov 8(%rsp), %rcx\n    call {}\n    add $32, %rsp\n    mov $1, %eax\n    xor %edx, %edx\n", var.off, var.off-8, helper));
+            }
         }
         Expr::Call(id,args) if ["day","month","dow"].iter().any(|b|is_builtin(id,b)) => {
             cg_value(&args[0],env,sigs,strs,out,target);
@@ -34072,6 +34135,9 @@ fn finalize_trace(mut out: String, target: Target) -> String {
     if out.contains("call hbc_atokens") {
         out.push_str(ATOKENS_HELPER);
     }
+    if out.contains("call hbc_asort_b") {
+        out.push_str(ASORT_BLOCK_HELPER);
+    }
     // Add private stderr variants only when used. No mutable routing state:
     // nested OutStd/QOut and controlled diagnostics retain their destination.
     if out.contains("call hbc_eprint_") {
@@ -40557,6 +40623,148 @@ hbc_seconds:
     addsd %xmm1, %xmm0
     mov $655362, %edi
     leave
+    ret
+"#;
+
+const ASORT_BLOCK_HELPER: &str = r#"
+    .text
+# hbc_asort_b: rdi = cells, rsi = count, rdx = start (1-based), rcx =
+# count (-1 -> to the end), r8 = bOrder block function pointer,
+# r9 = element family (0: Dyn integer cells, 1: borrowed Str pairs),
+# r10 = the owner's %rbp (captures context; reloaded before every block
+# call). Stable insertion sort over cells[start-1 .. start-1+count):
+# the block receives the two ELEMENTS (x, y) and TRUE places x before y.
+# Slots: -8 family, -16 owner ctx, -24 base (0-based first index),
+# -32 end (exclusive), -40 i.
+hbc_asort_b:
+    push %rbp
+    mov %rsp, %rbp
+    push %rbx
+    push %r12
+    push %r13
+    push %r14
+    push %r15
+    sub $56, %rsp
+    mov %r9, -8(%rbp)
+    mov %r10, -16(%rbp)
+    mov %rdi, %rbx
+    mov %rsi, %r12
+    test %r12, %r12
+    jz .Lsrtb_done
+    cmp $1, %rdx
+    jge .Lsrtb_sok
+    mov $1, %rdx
+.Lsrtb_sok:
+    cmp %r12, %rdx
+    jg .Lsrtb_done
+    # a count below 1 sorts to the end (hbc_asort_i's -1 convention)
+    test %rcx, %rcx
+    jle .Lsrtb_all
+    # count = min(count, len - start + 1)
+    mov %r12, %rax
+    sub %rdx, %rax
+    inc %rax
+    cmp %rax, %rcx
+    jle .Lsrtb_cok
+    mov %rax, %rcx
+    jmp .Lsrtb_cok
+.Lsrtb_all:
+    mov %r12, %rax
+    sub %rdx, %rax
+    inc %rax
+    mov %rax, %rcx
+.Lsrtb_cok:
+    lea -1(%rdx), %rax
+    mov %rax, -24(%rbp)
+    add %rcx, %rax
+    mov %rax, -32(%rbp)
+    mov %r8, %r13
+    mov -24(%rbp), %rax
+    inc %rax
+    mov %rax, -40(%rbp)
+.Lsrtb_i:
+    mov -40(%rbp), %rax
+    cmp -32(%rbp), %rax
+    jae .Lsrtb_done
+    mov %rax, %r14
+.Lsrtb_j:
+    mov -24(%rbp), %rax
+    cmp %rax, %r14
+    jbe .Lsrtb_nexti
+    # ---- compare cell[j] vs cell[j-1] through the block ----
+    mov %r14, %rcx
+    shl $4, %rcx
+    add %rbx, %rcx
+    cmpq $0, -8(%rbp)
+    jne .Lsrtb_strA
+    mov (%rcx), %rax
+    mov 8(%rcx), %rdx
+    call hbc_dyn_to_i64
+    jmp .Lsrtb_Agot
+.Lsrtb_strA:
+    mov 8(%rcx), %rax
+    test %rax, %rax
+    jnz .Lsrtb_strA2
+    xor %edx, %edx
+    jmp .Lsrtb_Agot
+.Lsrtb_strA2:
+    mov -8(%rax), %rdx
+.Lsrtb_Agot:
+    push %rdx
+    push %rax
+    mov %r14, %rcx
+    shl $4, %rcx
+    add %rbx, %rcx
+    sub $16, %rcx
+    cmpq $0, -8(%rbp)
+    jne .Lsrtb_strB
+    mov (%rcx), %rax
+    mov 8(%rcx), %rdx
+    call hbc_dyn_to_i64
+    jmp .Lsrtb_Bgot
+.Lsrtb_strB:
+    mov 8(%rcx), %rax
+    test %rax, %rax
+    jnz .Lsrtb_strB2
+    xor %edx, %edx
+    jmp .Lsrtb_Bgot
+.Lsrtb_strB2:
+    mov -8(%rax), %rdx
+.Lsrtb_Bgot:
+    push %rdx
+    push %rax
+    mov -16(%rbp), %r10
+    mov %r13, %r11
+    call *%r11
+    add $32, %rsp
+    test %rax, %rax
+    jz .Lsrtb_nexti
+    # ---- swap cell[j] and cell[j-1] ----
+    mov %r14, %rcx
+    shl $4, %rcx
+    add %rbx, %rcx
+    sub $16, %rcx
+    mov (%rcx), %rax
+    mov 8(%rcx), %rdx
+    mov 16(%rcx), %rsi
+    mov 24(%rcx), %rdi
+    mov %rsi, (%rcx)
+    mov %rdi, 8(%rcx)
+    mov %rax, 16(%rcx)
+    mov %rdx, 24(%rcx)
+    dec %r14
+    jmp .Lsrtb_j
+.Lsrtb_nexti:
+    incq -40(%rbp)
+    jmp .Lsrtb_i
+.Lsrtb_done:
+    lea -40(%rbp), %rsp
+    pop %r15
+    pop %r14
+    pop %r13
+    pop %r12
+    pop %rbx
+    pop %rbp
     ret
 "#;
 
