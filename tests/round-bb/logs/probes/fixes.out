@@ -1,0 +1,13 @@
+
+0.3|         0.3
+literal
+ownedvar
+ab|ab
+xyz
+0.3
+         0.3
+boom-evaluated
+caught: Argument error
+boom-evaluated
+caught2: Argument error
+         1.5
