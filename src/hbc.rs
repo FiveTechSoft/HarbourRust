@@ -2270,7 +2270,16 @@ fn lift_thread_blocks(funcs: &mut Vec<Func>) {
 
 // Byte builtins reuse only the existing measured typed byte paths. No F64,
 // Dyn coercion or encoding-aware Chr/Asc behavior is introduced here.
+thread_local! {
+    // Names of the functions the program defines, lowercased. Harbour lets a
+    // program's own function replace an RTL function of the same name (the
+    // procname oracle's recurse.prg defines DESCEND), so a call to one of
+    // these names is a user call, never the builtin.
+    static USER_FUNC_NAMES: std::cell::RefCell<std::collections::HashSet<String>> = std::cell::RefCell::new(std::collections::HashSet::new());
+}
+
 fn is_builtin(id: &str, name: &str) -> bool {
+    if USER_FUNC_NAMES.with(|u| { let u = u.borrow(); !u.is_empty() && u.contains(&id.to_ascii_lowercase()) }) { return false; }
     id.eq_ignore_ascii_case(name)
         || (name=="chr" && id.eq_ignore_ascii_case("hb_bchar"))
         || (name=="asc" && id.eq_ignore_ascii_case("hb_bcode"))
@@ -38210,6 +38219,7 @@ fn main() {
         }
         None
     }
+    USER_FUNC_NAMES.with(|u| *u.borrow_mut() = funcs.iter().map(|f| f.name.to_ascii_lowercase()).collect());
     let mut view: Vec<Sig> = funcs.iter().map(|f| Sig {
         nil_ret_only: all_returns_nil(f),
         name: f.name.clone(),

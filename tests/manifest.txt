@@ -1923,6 +1923,7 @@ neg tests/t1709_nested_move_neg_loop.prg is moved inside the
 pos2 tests/cb-logical/programs/ascan_block.prg tests/cb-logical/expected/ascan_block.linux.out tests/cb-logical/expected/ascan_block.windows.out
 pos2 tests/str-concat-assign/programs/accumulate.prg tests/str-concat-assign/expected/accumulate.linux.out tests/str-concat-assign/expected/accumulate.windows.out
 pos2 tests/loopreg/programs/edges.prg tests/loopreg/expected/edges.linux.out tests/loopreg/expected/edges.windows.out
+pos2 tests/user-overrides/builtin_names.prg tests/user-overrides/expected/builtin_names.linux.out tests/user-overrides/expected/builtin_names.windows.out
 posx tests/i64-overflow/add.prg 1 Limit: integer overflow needs numeric promotion\nCallstack:\n  at main (tests/i64-overflow/add.prg:4)\n
 posx tests/i64-overflow/sub.prg 1 Limit: integer overflow needs numeric promotion\nCallstack:\n  at main (tests/i64-overflow/sub.prg:4)\n
 posx tests/i64-overflow/mul.prg 1 Limit: integer overflow needs numeric promotion\nCallstack:\n  at main (tests/i64-overflow/mul.prg:4)\n
