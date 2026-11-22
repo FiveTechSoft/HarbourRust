@@ -17,7 +17,8 @@ outputs - no GPL source read):
 - strings decode owned with `\" \\ \/ \b \f \n \r \t` reversed; a
   `\uXXXX` codepoint emits as UTF-8 (the standard JSON interchange
   form; the oracle machine's console-codepage mapping for >= 0x80 is an
-  environment-dependent divergence, registered).
+  environment-dependent divergence, registered). Raw input bytes
+  >=0x80 are preserved without validating UTF-8.
 - `true`/`false`/`null` decode to the logical/NIL tags; a parse failure
   decodes to NIL (the oracle: 'not json' -> U, no error raised).
 - arrays decode as tag-8 blocks the ordinary AAdd/Len/indexing
