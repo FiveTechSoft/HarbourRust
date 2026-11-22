@@ -1,5 +1,7 @@
 # hb_jsonDecode() - clean-room JSON parser
 
+Coverage: 14 exact oracle rows in jsondecode_bb, plus a 3-row escape oracle file whose second row is divergent under the UTF-8 policy. The escape file as a whole is not an exact-pass claim.
+
 `hb_jsonDecode(text)` parses the JSON text and returns the value as a
 Dyn casilla (runtime/hrjson.c, generated/hrjson.s via
 tests/generate_json_asm.py; black-box fitted from real Harbour 3.2

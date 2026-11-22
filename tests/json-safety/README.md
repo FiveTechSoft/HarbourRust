@@ -1,4 +1,4 @@
-# JSON B1: owned string layout and decoding escapes
+# Historical B1: owned string layout and decoding escapes
 
 Base: 40846e1b9ac5c359e30bc4e9205558af64177fdf. This is the first review chunk of package B, not a complete repair of JSON. Do not merge this chunk alone as completion of B.
 
@@ -15,14 +15,14 @@ Validation:
 - Existing encode fixture: 14 rows exact, instrumented Linux, exit 0.
 - PE manifest gate: 1884 PASS, 22 KNOWN-MISMATCH, 0 FAIL. FILE gate: 22 checks. Neither establishes JSON runtime coverage on Windows.
 
-Still pending, intentionally outside this chunk:
+Historical B1 pending list (superseded by B2 below):
 - Decoder arrays: capacity/count and copy offsets, error unwind and nested tag-8 release.
 - Decoder numbers: exponent semantics, grammar validation and bounded arithmetic.
 - Explicit encode rejection/implementation for typed DArr3/DArr4.
 - Root-manifest JSON registrations and final README pin counts after full fixes.
 - Total-consumption compatibility is unchanged pending oracle evidence.
 
-The broad jsondecode_bb program still fails the instrumented allocation registry on array cleanup. Its output before cleanup agrees, but that is NOT a passing test. jsondecode_escapes now reports four UTF-8 bytes for its escaped e-acute case instead of the former three-byte incorrect result, so that old oracle-derived console-codepage pin is NOT claimed exact. The UTF-8 divergence needs explicit treatment in the later test registration. No Harbour source was used, no new compatibility claim is made, and no remote branch/CI/main mutation is included in this chunk's local tests.
+Historical B1 result: the broad jsondecode_bb program failed the instrumented allocation registry on array cleanup. Its output before cleanup agrees, but that is NOT a passing test. jsondecode_escapes now reports four UTF-8 bytes for its escaped e-acute case instead of the former three-byte incorrect result, so that old oracle-derived console-codepage pin is NOT claimed exact. The UTF-8 divergence needs explicit treatment in the later test registration. No Harbour source was used, no new compatibility claim is made, and no remote branch/CI/main mutation is included in this chunk's local tests.
 
 ## B2 continuation
 
@@ -35,3 +35,9 @@ Encode DArr3/DArr4 now fail by name rather than falling through to null. Buffer 
 Validation for B2: ASan/UBSan plus exact allocation registry covers arrays of nine elements, nested strings/arrays, malformed partial trees, deferred object errors with zero live blocks, malformed numbers and extreme exponents, i64 minimum and short/long strings. Generated runtime programs execute nested cleanup under --instrument. The 14-row encode and 14-row decode programs are byte-exact on Linux, plain/instrumented and external-as instrumented. The old three-row Unicode console pin remains unchanged and explicitly divergent in row two; its UTF-8 regression copy is separately named in the root manifest.
 
 Root manifest adds five positive and two negative rows. PE gate: 1891 PASS / 22 KNOWN-MISMATCH / 0 FAIL, emission only. Mac inventory: 1289 executable manifest rows plus 57 auxiliary rows = 1346; 16 runner tests pass with two platform-dependent skips. Rust units: 91/91. FILE: 22 checks. Full Windows/Mac JSON execution and full unrelated runtime batteries have not been performed locally. Deep-clone operations or arbitrary mutation of nested Dyn arrays are not newly certified by this change. No workflow changes or Harbour source use.
+
+## B2 v2 ownership correction
+
+The first B2 draft was rejected: recursive freeing combined with the old shallow tag-8 clone in Break(Dyn) could double-free or use freed children. Both Linux and Windows hbc_darrclone helpers now recursively clone owned tag-8 children. The new break_nested regression throws the same nested decoded local five times, reads both caught and original values, and destroys both owners. The rejected compiler crashes uninstrumented and fails its allocation registry instrumented; this version passes both and external assembly. Root inventory is now 1290 + 57 = 1347; PE 1892/22/0. This supersedes the counts in the B2 draft paragraph.
+
+Exponent literals currently retain dec metadata zero. Fractional roundtrip formatting after exponent parsing is NOT certified, even where the numeric value test passes. B1 comments above describe history, not remaining defects after B2. Windows/Mac runtime remain unexecuted locally.

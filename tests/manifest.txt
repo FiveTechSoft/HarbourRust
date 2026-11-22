@@ -1942,3 +1942,4 @@ pos2 tests/json-safety/programs/arrays_numbers.prg tests/json-safety/expected/ar
 pos2 tests/json-safety/programs/escapes_utf8.prg tests/json-safety/expected/escapes_utf8.linux.out tests/json-safety/expected/escapes_utf8.windows.out
 neg tests/json-safety/rejects/darr3.prg DArr3/DArr4 is outside this increment
 neg tests/json-safety/rejects/darr4.prg DArr3/DArr4 is outside this increment
+pos2 tests/json-safety/programs/break_nested.prg tests/json-safety/expected/break_nested.linux.out tests/json-safety/expected/break_nested.windows.out

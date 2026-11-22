@@ -33344,9 +33344,9 @@ hbc_dfree:
     ret
 
 # hbc_darrclone: rdi = Dyn-cell array DATA pointer (tag-8 payload, live
-# count at -8). Deep clone of the literal-only cell shape (the checker
-# guarantees scalar/string cells): scalar cells copy verbatim, owned
-# string cells (tag 4) and owned float cells are re-created so the clone
+# count at -8). Deep clone of owned Dyn cells: scalar cells copy verbatim,
+# owned tag-8 child arrays recurse, owned string cells (tag 4) and owned
+# float cells are re-created so the clone
 # owns its payloads independently. Returns rax = new data pointer; the
 # caller owns it. Used by Break(Dyn) so the exception entry never shares
 # the source slot's array.
@@ -33375,6 +33375,14 @@ hbc_darrclone:
     mov 8(%rbx,%rax), %rdx
     mov %rcx, %rax
     call hbc_float_clone
+    @HBC_TAG_KIND@cmp $8, %rax@HBC_TAG_END@
+    jne .Ldacl_not_array
+    mov %rdx, %rdi
+    call hbc_darrclone
+    mov %rax, %rdx
+    mov $8, %eax
+    jmp .Ldacl_store
+.Ldacl_not_array:
     @HBC_TAG_KIND@cmp $4, %rax@HBC_TAG_END@
     jne .Ldacl_store
     mov %rdx, %rdi
@@ -37373,9 +37381,9 @@ hbc_dfree:
     ret
 
 # hbc_darrclone: rdi = Dyn-cell array DATA pointer (tag-8 payload, live
-# count at -8). Deep clone of the literal-only cell shape (the checker
-# guarantees scalar/string cells): scalar cells copy verbatim, owned
-# string cells (tag 4) and owned float cells are re-created so the clone
+# count at -8). Deep clone of owned Dyn cells: scalar cells copy verbatim,
+# owned tag-8 child arrays recurse, owned string cells (tag 4) and owned
+# float cells are re-created so the clone
 # owns its payloads independently. Returns rax = new data pointer; the
 # caller owns it. Used by Break(Dyn) so the exception entry never shares
 # the source slot's array.
@@ -37404,6 +37412,14 @@ hbc_darrclone:
     mov 8(%rbx,%rax), %rdx
     mov %rcx, %rax
     call hbc_float_clone
+    @HBC_TAG_KIND@cmp $8, %rax@HBC_TAG_END@
+    jne .Ldacl_not_array
+    mov %rdx, %rdi
+    call hbc_darrclone
+    mov %rax, %rdx
+    mov $8, %eax
+    jmp .Ldacl_store
+.Ldacl_not_array:
     @HBC_TAG_KIND@cmp $4, %rax@HBC_TAG_END@
     jne .Ldacl_store
     mov %rdx, %rdi

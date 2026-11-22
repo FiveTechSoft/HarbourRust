@@ -21,7 +21,7 @@ with tempfile.TemporaryDirectory() as temp:
         run = subprocess.run([str(exe)], capture_output=True, timeout=10)
         assert (run.returncode, run.stdout, run.stderr) == (0, expected, b''), (flags, run)
         print('PASS hbc string roundtrip', flags)
-    for name in ('arrays_numbers', 'escapes_utf8'):
+    for name in ('arrays_numbers', 'escapes_utf8', 'break_nested'):
         for flags in ([], ['--instrument'], ['--external-as', '--instrument']):
             exe = temp / name
             build = subprocess.run([hbc, 'tests/json-safety/programs/' + name + '.prg', str(exe), '--target=linux'] + flags,

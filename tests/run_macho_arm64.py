@@ -76,9 +76,9 @@ TARGET = '--target=macho-arm64'  # --target=macho runs the same battery on Intel
 # out of range"; strfmt expectation updated). Round black-box programs
 # under tests/round-bb/ run via tests/round-bb/check.sh, not the manifest.
 # User overrides: builtin_names.prg and internal_valtype.prg (+2).
-# JSON encode/decode and safety fixtures: five executable rows (+5).
-# Full total:1289+6+4+38+9 =1346,1 named REJ on both Mac targets.
-EXPECTED_MANIFEST_ROWS = 1289
+# JSON encode/decode and safety fixtures: six executable rows (+6).
+# Full total:1290+6+4+38+9 =1347,1 named REJ on both Mac targets.
+EXPECTED_MANIFEST_ROWS = 1290
 # Post-run m_clie.dbf SHA-256 per DBF acceptance test (generated on Linux,
 # stdout checked against the committed expectations). t4 appends records:
 # dbAppend rewrites the header last-update date (bytes 1-3, YY MM DD of the
