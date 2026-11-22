@@ -7,10 +7,13 @@ Dyn casilla (runtime/hrjson.c, generated/hrjson.s via
 tests/generate_json_asm.py; black-box fitted from real Harbour 3.2
 outputs - no GPL source read):
 
-- numbers decode exact: integers as tag-0 pairs (9223372036854775807
-  included); floats keep the LITERAL's written decimals in the Dyn
-  float pair's dec byte, so `hb_jsonEncode(hb_jsonDecode("1.5"))`
-  round-trips "1.5" (the oracle prints them with the item decimals).
+- in-range integers decode as exact tag-0 pairs (9223372036854775807
+  included). Decimal-to-double conversion is not proven correctly rounded.
+  Non-exponent floats retain written decimal metadata, so the pinned 1.5
+  case round-trips. Exponent forms set decimal metadata to zero; fractional
+  roundtrip formatting for them is not certified. Integers outside i64,
+  exponent magnitude above 308, fractional metadata above 255 digits and
+  nonfinite results return NIL under the current explicit bounds.
 - strings decode owned with `\" \\ \/ \b \f \n \r \t` reversed; a
   `\uXXXX` codepoint emits as UTF-8 (the standard JSON interchange
   form; the oracle machine's console-codepage mapping for >= 0x80 is an
@@ -29,4 +32,4 @@ named rejection (the oracle's return contract there is unmeasured).
 
 `expected/*.windows.out` is real Harbour 3.2 output (hbmk2
 -comp=mingw64 -gtcgi, native Windows 11); the Linux files are the same
-bytes with LF line ends. hbc output is byte-identical (14 pins in jsondecode_bb plus 3 in jsondecode_escapes). The 14-row program is registered as an exact root-manifest case. The 3-row escape oracle pin is preserved unchanged but is NOT exact under this runtime UTF-8 policy: the escaped e-acute row now has length 4, while the recorded console-codepage pin has length 3. tests/json-safety/programs/escapes_utf8.prg and its explicitly self-pinned UTF-8 expectations register this divergence, not an oracle pass.
+bytes with LF line ends. Only the 14 pins in jsondecode_bb are claimed byte-identical; the 3-row jsondecode_escapes file is preserved as oracle evidence, not an exact-pass claim. The 14-row program is registered as an exact root-manifest case. The 3-row escape oracle pin is preserved unchanged but is NOT exact under this runtime UTF-8 policy: the escaped e-acute row now has length 4, while the recorded console-codepage pin has length 3. tests/json-safety/programs/escapes_utf8.prg and its explicitly self-pinned UTF-8 expectations register this divergence, not an oracle pass.
