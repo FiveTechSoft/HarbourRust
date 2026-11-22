@@ -13,9 +13,12 @@ All-strings literals type DArrS (the dynamic string path unchanged);
 an INLINE literal collection (`for each x in {1,2,3}`) keeps the
 "assign the expression to a variable first" rejection.
 
-`expected/*.windows.out` is real Harbour 3.2 output (hbmk2
--comp=mingw64 -gtcgi, native Windows 11); the Linux file is the same
-bytes with LF line ends. Byte-exact (10 pins).
+`expected/foreach_static.windows.out` is the original fixture recorded as
+Harbour 3.2 output (hbmk2 -comp=mingw64 -gtcgi, native Windows 11); its Linux
+counterpart has the same bytes with LF line ends. Byte-exact (10 pins).
+This provenance applies only to that original fixture. The four converted
+t976-t979 Windows pins and the three new owner-regression Windows pins are
+CRLF translations of verified Linux output, not measurements of Harbour.
 
 # Static-array FOR EACH regressions
 
