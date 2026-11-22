@@ -1947,3 +1947,5 @@ pos2 tests/foreach-static/programs/foreach_static.prg tests/foreach-static/expec
 pos2 tests/foreach-static/programs/owned_after.prg tests/foreach-static/expected/owned_after.linux.out tests/foreach-static/expected/owned_after.windows.out
 pos2 tests/foreach-static/programs/owned_inside_early.prg tests/foreach-static/expected/owned_inside_early.linux.out tests/foreach-static/expected/owned_inside_early.windows.out
 pos2 tests/foreach-static/programs/owned_exit_loop.prg tests/foreach-static/expected/owned_exit_loop.linux.out tests/foreach-static/expected/owned_exit_loop.windows.out
+pos2 tests/foreach-static/programs/nested_owned.prg tests/foreach-static/expected/nested_owned.linux.out tests/foreach-static/expected/nested_owned.windows.out
+pos2 tests/foreach-static/programs/static_dynamic_owned.prg tests/foreach-static/expected/static_dynamic_owned.linux.out tests/foreach-static/expected/static_dynamic_owned.windows.out

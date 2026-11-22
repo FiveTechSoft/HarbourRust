@@ -17,7 +17,7 @@ cases = [(f'tests/{name}.prg', name) for name in (
     't976_foreach_static_neg', 't977_foreach_static_copy_neg',
     't978_foreach_static_empty_neg', 't979_original_failed_foreach_neg')]
 cases += [('tests/foreach-static/programs/' + name + '.prg', name) for name in (
-    'foreach_static', 'owned_after', 'owned_inside_early', 'owned_exit_loop')]
+    'foreach_static', 'owned_after', 'owned_inside_early', 'owned_exit_loop', 'nested_owned', 'static_dynamic_owned')]
 with tempfile.TemporaryDirectory() as temp:
     for source, name in cases:
         for instrument in (False, True):

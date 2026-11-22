@@ -17,7 +17,7 @@ an INLINE literal collection (`for each x in {1,2,3}`) keeps the
 Harbour 3.2 output (hbmk2 -comp=mingw64 -gtcgi, native Windows 11); its Linux
 counterpart has the same bytes with LF line ends. Byte-exact (10 pins).
 This provenance applies only to that original fixture. The four converted
-t976-t979 Windows pins and the three new owner-regression Windows pins are
+t976-t979 Windows pins and the five new owner-regression Windows pins are
 CRLF translations of verified Linux output, not measurements of Harbour.
 
 # Static-array FOR EACH regressions
@@ -35,7 +35,7 @@ python tests/foreach-static/check.py --compiler ./hbc
 
 Use `./hbc.exe` on Windows. The runner checks exit status, raw stdout and
 empty stderr, with instrumentation both off and on. It executes the four
-former negative cases, the original feature fixture, and three owner-lifetime
+former negative cases, the original feature fixture, and five owner-lifetime
 regressions. New regression Windows bytes are CRLF translations of the verified
 Linux outputs; native Windows execution is still required to validate them.
 
@@ -50,11 +50,22 @@ Linux outputs; native Windows execution is still required to validate them.
 
 The former negatives keep their historical filenames but are positive
 manifest entries. Their pins were checked against actual Linux execution.
-The full Mac inventory is 1298 manifest rows plus 57 additional programs,
-1355 total, with the existing target-scoped rejection unchanged.
+The full Mac inventory is 1300 manifest rows plus 57 additional programs,
+1357 total, with the existing target-scoped rejection unchanged.
 
 The JSON escape fixture's e-acute row is restored byte-for-byte from
 76d4c63a. Its old compatibility output is preserved, not rewritten to make
 the new decoder pass. `tests/json-safety/expected/escapes_utf8.*.out` remains
 the separate UTF-8 runtime contract. Restoring that old row does not claim
 that the full historical JSON compatibility fixture passes.
+
+- `nested_owned`: stack-array iteration nested inside stack-array iteration,
+  owners in both bodies and after the inner loop. Unpatched 51e2f686 crashes
+  after the first pair; the repaired compiler reaches sum 66 and done.
+- `static_dynamic_owned`: static integer iteration followed by dynamic
+  string-array iteration, with owners during/between/after both loops.
+  Unpatched instrumented 51e2f686 stops with an allocation-registry mismatch;
+  the repaired compiler reaches sum 3 and done.
+
+These two additional fixture pins were checked on Linux, not against Harbour.
+Their Windows pins are CRLF translations, with no native Windows/Mac run.

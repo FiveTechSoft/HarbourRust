@@ -1,0 +1,9 @@
+
+OUTER INNER right          1         10
+OUTER INNER right          1         20
+AFTER INNER
+OUTER INNER right          2         10
+OUTER INNER right          2         20
+AFTER INNER
+        66 TAIL
+done
