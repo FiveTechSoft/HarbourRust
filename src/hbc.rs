@@ -8177,6 +8177,31 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 }
                 return Ok(Ty::DArrS);
             }
+            if is_builtin(id,"hb_jsonencode") {
+                // hb_jsonEncode(value): a clean-room JSON writer fitted to
+                // the black-box oracle (tests/jsonencode-bb/README.md):
+                // hashes and dynamic arrays render in insertion order with
+                // no spaces ({"a":1}; nil -> null, logicals -> true/false,
+                // nested containers recurse), strings escape \" \\ \n \t
+                // \r and \u00XX for the other control bytes, floats keep
+                // the item's written decimals (1.0 -> "1.0") and dates
+                // render as their DToS text inside a JSON string.
+                // Admitted: typed scalars (integer, float, string, logical,
+                // date), Hash, DArr/DArrU/DArr2/DArrS and Dyn (its runtime
+                // cell tags 0/9/1/2/3/4/5/8 encode; any other tag is the
+                // clean runtime type error). An owned Dyn temporary stays a
+                // named rejection (its release would need unwind cleanup).
+                if args.len()!=1 { return Err(format!("line {}: `hb_jsonEncode` takes one argument in this increment",n)); }
+                let t=type_expr(&args[0],env,sigs,n)?;
+                if !matches!(t,Ty::I64|Ty::F64|Ty::Str|Ty::StrOwn|Ty::Bool|Ty::Date|Ty::Hash|Ty::DArr|Ty::DArrU|Ty::DArr2|Ty::DArr3|Ty::DArr4|Ty::DArrDyn|Ty::DArrS|Ty::Dyn) {
+                    return Err(format!("line {}: `hb_jsonEncode` takes a typed scalar, Hash or dynamic array in this increment ({})",n,ty_name(t)));
+                }
+                if t==Ty::Dyn && dyn_expr_owned(&args[0]) {
+                    return Err(format!("line {}: `hb_jsonEncode` with an owned dynamic temporary is outside this increment (bind it to a variable first)",n));
+                }
+                apply_moves(&args[0],env,sigs,false);
+                return Ok(Ty::StrOwn);
+            }
             if is_builtin(id,"ctod") {
                 if args.len()!=1 { return Err(format!("line {}: `ctod` takes one argument",n)); }
                 if !matches!(type_expr(&args[0],env,sigs,n)?,Ty::Str|Ty::StrOwn) {
@@ -9791,7 +9816,9 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
         // AAdd-grown string array (33n; oracle hk254). Pure string elements
         // only; a string/integer mix keeps the named rejection below (a
         // mixed Dyn-leaf array is parked new storage).
-        if !es.is_empty() && es.iter().all(|e| matches!(e, Expr::Str(_))) { return Ok(Ty::DArrS); }
+        if !es.is_empty() && es.iter().all(|e| matches!(e, Expr::Str(_))) {                 return Ok(Ty::DArrS);
+            }
+
         let mut has_log = false;
             for e in es {
                 let t = type_expr(e, env, sigs, n)?;
@@ -12650,6 +12677,10 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
             }
             if is_builtin(id,"hb_atokens") {
                 for a in args { apply_moves(a,env,sigs,false); }
+                return;
+            }
+            if is_builtin(id,"hb_jsonencode") {
+                apply_moves(&args[0],env,sigs,false);
                 return;
             }
             if is_builtin(id,"ctod") { apply_moves(&args[0],env,sigs,false); return; }
@@ -16596,6 +16627,58 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                 out.push_str("    mov 16(%rsp), %rdi\n    call hbc_freestr\n");
             }
             out.push_str("    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    add $64, %rsp\n");
+        }
+        Expr::Call(id,args) if is_builtin(id,"hb_jsonencode") => {
+            // The request struct rides on the stack (hrjson.c layout):
+            // 0 kind, 8 int/bool/date value or container pointer or
+            // dyncell tag, 16 str len / dyncell payload / container
+            // count, 24 the float meta for kind 2. The double value
+            // travels in xmm0.
+            let t = expr_ty(&args[0],env,sigs);
+            let kind = match t {
+                Ty::I64 => 1u64, Ty::F64 => 2, Ty::Str | Ty::StrOwn => 4,
+                Ty::Bool => 3, Ty::Date => 5, Ty::Hash => 6,
+                Ty::DArr | Ty::DArrU | Ty::DArrDyn => 7, Ty::DArrS => 8,
+                Ty::DArr2 => 10,
+                Ty::Dyn => 9, _ => 0,
+            };
+            // An owned string temporary releases after the call.
+            let own_s = matches!(t, Ty::StrOwn) && !matches!(&args[0],Expr::Var(_));
+            out.push_str("    sub $64, %rsp\n    movq $0, 24(%rsp)\n");
+            match t {
+                Ty::Str | Ty::StrOwn => {
+                    cg_value(&args[0],env,sigs,strs,out,target);
+                    out.push_str("    movq $4, (%rsp)\n    mov %rax, 8(%rsp)\n    mov %rdx, 16(%rsp)\n    mov %rax, 40(%rsp)\n");
+                }
+                Ty::F64 => {
+                    cg_f64_load(&args[0],env,sigs,strs,out,target);
+                    out.push_str("    movq $2, (%rsp)\n    movsd %xmm0, 32(%rsp)\n    mov %rdi, 24(%rsp)\n");
+                }
+                Ty::Bool => {
+                    cg_expr(&args[0],env,sigs,strs,out,target);
+                    out.push_str("    movq $3, (%rsp)\n    mov %rax, 8(%rsp)\n");
+                }
+                Ty::Dyn => {
+                    cg_value(&args[0],env,sigs,strs,out,target);
+                    out.push_str("    movq $9, (%rsp)\n    mov %rax, 8(%rsp)\n    mov %rdx, 16(%rsp)\n");
+                }
+                _ => {
+                    // date, hash slot or an array slot {cells, count}:
+                    // both words of the slot travel.
+                    cg_value(&args[0],env,sigs,strs,out,target);
+                    out.push_str(&format!("    movq ${}, (%rsp)\n    mov %rax, 8(%rsp)\n    mov %rdx, 16(%rsp)\n", kind));
+                }
+            }
+            if kind == 2 {
+                out.push_str("    movsd 32(%rsp), %xmm0\n    mov 24(%rsp), %rsi\n");
+            } else {
+                out.push_str("    xorpd %xmm0, %xmm0\n    xor %esi, %esi\n");
+            }
+            out.push_str("    lea (%rsp), %rdi\n    call hbc_json_encode\n");
+            if own_s {
+                out.push_str("    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n    mov 40(%rsp), %rdi\n    call hbc_freestr\n    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n");
+            }
+            out.push_str("    add $64, %rsp\n");
         }
         Expr::Call(id,args) if is_builtin(id,"ctod") => {
             let temp=expr_ty(&args[0],env,sigs)==Ty::StrOwn && !matches!(&args[0],Expr::Var(_));
@@ -20850,6 +20933,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
                 };
             }
             if is_builtin(id, "hb_atokens") { return Ty::DArrS; }
+            if is_builtin(id, "hb_jsonencode") { return Ty::StrOwn; }
             if is_builtin(id, "valtype") || is_builtin(id, "hb_eol") || is_builtin(id, "procname") { return Ty::Str; } // hk88-hk92
             if ["ltrim", "rtrim", "alltrim", "trim"].iter().any(|b| is_builtin(id,b)) { return Ty::StrOwn; }
             if is_builtin(id,"substr") { return Ty::StrOwn; }
@@ -34139,6 +34223,20 @@ fn finalize_trace(mut out: String, target: Target) -> String {
     }
     if out.contains("call hbc_asort_b") {
         out.push_str(ASORT_BLOCK_HELPER);
+    }
+    // The clean-room JSON encode blob (target-agnostic SysV, externals
+    // whitelist in tests/generate_json_asm.py). The blob calls
+    // hbc_str_f64; the generated code may never have pulled its helper.
+    if out.contains("call hbc_json_encode") {
+        if !out.contains("hbc_str_f64:") {
+            out.push_str(&f64_fmt_helper());
+        }
+        // The date arm renders through hbc_dtos: when the generated code
+        // itself calls a date builtin, DATE_PORT_HELPERS is already in.
+        if !out.contains("hbc_dtos:") {
+            out.push_str(DATE_PORT_HELPERS);
+        }
+        out.push_str(include_str!("../generated/hrjson.s"));
     }
     // The clean-room Transform layout blob: the ordinary-Linux finalize
     // path appends it earlier (inside the gtstd block), so this only
