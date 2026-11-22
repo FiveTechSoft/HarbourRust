@@ -26,8 +26,13 @@
     "-Werror",
     "-Wno-misleading-indentation"
   ],
+<<<<<<< HEAD
   "source_sha256": "7fcb30b8932eda66172afe8d95ced02b4e70e2250d5a9db2904561f5f4d10412",
   "asm_sha256": "a39c2a43627fddc69bb5a54e96fc9a2757b8fb8ce706163feebd1804d81e7e7a",
+=======
+  "source_sha256": "f2ad900b09eab1dac37417e3e501dbb42e28821e5cad869f66bd6767ffd3b69e",
+  "asm_sha256": "55e8ede4f6fb424f5f9403493e659503b2c926a7c3782243207fafe8dc1617ab",
+>>>>>>> 060f700e (Fix the JSON decoder string-buffer header and the escape advance; escapes pins)
   "external_calls": [
     "hbc_alloc",
     "hbc_dtos",
