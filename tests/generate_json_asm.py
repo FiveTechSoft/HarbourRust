@@ -24,6 +24,14 @@ s=s.replace('movabsq','movabs')
 # Keep JSON read-only sections target-neutral until inclusion in hbc.
 s=re.sub(r'^\s*\.section\s+\.(?:rodata|rdata)[^\n]*', '@HRJSON_RODATA@', s, flags=re.M)
 s=re.sub(r'^(\s*(?:sal|sar|shl|shr|rol|ror)[bwlq]?)\s+(%\w+)\s*$',r'\1 $1, \2',s,flags=re.M)
+# The blob is linked into ELF, PE (image base 0x140000000) and Mach-O
+# (above 4 GiB), so every data address must be RIP-relative. GCC on ELF
+# with -fno-pic emits 32-bit absolute addresses (movl $.LC0, %esi;
+# movzbl hex(%rax), %eax) that truncate on PE and fault: generate with
+# MinGW GCC, which emits RIP-relative code.
+absolute=re.findall(r'^.*(?:\$[.A-Za-z_][A-Za-z0-9_.$]*|[.A-Za-z_][A-Za-z0-9_.$]*(?:[+-]\d+)?\((?!%rip\))[^)]*\)).*$',s,re.M)
+absolute=[l for l in absolute if not re.match(r'\s*(?:call|jmp|j[a-z]+)\s',l)]
+assert not absolute,'absolute data addresses (generate with MinGW GCC):\n'+'\n'.join(absolute[:5])
 s=re.sub(r'^\s*\.(?:lcomm|comm)\s+(\S+),(\d+)(?:,\s*\d+)?\s*$',lambda m:'\n.bss\n.balign 16\n'+m[1]+':\n.zero '+m[2]+'\n.text',s,flags=re.M)
 s=re.sub(r'^\s*\.(?:string|ascii)\s+("(?:[^"\\]|\\.)*")\s*$',lambda m:'.byte '+','.join(str(b)for b in ast.literal_eval('b'+m[1])),s,flags=re.M)
 for name in re.findall(r'^([A-Za-z_][A-Za-z0-9_.$]*):',s,re.M):
