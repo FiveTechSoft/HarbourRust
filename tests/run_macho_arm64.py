@@ -77,8 +77,9 @@ TARGET = '--target=macho-arm64'  # --target=macho runs the same battery on Intel
 # under tests/round-bb/ run via tests/round-bb/check.sh, not the manifest.
 # User overrides: builtin_names.prg and internal_valtype.prg (+2).
 # JSON encode/decode and safety fixtures: six executable rows (+6).
-# Full total:1290+6+4+38+9 =1347,1 named REJ on both Mac targets.
-EXPECTED_MANIFEST_ROWS = 1290
+# Static FOR EACH: four converted negatives plus four fixtures (+8).
+# Full total:1298+6+4+38+9 =1355,1 named REJ on both Mac targets.
+EXPECTED_MANIFEST_ROWS = 1298
 # Post-run m_clie.dbf SHA-256 per DBF acceptance test (generated on Linux,
 # stdout checked against the committed expectations). t4 appends records:
 # dbAppend rewrites the header last-update date (bytes 1-3, YY MM DD of the

@@ -969,10 +969,10 @@ neg tests/t972_clone_nested_output_move_neg.prg use of moved value
 neg tests/t973_clone_loop_continue_move_neg.prg not reassigned before `loop`
 neg tests/t974_clone_block_capture_move_neg.prg codeblock captures are not in
 pos2 tests/t975_clone_reassign_paths.prg tests/expectations/qout/t975_clone_reassign_paths.linux.out tests/expectations/qout/t975_clone_reassign_paths.windows.out
-neg tests/t976_foreach_static_neg.prg over fixed-size stack arrays is not in this increment
-neg tests/t977_foreach_static_copy_neg.prg over fixed-size stack arrays is not in this increment
-neg tests/t978_foreach_static_empty_neg.prg over fixed-size stack arrays is not in this increment
-neg tests/t979_original_failed_foreach_neg.prg over fixed-size stack arrays is not in this increment
+pos2 tests/t976_foreach_static_neg.prg tests/foreach-static/expected/t976_foreach_static_neg.linux.out tests/foreach-static/expected/t976_foreach_static_neg.windows.out
+pos2 tests/t977_foreach_static_copy_neg.prg tests/foreach-static/expected/t977_foreach_static_copy_neg.linux.out tests/foreach-static/expected/t977_foreach_static_copy_neg.windows.out
+pos2 tests/t978_foreach_static_empty_neg.prg tests/foreach-static/expected/t978_foreach_static_empty_neg.linux.out tests/foreach-static/expected/t978_foreach_static_empty_neg.windows.out
+pos2 tests/t979_original_failed_foreach_neg.prg tests/foreach-static/expected/t979_original_failed_foreach_neg.linux.out tests/foreach-static/expected/t979_original_failed_foreach_neg.windows.out
 pos2 tests/t980_inline_if_qout.prg tests/expectations/qout/t980_inline_if_qout.linux.out tests/expectations/qout/t980_inline_if_qout.windows.out
 pos2 tests/t981_inline_if_lazy_nil.prg tests/expectations/qout/t981_inline_if_lazy_nil.linux.out tests/expectations/qout/t981_inline_if_lazy_nil.windows.out
 pos2 tests/t982_original_ifinline.prg tests/expectations/qout/t982_original_ifinline.linux.out tests/expectations/qout/t982_original_ifinline.windows.out
@@ -1943,3 +1943,7 @@ pos2 tests/json-safety/programs/escapes_utf8.prg tests/json-safety/expected/esca
 neg tests/json-safety/rejects/darr3.prg DArr3/DArr4 is outside this increment
 neg tests/json-safety/rejects/darr4.prg DArr3/DArr4 is outside this increment
 pos2 tests/json-safety/programs/break_nested.prg tests/json-safety/expected/break_nested.linux.out tests/json-safety/expected/break_nested.windows.out
+pos2 tests/foreach-static/programs/foreach_static.prg tests/foreach-static/expected/foreach_static.linux.out tests/foreach-static/expected/foreach_static.windows.out
+pos2 tests/foreach-static/programs/owned_after.prg tests/foreach-static/expected/owned_after.linux.out tests/foreach-static/expected/owned_after.windows.out
+pos2 tests/foreach-static/programs/owned_inside_early.prg tests/foreach-static/expected/owned_inside_early.linux.out tests/foreach-static/expected/owned_inside_early.windows.out
+pos2 tests/foreach-static/programs/owned_exit_loop.prg tests/foreach-static/expected/owned_exit_loop.linux.out tests/foreach-static/expected/owned_exit_loop.windows.out

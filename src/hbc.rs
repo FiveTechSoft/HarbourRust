@@ -23794,10 +23794,12 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 let static_len = if static_arr {
                     match env.iter().rev().find(|v| match coll { Expr::Var(cn) => v.name == *cn, _ => false }).map(|v| v.ty) { Some(Ty::Arr(k)) => k, _ => unreachable!("static_arr") }
                 } else { 0 };
+                // Keep hidden slot reservation in lockstep with layout_locals,
+                // even when static iteration uses the owner's inline cells.
+                *frame += 16;
                 let coll_off = if static_arr {
                     match coll { Expr::Var(cn) => env.iter().rev().find(|v| v.name == *cn).expect("checked").off, _ => unreachable!("static_arr") }
                 } else {
-                    *frame += 16;
                     *frame
                 };
                 if matches!(coll, Expr::Call(..)) {
