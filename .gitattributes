@@ -99,3 +99,4 @@ tests/jsonencode-bb/expected/** -text
 
 # Byte-exact Harbour 3.2 output for the hb_jsonDecode pins.
 tests/jsondecode-bb/expected/** -text
+tests/user-overrides/expected/** -text
