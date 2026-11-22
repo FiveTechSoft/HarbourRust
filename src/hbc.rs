@@ -1670,7 +1670,7 @@ impl P {
                             "hb_isdate" => "D", "hb_isblock" => "B", "hb_ischar" => "C", _ => "",
                         };
                         if !letter.is_empty() {
-                            return Ok(Expr::Cmp(CmpOp::EqEq, Box::new(Expr::Call("valtype".to_string(), args)), Box::new(Expr::Str(letter.to_string()))));
+                            return Ok(Expr::Cmp(CmpOp::EqEq, Box::new(Expr::Call(INTERNAL_VALTYPE.to_string(), args)), Box::new(Expr::Str(letter.to_string()))));
                         }
                     }
                     Ok(Expr::Call(id, args))
@@ -2283,7 +2283,12 @@ thread_local! {
     static USER_FUNC_NAMES: std::cell::RefCell<std::collections::HashSet<String>> = std::cell::RefCell::new(std::collections::HashSet::new());
 }
 
+// This name cannot be produced by the identifier lexer. Compiler-created
+// ValType calls implement predicate semantics, not source-level RTL lookup.
+const INTERNAL_VALTYPE: &str = "\0valtype";
+
 fn is_builtin(id: &str, name: &str) -> bool {
+    if id == INTERNAL_VALTYPE { return name.eq_ignore_ascii_case("valtype"); }
     if USER_FUNC_NAMES.with(|u| { let u = u.borrow(); !u.is_empty() && u.contains(&id.to_ascii_lowercase()) }) { return false; }
     id.eq_ignore_ascii_case(name)
         || (name=="chr" && id.eq_ignore_ascii_case("hb_bchar"))
@@ -7114,7 +7119,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                                 return Err(format!("line {}: `HB_ISSTRING` hash keys must be literals or variables in this increment (assign an owned temporary first)", n));
                             }
                         }
-                        let vt = Expr::Call("valtype".to_string(), args.clone());
+                        let vt = Expr::Call(INTERNAL_VALTYPE.to_string(), args.clone());
                         type_expr(&vt, env, sigs, n).map_err(|e| format!("{} (HB_ISSTRING uses the measured ValType read contract)", e))?;
                     }
                 }
@@ -15998,7 +16003,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             } else if matches!(&args[0], Expr::Var(_) if !matches!(expr_ty(&args[0], env, sigs), Ty::Dyn | Ty::RefDyn)) {
                 out.push_str(if matches!(expr_ty(&args[0], env, sigs), Ty::Str | Ty::StrOwn | Ty::RefStrOwn) { "    mov $1, %eax\n" } else { "    xor %eax, %eax\n" });
             } else {
-                let vt = Expr::Call("valtype".to_string(), args.clone());
+                let vt = Expr::Call(INTERNAL_VALTYPE.to_string(), args.clone());
                 cg_expr(&vt, env, sigs, strs, out, target);
                 out.push_str("    cmpb $67, (%rax)\n    sete %al\n    movzbq %al, %rax\n");
             }
@@ -41765,4 +41770,28 @@ fn cg_dyn_substr(args:&[Expr],env:&[CgLocal],sigs:&[Sig],strs:&mut Vec<String>,o
     cg_dyn_stack_release(out,0,false);out.push_str(&format!("    add $64, %rsp\n    jmp hbc_seq_unwind\n.Ldss_limit{k}:\n"));
     cg_dyn_stack_release(out,0,false);let msg="Limit: Dyn SubStr requires a string source in this increment\n";let si=strs.len();strs.push(msg.to_string());
     out.push_str(&format!("    add $64, %rsp\n    lea .Lstr{si}(%rip), %rax\n    mov ${}, %edx\n    call hbc_write_bytes\n    jmp hbc_panic_exit\n.Ldss_end{k}:\n",msg.len()));
+}
+
+#[cfg(test)]
+mod internal_valtype_dispatch_tests {
+    use super::*;
+
+    #[test]
+    fn compiler_valtype_ignores_user_override_but_source_calls_do_not() {
+        USER_FUNC_NAMES.with(|u| {
+            let previous = std::mem::replace(&mut *u.borrow_mut(),
+                ["valtype", "descend", "time"].iter().map(|s| s.to_string()).collect());
+            assert!(!is_builtin("ValType", "valtype"));
+            assert!(!is_builtin("Descend", "descend"));
+            assert!(!is_builtin("Time", "time"));
+            assert!(is_builtin(INTERNAL_VALTYPE, "valtype"));
+            assert!(!is_builtin(INTERNAL_VALTYPE, "time"));
+            *u.borrow_mut() = previous;
+        });
+    }
+
+    #[test]
+    fn internal_valtype_is_not_a_source_identifier() {
+        assert!(!INTERNAL_VALTYPE.chars().all(|c| c.is_ascii_alphanumeric() || c == '_'));
+    }
 }
