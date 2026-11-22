@@ -17,6 +17,10 @@
 #     CR is stripped from both sides for those comparisons and the case is
 #     reported as PASS* (normalized). That is a newline-profile record,
 #     not a byte-exact claim.
+#   * pos/posx rows hold one shared LF expectation, while Windows QOut
+#     writes CRLF (189ded9c). A row whose output matches once CR is
+#     removed is also reported as PASS*; byte-exact Windows newlines are
+#     pinned by posx2/streams2 rows with their own .windows.out files.
 #
 # Usage:
 #   M=C:/HarbourRust/tools/mingw/mingw64/bin \
@@ -48,7 +52,9 @@ run_pos_kind() { # file expected [exit]
   if [ -n "$want_rc" ] && [ "$rc_win" != "$want_rc" ]; then
     echo "FAIL $f (exit code win=$rc_win want=$want_rc)"; fail=1; return
   fi
-  if [ "$out_win" == "$exp" ]; then echo "PASS $f"; else
+  if [ "$out_win" == "$exp" ]; then echo "PASS $f"
+  elif [ "${out_win//$'\r'/}" == "$exp" ]; then norm=$((norm+1)); echo "PASS* $f (normalized newlines)"
+  else
     echo "FAIL $f"
     echo "  exp: $(echo "$exp"|head -3|tr '\n' '|')"
     echo "  win: $(echo "$out_win"|head -3|tr '\n' '|')"
