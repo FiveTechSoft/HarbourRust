@@ -1,5 +1,5 @@
 {
-  "compiler": "gcc (Ubuntu 11.4.0-1ubuntu1~22.04.3) 11.4.0",
+  "compiler": "gcc.exe (MinGW-W64 x86_64-ucrt-posix-seh, built by Brecht Sanders, r3) 16.2.0",
   "flags": [
     "-D_WIN64",
     "-std=c99",
@@ -27,7 +27,7 @@
     "-Wno-misleading-indentation"
   ],
   "source_sha256": "7fcb30b8932eda66172afe8d95ced02b4e70e2250d5a9db2904561f5f4d10412",
-  "asm_sha256": "a39c2a43627fddc69bb5a54e96fc9a2757b8fb8ce706163feebd1804d81e7e7a",
+  "asm_sha256": "0ec772aad3363b963effc03dd85b0389b4b1baa6d5d385484a90484be9290c2d",
   "external_calls": [
     "hbc_alloc",
     "hbc_dtos",
