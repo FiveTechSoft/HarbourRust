@@ -11,7 +11,7 @@ cc=os.environ.get('HR_JSON_CC',str(root/'tools/mingw/mingw64/bin/gcc.exe'))
 if not Path(cc).exists(): cc='gcc'
 src='runtime/hrjson.c'
 flags=['-D_WIN64','-std=c99','-O2','-S','-mabi=sysv','-ffreestanding','-fno-builtin','-fno-stack-protector','-fno-asynchronous-unwind-tables','-fno-unwind-tables','-fno-ident','-mno-red-zone','-fno-pic','-fno-tree-vectorize','-mno-stack-arg-probe','-minline-all-stringops','-mstringop-strategy=rep_byte','-fno-jump-tables','-mno-push-args','-fcf-protection=none','-Wall','-Wextra','-Werror','-Wno-misleading-indentation']
-allowed={'hbc_alloc','hbc_freestr','hbc_dtos','hbc_type_error','hbc_str_f64'}
+allowed={'hbc_alloc','hbc_freestr','hbc_dtos','hbc_type_error','hbc_str_f64','hbc_free'}
 raw=root/'generated/hrjson.raw.s';subprocess.run([cc,*flags,src,'-o',str(raw)],cwd=root,check=True)
 s=raw.read_text();raw.unlink()
 s=re.sub(r'^\s*\.(file|def|ident|type|size)\s+.*\n','',s,flags=re.M)
@@ -21,7 +21,7 @@ s=re.sub(r'^(\s*(?:sal|sar|shl|shr|rol|ror)[bwlq]?)\s+(%\w+)\s*$',r'\1 $1, \2',s
 s=re.sub(r'^\s*\.(?:lcomm|comm)\s+(\S+),(\d+)(?:,\s*\d+)?\s*$',lambda m:'\n.bss\n.balign 16\n'+m[1]+':\n.zero '+m[2]+'\n.text',s,flags=re.M)
 s=re.sub(r'^\s*\.(?:string|ascii)\s+("(?:[^"\\]|\\.)*")\s*$',lambda m:'.byte '+','.join(str(b)for b in ast.literal_eval('b'+m[1])),s,flags=re.M)
 for name in re.findall(r'^([A-Za-z_][A-Za-z0-9_.$]*):',s,re.M):
-    if not name.startswith('hbc_json_encode'):s=re.sub(r'(?<![A-Za-z0-9_.])'+re.escape(name)+r'(?![A-Za-z0-9_.$])','hjson_local_'+name,s)
+    if not name.startswith(('hbc_json_encode','hbc_json_decode')):s=re.sub(r'(?<![A-Za-z0-9_.])'+re.escape(name)+r'(?![A-Za-z0-9_.$])','hjson_local_'+name,s)
 labels=set(re.findall(r'^([A-Za-z_.$][A-Za-z0-9_.$]*):',s,re.M))
 calls=set(re.findall(r'\b(?:call|jmp)\s+([A-Za-z_][A-Za-z0-9_.$]*)',s))
 externals={c for c in calls if c not in labels}

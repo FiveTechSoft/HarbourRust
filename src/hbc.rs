@@ -8202,6 +8202,28 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 apply_moves(&args[0],env,sigs,false);
                 return Ok(Ty::StrOwn);
             }
+            if is_builtin(id,"hb_jsondecode") {
+                // hb_jsonDecode(text): the clean-room parser (hrjson.c)
+                // returns the decoded value as a Dyn casilla: numbers
+                // (integer exact; floats keep the literal's written
+                // decimals as the Dyn float pair's dec), strings (owned,
+                // unescaped), true/false, null -> NIL and arrays as
+                // tag-8 blocks the ordinary AAdd/Len/indexing machinery
+                // accepts. A parse failure decodes to NIL (the oracle:
+                // 'not json' -> U). A JSON OBJECT is not representable in
+                // the hbc Dyn union (its ValType has no tag-test by
+                // design) - the clean runtime type error, a registered
+                // divergence from Harbour's H. The @var second argument
+                // form stays a named rejection (the oracle's return
+                // contract there is unmeasured).
+                if args.len()!=1 { return Err(format!("line {}: `hb_jsonDecode` takes exactly one argument in this increment",n)); }
+                let t=type_expr(&args[0],env,sigs,n)?;
+                if !matches!(t,Ty::Str|Ty::StrOwn) {
+                    return Err(format!("line {}: `hb_jsonDecode` takes a string in this increment",n));
+                }
+                apply_moves(&args[0],env,sigs,false);
+                return Ok(Ty::Dyn);
+            }
             if is_builtin(id,"ctod") {
                 if args.len()!=1 { return Err(format!("line {}: `ctod` takes one argument",n)); }
                 if !matches!(type_expr(&args[0],env,sigs,n)?,Ty::Str|Ty::StrOwn) {
@@ -12683,6 +12705,10 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
                 apply_moves(&args[0],env,sigs,false);
                 return;
             }
+            if is_builtin(id,"hb_jsondecode") {
+                apply_moves(&args[0],env,sigs,false);
+                return;
+            }
             if is_builtin(id,"ctod") { apply_moves(&args[0],env,sigs,false); return; }
             if is_builtin(id,"dirmake") {for a in args {apply_moves(a,env,sigs,false);}return;}
             if ["hb_flink","hb_flinksym","hb_flinkread","hb_memowrit","hb_dircreate","ferror"].iter().any(|b|is_builtin(id,b)) {for a in args {apply_moves(a,env,sigs,false);}return;}
@@ -16679,6 +16705,17 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                 out.push_str("    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n    mov 40(%rsp), %rdi\n    call hbc_freestr\n    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n");
             }
             out.push_str("    add $64, %rsp\n");
+        }
+        Expr::Call(id,args) if is_builtin(id,"hb_jsondecode") => {
+            // The text borrows; an owned temporary releases after the
+            // call. The result is the Dyn pair (rax tag, rdx payload).
+            let own_s = expr_ty(&args[0],env,sigs)==Ty::StrOwn && !matches!(&args[0],Expr::Var(_));
+            cg_value(&args[0],env,sigs,strs,out,target);
+            out.push_str("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n    mov (%rsp), %rdi\n    mov 8(%rsp), %rsi\n    call hbc_json_decode\n");
+            if own_s {
+                out.push_str("    mov %rax, 16(%rsp)\n    mov %rdx, 24(%rsp)\n    mov (%rsp), %rdi\n    call hbc_freestr\n    mov 16(%rsp), %rax\n    mov 24(%rsp), %rdx\n");
+            }
+            out.push_str("    add $32, %rsp\n");
         }
         Expr::Call(id,args) if is_builtin(id,"ctod") => {
             let temp=expr_ty(&args[0],env,sigs)==Ty::StrOwn && !matches!(&args[0],Expr::Var(_));
@@ -20934,6 +20971,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             }
             if is_builtin(id, "hb_atokens") { return Ty::DArrS; }
             if is_builtin(id, "hb_jsonencode") { return Ty::StrOwn; }
+            if is_builtin(id, "hb_jsondecode") { return Ty::Dyn; }
             if is_builtin(id, "valtype") || is_builtin(id, "hb_eol") || is_builtin(id, "procname") { return Ty::Str; } // hk88-hk92
             if ["ltrim", "rtrim", "alltrim", "trim"].iter().any(|b| is_builtin(id,b)) { return Ty::StrOwn; }
             if is_builtin(id,"substr") { return Ty::StrOwn; }
@@ -34227,7 +34265,7 @@ fn finalize_trace(mut out: String, target: Target) -> String {
     // The clean-room JSON encode blob (target-agnostic SysV, externals
     // whitelist in tests/generate_json_asm.py). The blob calls
     // hbc_str_f64; the generated code may never have pulled its helper.
-    if out.contains("call hbc_json_encode") {
+    if out.contains("call hbc_json_encode") || out.contains("call hbc_json_decode") {
         if !out.contains("hbc_str_f64:") {
             out.push_str(&f64_fmt_helper());
         }

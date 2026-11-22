@@ -26,11 +26,12 @@
     "-Werror",
     "-Wno-misleading-indentation"
   ],
-  "source_sha256": "059a66a0932a73cf5f55c5f0cd23bd0902fbb4067bc13d886f42f6acc88c5f4d",
-  "asm_sha256": "eebe4eb382caa1a618e7e7172a070446fd064c1666e05c356952d7b4bb4e5dc8",
+  "source_sha256": "294703bc5c94b3918b7d3f3a5360f47beaa8dded4fe49b74923afbea3e8fbbd8",
+  "asm_sha256": "0b1e5dd0a71fab60c0caaf677e0773dddb038e059f15611e7590b123509093d4",
   "external_calls": [
     "hbc_alloc",
     "hbc_dtos",
+    "hbc_free",
     "hbc_freestr",
     "hbc_str_f64",
     "hbc_type_error"

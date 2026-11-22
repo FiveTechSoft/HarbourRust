@@ -309,170 +309,893 @@ hjson_local_hrt_put_str_escaped:
 	movq	%r12, %rdi
 	call	hjson_local_hrt_put
 	jmp	.Lhjson_40
+	.p2align 4
+hjson_local_hrt_dec_value:
+	movq	16(%rdi), %rax
+	movq	8(%rdi), %rcx
+	cmpq	%rcx, %rax
+	jnb	.Lhjson_220
+	subq	$72, %rsp
+	movl	$8388627, %r8d
+	movq	%rbp, 56(%rsp)
+	movq	%rbx, 48(%rsp)
+	movq	%rsi, %rbx
+	movq	(%rdi), %rsi
+	.p2align 4
+	.p2align 3
+.Lhjson_60:
+	movzbl	(%rsi,%rax), %edx
+	subl	$9, %edx
+	cmpb	$23, %dl
+	ja	.Lhjson_59
+	btq	%rdx, %r8
+	jnc	.Lhjson_59
+	addq	$1, %rax
+	movq	%rax, 16(%rdi)
+	cmpq	%rcx, %rax
+	jne	.Lhjson_60
+.Lhjson_58:
+	xorl	%ecx, %ecx
+.Lhjson_57:
+	movq	48(%rsp), %rbx
+	movq	56(%rsp), %rbp
+	movl	%ecx, %eax
+	addq	$72, %rsp
+	ret
+	.p2align 4,,10
+	.p2align 3
+.Lhjson_59:
+	cmpq	%rcx, %rax
+	jnb	.Lhjson_58
+	movzbl	(%rsi,%rax), %edx
+	movq	%rdi, %rbp
+	cmpl	$34, %edx
+	je	.Lhjson_227
+	cmpl	$91, %edx
+	je	.Lhjson_228
+	cmpl	$123, %edx
+	je	.Lhjson_229
+	cmpl	$116, %edx
+	je	.Lhjson_230
+	cmpl	$102, %edx
+	je	.Lhjson_231
+	cmpl	$110, %edx
+	je	.Lhjson_232
+	leal	-48(%rdx), %eax
+	cmpl	$9, %eax
+	jbe	.Lhjson_154
+	cmpl	$45, %edx
+	jne	.Lhjson_58
+.Lhjson_154:
+	movq	16(%rbp), %rdx
+	cmpq	%rcx, %rdx
+	jb	.Lhjson_109
+	movq	$0, (%rbx)
+	xorl	%edi, %edi
+.Lhjson_110:
+	movq	%rdi, 8(%rbx)
+	jmp	.Lhjson_64
+	.p2align 4,,10
+	.p2align 3
+.Lhjson_230:
+	subq	%rax, %rcx
+	cmpq	$3, %rcx
+	jbe	.Lhjson_58
+	cmpb	$114, 1(%rsi,%rax)
+	jne	.Lhjson_58
+	cmpb	$117, 2(%rsi,%rax)
+	jne	.Lhjson_58
+	cmpb	$101, 3(%rsi,%rax)
+	jne	.Lhjson_58
+	addq	$4, %rax
+	movq	%rax, 16(%rdi)
+	movq	$3, (%rbx)
+	movq	$1, 8(%rbx)
+	jmp	.Lhjson_64
+	.p2align 4,,10
+	.p2align 3
+.Lhjson_232:
+	movq	16(%rdi), %rax
+	subq	%rax, %rcx
+	cmpq	$3, %rcx
+	jbe	.Lhjson_58
+	cmpb	$117, 1(%rsi,%rax)
+	jne	.Lhjson_58
+	cmpb	$108, 2(%rsi,%rax)
+	jne	.Lhjson_58
+	cmpb	$108, 3(%rsi,%rax)
+	jne	.Lhjson_58
+	addq	$4, %rax
+	movq	%rax, 16(%rdi)
+	movq	$1, (%rbx)
+	movq	$0, 8(%rbx)
+	jmp	.Lhjson_64
+	.p2align 4,,10
+	.p2align 3
+.Lhjson_228:
+	movl	$72, %edi
+	call	hbc_alloc
+	movq	8(%rbp), %rcx
+	movq	%rax, %r8
+	movq	16(%rbp), %rax
+	addq	$1, %rax
+	movq	%rax, 16(%rbp)
+	cmpq	%rcx, %rax
+	jnb	.Lhjson_224
+	movq	0(%rbp), %rsi
+	movl	$8388627, %edi
+	.p2align 4
+	.p2align 3
+.Lhjson_90:
+	movzbl	(%rsi,%rax), %edx
+	subl	$9, %edx
+	cmpb	$23, %dl
+	ja	.Lhjson_89
+	btq	%rdx, %rdi
+	jnc	.Lhjson_89
+	addq	$1, %rax
+	movq	%rax, 16(%rbp)
+	cmpq	%rcx, %rax
+	jb	.Lhjson_90
+.Lhjson_224:
+	movq	%r14, 64(%rsp)
+	xorl	%r9d, %r9d
+	movl	$4, %r14d
+.Lhjson_92:
+	leaq	32(%rsp), %rsi
+	movq	%rbp, %rdi
+	movq	%r8, 8(%rsp)
+	movq	%r9, (%rsp)
+	call	hjson_local_hrt_dec_value
+	movq	(%rsp), %r9
+	movq	8(%rsp), %r8
+	movl	$8388627, %r10d
+	testl	%eax, %eax
+	movl	%eax, %ecx
+	je	.Lhjson_233
+	cmpq	%r9, %r14
+	je	.Lhjson_234
+.Lhjson_95:
+	movq	32(%rsp), %rdx
+	movq	%r9, %rax
+	salq	$4, %rax
+	movq	%rdx, 8(%r8,%rax)
+	movq	40(%rsp), %rdx
+	movq	%rdx, 16(%r8,%rax)
+	movq	16(%rbp), %rax
+	movq	8(%rbp), %rdi
+	cmpq	%rdi, %rax
+	jnb	.Lhjson_98
+	movq	0(%rbp), %r11
+	addq	$1, %r9
+	.p2align 4
+	.p2align 3
+.Lhjson_101:
+	movzbl	(%r11,%rax), %esi
+	leal	-9(%rsi), %edx
+	cmpb	$23, %dl
+	ja	.Lhjson_99
+	btq	%rdx, %r10
+	jnc	.Lhjson_100
+	addq	$1, %rax
+	movq	%rax, 16(%rbp)
+	cmpq	%rdi, %rax
+	jne	.Lhjson_101
+.Lhjson_98:
+	leaq	8(%r8), %rdx
+	jmp	.Lhjson_141
+	.p2align 4,,10
+	.p2align 3
+.Lhjson_89:
+	cmpq	%rcx, %rax
+	jnb	.Lhjson_224
+	cmpb	$93, (%rsi,%rax)
+	jne	.Lhjson_224
+	addq	$1, %rax
+	addq	$8, %r8
+	movq	%rax, 16(%rbp)
+	movq	$0, -8(%r8)
+	movq	$8, (%rbx)
+	movq	%r8, 8(%rbx)
+.Lhjson_64:
+	movl	$1, %ecx
+	jmp	.Lhjson_57
+	.p2align 4,,10
+	.p2align 3
+.Lhjson_231:
+	movq	16(%rdi), %rax
+	subq	%rax, %rcx
+	cmpq	$4, %rcx
+	jbe	.Lhjson_58
+	cmpb	$97, 1(%rsi,%rax)
+	jne	.Lhjson_58
+	cmpb	$108, 2(%rsi,%rax)
+	jne	.Lhjson_58
+	cmpb	$115, 3(%rsi,%rax)
+	jne	.Lhjson_58
+	cmpb	$101, 4(%rsi,%rax)
+	jne	.Lhjson_58
+	addq	$5, %rax
+	movq	%rax, 16(%rdi)
+	movq	$3, (%rbx)
+	movq	$0, 8(%rbx)
+	jmp	.Lhjson_64
+	.p2align 4,,10
+	.p2align 3
+.Lhjson_229:
+	call	hbc_type_error
+	jmp	.Lhjson_58
+.Lhjson_99:
+	cmpb	$44, %sil
+	je	.Lhjson_235
+.Lhjson_100:
+	leaq	8(%r8), %rdx
+	cmpq	%rdi, %rax
+	jnb	.Lhjson_141
+	cmpb	$93, (%r11,%rax)
+	je	.Lhjson_236
+.Lhjson_141:
+	movl	$1, %esi
+	movq	%rdx, %rdi
+	call	hbc_free
+	movq	64(%rsp), %r14
+	jmp	.Lhjson_58
+	.p2align 4,,10
+	.p2align 3
+.Lhjson_227:
+	addq	$1, %rax
+	movq	%rax, 16(%rdi)
+	movl	$80, %edi
+	call	hbc_alloc
+	movq	8(%rbp), %rsi
+	movq	%rax, %r8
+	movq	16(%rbp), %rax
+	cmpq	%rsi, %rax
+	jnb	.Lhjson_62
+	movl	$64, %r9d
+	xorl	%edx, %edx
+	jmp	.Lhjson_86
+	.p2align 4,,10
+	.p2align 3
+.Lhjson_65:
+	leaq	4(%rdx), %rax
+	cmpq	%rax, %r9
+	jb	.Lhjson_237
+.Lhjson_83:
+	movb	%cl, (%r8,%rdx)
+	movq	16(%rbp), %rax
+	addq	$1, %rdx
+	addq	$1, %rax
+.Lhjson_82:
+	movq	8(%rbp), %rsi
+	movq	%rax, 16(%rbp)
+	cmpq	%rsi, %rax
+	jnb	.Lhjson_62
+.Lhjson_86:
+	movq	0(%rbp), %rdi
+	movzbl	(%rdi,%rax), %ecx
+	cmpb	$34, %cl
+	je	.Lhjson_238
+	cmpb	$92, %cl
+	jne	.Lhjson_65
+	leaq	1(%rax), %rcx
+	movq	%rcx, 16(%rbp)
+	cmpq	%rsi, %rcx
+	jnb	.Lhjson_62
+	movzbl	1(%rdi,%rax), %ecx
+	cmpb	$102, %cl
+	je	.Lhjson_142
+	jg	.Lhjson_68
+	cmpb	$92, %cl
+	je	.Lhjson_83
+	jg	.Lhjson_70
+	cmpb	$34, %cl
+	je	.Lhjson_83
+	cmpb	$47, %cl
+	je	.Lhjson_83
+.Lhjson_62:
+	movq	%r8, %rdi
+	call	hbc_freestr
+	jmp	.Lhjson_58
+	.p2align 4,,10
+	.p2align 3
+.Lhjson_68:
+	cmpb	$116, %cl
+	je	.Lhjson_144
+	jg	.Lhjson_72
+	cmpb	$110, %cl
+	je	.Lhjson_145
+	cmpb	$114, %cl
+	jne	.Lhjson_62
+	movl	$13, %ecx
+	jmp	.Lhjson_83
+	.p2align 4,,10
+	.p2align 3
+.Lhjson_237:
+	addq	%r9, %r9
+	movq	%r8, 24(%rsp)
+	leaq	16(%r9), %rdi
+	movq	%rdx, 16(%rsp)
+	movb	%cl, 8(%rsp)
+	movq	%r9, (%rsp)
+	call	hbc_alloc
+	movq	16(%rsp), %rdx
+	movq	(%rsp), %r9
+	movzbl	8(%rsp), %ecx
+	movq	24(%rsp), %r8
+	movq	%rax, %r10
+	testq	%rdx, %rdx
+	je	.Lhjson_84
+	xorl	%eax, %eax
+	.p2align 5
+	.p2align 4
+	.p2align 3
+.Lhjson_85:
+	movzbl	(%r8,%rax), %esi
+	movb	%sil, 16(%r10,%rax)
+	addq	$1, %rax
+	cmpq	%rdx, %rax
+	jne	.Lhjson_85
+.Lhjson_84:
+	movq	%r8, %rdi
+	movq	%r10, 24(%rsp)
+	movq	%rdx, 16(%rsp)
+	movb	%cl, 8(%rsp)
+	movq	%r9, (%rsp)
+	call	hbc_freestr
+	movq	24(%rsp), %r10
+	movq	16(%rsp), %rdx
+	movzbl	8(%rsp), %ecx
+	movq	(%rsp), %r9
+	leaq	16(%r10), %r8
+	jmp	.Lhjson_83
+.Lhjson_220:
+	xorl	%eax, %eax
+	ret
+.Lhjson_145:
+	movl	$10, %ecx
+	jmp	.Lhjson_83
+.Lhjson_235:
+	addq	$1, %rax
+	movq	%rax, 16(%rbp)
+	jmp	.Lhjson_92
+.Lhjson_70:
+	cmpb	$98, %cl
+	jne	.Lhjson_62
+	movl	$8, %ecx
+	jmp	.Lhjson_83
+.Lhjson_72:
+	cmpb	$117, %cl
+	jne	.Lhjson_62
+	leaq	2(%rax), %rcx
+	movq	%r14, 64(%rsp)
+	xorl	%r11d, %r11d
+	leaq	6(%rax), %r14
+	movq	%rcx, 16(%rbp)
+.Lhjson_77:
+	cmpq	%rsi, %rcx
+	je	.Lhjson_73
+	movzbl	(%rdi,%rcx), %r10d
+	leal	-48(%r10), %eax
+	cmpl	$9, %eax
+	ja	.Lhjson_74
+	movl	%eax, %r10d
+.Lhjson_75:
+	salq	$4, %r11
+	addq	$1, %rcx
+	movq	%rcx, 16(%rbp)
+	addq	%r10, %r11
+	cmpq	%r14, %rcx
+	jne	.Lhjson_77
+	leaq	(%r8,%rdx), %rdi
+	cmpq	$127, %r11
+	ja	.Lhjson_239
+	movb	%r11b, (%rdi)
+	addq	$1, %rdx
+.Lhjson_80:
+	movq	16(%rbp), %rax
+	movq	64(%rsp), %r14
+	addq	$1, %rax
+	jmp	.Lhjson_82
+.Lhjson_74:
+	leal	-97(%r10), %eax
+	cmpl	$5, %eax
+	ja	.Lhjson_76
+	subl	$87, %r10d
+	jmp	.Lhjson_75
+.Lhjson_236:
+	addq	$1, %rax
+	movq	64(%rsp), %r14
+	movq	%rax, 16(%rbp)
+	movq	%r9, (%r8)
+	movq	$8, (%rbx)
+	movq	%rdx, 8(%rbx)
+	jmp	.Lhjson_57
+.Lhjson_144:
+	movl	$9, %ecx
+	jmp	.Lhjson_83
+.Lhjson_142:
+	movl	$12, %ecx
+	jmp	.Lhjson_83
+.Lhjson_76:
+	leal	-65(%r10), %eax
+	cmpl	$5, %eax
+	ja	.Lhjson_73
+	subl	$55, %r10d
+	movslq	%r10d, %r10
+	jmp	.Lhjson_75
+.Lhjson_238:
+	addq	$1, %rax
+	movq	%rax, 16(%rbp)
+	movq	%rdx, -16(%r8)
+	movq	%rdx, -8(%r8)
+	movq	$4, (%rbx)
+	movq	%r8, 8(%rbx)
+	jmp	.Lhjson_64
+.Lhjson_109:
+	xorl	%r8d, %r8d
+	cmpb	$45, (%rsi,%rdx)
+	je	.Lhjson_240
+.Lhjson_111:
+	xorl	%edi, %edi
+	jmp	.Lhjson_113
+	.p2align 6
+	.p2align 4,,10
+	.p2align 3
+.Lhjson_116:
+	leaq	(%rdi,%rdi,4), %rdi
+	movsbq	%al, %rax
+	addq	$1, %rdx
+	movq	%rdx, 16(%rbp)
+	leaq	(%rax,%rdi,2), %rdi
+	cmpq	%rcx, %rdx
+	je	.Lhjson_226
+.Lhjson_113:
+	movzbl	(%rsi,%rdx), %eax
+	subl	$48, %eax
+	cmpb	$9, %al
+	jbe	.Lhjson_116
+	cmpq	%rcx, %rdx
+	jnb	.Lhjson_226
+	cmpb	$46, (%rsi,%rdx)
+	je	.Lhjson_120
+.Lhjson_226:
+	movq	16(%rbp), %rax
+	cmpq	%rcx, %rax
+	jb	.Lhjson_118
+.Lhjson_119:
+	movq	$0, (%rbx)
+	testl	%r8d, %r8d
+	je	.Lhjson_110
+.Lhjson_115:
+	negq	%rdi
+	jmp	.Lhjson_110
+.Lhjson_240:
+	addq	$1, %rdx
+	movq	%rdx, 16(%rbp)
+	cmpq	%rcx, %rdx
+	jnb	.Lhjson_241
+	movl	$1, %r8d
+	jmp	.Lhjson_111
+.Lhjson_118:
+	movzbl	(%rsi,%rax), %edx
+	pxor	%xmm0, %xmm0
+	andl	$-33, %edx
+	cmpb	$69, %dl
+	jne	.Lhjson_119
+.Lhjson_140:
+	leaq	1(%rax), %rdx
+	movq	%rdx, 16(%rbp)
+	cmpq	%rcx, %rdx
+	jnb	.Lhjson_152
+	movzbl	1(%rsi,%rax), %r9d
+	leal	-43(%r9), %r10d
+	andl	$253, %r10d
+	je	.Lhjson_242
+	xorl	%r10d, %r10d
+.Lhjson_128:
+	xorl	%r9d, %r9d
+	jmp	.Lhjson_130
+	.p2align 6
+	.p2align 4,,10
+	.p2align 3
+.Lhjson_132:
+	leaq	(%r9,%r9,4), %r9
+	movsbq	%al, %rax
+	addq	$1, %rdx
+	movq	%rdx, 16(%rbp)
+	leaq	(%rax,%r9,2), %r9
+	cmpq	%rcx, %rdx
+	je	.Lhjson_133
+.Lhjson_130:
+	movzbl	(%rsi,%rdx), %eax
+	subl	$48, %eax
+	cmpb	$9, %al
+	jbe	.Lhjson_132
+.Lhjson_133:
+	testq	%r9, %r9
+	je	.Lhjson_152
+	movsd	.Lhjson_C7(%rip), %xmm1
+	xorl	%eax, %eax
+	testl	%r10d, %r10d
+	je	.Lhjson_151
+	testb	$1, %r9b
+	je	.Lhjson_135
+	divsd	%xmm1, %xmm0
+	movl	$1, %eax
+	cmpq	%r9, %rax
+	je	.Lhjson_152
+.Lhjson_135:
+	addq	$2, %rax
+	divsd	%xmm1, %xmm0
+	divsd	%xmm1, %xmm0
+	cmpq	%r9, %rax
+	jne	.Lhjson_135
+.Lhjson_152:
+	movl	$5, %eax
+.Lhjson_122:
+	pxor	%xmm1, %xmm1
+	cvtsi2sdq	%rdi, %xmm1
+	addsd	%xmm1, %xmm0
+	testl	%r8d, %r8d
+	je	.Lhjson_139
+	xorpd	.Lhjson_C8(%rip), %xmm0
+.Lhjson_139:
+	movq	%rax, (%rbx)
+	movsd	%xmm0, 8(%rbx)
+	jmp	.Lhjson_64
+.Lhjson_234:
+	movq	%r9, %rdi
+	movq	%r8, 8(%rsp)
+	salq	$5, %rdi
+	movq	%r9, (%rsp)
+	addq	$8, %rdi
+	movl	%eax, 16(%rsp)
+	call	hbc_alloc
+	movq	(%rsp), %r9
+	movq	8(%rsp), %r8
+	movl	16(%rsp), %ecx
+	movq	%rax, %rdx
+	movq	%r9, %r11
+	addq	%r11, %r11
+	je	.Lhjson_96
+	xorl	%eax, %eax
+	.p2align 5
+	.p2align 4
+	.p2align 3
+.Lhjson_97:
+	movq	(%r8,%rax,8), %rsi
+	movq	%rsi, (%rdx,%rax,8)
+	addq	$1, %rax
+	cmpq	%r11, %rax
+	jne	.Lhjson_97
+.Lhjson_96:
+	leaq	8(%r8), %rdi
+	movl	$1, %esi
+	movl	%ecx, 16(%rsp)
+	movq	%r9, (%rsp)
+	movq	%rdx, 24(%rsp)
+	movq	%r11, 8(%rsp)
+	call	hbc_free
+	movq	24(%rsp), %r8
+	movq	8(%rsp), %r14
+	movl	$8388627, %r10d
+	movl	16(%rsp), %ecx
+	movq	(%rsp), %r9
+	jmp	.Lhjson_95
+.Lhjson_239:
+	movl	%r11d, %esi
+	movq	%r11, %rcx
+	andl	$63, %esi
+	shrq	$6, %rcx
+	orl	$-128, %esi
+	cmpq	$2047, %r11
+	ja	.Lhjson_81
+	orl	$-64, %ecx
+	movb	%cl, (%rdi)
+	movb	%sil, 1(%r8,%rdx)
+	addq	$2, %rdx
+	jmp	.Lhjson_80
+.Lhjson_73:
+	movq	%r8, %rdi
+	call	hbc_freestr
+	movq	64(%rsp), %r14
+	jmp	.Lhjson_58
+.Lhjson_233:
+	leaq	8(%r8), %rdi
+	movl	$1, %esi
+	call	hbc_free
+	movq	64(%rsp), %r14
+	jmp	.Lhjson_58
+.Lhjson_242:
+	xorl	%r10d, %r10d
+	leaq	2(%rax), %rdx
+	cmpb	$45, %r9b
+	movq	%rdx, 16(%rbp)
+	sete	%r10b
+	cmpq	%rcx, %rdx
+	jb	.Lhjson_128
+	jmp	.Lhjson_152
+	.p2align 4,,10
+	.p2align 3
+.Lhjson_120:
+	addq	$1, %rdx
+	movsd	.Lhjson_C7(%rip), %xmm2
+	xorl	%r9d, %r9d
+	pxor	%xmm0, %xmm0
+	movq	%rdx, 16(%rbp)
+	cmpq	%rcx, %rdx
+	jb	.Lhjson_121
+	jmp	.Lhjson_152
+	.p2align 6
+	.p2align 4,,10
+	.p2align 3
+.Lhjson_124:
+	mulsd	%xmm2, %xmm0
+	movsbl	%al, %eax
+	pxor	%xmm1, %xmm1
+	addq	$1, %rdx
+	cvtsi2sdl	%eax, %xmm1
+	movq	%rdx, 16(%rbp)
+	addq	$1, %r9
+	addsd	%xmm1, %xmm0
+	cmpq	%rcx, %rdx
+	jnb	.Lhjson_123
+.Lhjson_121:
+	movzbl	(%rsi,%rdx), %eax
+	subl	$48, %eax
+	cmpb	$9, %al
+	jbe	.Lhjson_124
+	movq	16(%rbp), %rax
+	cmpq	%rcx, %rax
+	jnb	.Lhjson_123
+	movzbl	(%rsi,%rax), %edx
+	andl	$-33, %edx
+	cmpb	$69, %dl
+	je	.Lhjson_140
+.Lhjson_123:
+	testq	%r9, %r9
+	je	.Lhjson_152
+	leaq	-1(%r9), %rdx
+	movl	$1, %eax
+	.p2align 4
+	.p2align 4
+	.p2align 3
+.Lhjson_136:
+	leaq	(%rax,%rax,4), %rax
+	addq	%rax, %rax
+	subq	$1, %rdx
+	jnb	.Lhjson_136
+	testq	%rax, %rax
+	js	.Lhjson_137
+	pxor	%xmm1, %xmm1
+	cvtsi2sdq	%rax, %xmm1
+.Lhjson_138:
+	divsd	%xmm1, %xmm0
+	movq	%r9, %rax
+	salq	$8, %rax
+	movzwl	%ax, %eax
+	orq	$5, %rax
+	jmp	.Lhjson_122
+.Lhjson_81:
+	movq	%r11, %rax
+	shrq	$12, %rax
+	orl	$-32, %eax
+	movb	%al, (%rdi)
+	movl	%ecx, %eax
+	andl	$63, %eax
+	orl	$-128, %eax
+	movb	%al, 1(%r8,%rdx)
+	leaq	2(%rdx), %rax
+	addq	$3, %rdx
+	movb	%sil, (%r8,%rax)
+	jmp	.Lhjson_80
+.Lhjson_137:
+	movq	%rax, %rdx
+	andl	$1, %eax
+	pxor	%xmm1, %xmm1
+	shrq $1, %rdx
+	orq	%rax, %rdx
+	cvtsi2sdq	%rdx, %xmm1
+	addsd	%xmm1, %xmm1
+	jmp	.Lhjson_138
+.Lhjson_151:
+	testb	$1, %r9b
+	je	.Lhjson_134
+	mulsd	%xmm1, %xmm0
+	movl	$1, %eax
+	cmpq	%r9, %rax
+	je	.Lhjson_152
+.Lhjson_134:
+	mulsd	%xmm1, %xmm0
+	addq	$2, %rax
+	mulsd	%xmm1, %xmm0
+	cmpq	%r9, %rax
+	jne	.Lhjson_134
+	jmp	.Lhjson_152
+.Lhjson_241:
+	xorl	%eax, %eax
+	xorl	%edi, %edi
+	movq	%rax, (%rbx)
+	jmp	.Lhjson_115
 	.section .rdata,"dr"
-.Lhjson_C6:
+.Lhjson_C9:
 .byte 116,114,117,101,0
-.Lhjson_C7:
+.Lhjson_C10:
 .byte 102,97,108,115,101,0
-.Lhjson_C8:
+.Lhjson_C11:
 .byte 110,117,108,108,0
 	.text
 	.p2align 4
 hjson_local_hrt_enc_dyn.part.0.constprop.0:
-	subq	$56, %rsp
-	movq	%rbx, 24(%rsp)
-	movq	%rdx, %rbx
+	movq	%rdx, %rax
 	cmpq	$3, %rsi
-	je	.Lhjson_84
+	je	.Lhjson_274
 	leaq	-2(%rsi), %rdx
 	testq	$-3, %rdx
-	je	.Lhjson_85
-	movq	%rbp, 32(%rsp)
-	movq	%rdi, %rbp
-	cmpq	$5, %rsi
-	je	.Lhjson_86
+	je	.Lhjson_275
+	subq	$56, %rsp
+	movq	%rbx, 32(%rsp)
+	movq	%rdi, %rbx
+	cmpb	$5, %sil
+	je	.Lhjson_276
 	cmpq	$8, %rsi
-	je	.Lhjson_87
-	movq	32(%rsp), %rbp
-	movq	24(%rsp), %rbx
+	je	.Lhjson_277
+	movq	32(%rsp), %rbx
 	addq	$56, %rsp
 	jmp	hbc_type_error
 	.p2align 4,,10
 	.p2align 3
-.Lhjson_85:
-	movq	-8(%rbx), %rdx
-	movq	%rbx, %rsi
-	movq	24(%rsp), %rbx
-	addq	$56, %rsp
+.Lhjson_275:
+	movq	-8(%rax), %rdx
+	movq	%rax, %rsi
 	jmp	hjson_local_hrt_put_str_escaped
 	.p2align 4,,10
 	.p2align 3
-.Lhjson_84:
+.Lhjson_274:
 	testq	%rdx, %rdx
-	jne	.Lhjson_88
-	movq	24(%rsp), %rbx
+	jne	.Lhjson_278
 	movl	$5, %edx
-	addq	$56, %rsp
-	leaq	.Lhjson_C7(%rip), %rsi
+	leaq	.Lhjson_C10(%rip), %rsi
 	jmp	hjson_local_hrt_put
 	.p2align 4,,10
 	.p2align 3
-.Lhjson_88:
-	movq	24(%rsp), %rbx
+.Lhjson_278:
 	movl	$4, %edx
-	addq	$56, %rsp
-	leaq	.Lhjson_C6(%rip), %rsi
+	leaq	.Lhjson_C9(%rip), %rsi
 	jmp	hjson_local_hrt_put
 	.p2align 4,,10
 	.p2align 3
-.Lhjson_87:
-	movq	%r12, 40(%rsp)
-	movq	(%rbx), %r12
+.Lhjson_277:
+	movq	-8(%rax), %rcx
+	movq	%r14, 40(%rsp)
 	movl	$1, %edx
-	leaq	15(%rsp), %rsi
-	movq	%r14, 48(%rsp)
-	movb	$91, 15(%rsp)
-	movq	%r12, %r14
+	leaq	31(%rsp), %rsi
+	movq	%r15, 48(%rsp)
+	movq	%rcx, %r14
+	movq	%rax, 8(%rsp)
+	movq	%rcx, %r15
+	movb	$91, 31(%rsp)
 	call	hjson_local_hrt_put
-	testq	%r12, %r12
-	je	.Lhjson_66
-	movq	8(%rbx), %rsi
-	xorl	%r12d, %r12d
-	addq	$16, %rbx
-	movq	(%rbx), %rdx
-	addq	$1, %r12
+	testq	%r14, %r14
+	je	.Lhjson_254
+	movq	8(%rsp), %rax
+	xorl	%r14d, %r14d
+	addq	$8, %rax
+.Lhjson_255:
+	movq	-8(%rax), %rsi
+	movq	(%rax), %rdx
+	movq	%rax, 8(%rsp)
 	testq	%rsi, %rsi
-	je	.Lhjson_76
-.Lhjson_90:
+	je	.Lhjson_265
 	cmpq	$9, %rsi
-	je	.Lhjson_76
+	je	.Lhjson_265
 	cmpq	$1, %rsi
-	je	.Lhjson_89
-	movq	%rbp, %rdi
+	je	.Lhjson_279
+	movq	%rbx, %rdi
 	call	hjson_local_hrt_enc_dyn.part.0.constprop.0
-.Lhjson_70:
-	cmpq	%r12, %r14
-	je	.Lhjson_66
-	addq	$16, %rbx
+	movq	8(%rsp), %rax
+.Lhjson_258:
+	leaq	1(%r14), %rcx
+	movq	%rcx, %r14
+	cmpq	%rcx, %r15
+	je	.Lhjson_254
+	addq	$16, %rax
 	movl	$1, %edx
-	movq	%rbp, %rdi
-	addq	$1, %r12
-	leaq	15(%rsp), %rsi
-	movb	$44, 15(%rsp)
+	leaq	31(%rsp), %rsi
+	movq	%rbx, %rdi
+	movq	%rax, 8(%rsp)
+	movb	$44, 31(%rsp)
 	call	hjson_local_hrt_put
-	movq	-8(%rbx), %rsi
-	movq	(%rbx), %rdx
+	movq	8(%rsp), %rax
+	jmp	.Lhjson_255
+	.p2align 4,,10
+	.p2align 3
+.Lhjson_276:
 	testq	%rsi, %rsi
-	jne	.Lhjson_90
-.Lhjson_76:
-	movq	%rdx, %rsi
-	movq	%rbp, %rdi
-	call	hjson_local_hrt_put_i64
-	jmp	.Lhjson_70
-	.p2align 4,,10
-	.p2align 3
-.Lhjson_66:
-	leaq	15(%rsp), %rsi
-	movq	%rbp, %rdi
-	movl	$1, %edx
-	movb	$93, 15(%rsp)
-	call	hjson_local_hrt_put
-	movq	32(%rsp), %rbp
-	movq	40(%rsp), %r12
-	movq	48(%rsp), %r14
-	movq	24(%rsp), %rbx
-	addq	$56, %rsp
-	ret
-	.p2align 4,,10
-	.p2align 3
-.Lhjson_86:
+	js	.Lhjson_280
+	movq	%rax, %xmm0
+	movq	%rsi, %rax
+	movzbl	%ah, %edi
+	orq	$1310720, %rdi
+	testb	$-1, %ah
+	movl	$1310722, %eax
+	cmove	%rax, %rdi
+.Lhjson_249:
+	xorl	%ecx, %ecx
 	xorl	%edx, %edx
 	xorl	%esi, %esi
-	movq	%rbx, %xmm0
-	xorl	%ecx, %ecx
-	movl	$1310722, %edi
 	call	hbc_str_f64
 	movq	-8(%rax), %rdx
-	movq	%rax, %rbx
+	movq	%rax, %rcx
 	xorl	%eax, %eax
-	movq	%rbx, %rsi
+	movq	%rcx, %rsi
 	testq	%rdx, %rdx
-	jne	.Lhjson_62
-	jmp	.Lhjson_63
+	jne	.Lhjson_250
+	jmp	.Lhjson_251
 	.p2align 4
 	.p2align 4,,10
 	.p2align 3
-.Lhjson_64:
+.Lhjson_252:
 	addq	$1, %rax
 	cmpq	%rax, %rdx
-	je	.Lhjson_91
-.Lhjson_62:
-	cmpb	$32, (%rbx,%rax)
-	je	.Lhjson_64
-	leaq	(%rbx,%rax), %rsi
+	je	.Lhjson_281
+.Lhjson_250:
+	cmpb	$32, (%rcx,%rax)
+	je	.Lhjson_252
+	leaq	(%rcx,%rax), %rsi
 	subq	%rax, %rdx
-.Lhjson_63:
-	movq	%rbp, %rdi
-	call	hjson_local_hrt_put
-	movq	32(%rsp), %rbp
+.Lhjson_251:
 	movq	%rbx, %rdi
-	movq	24(%rsp), %rbx
+	movq	%rcx, 8(%rsp)
+	call	hjson_local_hrt_put
+	movq	8(%rsp), %rdi
+	movq	32(%rsp), %rbx
 	addq	$56, %rsp
 	jmp	hbc_freestr
 	.p2align 4,,10
 	.p2align 3
-.Lhjson_89:
-	movl	$4, %edx
-	leaq	.Lhjson_C8(%rip), %rsi
-	movq	%rbp, %rdi
-	call	hjson_local_hrt_put
-	jmp	.Lhjson_70
+.Lhjson_265:
+	movq	%rdx, %rsi
+	movq	%rbx, %rdi
+	call	hjson_local_hrt_put_i64
+	movq	8(%rsp), %rax
+	jmp	.Lhjson_258
 	.p2align 4,,10
 	.p2align 3
-.Lhjson_91:
-	leaq	(%rbx,%rdx), %rsi
+.Lhjson_254:
+	leaq	31(%rsp), %rsi
+	movq	%rbx, %rdi
+	movl	$1, %edx
+	movb	$93, 31(%rsp)
+	call	hjson_local_hrt_put
+	movq	40(%rsp), %r14
+	movq	48(%rsp), %r15
+	movq	32(%rsp), %rbx
+	addq	$56, %rsp
+	ret
+	.p2align 4,,10
+	.p2align 3
+.Lhjson_281:
+	leaq	(%rcx,%rdx), %rsi
 	xorl	%edx, %edx
-	jmp	.Lhjson_63
+	jmp	.Lhjson_251
+	.p2align 4,,10
+	.p2align 3
+.Lhjson_280:
+	movzwl	8(%rax), %edi
+	movsd	(%rax), %xmm0
+	orq	$1310720, %rdi
+	jmp	.Lhjson_249
+	.p2align 4,,10
+	.p2align 3
+.Lhjson_279:
+	movl	$4, %edx
+	leaq	.Lhjson_C11(%rip), %rsi
+	movq	%rbx, %rdi
+	call	hjson_local_hrt_put
+	movq	8(%rsp), %rax
+	jmp	.Lhjson_258
 	.p2align 4
 	.globl	hbc_json_encode
 hbc_json_encode:
@@ -483,27 +1206,27 @@ hbc_json_encode:
 	movq	$0, 56(%rsp)
 	movq	$0, 64(%rsp)
 	cmpq	$5, %rbx
-	je	.Lhjson_93
-	jbe	.Lhjson_241
+	je	.Lhjson_283
+	jbe	.Lhjson_431
 	movq	%rbp, 96(%rsp)
 	movq	%r12, 104(%rsp)
 	movq	%r13, 112(%rsp)
 	movq	%r14, 120(%rsp)
 	movq	%r15, 128(%rsp)
 	cmpq	$8, %rbx
-	je	.Lhjson_101
-	jbe	.Lhjson_242
+	je	.Lhjson_291
+	jbe	.Lhjson_432
 	cmpq	$9, %rbx
-	je	.Lhjson_105
+	je	.Lhjson_295
 	cmpq	$10, %rbx
-	jne	.Lhjson_243
+	jne	.Lhjson_433
 	movq	$0, 16(%rsp)
 	movq	8(%rdi), %r15
 	testq	%r15, %r15
-	je	.Lhjson_158
+	je	.Lhjson_348
 	movq	16(%rdi), %rax
 	movq	%rax, 16(%rsp)
-.Lhjson_158:
+.Lhjson_348:
 	movl	$272, %edi
 	call	hbc_alloc
 	movq	$256, (%rax)
@@ -511,28 +1234,28 @@ hbc_json_encode:
 	leaq	16(%rax), %rbp
 	movq	$256, 8(%rax)
 	cmpq	$0, 56(%rsp)
-	je	.Lhjson_159
+	je	.Lhjson_349
 	xorl	%eax, %eax
-.Lhjson_160:
+.Lhjson_350:
 	movq	48(%rsp), %rdx
 	movzbl	(%rdx,%rax), %edx
 	movb	%dl, 16(%rbx,%rax)
 	addq	$1, %rax
 	cmpq	56(%rsp), %rax
-	jb	.Lhjson_160
-.Lhjson_159:
+	jb	.Lhjson_350
+.Lhjson_349:
 	movq	48(%rsp), %rdi
 	testq	%rdi, %rdi
-	je	.Lhjson_161
+	je	.Lhjson_351
 	call	hbc_freestr
-.Lhjson_161:
+.Lhjson_351:
 	movq	56(%rsp), %rax
 	movq	%rbp, 48(%rsp)
 	movq	$256, 64(%rsp)
 	movb	$91, 16(%rbx,%rax)
 	addq	$1, 56(%rsp)
 	cmpq	$0, 16(%rsp)
-	je	.Lhjson_240
+	je	.Lhjson_430
 	movq	(%r15), %rbx
 	movq	8(%r15), %r13
 	leaq	48(%rsp), %r12
@@ -540,32 +1263,32 @@ hbc_json_encode:
 	leaq	47(%rsp), %r14
 	.p2align 4
 	.p2align 3
-.Lhjson_170:
+.Lhjson_360:
 	movl	$1, %edx
 	movq	%r14, %rsi
 	movq	%r12, %rdi
 	movb	$91, 47(%rsp)
 	call	hjson_local_hrt_put
 	testq	%r13, %r13
-	je	.Lhjson_163
+	je	.Lhjson_353
 	movq	(%rbx), %rsi
 	addq	$8, %rbx
 	xorl	%ebp, %ebp
 	movq	(%rbx), %rdx
 	testq	%rsi, %rsi
-	je	.Lhjson_177
-.Lhjson_245:
+	je	.Lhjson_367
+.Lhjson_435:
 	cmpq	$9, %rsi
-	je	.Lhjson_177
+	je	.Lhjson_367
 	cmpq	$1, %rsi
-	je	.Lhjson_244
+	je	.Lhjson_434
 	movq	%r12, %rdi
 	call	hjson_local_hrt_enc_dyn.part.0.constprop.0
-.Lhjson_167:
+.Lhjson_357:
 	addq	$1, %rbp
 	cmpq	%r13, %rbp
-	je	.Lhjson_163
-.Lhjson_169:
+	je	.Lhjson_353
+.Lhjson_359:
 	addq	$16, %rbx
 	movl	$1, %edx
 	movq	%r14, %rsi
@@ -575,15 +1298,15 @@ hbc_json_encode:
 	movq	-8(%rbx), %rsi
 	movq	(%rbx), %rdx
 	testq	%rsi, %rsi
-	jne	.Lhjson_245
-.Lhjson_177:
+	jne	.Lhjson_435
+.Lhjson_367:
 	movq	%rdx, %rsi
 	movq	%r12, %rdi
 	addq	$1, %rbp
 	call	hjson_local_hrt_put_i64
 	cmpq	%r13, %rbp
-	jne	.Lhjson_169
-.Lhjson_163:
+	jne	.Lhjson_359
+.Lhjson_353:
 	movl	$1, %edx
 	movq	%r14, %rsi
 	movq	%r12, %rdi
@@ -592,7 +1315,7 @@ hbc_json_encode:
 	addq	$1, 8(%rsp)
 	movq	16(%rsp), %rcx
 	cmpq	%rcx, 8(%rsp)
-	je	.Lhjson_162
+	je	.Lhjson_352
 	movl	$1, %edx
 	movq	%r14, %rsi
 	movq	%r12, %rdi
@@ -601,21 +1324,21 @@ hbc_json_encode:
 	movb	$44, 47(%rsp)
 	addq	$16, %r15
 	call	hjson_local_hrt_put
-	jmp	.Lhjson_170
+	jmp	.Lhjson_360
 	.p2align 4,,10
 	.p2align 3
-.Lhjson_241:
+.Lhjson_431:
 	cmpq	$2, %rbx
-	je	.Lhjson_95
-	jbe	.Lhjson_246
+	je	.Lhjson_285
+	jbe	.Lhjson_436
 	cmpq	$3, %rbx
-	je	.Lhjson_247
+	je	.Lhjson_437
 	movq	16(%rdi), %rdx
 	movq	8(%rdi), %rsi
 	leaq	48(%rsp), %rdi
 	call	hjson_local_hrt_put_str_escaped
 	movq	56(%rsp), %rcx
-.Lhjson_113:
+.Lhjson_303:
 	movq	48(%rsp), %rax
 	movq	88(%rsp), %rbx
 	movq	%rcx, %rdx
@@ -623,7 +1346,7 @@ hbc_json_encode:
 	ret
 	.p2align 4,,10
 	.p2align 3
-.Lhjson_101:
+.Lhjson_291:
 	movq	16(%rdi), %rbp
 	movq	8(%rdi), %r12
 	movl	$272, %edi
@@ -633,39 +1356,39 @@ hbc_json_encode:
 	leaq	16(%rax), %r13
 	movq	$256, 8(%rax)
 	cmpq	$0, 56(%rsp)
-	je	.Lhjson_145
+	je	.Lhjson_335
 	xorl	%eax, %eax
-.Lhjson_146:
+.Lhjson_336:
 	movq	48(%rsp), %rdx
 	movzbl	(%rdx,%rax), %edx
 	movb	%dl, 16(%rbx,%rax)
 	addq	$1, %rax
 	cmpq	56(%rsp), %rax
-	jb	.Lhjson_146
-.Lhjson_145:
+	jb	.Lhjson_336
+.Lhjson_335:
 	movq	48(%rsp), %rdi
 	testq	%rdi, %rdi
-	je	.Lhjson_147
+	je	.Lhjson_337
 	call	hbc_freestr
-.Lhjson_147:
+.Lhjson_337:
 	movq	56(%rsp), %rax
 	movq	%r13, 48(%rsp)
 	movq	$256, 64(%rsp)
 	movb	$91, 16(%rbx,%rax)
 	addq	$1, 56(%rsp)
 	testq	%r12, %r12
-	je	.Lhjson_240
+	je	.Lhjson_430
 	testq	%rbp, %rbp
-	je	.Lhjson_240
+	je	.Lhjson_430
 	movq	8(%r12), %r13
 	leaq	8(%r12), %r15
 	xorl	%ebx, %ebx
 	leaq	48(%rsp), %r12
 	leaq	47(%rsp), %r14
-	jmp	.Lhjson_149
+	jmp	.Lhjson_339
 	.p2align 4,,10
 	.p2align 3
-.Lhjson_248:
+.Lhjson_438:
 	movl	$1, %edx
 	movq	%r14, %rsi
 	movq	%r12, %rdi
@@ -673,39 +1396,39 @@ hbc_json_encode:
 	movb	$44, 47(%rsp)
 	movq	(%r15), %r13
 	call	hjson_local_hrt_put
-.Lhjson_149:
+.Lhjson_339:
 	movq	-8(%r13), %rdx
 	movq	%r13, %rsi
 	movq	%r12, %rdi
 	addq	$1, %rbx
 	call	hjson_local_hrt_put_str_escaped
 	cmpq	%rbp, %rbx
-	jb	.Lhjson_248
-.Lhjson_162:
+	jb	.Lhjson_438
+.Lhjson_352:
 	movl	$1, %edx
 	movq	%r14, %rsi
 	movq	%r12, %rdi
 	movb	$93, 47(%rsp)
 	call	hjson_local_hrt_put
-	jmp	.Lhjson_239
+	jmp	.Lhjson_429
 	.p2align 4,,10
 	.p2align 3
-.Lhjson_246:
+.Lhjson_436:
 	testq	%rbx, %rbx
-	je	.Lhjson_249
+	je	.Lhjson_439
 	movq	8(%rdi), %rsi
 	leaq	48(%rsp), %rdi
 	call	hjson_local_hrt_put_i64
 	movq	56(%rsp), %rcx
-	jmp	.Lhjson_113
+	jmp	.Lhjson_303
 	.p2align 4,,10
 	.p2align 3
-.Lhjson_242:
+.Lhjson_432:
 	cmpq	$6, %rbx
-	je	.Lhjson_250
+	je	.Lhjson_440
 	movq	8(%rdi), %rbx
 	testq	%rbx, %rbx
-	jne	.Lhjson_131
+	jne	.Lhjson_321
 	movl	$272, %edi
 	call	hbc_alloc
 	movq	$256, (%rax)
@@ -713,24 +1436,24 @@ hbc_json_encode:
 	leaq	16(%rax), %rbp
 	movq	$256, 8(%rax)
 	cmpq	$0, 56(%rsp)
-	je	.Lhjson_132
+	je	.Lhjson_322
 	xorl	%eax, %eax
 	.p2align 5
 	.p2align 4
 	.p2align 3
-.Lhjson_133:
+.Lhjson_323:
 	movq	48(%rsp), %rdx
 	movzbl	(%rdx,%rax), %edx
 	movb	%dl, 16(%rbx,%rax)
 	addq	$1, %rax
 	cmpq	56(%rsp), %rax
-	jb	.Lhjson_133
-.Lhjson_132:
+	jb	.Lhjson_323
+.Lhjson_322:
 	movq	48(%rsp), %rdi
 	testq	%rdi, %rdi
-	je	.Lhjson_134
+	je	.Lhjson_324
 	call	hbc_freestr
-.Lhjson_134:
+.Lhjson_324:
 	movq	56(%rsp), %rax
 	movq	%rbp, 48(%rsp)
 	movb	$91, 16(%rbx,%rax)
@@ -739,8 +1462,8 @@ hbc_json_encode:
 	movb	$93, 1(%rdx,%rax)
 	movq	56(%rsp), %rax
 	leaq	2(%rax), %rcx
-	jmp	.Lhjson_238
-.Lhjson_131:
+	jmp	.Lhjson_428
+.Lhjson_321:
 	movq	16(%rdi), %r13
 	movl	$272, %edi
 	call	hbc_alloc
@@ -749,28 +1472,28 @@ hbc_json_encode:
 	leaq	16(%rax), %r12
 	movq	$256, 8(%rax)
 	cmpq	$0, 56(%rsp)
-	je	.Lhjson_135
+	je	.Lhjson_325
 	xorl	%eax, %eax
-.Lhjson_136:
+.Lhjson_326:
 	movq	48(%rsp), %rdx
 	movzbl	(%rdx,%rax), %edx
 	movb	%dl, 16(%rbp,%rax)
 	addq	$1, %rax
 	cmpq	56(%rsp), %rax
-	jb	.Lhjson_136
-.Lhjson_135:
+	jb	.Lhjson_326
+.Lhjson_325:
 	movq	48(%rsp), %rdi
 	testq	%rdi, %rdi
-	je	.Lhjson_137
+	je	.Lhjson_327
 	call	hbc_freestr
-.Lhjson_137:
+.Lhjson_327:
 	movq	56(%rsp), %rax
 	movq	%r12, 48(%rsp)
 	movq	$256, 64(%rsp)
 	movb	$91, 16(%rbp,%rax)
 	addq	$1, 56(%rsp)
 	testq	%r13, %r13
-	je	.Lhjson_240
+	je	.Lhjson_430
 	movq	(%rbx), %rsi
 	addq	$8, %rbx
 	xorl	%ebp, %ebp
@@ -778,18 +1501,18 @@ hbc_json_encode:
 	leaq	47(%rsp), %r14
 	movq	(%rbx), %rdx
 	testq	%rsi, %rsi
-	je	.Lhjson_175
-.Lhjson_252:
+	je	.Lhjson_365
+.Lhjson_442:
 	cmpq	$9, %rsi
-	je	.Lhjson_175
+	je	.Lhjson_365
 	cmpq	$1, %rsi
-	je	.Lhjson_251
+	je	.Lhjson_441
 	movq	%r12, %rdi
 	call	hjson_local_hrt_enc_dyn.part.0.constprop.0
-.Lhjson_142:
+.Lhjson_332:
 	addq	$1, %rbp
 	cmpq	%rbp, %r13
-	je	.Lhjson_162
+	je	.Lhjson_352
 	addq	$16, %rbx
 	movl	$1, %edx
 	movq	%r14, %rsi
@@ -799,15 +1522,15 @@ hbc_json_encode:
 	movq	-8(%rbx), %rsi
 	movq	(%rbx), %rdx
 	testq	%rsi, %rsi
-	jne	.Lhjson_252
-.Lhjson_175:
+	jne	.Lhjson_442
+.Lhjson_365:
 	movq	%rdx, %rsi
 	movq	%r12, %rdi
 	call	hjson_local_hrt_put_i64
-	jmp	.Lhjson_142
+	jmp	.Lhjson_332
 	.p2align 4,,10
 	.p2align 3
-.Lhjson_93:
+.Lhjson_283:
 	movq	8(%rdi), %rdi
 	movq	%rbp, 96(%rsp)
 	call	hbc_dtos
@@ -831,13 +1554,13 @@ hbc_json_encode:
 	call	hbc_freestr
 	movq	56(%rsp), %rcx
 	movq	96(%rsp), %rbp
-	jmp	.Lhjson_113
+	jmp	.Lhjson_303
 	.p2align 4,,10
 	.p2align 3
-.Lhjson_250:
+.Lhjson_440:
 	movq	8(%rdi), %r13
 	testq	%r13, %r13
-	je	.Lhjson_118
+	je	.Lhjson_308
 	movq	16(%rdi), %rax
 	movl	$272, %edi
 	movq	%rax, 24(%rsp)
@@ -847,21 +1570,21 @@ hbc_json_encode:
 	leaq	16(%rax), %r12
 	movq	$256, 8(%rax)
 	cmpq	$0, 56(%rsp)
-	je	.Lhjson_119
+	je	.Lhjson_309
 	xorl	%eax, %eax
-.Lhjson_120:
+.Lhjson_310:
 	movq	48(%rsp), %rdx
 	movzbl	(%rdx,%rax), %edx
 	movb	%dl, 16(%rbp,%rax)
 	addq	$1, %rax
 	cmpq	56(%rsp), %rax
-	jb	.Lhjson_120
-.Lhjson_119:
+	jb	.Lhjson_310
+.Lhjson_309:
 	movq	48(%rsp), %rdi
 	testq	%rdi, %rdi
-	je	.Lhjson_121
+	je	.Lhjson_311
 	call	hbc_freestr
-.Lhjson_121:
+.Lhjson_311:
 	movq	56(%rsp), %rax
 	movq	%r12, 48(%rsp)
 	leaq	47(%rsp), %r14
@@ -870,7 +1593,7 @@ hbc_json_encode:
 	movb	$123, 16(%rbp,%rax)
 	addq	$1, 56(%rsp)
 	cmpq	$0, 24(%rsp)
-	je	.Lhjson_122
+	je	.Lhjson_312
 	movq	8(%r13), %rax
 	movq	0(%r13), %r15
 	xorl	%ebp, %ebp
@@ -880,20 +1603,20 @@ hbc_json_encode:
 	movq	%rax, 8(%rsp)
 	movq	24(%r13), %rax
 	movq	%rax, 16(%rsp)
-	jmp	.Lhjson_127
+	jmp	.Lhjson_317
 	.p2align 4,,10
 	.p2align 3
-.Lhjson_123:
+.Lhjson_313:
 	cmpq	$1, %rbx
-	je	.Lhjson_253
+	je	.Lhjson_443
 	movq	16(%rsp), %rdx
 	movq	%rbx, %rsi
 	movq	%r12, %rdi
 	call	hjson_local_hrt_enc_dyn.part.0.constprop.0
-.Lhjson_125:
+.Lhjson_315:
 	addq	$1, %rbp
 	cmpq	%rbp, 24(%rsp)
-	je	.Lhjson_122
+	je	.Lhjson_312
 	movq	40(%r13), %rax
 	movl	$1, %edx
 	movq	%r14, %rsi
@@ -906,7 +1629,7 @@ hbc_json_encode:
 	movq	24(%r13), %rax
 	movq	%rax, 16(%rsp)
 	call	hjson_local_hrt_put
-.Lhjson_127:
+.Lhjson_317:
 	movq	8(%rsp), %rdx
 	movq	%r15, %rsi
 	movq	%r12, %rdi
@@ -917,17 +1640,17 @@ hbc_json_encode:
 	movb	$58, 47(%rsp)
 	call	hjson_local_hrt_put
 	testq	%rbx, %rbx
-	je	.Lhjson_174
+	je	.Lhjson_364
 	cmpq	$9, %rbx
-	jne	.Lhjson_123
-.Lhjson_174:
+	jne	.Lhjson_313
+.Lhjson_364:
 	movq	16(%rsp), %rsi
 	movq	%r12, %rdi
 	call	hjson_local_hrt_put_i64
-	jmp	.Lhjson_125
+	jmp	.Lhjson_315
 	.p2align 4,,10
 	.p2align 3
-.Lhjson_249:
+.Lhjson_439:
 	movl	$272, %edi
 	movq	%rbp, 96(%rsp)
 	call	hbc_alloc
@@ -936,73 +1659,73 @@ hbc_json_encode:
 	leaq	16(%rax), %rbp
 	movq	$256, 8(%rax)
 	cmpq	$0, 56(%rsp)
-	je	.Lhjson_108
+	je	.Lhjson_298
 	xorl	%eax, %eax
 	.p2align 5
 	.p2align 4
 	.p2align 3
-.Lhjson_109:
+.Lhjson_299:
 	movq	48(%rsp), %rdx
 	movzbl	(%rdx,%rax), %edx
 	movb	%dl, 16(%rcx,%rax)
 	addq	$1, %rax
 	cmpq	56(%rsp), %rax
-	jb	.Lhjson_109
-.Lhjson_108:
+	jb	.Lhjson_299
+.Lhjson_298:
 	movq	48(%rsp), %rdi
 	testq	%rdi, %rdi
-	je	.Lhjson_110
+	je	.Lhjson_300
 	call	hbc_freestr
-.Lhjson_110:
+.Lhjson_300:
 	movq	%rbp, 48(%rsp)
 	movl	$110, %eax
-	leaq	.Lhjson_C8(%rip), %rdx
-	jmp	.Lhjson_112
+	leaq	.Lhjson_C11(%rip), %rdx
+	jmp	.Lhjson_302
 	.p2align 5
 	.p2align 4,,10
 	.p2align 3
-.Lhjson_254:
+.Lhjson_444:
 	movq	48(%rsp), %rbp
 	movzbl	(%rdx,%rbx), %eax
-.Lhjson_112:
+.Lhjson_302:
 	addq	%rbx, %rbp
 	addq	$1, %rbx
 	addq	56(%rsp), %rbp
 	movb	%al, 0(%rbp)
 	cmpq	$4, %rbx
-	jne	.Lhjson_254
+	jne	.Lhjson_444
 	movq	56(%rsp), %rax
 	movq	96(%rsp), %rbp
 	leaq	4(%rax), %rcx
-	jmp	.Lhjson_113
-.Lhjson_243:
+	jmp	.Lhjson_303
+.Lhjson_433:
 	call	hbc_type_error
-.Lhjson_239:
+.Lhjson_429:
 	movq	56(%rsp), %rcx
-.Lhjson_238:
+.Lhjson_428:
 	movq	96(%rsp), %rbp
 	movq	104(%rsp), %r12
 	movq	112(%rsp), %r13
 	movq	120(%rsp), %r14
 	movq	128(%rsp), %r15
-	jmp	.Lhjson_113
+	jmp	.Lhjson_303
 	.p2align 4,,10
 	.p2align 3
-.Lhjson_105:
+.Lhjson_295:
 	movq	8(%rdi), %rsi
 	movq	16(%rdi), %rdx
 	testq	%rsi, %rsi
-	je	.Lhjson_176
+	je	.Lhjson_366
 	cmpq	$9, %rsi
-	je	.Lhjson_176
+	je	.Lhjson_366
 	cmpq	$1, %rsi
-	je	.Lhjson_255
+	je	.Lhjson_445
 	leaq	48(%rsp), %rdi
 	call	hjson_local_hrt_enc_dyn.part.0.constprop.0
-	jmp	.Lhjson_239
+	jmp	.Lhjson_429
 	.p2align 4,,10
 	.p2align 3
-.Lhjson_95:
+.Lhjson_285:
 	movzwl	%si, %edi
 	xorl	%edx, %edx
 	xorl	%esi, %esi
@@ -1014,44 +1737,44 @@ hbc_json_encode:
 	xorl	%eax, %eax
 	movq	%rbx, %rsi
 	testq	%rdx, %rdx
-	jne	.Lhjson_114
-	jmp	.Lhjson_115
+	jne	.Lhjson_304
+	jmp	.Lhjson_305
 	.p2align 4
 	.p2align 4,,10
 	.p2align 3
-.Lhjson_116:
+.Lhjson_306:
 	addq	$1, %rax
 	cmpq	%rax, %rdx
-	je	.Lhjson_256
-.Lhjson_114:
+	je	.Lhjson_446
+.Lhjson_304:
 	cmpb	$32, (%rbx,%rax)
-	je	.Lhjson_116
+	je	.Lhjson_306
 	leaq	(%rbx,%rax), %rsi
 	subq	%rax, %rdx
-.Lhjson_115:
+.Lhjson_305:
 	leaq	48(%rsp), %rdi
 	call	hjson_local_hrt_put
 	movq	%rbx, %rdi
 	call	hbc_freestr
 	movq	56(%rsp), %rcx
-	jmp	.Lhjson_113
+	jmp	.Lhjson_303
 	.p2align 4,,10
 	.p2align 3
-.Lhjson_247:
+.Lhjson_437:
 	cmpq	$0, 8(%rdi)
-	jne	.Lhjson_257
+	jne	.Lhjson_447
 	movl	$5, %edx
-	leaq	.Lhjson_C7(%rip), %rsi
-.Lhjson_117:
+	leaq	.Lhjson_C10(%rip), %rsi
+.Lhjson_307:
 	leaq	48(%rsp), %rdi
 	call	hjson_local_hrt_put
 	movq	56(%rsp), %rcx
-	jmp	.Lhjson_113
-.Lhjson_257:
+	jmp	.Lhjson_303
+.Lhjson_447:
 	movl	$4, %edx
-	leaq	.Lhjson_C6(%rip), %rsi
-	jmp	.Lhjson_117
-.Lhjson_118:
+	leaq	.Lhjson_C9(%rip), %rsi
+	jmp	.Lhjson_307
+.Lhjson_308:
 	movl	$272, %edi
 	call	hbc_alloc
 	movq	$256, (%rax)
@@ -1059,24 +1782,24 @@ hbc_json_encode:
 	leaq	16(%rax), %rbp
 	movq	$256, 8(%rax)
 	cmpq	$0, 56(%rsp)
-	je	.Lhjson_128
+	je	.Lhjson_318
 	xorl	%eax, %eax
 	.p2align 5
 	.p2align 4
 	.p2align 3
-.Lhjson_129:
+.Lhjson_319:
 	movq	48(%rsp), %rdx
 	movzbl	(%rdx,%rax), %edx
 	movb	%dl, 16(%rbx,%rax)
 	addq	$1, %rax
 	cmpq	56(%rsp), %rax
-	jb	.Lhjson_129
-.Lhjson_128:
+	jb	.Lhjson_319
+.Lhjson_318:
 	movq	48(%rsp), %rdi
 	testq	%rdi, %rdi
-	je	.Lhjson_130
+	je	.Lhjson_320
 	call	hbc_freestr
-.Lhjson_130:
+.Lhjson_320:
 	movq	56(%rsp), %rax
 	movq	%rbp, 48(%rsp)
 	movb	$123, 16(%rbx,%rax)
@@ -1085,8 +1808,8 @@ hbc_json_encode:
 	movb	$125, 1(%rdx,%rax)
 	movq	56(%rsp), %rax
 	leaq	2(%rax), %rcx
-	jmp	.Lhjson_238
-.Lhjson_255:
+	jmp	.Lhjson_428
+.Lhjson_445:
 	movl	$272, %edi
 	call	hbc_alloc
 	movq	$256, (%rax)
@@ -1094,84 +1817,122 @@ hbc_json_encode:
 	leaq	16(%rax), %rbx
 	movq	$256, 8(%rax)
 	cmpq	$0, 56(%rsp)
-	je	.Lhjson_153
+	je	.Lhjson_343
 	xorl	%eax, %eax
-.Lhjson_154:
+.Lhjson_344:
 	movq	48(%rsp), %rdx
 	movzbl	(%rdx,%rax), %edx
 	movb	%dl, 16(%rcx,%rax)
 	addq	$1, %rax
 	cmpq	56(%rsp), %rax
-	jb	.Lhjson_154
-.Lhjson_153:
+	jb	.Lhjson_344
+.Lhjson_343:
 	movq	48(%rsp), %rdi
 	testq	%rdi, %rdi
-	je	.Lhjson_155
+	je	.Lhjson_345
 	call	hbc_freestr
-.Lhjson_155:
+.Lhjson_345:
 	movq	%rbx, 48(%rsp)
 	movl	$110, %edx
 	xorl	%eax, %eax
-	leaq	.Lhjson_C8(%rip), %rcx
-	jmp	.Lhjson_157
+	leaq	.Lhjson_C11(%rip), %rcx
+	jmp	.Lhjson_347
 	.p2align 5
 	.p2align 4,,10
 	.p2align 3
-.Lhjson_258:
+.Lhjson_448:
 	movq	48(%rsp), %rbx
 	movzbl	(%rcx,%rax), %edx
-.Lhjson_157:
+.Lhjson_347:
 	addq	%rax, %rbx
 	addq	$1, %rax
 	addq	56(%rsp), %rbx
 	movb	%dl, (%rbx)
 	cmpq	$4, %rax
-	jne	.Lhjson_258
+	jne	.Lhjson_448
 	movq	56(%rsp), %rax
 	leaq	4(%rax), %rcx
-	jmp	.Lhjson_238
+	jmp	.Lhjson_428
 	.p2align 4,,10
 	.p2align 3
-.Lhjson_244:
+.Lhjson_434:
 	movl	$4, %edx
-	leaq	.Lhjson_C8(%rip), %rsi
+	leaq	.Lhjson_C11(%rip), %rsi
 	movq	%r12, %rdi
 	call	hjson_local_hrt_put
-	jmp	.Lhjson_167
-.Lhjson_253:
+	jmp	.Lhjson_357
+.Lhjson_443:
 	movl	$4, %edx
-	leaq	.Lhjson_C8(%rip), %rsi
+	leaq	.Lhjson_C11(%rip), %rsi
 	movq	%r12, %rdi
 	call	hjson_local_hrt_put
-	jmp	.Lhjson_125
-.Lhjson_251:
+	jmp	.Lhjson_315
+.Lhjson_441:
 	movl	$4, %edx
-	leaq	.Lhjson_C8(%rip), %rsi
+	leaq	.Lhjson_C11(%rip), %rsi
 	movq	%r12, %rdi
 	call	hjson_local_hrt_put
-	jmp	.Lhjson_142
-.Lhjson_122:
+	jmp	.Lhjson_332
+.Lhjson_312:
 	movl	$1, %edx
 	movq	%r14, %rsi
 	movq	%r12, %rdi
 	movb	$125, 47(%rsp)
 	call	hjson_local_hrt_put
-	jmp	.Lhjson_239
-.Lhjson_256:
+	jmp	.Lhjson_429
+.Lhjson_446:
 	leaq	(%rbx,%rdx), %rsi
 	xorl	%edx, %edx
-	jmp	.Lhjson_115
-.Lhjson_176:
+	jmp	.Lhjson_305
+.Lhjson_366:
 	leaq	48(%rsp), %rdi
 	movq	%rdx, %rsi
 	call	hjson_local_hrt_put_i64
-	jmp	.Lhjson_239
-.Lhjson_240:
+	jmp	.Lhjson_429
+.Lhjson_430:
 	leaq	48(%rsp), %r12
 	leaq	47(%rsp), %r14
-	jmp	.Lhjson_162
+	jmp	.Lhjson_352
+	.p2align 4
+	.globl	hbc_json_decode
+hbc_json_decode:
+	subq	$56, %rsp
+	movq	%rdi, 16(%rsp)
+	leaq	16(%rsp), %rdi
+	movq	%rsi, 24(%rsp)
+	movq	%rsp, %rsi
+	movq	$0, 32(%rsp)
+	movq	$0, (%rsp)
+	movq	$0, 8(%rsp)
+	call	hjson_local_hrt_dec_value
+	testl	%eax, %eax
+	je	.Lhjson_451
+	movq	(%rsp), %rdx
+	movq	8(%rsp), %rax
+	addq	$56, %rsp
+	xchgq	%rdx, %rax
+	ret
+	.p2align 4,,10
+	.p2align 3
+.Lhjson_451:
+	xorl	%eax, %eax
+	movl	$1, %edx
+	addq	$56, %rsp
+	xchgq	%rdx, %rax
+	ret
 	.section .rdata,"dr"
 	.align 16
 hjson_local_hex.0:
 .byte 48,49,50,51,52,53,54,55,56,57,97,98,99,100,101,102,0
+	.align 8
+.Lhjson_C7:
+	.long	0
+	.long	1076101120
+	.align 16
+.Lhjson_C8:
+	.long	0
+	.long	-2147483648
+	.long	0
+	.long	0
+
 .text

@@ -1,0 +1,15 @@
+
+N         42
+N          1.5
+C txt
+L .T.
+U
+A          3          2
+A          4 a          2 .T. NIL
+A          2
+[[1],[2,"b"]]
+         3 .T.
+U
+1.5
+["a",2,true,null]
+null
