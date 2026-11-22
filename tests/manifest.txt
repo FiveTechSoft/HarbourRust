@@ -1934,3 +1934,4 @@ posx tests/i64-overflow/dyn.prg 1 Limit: integer overflow needs numeric promotio
 posx tests/i64-overflow/loop.prg 1 Limit: integer overflow needs numeric promotion\nCallstack:\n  at main (tests/i64-overflow/loop.prg:6)\n
 posx tests/i64-overflow/callee.prg 1 Limit: integer overflow needs numeric promotion\nCallstack:\n  at bump (tests/i64-overflow/callee.prg:12)\n  at main (tests/i64-overflow/callee.prg:4)\n
 neg tests/t1710_round_arrlit_neg.prg `round` with a non-empty array literal argument is not covered in this increment
+pos2 tests/user-overrides/internal_valtype.prg tests/user-overrides/expected/internal_valtype.linux.out tests/user-overrides/expected/internal_valtype.windows.out

@@ -91,3 +91,4 @@ tests/transform-bb/expected/** -text
 tests/transform-bb/logs/** -text
 tests/transform-bb/evidence/** -text
 tests/user-overrides/expected/** -text
+tests/user-overrides/expected/internal_valtype.windows.out -text
