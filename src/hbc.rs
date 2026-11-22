@@ -215,15 +215,15 @@ const P10: [f64; 18] = [
     1e10, 1e11, 1e12, 1e13, 1e14, 1e15, 1e16, 1e17,
 ];
 
-// Harbour float-literal parse semantics (compiler branch of hb_str2number),
-// measured against oracles hk278-hk289: digits accumulate in an i64 while
-// they fit, the total converts to f64 and is divided ONCE by 10^decimals.
-// This is NOT correct rounding: `9.999999999999999` accumulates to
-// 9999999999999999, whose nearest f64 is exactly 1e16, so the literal IS
-// 10.0 and prints "10.000000000000000" (oracle hk285); Rust's str::parse
-// would give 9.9999999999999982 and print "...999999999999998". Own
-// implementation written against oracles (Harbour is GPL+runtime-exception;
-// no code copied). Reachability bound, by lexer/frontier rules (not
+// Float-literal parse semantics, clean-room from black-box oracles
+// hk278-hk289 (measured behaviour only): digits accumulate in an i64
+// while they fit, the total converts to f64 and is divided ONCE by
+// 10^decimals. This is NOT correct rounding: `9.999999999999999`
+// accumulates to 9999999999999999, whose nearest f64 is exactly 1e16,
+// so the literal IS 10.0 and prints "10.000000000000000" (oracle
+// hk285); Rust's str::parse would give 9.9999999999999982 and print
+// "...999999999999998". Own implementation written against oracles.
+// Reachability bound, by lexer/frontier rules (not
 // hypothesis): the lexer caps written decimals at 17 and the precision
 // frontier admits only (a) |x| < 1 with dec <= 17: the literal is "0" +
 // "." + <= 17 fraction digits, so at most 18 digits accumulate, worst
@@ -2045,7 +2045,7 @@ const ASM_RESERVED: &[&str] = &[
     // hbc itself emits; a user function with one of these names would
     // collide with a helper symbol.
     "dtos", "stod", "year", "day", "month", "dow", "cdow", "cmonth", "dtoc", "sqrt", "exp", "log", "mod", "padc", "rat", "stuff", "isdigit", "isalpha", "isupper", "islower", "strzero", "ischar", "strzero_fix", "str_f64", "fmt_f64", "date_add", "date_diff", "date_days", "date_from_days", "seconds",
-    "hb_osdriveseparator", "hb_base64encode", "hb_stod", "hb_hextonum", "hb_asciiupper", "hb_strtohex", "hb_dirsepadd", "getenv", "hb_at", "hb_bchar", "hb_bcode", "__defaultnil", "hb_default", "hb_defaultvalue", "hb_sha1", "hb_hmac_sha1", "tr_dims", "tr_apply", "strtran", "space", "substr", "date", "ctod", "date_pack", "date_render", "date_today", "dispbox", "hrbase_wait", "setcursor", "hb_flink", "hb_flinksym", "hb_flinkread", "hb_memowrit", "hb_dircreate", "ferror", "curdir", "fread", "fcreate", "fopen", "fwrite", "fclose", "freadstr", "hb_libname", "hb_ps", "os", "dirmake", "inkey", "file", "hrfile_setdefault", "hrfile_setpath", "qout", "qqout", "outstd", "outerr", "empty", "procname", "min", "max", "str", "padr", "hb_ntos", "replicate", "aeval", "hb_isnumeric", "hb_isarray", "hb_isstring", "dfree", "upper", "lower", "left", "right", "at", "int", "abs", "padl", "val", "ascan", "aclone", "atail", "asort", "hb_bitand", "hb_bitor", "hb_bitxor", "hb_bitnot", "hb_bittest", "hb_bitset", "hb_bitreset", "eprint_str", "eprint_sep", "eprint_i64", "eprint_i64c", "eprint_dyn", "eprint_dynlit", "print_dynlit", "eprint_f64", "hb_eol", "procline", "asc", "trim", "ltrim", "rtrim", "alltrim", "chr", "trace_top", "print_trace", "panic_exit", "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_arg_error", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
+    "hb_osdriveseparator", "hb_base64encode", "hb_stod", "hb_hextonum", "hb_asciiupper", "hb_strtohex", "hb_dirsepadd", "getenv", "hb_at", "hb_bchar", "hb_bcode", "__defaultnil", "hb_default", "hb_defaultvalue", "hb_sha1", "hb_hmac_sha1", "tr_dims", "tr_apply", "strtran", "space", "substr", "date", "ctod", "date_pack", "date_render", "date_today", "dispbox", "hrbase_wait", "setcursor", "hb_flink", "hb_flinksym", "hb_flinkread", "hb_memowrit", "hb_dircreate", "ferror", "curdir", "fread", "fcreate", "fopen", "fwrite", "fclose", "freadstr", "hb_libname", "hb_ps", "os", "dirmake", "inkey", "file", "hrfile_setdefault", "hrfile_setpath", "qout", "qqout", "outstd", "outerr", "empty", "procname", "min", "max", "str", "padr", "hb_ntos", "replicate", "aeval", "hb_isnumeric", "hb_isarray", "hb_isstring", "dfree", "upper", "lower", "left", "right", "at", "int", "abs", "padl", "val", "ascan", "aclone", "atail", "asort", "hb_bitand", "hb_bitor", "hb_bitxor", "hb_bitnot", "hb_bittest", "hb_bitset", "hb_bitreset", "eprint_str", "eprint_sep", "eprint_i64", "eprint_i64c", "eprint_dyn", "eprint_dynlit", "print_dynlit", "eprint_f64", "hb_eol", "procline", "asc", "trim", "ltrim", "rtrim", "alltrim", "chr", "trace_top", "print_trace", "panic_exit", "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_arg_error", "val_arg_error", "atokens_arg_error", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
 ];
 
 fn dbf_result(id: &str) -> Option<Ty> {
@@ -5270,7 +5270,11 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
                     return Ok(());
                 }
                 if is_builtin(id,"val") {
-                    if !args.is_empty() { pin_vars(f,&args[0],Ty::Str,pin,n)?; walk(f,&args[0],sigs,lit,pin,printed,n)?; }
+                    // Every argument is evaluated at runtime (extras for
+                    // their effects), so every argument is walked; the
+                    // first still pins string evidence.
+                    if !args.is_empty() { pin_vars(f,&args[0],Ty::Str,pin,n)?; }
+                    for a in args { walk(f,a,sigs,lit,pin,printed,n)?; }
                     return Ok(());
                 }
                 if is_builtin(id,"dtos") || is_builtin(id,"year") || ["day","month","dow","cdow","cmonth","dtoc"].iter().any(|b|is_builtin(id,b)) {
@@ -6583,6 +6587,98 @@ fn round_lowering_gap(e: &Expr, is_static_arr: &dyn Fn(&str) -> bool, call_arg: 
     }
 }
 
+// val_quiet_arg: an argument form that can neither raise nor free
+// anything when evaluated and DISCARDED - literals (NIL included:
+// discarding a bare NIL never raises), bare variable reads of
+// concrete static type, and aggregates of those. Anything else
+// (calls, sends, arithmetic, assignments, index compound forms, ...)
+// may raise, which matters while an owned string temporary of an
+// earlier argument is still live (no unwind cleanup in this
+// increment).
+fn val_quiet_arg(e: &Expr, env: &[Local]) -> bool {
+    match e {
+        Expr::Str(_) | Expr::Int(_) | Expr::Float(..) | Expr::FloatV(..) | Expr::Log(_) | Expr::Nil => true,
+        // A variable read cannot raise, but a DYNAMIC variable is not
+        // quiet: the checker already rejects non-NIL Dyn/NumLocal
+        // arguments, and a Dyn slot can hold a value whose discard
+        // path (or later coercion) raises.
+        Expr::Var(v) => val_operand_concrete(e, env),
+        // Aggregate DISCARD evaluates each element without coercing
+        // it, so elements need only be quiet - but an element that is
+        // itself a coercion (e.g. {"x" + NIL}) must pass the operand
+        // rule, which is what the recursive quiet check enforces.
+        Expr::ArrLit(es) => es.iter().all(|x| val_quiet_arg(x, env)),
+        Expr::HashLit(kvs) => kvs.iter().all(|(k, v)| val_quiet_arg(k, env) && val_quiet_arg(v, env)),
+        // chr() is total ONCE ITS ARGUMENT IS AN INTEGER: every
+        // integer maps to a one-byte string and the helper has no
+        // error path. Its operands are coercions, so they must be
+        // coercion-safe: chr(NIL + 1) is statically I64 yet the
+        // NIL -> i64 conversion raises before chr runs.
+        Expr::Call(id, xs) if is_builtin(id, "chr") => xs.iter().all(|x| val_operand_concrete(x, env)),
+        // `+` is total over string and numeric operands (type errors
+        // are static), so its evaluation cannot raise PROVIDED both
+        // operands coerce without raising.
+        Expr::Bin('+', a, b) => val_operand_concrete(a, env) && val_operand_concrete(b, env),
+        _ => false,
+    }
+}
+
+// val_operand_concrete: a value whose coercion (as a `+` or chr()
+// operand) cannot raise at runtime - a string or numeric literal, or
+// a variable/expression of concrete static type built only from such
+// operands. NIL is Dyn-typed: excluded even where the static result
+// type is concrete ("x" + NIL throws the string-argument error;
+// NIL + 1 is I64 yet its NIL -> i64 conversion raises). Logical
+// literals are excluded as coercion operands (their use with `+` is a
+// static type error anyway), and aggregates are never coercion
+// operands.
+fn val_operand_concrete(e: &Expr, env: &[Local]) -> bool {
+    match e {
+        Expr::Str(_) | Expr::Int(_) | Expr::Float(..) | Expr::FloatV(..) => true,
+        Expr::Var(v) => env.iter().any(|l| l.name == *v && !matches!(l.ty, Ty::Dyn | Ty::NumLocal)),
+        Expr::Bin('+', a, b) => val_operand_concrete(a, env) && val_operand_concrete(b, env),
+        Expr::Call(id, xs) if is_builtin(id, "chr") => xs.iter().all(|x| val_operand_concrete(x, env)),
+        _ => false,
+    }
+}
+
+// arg_consumes_var: does evaluating `e` move, free or rebind the string
+// variable `nm`? True when `nm` is passed by value to a call (the callee
+// consumes the caller's slot), assigned, ++/--'d, or borrowed by
+// reference. Block bodies are NOT scanned: a block is created, not run,
+// at argument evaluation time.
+fn arg_consumes_var(nm: &str, e: &Expr) -> bool {
+    match e {
+        Expr::Set(v, x) => v == nm || arg_consumes_var(nm, x),
+        Expr::Inc(v, _, _) => v == nm,
+        Expr::ByRef(v) => v == nm,
+        Expr::Call(_, xs) => xs.iter().any(|a| matches!(a, Expr::Var(v) if v == nm) || arg_consumes_var(nm, a)),
+        Expr::Send(o, _, xs) => arg_consumes_var(nm, o) || xs.iter().any(|a| matches!(a, Expr::Var(v) if v == nm) || arg_consumes_var(nm, a)),
+        Expr::Seq(es) | Expr::ArrLit(es) => es.iter().any(|x| arg_consumes_var(nm, x)),
+        Expr::HashLit(kvs) => kvs.iter().any(|(k, v)| arg_consumes_var(nm, k) || arg_consumes_var(nm, v)),
+        Expr::Bin(_, a, b) | Expr::Cmp(_, a, b) | Expr::LAnd(a, b) | Expr::LOr(a, b) => arg_consumes_var(nm, a) || arg_consumes_var(nm, b),
+        Expr::LNot(a) => arg_consumes_var(nm, a),
+        Expr::Index(v, i) => v == nm || arg_consumes_var(nm, i),
+        Expr::Index2(v, a, b) => v == nm || arg_consumes_var(nm, a) || arg_consumes_var(nm, b),
+        Expr::Index3(v, a, b, c) => v == nm || arg_consumes_var(nm, a) || arg_consumes_var(nm, b) || arg_consumes_var(nm, c),
+        Expr::Index4(v, a, b, c, d) => v == nm || arg_consumes_var(nm, a) || arg_consumes_var(nm, b) || arg_consumes_var(nm, c) || arg_consumes_var(nm, d),
+        Expr::IdxCompound(v, i, _, x) => v == nm || arg_consumes_var(nm, i) || arg_consumes_var(nm, x),
+        _ => false,
+    }
+}
+
+// val_lowering_gap: the shared lowering classifier with one difference -
+// array and hash literals are admitted ELEMENT-WISE: Val({}) and Val({1})
+// are the oracle's catchable runtime "Argument error" (C_0310/C_0311), so
+// the literal itself needs no expression lowering, but every element does.
+fn val_lowering_gap(e: &Expr, is_static_arr: &dyn Fn(&str) -> bool) -> Option<&'static str> {
+    match e {
+        Expr::ArrLit(es) => es.iter().find_map(|x| val_lowering_gap(x, is_static_arr)),
+        Expr::HashLit(kvs) => kvs.iter().find_map(|(k, v)| val_lowering_gap(k, is_static_arr).or_else(|| val_lowering_gap(v, is_static_arr))),
+        _ => round_lowering_gap(e, is_static_arr, false),
+    }
+}
+
 fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Result<Ty, String> {
     match e {
         Expr::Seq(es) => {
@@ -7671,12 +7767,43 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 return Ok(Ty::StrOwn);
             }
             if is_builtin(id, "val") {
-                // Val(c) (issue #1): parse the leading numeric text; the
-                // result carries the parsed decimals (F64 pair). Harbour
-                // stops at the first non-numeric byte.
-                if args.len()!=1 { return Err(format!("line {}: `Val` takes exactly one argument in this increment",n)); }
-                if !matches!(type_expr(&args[0],env,sigs,n)?,Ty::Str|Ty::StrOwn) {
-                    return Err(format!("line {}: `Val` expects a string",n));
+                // Clean-room Val, behaviour fitted from the black-box
+                // oracle spec only (val-oracle-spec):
+                // - any arity and any static argument types are admitted;
+                //   every argument is fully checked, so an unknown call or
+                //   a builtin with a bad arity stays the generic checker's
+                //   named error, never a downstream panic.
+                // - no argument, or a first argument of non-string static
+                //   type, is the catchable runtime "Argument error"
+                //   (C_0303-C_0314, D_0322, D_0325), not a compile error.
+                // - extras are EVALUATED for their effects and their
+                //   values ignored (D_0323/D_0324; the oracle cannot
+                //   distinguish evaluation of extras - chosen model,
+                //   matching the Round increment's argument order).
+                // - a Dyn or NumLocal first argument is a named rejection
+                //   of this increment (the oracle exercises static types
+                //   only; Harbour's dynamic dispatch is UNVERIFIED here).
+                // Array/hash literal arguments are admitted element-wise
+                // (C_0310/C_0311). Codegen asserts the same classifier.
+                for a in args.iter() {
+                    if let Some(gap) = val_lowering_gap(a, &|nm: &str| env.iter().any(|l| l.name == nm && matches!(l.ty, Ty::Arr(_)))) {
+                        return Err(format!("line {}: `Val` with {} is not covered in this increment (no expression lowering; outside the oracle; Harbour's runtime behaviour for this shape is UNVERIFIED here)", n, gap));
+                    }
+                }
+                if args.is_empty() { return Ok(Ty::F64); }
+                for (i, a) in args.iter().enumerate() {
+                    match a {
+                        Expr::ArrLit(es) => { for e in es { type_expr(e, env, sigs, n)?; } }
+                        Expr::HashLit(kvs) => { for (k, v) in kvs { type_expr(k, env, sigs, n)?; type_expr(v, env, sigs, n)?; } }
+                        _ => {
+                            let t = type_expr(a, env, sigs, n)?;
+                            // A NIL first argument is Harbour's runtime
+                            // Argument error (C_0303), not a rejection.
+                            if i == 0 && matches!(t, Ty::Dyn | Ty::NumLocal) && !matches!(a, Expr::Nil) {
+                                return Err(format!("line {}: `Val` with a dynamic first argument is not covered in this increment", n));
+                            }
+                        }
+                    }
                 }
                 return Ok(Ty::F64);
             }
@@ -7944,20 +8071,79 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 }
             }
             if is_builtin(id,"hb_atokens") {
-                // hb_ATokens(s [, cDelim]) (Harbour 3.2 hbtoken.c, flags 0):
-                // the tokens of s over a 1..n-character string delimiter;
-                // empty tokens are preserved (",a," -> {"", "a", ""}), the
-                // delimiter run is NOT collapsed when a delimiter string is
-                // passed, and without a delimiter the result is the single
-                // whole-string token ({"s"}; the empty string -> {""}).
-                // Quote/EOL flag modes need the third argument and stay a
-                // named rejection.
-                if args.is_empty() || args.len() > 2 { return Err(format!("line {}: `hb_ATokens` takes one or two arguments in this increment",n)); }
-                if !matches!(type_expr(&args[0],env,sigs,n)?, Ty::Str | Ty::StrOwn) {
-                    return Err(format!("line {}: `hb_ATokens` expects a string as its first argument",n));
+                // Clean-room hb_ATokens, behaviour fitted from the
+                // black-box oracle spec only (atokens-oracle-spec):
+                // - any arity and any static argument types are admitted;
+                //   every argument is fully checked, so an unknown call
+                //   or a builtin with a bad arity stays the generic
+                //   checker's named error, never a downstream panic.
+                // - no argument, or a first argument of non-string static
+                //   type, is the catchable runtime "Argument error"
+                //   (C_1600-C_1636, D_1641), not a compile error.
+                // - separator: a string (multi-byte, empties kept; an
+                //   EMPTY separator string falls back to the default,
+                //   A_0066-A_0070), logical .T. (single whole-string
+                //   token, C_1607/C_1637/C_1638) or anything else (NIL,
+                //   .F., numbers, dates, arrays, blocks: the default
+                //   space separator with empty tokens dropped).
+                // - lSkip/lDQOnly: logical arguments gate quote-skipping;
+                //   any other static type counts as .F. (UNVERIFIED -
+                //   the oracle exercises only logicals there).
+                // - extras beyond the fourth argument are EVALUATED for
+                //   their effects and ignored (D_1642/D_1643; the oracle
+                //   cannot distinguish evaluation of extras - chosen
+                //   model, matching the Round increment).
+                // - Dyn/NumLocal arguments other than a NIL literal are
+                //   a named rejection of this increment (the oracle
+                //   exercises static types only; Harbour's dynamic
+                //   dispatch is UNVERIFIED here). Array/hash literal
+                //   arguments are admitted element-wise.
+                // Codegen asserts the same classifier.
+                for a in args.iter() {
+                    if let Some(gap) = val_lowering_gap(a, &|nm: &str| env.iter().any(|l| l.name == nm && matches!(l.ty, Ty::Arr(_)))) {
+                        return Err(format!("line {}: `hb_ATokens` with {} is not covered in this increment (no expression lowering; outside the oracle; Harbour's runtime behaviour for this shape is UNVERIFIED here)", n, gap));
+                    }
                 }
-                if args.len()==2 && !matches!(type_expr(&args[1],env,sigs,n)?, Ty::Str | Ty::StrOwn) {
-                    return Err(format!("line {}: `hb_ATokens` expects a string separator in this increment",n));
+                let mut borrowed: Vec<Option<String>> = vec![None; args.len()];
+                let mut owned_tmp: Vec<bool> = vec![false; args.len()];
+                for (i, a) in args.iter().enumerate() {
+                    match a {
+                        Expr::ArrLit(es) => { for e in es { type_expr(e, env, sigs, n)?; } }
+                        Expr::HashLit(kvs) => { for (k, v) in kvs { type_expr(k, env, sigs, n)?; type_expr(v, env, sigs, n)?; } }
+                        _ => {
+                            let t = type_expr(a, env, sigs, n)?;
+                            if matches!(t, Ty::Dyn | Ty::NumLocal) && !matches!(a, Expr::Nil) {
+                                return Err(format!("line {}: `hb_ATokens` with a dynamic argument is not covered in this increment", n));
+                            }
+                            if matches!(t, Ty::Str | Ty::StrOwn) {
+                                if let Expr::Var(v) = a { borrowed[i] = Some(v.clone()); }
+                                else if matches!(t, Ty::StrOwn) { owned_tmp[i] = true; }
+                            }
+                        }
+                    }
+                }
+                // The codegen arm holds the string arguments' pointers in
+                // stack slots until every argument has been evaluated, so:
+                // - a borrowed string variable in the string or separator
+                //   position must not be consumed or rebound by a LATER
+                //   argument (hb_ATokens(s, Consume(s)) would otherwise
+                //   call the helper on freed bytes);
+                // - an OWNED string temporary in those positions stays
+                //   live across the later arguments, so every later
+                //   argument must be a non-raising form (a throw would
+                //   leak the temporary - no unwind cleanup in this
+                //   increment).
+                for i in [0usize, 1usize] {
+                    if i < args.len() {
+                        if let Some(v) = &borrowed[i] {
+                            if let Some((j, _)) = args[i + 1..].iter().enumerate().find(|(_, a)| arg_consumes_var(v, a)) {
+                                return Err(format!("line {}: `hb_ATokens` argument {} may consume or rebind the borrowed string `{}` of argument {} (conservative aliasing limit - aliasing between arguments is outside this increment, and a pure observer such as Len(`{}`) trips it too; copy the string or bind it to another variable first)", n, i + 2 + j, v, i + 1, v));
+                            }
+                        }
+                        if owned_tmp[i] && args[i + 1..].iter().any(|a| !val_quiet_arg(a, env)) {
+                            return Err(format!("line {}: `hb_ATokens` with an owned string temporary in argument {} followed by an argument that can raise is outside this increment (no unwind cleanup); bind the string to a variable first", n, i + 1));
+                        }
+                    }
                 }
                 return Ok(Ty::DArrS);
             }
@@ -15201,6 +15387,35 @@ fn cg_round_discard_arg(a: &Expr, t: Ty, env: &[CgLocal], sigs: &[Sig], strs: &m
     }
 }
 
+// cg_val_discard_arg: evaluate one Val argument for its effects and
+// release any owned temporary, exactly like cg_round_discard_arg, except
+// that array/hash literals (which have no expression lowering of their
+// own) are evaluated ELEMENT-WISE - Val({}) / Val({1}) still raise the
+// runtime Argument error after the elements' effects happen. The
+// element walk RECURSES: a nested aggregate (Val({{1}}), a hash inside
+// an array, ...) is opened element-wise at every depth instead of
+// falling into cg_round_discard_arg, whose cg_expr has no array-literal
+// lowering.
+fn cg_val_discard_arg(a: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target) {
+    match a {
+        Expr::ArrLit(es) => {
+            for e in es {
+                cg_val_discard_arg(e, env, sigs, strs, out, target);
+            }
+        }
+        Expr::HashLit(kvs) => {
+            for (k, v) in kvs {
+                cg_val_discard_arg(k, env, sigs, strs, out, target);
+                cg_val_discard_arg(v, env, sigs, strs, out, target);
+            }
+        }
+        _ => {
+            let t = expr_ty(a, env, sigs);
+            cg_round_discard_arg(a, t, env, sigs, strs, out, target);
+        }
+    }
+}
+
 fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target) {
     match e {
         Expr::Seq(es) => {
@@ -16271,20 +16486,75 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             }
         }
         Expr::Call(id,args) if is_builtin(id,"hb_atokens") => {
-            // hb_ATokens(s [, cDelim]): value and separator borrow; owned
-            // temporaries release after the call. The result is a DArrS
-            // (cells pointer + count, hbc_aclone_s convention). Slots:
-            // 0/8 result, 16/24 first operand, 32/40 separator.
-            let temp0 = expr_ty(&args[0],env,sigs)==Ty::StrOwn && !matches!(&args[0],Expr::Var(_));
-            let temp1 = args.len()==2 && expr_ty(&args[1],env,sigs)==Ty::StrOwn && !matches!(&args[1],Expr::Var(_));
-            cg_value(&args[0],env,sigs,strs,out,target);
-            out.push_str("    sub $48, %rsp\n    mov %rax, 16(%rsp)\n    mov %rdx, 24(%rsp)\n");
-            if args.len()==2 {
-                cg_value(&args[1],env,sigs,strs,out,target);
-                out.push_str("    mov 16(%rsp), %rdi\n    mov 24(%rsp), %rsi\n    mov %rdx, %rcx\n    mov %rax, %rdx\n    call hbc_atokens\n");
-            } else {
-                out.push_str("    mov 16(%rsp), %rdi\n    mov 24(%rsp), %rsi\n    xor %edx, %edx\n    xor %ecx, %ecx\n    call hbc_atokens\n");
+            // Clean-room hb_ATokens: rdi/rsi = string, rdx/rcx =
+            // separator (mode 1), r8 = mode (0 default, 1 string
+            // separator, 2 whole string), r9 = flags (bit0 skip, bit1
+            // double-quote only). The result is a DArrS (cells + count,
+            // hbc_aclone_s convention). Slots: 0/8 result, 16/24 string,
+            // 32/40 separator, 48 flags, 56 mode.
+            // Admission invariant: the checker applies val_lowering_gap
+            // to every argument; assert the SAME classifier here.
+            for a in args.iter() {
+                if let Some(gap) = val_lowering_gap(a, &|nm: &str| env.iter().any(|l| l.name == nm && matches!(l.ty, Ty::Arr(_)))) {
+                    panic!("internal checker bug: `hb_ATokens` argument with {} reached codegen (type_expr applies val_lowering_gap to every hb_ATokens argument)", gap);
+                }
             }
+            let stringable = |a: &Expr| !matches!(a, Expr::ArrLit(_) | Expr::HashLit(_)) && matches!(expr_ty(a, env, sigs), Ty::Str | Ty::StrOwn);
+            if args.is_empty() || !stringable(&args[0]) {
+                for a in args.iter() {
+                    cg_val_discard_arg(a, env, sigs, strs, out, target);
+                }
+                out.push_str("    call hbc_atokens_arg_error\n    xor %eax, %eax\n    xor %edx, %edx\n");
+                return;
+            }
+            let temp0 = expr_ty(&args[0],env,sigs)==Ty::StrOwn && !matches!(&args[0],Expr::Var(_));
+            cg_value(&args[0],env,sigs,strs,out,target);
+            out.push_str("    sub $64, %rsp\n    mov %rax, 16(%rsp)\n    mov %rdx, 24(%rsp)\n    movq $0, 32(%rsp)\n    movq $0, 40(%rsp)\n");
+            // Separator (arg 1): mode from the static type.
+            let mut mode: i32 = 0;
+            let mut temp1 = false;
+            if args.len() >= 2 {
+                let a1 = &args[1];
+                if matches!(a1, Expr::Log(true)) {
+                    mode = 2;
+                } else if stringable(a1) {
+                    mode = 1;
+                    temp1 = expr_ty(a1,env,sigs)==Ty::StrOwn && !matches!(a1,Expr::Var(_));
+                    cg_value(a1,env,sigs,strs,out,target);
+                    out.push_str("    mov %rax, 32(%rsp)\n    mov %rdx, 40(%rsp)\n");
+                } else if !matches!(a1, Expr::ArrLit(_) | Expr::HashLit(_)) && expr_ty(a1,env,sigs)==Ty::Bool {
+                    // runtime logical: .T. -> mode 2, .F. -> mode 0
+                    mode = -1;
+                    cg_expr(a1,env,sigs,strs,out,target);
+                    out.push_str("    and $1, %eax\n    lea (%rax,%rax), %rax\n    mov %rax, 56(%rsp)\n");
+                } else {
+                    // NIL/.F./number/date/array/block: default separator;
+                    // still evaluated for its effects.
+                    cg_val_discard_arg(a1, env, sigs, strs, out, target);
+                }
+            }
+            if mode >= 0 {
+                out.push_str(&format!("    movq ${}, 56(%rsp)\n", mode));
+            }
+            // Flags (args 2,3): logical -> runtime bit; anything else is
+            // .F. but still evaluated for effects.
+            out.push_str("    movq $0, 48(%rsp)\n");
+            for (i, bit) in [(2usize, 0u32), (3usize, 1u32)] {
+                if args.len() > i {
+                    let a = &args[i];
+                    if !matches!(a, Expr::ArrLit(_) | Expr::HashLit(_)) && expr_ty(a,env,sigs)==Ty::Bool {
+                        cg_expr(a,env,sigs,strs,out,target);
+                        out.push_str(&format!("    and $1, %eax\n    shl ${}, %eax\n    or %rax, 48(%rsp)\n", bit));
+                    } else {
+                        cg_val_discard_arg(a, env, sigs, strs, out, target);
+                    }
+                }
+            }
+            // Extras beyond the fourth argument: evaluated, ignored.
+            for a in args.iter().skip(4) {
+                cg_val_discard_arg(a, env, sigs, strs, out, target);
+            }
+            out.push_str("    mov 16(%rsp), %rdi\n    mov 24(%rsp), %rsi\n    mov 32(%rsp), %rdx\n    mov 40(%rsp), %rcx\n    mov 56(%rsp), %r8\n    mov 48(%rsp), %r9\n    call hbc_atokens\n");
             out.push_str("    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
             if temp1 {
                 out.push_str("    mov 32(%rsp), %rdi\n    call hbc_freestr\n");
@@ -16292,7 +16562,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             if temp0 {
                 out.push_str("    mov 16(%rsp), %rdi\n    call hbc_freestr\n");
             }
-            out.push_str("    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    add $48, %rsp\n");
+            out.push_str("    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    add $64, %rsp\n");
         }
         Expr::Call(id,args) if is_builtin(id,"ctod") => {
             let temp=expr_ty(&args[0],env,sigs)==Ty::StrOwn && !matches!(&args[0],Expr::Var(_));
@@ -16799,15 +17069,51 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             out.push_str("    add $96, %rsp\n");
         }
         Expr::Call(id,args) if is_builtin(id,"val") => {
-            // Val(c): the result follows the f64 pair convention
-            // (xmm0 = value, rdi = packed dec | len<<16), like round.
+            // Clean-room Val: the result follows the f64 pair convention
+            // (xmm0 = value, rdi = packed dec | len<<16), like round. No
+            // argument or a statically non-string first argument emits a
+            // runtime "Argument error" throw (catchable by BEGIN
+            // SEQUENCE) after EVERY argument was evaluated for effects;
+            // extras beyond the first are evaluated and ignored.
+            // Admission invariant: the checker applies val_lowering_gap to
+            // every Val argument; assert the SAME classifier here -
+            // reaching the panic means a checker bug, never user input.
+            for a in args.iter() {
+                if let Some(gap) = val_lowering_gap(a, &|nm: &str| env.iter().any(|l| l.name == nm && matches!(l.ty, Ty::Arr(_)))) {
+                    panic!("internal checker bug: `Val` argument with {} reached codegen (type_expr applies val_lowering_gap to every Val argument)", gap);
+                }
+            }
+            let stringable = |a: &Expr| !matches!(a, Expr::ArrLit(_) | Expr::HashLit(_)) && matches!(expr_ty(a, env, sigs), Ty::Str | Ty::StrOwn);
+            if args.is_empty() || !stringable(&args[0]) {
+                for a in args.iter() {
+                    cg_val_discard_arg(a, env, sigs, strs, out, target);
+                }
+                out.push_str("    call hbc_val_arg_error\n    xor %eax, %eax\n    cvtsi2sd %rax, %xmm0\n    mov $655370, %rdi\n");
+                return;
+            }
+            // The helper is pure (a parse; no observable effects), so it
+            // runs IMMEDIATELY after the first argument is evaluated -
+            // the argument's value is bound before any later argument,
+            // exactly Harbour's left-to-right binding. This closes two
+            // hazards at once: a later argument can no longer free the
+            // string out from under the saved pointer (Val(s, Consume(s))
+            // would otherwise call hbc_val on freed bytes), and no owned
+            // temporary stays live across a later argument that can
+            // raise (Val("1"+"2", Round()) leaked the temporary on the
+            // unwind). The result is a plain f64 pair, so nothing heap
+            // is live while the extras are evaluated.
             let temp=expr_ty(&args[0],env,sigs)==Ty::StrOwn && !matches!(&args[0],Expr::Var(_));
             cg_value(&args[0],env,sigs,strs,out,target);
-            out.push_str("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_val\n");
+            out.push_str("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+            out.push_str("    mov (%rsp), %rdi\n    mov 8(%rsp), %rsi\n    call hbc_val\n");
+            out.push_str("    movsd %xmm0, 8(%rsp)\n    mov %rdi, 16(%rsp)\n");
             if temp {
-                out.push_str("    movsd %xmm0, 8(%rsp)\n    mov %rdi, 24(%rsp)\n    mov (%rsp), %rdi\n    call hbc_freestr\n    movsd 8(%rsp), %xmm0\n    mov 24(%rsp), %rdi\n");
+                out.push_str("    mov (%rsp), %rdi\n    call hbc_freestr\n");
             }
-            out.push_str("    add $32, %rsp\n");
+            for a in args.iter().skip(1) {
+                cg_val_discard_arg(a, env, sigs, strs, out, target);
+            }
+            out.push_str("    movsd 8(%rsp), %xmm0\n    mov 16(%rsp), %rdi\n    add $32, %rsp\n");
         }
         Expr::Call(id,args) if is_builtin(id,"dtos") => {
             cg_value(&args[0],env,sigs,strs,out,target);
@@ -28557,195 +28863,216 @@ hbc_strzero_fix:
 .Lszf_ret:
     ret
 
-# hbc_val: rdi/rsi = borrowed text -> xmm0 = parsed value,
-# rdi = packed dec | len<<16 (the f64 pair convention).
-# Value (Harbour hb_str2number, non-PCode): skip leading whitespace
-# (space, 9..13), optional sign, then digits with at most one '.', stopping
-# at the first other byte. Digits accumulate exactly in an integer until
-# the next step could overflow, then in a double; the fraction digit count
-# divides by 10^n at the end. 1e3 and 0x1F stop at the letter.
-# Metadata (measured against Harbour 3.2.0, docs/STR-DECIMALS-2026-11-15.md):
-#   p = first '.' anywhere in the text; dec = len - p - 1 (every byte
-#   after it, digits or not); width = p when dec > 0, else the text
-#   length; width grows to the integer digits (+ sign) the value needs,
-#   to 20 when the value is >= 1e10 or <= -1e9, and is 10 for empty text.
+# hbc_val: clean-room Val(cString) runtime, fitted from the black-box
+# oracle spec only (val-oracle-spec; model + evidence in the val package
+# README). rdi/rsi = borrowed text -> the f64 pair convention:
+# xmm0 = value, rdi = packed metadata (dec | length<<16). No calls.
+# Parse: skip leading bytes in {32,9,10,11,12,13} (9/10/13/32 pinned by
+# oracle A_0097-A_0100; 11/12 are a C-locale choice, UNVERIFIED), one
+# optional sign, digits with at most one '.'; stop at the first other
+# byte (no exponent: A_0071 '1e5' -> 1; no hex: A_0121 '0x1F' -> 0).
+# Digits accumulate in i64 while acc*10+d fits; past that they continue
+# in a double accumulator seeded from the exact i64 (A_0053/A_0054); the
+# total divides ONCE by the correctly-rounded double 10^ndec (A_0069
+# pins the table over iterated multiplication). Harbour keeps an exact
+# integer ITEM for integral i64-fitting text (A_0049/A_0051/A_0052);
+# this helper returns a float like the rest of this compiler's numerics,
+# so those rows are recorded deviations of the chosen model.
+# Metadata: a '.' ANYWHERE in the text sets dec = strlen-dot-1 (trailing
+# junk counts: A_0118 '1.5abc' -> 4) and length = dot (strlen when the
+# dot ends the text: A_0019 '5.' -> 2); the length grows to the integer
+# digits plus sign the value needs (A_0016 '.5' -> 1, A_0017 '-.5' -> 2;
+# a rounding carry that adds an integer digit is UNVERIFIED). Without a
+# dot: length = strlen (10 for the empty string, A_0095; more than 19
+# digit bytes -> 20 when v >= 1e10 or v <= -1e9, else 10: C_0319-C_0321).
+# A value > 9999999999 or < -999999999 bumps the length to 20
+# (A_0042/A_0045/A_0057-A_0061).
 hbc_val:
-    push %rbp
-    mov %rsp, %rbp
     push %rbx
-    push %r12
-    push %r13
-    push %r14
-    push %r15
-    sub $8, %rsp
-    mov %rdi, %r12
-    mov %rsi, %r13
-    lea (%r12,%r13), %r14
-    mov %r12, %r15
-.Lval_skip:
-    cmp %r14, %r15
-    jae .Lval_sign
-    movzbl (%r15), %eax
+    mov %rdi, %r8            # cursor
+    lea (%rdi,%rsi), %r9     # end
+    xor %ebx, %ebx           # acc
+    xor %ecx, %ecx           # ndec
+    xor %edx, %edx           # flags: 1 seen dot, 2 double mode, 4 neg
+    xor %r10d, %r10d         # digit bytes consumed
+    pxor %xmm1, %xmm1        # dacc
+    movsd .Lval_ten(%rip), %xmm2
+.Lvalc_ws:
+    cmp %r9, %r8
+    jae .Lvalc_value
+    movzbl (%r8), %eax
     cmp $32, %eax
-    je .Lval_skipn
+    je .Lvalc_wsinc
     cmp $9, %eax
-    jb .Lval_sign
+    jb .Lvalc_sign
     cmp $13, %eax
-    ja .Lval_sign
-.Lval_skipn:
-    inc %r15
-    jmp .Lval_skip
-.Lval_sign:
-    xor %ebx, %ebx
-    cmp %r14, %r15
-    jae .Lval_digits
-    cmpb $43, (%r15)
-    je .Lval_sign_take
-    cmpb $45, (%r15)
-    jne .Lval_digits
-    mov $1, %ebx
-.Lval_sign_take:
-    inc %r15
-.Lval_digits:
-    xor %r8, %r8
-    xor %r9, %r9
-    xor %r10d, %r10d
-    xorpd %xmm0, %xmm0
-    movsd .Lval_ten(%rip), %xmm3
-.Lval_loop:
-    cmp %r14, %r15
-    jae .Lval_value
-    movzbl (%r15), %eax
-    cmp $46, %eax
-    jne .Lval_dig
-    test $1, %r10d
-    jnz .Lval_value
-    or $1, %r10d
-    jmp .Lval_next
-.Lval_dig:
+    ja .Lvalc_sign
+.Lvalc_wsinc:
+    inc %r8
+    jmp .Lvalc_ws
+.Lvalc_sign:
+    cmp $43, %eax
+    je .Lvalc_signinc
+    cmp $45, %eax
+    jne .Lvalc_scan
+    or $4, %dl
+.Lvalc_signinc:
+    inc %r8
+.Lvalc_scan:
+    cmp %r9, %r8
+    jae .Lvalc_value
+    movzbl (%r8), %eax
     sub $48, %eax
     cmp $9, %eax
-    ja .Lval_value
-    test $2, %r10d
-    jnz .Lval_dbl
-    movabs $922337203685477579, %rcx
-    cmp %rcx, %r8
-    jge .Lval_todbl
-    lea (%r8,%r8,4), %r8
-    add %r8, %r8
-    add %rax, %r8
-    jmp .Lval_count
-.Lval_todbl:
-    cvtsi2sd %r8, %xmm0
-    or $2, %r10d
-.Lval_dbl:
-    mulsd %xmm3, %xmm0
-    cvtsi2sd %rax, %xmm1
-    addsd %xmm1, %xmm0
-.Lval_count:
-    test $1, %r10d
-    jz .Lval_next
-    inc %r9
-.Lval_next:
-    inc %r15
-    jmp .Lval_loop
-.Lval_value:
-    test $2, %r10d
-    jnz .Lval_scale
-    cvtsi2sd %r8, %xmm0
-.Lval_scale:
-    test %r9, %r9
-    jz .Lval_signv
-    mov $1, %eax
-    cvtsi2sd %rax, %xmm2
-    mov %r9, %rcx
-.Lval_pow:
-    mulsd %xmm3, %xmm2
+    ja .Lvalc_notdigit
+    test $2, %dl
+    jnz .Lvalc_dbldigit
+    movabs $922337203685477579, %r11
+    cmp %r11, %rbx
+    jg .Lvalc_switch
+    imul $10, %rbx, %rbx
+    add %rax, %rbx
+    jmp .Lvalc_digdone
+.Lvalc_switch:
+    or $2, %dl
+    cvtsi2sd %rbx, %xmm1
+.Lvalc_dbldigit:
+    mulsd %xmm2, %xmm1
+    cvtsi2sd %rax, %xmm3
+    addsd %xmm3, %xmm1
+.Lvalc_digdone:
+    inc %r10
+    test $1, %dl
+    jz .Lvalc_nodec
+    inc %rcx
+.Lvalc_nodec:
+    inc %r8
+    jmp .Lvalc_scan
+.Lvalc_notdigit:
+    cmp $-2, %eax
+    jne .Lvalc_value
+    test $1, %dl
+    jnz .Lvalc_value
+    or $1, %dl
+    inc %r8
+    jmp .Lvalc_scan
+.Lvalc_value:
+    test $2, %dl
+    jnz .Lvalc_dblval
+    cvtsi2sd %rbx, %xmm0
+    jmp .Lvalc_scale
+.Lvalc_dblval:
+    movaps %xmm1, %xmm0
+.Lvalc_scale:
+    test %rcx, %rcx
+    jz .Lvalc_neg
+    lea .Lval_pow10(%rip), %rax
+.Lvalc_divloop:
+    cmp $308, %rcx
+    jbe .Lvalc_div1
+    divsd 2464(%rax), %xmm0
+    sub $308, %rcx
+    jmp .Lvalc_divloop
+.Lvalc_div1:
+    divsd (%rax,%rcx,8), %xmm0
+.Lvalc_neg:
+    test $4, %dl
+    jz .Lvalc_meta
+    xorpd .Lround_signmask(%rip), %xmm0
+.Lvalc_meta:
+    xor %r8d, %r8d
+.Lvalc_finddot:
+    cmp %rsi, %r8
+    jae .Lvalc_nodot
+    cmpb $46, (%rdi,%r8)
+    je .Lvalc_dot
+    inc %r8
+    jmp .Lvalc_finddot
+.Lvalc_dot:
+    mov %rsi, %rcx
+    sub %r8, %rcx
     dec %rcx
-    jnz .Lval_pow
-    divsd %xmm2, %xmm0
-.Lval_signv:
-    test %ebx, %ebx
-    jz .Lval_meta
-    xorpd %xmm4, %xmm4
-    subsd %xmm0, %xmm4
-    movsd %xmm4, %xmm0
-.Lval_meta:
+    test %rcx, %rcx
+    jz .Lvalc_lenstrlen
+    mov %r8, %rax
+    jmp .Lvalc_growth
+.Lvalc_lenstrlen:
+    mov %rsi, %rax
+    jmp .Lvalc_growth
+.Lvalc_nodot:
     xor %ecx, %ecx
-    mov $-1, %rdx
-.Lval_dotscan:
-    cmp %r13, %rcx
-    jae .Lval_dotdone
-    cmpb $46, (%r12,%rcx)
-    je .Lval_dotfound
-    inc %rcx
-    jmp .Lval_dotscan
-.Lval_dotfound:
-    mov %rcx, %rdx
-.Lval_dotdone:
-    xor %r9d, %r9d
-    mov %r13, %r8
-    test %rdx, %rdx
-    js .Lval_width
-    mov %r13, %r9
-    sub %rdx, %r9
-    dec %r9
-    test %r9, %r9
-    jz .Lval_width
-    mov %rdx, %r8
-.Lval_width:
-    test %r13, %r13
-    jnz .Lval_need
-    mov $10, %r8d
-    jmp .Lval_pack
-.Lval_need:
-    movq %xmm0, %rax
-    movabs $0x7FFFFFFFFFFFFFFF, %rcx
-    and %rcx, %rax
-    movq %rax, %xmm1
-    cvttsd2si %xmm1, %rax
-    mov $1, %ecx
-    mov $10, %r11
-.Lval_ndig:
-    cmp %r11, %rax
-    jb .Lval_ndone
-    xor %edx, %edx
-    div %r11
-    inc %rcx
-    jmp .Lval_ndig
-.Lval_ndone:
-    xorpd %xmm4, %xmm4
+    test %rsi, %rsi
+    jnz .Lvalc_nonempty
+    mov $10, %eax
+    jmp .Lvalc_bump
+.Lvalc_nonempty:
+    cmp $19, %r10
+    jbe .Lvalc_lenstrlen2
+    movsd .Lval_e10(%rip), %xmm3
+    ucomisd %xmm3, %xmm0
+    jae .Lvalc_l20
+    movsd .Lval_mn9(%rip), %xmm3
+    ucomisd %xmm0, %xmm3
+    ja .Lvalc_l20
+    mov $10, %eax
+    jmp .Lvalc_bump
+.Lvalc_l20:
+    mov $20, %eax
+    jmp .Lvalc_bump
+.Lvalc_lenstrlen2:
+    mov %rsi, %rax
+    jmp .Lvalc_bump
+.Lvalc_growth:
+    movaps %xmm0, %xmm3
+    pxor %xmm4, %xmm4
+    ucomisd %xmm4, %xmm3
+    jae .Lvalc_absok
+    xorpd .Lround_signmask(%rip), %xmm3
+.Lvalc_absok:
+    lea .Lval_pow10(%rip), %r11
+    mov $1, %r9d
+.Lvalc_kloop:
+    cmp $22, %r9d
+    jae .Lvalc_kdone
+    ucomisd (%r11,%r9,8), %xmm3
+    jb .Lvalc_kdone
+    inc %r9d
+    jmp .Lvalc_kloop
+.Lvalc_kdone:
+    pxor %xmm4, %xmm4
     ucomisd %xmm4, %xmm0
-    jae .Lval_nsign
-    inc %rcx
-.Lval_nsign:
-    cmp %rcx, %r8
-    jae .Lval_big
-    mov %rcx, %r8
-.Lval_big:
-    movsd .Lval_e10(%rip), %xmm1
-    ucomisd %xmm1, %xmm0
-    jae .Lval_wide
-    movsd .Lval_mn9(%rip), %xmm1
-    ucomisd %xmm0, %xmm1
-    jb .Lval_pack
-.Lval_wide:
-    cmp $20, %r8
-    jae .Lval_pack
-    mov $20, %r8d
-.Lval_pack:
-    mov %r8, %rdi
+    jae .Lvalc_nosign
+    inc %r9d
+.Lvalc_nosign:
+    cmp %r9, %rax
+    jae .Lvalc_bump
+    mov %r9, %rax
+.Lvalc_bump:
+    movsd .Lval_bmax(%rip), %xmm3
+    ucomisd %xmm3, %xmm0
+    ja .Lvalc_do20
+    movsd .Lval_bmin(%rip), %xmm3
+    ucomisd %xmm0, %xmm3
+    ja .Lvalc_do20
+    jmp .Lvalc_pack
+.Lvalc_do20:
+    cmp $20, %rax
+    jae .Lvalc_pack
+    mov $20, %eax
+.Lvalc_pack:
+    cmp $65535, %rcx
+    jbe .Lvalc_pkdec
+    mov $65535, %ecx
+.Lvalc_pkdec:
+    cmp $65535, %rax
+    jbe .Lvalc_pklen
+    mov $65535, %eax
+.Lvalc_pklen:
+    mov %rax, %rdi
     shl $16, %rdi
-    or %r9, %rdi
-    add $8, %rsp
-    pop %r15
-    pop %r14
-    pop %r13
-    pop %r12
+    or %rcx, %rdi
     pop %rbx
-    pop %rbp
     ret
-
 # hbc_strcpy: rdi = source bytes, rsi = length. Returns rax = pointer to
 # the bytes of a NEW owned allocation with a 16-byte header: capacity at
 # -16(%rax), length at -8(%rax) (fresh copies have cap == len; only
@@ -32138,6 +32465,44 @@ hbc_round_arg_error:
     lea .LseqD_roundarg(%rip), %rsi
     jmp hbc_seq_throw_error
 
+# hbc_val_arg_error: clean-room Val with no argument or a statically
+# non-string first argument. Harbour raises a recoverable Argument error;
+# the caught value's description is the string "Argument error" (oracle
+# C/D sections). Without an enclosing BEGIN SEQUENCE/TRY: clean exit 1
+# (Harbour opens a dialog; registered failure-mode difference).
+hbc_val_arg_error:
+    cmpq $0, hbc_seq_depth(%rip)
+    jne .Lseqt_valarg
+    lea .Lroundargmsg(%rip), %rsi
+    mov $15, %edx
+    mov $1, %eax
+    mov $1, %edi
+    syscall
+    mov $60, %eax
+    mov $1, %edi
+    syscall
+.Lseqt_valarg:
+    lea .LseqD_roundarg(%rip), %rsi
+    jmp hbc_seq_throw_error
+
+# hbc_atokens_arg_error: clean-room hb_ATokens with no argument or a
+# statically non-string first argument. Harbour raises a recoverable
+# Argument error (oracle C_1600-C_1636, D_1641); see hbc_val_arg_error.
+hbc_atokens_arg_error:
+    cmpq $0, hbc_seq_depth(%rip)
+    jne .Lseqt_atokensarg
+    lea .Lroundargmsg(%rip), %rsi
+    mov $15, %edx
+    mov $1, %eax
+    mov $1, %edi
+    syscall
+    mov $60, %eax
+    mov $1, %edi
+    syscall
+.Lseqt_atokensarg:
+    lea .LseqD_roundarg(%rip), %rsi
+    jmp hbc_seq_throw_error
+
 # hbc_type_error: NIL used as a number at runtime (arithmetic, ordering or
 # array indexing). Harbour raises a type-error dialog; headless probes
 # cannot capture it, so this PoC prints and exits 1 (registered failure
@@ -33923,6 +34288,8 @@ fn emit_strings(out: &mut String, strs: &[String]) {
     out.push_str(".Lround_lenmin:\n    .quad -4481700220496773120\n");
     out.push_str(".Lround_ten:\n    .quad 4621819117588971520\n");
     out.push_str(".Lval_ten:\n    .quad 4621819117588971520\n");
+    out.push_str(".Lval_pow10:\n    .quad 4607182418800017408,4621819117588971520,4636737291354636288,4652007308841189376,4666723172467343360,4681608360884174848,4696837146684686336,4711630319722168320\n    .quad 4726483295884279808,4741671816366391296,4756540486875873280,4771362005757984768,4786511204640096256,4801453603149578240,4816244402031689728,4831355200913801216\n    .quad 4846369599423283200,4861130398305394688,4876203697187506176,4891288408196988160,4906019910204099648,4921056587992461136,4936209963552724370,4950912855330343670\n    .quad 4965913770331839924,4981134201117475473,4995809153217856309,5010775143622804482,5026061058026967681,5040708725286295329,5055640609639927018,5070927765361438756\n    .quad 5085611494797045271,5100510072459938204,5115755594818026499,5130517386810051970,5145383438407770339,5160588303184390427,5175426328141668785,5190260616003865117\n    .quad 5205425776111082661,5220338247323490791,5235141515912716385,5250267901928720505,5265253074562153804,5280026050892618910,5295114571585172422,5310170741700075612\n    .quad 5324914135746594931,5339965678584216207,5355091182177117338,5369805687274470848,5384821118925634864,5400014330993143358,5414700624226077134,5429680791046716481\n    .quad 5444940124671458729,5459598867255545107,5474544595765125207,5489849056681572461,5504500338876674884,5519412436223111189,5534674858185628699,5549404963419349393\n    .quad 5564284217833028085,5579505586129598578,5594312666986969927,5609159848224127513,5624341125050046623,5639223377414889316,5654039237190600509,5669181362189711628\n    .quad 5684137024229819303,5698922296640836753,5714026187434080693,5729053538610189329,5743808940547873046,5758875493249449819,5773972853347434393,5788699084901003135\n    .quad 5803729174622436191,5818894902808190235,5833592647658521698,5848587129000908155,5863819622897374573,5878489548701575880,5893449256236299642,5908746951022133612\n    .quad 5923389709789098439,5938315458527276601,5953594944729471431,5968293054513797149,5983185640364723748,5998423672957854125,6013199508259175692,6028059708478020687\n    .quad 6043257259031049059,6058108998157561886,6072937571782577189,6088095589093318446,6103021453049119613,6117819141328598108,6132938551957418355,6147936803441821416\n    .quad 6162704330251049122,6177786039042055882,6192854981472359231,6207593053720795150,6222637944310812178,6237775920867971275,6252485228896883966,6267494164212496957\n    .quad 6282699556909163622,6297380774879948160,6312354597622900960,6327625826393305484,6342279612666699247,6357219145787913579,6372515862468903621,6387181665105488315\n    .quad 6402087712267973674,6417342571500552501,6432086856852908225,6446960202883822321,6462174185701937069,6476995114331412940,6491836525663526975,6507010590108141647\n    .quad 6521906365687930162,6536716590790747262,6551851672448740766,6566820540753443970,6581600310554213283,6596697323084647052,6611737571003524759,6626487599298388029\n    .quad 6641547434946439245,6656657389519784240,6671378373375286140,6686401903474135643,6701579930952233849,6716272551097421911,6731260626558379117,6746505131482525380\n    .quad 6761170052691860085,6776123504483000594,6791432928788053163,6806070800255343574,6820990439868928716,6836262289665382271,6850974717710472879,6865861337619414107\n    .quad 6881091912785062770,6895881730762912551,6910736104866537457,6925926372775540717,6940791766859600628,6955614650918971313,6970765556272656797,6985704755147937538\n    .quad 7000496887210966211,7015609352569224180,7030620626435931512,7045382727252532438,7060457653552755724,7075539313153278087,7090272086580789417,7105310353644650708\n    .quad 7120460749313351812,7135164882712455333,7150167349740806863,7165384870476088769,7180061035097450290,7195028541153624318,7210311613711739039,7224960465073586886\n    .quad 7239893829555368824,7255182835437068374,7269863095822322742,7284763118922862403,7300010448078009108,7314768852325550060,7329636315483470312,7344842944710342753\n    .quad 7359677661323397949,7374513327662353932,7389680210865521039,7404589451273023737,7419394066030959928,7434522134757852294,7449504152308370132,7464278443256716681\n    .quad 7479368607221621995,7494421696200865555,7509166374053909719,7524219521649687053,7539342016321045576,7554057775135708506,7569074773933509297,7584265047601073839\n    .quad 7598952565167317594,7613934262404594417,7629190726498141398,7643850664720225804,7658797887777303439,7674104216878122611,7688751996227527688,7703665553093004554\n    .quad 7718929799454322764,7733656483940292144,7748537163665533883,7763760313601558186,7778564053884953642,7793412627027934517,7808595643736132738,7823474633821702097\n    .quad 7838291852880443846,7853435676983343159,7868388153203847971,7883174753039699947,7898280303113987046,7913304543138139760,7928061241389138444,7943129414482358927\n    .quad 7958223736346011545,7972951233830551935,7987982905965699551,8003145667125738796,8017844648236784758,8032840674905064340,8048070271315481149,8062741404405536460\n    .quad 8077702621047577727,8092997486257191375,8107641424014248003,8122568646490040916,8137849974864254185,8152544630576045329,8167438655623861334,8182678487213103467\n    .quad 8197450949396715491,8212312555081272796,8227511862466441555,8242360307532691156,8257190253682816137,8272349986649944491,8287272633750019851,8302071662386050765\n    .quad 8317192748460561537,8332187858484294864,8346956694235468292,8362040039203907206,8377105913801525268,8391845264313580056,8406891752733120670,8422026733359923043\n    .quad 8436737289693151036,8451747785389158155,8466950252372585831,8481632689390553280,8496608035942484721,8511876407571054294,8526531384320212620,8541472405536132655\n    .quad 8556770982335504827,8571433297250123029,8586340797630094426,8601597473384530800,8616338352758403622,8631213117947018928,8646428874712260188,8661246477190873849\n    .quad 8676089274419180472,8691265071234035877,8706157598619623015,8720969177136690689,8736105950562497410,8751071646802550833,8765852738296924221,8780951402944363085\n    .quad 8795988553143856240,8810739872155129740,8825801321198693743,8840908250655452261,8855630494976198527,8870655600656603486,8885830673919285211,8900524524987563474\n    .quad 8915514139102383430,8930755759050537036,8945421882333202015,8960376836716005366,8975683443661690106,8990322489028717112,9005243596016972999,9020517280031764984\n    .quad 9035226268917471035,9050114321809489162,9065346688203983948,9080133147627747248,9094988921128908188,9110180938284831491,9125043052530916322,9139867303189443290\n    .quad 9155019916792074128,9169955912700582330,9184749379333099561,9199863512903218227,9214871658872686752\n");
+    out.push_str(".Lval_bmax:\n    .quad 4756540486875348992\n.Lval_bmin:\n    .quad 13965043853212778496\n");
     out.push_str(".Lval_e10:\n    .quad 4756540486875873280\n.Lval_mn9:\n    .quad -4481700220496773120\n");
     out.push_str(".Loommsg:\n    .byte 79,117,116,32,111,102,32,109,101,109,111,114,121,10\n");
     // "Type error: NIL used as a number\n" (33 bytes; registered failure mode)
@@ -36294,6 +36661,42 @@ hbc_round_arg_error:
     mov $1, %ecx
     call ExitProcess
 .Lseqt_roundarg:
+    lea .LseqD_roundarg(%rip), %rsi
+    jmp hbc_seq_throw_error
+
+# hbc_val_arg_error: clean-room Val Argument error (see the Linux twin;
+# oracle C/D sections). UNVERIFIED on Windows in this package (no Wine).
+hbc_val_arg_error:
+    push %rbp
+    mov %rsp, %rbp
+    sub $48, %rsp
+    cmpq $0, hbc_seq_depth(%rip)
+    jne .Lseqt_valarg
+    lea .Lroundargmsg(%rip), %rax
+    mov $15, %edx
+    mov %rax, %rcx
+    call hbc_print_str
+    mov $1, %ecx
+    call ExitProcess
+.Lseqt_valarg:
+    lea .LseqD_roundarg(%rip), %rsi
+    jmp hbc_seq_throw_error
+
+# hbc_atokens_arg_error: clean-room hb_ATokens Argument error (see the
+# Linux twin). UNVERIFIED on Windows in this package (no Wine).
+hbc_atokens_arg_error:
+    push %rbp
+    mov %rsp, %rbp
+    sub $48, %rsp
+    cmpq $0, hbc_seq_depth(%rip)
+    jne .Lseqt_atokensarg
+    lea .Lroundargmsg(%rip), %rax
+    mov $15, %edx
+    mov %rax, %rcx
+    call hbc_print_str
+    mov $1, %ecx
+    call ExitProcess
+.Lseqt_atokensarg:
     lea .LseqD_roundarg(%rip), %rsi
     jmp hbc_seq_throw_error
 
@@ -40159,17 +40562,27 @@ hbc_seconds:
 
 const ATOKENS_HELPER: &str = r#"
     .text
-# hbc_atokens: borrowed rdi/rsi = string ptr/len, rdx/rcx = delimiter
-# ptr/len. -> rax = DArrS cells pointer, rdx = count (hbc_aclone_s
-# convention). Harbour 3.2 hbtoken.c with flags 0: with an EXPLICIT
-# delimiter string a token boundary is a full 1..n-byte delimiter match,
-# empty tokens are preserved and runs are NOT collapsed (",a," ->
-# {"", "a", ""}); WITHOUT a delimiter the delimiter is the single space
-# (hbtoken.c 248-252), a delimiter RUN counts once and the edges are
-# trimmed ("uno  dos" -> {"uno", "dos"}; "" -> {""}). Each token becomes
-# an owned string cell (tag 2, data pointer).
-# Slots: -8 token index, -16 block base, -24 start, -32 count,
-# -40 position, -48 collapse flag, -52 space byte.
+# hbc_atokens: clean-room hb_ATokens(cString [, cDelim [, lSkipStrings
+# [, lDoubleQuoteOnly]]]) runtime, fitted from the black-box oracle spec
+# only (atokens-oracle-spec; model + evidence in the atokens package
+# README - 1628/1628 scored rows).
+#   rdi = string bytes, rsi = length
+#   rdx = separator bytes, rcx = separator length (mode 1 only)
+#   r8  = mode: 0 default (space separator, empty tokens dropped),
+#         1 string separator (multi-byte, empty tokens kept),
+#         2 single whole-string token (logical .T. separator)
+#   r9  = flags: bit0 skip quoted stretches, bit1 double-quote only
+# Returns the DArrS pair: rax = cells, rdx = count. Cell layout is the
+# hbc_aclone_s convention: an 8-byte count header at cells-8, then
+# 16-byte {tag, payload} cells; token strings are owned hbc_strcpy
+# copies under tag 2, released by hbc_sfree.
+# Oracle-pinned behaviour: an EMPTY separator string falls back to mode 0
+# (A_0066-A_0070, A_0171-A_0175); with no/empty input in mode 0 the
+# result is exactly one empty token (A_0001, A_0036); quote state is
+# flat, opens anywhere including mid-token, closes on the same byte, an
+# unterminated quote runs to the end (A_0668/A_0703/A_0738); [ ] and
+# backtick are NOT quotes (A_0946/A_0981); bit1 restricts the quote set
+# to '"' (A_0634/A_1019).
 hbc_atokens:
     push %rbp
     mov %rsp, %rbp
@@ -40178,171 +40591,174 @@ hbc_atokens:
     push %r13
     push %r14
     push %r15
-    sub $56, %rsp
-    mov %rdi, %rbx
-    mov %rsi, %r12
-    mov %rdx, %r13
-    mov %rcx, %r14
-    movq $0, -48(%rbp)
-    test %r14, %r14
-    jnz .Ltok_have
-    movb $32, -52(%rbp)
-    lea -52(%rbp), %r13
-    mov $1, %r14
-    movq $1, -48(%rbp)
-.Ltok_ltrim:
-    test %r12, %r12
-    jz .Ltok_have
-    movzbl (%rbx), %eax
-    cmp $32, %eax
-    jne .Ltok_rtrim
-    inc %rbx
-    dec %r12
-    jmp .Ltok_ltrim
-.Ltok_rtrim:
-    test %r12, %r12
-    jz .Ltok_have
-    movzbl -1(%rbx,%r12), %eax
-    cmp $32, %eax
-    jne .Ltok_have
-    dec %r12
-    jmp .Ltok_rtrim
-.Ltok_have:
-    # ---- count ----
-    mov $1, %r15
-    xor %r9, %r9
-.Ltok_cloop:
-    cmp %r12, %r9
-    jae .Ltok_cdone
-    lea (%rbx,%r9), %r10
-    movzbl (%r10), %eax
-    movzbl (%r13), %ecx
-    cmp %ecx, %eax
-    jne .Ltok_cnext
-    cmp $1, %r14
-    je .Ltok_chit
-    xor %r8, %r8
-.Ltok_cmem:
-    cmp %r14, %r8
-    jae .Ltok_chit
-    movzbl (%r10,%r8), %eax
-    movzbl (%r13,%r8), %ecx
-    cmp %ecx, %eax
-    jne .Ltok_cnext
-    inc %r8
-    jmp .Ltok_cmem
-.Ltok_chit:
-    inc %r15
-    cmpq $0, -48(%rbp)
-    jne .Ltok_cadv
-    lea (%r9,%r14), %r9
-    jmp .Ltok_cloop
-.Ltok_cadv:
-    lea 1(%r9), %rax
-    cmp %r12, %rax
-    jae .Ltok_cadv2
-    movzbl (%r13), %ecx
-    movzbl (%rbx,%rax), %eax
-    cmp %ecx, %eax
-    jne .Ltok_cadv2
-    inc %r9
-    jmp .Ltok_cadv
-.Ltok_cadv2:
-    lea (%r9,%r14), %r9
-    jmp .Ltok_cloop
-.Ltok_cnext:
-    inc %r9
-    jmp .Ltok_cloop
-.Ltok_cdone:
-    mov %r15, -32(%rbp)
-    # ---- cells block ----
+    sub $72, %rsp
+    mov %rdi, -48(%rbp)    # str ptr
+    mov %rsi, -56(%rbp)    # str len
+    mov %rdx, -64(%rbp)    # delim ptr
+    mov %rcx, -72(%rbp)    # delim len
+    mov %r8, -80(%rbp)     # mode
+    mov %r9, -88(%rbp)     # flags
+    # mode 1 with an empty separator string falls back to mode 0
+    cmp $1, %r8
+    jne .Latk_modedone
+    test %rcx, %rcx
+    jnz .Latk_modedone
+    xor %r8d, %r8d
+    mov %r8, -80(%rbp)
+.Latk_modedone:
+    # mode 2: single whole-string token
+    cmp $2, %r8
+    jne .Latk_notwhole
+    mov $24, %edi
+    call hbc_alloc
+    mov %rax, %r14
+    movq $1, (%r14)      # count header
+    mov -48(%rbp), %rdi
+    mov -56(%rbp), %rsi
+    call hbc_strcpy
+    movq $2, 8(%r14)     # cell 0 tag: owned string
+    mov %rax, 16(%r14)   # cell 0 payload
+    lea 8(%r14), %rax
+    mov $1, %edx
+    jmp .Latk_out
+.Latk_notwhole:
+    # mode 0: separator is one space byte
+    cmpq $0, -80(%rbp)
+    jne .Latk_delimok
+    lea .Latk_space(%rip), %rax
+    mov %rax, -64(%rbp)
+    movq $1, -72(%rbp)
+.Latk_delimok:
+    # cells: (len+1) 16-byte cells max, plus the 8-byte count header
+    mov -56(%rbp), %rdi
+    inc %rdi
+    shl $4, %rdi
+    add $8, %rdi
+    jc hbc_oom
+    call hbc_alloc
+    add $8, %rax
+    mov %rax, %r14       # cells base (count header at -8(%r14))
+    xor %r15d, %r15d     # token count
+    mov -48(%rbp), %r12    # cursor
+    mov %r12, %rbx         # token start
+    mov %r12, %r13         # end
+    add -56(%rbp), %r13
+    movb $0, -96(%rbp)     # quote state
+.Latk_scan:
+    cmp %r13, %r12
+    jae .Latk_last
+    testb $1, -88(%rbp)
+    jz .Latk_delimchk
+    movzbl -96(%rbp), %eax # q
+    test %eax, %eax
+    jz .Latk_notinq
+    movzbl (%r12), %ecx
+    cmp %eax, %ecx
+    jne .Latk_adv
+    movb $0, -96(%rbp)
+    jmp .Latk_adv
+.Latk_notinq:
+    movzbl (%r12), %eax
+    cmp $34, %eax
+    je .Latk_setq
+    testb $2, -88(%rbp)
+    jnz .Latk_delimchk
+    cmp $39, %eax
+    jne .Latk_delimchk
+.Latk_setq:
+    mov %al, -96(%rbp)
+    jmp .Latk_adv
+.Latk_delimchk:
+    mov -72(%rbp), %rax    # delim len
+    mov %r13, %rdx
+    sub %r12, %rdx
+    cmp %rax, %rdx
+    jb .Latk_adv
+    xor %r10d, %r10d
+.Latk_cmploop:
+    cmp %rax, %r10
+    jae .Latk_matched
+    mov -64(%rbp), %rsi
+    movzbl (%rsi,%r10), %ecx
+    movzbl (%r12,%r10), %edx
+    cmp %cl, %dl
+    jne .Latk_adv
+    inc %r10
+    jmp .Latk_cmploop
+.Latk_matched:
+    # flush [rbx, r12); mode 0 drops empty tokens at emission
+    mov %r12, %rsi
+    sub %rbx, %rsi
+    jnz .Latk_emit
+    cmpq $0, -80(%rbp)
+    je .Latk_skipempty
+.Latk_emit:
+    mov %rbx, %rdi
+    call .Latk_store
+.Latk_skipempty:
+    add -72(%rbp), %r12
+    mov %r12, %rbx
+    jmp .Latk_scan
+.Latk_adv:
+    inc %r12
+    jmp .Latk_scan
+.Latk_last:
+    mov %r13, %rsi
+    sub %rbx, %rsi
+    jnz .Latk_emitlast
+    cmpq $0, -80(%rbp)
+    jne .Latk_emitlast
+    # mode 0 trailing separator produced no token; if NOTHING was emitted
+    # the result is exactly one empty token
+    test %r15, %r15
+    jnz .Latk_done
+    mov %rbx, %rdi
+    xor %esi, %esi
+    call .Latk_store
+    jmp .Latk_done
+.Latk_emitlast:
+    mov %rbx, %rdi
+    call .Latk_store
+.Latk_done:
+    # Exact-size the result block. The scan reserved len+1 cells of
+    # capacity, but the header word is BOTH the live count readers see
+    # and the capacity hbc_free uses to compute the unmap length
+    # (hbc_aclone_s convention, where count == capacity), so the
+    # returned block must hold exactly r15 cells.
+    mov -56(%rbp), %rax
+    inc %rax               # reserved capacity in elements
+    cmp %rax, %r15
+    je .Latk_exact
+    mov %rax, -8(%r14)     # scan block header = its true capacity
     mov %r15, %rdi
     shl $4, %rdi
     add $8, %rdi
     jc hbc_oom
-    call hbc_aclone_alloc
-    mov %r15, (%rax)
-    mov %rax, -16(%rbp)
-    lea 8(%rax), %r15
-    movq $0, -8(%rbp)
-    movq $0, -24(%rbp)
-    movq $0, -40(%rbp)
-    test %r14, %r14
-    jz .Ltok_ftail
-.Ltok_floop:
-    mov -40(%rbp), %r9
-    cmp %r12, %r9
-    jae .Ltok_ftail
-    lea (%rbx,%r9), %r10
-    movzbl (%r10), %eax
-    movzbl (%r13), %ecx
-    cmp %ecx, %eax
-    jne .Ltok_fnext
-    cmp $1, %r14
-    je .Ltok_fhit
-    xor %r8, %r8
-.Ltok_fmem:
-    cmp %r14, %r8
-    jae .Ltok_fhit
-    movzbl (%r10,%r8), %eax
-    movzbl (%r13,%r8), %ecx
-    cmp %ecx, %eax
-    jne .Ltok_fnext
-    inc %r8
-    jmp .Ltok_fmem
-.Ltok_fhit:
-    mov -24(%rbp), %rax
-    mov %r9, %rcx
-    sub %rax, %rcx
-    mov %rax, %r11
-    lea (%rbx,%r11), %rdi
-    mov %rcx, %rsi
-    call hbc_strcpy
-    mov -8(%rbp), %rcx
-    shl $4, %rcx
-    movq $2, (%r15,%rcx)
-    mov %rax, 8(%r15,%rcx)
-    incq -8(%rbp)
-    mov -40(%rbp), %r9
-    cmpq $0, -48(%rbp)
-    jne .Ltok_fadv
-    lea (%r9,%r14), %r9
-    jmp .Ltok_fstore
-.Ltok_fadv:
-    lea 1(%r9), %rax
-    cmp %r12, %rax
-    jae .Ltok_fadv2
-    movzbl (%r13), %ecx
-    movzbl (%rbx,%rax), %eax
-    cmp %ecx, %eax
-    jne .Ltok_fadv2
-    inc %r9
-    jmp .Ltok_fadv
-.Ltok_fadv2:
-    lea (%r9,%r14), %r9
-.Ltok_fstore:
-    mov %r9, -24(%rbp)
-    mov %r9, -40(%rbp)
-    jmp .Ltok_floop
-.Ltok_fnext:
-    mov -40(%rbp), %r9
-    inc %r9
-    mov %r9, -40(%rbp)
-    jmp .Ltok_floop
-.Ltok_ftail:
-    mov -24(%rbp), %rax
-    mov %r12, %rcx
-    sub %rax, %rcx
-    lea (%rbx,%rax), %rdi
-    mov %rcx, %rsi
-    call hbc_strcpy
-    mov -8(%rbp), %rcx
-    shl $4, %rcx
-    movq $2, (%r15,%rcx)
-    mov %rax, 8(%r15,%rcx)
-    mov %r15, %rax
-    mov -32(%rbp), %rdx
-    lea -40(%rbp), %rsp
+    call hbc_alloc
+    lea 8(%rax), %r12      # new cells base (header written below)
+    xor %r13d, %r13d
+.Latk_copy:
+    cmp %r15, %r13
+    jae .Latk_copied
+    mov %r13, %rax
+    shl $4, %rax
+    mov (%r14,%rax), %rcx
+    mov %rcx, (%r12,%rax)
+    mov 8(%r14,%rax), %rcx
+    mov %rcx, 8(%r12,%rax)
+    inc %r13
+    jmp .Latk_copy
+.Latk_copied:
+    mov %r14, %rdi
+    mov $16, %esi
+    call hbc_free          # token strings stay owned by the moved cells
+    mov %r12, %r14
+.Latk_exact:
+    mov %r15, -8(%r14)   # count header (== capacity: exact block)
+    mov %r14, %rax
+    mov %r15, %rdx
+.Latk_out:
+    add $72, %rsp
     pop %r15
     pop %r14
     pop %r13
@@ -40350,6 +40766,20 @@ hbc_atokens:
     pop %rbx
     pop %rbp
     ret
+# .Latk_store: rdi = token bytes, rsi = length -> appended owned copy at
+# cells[r15]; clobbers volatile registers only.
+.Latk_store:
+    sub $8, %rsp
+    call hbc_strcpy
+    mov %r15, %r10
+    shl $4, %r10
+    movq $2, (%r14,%r10)
+    mov %rax, 8(%r14,%r10)
+    inc %r15
+    add $8, %rsp
+    ret
+.Latk_space:
+    .byte 32
 "#;
 
 const DESCEND_HELPER: &str = r#"

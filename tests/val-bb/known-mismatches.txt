@@ -1,0 +1,106 @@
+# Known mismatches vs oracle out.txt (id<TAB>family). See README.md
+# for the family discussion and the oracle evidence per family. Every
+# row below changes VISIBLE output bytes (none is metadata-only).
+# integer-item: the oracle keeps the exact integer (9007199254740993,
+#   9223372036854775807); this runtime's F64 rounds the last digits.
+# value-eval-1ulp: the parsed double differs by 1 ULP from the oracle;
+#   visible in the 17-decimal image (12 rows), in shortest/Str final
+#   digits (26 rows), as a full unit after Int(v*10^k) (6 rows) and in
+#   equality/subtraction probes (4 rows) (UNVERIFIED - Harbour's
+#   evaluation order).
+# default-image-width: only the leading PADDING of the Str/hb_CStr
+#   default image differs (columns 2 and 5); digits byte-identical
+#   after removing whitespace (UNVERIFIED fit - the oracle's width
+#   tracks consumed characters, ours the item metadata).
+A_0051	integer-item
+A_0052	integer-item
+A_0062	value-eval-1ulp
+A_0069	value-eval-1ulp
+A_0070	value-eval-1ulp
+A_0166	value-eval-1ulp
+E_0347	value-eval-1ulp
+E_0374	value-eval-1ulp
+E_0375	value-eval-1ulp
+E_0379	value-eval-1ulp
+E_0397	value-eval-1ulp
+E_0419	value-eval-1ulp
+E_0521	value-eval-1ulp
+E_0543	value-eval-1ulp
+E_0565	value-eval-1ulp
+E_0571	value-eval-1ulp
+E_0574	value-eval-1ulp
+E_0575	value-eval-1ulp
+E_0586	value-eval-1ulp
+E_0587	value-eval-1ulp
+E_0588	value-eval-1ulp
+E_0609	value-eval-1ulp
+E_0634	value-eval-1ulp
+E_0638	value-eval-1ulp
+E_0643	value-eval-1ulp
+E_0644	value-eval-1ulp
+E_0645	value-eval-1ulp
+E_0649	default-image-width
+E_0651	value-eval-1ulp
+E_0653	value-eval-1ulp
+E_0655	value-eval-1ulp
+E_0666	value-eval-1ulp
+E_0667	value-eval-1ulp
+E_0671	default-image-width
+E_0673	default-image-width
+E_0675	value-eval-1ulp
+E_0677	value-eval-1ulp
+F_0685	default-image-width
+F_0686	default-image-width
+F_0691	default-image-width
+F_0698	default-image-width
+F_0699	default-image-width
+F_0704	default-image-width
+F_0711	default-image-width
+F_0712	default-image-width
+F_0717	default-image-width
+F_0724	default-image-width
+F_0725	default-image-width
+F_0730	default-image-width
+F_0737	value-eval-1ulp
+F_0738	default-image-width
+F_0743	default-image-width
+F_0750	default-image-width
+F_0751	default-image-width
+F_0756	default-image-width
+F_0762	default-image-width
+F_0763	default-image-width
+F_0766	default-image-width
+F_0776	default-image-width
+F_0777	default-image-width
+F_0779	default-image-width
+F_0782	default-image-width
+F_0789	default-image-width
+F_0790	default-image-width
+F_0795	default-image-width
+F_0802	default-image-width
+F_0803	default-image-width
+F_0808	default-image-width
+F_0815	default-image-width
+F_0816	default-image-width
+F_0821	default-image-width
+F_0827	value-eval-1ulp
+F_0828	default-image-width
+F_0829	default-image-width
+F_0834	default-image-width
+F_0841	value-eval-1ulp
+F_0842	default-image-width
+F_0847	default-image-width
+F_0854	value-eval-1ulp
+F_0855	default-image-width
+F_0860	default-image-width
+F_0867	value-eval-1ulp
+F_0868	default-image-width
+F_0873	default-image-width
+O_0882	value-eval-1ulp
+O_0894	value-eval-1ulp
+O_0906	value-eval-1ulp
+O_0918	value-eval-1ulp
+O_0930	value-eval-1ulp
+O_0942	value-eval-1ulp
+O_0954	value-eval-1ulp
+O_0966	value-eval-1ulp
