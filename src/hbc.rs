@@ -41793,5 +41793,11 @@ mod internal_valtype_dispatch_tests {
     #[test]
     fn internal_valtype_is_not_a_source_identifier() {
         assert!(!INTERNAL_VALTYPE.chars().all(|c| c.is_ascii_alphanumeric() || c == '_'));
+        for text in [INTERNAL_VALTYPE, "ValType\0", "HB_ISCHAR(\0valtype)"] {
+            let error = tokenize(text, 1).unwrap_err();
+            assert!(error.contains("U+0000"), "{}", error);
+        }
+        assert!(matches!(&tokenize("ValType", 1).unwrap()[..],
+            [Tok::Ident(name)] if name == "valtype"));
     }
 }
