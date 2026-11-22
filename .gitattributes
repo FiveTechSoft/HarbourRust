@@ -101,3 +101,5 @@ tests/jsonencode-bb/expected/** -text
 tests/jsondecode-bb/expected/** -text
 tests/user-overrides/expected/** -text
 tests/user-overrides/expected/internal_valtype.windows.out -text
+
+tests/json-safety/expected/** -text

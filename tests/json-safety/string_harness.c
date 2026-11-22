@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <setjmp.h>
 #include "../../runtime/hrjson.c"
 static void *blocks[4096];
 static hrt_u64 sizes[4096];
@@ -19,7 +20,9 @@ void hbc_freestr(char *p) { release_exact(p-16, ((hrt_u64 *)p)[-2]+16); }
 void hbc_free(void *p, hrt_u64 n) { release_exact((char *)p-8, ((hrt_u64 *)p)[-1]*n+8); }
 char *hbc_dtos(hrt_i64 x) { (void)x; abort(); }
 char *hbc_str_f64(double x, hrt_u64 a, hrt_i64 b, hrt_i64 c, hrt_u32 d) { (void)x;(void)a;(void)b;(void)c;(void)d;abort(); }
-void hbc_type_error(void) { abort(); }
+static jmp_buf type_error_jump;
+static int expect_type_error;
+void hbc_type_error(void) { if(expect_type_error) longjmp(type_error_jump,1); abort(); }
 static void decode(const char *json,const char *expected,hrt_u64 n) {
     struct hrt_pair p=hbc_json_decode(json,strlen(json));
     assert(p.tag==4);
@@ -32,6 +35,37 @@ static void invalid(const char *json) {
     assert(p.tag==1 && !live);
 }
 int main(void) {
+    expect_type_error=1;
+    if(!setjmp(type_error_jump)) {
+        const char *object="[\"allocated\",[1,2,3,4,5],{}]";
+        hbc_json_decode(object,strlen(object)); assert(0);
+    }
+    assert(!live);
+    if(!setjmp(type_error_jump)) {
+        struct hrt_buf fake={0,~(hrt_u64)0,0};
+        hrt_put(&fake,"x",1); assert(0);
+    }
+    expect_type_error=0;
+
+    struct hrt_pair arr = hbc_json_decode("[1,2,3,4,5,6,7,8,9]",19);
+    assert(arr.tag == 8);
+    hrt_u64 *cells = (hrt_u64 *)arr.payload;
+    assert(cells[-1] == 9);
+    for(unsigned i=0;i<9;i++) assert(cells[i*2]==0 && cells[i*2+1]==i+1);
+    hrt_drop_pair(arr); assert(!live);
+    const char *nested = "[\"one\",[\"two\",[3,4,5,6,7]],[]]";
+    arr = hbc_json_decode(nested,strlen(nested)); assert(arr.tag==8);
+    hrt_drop_pair(arr); assert(!live);
+    invalid("[\"allocated\",[\"nested\",1,2,3,4,5],bad]");
+    invalid("[1,2,3,4,5,]");
+    const char *badnum[] = {"-", "1.", "1e", "1e+", "9223372036854775808", "-9223372036854775809", "1e999999999999999999999"};
+    for(unsigned i=0;i<sizeof(badnum)/sizeof(*badnum);i++) invalid(badnum[i]);
+    struct hrt_pair number = hbc_json_decode("1e2",3);
+    union { hrt_u64 u; double d; } bits;
+    bits.u=number.payload; assert((number.tag & 255)==5 && bits.d==100.0);
+    number=hbc_json_decode("1.25e2",6);bits.u=number.payload;assert(bits.d==125.0);
+    number=hbc_json_decode("-1e-2",5);bits.u=number.payload;assert(bits.d==-0.01);
+    number=hbc_json_decode("-9223372036854775808",20);assert(number.tag==0 && number.payload==0x8000000000000000ULL);
     decode("\"\"","",0); decode("\"abc\"","abc",3);
     decode("\"\\u0041\"","A",1); decode("\"\\u0041Z\"","AZ",2);
     decode("\"\\u00e9\"","\xc3\xa9",2);

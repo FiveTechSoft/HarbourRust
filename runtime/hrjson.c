@@ -43,11 +43,15 @@ struct hrt_buf {
 static void hrt_put(struct hrt_buf *b, const char *s, hrt_u64 n)
 {
     hrt_u64 i;
+    const hrt_u64 max = ~(hrt_u64)0;
+    if (n > max - b->len || b->len + n > max - 16) hbc_type_error();
     if (!b->p || b->len + n > b->cap) {
         hrt_u64 nc = b->cap ? b->cap : 256;
         char *np;
-        while (nc < b->len + n)
+        while (nc < b->len + n) {
+            if (nc > (max - 16) / 2) { nc = b->len + n; break; }
             nc *= 2;
+        }
         /* the hbc string convention: a 16-byte {cap, len} header, data
            at +16, freed by hbc_freestr */
         np = (char *)hbc_alloc(nc + 16);
@@ -80,7 +84,7 @@ static void hrt_put_i64(struct hrt_buf *b, hrt_i64 v)
     hrt_u64 a;
     if (v < 0) {
         hrt_putc(b, '-');
-        a = (hrt_u64)(-v);
+        a = 0 - (hrt_u64)v;
     } else
         a = (hrt_u64)v;
     if (a == 0)
@@ -338,6 +342,8 @@ struct hrt_jd {
     const char *s;
     hrt_u64 len;
     hrt_u64 pos;
+    unsigned depth;
+    int unsupported;
 };
 
 struct hrt_pair {
@@ -363,7 +369,6 @@ static int hrt_peek(struct hrt_jd *jd)
     return (unsigned char)jd->s[jd->pos];
 }
 
-static hrt_u64 hrt_pow10(hrt_u64 n);
 
 static int hrt_hex4(struct hrt_jd *jd, hrt_u64 *out)
 {
@@ -448,71 +453,94 @@ bad:
 
 static int hrt_dec_number(struct hrt_jd *jd, struct hrt_pair *out)
 {
-    hrt_u64 dec = 0;
-    int isfloat = 0;
-    double dv = 0.0;
-    hrt_i64 iv = 0;
-    int neg = 0;
-    hrt_u64 k;
-    if (jd->pos < jd->len && jd->s[jd->pos] == '-') { neg = 1; jd->pos++; }
-    while (jd->pos < jd->len && jd->s[jd->pos] >= '0' && jd->s[jd->pos] <= '9') {
-        iv = iv * 10 + (jd->s[jd->pos] - '0');
-        jd->pos++;
+    hrt_u64 mag = 0, dec = 0;
+    const hrt_u64 maxint = 9223372036854775807ULL;
+    int neg = 0, isfloat = 0, int_overflow = 0;
+    int expneg = 0;
+    unsigned exponent = 0;
+    double value = 0.0, place = 0.1;
+    hrt_u64 start;
+    if (hrt_peek(jd) == '-') { neg = 1; jd->pos++; }
+    start = jd->pos;
+    while (hrt_peek(jd) >= '0' && hrt_peek(jd) <= '9') {
+        unsigned digit = (unsigned)(jd->s[jd->pos++] - '0');
+        if (mag > (maxint + (unsigned)neg - digit) / 10) int_overflow = 1;
+        if (!int_overflow) mag = mag * 10 + digit;
+        value = value * 10.0 + digit;
     }
-    if (jd->pos < jd->len && jd->s[jd->pos] == '.') {
-        isfloat = 1;
-        jd->pos++;
-        while (jd->pos < jd->len && jd->s[jd->pos] >= '0' && jd->s[jd->pos] <= '9') {
-            dv = dv * 10.0 + (double)(jd->s[jd->pos] - '0');
-            jd->pos++;
-            dec++;
+    if (jd->pos == start) return 0;
+    if (jd->pos - start > 1 && jd->s[start] == '0') return 0;
+    if (hrt_peek(jd) == '.') {
+        isfloat = 1; jd->pos++; start = jd->pos;
+        while (hrt_peek(jd) >= '0' && hrt_peek(jd) <= '9') {
+            value += (jd->s[jd->pos++] - '0') * place;
+            place *= 0.1;
+            if (++dec > 255) return 0; /* representable metadata boundary */
         }
+        if (jd->pos == start) return 0;
     }
-    if (jd->pos < jd->len && (jd->s[jd->pos] == 'e' || jd->s[jd->pos] == 'E')) {
-        int eneg = 0;
-        hrt_i64 ex = 0;
-        isfloat = 1;
-        jd->pos++;
-        if (jd->pos < jd->len && (jd->s[jd->pos] == '+' || jd->s[jd->pos] == '-')) {
-            eneg = jd->s[jd->pos] == '-';
-            jd->pos++;
+    if (hrt_peek(jd) == 'e' || hrt_peek(jd) == 'E') {
+        isfloat = 1; jd->pos++;
+        if (hrt_peek(jd) == '+' || hrt_peek(jd) == '-') {
+            expneg = hrt_peek(jd) == '-'; jd->pos++;
         }
-        while (jd->pos < jd->len && jd->s[jd->pos] >= '0' && jd->s[jd->pos] <= '9') {
-            ex = ex * 10 + (jd->s[jd->pos] - '0');
-            jd->pos++;
+        start = jd->pos;
+        while (hrt_peek(jd) >= '0' && hrt_peek(jd) <= '9') {
+            unsigned digit = (unsigned)(jd->s[jd->pos++] - '0');
+            if (exponent > (308U - digit) / 10U) return 0;
+            exponent = exponent * 10 + digit;
         }
-        for (k = 0; k < (hrt_u64)ex; k++) {
-            if (eneg) dv /= 10.0; else dv *= 10.0;
+        if (jd->pos == start) return 0;
+        /* At most nine iterations, never a loop proportional to input exponent. */
+        {
+            double factor = 10.0;
+            unsigned e = exponent;
+            while (e) {
+                if (e & 1) value = expneg ? value / factor : value * factor;
+                e >>= 1;
+                if (e) factor *= factor;
+            }
         }
         dec = 0;
     }
     if (!isfloat) {
+        if (int_overflow) return 0;
         out->tag = 0;
-        out->payload = (hrt_u64)(neg ? -iv : iv);
-        return 1;
-    }
-    /* float: the integer part plus the digit fraction; the JSON literal's
-       written decimals become the Dyn float pair's dec (1.5 renders 1.5,
-       1.25 renders 1.25) */
-    dv = dv / (dec ? (double)hrt_pow10(dec) : 1.0) + (double)iv;
-    if (neg) dv = -dv;
-    {
-        union {
-            double d;
-            hrt_u64 u;
-        } bits;
-        bits.d = dv;
+        out->payload = neg ? 0 - mag : mag;
+    } else {
+        union { double d; hrt_u64 u; } bits;
+        bits.d = neg ? -value : value;
+        if ((bits.u & 0x7FF0000000000000ULL) == 0x7FF0000000000000ULL) return 0;
         out->tag = 5 | ((dec & 0xFF) << 8);
         out->payload = bits.u;
     }
     return 1;
 }
 
-static hrt_u64 hrt_pow10(hrt_u64 n)
+/* Parser-owned pairs are a tree, never aliased. The public array owner uses
+   the same tag-8 recursive layout and exact count-sized allocation. */
+static void hrt_drop_pair(struct hrt_pair v)
 {
-    hrt_u64 r = 1;
-    while (n--) r *= 10;
-    return r;
+    if (v.tag == 4) hbc_freestr((char *)v.payload);
+    else if (v.tag == 8) {
+        hrt_u64 *cells = (hrt_u64 *)v.payload;
+        hrt_u64 n = cells[-1], i;
+        for (i = 0; i < n; i++) {
+            struct hrt_pair child = {cells[i*2], cells[i*2+1]};
+            hrt_drop_pair(child);
+        }
+        hbc_free(cells, 16);
+    }
+}
+
+static void hrt_drop_array(hrt_u64 *base, hrt_u64 count)
+{
+    hrt_u64 i;
+    for (i = 0; i < count; i++) {
+        struct hrt_pair child = {base[1+i*2], base[2+i*2]};
+        hrt_drop_pair(child);
+    }
+    hbc_free(base+1, 16);
 }
 
 /* the value parser: a JSON value -> a Dyn pair; 0 = parse failure */
@@ -528,55 +556,62 @@ static int hrt_dec_value(struct hrt_jd *jd, struct hrt_pair *out)
         return hrt_dec_string(jd, out);
     }
     if (c == '[') {
-        /* dynamic array: the aclone block shape {count, cells at +8},
-           cells = tagged Dyn pairs; capacity == length */
-        hrt_u64 cap = 4;
-        hrt_u64 n = 0;
-        hrt_u64 *cells = (hrt_u64 *)hbc_alloc(cap * 16 + 8);
+        hrt_u64 cap = 4, n = 0;
+        hrt_u64 *base;
+        if (jd->depth >= 128) return 0;
+        jd->depth++;
+        base = (hrt_u64 *)hbc_alloc(cap * 16 + 8);
+        base[0] = cap;
         jd->pos++;
         hrt_skipws(jd);
-        if (hrt_peek(jd) == ']') {
-            jd->pos++;
-            *cells = 0;
-            out->tag = 8;
-            out->payload = (hrt_u64)(cells + 1);
-            return 1;
-        }
-        for (;;) {
-            struct hrt_pair v;
-            if (!hrt_dec_value(jd, &v)) {
-                hbc_free((char *)cells + 8, 1);
-                return 0;
+        if (hrt_peek(jd) != ']') {
+            for (;;) {
+                struct hrt_pair v;
+                if (!hrt_dec_value(jd, &v)) goto array_bad;
+                if (n == cap) {
+                    hrt_u64 nc, k;
+                    hrt_u64 *next;
+                    if (cap > ((~(hrt_u64)0) - 8) / 32) {
+                        hrt_drop_pair(v); goto array_bad;
+                    }
+                    nc = cap * 2;
+                    next = (hrt_u64 *)hbc_alloc(nc * 16 + 8);
+                    next[0] = nc;
+                    for (k = 0; k < n * 2; k++) next[1+k] = base[1+k];
+                    hbc_free(base+1, 16);
+                    base = next; cap = nc;
+                }
+                base[1+n*2] = v.tag;
+                base[2+n*2] = v.payload;
+                n++;
+                hrt_skipws(jd);
+                if (hrt_peek(jd) == ',') { jd->pos++; continue; }
+                if (hrt_peek(jd) == ']') break;
+                goto array_bad;
             }
-            if (n == cap) {
-                hrt_u64 nc = cap * 2;
-                hrt_u64 *nbuf = (hrt_u64 *)hbc_alloc(nc * 16 + 8);
-                hrt_u64 k;
-                for (k = 0; k < n * 2; k++)
-                    nbuf[k] = cells[k];
-                hbc_free((char *)cells + 8, 1);
-                cells = nbuf;
-                cap = nc;
-            }
-            cells[1 + n * 2] = v.tag;
-            cells[2 + n * 2] = v.payload;
-            n++;
-            hrt_skipws(jd);
-            if (hrt_peek(jd) == ',') { jd->pos++; continue; }
-            if (hrt_peek(jd) == ']') { jd->pos++; break; }
-            hbc_free((char *)cells + 8, 1);
-            return 0;
         }
-        *cells = n;
+        jd->pos++;
+        if (n != cap) {
+            hrt_u64 k;
+            hrt_u64 *exact = (hrt_u64 *)hbc_alloc(n * 16 + 8);
+            exact[0] = n;
+            for (k = 0; k < n * 2; k++) exact[1+k] = base[1+k];
+            hbc_free(base+1, 16);
+            base = exact;
+        }
         out->tag = 8;
-        out->payload = (hrt_u64)(cells + 1);
+        out->payload = (hrt_u64)(base+1);
+        jd->depth--;
         return 1;
+array_bad:
+        hrt_drop_array(base, n);
+        jd->depth--;
+        return 0;
     }
     if (c == '{') {
-        /* a JSON object decodes to a hash: the hbc Dyn union has no hash
-           cell tag (ValType on it panics by design), so this increment
-           names the failure instead of an unrepresentable value */
-        hbc_type_error();
+        /* Defer the named unsupported-object error until partial owners unwind. */
+        jd->unsupported = 1;
+        return 0;
     }
     if (c == 't') {
         if (jd->len - jd->pos < 4) return 0;
@@ -622,9 +657,12 @@ struct hrt_pair hbc_json_decode(const char *s, hrt_u64 len)
     jd.s = s;
     jd.len = len;
     jd.pos = 0;
+    jd.depth = 0;
+    jd.unsupported = 0;
     if (!hrt_dec_value(&jd, &out)) {
         out.tag = 1;
         out.payload = 0;
     }
+    if (jd.unsupported) hbc_type_error();
     return out;
 }

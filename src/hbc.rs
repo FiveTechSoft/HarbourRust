@@ -8207,7 +8207,10 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 // named rejection (its release would need unwind cleanup).
                 if args.len()!=1 { return Err(format!("line {}: `hb_jsonEncode` takes one argument in this increment",n)); }
                 let t=type_expr(&args[0],env,sigs,n)?;
-                if !matches!(t,Ty::I64|Ty::F64|Ty::Str|Ty::StrOwn|Ty::Bool|Ty::Date|Ty::Hash|Ty::DArr|Ty::DArrU|Ty::DArr2|Ty::DArr3|Ty::DArr4|Ty::DArrDyn|Ty::DArrS|Ty::Dyn) {
+                if matches!(t,Ty::DArr3|Ty::DArr4) {
+                    return Err(format!("line {}: `hb_jsonEncode` for DArr3/DArr4 is outside this increment",n));
+                }
+                if !matches!(t,Ty::I64|Ty::F64|Ty::Str|Ty::StrOwn|Ty::Bool|Ty::Date|Ty::Hash|Ty::DArr|Ty::DArrU|Ty::DArr2|Ty::DArrDyn|Ty::DArrS|Ty::Dyn) {
                     return Err(format!("line {}: `hb_jsonEncode` takes a typed scalar, Hash or dynamic array in this increment ({})",n,ty_name(t)));
                 }
                 if t==Ty::Dyn && dyn_expr_owned(&args[0]) {
@@ -33314,6 +33317,15 @@ hbc_dfree:
     jns 883f
     jmp .Ldfree_owned
 .Ldfree_not_float:
+    @HBC_TAG_KIND@cmp $8, %rcx@HBC_TAG_END@
+    jne .Ldfree_not_array
+    mov 8(%rbx,%rax), %rdi
+    test %rdi, %rdi
+    jz 883f
+    mov -8(%rdi), %rsi
+    call hbc_dfree
+    jmp 883f
+.Ldfree_not_array:
     @HBC_TAG_KIND@cmp $4, %rcx@HBC_TAG_END@
     jne 883f
 .Ldfree_owned:
@@ -37334,6 +37346,15 @@ hbc_dfree:
     jns 883f
     jmp .Ldfree_owned
 .Ldfree_not_float:
+    @HBC_TAG_KIND@cmp $8, %rcx@HBC_TAG_END@
+    jne .Ldfree_not_array
+    mov 8(%rbx,%rax), %rdi
+    test %rdi, %rdi
+    jz 883f
+    mov -8(%rdi), %rsi
+    call hbc_dfree
+    jmp 883f
+.Ldfree_not_array:
     @HBC_TAG_KIND@cmp $4, %rcx@HBC_TAG_END@
     jne 883f
 .Ldfree_owned:

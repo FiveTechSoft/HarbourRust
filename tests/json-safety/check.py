@@ -21,6 +21,21 @@ with tempfile.TemporaryDirectory() as temp:
         run = subprocess.run([str(exe)], capture_output=True, timeout=10)
         assert (run.returncode, run.stdout, run.stderr) == (0, expected, b''), (flags, run)
         print('PASS hbc string roundtrip', flags)
+    for name in ('arrays_numbers', 'escapes_utf8'):
+        for flags in ([], ['--instrument'], ['--external-as', '--instrument']):
+            exe = temp / name
+            build = subprocess.run([hbc, 'tests/json-safety/programs/' + name + '.prg', str(exe), '--target=linux'] + flags,
+                                   cwd=root, capture_output=True, timeout=30)
+            assert build.returncode == 0, (name, flags, build.stderr)
+            run = subprocess.run([str(exe)], capture_output=True, timeout=10)
+            pin = root / 'tests/json-safety/expected' / (name + '.linux.out')
+            assert (run.returncode, run.stdout, run.stderr) == (0, pin.read_bytes(), b''), (name, flags, run)
+            print('PASS', name, flags)
+    for depth in (3, 4):
+        build = subprocess.run([hbc, 'tests/json-safety/rejects/darr' + str(depth) + '.prg', str(temp/'reject'), '--target=linux'],
+                               cwd=root, capture_output=True, timeout=30)
+        assert build.returncode == 1 and b'DArr3/DArr4 is outside this increment' in build.stderr
+        print('PASS named DArr rejection', depth)
     harness = temp / 'harness'
     subprocess.run(['gcc', '-std=c99', '-O1', '-g', '-fsanitize=address,undefined',
                     '-fno-omit-frame-pointer', 'tests/json-safety/string_harness.c', '-o', str(harness)],

@@ -1935,3 +1935,10 @@ posx tests/i64-overflow/loop.prg 1 Limit: integer overflow needs numeric promoti
 posx tests/i64-overflow/callee.prg 1 Limit: integer overflow needs numeric promotion\nCallstack:\n  at bump (tests/i64-overflow/callee.prg:12)\n  at main (tests/i64-overflow/callee.prg:4)\n
 neg tests/t1710_round_arrlit_neg.prg `round` with a non-empty array literal argument is not covered in this increment
 pos2 tests/user-overrides/internal_valtype.prg tests/user-overrides/expected/internal_valtype.linux.out tests/user-overrides/expected/internal_valtype.windows.out
+pos2 tests/jsonencode-bb/programs/jsonencode_bb.prg tests/jsonencode-bb/expected/jsonencode_bb.linux.out tests/jsonencode-bb/expected/jsonencode_bb.windows.out
+pos2 tests/jsondecode-bb/programs/jsondecode_bb.prg tests/jsondecode-bb/expected/jsondecode_bb.linux.out tests/jsondecode-bb/expected/jsondecode_bb.windows.out
+pos2 tests/json-safety/programs/strings.prg tests/json-safety/expected/strings.linux.out tests/json-safety/expected/strings.windows.out
+pos2 tests/json-safety/programs/arrays_numbers.prg tests/json-safety/expected/arrays_numbers.linux.out tests/json-safety/expected/arrays_numbers.windows.out
+pos2 tests/json-safety/programs/escapes_utf8.prg tests/json-safety/expected/escapes_utf8.linux.out tests/json-safety/expected/escapes_utf8.windows.out
+neg tests/json-safety/rejects/darr3.prg DArr3/DArr4 is outside this increment
+neg tests/json-safety/rejects/darr4.prg DArr3/DArr4 is outside this increment

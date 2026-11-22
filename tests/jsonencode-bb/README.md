@@ -26,3 +26,5 @@ containers) stay out at the HSet checker, not here.
 `expected/*.windows.out` is real Harbour 3.2 output (hbmk2
 -comp=mingw64 -gtcgi, native Windows 11); the Linux file is the same
 bytes with LF line ends. hbc output is byte-identical (14 pins).
+
+The date fixture uses SToD("20261122") so its original 14-row oracle pin is reproducible. Typed DArr3/DArr4 are explicitly rejected rather than encoded as null. Overflow bounds and JSON safety cases are documented under tests/json-safety/. The UTF-8 escape fixtures there are regression pins, not additional Harbour captures.
