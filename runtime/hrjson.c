@@ -438,7 +438,6 @@ static int hrt_dec_string(struct hrt_jd *jd, struct hrt_pair *out)
                     hrt_putc(&b, (char)(0x80 | ((cp >> 6) & 0x3F)));
                     hrt_putc(&b, (char)(0x80 | (cp & 0x3F)));
                 }
-                (void)k;
                 continue;
             default: goto bad;
             }
