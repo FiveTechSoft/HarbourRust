@@ -3151,6 +3151,21 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                             None => return Err(format!("line {}: SET DATE needs AMERICAN, ANSI, BRITISH, FRENCH, GERMAN, ITALIAN, USA or JAPANESE in this increment", n)),
                         }
                     }
+                    if matches!(toks.get(1), Some(Tok::Ident(name)) if name.eq_ignore_ascii_case("epoch")) {
+                        // SET EPOCH TO <year> (Harbour 3.2, measured): CToD
+                        // reads a year below 100 as the first year at or
+                        // after <year> that ends in those two digits.
+                        if toks.len() == 4 && matches!(toks.get(2), Some(Tok::KwTo)) {
+                            if let Some(Tok::Int(v)) = toks.get(3) {
+                                if v.parse::<u32>().map_or(false, |y| y <= 9999) {
+                                    out.push(Stmt::CallStmt(n, Expr::Call("hbc_set_epoch".to_string(), vec![Expr::Int(v.clone())])));
+                                    *i += 1;
+                                    continue;
+                                }
+                            }
+                        }
+                        return Err(format!("line {}: SET EPOCH requires TO <integer year 0..9999> in this increment", n));
+                    }
                     if matches!(toks.get(1), Some(Tok::Ident(name)) if name.eq_ignore_ascii_case("century")) {
                         // SET CENTURY ON/OFF: the 4-vs-2-digit year of the
                         // date render state (hrdate.c). The TO <year>
@@ -8338,7 +8353,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 if args.len()!=1 || !matches!(&args[0],Expr::Int(_)) {return Err(format!("line {}: internal SET DECIMALS store expects one integer",n));}
                 return Ok(Ty::I64);
             }
-            if id=="hbc_set_datefmt" || id=="hbc_set_century" {
+            if id=="hbc_set_datefmt" || id=="hbc_set_century" || id=="hbc_set_epoch" {
                 if args.len()!=1 || !matches!(&args[0],Expr::Int(_)) {return Err(format!("line {}: internal SET DATE/CENTURY store expects one integer",n));}
                 return Ok(Ty::I64);
             }
@@ -12827,7 +12842,7 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
             if is_builtin(id,"hb_sha1") || is_builtin(id,"hb_hmac_sha1") {for a in args {apply_moves(a,env,sigs,false);}return;}
             if id=="hrbase_wait" {return;}
             if id=="hbc_set_decimals" {return;}
-            if id=="hbc_set_datefmt" || id=="hbc_set_century" {return;}
+            if id=="hbc_set_datefmt" || id=="hbc_set_century" || id=="hbc_set_epoch" {return;}
             if is_builtin(id,"inkey") {return;}
             if is_builtin(id,"file") || id=="hrfile_setdefault" || id=="hrfile_setpath" {
                 for a in args {apply_moves(a,env,sigs,false);}return;
@@ -16947,7 +16962,12 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
         }
         Expr::Call(id,args) if id=="hbc_set_datefmt" => {
             let v = match &args[0] { Expr::Int(v) => v.parse::<i64>().unwrap_or(0), _ => 0 };
-            out.push_str(&format!("    mov ${}, %edi\n    call hbc_date_set_fmt\n", v));
+            // CToD reads its fields in the layout's order (hbc_ctod).
+            out.push_str(&format!("    movq ${}, hbc_date_order(%rip)\n    mov ${}, %edi\n    call hbc_date_set_fmt\n", v, v));
+        }
+        Expr::Call(id,args) if id=="hbc_set_epoch" => {
+            let v = match &args[0] { Expr::Int(v) => v.parse::<i64>().unwrap_or(1900), _ => 1900 };
+            out.push_str(&format!("    movq ${}, hbc_date_epoch(%rip)\n", v));
         }
         Expr::Call(id,args) if id=="hbc_set_century" => {
             let v = match &args[0] { Expr::Int(v) => v.parse::<i64>().unwrap_or(0), _ => 0 };
@@ -21129,7 +21149,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             if is_builtin(id,"hb_sha1") || is_builtin(id,"hb_hmac_sha1") {return Ty::StrOwn;}
             if id=="hrbase_wait" {return Ty::I64;}
             if id=="hbc_set_decimals" {return Ty::I64;}
-            if id=="hbc_set_datefmt" || id=="hbc_set_century" {return Ty::I64;}
+            if id=="hbc_set_datefmt" || id=="hbc_set_century" || id=="hbc_set_epoch" {return Ty::I64;}
             if is_builtin(id,"setcursor") || is_builtin(id,"dirmake") || is_builtin(id,"inkey") {return Ty::I64;}
             if is_builtin(id,"file") {return Ty::Bool;}
             if id=="hrfile_setdefault"||id=="hrfile_setpath" {return Ty::Dyn;}
@@ -34446,6 +34466,10 @@ fn finalize_trace(mut out: String, target: Target) -> String {
     if (out.contains("call hbc_tr_dims") || out.contains("call hbc_tr_apply")) && !out.contains("hbc_tr_dims:") {
         out.push_str(include_str!("../generated/hrtransform.s"));
     }
+    // CToD parse state: the SET DATE field order and SET EPOCH.
+    if out.contains("hbc_date_order(%rip)") || out.contains("hbc_date_epoch(%rip)") {
+        out.push_str("    .data\n    .align 8\nhbc_date_order: .quad 0\nhbc_date_epoch: .quad 1900\n    .text\n");
+    }
     // The clean-room date-render blob (the SET DATE / SET CENTURY state
     // and the layout core): hbc_dtoc / hbc_date_render reference it.
     if out.contains("hbc_date_core_c")
@@ -40030,6 +40054,11 @@ hbc_stod:
     jmp hbc_date_pack
 
 # ptr/len rdi/rsi; three unsigned 32-bit runs. Nondigits separate runs.
+# The runs are read in the SET DATE layout's order (hbc_date_order: the
+# hrdate.c layout row; 0/5 month-day-year, 1/6 year-month-day, 2/3/4
+# day-month-year). A year below 100 becomes the first year at or after
+# SET EPOCH (hbc_date_epoch, default 1900) ending in those digits.
+# Measured against Harbour 3.2: tests/ctod-bb.
 hbc_ctod:
     sub $24, %rsp
     movq $0, (%rsp)
@@ -40060,12 +40089,42 @@ hbc_ctod:
     cmp $3, %r8d
     jb .Ldate_parse_byte
 .Ldate_parse_done:
+    mov hbc_date_order(%rip), %rax
+    cmp $1, %rax
+    je .Ldate_parse_ymd
+    cmp $6, %rax
+    je .Ldate_parse_ymd
+    cmp $2, %rax
+    jb .Ldate_parse_mdy
+    cmp $4, %rax
+    jbe .Ldate_parse_dmy
+.Ldate_parse_mdy:
     mov (%rsp), %r9d
     mov 4(%rsp), %r10d
     mov 8(%rsp), %r8d
+    jmp .Ldate_parse_epoch
+.Ldate_parse_dmy:
+    mov 4(%rsp), %r9d
+    mov (%rsp), %r10d
+    mov 8(%rsp), %r8d
+    jmp .Ldate_parse_epoch
+.Ldate_parse_ymd:
+    mov (%rsp), %r8d
+    mov 4(%rsp), %r9d
+    mov 8(%rsp), %r10d
+.Ldate_parse_epoch:
     cmp $100, %r8d
     jae .Ldate_parse_year
-    add $1900, %r8d
+    mov hbc_date_epoch(%rip), %rax
+    xor %edx, %edx
+    mov $100, %ecx
+    div %rcx
+    imul $100, %eax, %eax
+    add %eax, %r8d
+    mov hbc_date_epoch(%rip), %rax
+    cmp %eax, %r8d
+    jae .Ldate_parse_year
+    add $100, %r8d
 .Ldate_parse_year:
     add $24, %rsp
     jmp hbc_date_pack
