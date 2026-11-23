@@ -44,3 +44,32 @@ The two original oracle programs above contain `Date()` and their pins
 record November 23, 2026. They are not registered as timeless manifest
 expectations. The Transform program is also outside the current Mach-O
 contract, so it must not be silently added to the Mac battery.
+
+## SET DATE order in CTOD, SET EPOCH, ALTD() (November 23, 2026)
+
+Origin: a forum user's FEIERTAG.PRG (SET DATE GERMAN + CTOD("dd.mm.yyyy")).
+Before this change CTOD ignored the SET DATE field order and always read
+M D Y, so that call gave an empty date. Now CTOD reads the three digit runs
+in the order of the active SET DATE format and applies a SET EPOCH pivot to
+a year value below 100 (leading zeros do not matter: "0049" and "49" are
+the same value, as the old default rule already measured through Year()).
+
+Everything below is a HYPOTHESIS, not an oracle measurement (no Harbour was
+available in the session and no source is linked for it):
+- field order per format: MDY for AMERICAN/USA, DMY for BRITISH/FRENCH/
+  GERMAN/ITALIAN, YMD for ANSI/JAPANESE;
+- the pivot: century of the epoch year; a year below the epoch's last two
+  digits goes to the next century (default epoch 1900, which keeps the old
+  1900+yy result; epoch 1950: 49 -> 2049, 50 -> 1950);
+- `ALTD()` as a statement does nothing. A user function ALTD overrides it
+  (`tests/altd-user`). The value form (`? ALTD()`, `n := ALTD()`, `return ALTD()`,
+  `ALTD(1)`) is a named compile error (`tests/altd-stmt/altd_value_*`).
+- the Windows expectations of the new pins are the Linux bytes with LF ->
+  CRLF; they have not been run on Windows.
+
+`SET EPOCH TO <n>` takes an integer literal 0..9999. Anything else (a
+negative number, a literal that overflows, 10000 or more, a non-literal,
+a missing value) is a named compile error; it is never ignored and never
+falls back to 1900. Pins: `programs/setdate_epoch_parse.prg` (orders,
+pivot, "0049"/"049"/"49"), `programs/setdate_epoch_only.prg` (epoch set,
+no date used and no output), `setter_only_date` (format set, no date used).

@@ -81,8 +81,8 @@ TARGET = '--target=macho-arm64'  # --target=macho runs the same battery on Intel
 # Nested/static-to-dynamic owner fixtures: two executable rows (+2).
 # SET DATE/CENTURY: one converted negative and two setter-only fixtures (+3).
 # Empty date in every SET DATE layout, Harbour-measured (+1).
-# Full total:1304+6+4+38+9 =1361,1 named REJ on both Mac targets.
-EXPECTED_MANIFEST_ROWS = 1304
+# Full total:1308+6+4+38+9 =1365,1 named REJ on both Mac targets.
+EXPECTED_MANIFEST_ROWS = 1308
 # Post-run m_clie.dbf SHA-256 per DBF acceptance test (generated on Linux,
 # stdout checked against the committed expectations). t4 appends records:
 # dbAppend rewrites the header last-update date (bytes 1-3, YY MM DD of the
