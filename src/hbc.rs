@@ -7095,7 +7095,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 if arr && !matches!(&args[0], Expr::Var(_)) {
                     return Err(format!("line {}: `Empty` on an array/hash needs a variable in this increment", n));
                 }
-                if t == Ty::Dyn && !matches!(&args[0], Expr::Nil) && !DBF_USED.with(|v|v.get()) && !timestamp::known(&args[0]) {
+                if t == Ty::Dyn && !matches!(&args[0], Expr::Nil) && !DBF_USED.with(|v|v.get()) && !timestamp::known(&args[0]) && !timestamp::scalar_empty() {
                     return Err(format!("line {}: `Empty` on generic Dyn values is not in this increment", n));
                 }
                 if matches!(t, Ty::DArrRef | Ty::DArrRef2) {
@@ -19262,7 +19262,12 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                     out.push_str("    test %rdx, %rdx\n    sete %al\n    movzbq %al, %rax\n");
                 }
                 Ty::Dyn => {
-                    if timestamp::known(e){
+                    if timestamp::scalar_empty(){
+                        cg_value(e,env,sigs,strs,out,target);
+                        out.push_str("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_ts_empty\n    mov %rax, 16(%rsp)\n");
+                        if dyn_expr_owned(e){cg_concat_drop(out,0);}
+                        out.push_str("    mov 16(%rsp), %rax\n    add $32, %rsp\n    cmp $2, %rax\n    je hbc_type_error\n");
+                    }else if timestamp::known(e){
                         cg_value(e,env,sigs,strs,out,target);
                         out.push_str("    cmp $17, %rax\n    jne hbc_type_error\n    test %rdx, %rdx\n    sete %al\n    movzbq %al, %rax\n");
                     }else if DBF_USED.with(|v|v.get()) {

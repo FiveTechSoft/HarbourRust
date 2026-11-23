@@ -69,3 +69,12 @@ struct txt hbc_ts_format(u64 t,const char *df,u64 dn,const char *tf,u64 tn,u64 f
  }
  o=text(n);for(i=0;i<n;i++)o.p[i]=buf[i];return o;
 }
+/* Returns 2 for an unsupported kind, otherwise Harbour scalar Empty. */
+u64 hbc_ts_empty(u64 tag,u64 payload){
+ u64 i,n;const char *p;union {u64 u;double d;} x;
+ if((tag&255)==5){if(tag>>63)x.d=*(const double *)payload;else x.u=payload;return x.d==0.0;}
+ if(tag==1)return 1;
+ if(tag==0||tag==9||tag==3||tag==11||tag==17)return payload==0;
+ if(tag==2||tag==4){p=(const char *)payload;n=((const u64 *)p)[-1];for(i=0;i<n;i++)if(p[i]!=' '&&p[i]!='\t'&&p[i]!='\n'&&p[i]!='\r')return 0;return 1;}
+ return 2;
+}

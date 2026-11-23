@@ -147,3 +147,5 @@ pub(super) fn comparison_helpers(out:&mut String){
   s.push_str(&format!(".Ltscmpold{k}:\n"));*out=out.replace(&format!("{h}:\n"),&s);
  }
 }
+
+pub(super) fn scalar_empty()->bool{active()&&DECIMAL_LOCAL_PROFILE.with(|v|v.get())&&!MACRO_CONTEXT.with(|v|v.get())}

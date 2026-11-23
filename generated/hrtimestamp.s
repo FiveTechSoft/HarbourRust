@@ -987,5 +987,88 @@ hbc_ts_format:
 	movq	$0, 8(%rax)
 	addq	$16, %r8
 	jmp	.Lhtimestamp_155
+	.p2align 4
+	.globl	hbc_ts_empty
+hbc_ts_empty:
+	cmpb	$5, %dil
+	je	.Lhtimestamp_189
+	cmpq	$17, %rdi
+	ja	.Lhtimestamp_185
+	movl	$1, %eax
+	movl	%edi, %ecx
+	salq	%cl, %rax
+	movq	%rax, %r8
+	andl	$133641, %r8d
+	jne	.Lhtimestamp_182
+	testb	$20, %al
+	jne	.Lhtimestamp_183
+	xorl	%r8d, %r8d
+	cmpl	$1, %edi
+	setne	%r8b
+	addq	$1, %r8
+.Lhtimestamp_177:
+	movq	%r8, %rax
+	ret
+	.p2align 4,,10
+	.p2align 3
+.Lhtimestamp_189:
+	movq	%rsi, %xmm0
+	testq	%rdi, %rdi
+	js	.Lhtimestamp_190
+.Lhtimestamp_180:
+	xorl	%r8d, %r8d
+	ucomisd	.Lhtimestamp_C0(%rip), %xmm0
+	movl	$0, %eax
+	setnp	%r8b
+	cmovne	%rax, %r8
+	movq	%r8, %rax
+	ret
+	.p2align 4,,10
+	.p2align 3
+.Lhtimestamp_182:
+	xorl	%r8d, %r8d
+	testq	%rsi, %rsi
+	sete	%r8b
+	movq	%r8, %rax
+	ret
+	.p2align 4,,10
+	.p2align 3
+.Lhtimestamp_190:
+	movsd	(%rsi), %xmm0
+	jmp	.Lhtimestamp_180
+	.p2align 4,,10
+	.p2align 3
+.Lhtimestamp_183:
+	movq	-8(%rsi), %rdx
+	testq	%rdx, %rdx
+	je	.Lhtimestamp_187
+	movabs	$-4294977025, %rcx
+	addq	%rsi, %rdx
+	.p2align 4,,10
+	.p2align 3
+.Lhtimestamp_184:
+	movzbl	(%rsi), %eax
+	cmpb	$32, %al
+	ja	.Lhtimestamp_177
+	btq	%rax, %rcx
+	jc	.Lhtimestamp_177
+	addq	$1, %rsi
+	cmpq	%rdx, %rsi
+	jne	.Lhtimestamp_184
+.Lhtimestamp_187:
+	movl	$1, %r8d
+	movq	%r8, %rax
+	ret
+	.p2align 4,,10
+	.p2align 3
+.Lhtimestamp_185:
+	movl	$2, %r8d
+	movq	%r8, %rax
+	ret
+@HRTIMESTAMP_RODATA@
+	.align 8
+.Lhtimestamp_C0:
+	.long	0
+	.long	0
 
 .text
