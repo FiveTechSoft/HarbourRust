@@ -7,7 +7,9 @@
  *   JAPANESE YYYY/MM/DD (FRENCH shares the BRITISH layout)
  * SET CENTURY ON widens the year to four digits; OFF keeps two. The
  * month/day fields are always two zero-padded digits. The empty date
- * renders as spaces (8, or 10 with century on). DToS never changes.
+ * keeps the separators of the layout with spaces for every digit
+ * (default "  /  /  "; 8 bytes, or 10 with century on), as the Linux and
+ * Windows qout pins of CToD("") show. DToS never changes.
  */
 typedef unsigned long long hrt_u64;
 
@@ -42,9 +44,16 @@ static void hrt_w2(char *p, hrt_u64 v)
 }
 
 /* field k (0 month, 1 day, 2 year) rendered at p; returns the bytes */
-static hrt_u64 hrt_field(char *p, hrt_u64 k, hrt_u64 d, hrt_u64 m, hrt_u64 y)
+static hrt_u64 hrt_field(char *p, hrt_u64 k, hrt_u64 d, hrt_u64 m, hrt_u64 y,
+                         hrt_u64 blank)
 {
     hrt_u64 v;
+    if (blank) {            /* empty date: the field is all spaces */
+        hrt_u64 w = (k == 2 && g_century) ? 4 : 2, j;
+        for (j = 0; j < w; j++)
+            p[j] = ' ';
+        return w;
+    }
     if (k == 0) { hrt_w2(p, m); return 2; }
     if (k == 1) { hrt_w2(p, d); return 2; }
     if (g_century) {
@@ -60,14 +69,8 @@ static hrt_u64 hrt_field(char *p, hrt_u64 k, hrt_u64 d, hrt_u64 m, hrt_u64 y)
 /* rdi = packed date, rsi = buffer (>= 10 bytes) -> rax = the length */
 hrt_u64 hbc_date_core_c(hrt_u64 packed, char *buf)
 {
-    hrt_u64 d, m, y, f1, f2, f3, i;
+    hrt_u64 d, m, y, f1, f2, f3;
     const unsigned char *row;
-    if (!packed) {
-        hrt_u64 n = g_century ? 10 : 8;
-        for (i = 0; i < n; i++)
-            buf[i] = ' ';
-        return n;
-    }
     d = packed % 100;
     m = (packed / 100) % 100;
     y = packed / 10000;
@@ -79,11 +82,12 @@ hrt_u64 hbc_date_core_c(hrt_u64 packed, char *buf)
     f3 = 3 - f1 - f2;
     {
         char *p = buf;
-        p += hrt_field(p, f1, d, m, y);
+        hrt_u64 b = packed ? 0 : 1;
+        p += hrt_field(p, f1, d, m, y, b);
         *p++ = (char)row[1];
-        p += hrt_field(p, f2, d, m, y);
+        p += hrt_field(p, f2, d, m, y, b);
         *p++ = (char)row[3];
-        p += hrt_field(p, f3, d, m, y);
+        p += hrt_field(p, f3, d, m, y, b);
         return (hrt_u64)(p - buf);
     }
 }

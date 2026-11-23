@@ -8,8 +8,11 @@ Windows Harbour 3.2 - no GPL source read):
 - AMERICAN MM/DD/YY, ANSI YYYY.MM.DD, BRITISH/FRENCH DD/MM/YY,
   GERMAN DD.MM.YY, ITALIAN DD-MM-YY, USA MM-DD-YY, JAPANESE YYYY/MM/DD.
 - `SET CENTURY ON` widens the year to four digits; OFF keeps two.
-  The fields are always zero-padded; the empty date renders as spaces
-  (8, or 10 with century on).
+  The fields are always zero-padded; the empty date keeps the layout
+  separators with spaces for every digit (default `  /  /  `; 8 bytes, or 10
+  with century on). The default AMERICAN shape is pinned by the CToD("")
+  qout expectations; the separators of the other formats for an empty date
+  are inferred from that shape, not measured.
 - `DToS` never changes (always YYYYMMDD). The `? Date()` display and
   `DToC` share the same state; the STATE also reaches
   `Transform(date, ...)` through `hbc_dtoc` - the
