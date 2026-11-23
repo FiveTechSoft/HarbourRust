@@ -15,6 +15,7 @@ allowed={'hbc_alloc','hbc_freestr','hbc_dtos','hbc_type_error','hbc_str_f64','hb
 raw=root/'generated/hrjson.raw.s';subprocess.run([cc,*flags,src,'-o',str(raw)],cwd=root,check=True)
 s=raw.read_text();raw.unlink()
 s=re.sub(r'^\s*\.(file|def|ident|type|size)\s+.*\n','',s,flags=re.M)
+s=re.sub(r'^\s*\.section\s+\.note\.[^\n]*\n','',s,flags=re.M)
 s=re.sub(r'\.L([A-Za-z0-9_.$]+)',r'.Lhjson_\1',s)
 s=s.replace('movabsq','movabs')
 # GCC on ELF names mergeable read-only sections differently from MinGW.
