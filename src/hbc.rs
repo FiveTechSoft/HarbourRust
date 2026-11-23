@@ -7864,6 +7864,15 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 }
                 return Ok(Ty::StrOwn);
             }
+            if is_builtin(id,"val") && args.len()==1 && matches!(&args[0],Expr::Var(v) if env.iter().rev().any(|l|l.name==*v&&l.ty==Ty::Dyn)) {
+                // VAL of a dynamic (untyped LOCAL) variable: a string is parsed
+                // like the static case; any other runtime value is the same
+                // catchable Argument error as a statically non-string argument.
+                // Same gate as the other Dyn string consumers.
+                if !DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get()) {return Err(format!("line {}: Dyn string consumers require ordinary Linux without threads or macros in this increment",n));}
+                apply_moves(&args[0],env,sigs,false);
+                return Ok(Ty::F64);
+            }
             if is_builtin(id, "val") {
                 // Clean-room Val, behaviour fitted from the black-box
                 // oracle spec only (val-oracle-spec):
@@ -17403,6 +17412,14 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                 out.push_str("    mov %rax, 48(%rsp)\n    mov %rdx, 56(%rsp)\n    mov (%rsp), %rdi\n    call hbc_freestr\n    mov 48(%rsp), %rax\n    mov 56(%rsp), %rdx\n");
             }
             out.push_str("    add $96, %rsp\n");
+        }
+        Expr::Call(id,args) if is_builtin(id,"val") && args.len()==1 && expr_ty(&args[0],env,sigs)==Ty::Dyn => {
+            let k=fresh_lbl();cg_data_value(&args[0],env,sigs,strs,out,target);
+            out.push_str(&format!("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n    cmp $4, %al\n    jne .Ldval_bad{k}\n    mov %rdx, %rdi\n    mov -8(%rdx), %rsi\n    call hbc_val\n    movsd %xmm0, 16(%rsp)\n    mov %rdi, 24(%rsp)\n"));
+            cg_dyn_stack_release(out,0,false);
+            out.push_str(&format!("    movsd 16(%rsp), %xmm0\n    mov 24(%rsp), %rdi\n    add $32, %rsp\n    jmp .Ldval_end{k}\n.Ldval_bad{k}:\n"));
+            cg_dyn_stack_release(out,0,false);
+            out.push_str(&format!("    add $32, %rsp\n    call hbc_val_arg_error\n    xor %eax, %eax\n    cvtsi2sd %rax, %xmm0\n    mov $655370, %rdi\n.Ldval_end{k}:\n"));
         }
         Expr::Call(id,args) if is_builtin(id,"val") => {
             // Clean-room Val: the result follows the f64 pair convention
