@@ -6633,6 +6633,7 @@ fn aview_candidates(funcs: &[Func], base: &[Sig], strict: bool) -> Vec<Vec<bool>
         let old: Vec<Vec<bool>> = tab.iter().map(|s| s.aview.clone()).collect();
         for (fi,f) in funcs.iter().enumerate() {
             for (pi,p) in f.params.iter().enumerate() {
+                if cell_len::parameter(&f.name,pi){continue;}
                 if old[fi][pi] && !aview_stmts_safe(&f.stmts,p,&tab,strict) { tab[fi].aview[pi] = false; }
             }
         }
@@ -9227,6 +9228,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 if sig_aview[i] {
                     if optional_empty::parameter(id,i) {
                         if matches!(a,Expr::Nil){continue;}
+                        if optional_empty::mutable_parameter(id,i) && !matches!(a,Expr::Var(v) if env.iter().any(|x|x.name==*v&&matches!(x.ty,Ty::DArr|Ty::DArrU))){return Err(format!("line {}: mutable optional array needs a local flat tagged array variable or NIL",n));}
                         if matches!(a,Expr::Var(v) if module_static::current(v).is_some() || is_sarr(v)){return Err(format!("line {}: persistent array sources for optional empty-array views remain outside this increment",n));}
                         if !matches!(a,Expr::Var(v) if env.iter().rev().any(|x|x.name==*v&&matches!(x.ty,Ty::Arr(_)|Ty::DArr|Ty::DArrU|Ty::DArr2|Ty::DArr3|Ty::DArr4|Ty::DArrS|Ty::DArrDyn|Ty::AView))) {
                             return Err(format!("line {}: optional empty-array view takes NIL, an omitted argument or an array variable; dynamic sources, temporaries and by-reference arguments remain outside this increment",n));
@@ -11783,6 +11785,10 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 };
                 if env[kp].moved {
                     return Err(format!("line {}: use of moved value `{}`", n, id));
+                }
+                if env[kp].ty==Ty::AView && optional_empty::mutable_current(){
+                    if !matches!(e,Expr::Int(_)|Expr::Log(_)|Expr::Nil){return Err(format!("line {}: mutable optional array append takes literal scalar values in this increment",n));}
+                    type_expr(e,env,sigs,*n)?;continue;
                 }
                 if env[kp].ty == Ty::Dyn && is_sarr(id) {
                     // S4: `AAdd` on a shared module array (or a local
@@ -17857,8 +17863,8 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                         Ty::DArrDyn | Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::Hash => out.push_str(&format!("    mov -{}(%rbp), %rax\n", var.off - 8)),
                         Ty::AView => {
                             out.push_str(&format!("    mov -{}(%rbp), %rax\n", var.off));
-                            if cell_len::parameter(&CUR_FN.with(|c|c.borrow().clone()),0) {out.push_str("    cmpq $7, (%rax)\n    je hbc_len_error\n");}
-                            out.push_str("    mov 16(%rax), %rax\n");
+                            if cell_len::current(v) {out.push_str("    cmpq $7, (%rax)\n    je hbc_len_error\n");}
+                            if optional_empty::mutable_current(){let k=fresh_lbl();out.push_str(&format!("    cmpq $8, (%rax)\n    jne .Lmutlen{k}\n    mov 8(%rax), %rax\n    mov 8(%rax), %rax\n    jmp .Lmutlendone{k}\n.Lmutlen{k}:\n    mov 16(%rax), %rax\n.Lmutlendone{k}:\n"));}else{out.push_str("    mov 16(%rax), %rax\n");}
                         },
                         Ty::DArrRef | Ty::DArrRef2 => out.push_str(&format!("    mov -{}(%rbp), %rax\n    mov 8(%rax), %rax\n", var.off)),
                         Ty::RefDyn => out.push_str(&format!("    mov -{}(%rbp), %r11\n    @HBC_TAG_KIND@cmpq $8, (%r11)@HBC_TAG_END@\n    jne hbc_len_error\n    mov 8(%r11), %rax\n    mov -8(%rax), %rax\n",var.off)),
@@ -19363,7 +19369,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                         Expr::Var(v) => {
                             let root=env.iter().rev().find(|x|x.name==*v).expect("checked");
                             let slot=aview_scratch();
-                            cg_aview_whole(root,slot,out);
+                            if optional_empty::mutable_parameter(id,ai){optional_empty::emit_mut_argument(root,out);}else{cg_aview_whole(root,slot,out);}
                         }
                         Expr::Index(v,ie) => {
                             let root=env.iter().rev().find(|x|x.name==*v).expect("checked");
@@ -21864,6 +21870,7 @@ fn layout_locals(stmts: &[Stmt], env: &mut Vec<CgLocal>, sigs: &[Sig], frame: &m
                 if let Some(ci) = OBJ_NARROW.with(|m| m.borrow().get(&(CUR_FN.with(|c| c.borrow().clone()), id.clone())).copied()) { t = Ty::Obj(ci); }
                 *frame += size_of(t);
                 env.push(CgLocal { name: id.clone(), ty: t, off: *frame });
+                if t==Ty::AView && optional_empty::selected_local(&CUR_FN.with(|c|c.borrow().clone()),id,stmts){darr_slots.push((*frame,10));}
                 if matches!(t, Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::StrOwn | Ty::Hash | Ty::Dyn | Ty::DArrDyn | Ty::Obj(_)) {
                     darr_slots.push((*frame, if t == Ty::Dyn { 7 } else if t == Ty::Hash { 2 } else if t == Ty::DArr3 { 3 } else if t == Ty::DArr4 { 6 } else if t == Ty::DArrS { 4 } else if t == Ty::StrOwn { 5 } else if t == Ty::DArrDyn { 8 } else if matches!(t, Ty::Obj(_)) { 9 } else { (t == Ty::DArr2) as u8 }));
                     slot_names.insert(*frame, id.clone());
@@ -24962,6 +24969,12 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
             }
             Stmt::AAdd(_, id, e) => {
                 let v = env.iter().find(|v| v.name == *id).expect("checked").clone();
+                if v.ty==Ty::AView && optional_empty::mutable_current(){
+                    cg_expr(e,env,sigs,strs,out,target);
+                    if expr_ty(e,env,sigs)==Ty::I64{cg_i64_tagged(out);}
+                    if expr_ty(e,env,sigs)==Ty::Bool{out.push_str("    mov %rax, %rdx\n    mov $3, %eax\n");}
+                    out.push_str(&format!("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n    mov -{}(%rbp), %rdi\n    cmpq $8, (%rdi)\n    jne hbc_type_error\n    mov 8(%rdi), %rdi\n    mov %rsp, %rdx\n    mov $16, %esi\n    call hbc_aadd\n    add $16, %rsp\n",v.off));continue;
+                }
                 if v.ty == Ty::Dyn && is_sarr(id) {
                     // S4 shared module array: value first (tagged; a
                     // string cloned to owned tag-4, a borrowed Dyn
@@ -26659,7 +26672,7 @@ fn cg_func(f: &Func, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, tar
     // start in the known-empty state even when its declaring branch never
     // runs. Argument copy-in below overwrites the parameter slots.
     for (off, cls) in &darr_slots {
-        if *cls == 9 {
+        if *cls == 9 || *cls == 10 {
             // 8-byte object slot: zero its single word only.
             out.push_str(&format!("    movq $0, -{}(%rbp)\n", off));
         } else {
@@ -26798,6 +26811,9 @@ fn cg_func(f: &Func, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, tar
                     // No classes: tag 13 is impossible, keep the pristine shape.
                     out.push_str(&format!("    @HBC_TAG_KIND@cmpq $4, -{}(%rbp)@HBC_TAG_END@\n    jne .Le8a{}\n    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 91{}f\n    call hbc_freestr\n    jmp 91{}f\n.Le8a{}:\n    @HBC_TAG_KIND@cmpq $8, -{}(%rbp)@HBC_TAG_END@\n    jne 91{}f\n    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 91{}f\n    mov -8(%rdi), %rsi\n    call hbc_dfree\n91{}:\n", off, k7, off - 8, i, i, k7, off, i, off - 8, i, i));
                 }
+            }
+            10 => {
+                let k=fresh_lbl();out.push_str(&format!("    mov -{}(%rbp), %r11\n    test %r11, %r11\n    je .Lmutfree{k}\n    cmpq $1, 24(%r11)\n    jne .Lmutfree{k}\n    mov 8(%r11), %r11\n    mov (%r11), %rdi\n    test %rdi, %rdi\n    je .Lmutfree{k}\n    mov 8(%r11), %rsi\n    call hbc_dfree\n.Lmutfree{k}:\n",off));
             }
             9 => {
                 // Object slot: release the reference (refc 0 recycles the
@@ -38890,7 +38906,7 @@ fn main() {
                     ptys[i] = Ty::AView;
                 }
             }
-            if f.params.iter().enumerate().any(|(i,_)| view[fi].aview[i] && !aview_intent[fi][i] && !optional_empty::parameter(&f.name,i)) {
+            if f.params.iter().enumerate().any(|(i,_)| view[fi].aview[i] && !aview_intent[fi][i] && !optional_empty::parameter(&f.name,i) && !cell_len::parameter(&f.name,i)) {
                 if first_err.is_none() { first_err = Some(format!("array-view parameter of `{}` cannot escape, mutate, be captured, or pass to an unknown/owned route (ains piece 1b)", f.name)); }
             }
             // Parameters enter the frame as owned locals: integer arguments copy,
@@ -39107,7 +39123,7 @@ fn main() {
     // I3 is independent of I1 opt-outs. This recheck collects branch-local
     // types before check_stmts discards their scoped environments.
     vas::classify(&funcs, &sigs, &byref_params, &byref_locals,
-        !no_vas && !llvm && !macho, !prog.externs.is_empty());
+        !no_vas && !llvm && !macho && !optional_empty::any_mutable(), !prog.externs.is_empty());
 
     let procmeta = proc_metadata_needed(&funcs, !externs.is_empty());
     PROC_METADATA_LINES.with(|v|v.set(procmeta));

@@ -120,3 +120,5 @@ tests/val-dyn/*.out -text
 tests/date-aadd/*.out -text
 
 tests/timestamp-phase1/*.out -text
+
+tests/array-alias-a/*.out -text
