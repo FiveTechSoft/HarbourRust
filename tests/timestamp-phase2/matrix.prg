@@ -1,0 +1,21 @@
+FUNCTION Main()
+ LOCAL t:=hb_SToT("20261123101530987"),d:=SToD("20261123")
+ ? "["+hb_DToC(d,"YYYY")+"]"
+ ? "["+hb_DToC(d,"YY")+"]"
+ ? "["+hb_DToC(d,"MM")+"]"
+ ? "["+hb_DToC(d,"DD")+"]"
+ ? "["+hb_DToC(d,"YYYYMMDD")+"]"
+ ? "["+hb_DToC(d,"DDMMYYYY")+"]"
+ ? "["+hb_DToC(d,"MMDDYY")+"]"
+ ? "["+hb_DToC(d,"DD-YYYY-MM")+"]"
+ ? "["+hb_DToC(d,"YYYY_MM_DD")+"]"
+ ? "["+hb_DToC(d,"")+"]"
+ ? "["+hb_TToC(t,"","HH")+"]"
+ ? "["+hb_TToC(t,"","MM")+"]"
+ ? "["+hb_TToC(t,"","SS")+"]"
+ ? "["+hb_TToC(t,"","fff")+"]"
+ ? "["+hb_TToC(t,"","HHMMSSfff")+"]"
+ ? "["+hb_TToC(t,"","SS:MM:HH")+"]"
+ ? "["+hb_TToC(t,"","[HH:MM:SS.fff]")+"]"
+ ? "["+hb_TToC(t,"","")+"]"
+RETURN NIL

@@ -1,0 +1,35 @@
+FUNCTION Choose(x)
+ IF x
+ RETURN hb_SToT("20261123")
+ ENDIF
+RETURN "not timestamp"+Str(1,1)
+FUNCTION Render(x)
+RETURN hb_TToC(x,"YYYY-MM-DD","HH:MM:SS")
+FUNCTION RenderDate(x)
+RETURN hb_DToC(x,"YYYY-MM-DD")
+FUNCTION Main()
+ LOCAL i,e,n:=0
+ FOR i:=1 TO 101
+  BEGIN SEQUENCE
+   Render(Choose(.F.))
+  RECOVER USING e
+   n++
+  END SEQUENCE
+  BEGIN SEQUENCE
+   RenderDate(Choose(.F.))
+  RECOVER USING e
+   n++
+  END SEQUENCE
+  BEGIN SEQUENCE
+   hb_TToC(Choose(.F.),"YYYY-MM-DD","HH:MM:SS")
+  RECOVER USING e
+   n++
+  END SEQUENCE
+  BEGIN SEQUENCE
+   hb_DToC(Choose(.F.),"YYYY-MM-DD")
+  RECOVER USING e
+   n++
+  END SEQUENCE
+ NEXT
+ ? n
+RETURN NIL

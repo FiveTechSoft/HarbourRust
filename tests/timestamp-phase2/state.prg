@@ -1,0 +1,10 @@
+FUNCTION Main()
+ LOCAL t:=hb_SToT("20261123101530987"),d:=SToD("20261123")
+ ? hb_TToC(t),hb_DToC(d)
+ SET DATE BRITISH
+ SET CENTURY ON
+ ? hb_TToC(t),hb_DToC(d),hb_TToC(t,"YY.MM.DD","HH:MM")
+ SET DATE ANSI
+ SET CENTURY OFF
+ ? hb_TToC(t),hb_DToC(d)
+RETURN NIL

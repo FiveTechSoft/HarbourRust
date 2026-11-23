@@ -1,0 +1,4 @@
+FUNCTION Main()
+ LOCAL t:=hb_SToT("20261123101530"),s:="YYYY-MM-DD"
+ ? hb_TToC(t,s)
+RETURN NIL

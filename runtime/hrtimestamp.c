@@ -38,3 +38,34 @@ u64 hbc_ts_render(u64 t,char *out){
  put(out+n,ms/60000%60,2);n+=2;out[n++]=':';put(out+n,ms/1000%60,2);n+=2;
  out[n++]='.';put(out+n,ms%1000,3);return n+3;
 }
+
+/* Own format subset, verified through black-box oracle fixtures. Mask syntax
+ * is checked by the compiler; there is no locale token interpretation here. */
+static char upper(char c){return c>='a'&&c<='z'?(char)(c-32):c;}
+static u64 mask_date(u64 d,const char *f,u64 n,char *p){
+ u64 i=0,j,k,v;
+ while(i<n){char c=upper(f[i]);j=i+1;while(j<n&&upper(f[j])==c)j++;k=j-i;
+  if(c=='Y'||c=='M'||c=='D'){
+   v=c=='Y'?d/10000:(c=='M'?d/100%100:d%100);
+   if(d)put(p+i,v,k);else{u64 z;for(z=i;z<j;z++)p[z]=' ';}
+  }else{u64 z;for(z=i;z<j;z++)p[z]=upper(f[z]);}i=j;
+ }return n;
+}
+static u64 mask_time(u64 ms,const char *f,u64 n,char *p){
+ u64 i=0,j,k,v;
+ while(i<n){char c=upper(f[i]);j=i+1;while(j<n&&upper(f[j])==c)j++;k=j-i;
+  if(c=='H'||c=='M'||c=='S'||c=='F'){
+   v=c=='H'?ms/3600000:(c=='M'?ms/60000%60:(c=='S'?ms/1000%60:ms%1000));put(p+i,v,k);
+  }else{u64 z;for(z=i;z<j;z++)p[z]=upper(f[z]);}i=j;
+ }return n;
+}
+struct txt hbc_ts_format(u64 t,const char *df,u64 dn,const char *tf,u64 tn,u64 flags){
+ char buf[560];u64 n=0,i,d=date(t),ms=(unsigned)t;struct txt o;
+ if(flags&1)n=hbc_date_core_c(d,buf);else n=mask_date(d,df,dn,buf);
+ if(!(flags&4)){
+  if((flags&1)||dn)buf[n++]=' ';
+  if(flags&2){put(buf+n,ms/3600000,2);n+=2;buf[n++]=':';put(buf+n,ms/60000%60,2);n+=2;buf[n++]=':';put(buf+n,ms/1000%60,2);n+=2;buf[n++]='.';put(buf+n,ms%1000,3);n+=3;}
+  else n+=mask_time(ms,tf,tn,buf+n);
+ }
+ o=text(n);for(i=0;i<n;i++)o.p[i]=buf[i];return o;
+}

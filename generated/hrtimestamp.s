@@ -486,5 +486,506 @@ hbc_ts_render:
 	call	hbc_date_from_days
 	movq	%rax, %rdi
 	jmp	.Lhtimestamp_64
+	.p2align 4
+	.globl	hbc_ts_format
+hbc_ts_format:
+	pushq	%r15
+	pushq	%r14
+	pushq	%r13
+	movq	%r8, %r13
+	pushq	%r12
+	movq	%rdx, %r12
+	pushq	%rbp
+	movq	%rcx, %rbp
+	pushq	%rbx
+	movq	%rsi, %rbx
+	subq	$616, %rsp
+	movq	%rdi, 24(%rsp)
+	shrq	$32, %rdi
+	movq	%r9, 8(%rsp)
+	jne	.Lhtimestamp_169
+.Lhtimestamp_73:
+	movq	8(%rsp), %rax
+	movq	%rax, %rsi
+	andl	$4, %esi
+	andl	$1, %eax
+	movq	%rsi, (%rsp)
+	movq	%rax, %r10
+	jne	.Lhtimestamp_74
+	testq	%r12, %r12
+	je	.Lhtimestamp_170
+	movq	%rdi, %rdx
+	movq	%rdi, %r8
+	movq	%rbp, 32(%rsp)
+	leaq	48(%rsp), %r14
+	shrq	$2, %rdx
+	movq	%r13, 40(%rsp)
+	movabs	$2951479051793528259, %rsi
+	movq	%rdx, %rax
+	mulq	%rsi
+	movq	%rdx, %rax
+	shrq	$4, %rdx
+	shrq	$2, %rax
+	movq	%rax, %rcx
+	leaq	(%rax,%rax,4), %rax
+	leaq	(%rax,%rax,4), %rax
+	salq	$2, %rax
+	subq	%rax, %r8
+	movq	%rdx, %rax
+	mulq	%rsi
+	movq	%r8, 16(%rsp)
+	movabs	$-3689348814741910323, %r8
+	movq	%rdx, %rax
+	andq	$-4, %rdx
+	shrq	$2, %rax
+	addq	%rdx, %rax
+	movabs	$3777893186295716171, %rdx
+	leaq	(%rax,%rax,4), %rax
+	salq	$2, %rax
+	subq	%rax, %rcx
+	movq	%rdi, %rax
+	mulq	%rdx
+	movq	%rcx, %r13
+	movq	%rdx, %rax
+	shrq	$11, %rax
+	movq	%rax, %rbp
+	.p2align 4,,10
+	.p2align 3
+.Lhtimestamp_93:
+	movzbl	(%rbx,%r10), %r11d
+	leaq	1(%r10), %r15
+	movl	$1, %r9d
+	movq	%r15, %rcx
+	leal	-97(%r11), %eax
+	leal	-32(%r11), %edx
+	cmpb	$26, %al
+	cmovnb	%r11d, %edx
+	cmpq	%r15, %r12
+	ja	.Lhtimestamp_80
+	jmp	.Lhtimestamp_81
+	.p2align 4,,10
+	.p2align 3
+.Lhtimestamp_83:
+	addq	$1, %rcx
+	cmpq	%rcx, %r12
+	jbe	.Lhtimestamp_167
+.Lhtimestamp_80:
+	movzbl	(%rbx,%rcx), %eax
+	leal	-97(%rax), %r9d
+	leal	-32(%rax), %esi
+	cmpb	$26, %r9b
+	cmovb	%esi, %eax
+	cmpb	%al, %dl
+	je	.Lhtimestamp_83
+.Lhtimestamp_167:
+	movq	%rcx, %r9
+	subq	%r10, %r9
+.Lhtimestamp_81:
+	cmpb	$89, %dl
+	je	.Lhtimestamp_84
+	cmpb	$77, %dl
+	je	.Lhtimestamp_84
+	movq	16(%rsp), %rsi
+	cmpb	$68, %dl
+	jne	.Lhtimestamp_171
+	testq	%rdi, %rdi
+	jne	.Lhtimestamp_88
+.Lhtimestamp_173:
+	leaq	(%r14,%r10), %rax
+	leaq	(%r14,%rcx), %rdx
+	cmpq	%r10, %rcx
+	jbe	.Lhtimestamp_87
+	.p2align 4,,10
+	.p2align 3
+.Lhtimestamp_91:
+	movb	$32, (%rax)
+	addq	$1, %rax
+	cmpq	%rax, %rdx
+	jne	.Lhtimestamp_91
+.Lhtimestamp_87:
+	cmpq	%r12, %rcx
+	jnb	.Lhtimestamp_172
+.Lhtimestamp_120:
+	movq	%rcx, %r10
+	jmp	.Lhtimestamp_93
+	.p2align 4,,10
+	.p2align 3
+.Lhtimestamp_74:
+	leaq	48(%rsp), %r14
+	movq	%r14, %rsi
+	call	hbc_date_core_c
+	cmpq	$0, (%rsp)
+	movq	%rax, %r12
+	jne	.Lhtimestamp_78
+.Lhtimestamp_77:
+	leaq	1(%r12), %rax
+	movb	$32, 48(%rsp,%r12)
+	movq	%rax, (%rsp)
+	leaq	(%r14,%rax), %r9
+.Lhtimestamp_116:
+	movq	8(%rsp), %r8
+	movl	24(%rsp), %ecx
+	andl	$2, %r8d
+	je	.Lhtimestamp_95
+	movq	%rcx, %rax
+	movq	(%rsp), %rbx
+	movabs	$5373003642731685221, %rdx
+	movabs	$-3689348814741910323, %rdi
+	mulq	%rdx
+	movq	%rdx, %rsi
+	shrq	$20, %rsi
+	movq	%rsi, %rax
+	mulq	%rdi
+	shrq	$3, %rdx
+	leaq	(%rdx,%rdx,4), %rax
+	movq	%rdx, %r8
+	addq	%rax, %rax
+	subq	%rax, %rsi
+	leal	48(%rsi), %eax
+	movabs	$314824432191309681, %rsi
+	movb	%al, 49(%rsp,%rbx)
+	movq	%rdx, %rax
+	mulq	%rdi
+	movq	%r8, %rax
+	shrq	$3, %rdx
+	leaq	(%rdx,%rdx,4), %rdx
+	addq	%rdx, %rdx
+	subq	%rdx, %rax
+	movq	%rcx, %rdx
+	addl	$48, %eax
+	shrq	$5, %rdx
+	movb	%al, (%r9)
+	movq	%rdx, %rax
+	mulq	%rsi
+	movb	$58, 50(%rsp,%rbx)
+	movabs	$-8608480567731124087, %rsi
+	movb	$58, 53(%rsp,%rbx)
+	movb	$46, 56(%rsp,%rbx)
+	shrq	$5, %rdx
+	movq	%rdx, %rax
+	movq	%rdx, %r8
+	mulq	%rsi
+	shrq	$5, %rdx
+	movq	%rdx, %r9
+	salq	$4, %r9
+	subq	%rdx, %r9
+	salq	$2, %r9
+	subq	%r9, %r8
+	movq	%r8, %rax
+	movq	%r8, %r10
+	mulq	%rdi
+	movq	%r10, %rax
+	shrq	$3, %rdx
+	leaq	(%rdx,%rdx,4), %r8
+	addl	$48, %edx
+	addq	%r8, %r8
+	movb	%dl, 51(%rsp,%rbx)
+	movq	%rcx, %rdx
+	subq	%r8, %rax
+	shrq	$3, %rdx
+	movabs	$2361183241434822607, %r8
+	addl	$48, %eax
+	movb	%al, 52(%rsp,%rbx)
+	movq	%rdx, %rax
+	mulq	%r8
+	shrq	$4, %rdx
+	movq	%rdx, %rax
+	movq	%rdx, %r8
+	mulq	%rsi
+	movq	%rdx, %rsi
+	shrq	$5, %rsi
+	movq	%rsi, %rax
+	salq	$4, %rax
+	subq	%rsi, %rax
+	movq	%r8, %rsi
+	salq	$2, %rax
+	imulq	$1000, %r8, %r8
+	subq	%rax, %rsi
+	movq	%rsi, %rax
+	mulq	%rdi
+	subq	%r8, %rcx
+	leaq	(%r14,%rbx), %r8
+	shrq	$3, %rdx
+	leaq	(%rdx,%rdx,4), %rax
+	addl	$48, %edx
+	addq	%rax, %rax
+	movb	%dl, 54(%rsp,%rbx)
+	subq	%rax, %rsi
+	leal	48(%rsi), %eax
+	movl	$3, %esi
+	movb	%al, 55(%rsp,%rbx)
+	.p2align 4,,10
+	.p2align 3
+.Lhtimestamp_96:
+	movq	%rcx, %rax
+	subq	$1, %rsi
+	mulq	%rdi
+	shrq	$3, %rdx
+	leaq	(%rdx,%rdx,4), %rax
+	addq	%rax, %rax
+	subq	%rax, %rcx
+	addl	$48, %ecx
+	movb	%cl, 9(%r8,%rsi)
+	movq	%rdx, %rcx
+	testq	%rsi, %rsi
+	jne	.Lhtimestamp_96
+	movq	(%rsp), %r12
+	addq	$12, %r12
+.Lhtimestamp_78:
+	leaq	16(%r12), %rdi
+	call	hbc_alloc
+	movq	%r12, (%rax)
+	leaq	16(%rax), %r8
+	movq	%r12, 8(%rax)
+	testq	%r12, %r12
+	je	.Lhtimestamp_155
+.Lhtimestamp_112:
+	xorl	%edx, %edx
+	.p2align 4,,10
+	.p2align 3
+.Lhtimestamp_113:
+	movzbl	(%r14,%rdx), %ecx
+	movb	%cl, 16(%rax,%rdx)
+	addq	$1, %rdx
+	cmpq	%r12, %rdx
+	jne	.Lhtimestamp_113
+.Lhtimestamp_155:
+	addq	$616, %rsp
+	movq	%r12, %rdx
+	movq	%r8, %rax
+	popq	%rbx
+	popq	%rbp
+	popq	%r12
+	popq	%r13
+	popq	%r14
+	popq	%r15
+	ret
+	.p2align 4,,10
+	.p2align 3
+.Lhtimestamp_84:
+	cmpb	$89, %dl
+	movq	%rbp, %rsi
+	cmovne	%r13, %rsi
+	testq	%rdi, %rdi
+	je	.Lhtimestamp_173
+.Lhtimestamp_88:
+	testq	%r9, %r9
+	je	.Lhtimestamp_87
+	addq	%r14, %r10
+	.p2align 4,,10
+	.p2align 3
+.Lhtimestamp_90:
+	movq	%rsi, %rax
+	subq	$1, %r9
+	mulq	%r8
+	shrq	$3, %rdx
+	leaq	(%rdx,%rdx,4), %rax
+	addq	%rax, %rax
+	subq	%rax, %rsi
+	addl	$48, %esi
+	movb	%sil, (%r10,%r9)
+	movq	%rdx, %rsi
+	testq	%r9, %r9
+	jne	.Lhtimestamp_90
+	cmpq	%r12, %rcx
+	jb	.Lhtimestamp_120
+.Lhtimestamp_172:
+	cmpq	$0, (%rsp)
+	movq	32(%rsp), %rbp
+	movq	40(%rsp), %r13
+	je	.Lhtimestamp_77
+	leaq	16(%r12), %rdi
+	call	hbc_alloc
+	movq	%r12, (%rax)
+	leaq	16(%rax), %r8
+	movq	%r12, 8(%rax)
+	jmp	.Lhtimestamp_112
+	.p2align 4,,10
+	.p2align 3
+.Lhtimestamp_171:
+	cmpq	%r10, %rcx
+	ja	.Lhtimestamp_86
+	jmp	.Lhtimestamp_87
+	.p2align 4,,10
+	.p2align 3
+.Lhtimestamp_174:
+	movzbl	(%rbx,%r15), %r11d
+	addq	$1, %r15
+.Lhtimestamp_86:
+	leal	-97(%r11), %edx
+	leal	-32(%r11), %eax
+	cmpb	$26, %dl
+	cmovb	%eax, %r11d
+	movb	%r11b, (%r14,%r10)
+	movq	%r15, %r10
+	cmpq	%r15, %rcx
+	jne	.Lhtimestamp_174
+	jmp	.Lhtimestamp_87
+.Lhtimestamp_169:
+	subq	$2440588, %rdi
+	call	hbc_date_from_days
+	movq	%rax, %rdi
+	jmp	.Lhtimestamp_73
+.Lhtimestamp_170:
+	cmpq	$0, (%rsp)
+	jne	.Lhtimestamp_175
+	leaq	48(%rsp), %r14
+	movq	%r14, %r9
+	jmp	.Lhtimestamp_116
+.Lhtimestamp_95:
+	testq	%r13, %r13
+	je	.Lhtimestamp_111
+	movabs	$2361183241434822607, %rsi
+	movq	%rcx, %rdx
+	movq	%rcx, %rbx
+	movabs	$-8608480567731124087, %rdi
+	movabs	$-3689348814741910323, %r10
+	shrq	$3, %rdx
+	movq	%rdx, %rax
+	mulq	%rsi
+	movq	%rdx, %rax
+	movq	%rdx, %rsi
+	shrq	$4, %rax
+	shrq	$4, %rsi
+	imulq	$1000, %rax, %rax
+	subq	%rax, %rbx
+	movq	%rsi, %rax
+	mulq	%rdi
+	movq	%rbx, 16(%rsp)
+	shrq	$5, %rdx
+	movq	%rdx, %rax
+	salq	$4, %rax
+	subq	%rdx, %rax
+	movq	%rcx, %rdx
+	salq	$2, %rax
+	shrq	$5, %rdx
+	subq	%rax, %rsi
+	movq	%rdx, %rax
+	movq	%rsi, %r11
+	movabs	$314824432191309681, %rsi
+	mulq	%rsi
+	movq	%rdx, %rsi
+	shrq	$5, %rsi
+	movq	%rsi, %rax
+	mulq	%rdi
+	shrq	$5, %rdx
+	movq	%rdx, %rax
+	salq	$4, %rax
+	subq	%rdx, %rax
+	movabs	$5373003642731685221, %rdx
+	salq	$2, %rax
+	subq	%rax, %rsi
+	movq	%rcx, %rax
+	mulq	%rdx
+	movq	%rsi, %r15
+	shrq	$20, %rdx
+	movq	%rdx, 8(%rsp)
+	.p2align 4,,10
+	.p2align 3
+.Lhtimestamp_110:
+	movzbl	0(%rbp,%r8), %edx
+	leaq	1(%r8), %rdi
+	movl	$1, %esi
+	movq	%rdi, %rcx
+	leal	-97(%rdx), %eax
+	leal	-32(%rdx), %ebx
+	cmpb	$26, %al
+	cmovnb	%edx, %ebx
+	cmpq	%rdi, %r13
+	ja	.Lhtimestamp_99
+	jmp	.Lhtimestamp_100
+	.p2align 4,,10
+	.p2align 3
+.Lhtimestamp_102:
+	addq	$1, %rcx
+	cmpq	%rcx, %r13
+	jbe	.Lhtimestamp_168
+.Lhtimestamp_99:
+	movzbl	0(%rbp,%rcx), %eax
+	leal	-97(%rax), %r12d
+	leal	-32(%rax), %esi
+	cmpb	$26, %r12b
+	cmovb	%esi, %eax
+	cmpb	%al, %bl
+	je	.Lhtimestamp_102
+.Lhtimestamp_168:
+	movq	%rcx, %rsi
+	subq	%r8, %rsi
+.Lhtimestamp_100:
+	cmpb	$72, %bl
+	je	.Lhtimestamp_103
+	cmpb	$77, %bl
+	je	.Lhtimestamp_103
+	cmpb	$83, %bl
+	je	.Lhtimestamp_104
+	cmpb	$70, %bl
+	je	.Lhtimestamp_104
+	cmpq	%rcx, %r8
+	jb	.Lhtimestamp_105
+	jmp	.Lhtimestamp_106
+	.p2align 4,,10
+	.p2align 3
+.Lhtimestamp_176:
+	movzbl	0(%rbp,%rdi), %edx
+	addq	$1, %rdi
+.Lhtimestamp_105:
+	leal	-97(%rdx), %esi
+	leal	-32(%rdx), %eax
+	cmpb	$26, %sil
+	cmovb	%eax, %edx
+	movb	%dl, (%r9,%r8)
+	movq	%rdi, %r8
+	cmpq	%rdi, %rcx
+	jne	.Lhtimestamp_176
+.Lhtimestamp_106:
+	cmpq	%rcx, %r13
+	jbe	.Lhtimestamp_111
+.Lhtimestamp_124:
+	movq	%rcx, %r8
+	jmp	.Lhtimestamp_110
+	.p2align 4,,10
+	.p2align 3
+.Lhtimestamp_104:
+	movq	16(%rsp), %rdi
+	cmpb	$83, %bl
+	cmove	%r11, %rdi
+.Lhtimestamp_107:
+	addq	%r9, %r8
+	testq	%rsi, %rsi
+	je	.Lhtimestamp_106
+	.p2align 4,,10
+	.p2align 3
+.Lhtimestamp_108:
+	movq	%rdi, %rax
+	subq	$1, %rsi
+	mulq	%r10
+	shrq	$3, %rdx
+	leaq	(%rdx,%rdx,4), %rax
+	addq	%rax, %rax
+	subq	%rax, %rdi
+	addl	$48, %edi
+	movb	%dil, (%r8,%rsi)
+	movq	%rdx, %rdi
+	testq	%rsi, %rsi
+	jne	.Lhtimestamp_108
+	cmpq	%rcx, %r13
+	ja	.Lhtimestamp_124
+.Lhtimestamp_111:
+	movq	(%rsp), %r12
+	addq	%r13, %r12
+	jmp	.Lhtimestamp_78
+.Lhtimestamp_103:
+	movq	8(%rsp), %rdi
+	cmpb	$72, %bl
+	cmovne	%r15, %rdi
+	jmp	.Lhtimestamp_107
+.Lhtimestamp_175:
+	movl	$16, %edi
+	call	hbc_alloc
+	movq	%rax, %r8
+	movq	$0, (%rax)
+	movq	$0, 8(%rax)
+	addq	$16, %r8
+	jmp	.Lhtimestamp_155
 
 .text

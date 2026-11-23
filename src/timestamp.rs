@@ -1,14 +1,15 @@
 // Own MIT. Bounded scalar timestamp integration; tag16 remains shared arrays.
 use super::*;
 
-pub(super) fn family(id:&str)->bool { ["hb_stot","hb_ttos","hb_ttod","hb_dtot","hb_isdatetime","hb_istimestamp"].iter().any(|b|is_builtin(id,b)) }
+pub(super) fn family(id:&str)->bool { ["hb_stot","hb_ttos","hb_ttod","hb_dtot","hb_isdatetime","hb_istimestamp","hb_ttoc","hb_dtoc"].iter().any(|b|is_builtin(id,b)) }
 pub(super) fn result(id:&str)->Option<Ty>{
  if is_builtin(id,"hb_stot")||is_builtin(id,"hb_dtot"){Some(Ty::Dyn)}
- else if is_builtin(id,"hb_ttos"){Some(Ty::StrOwn)}
+ else if is_builtin(id,"hb_ttos")||is_builtin(id,"hb_ttoc")||is_builtin(id,"hb_dtoc"){Some(Ty::StrOwn)}
  else if is_builtin(id,"hb_ttod"){Some(Ty::Date)}
  else if is_builtin(id,"hb_isdatetime")||is_builtin(id,"hb_istimestamp"){Some(Ty::Bool)}else{None}
 }
 pub(super) fn check(id:&str,args:&[Expr],env:&mut [Local],sigs:&mut Vec<Sig>,n:usize)->Result<Ty,String>{
+ if format_builtin(id){return check_format(id,args,env,sigs,n);}
  if args.len()!=1{return Err(format!("line {}: {} takes exactly one argument in timestamp phase 1",n,id));}
  if !DECIMAL_LOCAL_PROFILE.with(|v|v.get())||MACRO_CONTEXT.with(|v|v.get()){return Err(format!("line {}: timestamp phase 1 requires ordinary Linux without threads or macros",n));}
  let t=type_expr(&args[0],env,sigs,n)?;
@@ -18,6 +19,7 @@ pub(super) fn check(id:&str,args:&[Expr],env:&mut [Local],sigs:&mut Vec<Sig>,n:u
  Ok(result(id).unwrap())
 }
 pub(super) fn emit(id:&str,args:&[Expr],env:&[CgLocal],sigs:&[Sig],strs:&mut Vec<String>,out:&mut String,target:Target){
+ if format_builtin(id){emit_format(id,args,env,sigs,strs,out,target);return;}
  let e=&args[0];let t=expr_ty(e,env,sigs);cg_value(e,env,sigs,strs,out,target);
  if is_builtin(id,"hb_isdatetime")||is_builtin(id,"hb_istimestamp"){
   let release=t==Ty::Dyn&&dyn_expr_owned(e);
@@ -95,3 +97,34 @@ hbc_ts_print:
     leave
     ret
 "#;
+
+fn format_builtin(id:&str)->bool{is_builtin(id,"hb_ttoc")||is_builtin(id,"hb_dtoc")}
+fn valid_mask(s:&str,time:bool)->bool{
+ if s.len()>128||(!time&&s.len()>10)||!s.is_ascii(){return false;}
+ let b=s.as_bytes();let mut i=0;let mut seen=std::collections::HashSet::new();
+ while i<b.len(){let c=b[i].to_ascii_uppercase();let mut j=i+1;while j<b.len()&&b[j].to_ascii_uppercase()==c{j+=1;}let n=j-i;
+ let ok=if time{match c{b'H'|b'M'|b'S'=>n==2,b'F'=>n==3,b'A'..=b'Z'=>false,_=>true}}else{match c{b'Y'=>n==2||n==4,b'M'|b'D'=>n==2,b'A'..=b'Z'=>false,_=>true}};
+ if !ok{return false;}if c.is_ascii_alphabetic()&&!seen.insert(c){return false;}i=j;}true
+}
+fn check_format(id:&str,args:&[Expr],env:&mut [Local],sigs:&mut Vec<Sig>,n:usize)->Result<Ty,String>{
+ let max=if is_builtin(id,"hb_dtoc"){2}else{3};
+ if args.is_empty()||args.len()>max{return Err(format!("line {}: {} takes 1..{} arguments",n,id,max));}
+ if !DECIMAL_LOCAL_PROFILE.with(|v|v.get())||MACRO_CONTEXT.with(|v|v.get()){return Err(format!("line {}: timestamp formats require ordinary Linux",n));}
+ let t=type_expr(&args[0],env,sigs,n)?;
+ if !matches!(t,Ty::Date|Ty::Dyn){return Err(format!("line {}: {} expects date/timestamp",n,id));}
+ for(i,a)in args.iter().enumerate().skip(1){if !matches!(a,Expr::Str(s) if valid_mask(s,i==2)){return Err(format!("line {}: timestamp format subset requires literal ASCII masks <=128 bytes; date YYYY/YY MM DD, time HH MM SS fff, punctuation only",n));}}
+ Ok(Ty::StrOwn)
+}
+fn emit_format(id:&str,args:&[Expr],env:&[CgLocal],sigs:&[Sig],strs:&mut Vec<String>,out:&mut String,target:Target){
+ let e=&args[0];let t=expr_ty(e,env,sigs);cg_value(e,env,sigs,strs,out,target);
+ if t==Ty::Date{out.push_str("    mov %rax, %rdi\n    call hbc_ts_from_date\n");}
+ else{let k=fresh_lbl();out.push_str(&format!("    cmp $11, %rax\n    jne .Ltsfmtstamp{k}\n    mov %rdx, %rdi\n    call hbc_ts_from_date\n    jmp .Ltsfmtready{k}\n.Ltsfmtstamp{k}:\n    cmp $17, %rax\n    je .Ltsfmtvalid{k}\n"));
+ if dyn_expr_owned(e){out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");cg_concat_drop(out,0);out.push_str("    add $16, %rsp\n");}
+ out.push_str(&format!("    jmp hbc_type_error\n.Ltsfmtvalid{k}:\n    mov %rdx, %rax\n.Ltsfmtready{k}:\n"));}
+ out.push_str("    sub $48, %rsp\n    mov %rax, (%rsp)\n");
+ let mut flags=0;
+ if let Some(df)=args.get(1){cg_value(df,env,sigs,strs,out,target);out.push_str("    mov %rax, 8(%rsp)\n    mov %rdx, 16(%rsp)\n");}else{flags|=1;out.push_str("    movq $0, 8(%rsp)\n    movq $0, 16(%rsp)\n");}
+ if let Some(tf)=args.get(2){cg_value(tf,env,sigs,strs,out,target);out.push_str("    mov %rax, 24(%rsp)\n    mov %rdx, 32(%rsp)\n");}else{flags|=2;out.push_str("    movq $0, 24(%rsp)\n    movq $0, 32(%rsp)\n");}
+ if is_builtin(id,"hb_dtoc"){flags|=4;}
+ out.push_str(&format!("    mov (%rsp), %rdi\n    mov 8(%rsp), %rsi\n    mov 16(%rsp), %rdx\n    mov 24(%rsp), %rcx\n    mov 32(%rsp), %r8\n    mov ${flags}, %r9d\n    call hbc_ts_format\n    add $48, %rsp\n"));
+}
