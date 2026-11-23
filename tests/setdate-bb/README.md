@@ -9,10 +9,8 @@ Windows Harbour 3.2 - no GPL source read):
   GERMAN DD.MM.YY, ITALIAN DD-MM-YY, USA MM-DD-YY, JAPANESE YYYY/MM/DD.
 - `SET CENTURY ON` widens the year to four digits; OFF keeps two.
   The fields are always zero-padded; the empty date keeps the layout
-  separators with spaces for every digit (default `  /  /  `; 8 bytes, or 10
-  with century on). The default AMERICAN shape is pinned by the CToD("")
-  qout expectations; the separators of the other formats for an empty date
-  are inferred from that shape, not measured.
+  and blanks every digit position ("  /  /  ", "    .  .  " with
+  century on). DToS of the empty date is 8 spaces.
 - `DToS` never changes (always YYYYMMDD). The `? Date()` display and
   `DToC` share the same state; the STATE also reaches
   `Transform(date, ...)` through `hbc_dtoc` - the
@@ -36,6 +34,11 @@ checks SET CENTURY ON/OFF and SET DATE without a later date-render call.
 The blob must be included for those entry points too. Their empty outputs
 are regression expectations, not new Harbour measurements. Linux checks
 normal/instrumented and external-as paths; Windows execution is unverified.
+
+`programs/setdate_empty.prg` renders the empty date in every SET DATE
+layout, century off and on. Its `.windows.out` is a Harbour 3.2
+measurement (mingw64, -gtcgi, native Windows 11, November 23, 2026);
+the `.linux.out` has the same bytes with LF line ends.
 
 The two original oracle programs above contain `Date()` and their pins
 record November 23, 2026. They are not registered as timeless manifest
