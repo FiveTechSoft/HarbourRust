@@ -65,16 +65,19 @@ hrdbf_error hrdbf_get(const hrdbf_area *a,unsigned n,hrdbf_value *v){
  return HRDBF_OK;
 }
 hrdbf_error hrdbf_deleted(const hrdbf_area *a,unsigned char *v){if(!a->open)return HRDBF_CLOSED;*v=a->recno<=a->count&&a->bytes[a->header+(size_t)(a->recno-1)*a->record]=='*';return HRDBF_OK;}
+/* The candidate area holds HRDBF_MAX_FIELDS descriptors (about 32 KiB):
+ * static storage, so no frame needs a stack probe (__chkstk is not
+ * linked). File scope with the hrdbf_ prefix: the blob generators keep
+ * that symbol name as is. */
+static hrdbf_area hrdbf_open_tmp;
 /* No loop distribution: the descriptor copy below must not become a
  * memcpy call (the blobs link no libc). */
 __attribute__((optimize("no-tree-loop-distribute-patterns")))
 hrdbf_error hrdbf_open(hrdbf_area *a,const unsigned char *b,size_t size){
- /* The candidate area holds HRDBF_MAX_FIELDS descriptors (about 32 KiB):
-  * static, so no frame needs a stack probe (__chkstk is not linked). */
- static hrdbf_area tmp;
+ hrdbf_area *const t=&hrdbf_open_tmp;
  size_t i,end,pos=32;unsigned off=1,j,k,terminated=0;hrdbf_value val;hrdbf_error err;
- a->diag[0]=0;tmp.diag[0]=0;
- hrdbf_close(a);hrdbf_close(&tmp);
+ a->diag[0]=0;t->diag[0]=0;
+ hrdbf_close(a);hrdbf_close(t);
  a->diag[0]=0;
  if(size<33){dset(a,"file has fewer than the 33 header bytes");return HRDBF_FORMAT;}
  if(b[0]!=3){dset(a,"version byte 0x");dhex(a,b[0]);dcat(a," is not 0x03 (dBASE III table without memo; 0x83/0xF5 carry a memo file)");return HRDBF_VERSION;}
@@ -83,18 +86,18 @@ hrdbf_error hrdbf_open(hrdbf_area *a,const unsigned char *b,size_t size){
   * flag for its M_CLIE.cdx). Read-only acceptance: no byte of these flags is
   * ever written back, and no structural index or codepage conversion is
   * derived from them. Bytes are preserved as read; no conversion promise. */
- tmp.header=u16(b+8);tmp.record=u16(b+10);tmp.count=u32(b+4);
- if(tmp.header<33||tmp.header>size||!tmp.record){
-  dset(a,"implausible header length ");ddec(a,tmp.header);dcat(a," or record length ");ddec(a,tmp.record);dcat(a," for file size ");ddec(a,size);return HRDBF_FORMAT;}
- while(pos<tmp.header){
+ t->header=u16(b+8);t->record=u16(b+10);t->count=u32(b+4);
+ if(t->header<33||t->header>size||!t->record){
+  dset(a,"implausible header length ");ddec(a,t->header);dcat(a," or record length ");ddec(a,t->record);dcat(a," for file size ");ddec(a,size);return HRDBF_FORMAT;}
+ while(pos<t->header){
   hrdbf_field *f;
   if(b[pos]==13){terminated=1;pos++;break;}
-  if(tmp.header-pos<32){dset(a,"field descriptor ");ddec(a,tmp.nfields+1);dcat(a," truncated before end of header");return HRDBF_FORMAT;}
-  if(tmp.nfields==HRDBF_MAX_FIELDS){dset(a,"more than 2046 field descriptors");return HRDBF_LIMIT;}
-  f=&tmp.fields[tmp.nfields++];
+  if(t->header-pos<32){dset(a,"field descriptor ");ddec(a,t->nfields+1);dcat(a," truncated before end of header");return HRDBF_FORMAT;}
+  if(t->nfields==HRDBF_MAX_FIELDS){dset(a,"more than 2046 field descriptors");return HRDBF_LIMIT;}
+  f=&t->fields[t->nfields++];
   for(j=0;j<11;j++)f->name[j]=b[pos+j];
-  if(!f->name[0]){dset(a,"field descriptor ");ddec(a,tmp.nfields);dcat(a," has an empty name");return HRDBF_FORMAT;}
-  for(j=0;j+1<tmp.nfields;j++){for(k=0;k<11&&tmp.fields[j].name[k]==f->name[k];k++);if(k==11){dset(a,"duplicate field name '");dname(a,f->name);dcat(a,"'");return HRDBF_FORMAT;}}
+  if(!f->name[0]){dset(a,"field descriptor ");ddec(a,t->nfields);dcat(a," has an empty name");return HRDBF_FORMAT;}
+  for(j=0;j+1<t->nfields;j++){for(k=0;k<11&&t->fields[j].name[k]==f->name[k];k++);if(k==11){dset(a,"duplicate field name '");dname(a,f->name);dcat(a,"'");return HRDBF_FORMAT;}}
   f->type=b[pos+11];f->width=b[pos+16];f->decimals=b[pos+17];f->offset=(uint16_t)off;
   if(!f->width){dset(a,"field '");dname(a,f->name);dcat(a,"' has zero width");return HRDBF_FORMAT;}
   if(f->type=='C'){if(f->decimals){dset(a,"C field '");dname(a,f->name);dcat(a,"' declares decimals");return HRDBF_TYPE;}}
@@ -105,33 +108,33 @@ hrdbf_error hrdbf_open(hrdbf_area *a,const unsigned char *b,size_t size){
   off+=f->width;if(off>65535){dset(a,"field widths exceed the 65535 record limit");return HRDBF_LIMIT;}pos+=32;
  }
  if(!terminated){dset(a,"field descriptors not terminated by 0x0D");return HRDBF_FORMAT;}
- if(!tmp.nfields){dset(a,"table declares no fields");return HRDBF_FORMAT;}
- if(off!=tmp.record){dset(a,"field widths plus delete flag sum to ");ddec(a,off);dcat(a," but header record length is ");ddec(a,tmp.record);return HRDBF_FORMAT;}
- while(pos<tmp.header)if(b[pos++]){dset(a,"nonzero byte between field descriptors and header end");return HRDBF_FORMAT;}
- if(tmp.count>(size-tmp.header)/tmp.record){dset(a,"header record count ");ddec(a,tmp.count);dcat(a," exceeds the ");ddec(a,(size-tmp.header)/tmp.record);dcat(a," records physically present");return HRDBF_FORMAT;}
- end=tmp.header+(size_t)tmp.count*tmp.record;
+ if(!t->nfields){dset(a,"table declares no fields");return HRDBF_FORMAT;}
+ if(off!=t->record){dset(a,"field widths plus delete flag sum to ");ddec(a,off);dcat(a," but header record length is ");ddec(a,t->record);return HRDBF_FORMAT;}
+ while(pos<t->header)if(b[pos++]){dset(a,"nonzero byte between field descriptors and header end");return HRDBF_FORMAT;}
+ if(t->count>(size-t->header)/t->record){dset(a,"header record count ");ddec(a,t->count);dcat(a," exceeds the ");ddec(a,(size-t->header)/t->record);dcat(a," records physically present");return HRDBF_FORMAT;}
+ end=t->header+(size_t)t->count*t->record;
  if(end!=size&&(size-end!=1||b[end]!=26)){dset(a,"unexpected trailing bytes after the last record (no 0x1A terminator)");return HRDBF_FORMAT;}
- tmp.bytes=b;tmp.size=size;tmp.open=1;hrdbf_top(&tmp);
+ t->bytes=b;t->size=size;t->open=1;hrdbf_top(t);
  /* Fail closed before exposing a cursor on malformed records. */
- for(i=0;i<tmp.count;i++){
-  unsigned char mark=b[tmp.header+i*tmp.record];
+ for(i=0;i<t->count;i++){
+  unsigned char mark=b[t->header+i*t->record];
   if(mark!=' '&&mark!='*'){dset(a,"record ");ddec(a,i+1);dcat(a," has delete flag 0x");dhex(a,mark);dcat(a," (expected space or '*')");return HRDBF_DATA;}
-  tmp.recno=i+1;for(j=1;j<=tmp.nfields;j++){err=hrdbf_get(&tmp,j,&val);if(err){
-   dset(a,"record ");ddec(a,i+1);dcat(a," field '");dname(a,tmp.fields[j-1].name);
+  t->recno=i+1;for(j=1;j<=t->nfields;j++){err=hrdbf_get(t,j,&val);if(err){
+   dset(a,"record ");ddec(a,i+1);dcat(a," field '");dname(a,t->fields[j-1].name);
    dcat(a,err==HRDBF_LIMIT?"' numeric content overflows int64":"' content is not valid for its type");
-   if(tmp.fields[j-1].type=='L')dcat(a," (logical byte must be T/F/Y/N/?/space)");
+   if(t->fields[j-1].type=='L')dcat(a," (logical byte must be T/F/Y/N/?/space)");
    if(mark=='*')dcat(a," inside a deleted record");
    return err;}}
  }
- hrdbf_top(&tmp);
+ hrdbf_top(t);
  /* Member copy: a whole-struct assignment of about 32 KiB is a memcpy. */
- a->bytes=tmp.bytes;a->size=tmp.size;a->count=tmp.count;a->recno=tmp.recno;
- a->header=tmp.header;a->record=tmp.record;a->nfields=tmp.nfields;
- a->bof=tmp.bof;a->eof=tmp.eof;
- for(j=0;j<tmp.nfields;j++){
-  for(k=0;k<11;k++)a->fields[j].name[k]=tmp.fields[j].name[k];
-  a->fields[j].type=tmp.fields[j].type;a->fields[j].width=tmp.fields[j].width;
-  a->fields[j].decimals=tmp.fields[j].decimals;a->fields[j].offset=tmp.fields[j].offset;
+ a->bytes=t->bytes;a->size=t->size;a->count=t->count;a->recno=t->recno;
+ a->header=t->header;a->record=t->record;a->nfields=t->nfields;
+ a->bof=t->bof;a->eof=t->eof;
+ for(j=0;j<t->nfields;j++){
+  for(k=0;k<11;k++)a->fields[j].name[k]=t->fields[j].name[k];
+  a->fields[j].type=t->fields[j].type;a->fields[j].width=t->fields[j].width;
+  a->fields[j].decimals=t->fields[j].decimals;a->fields[j].offset=t->fields[j].offset;
  }
  a->diag[0]=0;a->open=1;return HRDBF_OK;
 }
