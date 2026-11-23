@@ -4082,3 +4082,63 @@ assembly is unchanged.
 
 
 Parameters without type evidence (Julio Ponce, MIT): programs whose parameters have no body or call-site evidence now compile with a tagged slot; the S4 guard keeps the shared module array out. `tests/manifest.txt` row of `module-static-array/negative/call_arg.prg` now expects the S4 diagnostic. See `tests/param-no-evidence/README.md`.
+
+## Battery known failures recorded on 2026-11-23 (Linux subset, aarch64 host)
+
+Recorded while the Linux-only subset of the battery was being run (aarch64
+host; x86-64 output cannot execute natively here, so the 1308-row
+positive/execution set stays unverified; run the normal runner on an
+x86-64 host to complete it). The 13 cases below fail the plain battery
+`neg` check on the current tree; none is a fresh rejection regression by
+this compiler. The PE compile-only gate with this fresh binary is 0 FAIL
+(1909 PASS / 22 known-mismatches, exact run against commit 89c00e3f): all 13
+are diagnostic-contract, Linux-only-gate or PE-known-mismatch changes, not
+assembly defects.
+
+Four `neg` rows are stale on Linux only; Linux now
+compiles them (Windows still rejects, with a message matching the
+manifest substring). The Windows diagnostic matches the manifest substring:
+
+| Case | Manifest expects (both targets) | Linux today | Windows today |
+| --- | --- | --- | --- |
+| tests/t436_neg_darrs_arg_moved.prg | use of moved value `a` | compiles (2 functions) | rejects: same message |
+| tests/t988_inline_if_dyn_limit_neg.prg | "branches must share a scalar type" | compiles | rejects: same substring |
+| tests/t1068_minmax_mixed_neg.prg | "needs matching integer, float or logical arguments" | compiles | rejects: same substring |
+| tests/t1691_iif_mixed_neg_dynvar.prg | "branches must share a scalar type" | compiles | rejects: same substring |
+
+The Windows rejections read, verbatim: "`iif` branches must share a scalar type
+(float absorbs an int side), got Dyn and Dyn" (t988), "`min` needs matching
+integer, float or logical arguments; mixed numeric/Dyn/other types are not in
+this increment" (t1068), "`iif` branches must share a scalar type (float absorbs
+an int side), got Dyn and I64" (t1691) and "use of moved value `a` (heap values -
+strings and dynamic arrays - move on assignment, call or return; they do not
+copy)" (t436) - all matching the manifest substring. The Linux relaxations
+correspond to the recent Linux-only gates in main (CTOD untyped LOCAL, VAL
+Dyn local, argument-count tracking); the full cause of each relaxation is a
+maintainer audit, not this note. NOT re-pinned yet: the maintainer owns
+changing the manifest contract; do not edit these rows without an audit.
+
+Nine `neg` rows are the known-mismatch PE CurDir debt (same source state as
+the known-mismatches file). Linux rejects with the manifest substring;
+Windows rejects with "CurDir is measured only on the ordinary Linux backend
+in this increment", which is the PE debt recorded for the PE gate
+(`tests/ci/pe-known-mismatches.json`, base f70407f1d3) - recorded as known
+mismatches for the PE gate only, not for the battery:
+
+| Case | Windows diagnostic |
+| --- | --- |
+| tests/t1634_curdir_neg_extra.prg | CurDir is measured only on the ordinary Linux backend |
+| tests/t1635_curdir_neg_number.prg | same |
+| tests/t1636_curdir_neg_logical.prg | same |
+| tests/t1637_curdir_neg_variable.prg | same |
+| tests/t1638_curdir_neg_effect.prg | same |
+| tests/t1639_curdir_neg_array.prg | same |
+| tests/t1640_curdir_neg_function.prg | same |
+| tests/t1641_curdir_neg_dead.prg | same |
+| tests/t1642_curdir_neg_byref.prg | same |
+
+Neither bucket is re-pinned here. Remaining steps: (a) the maintainer decides
+whether the four Linux-stale rows change the manifest or the Linux gate,
+(b) the 9 CurDir rows either get battery-level known-mismatch treatment or
+stay as named debt, and (c) the full positive battery runs on an x86-64 host
+(or Wine stack) so the 1308-row positive/execution set is checked.
