@@ -38,6 +38,11 @@ builds isolated copies, and compares deterministic alignment/control-flow
 fixtures for ELF and PE. Only PE timestamp and its checksum are normalized.
 The detailed review records measured timings and the execution evidence.
 
+Branch padding (`docs/HASM-BRANCH-ALIGN-2026-11-21.md`, 21 November)
+only adds bytes before jumps, so these lower bounds still hold. The
+paired-output check runs with `HASM_BRANCH_ALIGN=0`, since its baseline
+predates padding.
+
 Limits: this is a conservative filter, not a new optimal-layout algorithm
 or a guarantee of linear-time assembly. Some far branches remain unproved;
 symbolic instruction-size inputs retain the old cost. Compilation timing
