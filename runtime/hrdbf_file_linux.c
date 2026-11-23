@@ -54,7 +54,7 @@ hrdbf_error hrdbf_file_open(hrdbf_file *f,const char *path,int writable){
  fd=open_dbf(path,writable==1);if(fd<0){ferr(f,"OS open failed (missing file, permission or sharing conflict)",fd);return HRDBF_IO;}
  n=syscall3(8,fd,0,2);if(n<0){ferr(f,"OS seek failed",n);err=HRDBF_IO;goto closefd;}
  if(n<33){fset(f,"file has fewer than the 33 header bytes");err=HRDBF_FORMAT;goto closefd;}
- if(n>HRDBF_MAX_BYTES){fset(f,"file size ");fdec(f,(uint64_t)n);fcat(f," exceeds the 64 MiB limit");err=HRDBF_LIMIT;goto closefd;}
+ if(n>HRDBF_MAX_BYTES){fset(f,"file size ");fdec(f,(uint64_t)n);fcat(f," exceeds the 1 GiB limit");err=HRDBF_LIMIT;goto closefd;}
  if(syscall3(8,fd,0,0)<0){fset(f,"OS seek failed");err=HRDBF_IO;goto closefd;}
  f->size=(size_t)n;f->owned=allocate(f->size);if(!f->owned){f->size=0;fset(f,"out of memory snapshotting the file");err=HRDBF_MEMORY;goto closefd;}
  while(pos<f->size){r=syscall3(0,fd,(long)(f->owned+pos),f->size-pos);if(r==-4)continue;if(r<=0){ferr(f,"OS read failed",r);err=HRDBF_IO;goto closefd;}pos+=(size_t)r;}

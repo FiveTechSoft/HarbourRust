@@ -3,7 +3,10 @@
 #define HRDBF_H
 #include <stddef.h>
 #include <stdint.h>
-#define HRDBF_MAX_FIELDS 128
+/* 2046 descriptors fill the 16-bit header length (32 + 2046*32 + 1 bytes);
+ * real Harbour 3.2 creates and opens 2046 fields and refuses 2047
+ * (measured). */
+#define HRDBF_MAX_FIELDS 2046
 /* All byte slices borrow the input buffer. The caller keeps it alive and
  * immutable until close. No allocation, file I/O, locale or libc dependency. */
 typedef enum { HRDBF_OK,HRDBF_FORMAT,HRDBF_VERSION,HRDBF_TYPE,HRDBF_LIMIT,

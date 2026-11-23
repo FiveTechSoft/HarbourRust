@@ -59,7 +59,9 @@ zero. Unsupported consumers fail explicitly rather than truncate values.
 
 The adapter opens read-only with close-on-exec, reads an owned snapshot, then
 closes the file descriptor before exposing the area. Maximum file size is
-64 MiB; maximum field count is 128; numeric precision is limited by the scaled
+1 GiB (the whole table is held in memory); maximum field count is 2046, the
+most a 16-bit header length holds and the most real Harbour 3.2 creates
+(measured: 2047 is refused); numeric precision is limited by the scaled
 int64 representation and at most 17 decimals. Close, reopen and error paths
 release the snapshot. There is no locking or consistency guarantee against a
 concurrent writer during the read. Malformed/unsupported input is rejected

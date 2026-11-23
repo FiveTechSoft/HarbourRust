@@ -65,8 +65,14 @@ hrdbf_error hrdbf_get(const hrdbf_area *a,unsigned n,hrdbf_value *v){
  return HRDBF_OK;
 }
 hrdbf_error hrdbf_deleted(const hrdbf_area *a,unsigned char *v){if(!a->open)return HRDBF_CLOSED;*v=a->recno<=a->count&&a->bytes[a->header+(size_t)(a->recno-1)*a->record]=='*';return HRDBF_OK;}
+/* No loop distribution: the descriptor copy below must not become a
+ * memcpy call (the blobs link no libc). */
+__attribute__((optimize("no-tree-loop-distribute-patterns")))
 hrdbf_error hrdbf_open(hrdbf_area *a,const unsigned char *b,size_t size){
- size_t i,end,pos=32;unsigned off=1,j,k,terminated=0;hrdbf_area tmp;hrdbf_value val;hrdbf_error err;
+ /* The candidate area holds HRDBF_MAX_FIELDS descriptors (about 32 KiB):
+  * static, so no frame needs a stack probe (__chkstk is not linked). */
+ static hrdbf_area tmp;
+ size_t i,end,pos=32;unsigned off=1,j,k,terminated=0;hrdbf_value val;hrdbf_error err;
  a->diag[0]=0;tmp.diag[0]=0;
  hrdbf_close(a);hrdbf_close(&tmp);
  a->diag[0]=0;
@@ -84,7 +90,7 @@ hrdbf_error hrdbf_open(hrdbf_area *a,const unsigned char *b,size_t size){
   hrdbf_field *f;
   if(b[pos]==13){terminated=1;pos++;break;}
   if(tmp.header-pos<32){dset(a,"field descriptor ");ddec(a,tmp.nfields+1);dcat(a," truncated before end of header");return HRDBF_FORMAT;}
-  if(tmp.nfields==HRDBF_MAX_FIELDS){dset(a,"more than 128 field descriptors");return HRDBF_LIMIT;}
+  if(tmp.nfields==HRDBF_MAX_FIELDS){dset(a,"more than 2046 field descriptors");return HRDBF_LIMIT;}
   f=&tmp.fields[tmp.nfields++];
   for(j=0;j<11;j++)f->name[j]=b[pos+j];
   if(!f->name[0]){dset(a,"field descriptor ");ddec(a,tmp.nfields);dcat(a," has an empty name");return HRDBF_FORMAT;}
@@ -117,5 +123,15 @@ hrdbf_error hrdbf_open(hrdbf_area *a,const unsigned char *b,size_t size){
    if(mark=='*')dcat(a," inside a deleted record");
    return err;}}
  }
- hrdbf_top(&tmp);*a=tmp;return HRDBF_OK;
+ hrdbf_top(&tmp);
+ /* Member copy: a whole-struct assignment of about 32 KiB is a memcpy. */
+ a->bytes=tmp.bytes;a->size=tmp.size;a->count=tmp.count;a->recno=tmp.recno;
+ a->header=tmp.header;a->record=tmp.record;a->nfields=tmp.nfields;
+ a->bof=tmp.bof;a->eof=tmp.eof;
+ for(j=0;j<tmp.nfields;j++){
+  for(k=0;k<11;k++)a->fields[j].name[k]=tmp.fields[j].name[k];
+  a->fields[j].type=tmp.fields[j].type;a->fields[j].width=tmp.fields[j].width;
+  a->fields[j].decimals=tmp.fields[j].decimals;a->fields[j].offset=tmp.fields[j].offset;
+ }
+ a->diag[0]=0;a->open=1;return HRDBF_OK;
 }
