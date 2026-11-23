@@ -25,7 +25,7 @@ HarbourRust does not support `.hrb` files, by design. A `.hrb` is precompiled pc
 
 ## Latest release
 
-**v0.11.4** (16 November 2026) is the latest release, with a Windows x86-64 compiler (`hbc_0.11.4.exe`), a Linux x86-64 compiler and a macOS Apple Silicon (arm64) compiler, plus `SHA256SUMS.txt`. See the [release notes](https://github.com/FiveTechSoft/HarbourRust/releases/tag/v0.11.4) for hashes, evidence and limits. The macOS arm64 binary is a compiler that runs on Apple Silicon. It was built from `2325feaf` (16 November 2026), before native ARM64 output reached main (`0b206021`, 16 November), so that release asset emits x86-64 programs; native ARM64 output is in main only (see "Native ARM64" below and the [ARM64 record](docs/ARM64-NATIVE-2026-11-16.md)). Windows results in the release notes were checked under Wine; native Windows runs are recorded where the sections below say so.
+**v0.11.5** (22 November 2026) is the latest release; it carries a Linux x86-64 compiler only. **v0.11.4** (16 November 2026) is the latest release with a Windows x86-64 compiler (`hbc_0.11.4.exe`), a Linux x86-64 compiler and a macOS Apple Silicon (arm64) compiler, plus `SHA256SUMS.txt`. See the [release notes](https://github.com/FiveTechSoft/HarbourRust/releases/tag/v0.11.4) for hashes, evidence and limits. The macOS arm64 binary is a compiler that runs on Apple Silicon. It was built from `2325feaf` (16 November 2026), before native ARM64 output reached main (`0b206021`, 16 November), so that release asset emits x86-64 programs; native ARM64 output is in main only (see "Native ARM64" below and the [ARM64 record](docs/ARM64-NATIVE-2026-11-16.md)). Windows results in the release notes were checked under Wine; native Windows runs are recorded where the sections below say so.
 
 Since the checkpoint described below, main also has: native ARM64 Mach-O output, threads, mutexes and one-shot initialisation on Windows, native DBF field writes and decimal arithmetic/comparison, classes on the Windows target (with limits), and a compile-time error for a fixed-size local array passed to a function that changes it. Each is described in its own bullet under Active development. Figures in this README carry their date and commit; the current main at the time of this edit is `9e150aee` (18 November 2026).
 
@@ -296,7 +296,7 @@ No tracing GC does not mean no memory management: native allocation/free helpers
 
 ## Use hbc without Rust, MinGW or a C compiler
 
-Download `hbc` for your platform from the [releases page](https://github.com/FiveTechSoft/HarbourRust/releases) (latest: [v0.11.4](https://github.com/FiveTechSoft/HarbourRust/releases/tag/v0.11.4)). No Rust installation, MinGW, external assembler or external linker is needed for supported native-only programs:
+Download `hbc` for your platform from the [releases page](https://github.com/FiveTechSoft/HarbourRust/releases) (latest: [v0.11.5](https://github.com/FiveTechSoft/HarbourRust/releases/tag/v0.11.5), Linux only; Windows and macOS: [v0.11.4](https://github.com/FiveTechSoft/HarbourRust/releases/tag/v0.11.4)). No Rust installation, MinGW, external assembler or external linker is needed for supported native-only programs:
 
 ```bat
 hbc.exe tests\samples\hello.prg hello.exe
@@ -311,7 +311,7 @@ The internal PE writer emits a console image with entry `_start`, fixed ImageBas
 
 ### Downloads and removed historical releases
 
-Releases v0.1.0 to v0.8.0 and their assets were removed on 14 November 2026; their git tags remain as source history. The latest release is **v0.11.4**; download it from the [releases page](https://github.com/FiveTechSoft/HarbourRust/releases). Compiler binaries are no longer tracked in the repository (`bin/` and `dist/` were removed on 23 November 2026 and remain in git history); the release assets are the verified ones.
+Releases v0.1.0 to v0.8.0 and their assets were removed on 14 November 2026; their git tags remain as source history. The latest release is **v0.11.5** (Linux x86-64 compiler only); the latest with Windows x86-64 and macOS compilers is **v0.11.4**. Download them from the [releases page](https://github.com/FiveTechSoft/HarbourRust/releases). Compiler binaries are no longer tracked in the repository (`bin/` and `dist/` were removed on 23 November 2026 and remain in git history); the release assets are the verified ones.
 
 Do not reuse a v0.1.1/v0.2.0 `hbc.exe` or its `build.bat`: those compilers emitted assembly text even when the output name ended in `.EXE` and needed external MinGW-w64 tools. The current compilers write PE32+ directly for supported native-only programs.
 

@@ -271,7 +271,7 @@ official `.hbp`).
 ### Windows (milestone 2.6)
 
 This C-extension/object-linking recipe needs a C toolchain; it is not a
-requirement for native-only `bin/hbc.exe` usage. The ordinary native-only
+requirement for native-only `hbc.exe` usage. The ordinary native-only
 path writes PE32+ itself without MinGW, an external assembler or linker.
 
 The same sources build for `--target=windows` with a mingw-w64
