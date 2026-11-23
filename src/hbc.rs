@@ -1,3 +1,4 @@
+mod shared_local;
 mod timestamp;
 mod bin_concat;
 mod optional_empty;
@@ -4468,7 +4469,7 @@ thread_local! {
 fn static_dyn(id: &str) -> bool { STATIC_DYN.with(|s|s.borrow().contains(id)) }
 // S4: is `id` in the current function a module dynamic array (shared
 // heap object, Dyn casilla {tag 16, object pointer})?
-fn is_sarr(id: &str) -> bool { module_static::current(id) == Some(Ty::Dyn) }
+fn is_sarr(id: &str) -> bool { module_static::current(id) == Some(Ty::Dyn) || shared_local::current(id) }
 
 // S4 shared module array multi-level STORE. Harbour order (probes
 // p14/m7): the RHS evaluates FIRST (tagged; strings cloned to owned
@@ -4481,29 +4482,15 @@ fn is_sarr(id: &str) -> bool { module_static::current(id) == Some(Ty::Dyn) }
 // freed) and the new pair lands.
 fn cg_sarr_store(id: &str, var_off: usize, ies: &[&Expr], e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target) {
     let kw = fresh_lbl();
-    let rt = expr_ty(e, env, sigs);
-    cg_value(e, env, sigs, strs, out, target);
-    match rt {
-        Ty::I64 => cg_i64_tagged(out),
-        Ty::Bool => out.push_str("    mov %rax, %rdx\n    mov $3, %eax\n"),
-        Ty::Str => out.push_str("    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_strcpy\n    mov %rax, %rdx\n    mov $4, %eax\n"),
-        Ty::Dyn => {
-            if !dyn_expr_owned(e) { cg_dyn_clone_if_str(out); }
-            // S4 review 2: the same runtime family check as the
-            // one-level ArrSet/AAdd boundary (0 i64, 1 NIL, 3 logical,
-            // 4 owned string, 9 literal-provenance i64, 16 shared ref);
-            // anything else (float, hash, block, ...) is a clean
-            // hbc_type_error, never a cell the exit sweep cannot read.
-            out.push_str("    test %rax, %rax\n    jz 1f\n    cmp $1, %rax\n    je 1f\n    cmp $3, %rax\n    je 1f\n    cmp $4, %rax\n    je 1f\n    cmp $9, %rax\n    je 1f\n    cmp $16, %rax\n    je 1f\n    jmp hbc_type_error\n1:\n");
-        },
-        _ => unreachable!("checked"),
-    }
+    cg_data_value(e,env,sigs,strs,out,target);
+    shared_local::screen_value(out);
     // Frame: value pair at (%rsp)/8(%rsp), a 16-byte scratch pair at
     // 16(%rsp)/24(%rsp) for saving the cell address across calls; the
     // n-1 leading indices push below the value (16 bytes each), so at
     // walk time index k sits at 16*(n-2-k)(%rsp), the value pair at
     // 16*(n-1)(%rsp) and the scratch pair at 16*(n-1)+16(%rsp).
     out.push_str("    sub $48, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+    if shared_local::active(){out.push_str("    movq $0, 32(%rsp)\n    cmpq $0, hbc_seq_depth(%rip)\n    je 87f\n    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_aux_push\n    movq $1, 32(%rsp)\n87:\n");}
     let n = ies.len();
     for x in &ies[..n-1] {
         if expr_ty(x, env, sigs) == Ty::Dyn {
@@ -4536,6 +4523,7 @@ fn cg_sarr_store(id: &str, var_off: usize, ies: &[&Expr], e: &Expr, env: &[CgLoc
     let v = 16*(n-1);
     let sc = v + 16;
     out.push_str(&format!("    mov (%r11), %rax\n    mov 8(%r11), %rdx\n    mov %r11, {}(%rsp)\n    call hbc_float_release\n    mov {}(%rsp), %r11\n    @HBC_TAG_KIND@cmpq $4, (%r11)@HBC_TAG_END@\n    jne .Lsnf{}\n    mov 8(%r11), %rdi\n    test %rdi, %rdi\n    jz .Lsnf{}\n    call hbc_freestr\n.Lsnf{}:\n", sc, sc, kw, kw, kw));
+    if shared_local::active(){out.push_str(&format!("    cmpq $0, {}(%rsp)\n    je 88f\n    call hbc_aux_pop\n88:\n",v+32));}
     out.push_str(&format!("    mov {}(%rsp), %r11\n    mov {}(%rsp), %rax\n    mov %rax, (%r11)\n    mov {}(%rsp), %rax\n    mov %rax, 8(%r11)\n    add ${}, %rsp\n    jmp .Lsd{}\n.Lsb{}:\n    call hbc_bound_error\n.Lsd{}:\n", sc, v, v+8, 48+16*(n-1), kw, kw, kw));
 }
 
@@ -4914,6 +4902,7 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
     let n = f.params.len();
     let mut pin: Vec<Option<Ty>> = vec![None; n];
     for (i,p) in f.params.iter().enumerate() {
+        if shared_local::parameter(&f.name,i) || shared_local::value_parameter(&f.name,i) {pin[i]=Some(Ty::Dyn);}
         if retyped_val_param(f,p) {
             if !DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get()) {
                 return Err("retyped VAL parameters require ordinary Linux without threads or macros in this increment".to_string());
@@ -4949,7 +4938,7 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
     // Once defaulted, a parameter keeps the tagged slot in later rounds, so the
     // fixpoint stays monotone (mutual recursion without evidence, t694).
     DEFAULT_DYN.with(|m|for (name,i) in m.borrow().iter(){if *name==f.name && *i<n {pin[*i]=Some(Ty::Dyn);}});
-    for i in 0..n { if optional_empty::parameter(&f.name,i) || cell_len::parameter(&f.name,i) {pin[i]=Some(Ty::AView);} }
+    for i in 0..n { if !shared_local::parameter(&f.name,i) && (optional_empty::parameter(&f.name,i) || cell_len::parameter(&f.name,i)) {pin[i]=Some(Ty::AView);} }
     for i in 0..n {if method_valtype::parameter(&f.name,i) {pin[i]=Some(Ty::Dyn);}}
     // Method functions: the implicit leading `Self` parameter is pinned
     // to the defining class (no body evidence needed).
@@ -5050,6 +5039,7 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
             // ains piece 1b: a view parameter absorbs pin evidence; the
             // body check validates its uses under the view rules.
             Some(Ty::AView) => Ok(()),
+            Some(Ty::Dyn) if shared_local::active() => Ok(()),
             None => { pin[idx] = Some(ty); Ok(()) }
             Some(t) if t == ty => Ok(()),
             // A parameter used numerically in one place and as NIL in
@@ -5164,7 +5154,7 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
                 pin_vars(f, re, Ty::I64, pin, n)
             }
             Expr::Index(id, ie) => {
-                if root_param(&f.name,id) {return pin_vars(f,ie,Ty::I64,pin,n);}
+                if root_param(&f.name,id) || shared_local::named(&f.name,id) {return pin_vars(f,ie,Ty::I64,pin,n);}
                 if is_param(f, id).map(|pi| pin[pi] == Some(Ty::AView)).unwrap_or(false) {
                     // ains piece 1b: indexing a view parameter is a read;
                     // pinning only types the index expression.
@@ -6819,6 +6809,8 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
         return Err(format!("line {}: timestamp arithmetic and comparison are not in phase 1",n));
     }
 
+    if shared_local::active() && shared_local::literal(e) {return Ok(Ty::Dyn);}
+    if shared_local::optional(e).is_some() {return Ok(Ty::Dyn);}
     match e {
         Expr::Seq(es) => {
             let mut local = env.to_vec();
@@ -9500,7 +9492,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 // Checked before the acceptance test so inference converging to Dyn
                 // cannot skip it.
                 if let Expr::Var(v) = a {
-                    if module_static::current(v) == Some(Ty::Dyn) && DEFAULT_DYN.with(|m| m.borrow().contains(&(sigs[si].name.clone(), i))) {
+                    if !shared_local::active() && module_static::current(v) == Some(Ty::Dyn) && DEFAULT_DYN.with(|m| m.borrow().contains(&(sigs[si].name.clone(), i))) {
                         return Err(format!("line {}: passing the shared module array `{}` as argument {} of `{}` is outside the dynamic increment in this increment (Harbour would alias the one object; measured in probe p6, deferred)", n, v, i + 1, id));
                     }
                 }
@@ -11799,7 +11791,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                     // (`AAdd(a, a)` builds a cycle: probe p22). Literal
                     // array values stay a named rejection in this slice.
                     let t = type_expr(e, env, sigs, *n)?;
-                    if !matches!(t, Ty::I64 | Ty::Bool | Ty::Str | Ty::Dyn) {
+                    if !matches!(t, Ty::I64 | Ty::Bool | Ty::Str | Ty::Dyn) && !(shared_local::active() && matches!(t,Ty::StrOwn|Ty::F64|Ty::Date)) {
                         return Err(format!("line {}: `AAdd` on the shared module array `{}` takes an integer, logical, string, NIL or dynamic value in this increment", n, id));
                     }
                     if matches!(e, Expr::ArrLit(..) | Expr::DArrNew) {
@@ -12424,7 +12416,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                         // index is an integer or Dyn. No moved-nulling:
                         // nothing here is consumed.
                         let vt = type_expr(e, env, sigs, *n)?;
-                        if !matches!(vt, Ty::I64 | Ty::Bool | Ty::Str | Ty::Dyn) {
+                        if !matches!(vt, Ty::I64 | Ty::Bool | Ty::Str | Ty::Dyn) && !(shared_local::active() && matches!(vt,Ty::StrOwn|Ty::F64|Ty::Date)) {
                             return Err(format!("line {}: storing into a cell of the shared module array `{}` takes an integer, logical, string, NIL or dynamic value in this increment", n, id));
                         }
                         let index_ty = type_expr(ie, env, sigs, *n)?;
@@ -12508,7 +12500,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                     // child cell must hold a tag-16 array at runtime.
                     // Indices are integers or Dyn.
                     let vt = type_expr(e, env, sigs, *n)?;
-                    if !matches!(vt, Ty::I64 | Ty::Bool | Ty::Str | Ty::Dyn) {
+                    if !matches!(vt, Ty::I64 | Ty::Bool | Ty::Str | Ty::Dyn) && !(shared_local::active() && matches!(vt,Ty::StrOwn|Ty::F64|Ty::Date)) {
                         return Err(format!("line {}: storing into a cell of the shared module array `{}` takes an integer, logical, string, NIL or dynamic value in this increment", n, id));
                     }
                     if !matches!(type_expr(ie, env, sigs, *n)?, Ty::I64 | Ty::Dyn) || !matches!(type_expr(ie2, env, sigs, *n)?, Ty::I64 | Ty::Dyn) {
@@ -12554,7 +12546,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                     // child cell must hold a tag-16 array at runtime.
                     // Indices are integers or Dyn.
                     let vt = type_expr(e, env, sigs, *n)?;
-                    if !matches!(vt, Ty::I64 | Ty::Bool | Ty::Str | Ty::Dyn) {
+                    if !matches!(vt, Ty::I64 | Ty::Bool | Ty::Str | Ty::Dyn) && !(shared_local::active() && matches!(vt,Ty::StrOwn|Ty::F64|Ty::Date)) {
                         return Err(format!("line {}: storing into a cell of the shared module array `{}` takes an integer, logical, string, NIL or dynamic value in this increment", n, id));
                     }
                     if !matches!(type_expr(ie, env, sigs, *n)?, Ty::I64 | Ty::Dyn) || !matches!(type_expr(ie2, env, sigs, *n)?, Ty::I64 | Ty::Dyn) || !matches!(type_expr(ie3, env, sigs, *n)?, Ty::I64 | Ty::Dyn) {
@@ -12602,7 +12594,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                     // child cell must hold a tag-16 array at runtime.
                     // Indices are integers or Dyn.
                     let vt = type_expr(e, env, sigs, *n)?;
-                    if !matches!(vt, Ty::I64 | Ty::Bool | Ty::Str | Ty::Dyn) {
+                    if !matches!(vt, Ty::I64 | Ty::Bool | Ty::Str | Ty::Dyn) && !(shared_local::active() && matches!(vt,Ty::StrOwn|Ty::F64|Ty::Date)) {
                         return Err(format!("line {}: storing into a cell of the shared module array `{}` takes an integer, logical, string, NIL or dynamic value in this increment", n, id));
                     }
                     if !matches!(type_expr(ie, env, sigs, *n)?, Ty::I64 | Ty::Dyn) || !matches!(type_expr(ie2, env, sigs, *n)?, Ty::I64 | Ty::Dyn) || !matches!(type_expr(ie3, env, sigs, *n)?, Ty::I64 | Ty::Dyn) || !matches!(type_expr(ie4, env, sigs, *n)?, Ty::I64 | Ty::Dyn) {
@@ -15731,6 +15723,12 @@ fn cg_val_discard_arg(a: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<St
 }
 
 fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target) {
+    if shared_local::active() && shared_local::literal(e) {shared_local::emit_literal(e,strs,out);return;}
+    if let Some(p)=shared_local::optional(e) {
+        let v=env.iter().rev().find(|v|v.name==p).expect("shared optional");let k=fresh_lbl();
+        out.push_str(&format!("    mov -{}(%rbp), %rax\n    mov -{}(%rbp), %rdx\n    cmp $1, %rax\n    jne .Lsharedopt{k}\n",v.off,v.off-8));
+        shared_local::emit_literal(&Expr::DArrNew,strs,out);out.push_str(&format!(".Lsharedopt{k}:\n"));return;
+    }
     match e {
         Expr::Seq(es) => {
             for (i,e) in es.iter().enumerate() {
@@ -20987,6 +20985,7 @@ fn cg_str_builtin(id: &str, args: &[Expr], env: &[CgLocal], sigs: &[Sig], strs: 
     if str_builtin_ty(id)!=Ty::StrOwn { out.push_str("    xor %edx, %edx\n"); }
 }
 fn cg_value(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target) {
+    if shared_local::active() && shared_local::literal(e) {shared_local::emit_literal(e,strs,out);return;}
     if let Expr::ArrLit(es) = e {
         if es.iter().any(|x| matches!(x, Expr::ArrLit(inner) if inner.iter().any(|y| matches!(y, Expr::ArrLit(_) | Expr::DArrNew)))) {
             return cg_darr3_literal(es, env, sigs, strs, out, target);
@@ -21109,6 +21108,8 @@ fn cg_array_value(e: &Expr, off: usize, env: &[CgLocal], sigs: &[Sig], strs: &mu
 }
 
 fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
+    if shared_local::active() && shared_local::literal(e) {return Ty::Dyn;}
+    if shared_local::optional(e).is_some() {return Ty::Dyn;}
     match e {
         Expr::Seq(es) => expr_ty(es.last().expect("nonempty"), env, sigs),
         Expr::Set(_, r) => expr_ty(r, env, sigs),
@@ -23362,6 +23363,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
     // at the top of the next iteration and after the loop.
     let mut open = false;
     for (si, s) in stmts.iter().enumerate() {
+        if shared_local::active() {out.push_str("    call hbc_sarr_collect\n");}
         if open { ovf_stmt_end(strs); }
         let traced = stmt_may_raise_or_call(s, env, sigs);
         let name = fname.split("__br").next().unwrap_or(fname);
@@ -24981,24 +24983,14 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                     // boundary-cloned, a tag-16 array value stored as a
                     // REFERENCE - `AAdd(a, a)` builds a cycle, p22),
                     // then the root's tag-16 guard and the append.
-                    let rt = expr_ty(e, env, sigs);
-                    cg_value(e, env, sigs, strs, out, target);
-                    match rt {
-                        Ty::I64 => cg_i64_tagged(out),
-                        Ty::Bool => out.push_str("    mov %rax, %rdx\n    mov $3, %eax\n"),
-                        Ty::Str => out.push_str("    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_strcpy\n    mov %rax, %rdx\n    mov $4, %eax\n"),
-                        Ty::Dyn => { if !dyn_expr_owned(e) { cg_dyn_clone_if_str(out); }
-                            // G: a Dyn value can carry ANY tag (owned tag-8
-                            // array, object, heap float) that the registry
-                            // sweep does not own. Admit only the verified
-                            // family {0 i64, 1 NIL, 3 logical, 4 owned
-                            // string, 16 shared array ref} at the boundary.
-                            out.push_str("    test %rax, %rax\n    jz 1f\n    cmp $1, %rax\n    je 1f\n    cmp $3, %rax\n    je 1f\n    cmp $4, %rax\n    je 1f\n    cmp $9, %rax\n    je 1f\n    cmp $16, %rax\n    je 1f\n    jmp hbc_type_error\n1:\n");
-                        },
-                        _ => unreachable!("checked"),
-                    }
+                    cg_data_value(e,env,sigs,strs,out,target);
+                    shared_local::screen_value(out);
+                    let k=fresh_lbl();
+                    if shared_local::active(){out.push_str(&format!("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n    movq $0, 16(%rsp)\n    cmpq $0, hbc_seq_depth(%rip)\n    je .Lsaaguard{k}\n    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_aux_push\n    movq $1, 16(%rsp)\n.Lsaaguard{k}:\n"));}
                     cg_sarr_root(id, v.off, "%rdi", out);
+                    if shared_local::active(){out.push_str("    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n");}
                     out.push_str("    call hbc_sarr_aadd\n");
+                    if shared_local::active(){out.push_str(&format!("    cmpq $0, 16(%rsp)\n    je .Lsaapop{k}\n    call hbc_aux_pop\n.Lsaapop{k}:\n    add $32, %rsp\n"));}
                 } else {
                 let vt = expr_ty(e, env, sigs);
                 // DArrRef (borrowed middle array): the slot holds the child
@@ -26048,35 +26040,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                     // The old cell payload is released (float, then an
                     // owned tag-4 string; a tag-16 shared reference is
                     // owned by the registry, never freed here).
-                    let kw = fresh_lbl();
-                    let rt = expr_ty(e, env, sigs);
-                    cg_value(e, env, sigs, strs, out, target);
-                    match rt {
-                        Ty::I64 => cg_i64_tagged(out),
-                        Ty::Bool => out.push_str("    mov %rax, %rdx\n    mov $3, %eax\n"),
-                        Ty::Str => out.push_str("    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_strcpy\n    mov %rax, %rdx\n    mov $4, %eax\n"),
-                        Ty::Dyn => { if !dyn_expr_owned(e) { cg_dyn_clone_if_str(out); }
-                            // G: same verified tag family as AAdd - a Dyn
-                            // RHS carrying an owned tag-8 array, object or
-                            // heap float is rejected at the boundary (the
-                            // registry sweep only owns tag-4 payloads).
-                            out.push_str("    test %rax, %rax\n    jz 1f\n    cmp $1, %rax\n    je 1f\n    cmp $3, %rax\n    je 1f\n    cmp $4, %rax\n    je 1f\n    cmp $9, %rax\n    je 1f\n    cmp $16, %rax\n    je 1f\n    jmp hbc_type_error\n1:\n");
-                        },
-                        _ => unreachable!("checked"),
-                    }
-                    out.push_str("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
-                    if expr_ty(ie, env, sigs) == Ty::Dyn {
-                        cg_expr(ie, env, sigs, strs, out, target);
-                        out.push_str("    call hbc_dyn_to_i64\n");
-                    } else {
-                        cg_expr(ie, env, sigs, strs, out, target);
-                    }
-                    out.push_str("    mov %rax, %rcx\n");
-                    cg_sarr_root(id, v.off, "%r11", out);
-                    out.push_str(&format!("    cmp $1, %rcx\n    jl .Lwbnd{}\n    cmp (%r11), %rcx\n    jg .Lwbnd{}\n", kw, kw));
-                    out.push_str("    mov 24(%r11), %r11\n    mov %rcx, %r10\n    dec %r10\n    shl $4, %r10\n    add %r11, %r10\n");
-                    out.push_str(&format!("    mov (%r10), %rax\n    mov 8(%r10), %rdx\n    call hbc_float_release\n    @HBC_TAG_KIND@cmpq $4, (%r10)@HBC_TAG_END@\n    jne .Lwnf{}\n    mov 8(%r10), %rdi\n    test %rdi, %rdi\n    jz .Lwnf{}\n    call hbc_freestr\n.Lwnf{}:\n", kw, kw, kw));
-                    out.push_str(&format!("    mov (%rsp), %rax\n    mov %rax, (%r10)\n    mov 8(%rsp), %rax\n    mov %rax, 8(%r10)\n    add $32, %rsp\n    jmp .Lwdone{}\n.Lwbnd{}:\n    call hbc_bound_error\n.Lwdone{}:\n", kw, kw, kw));
+                    cg_sarr_store(id,v.off,&[ie],e,env,sigs,strs,out,target);
                 } else if matches!(v.ty, Ty::Dyn|Ty::RefDyn) {
                     // ains P2 stage 1: a[i] := scalar on a Dyn-held array
                     // (checker: I64/Bool/Str/NIL RHS). The RHS is tagged
@@ -31103,6 +31067,7 @@ fn emit_asm(funcs: &[Func], sigs: &[Sig], externs: &[String], target: Target, in
     match target {
         Target::Linux => {
             out.push_str("    .text\n    .globl _start\n_start:\n");
+            if shared_local::active(){out.push_str("    mov %rsp, hbc_sarr_stack_top(%rip)\n");}
             if MACRO_CONTEXT.with(|c|c.get()){out.push_str("    mov %rsp, %rbp\n    and $-16, %rsp\n    sub $256, %rsp\n    mov %rsp, %rdi\n    call hrmacro_start\n");}
             if funcs.iter().any(|f| f.stmts.iter().any(|st| matches!(st, Stmt::Static(_,_,Expr::Str(_))))) { out.push_str("    call hbc_module_strings_init\n"); }
             if funcs_have_shared_arrays(funcs) { out.push_str("    call hbc_module_arrays_init\n"); }
@@ -31216,6 +31181,13 @@ fn emit_asm(funcs: &[Func], sigs: &[Sig], externs: &[String], target: Target, in
     }
     if funcs_have_shared_arrays(funcs) {
         out.push_str(SARR_HELPERS);
+        if shared_local::active() {
+            out.push_str(include_str!("shared_collect.s"));
+            out.push_str("hbc_sarr_mark_globals:\n    push %rbp\n    mov %rsp, %rbp\n");
+            let mut seen=std::collections::HashSet::new();
+            for f in funcs {for st in &f.stmts {if let Stmt::Static(_,n,_)=st {if module_static::kind(&f.name,n)==Some(Ty::Dyn) {let l=module_static::storage(&f.name,n);if seen.insert(l.clone()){out.push_str(&format!("    cmpq $16, {l}(%rip)\n    jne 1f\n    mov {l}+8(%rip), %rax\n    movq $1, 32(%rax)\n1:\n"));}}}}}
+            out.push_str("    leave\n    ret\n");
+        }
         out.push_str("hbc_module_arrays_init:\n    push %rbp\n    mov %rsp, %rbp\n    sub $32, %rsp\n");
         let mut seen = std::collections::HashSet::new();
         let mut desc_out = String::new();
@@ -31235,15 +31207,15 @@ fn emit_asm(funcs: &[Func], sigs: &[Sig], externs: &[String], target: Target, in
 // ---- module STATIC shared arrays (Dyn tag 16) ----
 // Object layout: hbc_free-compatible buffers; data pointer O (O-8 is the
 // capacity-in-elements header, element size 1). O+0 length, O+8 capacity
-// in cells, O+16 registry link, O+24 cells data pointer C (C-8 capacity
+// in cells, O+16 registry link, O+24 cells data pointer C, O+32 collector mark (C-8 capacity
 // in cells, element size 16). Cells are 16-byte {tag, payload} pairs:
-// 0 i64, 1 NIL, 2 logical, 4 owned string (hbc_strcpy allocation), 16
+// 0 i64, 1 NIL, 3 logical, 4 owned string (hbc_strcpy allocation), 16
 // shared array reference (payload = child object). The cells buffer is
 // separate so growth never moves the object identity that aliases and
 // cycles point at. No refcounts: the registry owns every object and the
 // exit sweep frees strings then objects; cycles are ordinary memory.
 fn funcs_have_shared_arrays(funcs: &[Func]) -> bool {
-    funcs.iter().any(|f| f.stmts.iter().any(|st| matches!(st, Stmt::Static(_, id, _) if module_static::kind(&f.name, id) == Some(Ty::Dyn))))
+    shared_local::active() || funcs.iter().any(|f| f.stmts.iter().any(|st| matches!(st, Stmt::Static(_, id, _) if module_static::kind(&f.name, id) == Some(Ty::Dyn))))
 }
 
 const SARR_HELPERS: &str = r"
@@ -31266,11 +31238,12 @@ hbc_sarr_build:
     mov %rdi, %rbx
     mov (%rbx), %r12
     add $8, %rbx
-    mov $40, %edi
+    mov $48, %edi
     call hbc_alloc
-    movq $32, (%rax)
+    movq $40, (%rax)
     add $8, %rax
     mov %rax, %r13
+    movq $0, 32(%r13)
     mov %r12, (%r13)
     mov %r12, 8(%r13)
     mov hbc_sarr_registry(%rip), %r10
@@ -31337,6 +31310,9 @@ hbc_sarr_cells_release:
     mov %rdx, %r12
 70: test %r12, %r12
     jle 80f
+    mov (%rbx), %rax
+    mov 8(%rbx), %rdx
+    call hbc_float_release
     cmpq $4, (%rbx)
     jne 75f
     mov 8(%rbx), %rdi
@@ -38766,8 +38742,10 @@ fn main() {
     // summed lattice height and the round count is bounded by `cap`
     // below. Reaching the cap means the monotonicity argument broke -
     // an explicit diagnostic, never a silent assumption.
-    optional_empty::analyze(&funcs);
-    cell_len::analyze(&funcs);
+    shared_local::init(&funcs);
+    if shared_local::active() && llvm {eprintln!("error: local shared arrays require the native Linux backend in A2");process::exit(1);}
+    if let Err(e)=shared_local::validate(&funcs){eprintln!("error: {}",e);process::exit(1);}
+    if !shared_local::active() {optional_empty::analyze(&funcs);cell_len::analyze(&funcs);}
     method_valtype::analyze(&funcs);
     let cap = 2 + 4 * funcs.iter().map(|f| f.params.len() + 1).sum::<usize>();
     // A single inline-IF return can carry its own concrete base-case
@@ -38901,6 +38879,7 @@ fn main() {
                 // rejection fires - never a silent fallback to the owned
                 // contract. Evidence with only whole reads (t412) stays
                 // on its old measured contract.
+                if shared_local::parameter(&f.name,i) {ptys[i]=Ty::Dyn;view[fi].aview[i]=false;continue;}
                 if optional_empty::parameter(&f.name,i) || view[fi].aview[i] || ptys[i]==Ty::AView || (evidence && aview_safe[fi][i]) || (evidence && !aview_intent[fi][i]) {
                     view[fi].aview[i] = true;
                     ptys[i] = Ty::AView;
