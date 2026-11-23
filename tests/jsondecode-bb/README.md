@@ -34,3 +34,11 @@ named rejection (the oracle's return contract there is unmeasured).
 `expected/*.windows.out` is real Harbour 3.2 output (hbmk2
 -comp=mingw64 -gtcgi, native Windows 11); the Linux files are the same
 bytes with LF line ends. Only the 14 pins in jsondecode_bb are claimed byte-identical; the 3-row jsondecode_escapes file is preserved as oracle evidence, not an exact-pass claim. The 14-row program is registered as an exact root-manifest case. The 3-row escape oracle pin is preserved unchanged but is NOT exact under this runtime UTF-8 policy: the escaped e-acute row now has length 4, while the recorded console-codepage pin has length 3. tests/json-safety/programs/escapes_utf8.prg and its explicitly self-pinned UTF-8 expectations register this divergence, not an oracle pass.
+
+Runtime recipe byte policy: `runtime/*.c` and `generated/*.s` check out
+with LF on every platform. `generated/hrjson_recipe.json` hashes the raw
+versioned source/assembly bytes, not a CRLF checkout or normalized digest.
+The generator rejects CR in the source and writes UTF-8 LF bytes explicitly.
+Its section filter omits only an empty `.note.GNU-stack` marker and rejects
+other note sections or any content under that marker. Check with
+`python tests/test_generate_json_asm.py`.

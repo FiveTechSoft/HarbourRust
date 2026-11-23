@@ -26,8 +26,8 @@
     "-Werror",
     "-Wno-misleading-indentation"
   ],
-  "source_sha256": "c02f440513f27d3c3b3ac7ebe140f713da85df944365cfeb1dfc606d039a7827",
-  "asm_sha256": "3dad060a8cfa68bb54eb0bddfb1a22638ec8106759ccf6c07f4cd684bb62f58a",
+  "source_sha256": "7fcb30b8932eda66172afe8d95ced02b4e70e2250d5a9db2904561f5f4d10412",
+  "asm_sha256": "5a1664ddff6aa568292dd2192c3a27b99dd62258deb4eae2d71c19114fbbe8bd",
   "external_calls": [
     "hbc_alloc",
     "hbc_dtos",
@@ -35,5 +35,6 @@
     "hbc_freestr",
     "hbc_str_f64",
     "hbc_type_error"
-  ]
+  ],
+  "newline_policy": "LF bytes; CR rejected in source; assembly emitted as UTF-8 LF"
 }
