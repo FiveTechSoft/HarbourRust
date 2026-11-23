@@ -25,8 +25,13 @@ static size_t hrdbf_app_baselen;
  * The bag opens with no controlling order (natural order, AUTORDER 0);
  * dbSetOrder(1) selects it and ordListAdd() of the same bag selects it and
  * goes top. 0 none, 1 open bag, 2 present on a writable open (index writes
- * are outside this increment), 3 present but not admitted by the reader. */
+ * are outside this increment), 3 present but not admitted by the reader,
+ * 4 present on a shared open (the index lock protocol is outside this
+ * increment). */
 static unsigned hrdbf_app_struct;
+/* shared=.T. readonly=.T.: the table is snapshotted at open while other
+ * processes may keep it open for writing; no index is admitted. */
+static int hrdbf_app_shared;
 /* Path character for "same file, other extension": ASCII case-insensitive,
  * and on Windows '\' and '/' are one separator. */
 static unsigned char hrdbf_app_pathc(unsigned char c){
@@ -58,7 +63,7 @@ static void hrdbf_app_fail2(const char *prefix,const char *detail){
  hrdbf_app_write(prefix);hrdbf_app_write(detail);hrdbf_app_write("\n");hrdbf_app_exit();
 }
 static void hrdbf_app_require(void){if(!hrdbf_app_state.area.open)hrdbf_app_fail("hbc: DBF no workarea is open\n");}
-void hrdbf_app_close(void){hrdbf_error a=hrntx_file_close(&hrdbf_app_order),b=hrdbf_file_close(&hrdbf_app_state);hrdbf_app_found_flag=0;hrdbf_app_order_active=0;hrdbf_app_pos=0;hrdbf_app_struct=0;if(a||b)hrdbf_app_fail("hbc: DBF/NTX close failed\n");}
+void hrdbf_app_close(void){hrdbf_error a=hrntx_file_close(&hrdbf_app_order),b=hrdbf_file_close(&hrdbf_app_state);hrdbf_app_found_flag=0;hrdbf_app_order_active=0;hrdbf_app_pos=0;hrdbf_app_struct=0;hrdbf_app_shared=0;if(a||b)hrdbf_app_fail("hbc: DBF/NTX close failed\n");}
 void hrdbf_app_open(const unsigned char *p,size_t len,uint64_t new_area,uint64_t cdx,uint64_t writable){
  char path[HRDBF_APP_PATH_MAX];size_t i,start=0,end;hrdbf_error e;
  if(new_area&&hrdbf_app_state.area.open)hrdbf_app_fail("hbc: DBF only one workarea is supported\n");
@@ -67,6 +72,9 @@ void hrdbf_app_open(const unsigned char *p,size_t len,uint64_t new_area,uint64_t
  if(hrntx_file_close(&hrdbf_app_order))hrdbf_app_fail("hbc: DBF index close failed\n");
  hrdbf_app_found_flag=0;hrdbf_app_order_active=0;hrdbf_app_pos=0;hrdbf_app_struct=0;
  hrdbf_app_cdx=cdx!=0;
+ /* writable: 0 readonly exclusive, 1 read-write exclusive, 2 readonly shared. */
+ if(writable>2)hrdbf_app_fail("hbc: DBF open mode outside supported range\n");
+ hrdbf_app_shared=writable==2;
  for(i=0;i<len;i++)if(p[i]=='/'
 #ifdef _WIN32
  ||p[i]=='\\'
@@ -77,7 +85,7 @@ void hrdbf_app_open(const unsigned char *p,size_t len,uint64_t new_area,uint64_t
   * same stem is the structural bag, one in another directory is not. */
  hrdbf_app_baselen=end;
  for(i=0;i<end;i++)hrdbf_app_basename[i]=hrdbf_app_pathc(p[i]);
- e=hrdbf_file_open(&hrdbf_app_state,path,writable!=0);
+ e=hrdbf_file_open(&hrdbf_app_state,path,(int)writable);
  if(e){
   /* D1.1: exact reason from the OS layer or the decoder, code fallback. */
   const char *d=hrdbf_app_state.diag[0]?hrdbf_app_state.diag:hrdbf_app_state.area.diag;
@@ -91,7 +99,8 @@ void hrdbf_app_open(const unsigned char *p,size_t len,uint64_t new_area,uint64_t
  if(hrdbf_app_cdx&&end+4<sizeof path){
   path[end]='.';path[end+1]='c';path[end+2]='d';path[end+3]='x';path[end+4]=0;
   if(!hrntx_file_missing(path)){
-   if(writable)hrdbf_app_struct=2;
+   if(writable==1)hrdbf_app_struct=2;
+   else if(hrdbf_app_shared)hrdbf_app_struct=4;
    else hrdbf_app_struct=hrntx_file_open(&hrdbf_app_order,path,&hrdbf_app_state.area,1)?3:1;
   }
  }
@@ -99,6 +108,7 @@ void hrdbf_app_open(const unsigned char *p,size_t len,uint64_t new_area,uint64_t
 static void hrdbf_app_struct_check(void){
  if(hrdbf_app_struct==2)hrdbf_app_fail("hbc: structural CDX on a readonly=.F. open is outside this increment (index maintenance)\n");
  if(hrdbf_app_struct==3)hrdbf_app_fail("hbc: structural CDX present but not admitted (one tag, subset, size or format)\n");
+ if(hrdbf_app_struct==4)hrdbf_app_fail("hbc: structural CDX on a shared=.T. open is outside this increment (index lock protocol)\n");
 }
 static void hrdbf_app_order_sync(void){
  hrdbf_area*d=&hrdbf_app_state.area;hrntx_index*x=&hrdbf_app_order.index;
@@ -143,6 +153,7 @@ uint64_t hrdbf_app_order_add(const unsigned char*p,size_t len){
   * top (measured), it does not open a second copy. */
  if(same&&hrdbf_app_struct==1){hrdbf_app_order_active=1;hrdbf_app_top();return 1;}
  if(same)hrdbf_app_struct_check();
+ if(hrdbf_app_shared)hrdbf_app_fail("hbc: DBF index on a shared=.T. open is outside this increment (index lock protocol)\n");
  if(hrdbf_app_order.index.bytes)hrdbf_app_fail("hbc: DBF index only one index is supported\n");
  if(!dot){path[len++]='.';path[len++]=hrdbf_app_cdx?'c':'n';path[len++]=hrdbf_app_cdx?'d':'t';path[len++]='x';}path[len]=0;
  err=hrntx_file_open(&hrdbf_app_order,path,&hrdbf_app_state.area,hrdbf_app_cdx);

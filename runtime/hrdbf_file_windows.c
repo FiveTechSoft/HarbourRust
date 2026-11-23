@@ -1,5 +1,9 @@
-/* Own MIT Windows x86-64 private snapshots. Handles remain exclusive
- * until close, measured against official Harbour PE shared=.F. opens.
+/* Own MIT Windows x86-64 private snapshots. Handles remain open until
+ * close. shared=.F. opens are exclusive (share mode 0), measured against
+ * official Harbour PE shared=.F. opens. writable==2 is a shared=.T.
+ * readonly=.T. open: GENERIC_READ with FILE_SHARE_READ|FILE_SHARE_WRITE, so
+ * it coexists with Harbour shared read-write holders (measured) and is
+ * refused by an exclusive holder (win32 error 32).
  * readonly=.F. requests GENERIC_READ|GENERIC_WRITE with share mode 0, the
  * Harbour exclusive read-write contract.
  * D2: writable opens keep the exclusive handle and write record commits
@@ -45,7 +49,7 @@ static __attribute__((optimize("no-tree-loop-ivcanon,no-ivopts"))) void werr(con
 static hrdbf_error hrdbfw_snapshot(const char*path,unsigned char**bytes,size_t*size,void**handle,size_t min,unsigned page,int writable){
  WCHAR wide[260];HANDLE h;LARGE_INTEGER n,after;DWORD got,e;size_t pos=0;unsigned char extra;
  if(!hrdbfw_path(path,wide)){fset("path is not a supported plain file path (reserved device name or characters)");return HRDBF_IO;}
- h=CreateFileW(wide,GENERIC_READ|(writable?GENERIC_WRITE:0),0,0,OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL,0);
+ h=CreateFileW(wide,GENERIC_READ|(writable==1?GENERIC_WRITE:0),writable==2?FILE_SHARE_READ|FILE_SHARE_WRITE:0,0,OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL,0);
  if(h==INVALID_HANDLE_VALUE){werr("OS open failed (2=missing, 5=access denied, 32=another program has it open)",GetLastError());return HRDBF_IO;}
  *handle=h;
  if(!GetFileSizeEx(h,&n)){werr("GetFileSizeEx failed",GetLastError());return HRDBF_IO;}
@@ -71,7 +75,7 @@ hrdbf_error hrdbf_file_open(hrdbf_file*f,const char*path,int writable){
  f->diag[0]=0;fsink[0]=0;
  e=hrdbf_file_close(f);if(e)return e;
  f->diag[0]=0;fsink[0]=0;fsink_len=0;
- f->writable=writable!=0;
+ f->writable=writable==1;
  e=hrdbfw_snapshot(path,&f->owned,&f->size,&f->handle,33,0,writable);
  if(e){char *d=f->diag;const char *q=fsink;while(d<f->diag+159&&*q){*d=*q;d++;q++;}*d=0;}
  if(!e)e=hrdbf_open(&f->area,f->owned,f->size);

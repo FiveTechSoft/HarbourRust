@@ -48,8 +48,10 @@ hrdbf_error hrdbf_file_open(hrdbf_file *f,const char *path,int writable){
  f->diag[0]=0;
  err=hrdbf_file_close(f);if(err)return err;
  f->diag[0]=0;
- f->writable=writable!=0;
- fd=open_dbf(path,writable);if(fd<0){ferr(f,"OS open failed (missing file, permission or sharing conflict)",fd);return HRDBF_IO;}
+ /* writable: 0 readonly, 1 read-write, 2 readonly shared (Linux has no
+  * share modes: the same O_RDONLY snapshot). */
+ f->writable=writable==1;
+ fd=open_dbf(path,writable==1);if(fd<0){ferr(f,"OS open failed (missing file, permission or sharing conflict)",fd);return HRDBF_IO;}
  n=syscall3(8,fd,0,2);if(n<0){ferr(f,"OS seek failed",n);err=HRDBF_IO;goto closefd;}
  if(n<33){fset(f,"file has fewer than the 33 header bytes");err=HRDBF_FORMAT;goto closefd;}
  if(n>HRDBF_MAX_BYTES){fset(f,"file size ");fdec(f,(uint64_t)n);fcat(f," exceeds the 64 MiB limit");err=HRDBF_LIMIT;goto closefd;}

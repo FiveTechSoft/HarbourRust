@@ -6880,9 +6880,15 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                     return Ok(ty);
                 }
                 if id=="dbusearea" {
-                    if args.len()!=6 {return Err(format!("line {}: dbUseArea requires six explicit arguments: new, DBFNTX/DBFCDX, filename, alias, shared=.F., readonly literal",n));}
-                    if !matches!(&args[0],Expr::Log(_)) || !matches!(&args[1],Expr::Str(v) if v.eq_ignore_ascii_case("DBFNTX")||v.eq_ignore_ascii_case("DBFCDX")) || !matches!(&args[3],Expr::Str(v) if !v.is_empty()) || !matches!(&args[4],Expr::Log(false)) || !matches!(&args[5],Expr::Log(_)) {
-                        return Err(format!("line {}: DBF supports one alias, literal DBFNTX/DBFCDX, shared=.F. and a literal readonly flag; shared access, other drivers and field writes are not supported",n));
+                    if args.len()!=6 {return Err(format!("line {}: dbUseArea requires six explicit arguments: new, DBFNTX/DBFCDX, filename, alias, shared literal, readonly literal",n));}
+                    if !matches!(&args[0],Expr::Log(_)) || !matches!(&args[1],Expr::Str(v) if v.eq_ignore_ascii_case("DBFNTX")||v.eq_ignore_ascii_case("DBFCDX")) || !matches!(&args[3],Expr::Str(v) if !v.is_empty()) || !matches!(&args[4],Expr::Log(_)) || !matches!(&args[5],Expr::Log(_)) {
+                        return Err(format!("line {}: DBF supports one alias, literal DBFNTX/DBFCDX and literal shared and readonly flags; other drivers are not supported",n));
+                    }
+                    // shared=.T. is admitted read-only: the table is snapshotted at
+                    // open beside other processes; shared writes need the RDD record
+                    // and file lock protocol (RLock/FLock), outside this increment.
+                    if matches!((&args[4],&args[5]),(Expr::Log(true),Expr::Log(false))) {
+                        return Err(format!("line {}: dbUseArea shared=.T. requires readonly=.T.; shared writes (record and file locks) are outside this increment",n));
                     }
                     if !matches!(type_expr(&args[2],env,sigs,n)?,Ty::Str|Ty::StrOwn){return Err(format!("line {}: DBF filename must be a string",n));}
                     if let Expr::Str(a)=&args[3] {DBF_ALIASES.with(|v|{let mut v=v.borrow_mut();let a=a.to_ascii_uppercase();if !v.contains(&a){v.push(a);}});}
@@ -15838,7 +15844,9 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                     out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rax, %rdi\n    mov %rdx, %rsi\n");
                     out.push_str(if matches!(args[0],Expr::Log(true)){"    mov $1, %edx\n"}else{"    xor %edx, %edx\n"});
                     out.push_str(if matches!(&args[1],Expr::Str(v) if v.eq_ignore_ascii_case("DBFCDX")){"    mov $1, %ecx\n"}else{"    xor %ecx, %ecx\n"});
-                    out.push_str(if matches!(&args[5],Expr::Log(false)){"    mov $1, %r8d\n"}else{"    xor %r8d, %r8d\n"});
+                    // hrdbf_app_open mode: 0 readonly exclusive, 1 read-write
+                    // exclusive, 2 readonly shared.
+                    out.push_str(if matches!(&args[5],Expr::Log(false)){"    mov $1, %r8d\n"}else if matches!(&args[4],Expr::Log(true)){"    mov $2, %r8d\n"}else{"    xor %r8d, %r8d\n"});
                     out.push_str("    call hrdbf_app_open\n");
                     if expr_ty(&args[2],env,sigs)==Ty::StrOwn && !matches!(&args[2],Expr::Var(_)) {out.push_str("    mov (%rsp), %rdi\n    call hbc_freestr\n");}
                     out.push_str("    add $16, %rsp\n    mov $1, %eax\n    xor %edx, %edx\n");

@@ -8,16 +8,18 @@ such as M_CLIE.DBF falls within the supported on-disk subset.
 
 ## Same admitted subset, not a new RDD
 
-One workarea, six explicit DBUSEAREA arguments, literal DBFNTX/DBFCDX,
-shared=.F. and a literal readonly flag; readonly=.F. retains the exclusive
+One workarea, six explicit DBUSEAREA arguments, literal DBFNTX/DBFCDX and
+literal shared and readonly flags; readonly=.F. retains the exclusive
 handle with GENERIC_READ|GENERIC_WRITE (Harbour's exclusive contract), while
-field writes remain outside the subset. Existing C/N/L/D dBASE III rules,
+field writes remain outside the subset. shared=.T. is admitted only with
+readonly=.T. (see "Shared read-only opens" below). Existing C/N/L/D dBASE III rules,
 scalar-consumer limits and size limits stay in force.
 See [D1](DBF-WRITE-OPEN-D1.md). NTX and CDX must be opened explicitly
 with OrdListAdd. CDX is one ascending, nonunique, unconditional tag over one
 direct C field of 1..240 bytes, with complete matching physical-record coverage.
 See [DBF](DBF-READONLY.md), [NTX](NTX-READONLY.md) and [CDX](CDX-READONLY.md).
-No writes, memo fields, shared RDD locking, structural CDX on writable opens,
+No writes, memo fields, shared RDD locking, indexes on shared opens,
+structural CDX on writable opens,
 multitag/scopes/expressions/codepage conversion, LLVM or Mach-O DBF support.
 
 Static arguments, APIs, driver and shared/readonly restrictions fail at
@@ -27,6 +29,39 @@ Actual DBF flags/format, CDX tags/layout and DBF/index consistency can only be
 checked at runtime. Unsupported content is rejected before exposing a cursor,
 not silently truncated or reduced to a supported tag. No compile-time claim
 is made for runtime file contents.
+
+## Shared read-only opens
+
+`dbUseArea(..., .T. /*shared*/, .T. /*readonly*/)` opens the table with
+GENERIC_READ and FILE_SHARE_READ|FILE_SHARE_WRITE, so hbc can read a table
+that a running application keeps open shared. Measured against real Harbour
+3.2 on native Windows (`tests/dbf/shared-readonly`, two processes):
+
+- beside a Harbour shared read-write holder, hbc opens and reads the same
+  records as a Harbour shared reader;
+- while hbc holds the table, a Harbour shared read-write open appends and a
+  Harbour exclusive open is refused (NetErr), as with a Harbour reader;
+- a Harbour exclusive holder refuses the open (win32 error 32).
+
+Registered differences:
+
+- hbc snapshots the table at open. Records appended by another process
+  after that are not seen (Harbour's `LastRec()` grows from 3 to 4 in the
+  gate; hbc's stays 3). A writer that appends while the snapshot is being
+  read can make the open fail with a size or format error; it is not
+  silently truncated.
+- On a sharing violation Harbour sets `NetErr()` and the program continues;
+  hbc aborts at the open with the Win32 error. `NetErr()` is not supported.
+- No index is admitted on a shared open. Harbour reads index files under
+  its index lock protocol while writers update them; hbc does not implement
+  that protocol. The structural `.cdx` is not opened, and `dbSetOrder(n>=1)`,
+  `dbSeek` and `ordListAdd` fail with an explicit message.
+- shared=.T. with readonly=.F. is a compile-time error (shared writes need
+  record and file locks).
+
+On Linux there are no share modes: a shared open is the same O_RDONLY
+snapshot, and the same index and NetErr restrictions apply. The
+Linux side is not measured against Harbour by this gate.
 
 ## Windows path contract
 
