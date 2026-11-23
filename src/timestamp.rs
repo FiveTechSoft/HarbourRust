@@ -58,6 +58,8 @@ thread_local!{static ACTIVE:std::cell::Cell<bool>=const{std::cell::Cell::new(fal
 pub(super) fn known(e:&Expr)->bool{match e{Expr::Call(id,_)=>is_builtin(id,"hb_stot")||is_builtin(id,"hb_dtot"),Expr::Var(v)=>NAMES.with(|m|m.borrow().contains(&(CUR_FN.with(|f|f.borrow().clone()),v.clone()))),_=>false}}
 pub(super) fn active()->bool{ACTIVE.with(|v|v.get())}
 pub(super) fn init(fs:&[Func]){
+ let mut fmt=false;let mut arr=false;for f in fs{visit_stmts_ref(&f.stmts,&mut |_|{},&mut |e|{if matches!(e,Expr::Call(id,_) if is_builtin(id,"hb_stot")||is_builtin(id,"hb_dtot")){fmt=true;}if matches!(e,Expr::DArrNew){arr=true;}});}
+ CONTAINERS.with(|v|v.set(fmt&&arr&&CLASSES.with(|c|c.borrow().is_empty())&&DECIMAL_LOCAL_PROFILE.with(|v|v.get())&&!MACRO_CONTEXT.with(|v|v.get())));
  ACTIVE.with(|v|v.set(false));
  NAMES.with(|v|v.borrow_mut().clear());
  for f in fs{visit_stmts_ref(&f.stmts,&mut |_|{},&mut |e|{if matches!(e,Expr::Call(id,_) if family(id)){ACTIVE.with(|v|v.set(true));}});}
@@ -128,3 +130,7 @@ fn emit_format(id:&str,args:&[Expr],env:&[CgLocal],sigs:&[Sig],strs:&mut Vec<Str
  if is_builtin(id,"hb_dtoc"){flags|=4;}
  out.push_str(&format!("    mov (%rsp), %rdi\n    mov 8(%rsp), %rsi\n    mov 16(%rsp), %rdx\n    mov 24(%rsp), %rcx\n    mov 32(%rsp), %r8\n    mov ${flags}, %r9d\n    call hbc_ts_format\n    add $48, %rsp\n"));
 }
+
+// Phase3 array bridge is independently bounded to timestamp programs without classes.
+thread_local!{static CONTAINERS:std::cell::Cell<bool>=const{std::cell::Cell::new(false)};}
+pub(super) fn containers()->bool{CONTAINERS.with(|v|v.get())}

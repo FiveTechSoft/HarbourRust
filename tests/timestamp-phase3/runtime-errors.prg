@@ -1,0 +1,17 @@
+FUNCTION Main()
+ LOCAL a:={},i,e,n:=0
+ AAdd(a,hb_SToT("20261123"))
+ FOR i:=1 TO 101
+  BEGIN SEQUENCE
+   hb_TToC(a)
+  RECOVER USING e
+   n++
+  END SEQUENCE
+  BEGIN SEQUENCE
+   hb_TToS(a)
+  RECOVER USING e
+   n++
+  END SEQUENCE
+ NEXT
+ ? n
+RETURN NIL

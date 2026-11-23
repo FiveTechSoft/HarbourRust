@@ -29,7 +29,7 @@ pub fn init(ff:&[Func]) {
   names.insert(f.name.clone(),arrays);
  }
  for f in ff {let own=names.get(&f.name).unwrap();visit_stmts_ref(&f.stmts,&mut |_|{},&mut |e|{if let Expr::Call(id,aa)=e {if let Some(to)=ff.iter().find(|x|x.name==*id){for(i,a)in aa.iter().enumerate().take(to.params.len()){if matches!(a,Expr::Var(n) if own.contains(n)) && to.stmts.iter().any(|s|matches!(s,Stmt::AAdd(_,p,_) if p==&to.params[i])) {need=true;}}}}});}
- if method_arrays::active(){need=true;}
+ if method_arrays::active()||timestamp::containers(){need=true;}
  if !need{return;}
  // Initially keep unsupported profiles closed, rather than changing existing
  // native/PE/Mach-O contracts with an untested collector.

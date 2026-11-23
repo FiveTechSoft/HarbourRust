@@ -130,3 +130,5 @@ tests/method-results-b1/*.prg -text
 tests/method-arrays-b2/*.prg -text
 
 tests/timestamp-phase2/*.prg -text
+
+tests/timestamp-phase3/*.prg -text
