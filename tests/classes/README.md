@@ -67,6 +67,25 @@ run against Harbour under Wine are PENDING. On Linux without Wine,
 `--emit-only` passes 43/43 (emission evidence, not proof of running on
 Windows).
 
+## Windows differential gate (`check_windows_differential.py`)
+
+The fresh differential run against official Harbour on Windows. Both
+sides compile and run as Windows PE programs in the same environment
+(Wine on Linux, or real Windows), compared byte for byte with NO
+normalization:
+
+    python3 tests/classes/check_windows_differential.py /path/to/hbc \
+        --hbmk2-win /path/to/windows/hbmk2.exe --wine /path/to/wine [--write-fixtures]
+
+`--hbmk2-win` is the official Windows hbmk2.exe with its install tree.
+`--write-fixtures` versions the oracle streams into
+`tests/classes/expected-windows/`. Declared-limit and negative probes
+must run under Harbour and answer their recorded named rejection under
+HarbourRust. On hosts without a Windows runner, `--emit-only` checks
+HarbourRust compilation, PE32+ structure and named rejections (43/43 on
+Linux at 092b957f; emission evidence, not execution). A Wine/Windows
+runner is PENDING; no oracle fixture has been captured yet.
+
 ## Mach-O Intel battery (`check_macho.sh`)
 
 Run on a real Mac with Python 3 installed:
