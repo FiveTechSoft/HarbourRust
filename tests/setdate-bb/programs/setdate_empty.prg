@@ -22,5 +22,5 @@ SET DATE ANSI
 ? "[" + DToC(d) + "]"
 SET DATE GERMAN
 ? "[" + DToC(d) + "]"
-? d
+? d, "|"
 return
