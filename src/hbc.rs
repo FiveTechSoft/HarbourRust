@@ -4881,9 +4881,30 @@ fn minmax_mixed_tys(a:Ty,b:Ty)->bool {
 fn byref_param(function: &str, index: usize) -> bool {
     BYREF_PARAMS.with(|m|m.borrow().get(function).map_or(false,|v|v.contains(&index)))
 }
+// Bounded package A: explicit self-VAL reassignment opts a parameter into
+// tagged scalar storage. Other parameter inference remains unchanged.
+thread_local! {static RETYPED_VAL_FUNCTIONS: std::cell::RefCell<std::collections::HashSet<String>>=std::cell::RefCell::new(std::collections::HashSet::new());}
+fn retyped_val_param(f: &Func, p: &str) -> bool {
+    let mut hit=false;
+    visit_stmts_ref(&f.stmts,&mut |st| {
+        if let Stmt::Assign(_,dst,Expr::Call(id,args))=st {
+            if dst==p && is_builtin(id,"val") && args.len()==1 && matches!(&args[0],Expr::Var(v) if v==p) {hit=true;}
+        }
+    },&mut |_|{});
+    hit
+}
 fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>), String> {
     let n = f.params.len();
     let mut pin: Vec<Option<Ty>> = vec![None; n];
+    for (i,p) in f.params.iter().enumerate() {
+        if retyped_val_param(f,p) {
+            if !DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get()) {
+                return Err("retyped VAL parameters require ordinary Linux without threads or macros in this increment".to_string());
+            }
+            if byref_param(&f.name,i) {return Err("retyped VAL parameters cannot be passed by reference in this increment".to_string());}
+            pin[i]=Some(Ty::Dyn);
+        }
+    }
     let mut lit: Vec<(String, Ty)> = Vec::new(); // literal-initialized locals
     #[derive(Clone,Default)]
     struct ParamUse { printed:bool, len_line:Option<usize> }
@@ -5064,7 +5085,7 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
     }
     // Pin parameter vars appearing directly (not under a call) in e.
     fn pin_vars(f: &Func, e: &Expr, ty: Ty, pin: &mut Vec<Option<Ty>>, n: usize) -> Result<(), String> {
-        if matches!(e,Expr::Var(v) if root_param(&f.name,v)){return Ok(());}
+        if matches!(e,Expr::Var(v) if root_param(&f.name,v) || retyped_val_param(f,v)){return Ok(());}
 
         // String parameters are uniformly OWNED strings (StrOwn): the
         // callee owns and frees its parameter, a rodata argument is
@@ -9381,6 +9402,9 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 // operand through the Dyn route (a float payload is combined by kind).
                 if sig_params[i] == Ty::Dyn { mark_dynplus(a, env, sigs, n); }
                 let ta = type_expr(a, env, sigs, n)?;
+                if ta==Ty::Dyn && sig_params[i]==Ty::I64 && RETYPED_VAL_FUNCTIONS.with(|v|v.borrow().contains(&CUR_FN.with(|c|c.borrow().clone()))) {
+                    return Err(format!("line {}: retyped VAL parameter to a static integer parameter is not covered in this increment; use a Dyn receiver",n));
+                }
                 if method_valtype::parameter(id,i) {method_valtype::argument(id,a,ta,n)?;}
                 if dd_call && matches!(ta, Ty::Obj(_)) && !DEFAULT_DYN.with(|m| m.borrow().contains(&(sigs[si].name.clone(), i))) {
                     return Err(format!("line {}: an object argument (argument {}) in a call to `{}`, which has a parameter without type evidence, is outside the dynamic increment in this increment (the boundary screen for object values could not release its reference)", n, i + 1, id));
@@ -11224,6 +11248,9 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                     return Err(format!("line {}: `return` from within a FINALLY block is not in this increment (Harbour defers it through the unwind; CATCH bodies take a normal `return`)", n));
                 }
                 allow_mixed_iif(e);
+                // Return expressions in the opted-in functions must retain
+                // runtime numeric kinds just as assignments and print do.
+                if RETYPED_VAL_FUNCTIONS.with(|v|v.borrow().contains(&CUR_FN.with(|c|c.borrow().clone()))) {mark_dynplus(e,env,sigs,*n);}
                 let t = type_expr(e, env, sigs, *n)?;
                 if t==Ty::NumLocal {return Err(format!("line {}: mixed numeric LOCAL return ABI is not in this increment",n));}
                 if t == Ty::F64 {
@@ -38539,6 +38566,10 @@ fn main() {
     if hash_case_mode && (!DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get())) {eprintln!("error: hb_HCaseMatch logical mode requires ordinary Linux without threads or macros");process::exit(1);}
     HASH_CASE_LOGICAL_MODE.with(|v|v.set(hash_case_mode));
     narrow_bare_date_locals(&mut funcs);
+    RETYPED_VAL_FUNCTIONS.with(|v| *v.borrow_mut()=funcs.iter().filter(|f|f.params.iter().any(|p|retyped_val_param(f,p))).map(|f|f.name.clone()).collect());
+    if RETYPED_VAL_FUNCTIONS.with(|v|!v.borrow().is_empty()) && (!DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get())) {
+        eprintln!("error: retyped VAL parameters require ordinary Linux without threads or macros in this increment");process::exit(1);
+    }
     if let Err(e)=box_gtstd::validate(&funcs){eprintln!("error: {}",e);process::exit(1);}
     lift_thread_blocks(&mut funcs);
 
@@ -38610,6 +38641,9 @@ fn main() {
         scan_byref_stmts(&f.stmts, &f.name, &mut byref_params, &mut byref_locals, &mut byref_variants);
     }
     BYREF_PARAMS.with(|m|*m.borrow_mut()=byref_params.clone());
+    for f in &funcs {for (i,p) in f.params.iter().enumerate() {
+        if retyped_val_param(f,p) && byref_param(&f.name,i) {eprintln!("error: retyped VAL parameters cannot be passed by reference in this increment");process::exit(1);}
+    }}
 
     // Pass 1: semantic analysis - types, ownership/move, signatures.
     // ORDER-INDEPENDENT inference (oracle hk253: Harbour resolves calls
