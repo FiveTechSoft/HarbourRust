@@ -1,3 +1,4 @@
+mod timestamp;
 mod bin_concat;
 mod optional_empty;
 mod cell_len;
@@ -2045,6 +2046,7 @@ impl P {
 }
 
 const ASM_RESERVED: &[&str] = &[
+    "ts_parse", "ts_from_date", "ts_to_date", "ts_midnight", "ts_string", "ts_render", "ts_print",
     "float_new", "float_clone", "float_release", "float_unpack", "float_cells_release", "aclone_i", "aclone_s", "asort_i", "asort_s", "aclone_alloc",
     // Not backend keywords (there is no textual backend anymore), but labels
     // hbc itself emits; a user function with one of these names would
@@ -5411,6 +5413,10 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
                     if !args.is_empty() { pin_vars(f,&args[0],Ty::Date,pin,n)?; walk(f,&args[0],sigs,lit,pin,printed,n)?; }
                     return Ok(());
                 }
+                if timestamp::family(id){
+                    if is_builtin(id,"hb_stot") && !args.is_empty(){pin_vars(f,&args[0],Ty::Str,pin,n)?;}
+                    for a in args {walk(f,a,sigs,lit,pin,printed,n)?;}return Ok(());
+                }
                 if is_builtin(id,"stod") || is_builtin(id,"hb_stod") {
                     if !args.is_empty() { pin_vars(f,&args[0],Ty::Str,pin,n)?; walk(f,&args[0],sigs,lit,pin,printed,n)?; }
                     return Ok(());
@@ -6808,6 +6814,10 @@ fn val_lowering_gap(e: &Expr, is_static_arr: &dyn Fn(&str) -> bool) -> Option<&'
 }
 
 fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Result<Ty, String> {
+    if matches!(e,Expr::Bin(_,a,b)|Expr::Cmp(_,a,b) if timestamp::known(a)||timestamp::known(b)){
+        return Err(format!("line {}: timestamp arithmetic and comparison are not in phase 1",n));
+    }
+
     match e {
         Expr::Seq(es) => {
             let mut local = env.to_vec();
@@ -7073,7 +7083,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 if arr && !matches!(&args[0], Expr::Var(_)) {
                     return Err(format!("line {}: `Empty` on an array/hash needs a variable in this increment", n));
                 }
-                if t == Ty::Dyn && !matches!(&args[0], Expr::Nil) && !DBF_USED.with(|v|v.get()) {
+                if t == Ty::Dyn && !matches!(&args[0], Expr::Nil) && !DBF_USED.with(|v|v.get()) && !timestamp::known(&args[0]) {
                     return Err(format!("line {}: `Empty` on generic Dyn values is not in this increment", n));
                 }
                 if matches!(t, Ty::DArrRef | Ty::DArrRef2) {
@@ -7312,7 +7322,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 }
                 match &args[0] {
                     Expr::Int(_) | Expr::Str(_) | Expr::Nil | Expr::Var(_) => {}
-                    Expr::Call(id, _) if is_output_call(id) || is_builtin(id,"date") || is_builtin(id,"ctod") || dbf_result(id).is_some() => {}
+                    Expr::Call(id, _) if is_output_call(id) || is_builtin(id,"date") || is_builtin(id,"ctod") || dbf_result(id).is_some() || timestamp::family(id) => {}
                     Expr::Index(v, _) => {
                         // DArr4 first level: child-array casilla -
                         // "A" (hk114, byte-measured via hk117 markers).
@@ -7950,6 +7960,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 }
                 return Ok(Ty::F64);
             }
+            if timestamp::family(id){return timestamp::check(id,args,env,sigs,n);}
             if is_builtin(id, "dtos") {
                 // DToS(d) (issue #1): the packed date as yyyymmdd text; an
                 // empty date renders 8 spaces (Harbour DToS(CToD(""))).
@@ -12864,6 +12875,7 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
                 for a in args { apply_moves(a,env,sigs,false); }
                 return;
             }
+            if timestamp::family(id){for a in args {apply_moves(a,env,sigs,false);}return;}
             if is_builtin(id,"dtos") || is_builtin(id,"stod") || is_builtin(id,"hb_stod") || is_builtin(id,"year") || ["day","month","dow","cdow","cmonth","dtoc"].iter().any(|b|is_builtin(id,b)) {
                 for a in args { apply_moves(a,env,sigs,false); }
                 return;
@@ -16380,6 +16392,9 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                     vt_letter(strs, out, "P");
                     out.push_str(&format!("    jmp 97f\n.Lvtp{}:\n", lp));
                 }
+                let not_ts=fresh_lbl();
+                out.push_str(&format!("    cmp $17, %r10\n    jne .Lnot_ts{not_ts}\n"));
+                vt_letter(strs,out,"T");out.push_str(&format!("    jmp 97f\n.Lnot_ts{not_ts}:\n"));
                 // Date is a scalar Dyn kind, not a DBF-only value.
                 let no_date=fresh_lbl();let done=fresh_lbl();
                 out.push_str(&format!("    cmpb $11, %r10b\n    jne .Ldbfnotdate{}\n",no_date));
@@ -16403,6 +16418,16 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                 Expr::Call(id, _) if is_output_call(id) => {
                     cg_expr(&args[0], env, sigs, strs, out, target);
                     vt_letter(strs, out, "U");
+                }
+                Expr::Call(id,_) if timestamp::family(id) => {
+                    cg_value(&args[0],env,sigs,strs,out,target);
+                    match timestamp::result(id).unwrap(){
+                        Ty::Dyn=>{out.push_str("    mov %rax, %r10\n");vt_classify_scalar(strs,out);},
+                        Ty::Date=>vt_letter(strs,out,"D"),
+                        Ty::Bool=>vt_letter(strs,out,"L"),
+                        Ty::StrOwn=>{out.push_str("    mov %rax, %rdi\n    call hbc_freestr\n");vt_letter(strs,out,"C");},
+                        _=>unreachable!(),
+                    }
                 }
                 Expr::Call(id,_) if matches!(dbf_result(id),Some(Ty::Bool)|Some(Ty::I64)) => {
                     cg_value(&args[0],env,sigs,strs,out,target);
@@ -17508,6 +17533,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             }
             out.push_str("    movsd 8(%rsp), %xmm0\n    mov 16(%rsp), %rdi\n    add $32, %rsp\n");
         }
+        Expr::Call(id,args) if timestamp::family(id) => {timestamp::emit(id,args,env,sigs,strs,out,target);}
         Expr::Call(id,args) if is_builtin(id,"dtos") => {
             cg_value(&args[0],env,sigs,strs,out,target);
             out.push_str("    mov %rax, %rdi\n    call hbc_dtos\n");
@@ -19174,7 +19200,10 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                     out.push_str("    test %rdx, %rdx\n    sete %al\n    movzbq %al, %rax\n");
                 }
                 Ty::Dyn => {
-                    if DBF_USED.with(|v|v.get()) {
+                    if timestamp::known(e){
+                        cg_value(e,env,sigs,strs,out,target);
+                        out.push_str("    cmp $17, %rax\n    jne hbc_type_error\n    test %rdx, %rdx\n    sete %al\n    movzbq %al, %rax\n");
+                    }else if DBF_USED.with(|v|v.get()) {
                         cg_value(e,env,sigs,strs,out,target);
                         out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hrdbf_app_empty\n");
                         if dyn_expr_owned(e) { cg_dyn_stack_release(out,0,true); }
@@ -21232,6 +21261,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             if ["padc","rat","stuff","isdigit","isalpha","isupper","islower","strzero"].iter().any(|b|is_builtin(id,b)) { return str_builtin_ty(id); }
             if is_builtin(id, "padl") { return Ty::StrOwn; }
             if is_builtin(id, "val") { return Ty::F64; }
+            if let Some(t)=timestamp::result(id){return t;}
             if is_builtin(id, "dtos") { return Ty::StrOwn; }
             if is_builtin(id, "stod") || is_builtin(id,"hb_stod") { return Ty::Date; }
             if is_builtin(id, "year") { return Ty::I64; }
@@ -23050,6 +23080,9 @@ fn cg_print_items(es: &[Expr], inline: bool, raw: bool, stderr: bool, env: &[CgL
                             }
                         }
                         Ty::Dyn => {
+                            let ts_done=fresh_lbl();let ts_other=fresh_lbl();
+                            let ts_mode=if stderr {2} else if raw {0} else {1};
+                            if timestamp::active(){out.push_str(&format!("    cmp $17, %rax\n    jne .Lprint_not_ts{ts_other}\n    mov %rdx, %rdi\n    mov ${ts_mode}, %esi\n    call hbc_ts_print\n    jmp .Lprint_ts_done{ts_done}\n.Lprint_not_ts{ts_other}:\n"));}
                             // Inline dates use the same SET DATE/CENTURY renderer as
                             // static dates. No owned payload is created by rendering.
                             let date_done=fresh_lbl();let not_date=fresh_lbl();
@@ -23066,6 +23099,7 @@ fn cg_print_items(es: &[Expr], inline: bool, raw: bool, stderr: bool, env: &[CgL
                                 out.push_str("    call hbc_print_dyn\n");
                             }
                             out.push_str(&format!(".Lprint_date_done{date_done}:\n"));
+                            if timestamp::active(){out.push_str(&format!(".Lprint_ts_done{ts_done}:\n"));}
                             // An owned temporary (a call result) releases a
                             // tag-4 payload right after printing; a Var stays
                             // owned by its slot, and a DArrDyn cell read stays
@@ -34534,7 +34568,19 @@ fn finalize_trace(mut out: String, target: Target) -> String {
     if macro_mode {
         out.push_str(&macro_helpers(target));
     }
-    if ["ctod", "date_today", "date_render", "stod", "dtos", "year", "day", "month", "dow", "cdow", "cmonth", "dtoc", "date_add", "date_diff", "date_days", "date_from_days", "descend_date"].iter().any(|name| out.contains(&format!("call hbc_{}",name))) {
+    if out.contains("call hbc_ts_") {
+        let ro=if target==Target::Windows{".section .rdata,\"r\""}else{".section .rodata"};
+        out.push_str(&include_str!("../generated/hrtimestamp.s").replace("@HRTIMESTAMP_RODATA@",ro));
+        out.push_str(timestamp::PRINT_HELPER);
+        // Unknown Dyn values cannot silently fall through legacy equality.
+        // Timestamp ordering and equality are a later phase.
+        for h in ["hbc_dyn_eq", "hbc_dynxeq_dd", "hbc_dynxcmp"]{
+            let label=format!("{}:\n",h);
+            out=out.replace(&label,&format!("{}    cmp $17, %rax\n    je hbc_type_error\n    cmp $17, %rcx\n    je hbc_type_error\n",label));
+        }
+
+    }
+    if ["ts_parse", "ts_to_date", "date_core_c", "ctod", "date_today", "date_render", "stod", "dtos", "year", "day", "month", "dow", "cdow", "cmonth", "dtoc", "date_add", "date_diff", "date_days", "date_from_days", "descend_date"].iter().any(|name| out.contains(&format!("call hbc_{}",name))) {
         out.push_str(DATE_PORT_HELPERS);
     }
     if matches!(target, Target::Linux) && !MACHO_MODE.with(|v| v.get()) && (out.contains("call hbc_date_today") || out.contains("call hbc_seconds") || out.contains("call hbc_time_str")) {
@@ -38599,6 +38645,7 @@ fn main() {
     narrow_bare_date_locals(&mut funcs);
     init_retyped_val_functions(&funcs);
     init_pcount_functions(&funcs);
+    timestamp::init(&funcs);
     let mut bad_pcount_arity=false;
     for f in &funcs {visit_stmts_ref(&f.stmts,&mut |_|{},&mut |e|{if matches!(e,Expr::Call(id,args) if is_builtin(id,"pcount") && !args.is_empty()){bad_pcount_arity=true;}});}
     if bad_pcount_arity {eprintln!("error: PCount takes no arguments in this increment");process::exit(1);}
