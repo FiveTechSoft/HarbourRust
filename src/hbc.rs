@@ -34369,7 +34369,9 @@ fn finalize_trace(mut out: String, target: Target) -> String {
         if !out.contains("hbc_dtos:") {
             out.push_str(DATE_PORT_HELPERS);
         }
-        out.push_str(include_str!("../generated/hrjson.s"));
+        // Expand only this blob's private section marker for the target.
+        let json_rodata = if target == Target::Windows { ".section .rdata,\"r\"" } else { ".section .rodata" };
+        out.push_str(&include_str!("../generated/hrjson.s").replace("@HRJSON_RODATA@", json_rodata));
     }
     // The clean-room Transform layout blob: the ordinary-Linux finalize
     // path appends it earlier (inside the gtstd block), so this only

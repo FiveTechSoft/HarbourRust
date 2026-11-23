@@ -21,8 +21,8 @@ s=re.sub(r'^\s*\.(file|def|ident|type|size)\s+.*\n','',s,flags=re.M)
 s=strip_empty_gnu_stack(s)
 s=re.sub(r'\.L([A-Za-z0-9_.$]+)',r'.Lhjson_\1',s)
 s=s.replace('movabsq','movabs')
-# GCC on ELF names mergeable read-only sections differently from MinGW.
-s=re.sub(r'^\s*\.section\s+\.rodata[^\n]*', '.section .rodata', s, flags=re.M)
+# Keep JSON read-only sections target-neutral until inclusion in hbc.
+s=re.sub(r'^\s*\.section\s+\.(?:rodata|rdata)[^\n]*', '@HRJSON_RODATA@', s, flags=re.M)
 s=re.sub(r'^(\s*(?:sal|sar|shl|shr|rol|ror)[bwlq]?)\s+(%\w+)\s*$',r'\1 $1, \2',s,flags=re.M)
 s=re.sub(r'^\s*\.(?:lcomm|comm)\s+(\S+),(\d+)(?:,\s*\d+)?\s*$',lambda m:'\n.bss\n.balign 16\n'+m[1]+':\n.zero '+m[2]+'\n.text',s,flags=re.M)
 s=re.sub(r'^\s*\.(?:string|ascii)\s+("(?:[^"\\]|\\.)*")\s*$',lambda m:'.byte '+','.join(str(b)for b in ast.literal_eval('b'+m[1])),s,flags=re.M)

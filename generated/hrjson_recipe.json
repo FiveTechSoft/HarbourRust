@@ -27,7 +27,7 @@
     "-Wno-misleading-indentation"
   ],
   "source_sha256": "7fcb30b8932eda66172afe8d95ced02b4e70e2250d5a9db2904561f5f4d10412",
-  "asm_sha256": "5a1664ddff6aa568292dd2192c3a27b99dd62258deb4eae2d71c19114fbbe8bd",
+  "asm_sha256": "8d8946bc2819cf0f08ad8249c85d91249ab2bb616c49b724b793987017f1186a",
   "external_calls": [
     "hbc_alloc",
     "hbc_dtos",
@@ -36,5 +36,6 @@
     "hbc_str_f64",
     "hbc_type_error"
   ],
-  "newline_policy": "LF bytes; CR rejected in source; assembly emitted as UTF-8 LF"
+  "newline_policy": "LF bytes; CR rejected in source; assembly emitted as UTF-8 LF",
+  "section_policy": "@HRJSON_RODATA@ expands only at JSON inclusion: Linux .rodata; Windows .rdata,\"r\""
 }

@@ -243,7 +243,7 @@ hjson_local_hrt_put_i64:
 	cmpq	$9, %rax
 	ja	.Lhjson_49
 	jmp	.Lhjson_48
-	.section .rdata,"dr"
+@HRJSON_RODATA@
 .Lhjson_C0:
 .byte 92,34,0
 .Lhjson_C1:
@@ -423,7 +423,7 @@ hjson_local_hrt_drop_pair:
 .Lhjson_90:
 	movq	%rsi, %rdi
 	jmp	hbc_freestr
-	.section .rdata,"dr"
+@HRJSON_RODATA@
 .Lhjson_C9:
 .byte 0
 	.text
@@ -1274,7 +1274,7 @@ hjson_local_hrt_dec_value:
 	movq	96(%rsp), %r15
 	leaq	24(%rsp), %rsi
 	jmp	.Lhjson_111
-	.section .rdata,"dr"
+@HRJSON_RODATA@
 .Lhjson_C11:
 .byte 116,114,117,101,0
 .Lhjson_C12:
@@ -1452,7 +1452,7 @@ hjson_local_hrt_enc_dyn.part.0.constprop.0:
 	call	hjson_local_hrt_put
 	movq	8(%rsp), %rax
 	jmp	.Lhjson_312
-	.section .rdata,"dr"
+@HRJSON_RODATA@
 .Lhjson_C14:
 .byte 123,125,0
 .Lhjson_C15:
@@ -2003,7 +2003,7 @@ hbc_json_decode:
 	addq	$72, %rsp
 	xchgq	%rdx, %rax
 	ret
-	.section .rdata,"dr"
+@HRJSON_RODATA@
 	.align 16
 hjson_local_hex.0:
 .byte 48,49,50,51,52,53,54,55,56,57,97,98,99,100,101,102,0

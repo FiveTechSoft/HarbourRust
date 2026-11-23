@@ -42,3 +42,10 @@ The generator rejects CR in the source and writes UTF-8 LF bytes explicitly.
 Its section filter omits only an empty `.note.GNU-stack` marker and rejects
 other note sections or any content under that marker. Check with
 `python tests/test_generate_json_asm.py`.
+
+The JSON blob uses the private `@HRJSON_RODATA@` section marker. Only its
+inclusion expands that marker: Linux emits `.section .rodata`; Windows
+emits `.section .rdata,"r"`. No global assembly substitution is used.
+`python tests/check_json_target_sections.py --compiler ./hbc` checks the
+complete emitted blob after its first label for both targets and both
+instrumentation modes, including all five target-specific sections.
