@@ -27,6 +27,14 @@ static size_t hrdbf_app_baselen;
  * goes top. 0 none, 1 open bag, 2 present on a writable open (index writes
  * are outside this increment), 3 present but not admitted by the reader. */
 static unsigned hrdbf_app_struct;
+/* Path character for "same file, other extension": ASCII case-insensitive,
+ * and on Windows '\' and '/' are one separator. */
+static unsigned char hrdbf_app_pathc(unsigned char c){
+#ifdef _WIN32
+ if(c=='\\')c='/';
+#endif
+ return cxupper(c);
+}
 static void hrdbf_app_write(const char *msg){
  size_t n=0;while(msg[n])n++;
 #ifdef _WIN32
@@ -65,8 +73,10 @@ void hrdbf_app_open(const unsigned char *p,size_t len,uint64_t new_area,uint64_t
 #endif
  )start=i+1;
  end=len;for(i=start;i<len;i++)if(p[i]=='.')end=i;
- hrdbf_app_baselen=end-start;
- for(i=0;i<hrdbf_app_baselen;i++)hrdbf_app_basename[i]=cxupper(p[start+i]);
+ /* The table path without its extension (pathc-folded): an index with the
+  * same stem is the structural bag, one in another directory is not. */
+ hrdbf_app_baselen=end;
+ for(i=0;i<end;i++)hrdbf_app_basename[i]=hrdbf_app_pathc(p[i]);
  e=hrdbf_file_open(&hrdbf_app_state,path,writable!=0);
  if(e){
   /* D1.1: exact reason from the OS layer or the decoder, code fallback. */
@@ -126,8 +136,8 @@ uint64_t hrdbf_app_order_add(const unsigned char*p,size_t len){
 #endif
  )last=i+1;}
  end=len;for(i=last;i<len;i++)if(p[i]=='.'){dot=1;end=i;}
- if(hrdbf_app_cdx&&end-last==hrdbf_app_baselen){
-  for(i=0;i<hrdbf_app_baselen;i++)if(cxupper(p[last+i])!=hrdbf_app_basename[i])same=0;
+ if(hrdbf_app_cdx&&end==hrdbf_app_baselen){
+  for(i=0;i<end;i++)if(hrdbf_app_pathc(p[i])!=hrdbf_app_basename[i])same=0;
  }else same=0;
  /* The structural bag is already open: Harbour selects its order and goes
   * top (measured), it does not open a second copy. */

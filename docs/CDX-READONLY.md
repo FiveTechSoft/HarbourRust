@@ -7,7 +7,8 @@ or translated. This is not general DBFCDX compatibility.
 ## Admitted subset
 
 Linux/Windows x86-64 ordinary native backend. One read-only dBASE III area and one
-explicitly opened, nonstructural compound CDX containing exactly one tag. The
+compound CDX containing exactly one tag, opened explicitly with OrdListAdd or
+as the structural bag. The
 tag must be ascending, nonunique and unconditional, over one direct C field
 of width 1-240 bytes. Every physical DBF record, including deleted records,
 must appear once, with a key matching that field's bytes. No expression is
@@ -121,3 +122,20 @@ C bridge checks, resource tracing and sanitizer tests.
 
 Generated fixtures and executions with real Harbour decide admitted behavior
 when older descriptions are incomplete. No Harbour RDD code is used.
+
+## Structural bag (autoopen)
+
+Measured against real Harbour 3.2 on native Windows
+(`tests/dbf/cdx-autoopen/check_cdx_autoopen.py`, 5/5 identical):
+
+- A DBFCDX open also opens `<dir>/<base>.cdx` whenever that file exists.
+  The production flag in header byte 28 does not matter: Harbour opens the
+  bag without it, and a missing file with the flag set is silent.
+- The bag opens with no controlling order (natural order). `dbSetOrder(1)`
+  selects it; `OrdListAdd()` of the same bag selects it and goes top.
+- On a readonly=.F. open hbc does not open the bag, because index
+  maintenance is outside this increment. `dbSetOrder(n>=1)`, `dbSeek` and
+  `OrdListAdd()` of that bag then fail with an explicit message instead of
+  falling back to natural order. A bag the reader does not admit (more
+  than one tag, keys outside the subset) fails the same way. Harbour
+  succeeds in both cases: a registered difference.

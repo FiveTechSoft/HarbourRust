@@ -17,7 +17,7 @@ See [D1](DBF-WRITE-OPEN-D1.md). NTX and CDX must be opened explicitly
 with OrdListAdd. CDX is one ascending, nonunique, unconditional tag over one
 direct C field of 1..240 bytes, with complete matching physical-record coverage.
 See [DBF](DBF-READONLY.md), [NTX](NTX-READONLY.md) and [CDX](CDX-READONLY.md).
-No writes, memo fields, shared RDD locking, structural CDX autoopening,
+No writes, memo fields, shared RDD locking, structural CDX on writable opens,
 multitag/scopes/expressions/codepage conversion, LLVM or Mach-O DBF support.
 
 Static arguments, APIs, driver and shared/readonly restrictions fail at
@@ -39,10 +39,11 @@ trailing-dot/space component ambiguities are rejected. No automatic long-path
 prefixing, ACP guessing or UTF-8 conversion. Files still need to exist and be
 readable under the OS path-length/access rules.
 
-CDX/DBF basenames are compared ASCII case-insensitively after separator and
-extension handling, including across different directories. DATA.dbf and
-data.cdx conflict. The adapter preserves this conservative existing reader
-restriction rather than pretending to autoopen a structural index.
+A DBFCDX open also opens the structural bag `<dir>/<base>.cdx` when that file
+exists, as Harbour does (see [CDX](CDX-READONLY.md)). An index path is the
+structural bag when it names the table's path with another extension,
+compared ASCII case-insensitively with `/` and `\` as one separator. The same
+basename in another directory is an ordinary bag.
 
 ## Handles, snapshots and cleanup
 

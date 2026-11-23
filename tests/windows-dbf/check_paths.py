@@ -23,7 +23,7 @@ def case(name,path,static=True,ok=False,index=None):
   q=subprocess.run([wine,str(out/(name+'.exe'))],cwd=out,env=env,capture_output=True,timeout=15);rc=q.returncode
   (out/(name+'.stdout')).write_bytes(q.stdout);(out/(name+'.stderr')).write_bytes(q.stderr)
   passed=(rc==0 and b'250' in q.stdout and not q.stderr) if ok else (rc==1 and b'hbc:' in q.stderr)
- if name=='same-basename':assert b'different basename' in q.stderr,q.stderr
+ if name=='same-basename':assert b'index read-only open rejected' in q.stderr,q.stderr  # other dir: not the structural bag, and missing
  rows.append(dict(case=name,path=path,static=static,expected_success=ok,rc=rc,pass_=passed));print(rows[-1]);assert passed
 for n,p in [('slash','dir.with.dot/DATA.DBF'),('backslash','dir.with.dot\\DATA.DBF'),('mixed','./dir.with.dot\\DATA.DBF'),('absolute','Z:'+str(out/'dir.with.dot/DATA.DBF').replace('/','\\'))]:case(n,p,ok=True)
 for n,p in [('index-slash','index.dir/keys.CDX'),('index-backslash','index.dir\\keys.CDX'),('index-mixed','./index.dir\\keys.CDX')]:case(n,'dir.with.dot/DATA.DBF',ok=True,index=p)
