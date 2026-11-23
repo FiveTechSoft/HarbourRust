@@ -126,3 +126,5 @@ tests/array-alias-a/*.out -text
 tests/array-shared-a2/*.out -text
 
 tests/method-results-b1/*.prg -text
+
+tests/method-arrays-b2/*.prg -text

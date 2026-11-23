@@ -5,7 +5,7 @@ thread_local!{static PARAMS:std::cell::RefCell<HashSet<(String,String)>>=std::ce
 pub fn parameter(f:&str,p:&str)->bool{PARAMS.with(|v|v.borrow().contains(&(f.to_string(),p.to_string())))}
 thread_local!{static POS:std::cell::RefCell<HashSet<(String,usize)>>=std::cell::RefCell::new(HashSet::new());}
 pub fn position(f:&str,i:usize)->bool{POS.with(|v|v.borrow().contains(&(f.to_string(),i)))}
-pub fn active()->bool{PARAMS.with(|v|!v.borrow().is_empty())}
+pub fn active()->bool{if method_arrays::active(){return true;}PARAMS.with(|v|!v.borrow().is_empty())}
 pub fn choices(name:&str)->Vec<(u32,String)>{let n=CLASSES.with(|v|v.borrow().len());(0..n as u32).filter_map(|ci|method_lookup(ci,&name.to_lowercase()).map(|(_,f)|(ci,f))).collect()}
 pub fn init(ff:&[Func]){
  PARAMS.with(|v|v.borrow_mut().clear());POS.with(|v|v.borrow_mut().clear());
@@ -40,7 +40,7 @@ pub fn emit(e:&Expr,env:&[CgLocal],sigs:&[Sig],strs:&mut Vec<String>,out:&mut St
 
 fn plain_arg(e:&Expr)->bool{matches!(e,Expr::Int(_)|Expr::Log(_)|Expr::Nil|Expr::Str(_)|Expr::Var(_))}
 pub fn validate(ff:&[Func])->Result<(),String>{
- if !active(){return Ok(());}
+ if !active() || method_arrays::active(){return Ok(());}
  let mut bad=false;
  for f in ff {visit_stmts_ref(&f.stmts,&mut |st|{if matches!(st,Stmt::ForEach(..)|Stmt::MemvarDecl(..)|Stmt::MemvarSet(..)|Stmt::Switch(..)){bad=true;}},&mut |_|{});
  visit_stmts_ref(&f.stmts,&mut |_|{},&mut |e|{if matches!(e,Expr::HashLit(_)|Expr::ArrLit(_)|Expr::DArrNew|Expr::BlockLit(..)|Expr::ByRef(_)|Expr::FuncRef(_)|Expr::Seq(_)|Expr::Set(..)){bad=true;}});}
@@ -57,7 +57,7 @@ pub fn runtime()->String{
  let a=s.find(".Lhrobj_8:").unwrap();let b=s.find(".Lhrobj_29:").unwrap();
  s.replace_range(a..b,".Lhrobj_8:\n    add $1, %eax\n    shl $4, %eax\n    mov %rax, %rdi\n    call hbc_alloc\n    mov %rax, %r14\n    movl 20(%r12), %eax\n    jmp .Lhrobj_9\n");
  let a=s.find(".Lhrobj_39:").unwrap();let b=s.find(".Lhrobj_35:").unwrap();
- s.replace_range(a..b,".Lhrobj_39:\n    mov 0(%rbp), %rax\n    movl 20(%rax), %esi\n    add $1, %esi\n    shl $4, %esi\n    mov %rbp, %rdi\n@REG_FREE_L@    incq hbc_mem_frees(%rip)\n    call hbc_release\n");s
+ s.replace_range(a..b,".Lhrobj_39:\n    mov 0(%rbp), %rax\n    movl 20(%rax), %esi\n    add $1, %esi\n    shl $4, %esi\n    mov %rbp, %rdi\n@REG_FREE_L@    incq hbc_mem_frees(%rip)\n    call hbc_release\n");method_arrays::runtime(s)
 }
 pub fn cleanup(out:&mut String){
  if !active(){return;}

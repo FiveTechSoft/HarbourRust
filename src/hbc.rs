@@ -1,3 +1,4 @@
+mod method_arrays;
 mod method_results;
 mod shared_local;
 mod timestamp;
@@ -3874,6 +3875,11 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
             Tok::ColonColon => {
                 // ::name := e (statement form inside a method body)
                 match toks.as_slice() {
+                    [Tok::ColonColon, Tok::Ident(mname), Tok::IncTok] => {
+                        check_ident(mname,n)?;
+                        out.push(Stmt::SelfSet(n,mname.clone(),Expr::Bin('+',Box::new(Expr::SelfGet(mname.clone())),Box::new(Expr::Int("1".into())))));
+                        *i+=1;
+                    }
                     [Tok::ColonColon, Tok::Ident(mname), Tok::Assign, rest @ ..] => {
                         check_ident(mname, n)?;
                         let e = parse_expr_tokens(rest.to_vec(), n)?;
@@ -4701,7 +4707,7 @@ fn class_init_scalar_ok(e: &Expr) -> bool {
 // casillas are tagged Dyn slots). Objects/arrays/hashes/codeblocks are
 // named rejections (reference-cycle management pending).
 fn check_data_value(n: usize, name: &str, t: Ty) -> Result<(), String> {
-    if method_results::active() && t==Ty::Dyn{return Err(format!("line {}: B1 cannot store a Dyn result into DATA `{}` (object/container roots are not supported)",n,name));}
+    if method_results::active() && !method_arrays::active() && t==Ty::Dyn{return Err(format!("line {}: B1 cannot store a Dyn result into DATA `{}` (object/container roots are not supported)",n,name));}
     match t {
         Ty::I64 | Ty::F64 | Ty::Bool | Ty::Str | Ty::StrOwn | Ty::Date | Ty::Dyn => Ok(()),
         Ty::Obj(_) => Err(format!("line {}: DATA `{}` holding an object is not in this increment (reference-cycle management pending)", n, name)),
@@ -5608,6 +5614,9 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
             Expr::DArrNew => Ok(()),
             Expr::SelfObj | Expr::SelfGet(_) => Ok(()),
             Expr::Send(o, name, args) => {
+                if method_arrays::active(){
+                    for(_,id)in method_results::choices(name){if let Some(sg)=sigs.iter().find(|s|s.name==id){for(i,a)in args.iter().enumerate(){if sg.inferred.get(i+1)==Some(&true){pin_vars(f,a,sg.params[i+1],pin,n)?;}}}}
+                }
                 // A send on a parameter pins it to the member's unique
                 // hierarchy root (receiver_pin_class); ambiguity is a
                 // named error, the no-owner case keeps the Dyn pin for
@@ -6915,7 +6924,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
             Some(v) => Ok(v.ty),
         },
         Expr::Call(id, args) => {
-            if method_results::active() && !USER_FUNC_NAMES.with(|v|v.borrow().contains(id)) && !is_output_call(id) && !is_builtin(id,"valtype") {
+            if method_results::active() && !USER_FUNC_NAMES.with(|v|v.borrow().contains(id)) && !is_output_call(id) && !is_builtin(id,"valtype") && !(method_arrays::active() && is_builtin(id,"len")) {
                 for a in args {if type_expr(a,env,sigs,n)?==Ty::Dyn{return Err(format!("line {}: B1 Dyn builtin consumer `{}` is not covered; use ValType, output, or a direct function",n,id));}}
             }
             if let Some(ty) = dbf_result(id) {
@@ -7487,7 +7496,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                     // ains P2 stage 1: len of a Dyn VARIABLE dispatches on
                     // the runtime tag (string or tag-8 array: length/count
                     // at payload-8; anything else is hbc_len_error).
-                    Ty::Dyn if matches!(&args[0], Expr::Var(_)) => Ok(Ty::I64),
+                    Ty::Dyn if method_arrays::active() || matches!(&args[0], Expr::Var(_)) => Ok(Ty::I64),
                     _ => return Err(format!("line {}: `len` expects an array", n)),
                 };
             }
@@ -9430,6 +9439,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 // operand through the Dyn route (a float payload is combined by kind).
                 if sig_params[i] == Ty::Dyn { mark_dynplus(a, env, sigs, n); }
                 let ta = type_expr(a, env, sigs, n)?;
+                if method_arrays::active() && sig_params[i]==Ty::StrOwn{return Err(format!("line {}: B2 owned-string parameters are outside argument-unwind scope",n));}
                 if method_results::active() && ta==Ty::Dyn && sig_params[i]==Ty::I64{return Err(format!("line {}: B1 does not implicitly extract a Dyn call argument as integer; use a typed local",n));}
                 if ta==Ty::Dyn && sig_params[i]==Ty::I64 && RETYPED_VAL_FUNCTIONS.with(|v|v.borrow().contains(&CUR_FN.with(|c|c.borrow().clone()))) {
                     return Err(format!("line {}: retyped VAL parameter to a static integer parameter is not covered in this increment; use a Dyn receiver",n));
@@ -9568,7 +9578,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
         }
         Expr::Bin(op, a, b) => {
 
-            if method_results::active() && (type_expr(a,env,sigs,n)?==Ty::Dyn || type_expr(b,env,sigs,n)?==Ty::Dyn){return Err(format!("line {}: B1 Dyn arithmetic/comparison is outside scope; inspect ValType or pass/store the result",n));}
+            if method_results::active() && (!method_arrays::active() || (dyn_expr_owned(a)&&!matches!(a.as_ref(),Expr::SelfGet(_))&&type_expr(a,env,sigs,n)?==Ty::Dyn) || (dyn_expr_owned(b)&&!matches!(b.as_ref(),Expr::SelfGet(_))&&type_expr(b,env,sigs,n)?==Ty::Dyn)) && (type_expr(a,env,sigs,n)?==Ty::Dyn || type_expr(b,env,sigs,n)?==Ty::Dyn){return Err(format!("line {}: B1 Dyn arithmetic/comparison is outside scope; inspect ValType or pass/store the result",n));}
             // `%` takes its operands as doubles by kind: an arithmetic operand with a Dyn side
             // takes the Dyn route so a float payload is combined by kind.
             if *op == '%' { mark_dynplus(a, env, sigs, n); mark_dynplus(b, env, sigs, n); }
@@ -9732,7 +9742,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
             Ok(Ty::Bool)
         }
         Expr::Cmp(op, a, b) => {
-            if method_results::active() && (type_expr(a,env,sigs,n)?==Ty::Dyn || type_expr(b,env,sigs,n)?==Ty::Dyn){return Err(format!("line {}: B1 Dyn arithmetic/comparison is outside scope; inspect ValType or pass/store the result",n));}
+            if method_results::active() && (!method_arrays::active() || (dyn_expr_owned(a)&&!matches!(a.as_ref(),Expr::SelfGet(_))&&type_expr(a,env,sigs,n)?==Ty::Dyn) || (dyn_expr_owned(b)&&!matches!(b.as_ref(),Expr::SelfGet(_))&&type_expr(b,env,sigs,n)?==Ty::Dyn)) && (type_expr(a,env,sigs,n)?==Ty::Dyn || type_expr(b,env,sigs,n)?==Ty::Dyn){return Err(format!("line {}: B1 Dyn arithmetic/comparison is outside scope; inspect ValType or pass/store the result",n));}
 
             // `$` containment (oracle hk341): string-in-string only in
             // this increment - case-sensitive byte scan; an empty or
@@ -10231,7 +10241,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
         Expr::Send(recv, name, args) => {
             if method_results::send(e){return method_results::check(e,env,sigs,n);}
             let rt = type_expr(recv, env, sigs, n)?;
-            if method_results::active() && !args.iter().all(|a|matches!(a,Expr::Int(_)|Expr::Log(_)|Expr::Str(_)|Expr::Nil|Expr::Var(_))){return Err(format!("line {}: B1 typed message arguments must be plain variables or literals",n));}
+            if method_results::active() && !method_arrays::active() && !args.iter().all(|a|matches!(a,Expr::Int(_)|Expr::Log(_)|Expr::Str(_)|Expr::Nil|Expr::Var(_))){return Err(format!("line {}: B1 typed message arguments must be plain variables or literals",n));}
             let ci = match rt {
                 Ty::Obj(ci) => ci,
                 Ty::Dyn => return Err(format!("line {}: `:{}` on a Dyn value (its class is not known at compile time) is not in this increment", n, name)),
@@ -11071,6 +11081,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 apply_moves(e, env, sigs, true);
             }
             Stmt::SendSet(n, recv, name, e) => {
+                if method_arrays::active() && !matches!(recv,Expr::Var(_)|Expr::SelfObj){return Err(format!("line {}: B2 DATA write receiver must be a variable or Self",n));}
                 let rt = type_expr(recv, env, sigs, *n)?;
                 let ci = match rt {
                     Ty::Obj(ci) => ci,
@@ -11419,7 +11430,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 let te = type_expr(end, env, sigs, *n)?;
                 apply_moves(start, env, sigs, false);
                 apply_moves(end, env, sigs, false);
-                if ts != Ty::I64 || te != Ty::I64 {
+                if (ts != Ty::I64 && !(method_arrays::active()&&ts==Ty::Dyn)) || (te != Ty::I64 && !(method_arrays::active()&&te==Ty::Dyn)) {
                     return Err(format!("line {}: `for` bounds must be integers", n));
                 }
                 // Harbour REUSES a visible integer variable as the loop
@@ -11811,6 +11822,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                     type_expr(e,env,sigs,*n)?;continue;
                 }
                 if env[kp].ty == Ty::Dyn && is_sarr(id) {
+                    if method_arrays::active(){allow_mixed_iif(e);}
                     // S4: `AAdd` on a shared module array (or a local
                     // alias of one) grows the object by one cell at
                     // runtime (tag-16 guard). Value: integer, logical,
@@ -15589,7 +15601,7 @@ fn cg_data_value(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
         }
         Ty::Bool => { cg_value(e, env, sigs, strs, out, target); out.push_str("    mov %rax, %rdx\n    mov $3, %eax\n"); }
         Ty::Date => { cg_value(e, env, sigs, strs, out, target); out.push_str("    mov %rax, %rdx\n    mov $11, %eax\n"); }
-        Ty::Dyn => { cg_expr(e, env, sigs, strs, out, target); if !dyn_expr_owned(e) { cg_dyn_clone_if_str(out); } }
+        Ty::Dyn => { cg_expr(e, env, sigs, strs, out, target); if !dyn_expr_owned(e) { cg_dyn_clone_if_str(out); } if method_arrays::active(){method_arrays::screen_data(out);} }
         _ => unreachable!("checked: scalar DATA only"),
     }
 }
@@ -17868,6 +17880,15 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             out.push_str("    test %rax, %rax\n    jne hbc_type_error\n    call hbc_round\n");
         }
         Expr::Call(id, args) if is_builtin(id, "len") => {
+            if method_arrays::active() && expr_ty(&args[0],env,sigs)==Ty::Dyn && !matches!(&args[0],Expr::Var(_)|Expr::Index(..)|Expr::Index2(..)|Expr::Index3(..)){
+                cg_value(&args[0],env,sigs,strs,out,target);
+                let k=fresh_lbl();out.push_str(&format!("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n    cmp $16, %rax\n    jne .Lb2lenstr{k}\n    mov (%rdx), %rax\n    jmp .Lb2lendone{k}\n.Lb2lenstr{k}:\n    cmp $2, %rax\n    je .Lb2lenok{k}\n    cmp $4, %rax\n    jne .Lb2lenbad{k}\n.Lb2lenok{k}:\n    mov -8(%rdx), %rax\n.Lb2lendone{k}:\n    mov %rax, 16(%rsp)\n"));
+                if dyn_expr_owned(&args[0]){cg_dyn_stack_release(out,0,false);}
+                out.push_str(&format!("    mov 16(%rsp), %rax\n    add $32, %rsp\n    jmp .Lb2lenend{k}\n.Lb2lenbad{k}:\n"));
+                if dyn_expr_owned(&args[0]){cg_dyn_stack_release(out,0,false);}
+                out.push_str(&format!("    add $32, %rsp\n    jmp hbc_type_error\n.Lb2lenend{k}:\n"));return;
+            }
+
             // len(s) for a string (hk217): the value pair's len half.
             if matches!(expr_ty(&args[0], env, sigs), Ty::Str | Ty::StrOwn) {
                 cg_value(&args[0], env, sigs, strs, out, target);
@@ -19395,7 +19416,16 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             let mut moved_nulls: Vec<(usize, usize)> = Vec::new();
             // Dyn arguments into a defaulted-Dyn parameter that must be screened for a tag-13 object at runtime: (argument index, owned temporary?).
             let mut dd_checks: Vec<(usize, bool)> = Vec::new();
+            let mut b2guards=0usize;
             for (ai, a) in args.iter().enumerate() {
+                if method_arrays::active() && ai>0 {
+                    match psig.as_ref().and_then(|p|p.get(ai-1)) {
+                        Some(Ty::Dyn)=>{out.push_str("    mov (%rsp), %rdi\n    mov 8(%rsp), %rsi\n    call hbc_aux_push\n");b2guards+=1;},
+                        Some(Ty::Obj(_))=>{out.push_str("    mov $13, %edi\n    mov (%rsp), %rsi\n    call hbc_aux_push\n");b2guards+=1;},
+                        Some(Ty::StrOwn)=>{out.push_str("    mov $4, %edi\n    mov (%rsp), %rsi\n    call hbc_aux_push\n");b2guards+=1;},_=>{}
+                    }
+                }
+
                 if psig.as_ref().and_then(|p|p.get(ai)) == Some(&Ty::AView) {
                     if optional_empty::parameter(id,ai)&&matches!(a,Expr::Nil){optional_empty::emit_nil(out);continue;}
                     match a {
@@ -19631,6 +19661,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                     if ta==Ty::I64 {out.push_str("    mov %rdx, 8(%rsp)\n");}
                 }
             }
+            for _ in 0..b2guards{out.push_str("    call hbc_aux_pop\n");}
             for (o0, o1) in &moved_nulls {
                 out.push_str(&format!("    movq $0, -{}(%rbp)\n    movq $0, -{}(%rbp)\n", o0, o1));
             }
@@ -19644,6 +19675,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                 if optional_empty::parameter(id,i){optional_empty::emit_nil(out);}else{out.push_str("    sub $16, %rsp\n    movq $1, (%rsp)\n    movq $0, 8(%rsp)\n");}
             }
             if !dd_checks.is_empty() {
+                if method_arrays::active() && psig.as_ref().map_or(false,|p|p.iter().any(|t|matches!(t,Ty::Obj(_)))){eprintln!("error: B2 cannot combine a defaulted Dyn object screen with typed object arguments");process::exit(1);}
                 // Runtime screen of defaulted-Dyn parameters. A tag-13 casilla is NOT handed over: after every
                 // argument has been evaluated and pushed (same order as the existing NIL-object protocol), the
                 // owned casillas are released (a borrowed object is never released; an owned temporary object is),
@@ -24026,9 +24058,11 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 // counter; otherwise a fresh slot.
                 let reuse_off = env.iter().rev().find(|v| v.name == *var && v.ty == Ty::I64).map(|v| v.off);
                 cg_value(start, env, sigs, strs, out, target);
+                if method_arrays::active() && expr_ty(start,env,sigs)==Ty::Dyn{method_arrays::integer(start,out);}
                 let i_off = if let Some(o) = reuse_off { o } else { *frame += size_of(Ty::I64); *frame };
                 out.push_str(&format!("    mov %rax, -{}(%rbp)\n    mov %rdx, -{}(%rbp)\n", i_off,i_off-8));
                 cg_value(end, env, sigs, strs, out, target);
+                if method_arrays::active() && expr_ty(end,env,sigs)==Ty::Dyn{method_arrays::integer(end,out);}
                 *frame += 8;
                 let end_off = *frame;
                 out.push_str(&format!("    mov %rax, -{}(%rbp)\n", end_off));
@@ -31240,6 +31274,7 @@ fn emit_asm(funcs: &[Func], sigs: &[Sig], externs: &[String], target: Target, in
             out.push_str("hbc_sarr_mark_globals:\n    push %rbp\n    mov %rsp, %rbp\n");
             let mut seen=std::collections::HashSet::new();
             for f in funcs {for st in &f.stmts {if let Stmt::Static(_,n,_)=st {if module_static::kind(&f.name,n)==Some(Ty::Dyn) {let l=module_static::storage(&f.name,n);if seen.insert(l.clone()){out.push_str(&format!("    cmpq $16, {l}(%rip)\n    jne 1f\n    mov {l}+8(%rip), %rax\n    movq $1, 32(%rax)\n1:\n"));}}}}}
+            method_arrays::roots(&mut out);
             out.push_str("    leave\n    ret\n");
         }
         out.push_str("hbc_module_arrays_init:\n    push %rbp\n    mov %rsp, %rbp\n    sub $32, %rsp\n");
@@ -34311,6 +34346,7 @@ hbc_free_lists: .skip 10240
     emit_f64_consts(&mut out);
     // Allocation registry: only instrumented builds (--instrument, the
     // battery's mode) carry it; normal output has no registry at all.
+    if method_arrays::active(){out=out.replace("    jne .Lauxdrain\n    mov 16(%rbx), %rdi", "    je .Lb2auxstr\n    cmpq $13, 8(%rbx)\n    jne .Lauxdrain\n    mov 16(%rbx), %rdi\n    call hrobj_release\n    jmp .Lauxdrain\n.Lb2auxstr:\n    mov 16(%rbx), %rdi");}
     out = out.replace("@REG_ALLOC_L@", if instrument { REG_ALLOC_L } else { "" });
     out = out.replace("@REG_FREE_L@", if instrument { REG_FREE_L } else { "" });
     out = out.replace("@REG_HFREE_W@", if instrument { REG_HFREE_W } else { "" });
@@ -38797,6 +38833,8 @@ fn main() {
     // summed lattice height and the round count is bounded by `cap`
     // below. Reaching the cap means the monotonicity argument broke -
     // an explicit diagnostic, never a silent assumption.
+    method_arrays::init(&funcs);
+    if let Err(e)=method_arrays::validate(&funcs){eprintln!("error: {}",e);process::exit(1);}
     shared_local::init(&funcs);
     if shared_local::active() && llvm {eprintln!("error: local shared arrays require the native Linux backend in A2");process::exit(1);}
     if let Err(e)=shared_local::validate(&funcs){eprintln!("error: {}",e);process::exit(1);}

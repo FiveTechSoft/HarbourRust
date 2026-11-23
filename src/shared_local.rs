@@ -29,10 +29,11 @@ pub fn init(ff:&[Func]) {
   names.insert(f.name.clone(),arrays);
  }
  for f in ff {let own=names.get(&f.name).unwrap();visit_stmts_ref(&f.stmts,&mut |_|{},&mut |e|{if let Expr::Call(id,aa)=e {if let Some(to)=ff.iter().find(|x|x.name==*id){for(i,a)in aa.iter().enumerate().take(to.params.len()){if matches!(a,Expr::Var(n) if own.contains(n)) && to.stmts.iter().any(|s|matches!(s,Stmt::AAdd(_,p,_) if p==&to.params[i])) {need=true;}}}}});}
+ if method_arrays::active(){need=true;}
  if !need{return;}
  // Initially keep unsupported profiles closed, rather than changing existing
  // native/PE/Mach-O contracts with an untested collector.
- if !DECIMAL_LOCAL_PROFILE.with(|v|v.get())||MACRO_CONTEXT.with(|v|v.get())||EXTERNS.with(|v|!v.borrow().is_empty())||CLASSES.with(|v|!v.borrow().is_empty()){return;}
+ if !DECIMAL_LOCAL_PROFILE.with(|v|v.get())||MACRO_CONTEXT.with(|v|v.get())||EXTERNS.with(|v|!v.borrow().is_empty())||(!method_arrays::active()&&CLASSES.with(|v|!v.borrow().is_empty())){return;}
  for f in ff {visit_stmts_ref(&f.stmts,&mut |s|{if let Stmt::Local(_,n,e)|Stmt::Assign(_,n,e)=s{if literal(e){names.entry(f.name.clone()).or_default().insert(n.clone());}}},&mut |_|{});}
  let mut params=HashSet::new();let mut returns=HashSet::<String>::new();
  loop {
@@ -45,15 +46,19 @@ pub fn init(ff:&[Func]) {
      Stmt::Local(_,n,Expr::Var(p))|Stmt::Assign(_,n,Expr::Var(p)) if own.contains(p)=>{names.entry(f.name.clone()).or_default().insert(n.clone());},
      Stmt::Local(_,n,e) if optional_empty::selected(e).map_or(false,|p|own.contains(p))=>{names.entry(f.name.clone()).or_default().insert(n.clone());},
      Stmt::Local(_,n,Expr::Call(id,_))|Stmt::Assign(_,n,Expr::Call(id,_)) if oldret.contains(id)=>{names.entry(f.name.clone()).or_default().insert(n.clone());},
+     Stmt::Local(_,n,e)|Stmt::Assign(_,n,e) if method_arrays::active() && method_arrays::expr(e,&own,&oldret)=>{names.entry(f.name.clone()).or_default().insert(n.clone());},
      Stmt::CatchBind(_,n)=>{names.entry(f.name.clone()).or_default().insert(n.clone());},
      Stmt::Try(_,_,Some((Some(n),_)),_)=>{names.entry(f.name.clone()).or_default().insert(n.clone());},
+     Stmt::Ret(_,Some(Expr::SelfGet(_))) if method_arrays::active()=>{returns.insert(f.name.clone());},
+     Stmt::Ret(_,Some(e)) if method_arrays::active() && method_arrays::expr(e,&own,&oldret)=>{returns.insert(f.name.clone());},
      Stmt::Ret(_,Some(Expr::Var(n))) if own.contains(n)=>{returns.insert(f.name.clone());},
      _=>{}
     }
    },&mut |_|{});
    visit_stmts_ref(&f.stmts,&mut |_|{},&mut |e|{
+    if method_arrays::active(){if let Expr::Send(_,n,aa)=e{for(_,id)in method_results::choices(n){if let Some(to)=ff.iter().find(|f|f.name==id){for(i,a)in aa.iter().enumerate(){if i+1<to.params.len() && method_arrays::expr(a,&own,&oldret){params.insert((id.clone(),i+1));names.entry(id.clone()).or_default().insert(to.params[i+1].clone());}}}}}}
     if let Expr::Call(id,aa)=e {if let Some(to)=ff.iter().find(|x|x.name==*id){for(i,a)in aa.iter().enumerate().take(to.params.len()){
-     if matches!(a,Expr::Var(n)|Expr::Index(n,_) if own.contains(n)) || matches!(a,Expr::Call(id,_) if oldret.contains(id)) {params.insert((id.clone(),i));names.entry(id.clone()).or_default().insert(to.params[i].clone());}
+     if matches!(a,Expr::Var(n)|Expr::Index(n,_) if own.contains(n)) || matches!(a,Expr::Call(id,_) if oldret.contains(id)) || (method_arrays::active() && method_arrays::expr(a,&own,&oldret)) {params.insert((id.clone(),i));names.entry(id.clone()).or_default().insert(to.params[i].clone());}
     }}}
    });
   }
