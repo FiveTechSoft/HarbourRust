@@ -3124,6 +3124,51 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                         }
                         return Err(format!("line {}: SET FIXED requires ON or OFF in this increment", n));
                     }
+                    if matches!(toks.get(1), Some(Tok::Ident(name)) if name.eq_ignore_ascii_case("date")) {
+                        // SET DATE [TO] <format>: the runtime date render
+                        // state (runtime/hrdate.c). Oracle-fitted table
+                        // (Harbour 3.2, native Windows): AMERICAN MM/DD/YY,
+                        // ANSI YYYY.MM.DD, BRITISH/FRENCH DD/MM/YY, GERMAN
+                        // DD.MM.YY, ITALIAN DD-MM-YY, USA MM-DD-YY,
+                        // JAPANESE YYYY/MM/DD.
+                        let wi = if matches!(toks.get(2), Some(Tok::KwTo)) { 3usize } else { 2usize };
+                        if toks.len() != wi + 1 {
+                            return Err(format!("line {}: SET DATE [TO] <format> takes one format word in this increment", n));
+                        }
+                        let words = ["american","ansi","british","german","italian","usa","japanese","french"];
+                        let fmt = match toks.get(wi) {
+                            Some(Tok::Ident(w)) => words.iter().position(|f| w.eq_ignore_ascii_case(f)),
+                            _ => None,
+                        };
+                        match fmt {
+                            // FRENCH shares the BRITISH row (DD/MM/YY).
+                            Some(f) => {
+                                let f = if f == 7 { 2 } else { f };
+                                out.push(Stmt::CallStmt(n, Expr::Call("hbc_set_datefmt".to_string(), vec![Expr::Int(f.to_string())])));
+                                *i += 1;
+                                continue;
+                            }
+                            None => return Err(format!("line {}: SET DATE needs AMERICAN, ANSI, BRITISH, FRENCH, GERMAN, ITALIAN, USA or JAPANESE in this increment", n)),
+                        }
+                    }
+                    if matches!(toks.get(1), Some(Tok::Ident(name)) if name.eq_ignore_ascii_case("century")) {
+                        // SET CENTURY ON/OFF: the 4-vs-2-digit year of the
+                        // date render state (hrdate.c). The TO <year>
+                        // ROLLOVER form is unmeasured.
+                        match toks.get(2) {
+                            Some(Tok::Ident(v)) if v.eq_ignore_ascii_case("on") => {
+                                out.push(Stmt::CallStmt(n, Expr::Call("hbc_set_century".to_string(), vec![Expr::Int("1".to_string())])));
+                                *i += 1;
+                                continue;
+                            }
+                            Some(Tok::Ident(v)) if v.eq_ignore_ascii_case("off") => {
+                                out.push(Stmt::CallStmt(n, Expr::Call("hbc_set_century".to_string(), vec![Expr::Int("0".to_string())])));
+                                *i += 1;
+                                continue;
+                            }
+                            _ => return Err(format!("line {}: SET CENTURY requires ON or OFF in this increment (the TO <year> ROLLOVER form is unmeasured)", n)),
+                        }
+                    }
                     // SET commands switch runtime state. Measured sweep
                     // forms (63zk): SET PRINTER/DEVICE/ALTERNATE/MARGIN
                     // belong to the output-routing subsystem (dev/longdev/
@@ -8287,6 +8332,10 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 if args.len()!=1 || !matches!(&args[0],Expr::Int(_)) {return Err(format!("line {}: internal SET DECIMALS store expects one integer",n));}
                 return Ok(Ty::I64);
             }
+            if id=="hbc_set_datefmt" || id=="hbc_set_century" {
+                if args.len()!=1 || !matches!(&args[0],Expr::Int(_)) {return Err(format!("line {}: internal SET DATE/CENTURY store expects one integer",n));}
+                return Ok(Ty::I64);
+            }
             if is_builtin(id,"setcursor") {
                 if !CURDIR_LINUX_NATIVE.with(|v|v.get()) {return Err(format!("line {}: SetCursor is measured only on ordinary Linux GTSTD",n));}
                 if args.len()>1{return Err(format!("line {}: SetCursor takes zero or one typed integer argument",n));}
@@ -12772,6 +12821,7 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
             if is_builtin(id,"hb_sha1") || is_builtin(id,"hb_hmac_sha1") {for a in args {apply_moves(a,env,sigs,false);}return;}
             if id=="hrbase_wait" {return;}
             if id=="hbc_set_decimals" {return;}
+            if id=="hbc_set_datefmt" || id=="hbc_set_century" {return;}
             if is_builtin(id,"inkey") {return;}
             if is_builtin(id,"file") || id=="hrfile_setdefault" || id=="hrfile_setpath" {
                 for a in args {apply_moves(a,env,sigs,false);}return;
@@ -16886,6 +16936,14 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
         Expr::Call(id,args) if id=="hbc_set_decimals" => {
             let v = match &args[0] { Expr::Int(v) => v.parse::<i64>().unwrap_or(2), _ => 2 };
             out.push_str(&format!("    movq ${}, .Lset_decimals(%rip)\n", v));
+        }
+        Expr::Call(id,args) if id=="hbc_set_datefmt" => {
+            let v = match &args[0] { Expr::Int(v) => v.parse::<i64>().unwrap_or(0), _ => 0 };
+            out.push_str(&format!("    mov ${}, %edi\n    call hbc_date_set_fmt\n", v));
+        }
+        Expr::Call(id,args) if id=="hbc_set_century" => {
+            let v = match &args[0] { Expr::Int(v) => v.parse::<i64>().unwrap_or(0), _ => 0 };
+            out.push_str(&format!("    mov ${}, %edi\n    call hbc_date_set_century\n", v));
         }
         Expr::Call(id,args) if is_builtin(id,"setcursor") => {
             if let Some(a)=args.first(){cg_expr(a,env,sigs,strs,out,target);out.push_str("    mov %rax, %rdi\n    call hbc_cursor_set\n");}
@@ -21063,6 +21121,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             if is_builtin(id,"hb_sha1") || is_builtin(id,"hb_hmac_sha1") {return Ty::StrOwn;}
             if id=="hrbase_wait" {return Ty::I64;}
             if id=="hbc_set_decimals" {return Ty::I64;}
+            if id=="hbc_set_datefmt" || id=="hbc_set_century" {return Ty::I64;}
             if is_builtin(id,"setcursor") || is_builtin(id,"dirmake") || is_builtin(id,"inkey") {return Ty::I64;}
             if is_builtin(id,"file") {return Ty::Bool;}
             if id=="hrfile_setdefault"||id=="hrfile_setpath" {return Ty::Dyn;}
@@ -34379,6 +34438,12 @@ fn finalize_trace(mut out: String, target: Target) -> String {
     if (out.contains("call hbc_tr_dims") || out.contains("call hbc_tr_apply")) && !out.contains("hbc_tr_dims:") {
         out.push_str(include_str!("../generated/hrtransform.s"));
     }
+    // The clean-room date-render blob (the SET DATE / SET CENTURY state
+    // and the layout core): hbc_dtoc / hbc_date_render reference it.
+    if out.contains("hbc_date_core_c") {
+        let date_rodata = if target == Target::Windows { ".section .rdata,\"r\"" } else { ".section .rodata" };
+        out.push_str(&include_str!("../generated/hrdate.s").replace("@HRDATE_RODATA@", date_rodata));
+    }
     // Add private stderr variants only when used. No mutable routing state:
     // nested OutStd/QOut and controlled diagnostics retain their destination.
     if out.contains("call hbc_eprint_") {
@@ -40001,44 +40066,12 @@ hbc_date_render:
     mov %rsp, %rbp
     sub $32, %rsp
     mov %edx, -4(%rbp)
-    movabs $0x20202f20202f2020, %rcx
-    mov %rcx, -16(%rbp)
-    test %rax, %rax
-    jz .Ldate_render_write
-    xor %edx, %edx
-    mov $100, %ecx
-    div %rcx
-    mov %edx, %r8d
-    xor %edx, %edx
-    div %rcx
-    mov %edx, %r9d
-    xor %edx, %edx
-    div %rcx
-    mov %edx, %eax
-    xor %edx, %edx
-    mov $10, %ecx
-    div %ecx
-    add $48, %al
-    add $48, %dl
-    mov %al, -10(%rbp)
-    mov %dl, -9(%rbp)
-    mov %r9d, %eax
-    xor %edx, %edx
-    div %ecx
-    add $48, %al
-    add $48, %dl
-    mov %al, -16(%rbp)
-    mov %dl, -15(%rbp)
-    mov %r8d, %eax
-    xor %edx, %edx
-    div %ecx
-    add $48, %al
-    add $48, %dl
-    mov %al, -13(%rbp)
-    mov %dl, -12(%rbp)
+    mov %rax, %rdi
+    lea -32(%rbp), %rsi
+    call hbc_date_core_c
+    mov %rax, %rdx
+    lea -32(%rbp), %rax
 .Ldate_render_write:
-    lea -16(%rbp), %rax
-    mov $8, %edx
     cmpl $0, -4(%rbp)
     je .Ldate_render_raw
     cmpl $2, -4(%rbp)
@@ -40230,53 +40263,18 @@ hbc_cmonth:
     xor %edx, %edx
     ret
 
-# hbc_dtoc: packed date -> owned MM/DD/YY string (spaces for 0).
+# hbc_dtoc: packed date -> owned text per the SET DATE / SET CENTURY
+# runtime state (runtime/hrdate.c: the state and the layout core live
+# in the C blob, included whenever hbc_date_core_c is referenced).
 hbc_dtoc:
     push %rbp
     mov %rsp, %rbp
-    sub $32, %rsp
-    movabs $0x20202f20202f2020, %rcx
-    mov %rcx, -16(%rbp)
-    test %rdi, %rdi
-    jz .Ldtoc_alloc
-    mov %rdi, %rax
-    xor %edx, %edx
-    mov $100, %ecx
-    div %rcx
-    mov %edx, %r8d
-    xor %edx, %edx
-    div %rcx
-    mov %edx, %r9d
-    xor %edx, %edx
-    div %rcx
-    mov %edx, %r10d
-    mov $10, %ecx
-    mov %r10d, %eax
-    xor %edx, %edx
-    div %ecx
-    add $48, %al
-    add $48, %dl
-    mov %al, -10(%rbp)
-    mov %dl, -9(%rbp)
-    mov %r9d, %eax
-    xor %edx, %edx
-    div %ecx
-    add $48, %al
-    add $48, %dl
-    mov %al, -16(%rbp)
-    mov %dl, -15(%rbp)
-    mov %r8d, %eax
-    xor %edx, %edx
-    div %ecx
-    add $48, %al
-    add $48, %dl
-    mov %al, -13(%rbp)
-    mov %dl, -12(%rbp)
-.Ldtoc_alloc:
-    mov $8, %esi
-    call hbc_stralloc
-    mov -16(%rbp), %r8
-    mov %r8, (%rax)
+    sub $48, %rsp
+    lea -32(%rbp), %rsi
+    call hbc_date_core_c
+    mov %rax, %rsi
+    lea -32(%rbp), %rdi
+    call hbc_strcpy
     leave
     ret
 
