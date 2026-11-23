@@ -17,7 +17,7 @@ for index in ['unique','descending','conditional','numeric','expression','multi'
   q=subprocess.run([a.wine,str(out/(name+'.exe'))],cwd=out,env=env,capture_output=True,timeout=15)
   for ext,data in [('stdout',q.stdout),('stderr',q.stderr),('rc',str(q.returncode).encode())]:(out/(name+'.'+ext)).write_bytes(data)
   assert q.returncode==1 and not q.stdout and b'rejected' in q.stderr,(name,q.returncode,q.stdout,q.stderr);rows.append(dict(case=name,pass_=True))
-static=[('arity','dbUseArea(.T.,"DBFCDX","data.dbf","P",.F.)'),('shared','dbUseArea(.T.,"DBFCDX","data.dbf","P",.T.,.T.)'),('write','dbUseArea(.T.,"DBFCDX","data.dbf","P",.F.,.F.)'),('driver','dbUseArea(.T.,"BAD","data.dbf","P",.F.,.T.)'),('seek-type','dbSeek(3)'),('append','dbAppend()')]
+static=[('arity','dbUseArea(.T.,"DBFCDX","data.dbf","P",.F.)'),('shared-write','dbUseArea(.T.,"DBFCDX","data.dbf","P",.T.,.F.)'),('write','dbUseArea(.T.,"DBFCDX","data.dbf","P",.F.,.F.)'),('driver','dbUseArea(.T.,"BAD","data.dbf","P",.F.,.T.)'),('seek-type','dbSeek(3)'),('append','dbAppend()')]
 for name,body in static:
  p=out/(name+'.prg');p.write_text('function Main()\n'+body+'\nreturn nil\n');q=subprocess.run([compiler,p,out/(name+'.exe'),'--target=windows'],capture_output=True);(out/(name+'.compile.stderr')).write_bytes(q.stderr);assert q.returncode!=0 and q.stderr,(name,q.stderr);rows.append(dict(case='static-'+name,pass_=True))
 p=out/'platform.prg';p.write_text('function Main()\ndbCloseArea()\nreturn nil\n')
