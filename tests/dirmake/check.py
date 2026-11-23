@@ -51,7 +51,7 @@ for name,body in cases.items():
   r=run([compiler,src,d/target,'--target='+target,'--instrument'],d,target+'-build');assert r.returncode==0,(name,target,r.stderr)
   rows.append(dict(kind='emission-only',name=name,target=target,passed=True))
 for name,body in [('array','? DIRMAKE({1})'),('hash','? DIRMAKE({"a"=>1})'),('block','? DIRMAKE({||1})'),('extra','? DIRMAKE("a",1)'),('unknown','? DIRMAKE(missing())'),('malformed','? DIRMAKE(Space())'),('forward','? DIRMAKE(later())\nreturn nil\nfunction later()\nreturn Space()')]:
- d=out/('reject-'+name);d.mkdir();src=d/'probe.prg';src.write_text(source(body));r=run([compiler,src,d/'exe'],d,'build');expected=b'DIRMAKE supports zero or one scalar'if name in ['array','hash','block','extra']else(b'unknown function'if name=='unknown'else(b'never returns'if name=='forward'else b'space'))
+ d=out/('reject-'+name);d.mkdir();src=d/'probe.prg';src.write_text(source(body));r=run([compiler,src,d/'exe'],d,'build');expected=b'DIRMAKE supports zero or one scalar'if name in ['array','hash','block','extra']else(b'unknown function'if name=='unknown'else(b'`Space` takes one argument'if name=='forward'else b'space'))
  assert r.returncode==1 and expected.lower()in r.stderr.lower(),(name,r.returncode,r.stderr)
  rows.append(dict(kind='rejection',name=name,passed=True))
 for target,mode in [('linux','--experimental-llvm'),('linux','--experimental-llvm-no-trace'),('windows','--experimental-llvm')]:
