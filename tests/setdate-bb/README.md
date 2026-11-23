@@ -24,3 +24,14 @@ words (SPANISH is not a Harbour format word, measured E0030).
 -comp=mingw64 -gtcgi, native Windows 11); the Linux files are the same
 bytes with LF line ends. hbc output is byte-identical over both
 programs (18 pins).
+
+Setter-only regression: `python tests/setdate-bb/check.py --compiler ./hbc`
+checks SET CENTURY ON/OFF and SET DATE without a later date-render call.
+The blob must be included for those entry points too. Their empty outputs
+are regression expectations, not new Harbour measurements. Linux checks
+normal/instrumented and external-as paths; Windows execution is unverified.
+
+The two original oracle programs above contain `Date()` and their pins
+record November 23, 2026. They are not registered as timeless manifest
+expectations. The Transform program is also outside the current Mach-O
+contract, so it must not be silently added to the Mac battery.

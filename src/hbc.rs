@@ -34440,7 +34440,9 @@ fn finalize_trace(mut out: String, target: Target) -> String {
     }
     // The clean-room date-render blob (the SET DATE / SET CENTURY state
     // and the layout core): hbc_dtoc / hbc_date_render reference it.
-    if out.contains("hbc_date_core_c") {
+    if out.contains("hbc_date_core_c")
+        || out.contains("call hbc_date_set_fmt")
+        || out.contains("call hbc_date_set_century") {
         let date_rodata = if target == Target::Windows { ".section .rdata,\"r\"" } else { ".section .rodata" };
         out.push_str(&include_str!("../generated/hrdate.s").replace("@HRDATE_RODATA@", date_rodata));
     }
