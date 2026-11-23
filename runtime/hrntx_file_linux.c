@@ -30,3 +30,11 @@ finish:
  if(err){hrdbf_error e=hrntx_file_close(f);if(e)return e;}
  return err;
 }
+/* Structural CDX autoopen probe: 1 only for ENOENT/ENOTDIR; any other
+ * outcome means "present", so the open that follows reports its failure. */
+static int hrntx_file_missing(const char*path){
+ long fd=open_dbf(path,0);
+ if(fd==-2||fd==-20)return 1;
+ if(fd>=0)syscall3(3,fd,0,0);
+ return 0;
+}

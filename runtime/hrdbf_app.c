@@ -19,6 +19,22 @@ static unsigned hrdbf_app_order_active;
 static unsigned hrdbf_app_cdx;
 static unsigned char hrdbf_app_basename[HRDBF_APP_PATH_MAX];
 static size_t hrdbf_app_baselen;
+/* Structural CDX (measured against real Harbour, native Windows): a DBFCDX
+ * open also opens <dir>/<base>.cdx whenever that file exists, with or
+ * without the production flag in header byte 28; a missing file is silent.
+ * The bag opens with no controlling order (natural order, AUTORDER 0);
+ * dbSetOrder(1) selects it and ordListAdd() of the same bag selects it and
+ * goes top. 0 none, 1 open bag, 2 present on a writable open (index writes
+ * are outside this increment), 3 present but not admitted by the reader. */
+static unsigned hrdbf_app_struct;
+/* Path character for "same file, other extension": ASCII case-insensitive,
+ * and on Windows '\' and '/' are one separator. */
+static unsigned char hrdbf_app_pathc(unsigned char c){
+#ifdef _WIN32
+ if(c=='\\')c='/';
+#endif
+ return cxupper(c);
+}
 static void hrdbf_app_write(const char *msg){
  size_t n=0;while(msg[n])n++;
 #ifdef _WIN32
@@ -42,14 +58,14 @@ static void hrdbf_app_fail2(const char *prefix,const char *detail){
  hrdbf_app_write(prefix);hrdbf_app_write(detail);hrdbf_app_write("\n");hrdbf_app_exit();
 }
 static void hrdbf_app_require(void){if(!hrdbf_app_state.area.open)hrdbf_app_fail("hbc: DBF no workarea is open\n");}
-void hrdbf_app_close(void){hrdbf_error a=hrntx_file_close(&hrdbf_app_order),b=hrdbf_file_close(&hrdbf_app_state);hrdbf_app_found_flag=0;hrdbf_app_order_active=0;hrdbf_app_pos=0;if(a||b)hrdbf_app_fail("hbc: DBF/NTX close failed\n");}
+void hrdbf_app_close(void){hrdbf_error a=hrntx_file_close(&hrdbf_app_order),b=hrdbf_file_close(&hrdbf_app_state);hrdbf_app_found_flag=0;hrdbf_app_order_active=0;hrdbf_app_pos=0;hrdbf_app_struct=0;if(a||b)hrdbf_app_fail("hbc: DBF/NTX close failed\n");}
 void hrdbf_app_open(const unsigned char *p,size_t len,uint64_t new_area,uint64_t cdx,uint64_t writable){
  char path[HRDBF_APP_PATH_MAX];size_t i,start=0,end;hrdbf_error e;
  if(new_area&&hrdbf_app_state.area.open)hrdbf_app_fail("hbc: DBF only one workarea is supported\n");
  if(!len||len>=sizeof path)hrdbf_app_fail("hbc: DBF filename length outside supported range\n");
  for(i=0;i<len;i++){if(!p[i])hrdbf_app_fail("hbc: DBF filename contains NUL\n");path[i]=(char)p[i];}path[len]=0;
  if(hrntx_file_close(&hrdbf_app_order))hrdbf_app_fail("hbc: DBF index close failed\n");
- hrdbf_app_found_flag=0;hrdbf_app_order_active=0;hrdbf_app_pos=0;
+ hrdbf_app_found_flag=0;hrdbf_app_order_active=0;hrdbf_app_pos=0;hrdbf_app_struct=0;
  hrdbf_app_cdx=cdx!=0;
  for(i=0;i<len;i++)if(p[i]=='/'
 #ifdef _WIN32
@@ -57,8 +73,10 @@ void hrdbf_app_open(const unsigned char *p,size_t len,uint64_t new_area,uint64_t
 #endif
  )start=i+1;
  end=len;for(i=start;i<len;i++)if(p[i]=='.')end=i;
- hrdbf_app_baselen=end-start;
- for(i=0;i<hrdbf_app_baselen;i++)hrdbf_app_basename[i]=cxupper(p[start+i]);
+ /* The table path without its extension (pathc-folded): an index with the
+  * same stem is the structural bag, one in another directory is not. */
+ hrdbf_app_baselen=end;
+ for(i=0;i<end;i++)hrdbf_app_basename[i]=hrdbf_app_pathc(p[i]);
  e=hrdbf_file_open(&hrdbf_app_state,path,writable!=0);
  if(e){
   /* D1.1: exact reason from the OS layer or the decoder, code fallback. */
@@ -70,6 +88,17 @@ void hrdbf_app_open(const unsigned char *p,size_t len,uint64_t new_area,uint64_t
             e==HRDBF_DATA?"record content invalid":"table format not supported";
   hrdbf_app_fail2("hbc: DBF open rejected: ",d);
  }
+ if(hrdbf_app_cdx&&end+4<sizeof path){
+  path[end]='.';path[end+1]='c';path[end+2]='d';path[end+3]='x';path[end+4]=0;
+  if(!hrntx_file_missing(path)){
+   if(writable)hrdbf_app_struct=2;
+   else hrdbf_app_struct=hrntx_file_open(&hrdbf_app_order,path,&hrdbf_app_state.area,1)?3:1;
+  }
+ }
+}
+static void hrdbf_app_struct_check(void){
+ if(hrdbf_app_struct==2)hrdbf_app_fail("hbc: structural CDX on a readonly=.F. open is outside this increment (index maintenance)\n");
+ if(hrdbf_app_struct==3)hrdbf_app_fail("hbc: structural CDX present but not admitted (one tag, subset, size or format)\n");
 }
 static void hrdbf_app_order_sync(void){
  hrdbf_area*d=&hrdbf_app_state.area;hrntx_index*x=&hrdbf_app_order.index;
@@ -100,7 +129,6 @@ void hrdbf_app_skip(int64_t n){
 uint64_t hrdbf_app_order_add(const unsigned char*p,size_t len){
  char path[HRDBF_APP_PATH_MAX];size_t i,last=0,end;int dot=0,same=1;hrdbf_error err;
  hrdbf_app_require();
- if(hrdbf_app_order.index.bytes)hrdbf_app_fail("hbc: DBF index only one index is supported\n");
  if(!len||len>sizeof(path)-5)hrdbf_app_fail("hbc: DBF index filename length outside supported range\n");
  for(i=0;i<len;i++){if(!p[i])hrdbf_app_fail("hbc: DBF index filename contains NUL\n");path[i]=(char)p[i];if(p[i]=='/'
 #ifdef _WIN32
@@ -108,10 +136,14 @@ uint64_t hrdbf_app_order_add(const unsigned char*p,size_t len){
 #endif
  )last=i+1;}
  end=len;for(i=last;i<len;i++)if(p[i]=='.'){dot=1;end=i;}
- if(hrdbf_app_cdx&&end-last==hrdbf_app_baselen){
-  for(i=0;i<hrdbf_app_baselen;i++)if(cxupper(p[last+i])!=hrdbf_app_basename[i])same=0;
-  if(same)hrdbf_app_fail("hbc: CDX must use a different basename from DBF; structural/autoopen indexes are outside this increment\n");
- }
+ if(hrdbf_app_cdx&&end==hrdbf_app_baselen){
+  for(i=0;i<end;i++)if(hrdbf_app_pathc(p[i])!=hrdbf_app_basename[i])same=0;
+ }else same=0;
+ /* The structural bag is already open: Harbour selects its order and goes
+  * top (measured), it does not open a second copy. */
+ if(same&&hrdbf_app_struct==1){hrdbf_app_order_active=1;hrdbf_app_top();return 1;}
+ if(same)hrdbf_app_struct_check();
+ if(hrdbf_app_order.index.bytes)hrdbf_app_fail("hbc: DBF index only one index is supported\n");
  if(!dot){path[len++]='.';path[len++]=hrdbf_app_cdx?'c':'n';path[len++]=hrdbf_app_cdx?'d':'t';path[len++]='x';}path[len]=0;
  err=hrntx_file_open(&hrdbf_app_order,path,&hrdbf_app_state.area,hrdbf_app_cdx);
  if(err)hrdbf_app_fail(hrdbf_app_cdx&&err==HRDBF_TYPE?"hbc: CDX direct character key field width must be <=240\n":"hbc: DBF index read-only open rejected (subset, format, DBF mismatch, size or I/O)\n");
@@ -215,6 +247,7 @@ void hrdbf_app_goto(int64_t n){
 void hrdbf_app_ordselect(int64_t n){
  hrdbf_area*d=&hrdbf_app_state.area;hrntx_index*x=&hrdbf_app_order.index;
  hrdbf_app_require();
+ if(n>=1&&!x->bytes)hrdbf_app_struct_check();
  if(n!=1||!x->bytes){hrdbf_app_order_active=0;return;}
  hrdbf_app_order_active=1;hrdbf_app_cursor_replant(d->recno);
 }
