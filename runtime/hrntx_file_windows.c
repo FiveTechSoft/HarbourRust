@@ -17,3 +17,13 @@ static hrdbf_error hrntx_file_open(hrntx_file*f,const char*path,const hrdbf_area
  {hrntx_error x=(cdx?hrcdx_open:hrntx_open)(&f->index,f->bytes,f->size,d,(hrntx_entry*)f->work,d->count,f->work+cap,np+nr);if(x)e=x==HRNTX_KEYWIDTH?HRDBF_TYPE:HRDBF_FORMAT;}
 done:if(e){hrdbf_error c=hrntx_file_close(f);if(c)return c;}return e;
 }
+/* Structural CDX autoopen probe: 1 only when the OS reports the file (or
+ * its directory) missing; any other outcome means "present", so the open
+ * that follows reports its own failure. */
+static int hrntx_file_missing(const char*path){
+ WCHAR wide[260];HANDLE h;DWORD e;
+ if(!hrdbfw_path(path,wide))return 0;
+ h=CreateFileW(wide,GENERIC_READ,FILE_SHARE_READ,0,OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL,0);
+ if(h==INVALID_HANDLE_VALUE){e=GetLastError();return e==2||e==3;}
+ CloseHandle(h);return 0;
+}
