@@ -1,0 +1,1 @@
+{"execution_exact_by_profile": {"linux-default": 19, "linux-harbour": 19, "linux-llvm": 14}, "frozen175_default_accepted": 20, "frozen175_llvm_accepted": 14, "inventory_files": 1203, "manual_entrypoint_dependency_reviews": 208, "manually_reviewed_or_executed_sources": 211, "original_test_sources_compile_audited": 268}

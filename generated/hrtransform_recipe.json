@@ -1,11 +1,9 @@
 {
-  "compiler": "gcc.exe (MinGW-W64 x86_64-ucrt-posix-seh, built by Brecht Sanders, r3) 16.2.0",
+  "compiler": "gcc (Ubuntu 11.4.0-1ubuntu1~22.04.3) 11.4.0",
   "flags": [
-    "-D_WIN64",
     "-std=c99",
     "-O2",
     "-S",
-    "-mabi=sysv",
     "-ffreestanding",
     "-fno-builtin",
     "-fno-stack-protector",
@@ -14,22 +12,20 @@
     "-fno-ident",
     "-mno-red-zone",
     "-fno-pic",
+    "-mno-sse",
+    "-mno-mmx",
     "-fno-tree-vectorize",
-    "-mno-stack-arg-probe",
     "-minline-all-stringops",
     "-mstringop-strategy=rep_byte",
     "-fno-jump-tables",
+    "-fno-tree-switch-conversion",
     "-mno-push-args",
     "-fcf-protection=none",
     "-Wall",
     "-Wextra",
-    "-Werror",
-    "-Wno-misleading-indentation"
+    "-Werror"
   ],
-  "source_sha256": "2d723e6dc7bc7738a939277321cdb495beeda01c50395bbc565765d2003292ed",
-  "asm_sha256": "9ef58eb30a494ebe86d68f71b75932152d92efe666b2e410b741103ff8f87ff9",
-  "external_calls": [
-    "hbc_alloc",
-    "hbc_freestr"
-  ]
+  "source_sha256": "aabb80ce517fab505a76920f04ba46d20735f0d41802a85d379c6c82d5ca76c1",
+  "asm_sha256": "1a7205c97369db319efb3f61e741ee21b6aee3f32dfc42e7d6105f6f3f38f18f",
+  "external_calls": []
 }

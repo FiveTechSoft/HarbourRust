@@ -1,0 +1,5 @@
+PASS full-spec (879/971 lines match, 92 pinned)
+PASS probes-leak (3/3 lines match, 0 pinned)
+PASS probes-errors (7/7 lines match, 0 pinned)
+PASS probes-args (4/4 lines match, 0 pinned)
+PASS val_reject_dyn (clean rejection)

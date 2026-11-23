@@ -1,0 +1,2 @@
+gcc -g -fsanitize=address,undefined -fno-sanitize-recover=undefined -O1 tests/transform-bb/evidence/fuzz_hbc_tr_apply.c runtime/hrtransform.c -o /tmp/t/fz
+run: /tmp/t/fz   (srand seed 7, 200000 iterations; pictures to 3000 columns every 50th, text to 1500)

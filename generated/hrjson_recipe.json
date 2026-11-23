@@ -1,0 +1,41 @@
+{
+  "compiler": "gcc.exe (MinGW-W64 x86_64-ucrt-posix-seh, built by Brecht Sanders, r3) 16.2.0",
+  "flags": [
+    "-D_WIN64",
+    "-std=c99",
+    "-O2",
+    "-S",
+    "-mabi=sysv",
+    "-ffreestanding",
+    "-fno-builtin",
+    "-fno-stack-protector",
+    "-fno-asynchronous-unwind-tables",
+    "-fno-unwind-tables",
+    "-fno-ident",
+    "-mno-red-zone",
+    "-fno-pic",
+    "-fno-tree-vectorize",
+    "-mno-stack-arg-probe",
+    "-minline-all-stringops",
+    "-mstringop-strategy=rep_byte",
+    "-fno-jump-tables",
+    "-mno-push-args",
+    "-fcf-protection=none",
+    "-Wall",
+    "-Wextra",
+    "-Werror",
+    "-Wno-misleading-indentation"
+  ],
+  "source_sha256": "7fcb30b8932eda66172afe8d95ced02b4e70e2250d5a9db2904561f5f4d10412",
+  "asm_sha256": "8d8946bc2819cf0f08ad8249c85d91249ab2bb616c49b724b793987017f1186a",
+  "external_calls": [
+    "hbc_alloc",
+    "hbc_dtos",
+    "hbc_free",
+    "hbc_freestr",
+    "hbc_str_f64",
+    "hbc_type_error"
+  ],
+  "newline_policy": "LF bytes; CR rejected in source; assembly emitted as UTF-8 LF",
+  "section_policy": "@HRJSON_RODATA@ expands only at JSON inclusion: Linux .rodata; Windows .rdata,\"r\""
+}

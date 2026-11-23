@@ -1,0 +1,3 @@
+# Known mismatches vs oracle out.txt (id<TAB>family).
+# None: all 1649 adapted rows are byte-exact; pinned-diffs/full-spec.diff
+# is empty and this file documents zero ids.

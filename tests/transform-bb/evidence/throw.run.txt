@@ -1,0 +1,6 @@
+rc 0
+stdout b'\ncaught2'
+stderr b''
+maxrss_KB 9616
+baseline_200_iterations rc 0 maxrss_KB 9596
+iterations: 20000 loops x 2 throwing calls = 40000 throws (v2 claim of 60k was with 3 calls per loop; one case now rejected)

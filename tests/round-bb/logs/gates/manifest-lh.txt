@@ -1,0 +1,622 @@
+neg tests/samples/broken_borrow.prg line 5: use of moved value
+neg tests/t01_injection_colons.prg trailing tokens after expression
+neg tests/t02_injection_unsafe.prg trailing tokens after expression
+neg tests/t03_injection_macro.prg trailing tokens after expression
+neg tests/t04_unicode_ident.prg U+00F1
+neg tests/t05_keyword_boundary.prg statement not in the subset
+neg tests/t06_undefined_var.prg undefined variable
+neg tests/t08_type_error.prg arithmetic requires integers
+neg tests/t09_duplicate_local.prg duplicate local
+neg tests/t14_if_move_after.prg line 8: use of moved value
+neg tests/t19_if_scope.prg undefined variable `z`
+neg tests/t21_assign_undeclared.prg assignment to undeclared variable
+neg tests/t22_assign_type.prg type mismatch in assignment
+neg tests/t24_while_move.prg not reassigned before `enddo`
+neg tests/t26_while_scope.prg undefined variable `z`
+neg tests/t29_exit_outside.prg outside a `while` loop
+neg tests/t30_loop_move.prg not reassigned before `loop`
+neg tests/t32_exit_move_use.prg use of moved value
+neg tests/t34_return_type_mix.prg return type mismatch
+neg tests/t36_return_move_join.prg use of moved value
+neg tests/t38_for_scope.prg undefined variable `i`
+neg tests/t40_for_assign_var.prg cannot assign to the `for` loop variable
+neg tests/t41_for_move.prg not reassigned before `next`
+neg tests/t43_for_step_zero.prg non-zero integer literal
+neg tests/t44_for_step_expr.prg non-zero integer literal
+neg tests/t50_for_return_move.prg not reassigned before `next`
+neg tests/t53_mixed_cmp.prg cannot compare a string with an integer
+neg tests/t56_str_order_mixed.prg cannot compare a string with an integer
+neg tests/t63_params_arity.prg takes 2 argument(s), got 3
+neg tests/t69_strparam_useaftermove.prg use of moved value `v`
+neg tests/t73_strparam_wrongty.prg argument 1 of `isab` must be a string
+neg tests/t75_strparam_movetwice.prg use of moved value `v`
+neg tests/t65_params_dup.prg duplicate parameter `a`
+neg tests/t66_params_shadow.prg duplicate local `a`
+neg tests/t80_pp_error.prg #error custom failure text
+neg tests/t81_pp_badif.prg use ==, not =
+neg tests/t82_pp_case_macro.prg undefined variable `mixed`
+neg tests/t87_pp_command_bad.prg statement not in the subset
+neg tests/t88_pp_case_param.prg undefined variable `x`
+neg tests/t93_pp_cmd_parenreq.prg statement not in the subset
+neg tests/t106_pp_cmd_optres_neg.prg incomplete expression
+neg tests/t108_pp_uncommand_neg.prg statement not in the subset
+neg tests/t110_pp_include_angle_neg.prg cannot find include
+neg tests/t112_pp_semicolon_neg.prg incomplete expression
+neg tests/t114_pp_bad_marker.prg bad match marker
+neg tests/t116_pp_abbrev_neg.prg statement not in the subset
+neg tests/t117_pp_bad_result_marker.prg unknown result marker
+neg tests/t122_qout_trailing_comma.prg missing expression
+neg tests/t123_qout_move_two_uses.prg use of moved value
+neg tests/t124_qout_move_then_print.prg use of moved value
+neg tests/t125_qout_move_in_expr.prg use of moved value
+neg tests/t131_arr_neg_const_low.prg out of bounds
+neg tests/t132_arr_neg_const_high.prg out of bounds
+neg tests/t134_arr_neg_str_index.prg is not an array
+neg tests/t135_arr_neg_print_whole.prg cannot print a temporary array or hash
+neg tests/t136_arr_neg_pass_arg.prg is copied at the boundary only into a flat dynamic-array parameter
+neg tests/t137_arr_neg_size_mismatch.prg type mismatch in assignment
+neg tests/t139_arr_neg_mixed.prg array elements cannot mix integers and arrays
+neg tests/t149_arrset_move_both.prg use of moved value
+neg tests/t157_cb_neg_capture.prg codeblock captures are not in this increment
+neg tests/t158_cb_neg_fewer_args.prg `eval` got 1
+neg tests/t159_cb_neg_string_body.prg integer expressions
+neg tests/t160_cb_neg_print.prg cannot print a codeblock
+neg tests/t161_cb_neg_arity_reassign.prg type mismatch in assignment
+neg tests/t162_cb_neg_as_arg.prg got a codeblock
+neg tests/t163_cb_neg_string_arg.prg must be integers
+neg tests/t173_dyn_neg_moved.prg use of moved value
+neg tests/t174_dyn_neg_aadd_fixed.prg AAdd` applies to dynamic arrays
+neg tests/t175_dyn_neg_print.prg cannot print a temporary array or hash
+neg tests/t177_dyn_neg_branch_join.prg use of moved value
+neg tests/t178_dyn_neg_backedge.prg moved inside the `for` body
+neg tests/t179_dyn_neg_loop_stmt.prg moved inside the `while` body
+neg tests/t180_dyn_neg_exit_path.prg moved inside the `for` body
+neg tests/t181_dyn_neg_aadd_moved.prg use of moved value
+neg tests/t182_dyn_neg_asize_moved.prg use of moved value
+neg tests/t197_md_neg_extract.prg cannot extract the subarray
+neg tests/t198_md_neg_selfinsert.prg the elements of `a` are dynamic arrays
+neg tests/t199_md_neg_mixed.prg cannot mix integers and arrays
+neg tests/t203_md_neg_asize_unpinned.prg unknown until its first `AAdd`
+neg tests/t204_md_neg_twolevel_flat.prg two-level indexing needs an array of arrays
+neg tests/t205_md_neg_parent_moved.prg use of moved value
+neg tests/t206_md_neg_aaddsub_flat.prg needs an array of arrays
+neg tests/t212_nil_neg_order.prg NIL only compares
+neg tests/t241_hash_move.prg use of moved value
+neg tests/t252_array_0args.prg at least one dimension
+neg tests/t273_param_moved.prg use of moved value
+neg tests/t278_deep3_neg_wrset2.prg three-level assignment needs an array of arrays of arrays
+neg tests/t279_deep3_neg_wr4.prg four-level assignment needs an array of arrays of arrays of arrays
+neg tests/t282_deep3_neg_aaddsub2.prg `AAdd` on a[i][j] needs an array of arrays of arrays
+neg tests/t283_deep3_neg_asizesub2.prg `ASize` on a[i][j] needs an array of arrays of arrays
+neg tests/t291_neg_class_multi.prg multiple inheritance is not in this increment
+neg tests/t292_neg_class_scope.prg class scopes
+neg tests/t295_neg_params3_moved.prg use of moved value
+neg tests/t297_neg_print_move.prg use of moved value
+neg tests/t302_neg_hkeys_moved.prg use of moved value
+neg tests/t303_neg_hkeys_param.prg must be a dynamic array, got an array of strings
+neg tests/t304_neg_hkeys_aadd.prg the elements of `k` are strings
+neg tests/t305_neg_hkeys_strmoved.prg use of moved value
+neg tests/t310_neg_hkeys_param_moved.prg use of moved value
+neg tests/t313_neg_hkeys_strparam_moved.prg use of moved value
+neg tests/t315_neg_hkeys_asize.prg `ASize` applies to dynamic arrays
+neg tests/t323_neg_hash_pin_conflict.prg indexed assignment applies to arrays
+neg tests/t332_neg_print_temp_hash.prg cannot print a temporary array or hash
+neg tests/t338_neg_for_in.prg Harbour requires EACH here
+neg tests/t339_neg_foreach_undeclared.prg must be declared first
+neg tests/t340_neg_foreach_assign.prg cannot assign to the `for` loop variable
+neg tests/t341_neg_foreach_grow.prg cannot be modified, moved or grown inside its own loop
+neg tests/t345_neg_hkeys_literal.prg `hb_HKeys` expects a hash variable
+neg tests/t346_neg_foreach_ret_lv.prg cannot be returned, assigned, passed to a function or stored
+neg tests/t347_neg_foreach_assign_lv.prg cannot be returned, assigned, passed to a function or stored
+neg tests/t348_neg_foreach_store_lv.prg cannot be returned, assigned, passed to a function or stored
+neg tests/t370_neg_foreach_index_grow.prg cannot be modified, moved or grown inside its own loop
+neg tests/t371_neg_foreach_index_childgrow.prg cannot be modified, moved or grown inside its own loop
+neg tests/t372_neg_foreach_index_write.prg cannot be modified, moved or grown inside its own loop
+neg tests/t376_neg_foreach_index2_childgrow.prg cannot be modified, moved or grown inside its own loop
+neg tests/t377_neg_foreach_index2_write.prg cannot be modified, moved or grown inside its own loop
+neg tests/t378_neg_foreach_index2_move.prg cannot be modified, moved or grown inside its own loop
+neg tests/t391_neg_aadd3_mid_moved.prg use of moved value
+neg tests/t392_neg_aadd3_mid_deep.prg the elements of the middle level of `a` are flat dynamic arrays in this increment
+neg tests/t399_neg_borrow_return.prg is borrowed from its caller
+neg tests/t400_neg_borrow_passon.prg is borrowed from its caller
+neg tests/t401_neg_borrow_overlap.prg no other argument of the same call may mention it
+neg tests/t403_neg_borrow_darr3.prg indexing applies to arrays
+neg tests/t404_neg_borrow_foreach.prg cannot be modified, moved or grown inside its own loop
+neg tests/t405_neg_borrow_move_conflict.prg cannot also receive an owned array
+neg tests/t406_neg_borrow_reassign.prg is borrowed from its caller
+neg tests/t407_neg_borrow_argmove_later.prg no other argument of the same call may mention it
+neg tests/t408_neg_borrow_argmove_earlier.prg no other argument of the same call may mention it
+neg tests/t413_valtype_deep3.prg not measured in this PoC
+neg tests/t414_valtype_usercall.prg not measured in this PoC
+neg tests/t421_neg_borrow3_return.prg is borrowed from its caller
+neg tests/t422_neg_borrow3_overlap.prg no other argument of the same call may mention it
+neg tests/t425_static_arg_writecopy.prg line 7: array `a` is passed to `setit`, which can change its elements
+neg tests/t426_static_arg_growcopy.prg line 8: array `a` is passed to `growit`, which can change its elements
+neg tests/t427_static_arg_shrinkcopy.prg line 7: array `a` is passed to `shrinkit`, which can change its elements
+neg tests/t428_neg_static_arg_deep.prg is copied at the boundary only into a flat dynamic-array parameter
+neg tests/t429_neg_static_arg_literal.prg is copied at the boundary only into a flat dynamic-array parameter
+neg tests/t433_neg_static_return_literal.prg a static array return is a variable in this increment
+neg tests/t434_neg_len_temp.prg `len` of an array temporary is not in this increment
+neg tests/t436_neg_darrs_arg_moved.prg use of moved value `a`
+neg tests/t438_neg_darrs_arg_readonly.prg must be a dynamic array, got an array of strings
+neg tests/t441_neg_hash_arg_moved.prg use of moved value `h`
+neg tests/t442_neg_hash_literal_arg.prg a hash argument is a variable in this increment
+neg tests/t443_neg_hash_arg_readonly.prg must be a dynamic array, got a hash
+neg tests/t446_neg_block_arity.prg must be a codeblock of 1 argument(s), got a codeblock of 2 argument(s)
+neg tests/t447_neg_block_numeric.prg must be an integer, got a codeblock
+neg tests/t451_neg_five_indices.prg more than four index levels are not in this increment
+neg tests/t452_neg_aadd_level3.prg on more than three index levels is not in this increment
+neg tests/t457_neg_aaddsub3_root.prg `AAdd` on a[i][j][k] needs an array of arrays of arrays of arrays
+neg tests/t286_neg_array4d.prg `Array` with more than four dimensions is not in this increment
+neg tests/t461_neg_foreach_sub3_root.prg `for each` needs a flat or string array or a hash in this increment
+neg tests/t462_neg_foreach_sub3_touch.prg cannot be modified, moved or grown inside its own loop
+neg tests/t466_neg_param4_reuse.prg use of moved value `a`
+neg tests/t469_neg_param4_callee_reuse.prg use of moved value `p`
+neg tests/t472_neg_aaddsub2_comma_darr2.prg needs an array of arrays of arrays
+neg tests/t473_neg_arrset_elem4.prg assigning into an element of a four-level array is not in this increment
+neg tests/t474_neg_aaddsub4.prg `AAdd` on a[i] of a four-level array is not in this increment
+neg tests/t475_neg_asize_root4.prg `ASize` on the root of a four-level array is not in this increment
+neg tests/t476_neg_aadd_root4.prg `AAdd` on the root of a four-level array is not in this increment
+neg tests/t483_neg_foreach_darr4_reseat.prg cannot assign to the `for` loop variable
+neg tests/t484_neg_foreach_darr4_grow.prg borrows an element array from the collection
+neg tests/t492_neg_exeq_static.prg measured only between two integers, between two strings, between two one-level dynamic array variables and against NIL
+neg tests/t497_neg_exeq_block.prg identity is per evaluation
+neg tests/t524_neg_hdel_type.prg hb_HDel expects a hash
+neg tests/t527_neg_hhaskey_type.prg expects a hash variable
+neg tests/t530_neg_hget_type.prg expects a hash variable
+neg tests/t534_neg_hset_type.prg hb_HSet expects a hash
+neg tests/t536_neg_hget_default_str.prg the hb_HGet default is an integer in this increment
+neg tests/t537_neg_hget_default_strown.prg the hb_HGet default is an integer in this increment
+neg tests/t538_neg_hget_default_darr.prg the hb_HGet default is an integer in this increment
+neg tests/t539_neg_hget_default_hash.prg the hb_HGet default is an integer in this increment
+neg tests/t543_neg_hpos_type.prg `hb_HPos` expects a hash variable
+neg tests/t548_neg_hmerge_type.prg hb_HMerge expects hash variables
+neg tests/t549_neg_hmerge_src.prg hb_HMerge expects hash variables
+neg tests/t553_neg_hclone_type.prg `hb_HClone` expects a hash variable
+neg tests/t565_neg_casematch_type.prg hb_HSetCaseMatch expects a hash variable
+neg tests/t566_neg_casematch_flag.prg the hb_HSetCaseMatch flag is an integer
+neg tests/t567_neg_casematch_getter.prg `hb_HCaseMatch` expects a hash variable
+neg tests/t571_neg_hscan_type.prg `hb_HScan` expects a hash variable
+neg tests/t572_neg_hscan_start.prg the hb_HScan start is an integer in this increment
+neg tests/t573_neg_hscan_value.prg hash values are integers or NIL in this increment
+neg tests/t577_neg_hkeyat_type.prg `hb_HKeyAt` expects a hash variable
+neg tests/t578_neg_hkeyat_index.prg the hb_HKeyAt position is an integer in this increment
+neg tests/t579_neg_hvalueat_type.prg `hb_HValueAt` expects a hash variable
+neg tests/t582_neg_hdelat_type.prg hb_HDelAt expects a hash variable
+neg tests/t583_neg_hdelat_index.prg the hb_HDelAt position is an integer in this increment
+neg tests/t587_neg_hclear_type.prg hb_HClear expects a hash variable
+neg tests/t588_neg_hfill_value.prg hash values are integers, logicals or NIL in this increment
+neg tests/t598_hcopy_self.prg `hb_HCopy` cannot copy a hash onto itself
+neg tests/t603_bare_and.prg bare `and` is not an operator in Harbour either
+neg tests/t604_bare_not.prg trailing tokens after expression
+neg tests/t605_mixed_log_num.prg logicals compare only with another logical
+neg tests/t621_unterminated_block.prg unterminated /* */ comment
+neg tests/t627_str_plus_int.prg arithmetic requires integers
+neg tests/t630_call_stmt_unknown.prg unknown function
+neg tests/t636_byref_alias.prg cannot borrow `x` exclusively
+neg tests/t637_byref_nonvar.prg statement not in the subset
+neg tests/t641_byref_moveout.prg moves it out of its owner
+neg tests/t642_byref_aliasval.prg cannot borrow `x` exclusively
+neg tests/t663_dyn_str_foreach.prg its value borrows from the collection
+neg tests/t671_div_eq_neg.prg `/=` is not in this increment
+neg tests/t682_static_var_neg.prg module STATIC requires a folded i64, logical or string scalar or a constant array initializer (i64/logical/string/NIL cells, nested and empty arrays admitted); NIL, Date, float and hash initializers are not in this increment
+neg tests/t683_second_group_neg.prg code outside a function
+neg tests/t684_dup_main_neg.prg duplicate function
+neg tests/t685_memvar_ref_neg.prg assignment to undeclared variable `m_y`
+neg tests/t686_request_undef_neg.prg REQUEST `extmod` cannot be honored
+neg tests/t687_static_clash_neg.prg duplicate function `f`
+neg tests/t692_forward_type_neg.prg argument 1 of `fwd` must be an integer, got a string
+neg tests/t694_mutual_no_evidence_neg.prg never returns a value
+neg tests/t697_strlit_mixed.prg array elements must be integers or logicals
+neg tests/t701_discard_hash_neg.prg discarding a hash return
+neg tests/t706_print_dyn_array_neg.prg must be a dynamic value, got a dynamic array
+neg tests/t715_dyn_cond_str_elem_neg.prg a bare value is not a condition in this PoC
+neg tests/t724_infer_pinerr_osc_neg.prg must be a dynamic array, got a dynamic value
+neg tests/t729_float_arith_neg.prg arithmetic needs numeric operands
+neg tests/t730_float_cond_neg.prg not a condition
+neg tests/t767_f64_mixed_return_neg.prg return type mismatch
+neg tests/t776_nonnumeric_nopromo_neg.prg must be an integer, got a boolean
+neg tests/t784_for_reuse_str_neg.prg reuses a non-integer or read-only slot
+neg tests/t793_barefor_mention_neg.prg reuses a non-integer or read-only slot
+neg tests/t794_barefor_range_neg.prg reuses a non-integer or read-only slot
+neg tests/t795_barefor_nested_neg.prg reuses a non-integer or read-only slot
+neg tests/t801_dollar_int_neg.prg containment `$` is measured for string-in-string only
+neg tests/t802_mod_str_neg.prg `%` needs numeric operands
+neg tests/t803_dollar_arr_neg.prg containment `$` is measured for string-in-string only
+neg tests/t811_pow_str_neg.prg `^` needs numeric operands
+neg tests/t812_pow_arr_neg.prg `^` needs numeric operands
+neg tests/t813_set_callstmt_neg.prg unknown function `set`
+neg tests/t814_set_century_neg.prg SET commands are not in this increment
+neg tests/t815_set_printer_neg.prg SET commands are not in this increment
+neg tests/t820_cont_code_after_neg.prg incomplete expression
+neg tests/t821_cont_string_neg.prg unterminated string
+neg tests/t822_cont_nomerge_neg.prg expected `local name [:= expr]`
+neg tests/t826_docase_case_nocond_neg.prg `case` takes a condition
+neg tests/t827_docase_unclosed_neg.prg `do case` without `endcase`
+neg tests/t851_chr_float_neg.prg `chr` expects an integer
+neg tests/t852_chr_str_neg.prg `chr` expects an integer
+neg tests/t853_chr_arity_neg.prg `chr` takes one argument
+neg tests/t857_trim_type_neg.prg `ltrim` expects a string
+neg tests/t858_trim_arity_neg.prg `rtrim` takes one argument
+neg tests/t862_asc_type_neg.prg `asc` expects a string
+neg tests/t863_asc_arity_neg.prg `asc` takes one argument
+neg tests/t864_asc_extra_neg.prg `asc` takes one argument
+neg tests/t865_asc_dyn_neg.prg `asc` expects a string
+neg tests/t871_qqout_array_temp_neg.prg cannot print a temporary array or hash
+neg tests/t872_qout_block_arg_neg.prg cannot print a codeblock
+neg tests/t873_qout_move_neg.prg use of moved value
+neg tests/t874_qout_move_after_neg.prg use of moved value
+neg tests/t879_qout_param_array_neg.prg a static array argument
+neg tests/t894_inc_capture_neg.prg codeblock captures are not in
+neg tests/t895_inc_float_neg.prg integer variable lvalues only
+neg tests/t897_inc_elem_neg.prg requires a variable lvalue
+neg tests/t898_inc_literal_neg.prg requires a variable lvalue
+neg tests/t899_inc_readonly_neg.prg read-only variable
+neg tests/t900_inc_chain_neg.prg requires a variable lvalue
+neg tests/t902_inc_undefined_neg.prg undefined variable
+neg tests/t913_unary_plus_move_neg.prg use of moved value
+neg tests/t915_unary_plus_literal_inc_neg.prg requires a variable lvalue
+neg tests/t916_unary_plus_float_inc_neg.prg integer variable lvalues only
+neg tests/t919_paren_moved_neg.prg use of moved value
+neg tests/t920_paren_hash_temp_neg.prg discarding a hash
+neg tests/t921_paren_block_temp_neg.prg discarding a codeblock
+neg tests/t922_paren_array_temp_neg.prg discarding an array
+neg tests/t923_paren_capture_neg.prg codeblock captures are not in
+neg tests/t924_paren_undefined_neg.prg undefined variable
+neg tests/t926_paren_foreach_limit_neg.prg the `for each` variable
+neg tests/t934_sequence_dyn_neg.prg borrowed-string results only
+neg tests/t935_sequence_array_neg.prg borrowed-string results only
+neg tests/t936_sequence_block_neg.prg borrowed-string results only
+neg tests/t937_sequence_capture_neg.prg codeblock captures are not in
+neg tests/t938_sequence_lvalue_neg.prg requires a variable lvalue
+neg tests/t939_sequence_missing_neg.prg unexpected token RParen
+neg tests/t940_sequence_empty_neg.prg unexpected token Comma
+neg tests/t943_sequence_undefined_neg.prg undefined variable
+neg tests/t946_sequence_moved_again_neg.prg use of moved value
+neg tests/t947_sequence_moved_later_neg.prg use of moved value
+neg tests/t949_sequence_sibling_move_neg.prg use of moved value
+neg tests/t950_sequence_print_move_neg.prg use of moved value
+neg tests/t951_sequence_nested_move_neg.prg use of moved value
+neg tests/t952_sequence_iif_cond_move_neg.prg use of moved value
+neg tests/t953_sequence_iif_arm_move_neg.prg use of moved value
+neg tests/t954_sequence_and_move_neg.prg use of moved value
+neg tests/t955_sequence_or_move_neg.prg use of moved value
+neg tests/t956_sequence_if_join_move_neg.prg use of moved value
+neg tests/t957_sequence_loop_move_neg.prg moved inside the `for` body
+neg tests/t958_sequence_lazy_arm_move_neg.prg use of moved value
+neg tests/t959_sequence_lazy_and_move_neg.prg use of moved value
+neg tests/t960_sequence_lazy_or_move_neg.prg use of moved value
+neg tests/t961_sequence_seq_inside_arg_move_neg.prg must be a string
+neg tests/t962_sequence_double_consume_neg.prg use of moved value
+neg tests/t964_qout_seq_sibling_move_neg.prg use of moved value
+neg tests/t965_qout_seq_nested_move_neg.prg use of moved value
+neg tests/t966_qout_seq_print_move_neg.prg use of moved value
+neg tests/t967_qout_call_sibling_move_neg.prg use of moved value
+neg tests/t968_clone_if_else_move_neg.prg use of moved value
+neg tests/t969_clone_while_exit_move_neg.prg use of moved value
+neg tests/t970_clone_for_exit_move_neg.prg use of moved value
+neg tests/t971_clone_foreach_exit_move_neg.prg use of moved value
+neg tests/t972_clone_nested_output_move_neg.prg use of moved value
+neg tests/t973_clone_loop_continue_move_neg.prg not reassigned before `loop`
+neg tests/t974_clone_block_capture_move_neg.prg codeblock captures are not in
+neg tests/t976_foreach_static_neg.prg over fixed-size stack arrays is not in this increment
+neg tests/t977_foreach_static_copy_neg.prg over fixed-size stack arrays is not in this increment
+neg tests/t978_foreach_static_empty_neg.prg over fixed-size stack arrays is not in this increment
+neg tests/t979_original_failed_foreach_neg.prg over fixed-size stack arrays is not in this increment
+neg tests/t986_inline_if_move_neg.prg use of moved value
+neg tests/t987_inline_if_qout_move_neg.prg use of moved value
+neg tests/t988_inline_if_dyn_limit_neg.prg branches must share a scalar type
+neg tests/t990_inline_if_condition_neg.prg condition must be logical
+neg tests/t991_inline_if_arity_neg.prg without `endif`
+neg tests/t994_inline_if_missing_condition_neg.prg `iif` condition must be logical
+neg tests/t995_inline_if_extra_branch_neg.prg without `endif`
+neg tests/t996_regular_call_empty_arg_neg.prg `f` takes 1 argument(s), got 2
+neg tests/t1003_recursive_inline_wrongarg.prg never returns a value
+neg tests/t1004_recursive_inline_nonanchor.prg never returns a value
+neg tests/t1005_recursive_inline_noground.prg never returns a value
+neg tests/t1010_pp_warning_follow_error_neg.prg #error next remains fatal
+neg tests/t1011_pp_warning_diagnostic_neg.prg line 3: undefined variable
+neg tests/t1013_pp_warning_unknown_directive_neg.prg unknown directive #notadirective
+neg tests/t1021_procline_arity_neg.prg current frame
+neg tests/t1026_default_unused_undef_neg.prg unknown function `hb_symbol_unused`
+neg tests/t1027_default_unused_missing_neg.prg undefined variable `missing`
+neg tests/t1028_default_unused_moved_neg.prg use of moved value `s`
+neg tests/t1033_raw_quote_unterminated_neg.prg unterminated string
+neg tests/t1034_raw_quote_backslash_escape_neg.prg unterminated string
+neg tests/t1038_eol_arity_neg.prg `hb_eol` takes no arguments
+neg tests/t1039_outstd_move_neg.prg use of moved value
+neg tests/t1043_original_longstr2_move_neg.prg use of moved value `short`
+neg tests/t1044_outerr_move_neg.prg use of moved value
+neg tests/t1047_empty_dyn_neg.prg `Empty` on generic Dyn values
+neg tests/t1048_empty_temp_array_neg.prg `Empty` on an array/hash needs a variable
+neg tests/t1049_empty_arity_neg.prg `Empty` takes one argument
+neg tests/t1050_empty_moved_neg.prg use of moved value
+neg tests/t1059_index_eqeq_stmt_neg.prg expected `name[idx] := expr`
+neg tests/t1060_index_equal_moved_neg.prg use of moved value
+neg tests/t1063_stray_end_neg.prg statement not in the subset
+neg tests/t1064_end_payload_neg.prg `endif` takes no expression
+neg tests/t1065_mismatched_end_neg.prg `if` without `endif`
+neg tests/t1068_minmax_mixed_neg.prg needs matching integer, float or logical arguments
+neg tests/t1069_minmax_string_neg.prg needs matching integer, float or logical arguments
+neg tests/t1070_minmax_arity_neg.prg takes two arguments
+neg tests/t1073_bitops_float_neg.prg arguments must be integers
+neg tests/t1074_bitops_arity_neg.prg needs at least two argument(s)
+neg tests/t1075_bitnot_arity_neg.prg needs exactly one argument(s)
+neg tests/t1078_bitindex_range_neg.prg bit index must be a literal from 0 to 63
+neg tests/t1079_bitindex_type_neg.prg value must be an integer
+neg tests/t1080_bitindex_arity_neg.prg takes two arguments
+neg tests/t1083_semicolon_incomplete_neg.prg incomplete expression
+neg tests/t1085_semicolon_unbalanced_neg.prg missing )
+neg tests/t1091_pp_identifier_literal_neg.prg statement not in the subset
+neg tests/t1092_pp_identifier_expr_neg.prg statement not in the subset
+neg tests/t1093_pp_wildcard_follow_neg.prg statement not in the subset
+neg tests/t1094_pp_marker_remove.prg statement not in the subset
+neg tests/t1096_pp_marker_malformed_neg.prg bad match marker
+neg tests/t1097_pp_identifier_optional.prg statement not in the subset
+neg tests/t1105_pp_restricted_exact_neg.prg statement not in the subset
+neg tests/t1106_pp_restricted_unknown_neg.prg statement not in the subset
+neg tests/t1107_pp_restricted_prefix_neg.prg statement not in the subset
+neg tests/t1108_pp_restricted_quote_neg.prg statement not in the subset
+neg tests/t1109_pp_restricted_empty_neg.prg bad match marker
+neg tests/t1110_pp_restricted_macro_neg.prg bad match marker
+neg tests/t1117_pp_logical_unknown_neg.prg unknown result marker
+neg tests/t1118_pp_logical_case_neg.prg unknown result marker
+neg tests/t1119_pp_logical_malformed_neg.prg unknown result marker
+neg tests/t1120_pp_logical_nonmatch_neg.prg statement not in the subset
+neg tests/t1127_pp_null_unknown_neg.prg unknown result marker
+neg tests/t1128_pp_null_case_neg.prg unknown result marker
+neg tests/t1129_pp_null_malformed_neg.prg unknown result marker
+neg tests/t1130_pp_null_nonmatch_neg.prg statement not in the subset
+neg tests/t1139_pp_generated_unknown_neg.prg unknown result marker
+neg tests/t1140_pp_generated_case_neg.prg unknown result marker
+neg tests/t1141_pp_generated_exact_neg.prg statement not in the subset
+neg tests/t1142_pp_generated_recursive_neg.prg command expansion too deep
+neg tests/t1143_pp_generated_unsupported_neg.prg no functions found
+neg tests/t1144_pp_generated_unescaped_neg.prg unknown result marker
+neg tests/t1156_pp_call_unknown_neg.prg unknown result marker
+neg tests/t1157_pp_call_case_neg.prg unknown result marker
+neg tests/t1158_pp_call_recursive_neg.prg translation expansion too deep
+neg tests/t1159_pp_call_removed_neg.prg unknown function
+neg tests/t1167_pp_atoms_spaced_assign_neg.prg expected
+neg tests/t1168_pp_atoms_spaced_logical_neg.prg unterminated dotted word
+neg tests/t1177_pp_stringify_mixed_quotes_neg.prg numeric string escapes
+neg tests/t1178_pp_stringify_escape_neg.prg numeric string escapes
+neg tests/t1179_pp_stringify_list_neg.prg numeric string escapes
+neg tests/t1180_pp_stringify_other_form_neg.prg unknown result marker
+neg tests/t1189_pp_fixed_translate_recursive_neg.prg fixed translation expansion too deep
+neg tests/t1195_pp_normal_stringify_quotes_neg.prg numeric string escapes
+neg tests/t1196_pp_normal_stringify_list_neg.prg list stringify with unbalanced delimiters
+neg tests/t1202_pp_list_escape_neg.prg numeric string escapes
+neg tests/t1208_pp_macro_mismatch_neg.prg mismatched delimiters in macro call
+neg tests/t1209_pp_macro_bracket_comma_neg.prg unterminated bracket string
+neg tests/t1216_bracket_unterminated_neg.prg unterminated bracket string
+neg tests/t1218_bracket_macro_quotes_neg.prg macro bracket argument requiring both quotes
+neg tests/t1239_pp_smart_repeat_neg.prg trailing tokens after expression
+neg tests/t1240_pp_smart_escape_neg.prg numeric string escapes are outside
+neg tests/t1241_pp_smart_restricted_repeat_neg.prg smart stringify of repeated/disjoint captures
+neg tests/t1242_pp_smart_optional_literal_neg.prg smart stringify with literal-bearing optional groups
+neg tests/t1261_pp_reduced_var_macro_neg.prg reduced VAR expression atom outside bounded contract
+neg tests/t1262_pp_reduced_var_power_neg.prg reduced VAR expression shape outside bounded contract
+neg tests/t1263_pp_reduced_var_incomplete_neg.prg reduced VAR expression shape outside bounded contract
+neg tests/t1264_pp_reduced_var_dot_neg.prg reduced VAR expression atom outside bounded contract
+neg tests/t1271_pp_plain_type_macro_neg.prg reduced VAR expression atom outside bounded contract
+neg tests/t1272_pp_plain_type_incomplete_neg.prg reduced VAR expression shape outside bounded contract
+neg tests/t1277_pp_var_flags_repeat.prg statement not in the subset
+neg tests/t1280_pp_var_flags_macro_neg.prg reduced VAR expression atom outside bounded contract
+neg tests/t1281_pp_var_flags_incomplete_neg.prg reduced VAR expression shape outside bounded contract
+neg tests/t1290_pp_queue_cycle_neg.prg command expansion too deep
+neg tests/t1291_pp_queue_include_neg.prg generated directive outside command/xcommand scope
+neg tests/t1292_pp_queue_uncommand_neg.prg generated directive outside command/xcommand scope
+neg tests/t1299_pp_var_family_type_neg.prg overlapping VAR type expression outside bounded contract
+neg tests/t1300_pp_var_family_trailing_neg.prg statement not in the subset
+neg tests/t1307_pp_alias_command_cycle.prg command expansion too deep
+neg tests/t1308_pp_alias_define_cycle.prg macro expansion too deep
+neg tests/t1325_pp_call_cycle.prg command expansion too deep
+neg tests/t1332_pp_inline_ident_cycle.prg fixed translation expansion too deep
+neg tests/t1337_pp_concat_scope.prg inline plain-tail expression outside bounded contract
+neg tests/t1338_pp_concat_incomplete.prg inline plain-tail expression outside bounded contract
+neg tests/t1356_idxcompound_div_parked.prg is parked: Harbour `/` always yields decimals
+neg tests/t1360_recursive_mutual_endret_limit.prg never returns a value
+neg tests/t1365_hb_pvalue_block_neg.prg `hb_PValue` inside a codeblock is not in this increment
+neg tests/t1366_omitted_float_pin_neg.prg arithmetic between a NIL-able (Dyn) value and a float
+neg tests/t1368_pcount_neg.prg `PCount` is not in this increment
+neg tests/t1369_unknown_nested_arg_neg.prg unknown function `nosuchfn_xyzzy`
+neg tests/t1375_set_float_rhs_neg.prg inline `:=` in an expression supports integer/logical values only
+neg tests/t1376_set_undeclared_neg.prg assignment to undeclared variable `z`
+neg tests/t1377_pragma_other_neg.prg #pragma `-b-` is not in this PoC
+neg tests/t1378_seq_dyn_call_neg.prg parenthesized comma expressions support
+neg tests/t1379_set_byref_neg.prg inline `:=` through a by-reference parameter is not in this increment
+neg tests/t1387_cb_neg_kind_mix.prg would hold both integer- and NIL-returning codeblocks
+neg tests/t1388_cb_neg_param_kind.prg must be an integer-returning codeblock, got a NIL-returning one
+neg tests/t1389_cb_neg_iif_blocks.prg `iif` branches must share a scalar type
+neg tests/t1400_str_neg_string.prg must be an integer or a float in this increment
+neg tests/t1401_padr_neg_arity.prg `padr` takes 2 arguments in this increment
+neg tests/t1402_hb_ntos_neg_arity.prg `hb_ntos` takes one argument in this increment
+neg tests/t1403_padr_neg_noargs.prg `padr` takes 2 arguments in this increment
+neg tests/t1404_str_neg_noargs.prg `str` takes 1 to 3 arguments in this increment
+neg tests/t1405_hb_ntos_neg_noargs.prg `hb_ntos` takes one argument in this increment
+neg tests/t1407_replicate_neg_noargs.prg `replicate` takes 2 arguments in this increment
+neg tests/t1408_replicate_neg_onearg.prg `replicate` takes 2 arguments in this increment
+neg tests/t1409_replicate_neg_intfirst.prg `replicate` expects a string as its first argument
+neg tests/t1410_replicate_neg_strcount.prg `replicate` expects an integer count
+neg tests/t1414_aeval_neg_onearg.prg `aeval` takes 2 to 4 arguments
+neg tests/t1415_aeval_neg_nonvar.prg `aeval` expects an array variable
+neg tests/t1416_aeval_neg_expr.prg unknown function `aeval`
+neg tests/t1421_aeval_neg_zeroarg.prg `aeval` takes 2 to 4 arguments
+neg tests/t1424_mixed_cell_store_neg.prg storing a cell of the mixed array
+neg tests/t1425_mixed_cell_assign_neg.prg storing into a cell of the mixed array
+neg tests/t1426_mixed_isnumeric_neg.prg over this expression is not measured
+neg tests/t1431_mixed_use_after_move_neg.prg use of moved value `a`
+neg tests/t1436_mixed_branch_pin_neg.prg unknown until its first
+neg tests/t1438_isx_blockvar_neg.prg over this variable type is not measured
+neg tests/t1439_isx_hashvar_neg.prg over this variable type is not measured
+neg tests/t1440_isx_floatindex_neg.prg index must be an integer expression
+neg tests/t1441_isx_stringindex_neg.prg index must be an integer expression
+neg tests/t1442_isx_unknownindex_neg.prg unknown function `nosuchfn_xyzzy`
+neg tests/t1443_isx_movedowner_neg.prg use of moved value `a`
+neg tests/t1444_isx_zeroargs_neg.prg takes one argument
+neg tests/t1456_aview_escape.prg array-view
+neg tests/t1457_aview_mutate.prg array-view
+neg tests/t1458_aview_frozen.prg no other argument of the same call may mention it
+neg tests/t1459_aview_capture.prg array-view
+neg tests/t1460_aview_store.prg array-view
+neg tests/t1461_aview_byref.prg array-view
+neg tests/t1462_aview_printcell.prg array-view
+neg tests/t1463_aview_badindex.prg array index must be an integer
+neg tests/t1464_aview_moved.prg use of moved value
+neg tests/t1465_aview_children.prg no other argument of the same call may mention it
+neg tests/t1470_aview_outputcell.prg array-view
+neg tests/t1471_aview_outstdcell.prg array-view
+neg tests/t1472_aview_outerrcell.prg array-view
+neg tests/t1473_aview_qoutcell.prg array-view
+neg tests/t1474_aview_idxconsume.prg may not mention the viewed array
+neg tests/t1475_aview_idxmutate.prg may not mention the viewed array
+neg tests/t1476_borrow_idxconsume.prg may not mention the owner array
+neg tests/t1477_borrow_idxmutate.prg may not mention the owner array
+neg tests/t1481_stepc_iif_store.prg array-view
+neg tests/t1495_stepd_neg_store.prg branches must share a scalar type
+neg tests/t1496_stepd_neg_return.prg branches must share a scalar type
+neg tests/t1497_stepd_neg_pass.prg branches must share a scalar type
+neg tests/t1513_dynarr_nested_neg.prg cannot mix integers and arrays
+neg tests/t1514_dynarr_computed_neg.prg holds scalar literals only in this stage
+neg tests/t1518_dynout_freeze_neg.prg is borrowed by a cell read in this output statement
+neg tests/t1519_dynselfroot_neg.prg may not mention it (an assignment there frees the array before the store)
+neg tests/t1528_asizeexpr_neg.prg unknown function `asize`
+neg tests/t1529_afillarr_neg.prg aliases the child in Harbour (probe g3)
+neg tests/t1530_aistyped_neg.prg statically-typed arrays are not in this increment
+neg tests/t1531_adelrhs_neg.prg unknown function `adel`
+neg tests/t1532_afillarity_neg.prg `AFill` takes two to four arguments
+neg tests/t1533_afillfloat_neg.prg the Dyn float tag is still undecided
+neg tests/t1538_argidxassign_neg.prg expected `,` or `)` in call arguments
+neg tests/t1540_argidxcompound_neg.prg unexpected token Eq in expression
+neg tests/t1553_string_each_neg_assign_var.prg string `for each` requires
+neg tests/t1554_string_each_neg_assign_source.prg string `for each` requires
+neg tests/t1555_string_each_neg_copy_char.prg string `for each` requires
+neg tests/t1556_string_each_neg_return_char.prg string `for each` requires
+neg tests/t1557_string_each_neg_user_call.prg string `for each` requires
+neg tests/t1558_string_each_neg_hash_escape.prg string `for each` requires
+neg tests/t1559_string_each_neg_array_escape.prg string `for each` requires
+neg tests/t1560_string_each_neg_block_escape.prg string `for each` requires
+neg tests/t1561_string_each_neg_inline_write.prg string `for each` requires
+neg tests/t1562_string_each_neg_nested.prg string `for each` requires
+neg tests/t1563_string_each_neg_effect_condition.prg string `for each` requires
+neg tests/t1564_string_each_neg_call_collection.prg string `for each` requires
+neg tests/t1565_string_each_neg_byref_observer.prg requires an explicit by-value string argument
+neg tests/t1566_string_each_neg_omitted_observer.prg requires an explicit by-value string argument
+neg tests/t1567_string_each_neg_same_var.prg loop variable cannot be the collection itself
+neg tests/t1581_text_neg_unterminated.prg unterminated TEXT
+neg tests/t1582_text_neg_arguments.prg statement not in the subset
+neg tests/t1583_text_neg_customcommand.prg bare TEXT with custom
+neg tests/t1584_text_neg_customtranslation.prg bare TEXT with custom
+neg tests/t1585_text_neg_alias.prg bare TEXT with custom
+neg tests/t1586_text_neg_generated.prg statement not in the subset
+neg tests/t1587_text_neg_continuation.prg continuation into TEXT
+neg tests/t1588_text_neg_include_boundary.prg unterminated TEXT
+neg tests/t1589_text_neg_control.prg TEXT literal lines with control bytes or more than 79 UTF-8 bytes
+neg tests/t1590_text_neg_long.prg TEXT literal lines with control bytes or more than 79 UTF-8 bytes
+neg tests/t1608_startup_neg_parameters.prg INIT procedures with parameters
+neg tests/t1609_startup_neg_exit.prg EXIT PROCEDURE is not in this increment
+neg tests/t1610_startup_neg_value_return.prg INIT procedures require bare/NIL returns
+neg tests/t1611_startup_neg_dead_return.prg INIT procedures require bare/NIL returns
+neg tests/t1612_startup_neg_switch_return.prg INIT procedures require bare/NIL returns
+neg tests/t1613_startup_neg_static.prg INIT procedures require bare/NIL returns
+neg tests/t1614_startup_neg_call_hook.prg unknown function `boot`
+neg tests/t1615_startup_neg_duplicate.prg duplicate function `boot$`
+neg tests/t1616_startup_neg_no_main.prg no main function
+neg tests/t1617_startup_neg_init_main.prg no main function
+neg tests/t1634_curdir_neg_extra.prg CurDir supports no argument or one literal string/NIL
+neg tests/t1635_curdir_neg_number.prg CurDir supports no argument or one literal string/NIL
+neg tests/t1636_curdir_neg_logical.prg CurDir supports no argument or one literal string/NIL
+neg tests/t1637_curdir_neg_variable.prg CurDir supports no argument or one literal string/NIL
+neg tests/t1638_curdir_neg_effect.prg CurDir supports no argument or one literal string/NIL
+neg tests/t1639_curdir_neg_array.prg CurDir supports no argument or one literal string/NIL
+neg tests/t1640_curdir_neg_function.prg CurDir supports no argument or one literal string/NIL
+neg tests/t1641_curdir_neg_dead.prg CurDir supports no argument or one literal string/NIL
+neg tests/t1642_curdir_neg_byref.prg CurDir supports no argument or one literal string/NIL
+neg tests/t1661_date_param_neg.prg must be a dynamic value, got a date
+neg tests/t1663_date_arity_neg.prg `date` takes no arguments
+neg tests/t1664_ctod_nonstring_neg.prg `ctod` expects a string
+neg tests/t1666_date_mixedcmp_neg.prg dates compare only with other dates
+neg tests/t1667_date_assign_neg.prg type mismatch in assignment
+neg tests/t1668_date_array_neg.prg array elements must be integers or logicals
+neg tests/t1669_date_hash_neg.prg hash values are tagged scalars
+neg tests/t1670_date_retmix_neg.prg return type mismatch
+neg tests/t1671_date_byref_neg.prg cannot infer the type of parameter
+neg tests/procmeta/reject_procline_arity.prg supports only no argument or one I64 level
+neg tests/procmeta/reject_procline_array.prg level must be I64
+neg tests/procmeta/reject_procline_bool.prg level must be I64
+neg tests/procmeta/reject_procline_date.prg level must be I64
+neg tests/procmeta/reject_procline_float.prg level must be I64
+neg tests/procmeta/reject_procline_nil.prg level must be I64
+neg tests/procmeta/reject_procline_str.prg level must be I64
+neg tests/procmeta/reject_procname_arity.prg supports only no argument or one I64 level
+neg tests/procmeta/reject_procname_array.prg level must be I64
+neg tests/procmeta/reject_procname_bool.prg level must be I64
+neg tests/procmeta/reject_procname_date.prg level must be I64
+neg tests/procmeta/reject_procname_float.prg level must be I64
+neg tests/procmeta/reject_procname_nil.prg level must be I64
+neg tests/procmeta/reject_procname_str.prg level must be I64
+neg tests/try-catch/try_return_neg.prg E0025: invalid RETURN from within of SEQUENCE code
+neg tests/try-catch/try_exit_neg.prg E0025: invalid EXIT from within of SEQUENCE code
+neg tests/hash-logical/haskey-int-neg.prg arithmetic
+neg tests/issue1/a1_array_param_mut.prg line 3: array `v` is passed to `f`, which can change its elements
+neg tests/issue1/a2_array_param_mut_return.prg line 3: array `v` is passed to `f`, which can change its elements
+neg tests/issue1/a3_array_param_mut_case.prg line 3: array `v` is passed to `f`, which can change its elements
+cli tests/expectations/cli/version.out --version
+neg tests/module-static/negative/branch_shadow.prg module STATIC shadow inside control flow
+neg tests/module-static/negative/date.prg module STATIC requires a folded i64, logical or string scalar or a constant array initializer (i64/logical/string/NIL cells, nested and empty arrays admitted); NIL, Date, float and hash initializers are not in this increment
+neg tests/module-static/negative/duplicate.prg duplicate module STATIC
+neg tests/module-static/negative/effectful.prg module STATIC requires a folded i64, logical or string scalar or a constant array initializer (i64/logical/string/NIL cells, nested and empty arrays admitted); NIL, Date, float and hash initializers are not in this increment
+neg tests/module-static/negative/float.prg module STATIC requires a folded i64, logical or string scalar or a constant array initializer (i64/logical/string/NIL cells, nested and empty arrays admitted); NIL, Date, float and hash initializers are not in this increment
+neg tests/module-static/negative/hash.prg module STATIC requires a folded i64, logical or string scalar or a constant array initializer (i64/logical/string/NIL cells, nested and empty arrays admitted); NIL, Date, float and hash initializers are not in this increment
+neg tests/module-static/negative/late.prg module STATIC declarations must precede
+neg tests/module-static/negative/loop.prg STATIC loop counters require
+neg tests/module-static/negative/memvar.prg module STATIC and explicit MEMVAR
+neg tests/module-static/negative/nil.prg module STATIC requires a folded i64, logical or string scalar or a constant array initializer (i64/logical/string/NIL cells, nested and empty arrays admitted); NIL, Date, float and hash initializers are not in this increment
+neg tests/module-static/negative/widen.prg keeps the scalar type of its folded initializer in this increment
+neg tests/module-static/negative/method_loop.prg STATIC loop counters require
+neg tests/module-static-owned/negative/array_escape.prg owned/container
+neg tests/module-static-owned/negative/bool_byref.prg logical by-reference use is outside
+neg tests/module-static-owned/negative/catch_shadow.prg module STATIC catch binding shadow
+neg tests/module-static-owned/negative/compound_call.prg inline-effect
+neg tests/module-static-owned/negative/counter_try.prg STATIC loop counters require
+neg tests/module-static-owned/negative/inline_write.prg inline-effect
+neg tests/module-static-owned/negative/logical_widen.prg keeps the scalar type of its folded initializer in this increment
+neg tests/module-static-owned/negative/string_widen.prg keeps the scalar type of its folded initializer in this increment
+neg tests/module-static-owned/negative/print_mutation.prg inline-effect
+neg tests/module-static-owned/negative/argument_mutation.prg inline-effect
+neg tests/module-static-array/negative/aadd_lit.prg shared-array use is outside the dynamic increment
+neg tests/module-static-array/negative/afill.prg shared-array use is outside the dynamic increment
+neg tests/module-static-array/negative/assign_nonconst.prg takes a literal of constants
+neg tests/module-static-array/negative/byref.prg shared-array use is outside the dynamic increment
+neg tests/module-static-array/negative/call_arg.prg passing the shared module array
+neg tests/module-static-array/negative/cmp_whole.prg shared-array use is outside the dynamic increment
+neg tests/module-static-array/negative/compound.prg shared-array use is outside the dynamic increment
+neg tests/module-static-array/negative/container.prg shared-array use is outside the dynamic increment
+neg tests/module-static-array/negative/if_whole.prg shared-array use is outside the dynamic increment
+neg tests/module-static-array/negative/obj_cell.prg storing into a cell of the shared module array
+neg tests/t_static_obj_store.prg module STATIC `o` keeps the scalar type of its folded initializer in this increment
+neg tests/t1687_iif_mixed_neg_object.prg branches must share a scalar type
+neg tests/t1688_iif_mixed_neg_array.prg branches must share a scalar type
+neg tests/t1689_iif_mixed_neg_block.prg branches must share a scalar type
+neg tests/t1690_iif_mixed_neg_date.prg branches must share a scalar type
+neg tests/t1691_iif_mixed_neg_dynvar.prg branches must share a scalar type
+neg tests/t1692_iif_mixed_neg_nested.prg an owned tagged value
+neg tests/t1693_iif_mixed_neg_call.prg branches must share a scalar type
+neg tests/t1702_iif_mixed_neg_consumer_left_count.prg an owned tagged value
+neg tests/t1705_iif_mixed_neg_output_multi_owned_var.prg an owned tagged value
+neg tests/t1704_iif_mixed_neg_output_multi_float.prg an owned tagged value
+neg tests/t1703_iif_mixed_neg_output_multi_str.prg an owned tagged value
+neg tests/t1701_iif_mixed_neg_consumer_str_arg.prg an owned tagged value
+neg tests/t1700_iif_mixed_neg_consumer_compare.prg an owned tagged value
+neg tests/t1699_iif_mixed_neg_consumer_plus.prg an owned tagged value
+neg tests/t1698_iif_mixed_neg_consumer_minus.prg an owned tagged value
+neg tests/t1697_iif_mixed_neg_consumer_int_slot_assign.prg an owned tagged value
+neg tests/t1696_iif_mixed_neg_consumer_user_int_param.prg an owned tagged value
+neg tests/t1695_iif_mixed_neg_consumer_hb_ntos_float.prg an owned tagged value
+neg tests/t1694_iif_mixed_neg_consumer_hb_ntos_str.prg an owned tagged value
+neg tests/t1706_nested_move_neg_same_call.prg use of moved value
+neg tests/t1707_nested_move_neg_after.prg use of moved value
+neg tests/t1708_nested_move_neg_twice.prg use of moved value
+neg tests/t1709_nested_move_neg_loop.prg is moved inside the
+neg tests/t1710_round_arrlit_neg.prg `round` with a non-empty array literal argument is not covered in this increment

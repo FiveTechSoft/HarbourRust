@@ -77,9 +77,6 @@ tests/loopreg/expected/** -text
 # Byte-exact Harbour 3.2 output for string codeblocks with captures.
 tests/ascan-str-capture/expected/** -text
 
-# Byte-exact Harbour 3.2 output for numeric TRANSFORM pins.
-tests/transform-num/expected/** -text
-
 # Byte-exact Harbour 3.2 output for the Time() assertions.
 tests/time-func/expected/** -text
 
@@ -88,3 +85,31 @@ tests/descend-func/expected/** -text
 
 # Byte-exact Harbour 3.2 output for the hb_ATokens() pins.
 tests/atokens-func/expected/** -text
+
+# Byte-exact reference output for the black-box TRANSFORM pins.
+tests/transform-bb/expected/** -text
+tests/transform-bb/logs/** -text
+tests/transform-bb/evidence/** -text
+
+# Byte-exact Harbour 3.2 output for the ASort block pins.
+tests/asort-block/expected/** -text
+
+# Byte-exact Harbour 3.2 output for the hb_jsonEncode pins.
+tests/jsonencode-bb/expected/** -text
+
+# Byte-exact Harbour 3.2 output for the hb_jsonDecode pins.
+tests/jsondecode-bb/expected/** -text
+tests/user-overrides/expected/** -text
+tests/user-overrides/expected/internal_valtype.windows.out -text
+
+tests/json-safety/expected/** -text
+
+# Byte-exact Harbour 3.2 output for the static foreach pins.
+tests/foreach-static/expected/** -text
+
+# Runtime recipes hash these exact LF bytes on every checkout.
+runtime/*.c text eol=lf
+generated/*.s text eol=lf
+
+# Byte-exact Harbour 3.2 output for the SET DATE pins.
+tests/setdate-bb/expected/** -text

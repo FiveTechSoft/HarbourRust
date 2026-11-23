@@ -178,8 +178,11 @@ hbc_dyn_arithf:
     leave
     ret
 
-# Release marked-float payloads in a flat cell range. RDI=data,RDX=count;
-# preserves RDI/RSI/RDX for the final block free. Never used on block moves.
+# Release marked-float payloads AND owned tag-4 string payloads in a flat
+# cell range. RDI=data,RDX=count; preserves RDI/RSI/RDX for the final block
+# free. Never used on block moves. Borrowed tag-2 controls are NOT freed
+# (the cell does not own them); a tag-4 payload is an owned copy exclusive
+# to the cell (AAdd/ArrSet/ATail/AClone clone at the boundary).
 hbc_float_cells_release:
     push %rbp
     mov %rsp,%rbp
@@ -196,7 +199,18 @@ hbc_float_cells_release:
     jle .Lfloat_cells_done
     mov (%rbx),%rax
     mov 8(%rbx),%rdx
+    cmp $4,%al
+    jne .Lfloat_cells_not4
+    test %rdx,%rdx
+    jz .Lfloat_cells_not4
+    mov %rdx,%rdi
+    call hbc_freestr
+    jmp .Lfloat_cells_next
+.Lfloat_cells_not4:
+    mov (%rbx),%rax
+    mov 8(%rbx),%rdx
     call hbc_float_release
+.Lfloat_cells_next:
     add $16,%rbx
     dec %r12
     jmp .Lfloat_cells_loop

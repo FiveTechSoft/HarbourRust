@@ -1,0 +1,3 @@
+# build: /tmp/hbc-final programs/round_spec_adapted.prg ./round_spec --target=linux
+tests/round-bb/programs/round_spec_adapted.prg -> /tmp/tmp.wlWgfhhcCk/round_spec (73 functions, ELF directo)
+build rc=0

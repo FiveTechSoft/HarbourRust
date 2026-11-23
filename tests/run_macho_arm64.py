@@ -70,8 +70,18 @@ TARGET = '--target=macho-arm64'  # --target=macho runs the same battery on Intel
 # Dyn integer expression increment makes t896 runtime-error positive (+1).
 # Integer overflow stops: tests/i64-overflow adds 7 posx rows (+7).
 # Overflow stubs: loop.prg and callee.prg stop in untraced statements (+2).
-# Full total:1275+6+4+38+9 =1332,1 named REJ on both Mac targets.
-EXPECTED_MANIFEST_ROWS = 1275
+# Round clean-room rewrite (Harbour hb_round replacement): 7 net new
+# executable rows (t732/t734/t736/t737/t743/t747/t836), 13 existing rows
+# re-expected or re-kinded (t837-t848, t1014 no longer raise "round dec
+# out of range"; strfmt expectation updated). Round black-box programs
+# under tests/round-bb/ run via tests/round-bb/check.sh, not the manifest.
+# User overrides: builtin_names.prg and internal_valtype.prg (+2).
+# JSON encode/decode and safety fixtures: six executable rows (+6).
+# Static FOR EACH: four converted negatives plus four fixtures (+8).
+# Nested/static-to-dynamic owner fixtures: two executable rows (+2).
+# SET DATE/CENTURY: one converted negative and two setter-only fixtures (+3).
+# Full total:1303+6+4+38+9 =1360,1 named REJ on both Mac targets.
+EXPECTED_MANIFEST_ROWS = 1303
 # Post-run m_clie.dbf SHA-256 per DBF acceptance test (generated on Linux,
 # stdout checked against the committed expectations). t4 appends records:
 # dbAppend rewrites the header last-update date (bytes 1-3, YY MM DD of the
