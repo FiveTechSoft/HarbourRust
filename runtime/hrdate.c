@@ -7,7 +7,8 @@
  *   JAPANESE YYYY/MM/DD (FRENCH shares the BRITISH layout)
  * SET CENTURY ON widens the year to four digits; OFF keeps two. The
  * month/day fields are always two zero-padded digits. The empty date
- * renders as spaces (8, or 10 with century on). DToS never changes.
+ * renders the layout with every digit position blank ("  /  /  ", or
+ * "  /  /    " with century on). DToS never changes.
  */
 typedef unsigned long long hrt_u64;
 
@@ -62,12 +63,6 @@ hrt_u64 hbc_date_core_c(hrt_u64 packed, char *buf)
 {
     hrt_u64 d, m, y, f1, f2, f3, i;
     const unsigned char *row;
-    if (!packed) {
-        hrt_u64 n = g_century ? 10 : 8;
-        for (i = 0; i < n; i++)
-            buf[i] = ' ';
-        return n;
-    }
     d = packed % 100;
     m = (packed / 100) % 100;
     y = packed / 10000;
@@ -84,6 +79,12 @@ hrt_u64 hbc_date_core_c(hrt_u64 packed, char *buf)
         p += hrt_field(p, f2, d, m, y);
         *p++ = (char)row[3];
         p += hrt_field(p, f3, d, m, y);
+        /* the empty date keeps the layout's separators and blanks every
+         * digit position (Harbour: "  /  /  ", "    .  .  ", ...) */
+        if (!packed)
+            for (i = 0; buf + i < p; i++)
+                if (buf[i] >= '0' && buf[i] <= '9')
+                    buf[i] = ' ';
         return (hrt_u64)(p - buf);
     }
 }
