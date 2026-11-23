@@ -20,10 +20,13 @@ Windows Harbour 3.2 - no GPL source read):
 Named rejections: `SET CENTURY TO <year> ROLLOVER`, unknown format
 words (SPANISH is not a Harbour format word, measured E0030).
 
-`expected/*.windows.out` is real Harbour 3.2 output (hbmk2
--comp=mingw64 -gtcgi, native Windows 11); the Linux files are the same
-bytes with LF line ends. hbc output is byte-identical over both
-programs (18 pins).
+`expected/setdate_matrix.windows.out` and
+`expected/setdate_transform.windows.out` are the original recorded Harbour
+3.2 outputs (hbmk2 -comp=mingw64 -gtcgi, native Windows 11); their Linux
+counterparts have the same bytes with LF line ends. The two original
+programs matched those dated pins in local Linux checks on November 23,
+2026. This provenance does not apply to the empty setter-only regression
+outputs added later; those are not Harbour measurements.
 
 Setter-only regression: `python tests/setdate-bb/check.py --compiler ./hbc`
 checks SET CENTURY ON/OFF and SET DATE without a later date-render call.
