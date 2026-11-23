@@ -55,9 +55,10 @@ jobs:
           python tools/check_syntax_workstreams.py --output work/ci-syntax-workstreams.json
       - name: Python unit tests for test generators and runners
         shell: bash
-        working-directory: tests
         run: |
           set -euo pipefail
+          # repo root: the macho tests open tests/... paths; PYTHONPATH finds the helper modules
+          export PYTHONPATH=tests
           # test_run_macho_arm64 execs fake /bin/sh compilers, so it is POSIX-only
           if [[ "$RUNNER_OS" == "Windows" ]]; then mods=test_generate_json_asm; else mods="test_generate_json_asm test_run_macho_arm64"; fi
           python -m unittest -v $mods
