@@ -8,24 +8,24 @@ included with `include_str!` (`hrobj_blob.s`, `hrobj_blob_mt.s`,
 Everything below was tested with the versions noted; newer versions will
 usually work, but these are the verified ones.
 
-## Use the tracked Windows compiler without a toolchain
+## Use a release compiler without a toolchain
 
-`bin/hbc.exe` is the tracked Windows x86-64 compiler snapshot, added in
-`8299ee4` from source `e17223f`, not the historical v0.1.1 download.
+Compiler binaries are no longer tracked in the repository (`bin/` and
+`dist/` were removed on 23 November 2026; they remain in git history).
+Download `hbc` for your platform from the
+[releases page](https://github.com/FiveTechSoft/HarbourRust/releases).
 Using it for supported native-only programs requires no Rust, MinGW, C
-compiler, external assembler or linker. From the repository root on Windows:
+compiler, external assembler or linker. On Windows:
 
 ```bat
-bin\hbc.exe tests\samples\hello.prg hello.exe
+hbc.exe tests\samples\hello.prg hello.exe
 hello.exe
 ```
 
 The own writers produce ELF (Linux x86-64), PE32+ (Windows x86-64) and
-experimental Mach-O (macOS Intel x86-64). Native ARM64 remains rejected.
-The exact tracked Windows compiler has Wine 11.0 smoke evidence, not native
-Windows verification; Intel Mach-O has no hardware smoke yet. Section 4 pins
-the source/hash and scope. This is a main snapshot, not a published v0.9.0
-binary. Compiler-build dependencies below are not requirements for using it.
+experimental Mach-O (macOS Intel x86-64). See the release notes for each
+asset's hashes, evidence and limits. Compiler-build dependencies below are
+not requirements for using it.
 Only the legacy `--external-as`/explicit assembly pipeline needs assembler
 and linker tools; its Windows path uses MinGW-w64 binutils/import libraries.
 C extensions and the hbmk2 adapter separately need their C toolchain.
@@ -35,11 +35,18 @@ C extensions and the hbmk2 adapter separately need their C toolchain.
 Verified with rustc 1.99.1 (stable).
 
 ```
+cargo build --release        # output: target/release/hbc
+cargo test --release         # Rust unit tests
+```
+
+or, without Cargo:
+
+```
 rustc --edition=2021 -O src/hbc.rs -o hbc
 ```
 
-No crates, no network access, no build system. The resulting `hbc` is a
-statically linked Linux x86-64 binary.
+No crates and no network access are needed either way. The resulting `hbc`
+is a statically linked Linux x86-64 binary.
 
 ## 2. Compile a Harbour program to a Linux binary
 
@@ -111,25 +118,14 @@ The emitted code only calls `kernel32.dll` (`GetStdHandle`, `WriteFile`,
 
 ## 4. Build the compiler itself as a Windows .exe (hbc.exe)
 
-A current precompiled Windows x86-64 compiler is tracked at `bin/hbc.exe`.
-From the repository root on Windows, no Rust, MinGW, C compiler, external
-assembler or linker is needed for the supported native-only path:
+Precompiled Windows x86-64 compilers are published on the
+[releases page](https://github.com/FiveTechSoft/HarbourRust/releases).
+Until 23 November 2026 a snapshot was tracked at `bin/hbc.exe` (added in
+`8299ee4`, cross-built from source `e17223ffacb35e8c15f0368626ceee0e0ff23699`,
+SHA256 `5e1b1e010e609b39a2e05d4d4c3ff47aa079463840ea27633f8f1e6d51a0af0c`);
+it is still in git history.
 
-```bat
-bin\hbc.exe tests\samples\hello.prg hello.exe
-hello.exe
-```
-
-This binary was cross-built from compiler source at
-`e17223ffacb35e8c15f0368626ceee0e0ff23699` (the `src/` tree is identical
-at `ecdd2d457e5b2f4e8d360b0bdcdaa58440898a7f`). SHA256:
-`5e1b1e010e609b39a2e05d4d4c3ff47aa079463840ea27633f8f1e6d51a0af0c`.
-Refresh `bin/hbc.exe` and this source pin/hash when the compiler changes;
-it is a versioned snapshot, not automatically rebuilt when source changes.
-It was added in `8299ee4`; it is not the v0.1.1 compiler and is not yet a
-published v0.9.0 binary.
-
-Fresh verification used Wine 11.0: this exact compiler, without a target flag,
+Fresh verification of that snapshot used Wine 11.0: this exact compiler, without a target flag,
 compiled `hello.prg` and the four positive `tests/try-catch/` programs to PE32+;
 all five generated programs ran with expected output, empty stderr and exit 0.
 The two TRY negatives rejected with E0025. No native Windows execution or
@@ -181,54 +177,13 @@ wine ./hbc.exe prog.prg prog.s --target=windows
 Wine 11.20 was also tried but does not start in constrained containers
 (32 GB address-space reservation); use 10.20.
 
-## 6. Current snapshot and historical repository binaries
+## 6. Historical repository binaries
 
-Use `bin/hbc.exe` for the tracked Windows snapshot described in section 4.
-The `dist/` files below are historical and do not describe its version or
-native-writer requirements:
-
-All nine historical GitHub releases (v0.1.0 through v0.8.0) and their
-uploaded assets were removed on 14 November 2026. Git tags remain as source
-history. There is currently no published release binary; v0.9.0 remains
-pending. Use [the tracked Windows compiler](bin/hbc.exe) from this repository,
-or build current source. Do not look for the removed release downloads.
-
-The historical v0.1.1/v0.2.0 compilers emitted assembly even when the output was
-named `.EXE`. Their `build.bat` needed MinGW-w64 `as`/`ld` to make a real PE.
-For the current tracked compiler's supported native-only programs, use the
-quick start at the top of this file, not an old release script. A filename
-ending in `.EXE` is not proof that the file contains executable PE bytes.
-
-The `dist/` table below is retained only as repository history. Its legacy
-scripts are not the current native-only entry point.
-
-| File          | Platform            | Description                               |
-| ------------- | ------------------- | ----------------------------------------- |
-| `1-hbc`     | Linux x86-64        | Historical compiler                       |
-| `2-hbc.exe` | Windows x86-64      | Historical compiler, not current bin/hbc.exe |
-| `3-hello.exe` | Windows x86-64      | `tests/samples/hello.prg` compiled as in section 3 |
-
-The numeric prefixes are an artifact of the upload tool used to publish
-the files; the contents are exactly the verified builds described here.
-
-SHA-256 of each file is listed in `dist/SHA256SUMS`. These binaries were
-built from `src/hbc.rs` at commit
-`a8c8aed7efb87587e239eecd77dfa9ab7dc75173` and `src/pp.rs` at commit
-`3e78dfddb797f8d65d6dfadc453add63efe877d5` (that exact source state is
-also visible at the dist upload commit
-`1b24443ebcd9834a2b9b43531832e2fb093c1080`, which only added the
-binaries), and verified by running them
-(Linux natively, Windows under Wine 10.20, not real Windows): `2-hbc.exe`
-and `1-hbc` emit byte-identical assembly for the same input, and `3-hello.exe`
-prints its expected output. `dist/build.sh` (Linux) and `dist/build.bat` (Windows) chain the three
-steps for one program (`hbc` -> `as` -> `ld`) and stop at the first failing
-step. build.sh was verified end-to-end on Linux; build.bat chains the
-exact commands of section 3 and needs MinGW-w64 binutils on PATH on real
-Windows (not exercised under Wine, where our as/ld are Linux binaries).
-
-If `src/hbc.rs` at HEAD is newer than that
-commit, these historical `dist/` binaries correspond to the older source; rebuild from
-the current source (sections 1-4) for binaries matching HEAD.
+Compiler binaries are published only as GitHub Release assets. The
+historical `bin/` snapshots and `dist/` binaries (v0.1.1/v0.2.0 era, which
+emitted assembly even for `.EXE` names and needed MinGW-w64 `as`/`ld`) were
+removed from the tree on 23 November 2026 and remain in git history. Do not
+reuse them; download a release or build current source (sections 1-4).
 
 ## 7. Run the test battery
 
