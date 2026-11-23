@@ -19,6 +19,9 @@ files and through the reader's first output line (`opened`).
 |---|---|
 | alone | `r1` without another process: identical |
 | holder-S | `r1` beside a Harbour shared read-write holder: identical |
+| holder-SA | the holder appended and committed a record before `r1` opens: identical |
+| holder-SU | the holder appended without dbCommit/dbUnlock before `r1` opens: identical (both see a fourth, blank record) |
+| bag-held | `r3` reads `shc.dbf` in natural order while a Harbour process holds the table and its structural bag shared: identical |
 | reverse | while `r1` holds the table, a Harbour shared writer appends and a Harbour exclusive open is refused, whichever compiler built `r1` |
 | append | registered: Harbour sees a record appended after its open, hbc reads its open-time snapshot |
 | holder-X | registered: Harbour sets NetErr and continues, hbc aborts at the open with win32 error 32 |

@@ -10,6 +10,10 @@ Harbour only and play the other process.
 Scenarios (fixture rebuilt from pristine bytes before each run):
   alone       r1 with no other process.
   holder-S    r1 while a Harbour process holds shr.dbf shared read-write.
+  holder-SA   the holder appended and committed a record before r1 opens.
+  holder-SU   the holder appended without dbCommit/dbUnlock before r1 opens.
+  bag-held    r3 reads shc.dbf (natural order) while the holder keeps the
+              table and its structural bag open shared read-write.
   reverse     r1 holds shr.dbf; a Harbour shared read-write writer appends
               and a Harbour exclusive open is refused. The writer and
               exclusive outputs must not depend on which compiler built r1.
@@ -120,18 +124,19 @@ def main():
     exclusive = hb_build(here / 'harbour/exclusive.prg', 'exclusive')
     r1 = {'harbour': hb_build(here / 'programs/r1.prg', 'r1'), 'hbc': hbc_build(here / 'programs/r1.prg', 'r1')}
     r2 = {'harbour': hb_build(here / 'programs/r2.prg', 'r2'), 'hbc': hbc_build(here / 'programs/r2.prg', 'r2')}
+    r3 = {'harbour': hb_build(here / 'programs/r3.prg', 'r3'), 'hbc': hbc_build(here / 'programs/r3.prg', 'r3')}
 
     def alone(exe):
         reset(); flag('go.flag')
         p = subprocess.run([exe], cwd=out, capture_output=True, timeout=60)
         return p.returncode, norm(p.stdout), norm(p.stderr)
 
-    def with_holder(mode, exe, append):
+    def with_holder(mode, exe, append, table='shr.dbf'):
         reset()
-        h = start(holder, mode)
+        h = start(holder, mode, table)
         wait_file('ready.flag')
         r = start(exe)
-        head = wait_marker(r) if mode == 'S' else b''
+        head = wait_marker(r) if mode != 'X' else b''
         if append:
             flag('append.flag'); wait_file('appended.flag')
         flag('go.flag')
@@ -175,8 +180,14 @@ def main():
         res[who, 'holder-X'] = with_holder('X', r1[who], False)
         res[who, 'reverse'] = reverse(r1[who])
         res[who, 'r2'] = alone(r2[who])
+        res[who, 'holder-SA'] = with_holder('SA', r1[who], False)
+        res[who, 'holder-SU'] = with_holder('SU', r1[who], False)
+        res[who, 'bag-held'] = with_holder('S', r3[who], False, 'shc.dbf')
     same('r1 alone', res['harbour', 'alone'], res['hbc', 'alone'])
     same('r1 holder-S', res['harbour', 'holder-S'], res['hbc', 'holder-S'])
+    same('r1 holder-SA (committed append before the open)', res['harbour', 'holder-SA'], res['hbc', 'holder-SA'])
+    same('r1 holder-SU (uncommitted append before the open)', res['harbour', 'holder-SU'], res['hbc', 'holder-SU'])
+    same('r3 bag-held (table and structural bag held shared)', res['harbour', 'bag-held'], res['hbc', 'bag-held'])
     hr, hw, hx = res['harbour', 'reverse']
     gr, gw, gx = res['hbc', 'reverse']
     check('reverse: Harbour reader sees the writer append', hr == res['harbour', 'append'], (hr, res['harbour', 'append']))
