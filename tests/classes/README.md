@@ -42,6 +42,62 @@ gate prints.
 See [docs/CLASSES.md](../../docs/CLASSES.md) for the supported scope,
 the object model, and the full declared-limit list.
 
+## Windows/PE battery (`check_windows.py`)
+
+Run under Wine on Linux or on real Windows with Python 3 installed:
+
+    python3 tests/classes/check_windows.py /absolute/path/to/current/hbc [--wine /path/to/wine]
+
+Build hbc from the current checkout first. The battery compiles the 27
+runnable class probes with `--target=windows`, validates each PE32+ file
+(MZ header, PE signature, machine 0x8664), runs it, and checks exit
+status, empty stderr and stdout against `expected/` after mapping
+CRLF -> LF (Windows console output is CRLF, measured in the
+windows-separators oracle fixtures; the raw CRLF counts are recorded per
+case in the evidence directory). The other 16 cases must produce their
+recorded named compile rejection, not an unrelated target error.
+Baselines are the Linux post-fix captures, NOT a fresh Harbour oracle run
+on Windows; byte-exact CRLF parity is covered separately and only by
+`tests/classes/windows-separators`. On hosts without a Windows runner,
+`--emit-only` checks compilation, PE structure and named rejections
+(43/43 emission evidence, not execution).
+
+Real-Windows/Wine execution of the full battery and a fresh differential
+run against Harbour under Wine are PENDING. On Linux without Wine,
+`--emit-only` passes 43/43 (emission evidence, not proof of running on
+Windows).
+
+## Windows differential gate (`check_windows_differential.py`)
+
+The fresh differential run against official Harbour on Windows. Both
+sides compile and run as Windows PE programs in the same environment
+(Wine on Linux, or real Windows), compared byte for byte with NO
+normalization:
+
+    python3 tests/classes/check_windows_differential.py /path/to/hbc \
+        --hbmk2-win /path/to/windows/hbmk2.exe --wine /path/to/wine [--write-fixtures]
+
+`--hbmk2-win` is the official Windows hbmk2.exe with its install tree.
+`--write-fixtures` versions the oracle streams (stdout, stderr, exit
+code) of the 27 runnable probes into `tests/classes/expected-windows/`;
+with those fixtures present the gate runs in replay mode (no
+`--hbmk2-win` needed) comparing candidate runs against them: replay is
+27 byte comparisons + 16 named rejections (in replay the declared-limit
+probes check only the HarbourRust rejection; Harbour is not exercised).
+A timeout or OS error on any run involved in a case marks it INFRA: it
+counts against the gate like a FAIL and is never exported as a fixture
+or satisfied by replay, so two identical infrastructure failures can
+never pass as parity. The 3
+declared-limit probes must compile and run under Harbour and answer
+their recorded named rejection under HarbourRust; the 13 named
+negatives only exercise HarbourRust's rejection (several are programs
+Harbour compiles fine). Off Windows, running anything requires `--wine`;
+missing runner pieces are an explicit STOP, never a FAIL rc 127. On
+hosts without a Windows runner, `--emit-only` checks HarbourRust
+compilation, PE32+ structure and named rejections (43/43 on Linux at
+092b957f; emission evidence, not execution). A Wine/Windows runner is
+PENDING; no oracle fixture has been captured yet.
+
 ## Mach-O Intel battery (`check_macho.sh`)
 
 Run on a real Mac with Python 3 installed:

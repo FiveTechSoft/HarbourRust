@@ -110,3 +110,6 @@ tests/foreach-static/expected/** -text
 # Runtime recipes hash these exact LF bytes on every checkout.
 runtime/*.c text eol=lf
 generated/*.s text eol=lf
+
+# Byte-exact Harbour 3.2 output for the SET DATE pins.
+tests/setdate-bb/expected/** -text
