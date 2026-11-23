@@ -42,6 +42,31 @@ gate prints.
 See [docs/CLASSES.md](../../docs/CLASSES.md) for the supported scope,
 the object model, and the full declared-limit list.
 
+## Windows/PE battery (`check_windows.py`)
+
+Run under Wine on Linux or on real Windows with Python 3 installed:
+
+    python3 tests/classes/check_windows.py /absolute/path/to/current/hbc [--wine /path/to/wine]
+
+Build hbc from the current checkout first. The battery compiles the 27
+runnable class probes with `--target=windows`, validates each PE32+ file
+(MZ header, PE signature, machine 0x8664), runs it, and checks exit
+status, empty stderr and stdout against `expected/` after mapping
+CRLF -> LF (Windows console output is CRLF, measured in the
+windows-separators oracle fixtures; the raw CRLF counts are recorded per
+case in the evidence directory). The other 16 cases must produce their
+recorded named compile rejection, not an unrelated target error.
+Baselines are the Linux post-fix captures, NOT a fresh Harbour oracle run
+on Windows; byte-exact CRLF parity is covered separately and only by
+`tests/classes/windows-separators`. On hosts without a Windows runner,
+`--emit-only` checks compilation, PE structure and named rejections
+(43/43 emission evidence, not execution).
+
+Real-Windows/Wine execution of the full battery and a fresh differential
+run against Harbour under Wine are PENDING. On Linux without Wine,
+`--emit-only` passes 43/43 (emission evidence, not proof of running on
+Windows).
+
 ## Mach-O Intel battery (`check_macho.sh`)
 
 Run on a real Mac with Python 3 installed:
