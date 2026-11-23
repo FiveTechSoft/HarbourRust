@@ -296,16 +296,14 @@ No tracing GC does not mean no memory management: native allocation/free helpers
 
 ## Use hbc without Rust, MinGW or a C compiler
 
-The Windows x86-64 compiler is tracked in this repository at [`bin/hbc.exe`](bin/hbc.exe). From a checkout, use it directly; no separate compiler download, Rust installation, MinGW, external assembler or external linker is needed for supported native-only programs:
+Download `hbc` for your platform from the [releases page](https://github.com/FiveTechSoft/HarbourRust/releases) (latest: [v0.11.4](https://github.com/FiveTechSoft/HarbourRust/releases/tag/v0.11.4)). No Rust installation, MinGW, external assembler or external linker is needed for supported native-only programs:
 
 ```bat
-bin\hbc.exe tests\samples\hello.prg hello.exe
+hbc.exe tests\samples\hello.prg hello.exe
 hello.exe
 ```
 
-**The tracked compiler is a main-branch snapshot, not the old v0.1.1 compiler.** It was built from source at `e17223f` and added to the repository in `8299ee4`; its full source pin and SHA256 are in [BUILDING.md](BUILDING.md#4-build-the-compiler-itself-as-a-windows-exe-hbcexe). It is not automatically rebuilt when source changes, so it can lag main; for current features use the [v0.11.4 release compiler](https://github.com/FiveTechSoft/HarbourRust/releases/tag/v0.11.4) or build from source.
-
-`hbc` writes supported native executables itself: ELF on Linux x86-64, PE32+ on Windows x86-64, and experimental Mach-O on macOS Intel x86-64. The native-only path needs no external assembler/linker or MinGW import libraries. The tracked compiler defaults to Windows output; use an explicit target for cross-compilation. Intel Mach-O and native ARM64 were run on GitHub Actions macOS runners on 17 November 2026 (run 44032525274, see the ARM64 record); the release compilers predate native ARM64. The exact tracked `bin/hbc.exe` was verified under Wine 11.0, not native Windows: hello and four positive TRY programs compiled and ran, and two TRY negatives rejected. This is not a full-manifest or general compatibility claim.
+`hbc` writes supported native executables itself: ELF on Linux x86-64, PE32+ on Windows x86-64, and experimental Mach-O on macOS Intel x86-64. The native-only path needs no external assembler/linker or MinGW import libraries. A Windows compiler defaults to Windows output; use an explicit target for cross-compilation. Intel Mach-O and native ARM64 were run on GitHub Actions macOS runners on 17 November 2026 (run 44032525274, see the ARM64 record); the release compilers predate native ARM64.
 
 The internal PE writer emits a console image with entry `_start`, fixed ImageBase `0x140000000` and imports limited to a measured kernel32 whitelist (`ExitProcess`, `GetEnvironmentVariableA`, `GetLocalTime`, `GetProcessHeap`, `GetStdHandle`, `HeapAlloc`, `HeapFree`, `WriteFile`). VAS-eligible programs add `GetSystemInfo`, `VirtualAlloc` and `VirtualFree` (11 entries); ineligible programs retain the original eight. No CRT, SEH, TLS or base relocations are supported.
 
@@ -313,7 +311,7 @@ The internal PE writer emits a console image with entry `_start`, fixed ImageBas
 
 ### Downloads and removed historical releases
 
-Releases v0.1.0 to v0.8.0 and their assets were removed on 14 November 2026; their git tags remain as source history. The latest release is **v0.11.4**; download it from the [releases page](https://github.com/FiveTechSoft/HarbourRust/releases). The tracked Windows compiler [bin/hbc.exe](bin/hbc.exe) is an older main snapshot, and `bin/hbc-macos-intel` and `bin/hbc-macos-arm64` are Mac compiler snapshots; the release assets are the verified ones.
+Releases v0.1.0 to v0.8.0 and their assets were removed on 14 November 2026; their git tags remain as source history. The latest release is **v0.11.4**; download it from the [releases page](https://github.com/FiveTechSoft/HarbourRust/releases). Compiler binaries are no longer tracked in the repository (`bin/` and `dist/` were removed on 23 November 2026 and remain in git history); the release assets are the verified ones.
 
 Do not reuse a v0.1.1/v0.2.0 `hbc.exe` or its `build.bat`: those compilers emitted assembly text even when the output name ended in `.EXE` and needed external MinGW-w64 tools. The current compilers write PE32+ directly for supported native-only programs.
 
@@ -378,21 +376,20 @@ see also [scope and evidence](docs/MACHO-INTEL.md).
 
 ## Build and run on Windows
 
-Use the tracked `bin/hbc.exe`, or rebuild it following
+Download `hbc.exe` from the [releases page](https://github.com/FiveTechSoft/HarbourRust/releases), or build it following
 [BUILDING.md](BUILDING.md#4-build-the-compiler-itself-as-a-windows-exe-hbcexe).
-No Rust, MinGW, assembler or linker is required to use the tracked compiler
+No Rust, MinGW, assembler or linker is required to use a release compiler
 on the native-only path: it writes PE32+ itself.
 From Windows Command Prompt at the repository root:
 
 ```bat
-set "HBC=%CD%\bin\hbc.exe"
+set "HBC=C:\path\to\hbc.exe"
 "%HBC%" tests\samples\hello.prg hello.exe
 hello.exe
 ```
 
 `--external-as` keeps the older MinGW-w64 `x86_64-w64-mingw32-as`/`-ld` path;
-that toolchain is also used by the test runner. `dist\build.bat` chains the
-legacy path and defaults to the older `dist\2-hbc.exe`; set `HBC` to override.
+that toolchain is also used by the test runner.
 The internal writer was exercised on Windows 11 x86-64 with an isolated
 native-manifest battery over the 1729-entry manifest of that run (an earlier snapshot, not the current 1892-row inventory): 1706 cases
 passed, 23 Linux-only cases were skipped, and no case failed; no stream case

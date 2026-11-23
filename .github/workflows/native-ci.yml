@@ -40,6 +40,11 @@ jobs:
           set -euo pipefail
           if [[ "$RUNNER_OS" == "Windows" ]]; then output=hbc.exe; else output=hbc; fi
           rustup run 1.100.0 rustc --edition=2021 -C opt-level=1 -C debuginfo=0 -C strip=symbols src/hbc.rs -o "$output"
+      - name: Rust unit tests (cargo)
+        shell: bash
+        run: |
+          set -euo pipefail
+          rustup run 1.100.0 cargo test --release --locked
       - name: Compile-only PE manifest and exact CLI fixture
         shell: bash
         run: |
