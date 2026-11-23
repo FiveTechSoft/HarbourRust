@@ -46,6 +46,13 @@ jobs:
           set -euo pipefail
           if [[ "$RUNNER_OS" == "Windows" ]]; then compiler=./hbc.exe; else compiler=./hbc; fi
           python tests/ci/compile_pe.py --compiler "$compiler" --output work/ci-pe
+      - name: Procmeta controls and syntax workstream taxonomy
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$RUNNER_OS" == "Windows" ]]; then compiler=./hbc.exe; else compiler=./hbc; fi
+          python tools/check_procmeta_controls.py --compiler "$compiler" --output work/ci-procmeta-controls
+          python tools/check_syntax_workstreams.py --output work/ci-syntax-workstreams.json
       - name: FILE native Linux fixtures (no Harbour or Wine)
         if: runner.os == 'Linux'
         shell: bash
