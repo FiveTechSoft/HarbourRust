@@ -117,3 +117,4 @@ tests/altd-stmt/*.out -text
 tests/altd-user/*.out -text
 tests/ctod-dyn/*.out -text
 tests/val-dyn/*.out -text
+tests/ctod-bb/expected/** -text

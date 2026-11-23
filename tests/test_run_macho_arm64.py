@@ -143,7 +143,7 @@ class ManifestInventoryTests(unittest.TestCase):
         rows=self.manifest_rows()
         self.assertEqual(len(rows),m.EXPECTED_MANIFEST_ROWS)
         self.assertEqual(len({tuple(l.split(' ')[:2]) for l in rows}),len(rows))
-        self.assertEqual(len(rows)+m.FILE_POSITIVES+m.DBF_TESTS+m.THREAD_PROGRAMS+m.EXT_DEMOS,1365)
+        self.assertEqual(len(rows)+m.FILE_POSITIVES+m.DBF_TESTS+m.THREAD_PROGRAMS+m.EXT_DEMOS,1366)
 
     def test_dyn_increment_named_rejection_is_target_scoped(self):
         try:
