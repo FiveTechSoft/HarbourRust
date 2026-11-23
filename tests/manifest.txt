@@ -1951,3 +1951,5 @@ pos2 tests/foreach-static/programs/nested_owned.prg tests/foreach-static/expecte
 pos2 tests/foreach-static/programs/static_dynamic_owned.prg tests/foreach-static/expected/static_dynamic_owned.linux.out tests/foreach-static/expected/static_dynamic_owned.windows.out
 pos2 tests/setdate-bb/programs/setter_only_date.prg tests/setdate-bb/expected/setter_only_date.linux.out tests/setdate-bb/expected/setter_only_date.windows.out
 pos2 tests/setdate-bb/programs/setter_only_century_off.prg tests/setdate-bb/expected/setter_only_century_off.linux.out tests/setdate-bb/expected/setter_only_century_off.windows.out
+pos2 tests/quit-bb/programs/cls_altd_quit.prg tests/quit-bb/expected/cls_altd_quit.linux.out tests/quit-bb/expected/cls_altd_quit.windows.out
+pos2 tests/quit-bb/programs/quit_nested.prg tests/quit-bb/expected/quit_nested.linux.out tests/quit-bb/expected/quit_nested.windows.out
