@@ -2,7 +2,8 @@
 #ifndef HRDBF_FILE_H
 #define HRDBF_FILE_H
 #include "hrdbf.h"
-#define HRDBF_MAX_BYTES (64u*1024u*1024u)
+/* The whole table is snapshotted in memory: 1 GiB bounds that allocation. */
+#define HRDBF_MAX_BYTES (1024u*1024u*1024u)
 typedef struct { hrdbf_area area; unsigned char *owned; size_t size;
  int writable; /* readonly=.F. open: field writes and appends admitted */
 #ifdef _WIN32

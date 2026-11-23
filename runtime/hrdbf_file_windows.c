@@ -54,7 +54,7 @@ static hrdbf_error hrdbfw_snapshot(const char*path,unsigned char**bytes,size_t*s
  *handle=h;
  if(!GetFileSizeEx(h,&n)){werr("GetFileSizeEx failed",GetLastError());return HRDBF_IO;}
  if(n.QuadPart<(LONGLONG)min){fset("file has fewer than the 33 header bytes");return HRDBF_FORMAT;}
- if(n.QuadPart>HRDBF_MAX_BYTES){fset("file size ");fdec((uint64_t)n.QuadPart);fcat(" exceeds the 64 MiB limit");return HRDBF_FORMAT;}
+ if(n.QuadPart>HRDBF_MAX_BYTES){fset("file size ");fdec((uint64_t)n.QuadPart);fcat(" exceeds the 1 GiB limit");return HRDBF_FORMAT;}
  if(page&&n.QuadPart%page){fset("file size is not a whole number of pages");return HRDBF_FORMAT;}
  *size=(size_t)n.QuadPart;*bytes=allocate(*size);if(!*bytes){fset("out of memory snapshotting the file");return HRDBF_MEMORY;}
  while(pos<*size){got=0;e=0;if(!ReadFile(h,*bytes+pos,(DWORD)(*size-pos),&got,0))e=GetLastError();
