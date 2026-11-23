@@ -799,6 +799,18 @@ impl<'a> Tr<'a> {
                 Op::Reg(c, 32, false) => { let d = RMAP[*c as usize]; self.w(0x5AC0_0800 | r(d) << 5 | r(d)); }
                 _ => return Err("ARM64: bswap form".into()),
             },
+            // Register exchange (the memory form is atomic, handled above).
+            // A 32-bit xchg zero-extends both registers, like a 32-bit mov.
+            "xchg" => match (&ops[0], &ops[1]) {
+                (Op::Reg(a, wa, false), Op::Reg(b, wb, false)) if *wa == *wb && *wa >= 32 => {
+                    let (ra, rb) = (RMAP[*a as usize], RMAP[*b as usize]);
+                    let x = *wa == 64;
+                    self.w(e_mov(x, T0, ra));
+                    self.w(e_mov(x, ra, rb));
+                    self.w(e_mov(x, rb, T0));
+                }
+                _ => return Err("ARM64: xchg form".into()),
+            },
             "mov" | "movabs" | "movq" if ops.iter().any(|o| matches!(o, Op::Xmm(_))) => {
                 match (&ops[0], &ops[1]) {
                     (Op::Xmm(s), Op::Xmm(d)) => self.w(e_fmov(*d, *s)),
@@ -2083,7 +2095,7 @@ pub fn assemble_macho_arm64_ext(src: &str, ext: Option<&str>) -> Result<Vec<u8>,
         p: Parser { consts: HashMap::new(), labels: HashMap::new(), numlabels: HashMap::new(), seq: Cell::new(0) },
         text: Vec::new(), rodata: Vec::new(), data: Vec::new(), bss: Vec::new(), note: Vec::new(),
         has_gnu_stack: false, cur: Sec::Text, secstack: Vec::new(),
-        text_align: 1, rod_align: 1, dat_align: 1, bss_align: 1,
+        text_align: 1, rod_align: 1, dat_align: 1, bss_align: 1, branch_align: false,
     };
     for (ln, raw) in expanded.lines().enumerate() {
         a.parse_line(raw).map_err(|e| format!("line {}: {}: {}", ln + 1, raw.trim(), e))?;
@@ -2510,6 +2522,18 @@ mod tests {
             let wrong = e_movw(true,2,16,334,0).to_le_bytes();
             assert!(!bin.windows(4).any(|w|w==wrong));
         }
+    }
+    #[test]
+    fn register_xchg_swaps_through_scratch() {
+        for (code, x) in [("xchgq %rdx, %rax\n", true), ("xchgl %edx, %eax\n", false)] {
+            let src = format!(".text\n.globl _start\n_start:\n{}mov $60, %eax\n xor %edi, %edi\n syscall\n", code);
+            let bin = assemble_macho_arm64(&src).unwrap();
+            let (rax, rdx) = (RMAP[0], RMAP[2]);
+            let seq = [e_mov(x, T0, rdx), e_mov(x, rdx, rax), e_mov(x, rax, T0)]
+                .iter().flat_map(|w| w.to_le_bytes()).collect::<Vec<_>>();
+            assert!(bin.windows(seq.len()).any(|w| w == seq), "{}", code);
+        }
+        assert!(assemble_macho_arm64(".text\n.globl _start\n_start:\nxchgw %dx, %ax\n").is_err());
     }
     #[test]
     fn bitmask_immediates() {

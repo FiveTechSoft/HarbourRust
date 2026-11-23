@@ -808,7 +808,7 @@ pos2 tests/t810_pow_starstar.prg tests/expectations/qout/t810_pow_starstar.linux
 neg tests/t811_pow_str_neg.prg `^` needs numeric operands
 neg tests/t812_pow_arr_neg.prg `^` needs numeric operands
 neg tests/t813_set_callstmt_neg.prg unknown function `set`
-neg tests/t814_set_century_neg.prg SET commands are not in this increment
+pos2 tests/t814_set_century_neg.prg tests/setdate-bb/expected/t814_set_century_neg.linux.out tests/setdate-bb/expected/t814_set_century_neg.windows.out
 neg tests/t815_set_printer_neg.prg SET commands are not in this increment
 pos2 tests/t816_cont_basic.prg tests/expectations/qout/t816_cont_basic.linux.out tests/expectations/qout/t816_cont_basic.windows.out
 pos2 tests/t817_cont_comment.prg tests/expectations/qout/t817_cont_comment.linux.out tests/expectations/qout/t817_cont_comment.windows.out
@@ -1949,3 +1949,5 @@ pos2 tests/foreach-static/programs/owned_inside_early.prg tests/foreach-static/e
 pos2 tests/foreach-static/programs/owned_exit_loop.prg tests/foreach-static/expected/owned_exit_loop.linux.out tests/foreach-static/expected/owned_exit_loop.windows.out
 pos2 tests/foreach-static/programs/nested_owned.prg tests/foreach-static/expected/nested_owned.linux.out tests/foreach-static/expected/nested_owned.windows.out
 pos2 tests/foreach-static/programs/static_dynamic_owned.prg tests/foreach-static/expected/static_dynamic_owned.linux.out tests/foreach-static/expected/static_dynamic_owned.windows.out
+pos2 tests/setdate-bb/programs/setter_only_date.prg tests/setdate-bb/expected/setter_only_date.linux.out tests/setdate-bb/expected/setter_only_date.windows.out
+pos2 tests/setdate-bb/programs/setter_only_century_off.prg tests/setdate-bb/expected/setter_only_century_off.linux.out tests/setdate-bb/expected/setter_only_century_off.windows.out
