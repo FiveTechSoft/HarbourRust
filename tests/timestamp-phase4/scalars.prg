@@ -1,0 +1,9 @@
+FUNCTION Compare(a,b)
+RETURN iif(a<b,-1,iif(a>b,1,0))
+FUNCTION Same(a,b)
+RETURN a==b
+FUNCTION Main()
+ LOCAL t:=hb_SToT("20261123")
+ ? Compare(1,2),Compare(3,1),Compare("a","b"),Compare("z","a")
+ ? Same(1,1),Same("x","x"),Same(t,t),Compare(t,t)
+RETURN NIL

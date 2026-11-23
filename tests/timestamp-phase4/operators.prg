@@ -1,0 +1,10 @@
+FUNCTION Compare(a,b)
+RETURN iif(a<b,-1,iif(a>b,1,0))
+FUNCTION Main()
+ LOCAL a:=hb_SToT("20261123101530987"),b:=hb_SToT("20261123101530988"),e:=hb_SToT("")
+ ? a=b,a==b,a!=b,a<b,a>b,a<=b,a>=b
+ ? a=a,a==a,a!=a,a<a,a>a,a<=a,a>=a
+ ? b=a,b==a,b!=a,b<a,b>a,b<=a,b>=a
+ ? Compare(a,b),Compare(b,a),Compare(a,a),Compare(e,a)
+ ? e==NIL,e=NIL,e!=NIL
+RETURN NIL

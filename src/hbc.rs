@@ -6819,9 +6819,11 @@ fn val_lowering_gap(e: &Expr, is_static_arr: &dyn Fn(&str) -> bool) -> Option<&'
 }
 
 fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Result<Ty, String> {
-    if matches!(e,Expr::Bin(_,a,b)|Expr::Cmp(_,a,b) if timestamp::known(a)||timestamp::known(b)){
+    if matches!(e,Expr::Bin(_,a,b) if timestamp::known(a)||timestamp::known(b)){
         return Err(format!("line {}: timestamp arithmetic and comparison are not in phase 1",n));
     }
+
+    if let Expr::Cmp(_,a,b)=e{if timestamp::known(a)||timestamp::known(b){let ta=type_expr(a,env,sigs,n)?;let tb=type_expr(b,env,sigs,n)?;if ta!=Ty::Dyn||tb!=Ty::Dyn{return Err(format!("line {}: timestamp comparison requires two Dyn cells; mixed static kinds are outside phase4",n));}}}
 
     if shared_local::active() && shared_local::literal(e) {return Ok(Ty::Dyn);}
     if shared_local::optional(e).is_some() {return Ok(Ty::Dyn);}
@@ -34655,12 +34657,7 @@ fn finalize_trace(mut out: String, target: Target) -> String {
         let ro=if target==Target::Windows{".section .rdata,\"r\""}else{".section .rodata"};
         out.push_str(&include_str!("../generated/hrtimestamp.s").replace("@HRTIMESTAMP_RODATA@",ro));
         out.push_str(timestamp::PRINT_HELPER);
-        // Unknown Dyn values cannot silently fall through legacy equality.
-        // Timestamp ordering and equality are a later phase.
-        for h in ["hbc_dyn_eq", "hbc_dynxeq_dd", "hbc_dynxcmp"]{
-            let label=format!("{}:\n",h);
-            out=out.replace(&label,&format!("{}    cmp $17, %rax\n    je hbc_type_error\n    cmp $17, %rcx\n    je hbc_type_error\n",label));
-        }
+        timestamp::comparison_helpers(&mut out);
 
     }
     if ["ts_parse", "ts_to_date", "date_core_c", "ctod", "date_today", "date_render", "stod", "dtos", "year", "day", "month", "dow", "cdow", "cmonth", "dtoc", "date_add", "date_diff", "date_days", "date_from_days", "descend_date"].iter().any(|name| out.contains(&format!("call hbc_{}",name))) {

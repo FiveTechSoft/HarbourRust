@@ -43,3 +43,8 @@ measured evidence, not a general safety proof. No Windows or Darwin execution.
 
 Generate the own C blob with tests/generate_timestamp_asm.py; its recipe pins
 source/assembly hashes, GCC flags and the five allowed existing helper calls.
+
+Phase4 supersedes the timestamp-vs-timestamp comparison limit above. The
+checker now executes both former comparison-limit fixtures successfully.
+Mixed timestamp/Date and other-kind comparison remains a runtime limit;
+see ../timestamp-phase4/README.md for the current measured scope.

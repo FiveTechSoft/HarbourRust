@@ -134,3 +134,16 @@ fn emit_format(id:&str,args:&[Expr],env:&[CgLocal],sigs:&[Sig],strs:&mut Vec<Str
 // Phase3 array bridge is independently bounded to timestamp programs without classes.
 thread_local!{static CONTAINERS:std::cell::Cell<bool>=const{std::cell::Cell::new(false)};}
 pub(super) fn containers()->bool{CONTAINERS.with(|v|v.get())}
+
+// Compare only two timestamps. Mixed Date/timestamp has different Harbour
+// coercions per operator and is a named runtime limit, not payload ordering.
+pub(super) fn comparison_helpers(out:&mut String){
+ for (h,ordering) in [("hbc_dyn_eq",false),("hbc_dynxeq_dd",false),("hbc_dynxcmp",true)]{
+  let k=fresh_lbl();let mut s=format!("{h}:\n    cmp $17, %rax\n    je .Ltscmp{k}\n    cmp $17, %rcx\n    jne .Ltscmpold{k}\n.Ltscmp{k}:\n");
+  if !ordering{s.push_str(&format!("    cmp $1, %rax\n    je .Ltscmpfalse{k}\n    cmp $1, %rcx\n    je .Ltscmpfalse{k}\n"));}
+  s.push_str(&format!("    cmp $17, %rax\n    jne hbc_type_error\n    cmp $17, %rcx\n    jne hbc_type_error\n    cmp %r8, %rdx\n"));
+  if ordering{s.push_str(&format!("    je .Ltscmpzero{k}\n    jb .Ltscmpless{k}\n    mov $1, %eax\n    ret\n.Ltscmpless{k}:\n    mov $-1, %rax\n    ret\n.Ltscmpzero{k}:\n    xor %eax, %eax\n    ret\n"));}
+  else{s.push_str(&format!("    sete %al\n    movzbq %al, %rax\n    ret\n.Ltscmpfalse{k}:\n    xor %eax, %eax\n    ret\n"));}
+  s.push_str(&format!(".Ltscmpold{k}:\n"));*out=out.replace(&format!("{h}:\n"),&s);
+ }
+}
