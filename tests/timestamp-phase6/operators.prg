@@ -1,0 +1,18 @@
+FUNCTION Less(a,b)
+RETURN a<b
+FUNCTION Greater(a,b)
+RETURN a>b
+FUNCTION LessEqual(a,b)
+RETURN a<=b
+FUNCTION GreaterEqual(a,b)
+RETURN a>=b
+FUNCTION Same(a,b)
+RETURN a==b
+FUNCTION NotEqual(a,b)
+RETURN a!=b
+FUNCTION Main()
+ LOCAL a:=SToD("20261123"),b:=SToD("20261124"),t:=hb_SToT("20261123")
+ ? Less(a,b),Greater(a,b),LessEqual(a,a),GreaterEqual(a,a),Same(a,a),NotEqual(a,b)
+ ? Same(1,1),NotEqual(1,2)
+ ? Same(a,NIL),NotEqual(a,NIL),Same(SToD(""),SToD(""))
+RETURN NIL

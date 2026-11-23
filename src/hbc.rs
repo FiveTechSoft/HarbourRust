@@ -9532,7 +9532,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                     || (ta == Ty::I64 && sig_params[i] == Ty::F64) // integer converts to a double at the boundary (63zd; oracles hk302/hk303/hk307)
                     || (matches!(ta,Ty::I64|Ty::F64) && sig_params[i] == Ty::Dyn) // tagged at the call
                     || ((ta == Ty::Str || ta == Ty::StrOwn) && sig_params[i] == Ty::Dyn) // cloned to an owned tag-4 payload at the boundary (hk259)
-                    || (method_results::active() && ta==Ty::Date && sig_params[i]==Ty::Dyn)
+                    || ((method_results::active()||timestamp::scalar_empty()) && ta==Ty::Date && sig_params[i]==Ty::Dyn)
                     || (ta == Ty::Bool && sig_params[i] == Ty::Dyn) // tagged 3 at the call (hk264)
                     || (matches!(ta, Ty::Obj(_)) && sig_params[i] == Ty::Dyn) // object tags 13 in place (sharing, hk-registered)
                     || matches!((ta, sig_params[i]), (Ty::Obj(d), Ty::Obj(b)) if class_is_a(d, b)) // is-a: a descendant object fills a base slot
@@ -19568,7 +19568,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                     out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
                     continue;
                 }
-                if method_results::active() && ta==Ty::Date && pty==Some(Ty::Dyn){out.push_str("    sub $16, %rsp\n    movq $11, (%rsp)\n    mov %rax, 8(%rsp)\n");continue;}
+                if (method_results::active()||timestamp::scalar_empty()) && ta==Ty::Date && pty==Some(Ty::Dyn){out.push_str("    sub $16, %rsp\n    movq $11, (%rsp)\n    mov %rax, 8(%rsp)\n");continue;}
                 if ta == Ty::Bool && pty == Some(Ty::Dyn) {
                     // Logical argument to a Dyn parameter: tag 3, payload
                     // 0/1 (hk264). Scalar: no ownership transfer, the

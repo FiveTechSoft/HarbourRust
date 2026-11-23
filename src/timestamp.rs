@@ -144,7 +144,7 @@ pub(super) fn comparison_helpers(out:&mut String){
   s.push_str(&format!("    cmp $17, %rax\n    jne hbc_type_error\n    cmp $17, %rcx\n    jne hbc_type_error\n    cmp %r8, %rdx\n"));
   if ordering{s.push_str(&format!("    je .Ltscmpzero{k}\n    jb .Ltscmpless{k}\n    mov $1, %eax\n    ret\n.Ltscmpless{k}:\n    mov $-1, %rax\n    ret\n.Ltscmpzero{k}:\n    xor %eax, %eax\n    ret\n"));}
   else{s.push_str(&format!("    sete %al\n    movzbq %al, %rax\n    ret\n.Ltscmpfalse{k}:\n    xor %eax, %eax\n    ret\n"));}
-  s.push_str(&format!(".Ltscmpold{k}:\n"));*out=out.replace(&format!("{h}:\n"),&s);
+  s.push_str(&format!(".Ltscmpold{k}:\n    cmp $11, %rax\n    jne .Ltsdateok{k}\n    cmp $11, %rcx\n    jne .Ltsdateok{k}\n    xor %eax, %eax\n    xor %ecx, %ecx\n.Ltsdateok{k}:\n"));*out=out.replace(&format!("{h}:\n"),&s);
  }
 }
 
