@@ -78,13 +78,19 @@ normalization:
         --hbmk2-win /path/to/windows/hbmk2.exe --wine /path/to/wine [--write-fixtures]
 
 `--hbmk2-win` is the official Windows hbmk2.exe with its install tree.
-`--write-fixtures` versions the oracle streams into
-`tests/classes/expected-windows/`. Declared-limit and negative probes
-must run under Harbour and answer their recorded named rejection under
-HarbourRust. On hosts without a Windows runner, `--emit-only` checks
-HarbourRust compilation, PE32+ structure and named rejections (43/43 on
-Linux at 092b957f; emission evidence, not execution). A Wine/Windows
-runner is PENDING; no oracle fixture has been captured yet.
+`--write-fixtures` versions the oracle streams (stdout, stderr, exit
+code) of the 27 runnable probes into `tests/classes/expected-windows/`;
+with those fixtures present the gate runs in replay mode (no
+`--hbmk2-win` needed) comparing candidate runs against them. The 3
+declared-limit probes must compile and run under Harbour and answer
+their recorded named rejection under HarbourRust; the 13 named
+negatives only exercise HarbourRust's rejection (several are programs
+Harbour compiles fine). Off Windows, running anything requires `--wine`;
+missing runner pieces are an explicit STOP, never a FAIL rc 127. On
+hosts without a Windows runner, `--emit-only` checks HarbourRust
+compilation, PE32+ structure and named rejections (43/43 on Linux at
+092b957f; emission evidence, not execution). A Wine/Windows runner is
+PENDING; no oracle fixture has been captured yet.
 
 ## Mach-O Intel battery (`check_macho.sh`)
 
