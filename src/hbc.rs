@@ -1,3 +1,4 @@
+mod method_results;
 mod shared_local;
 mod timestamp;
 mod bin_concat;
@@ -4700,6 +4701,7 @@ fn class_init_scalar_ok(e: &Expr) -> bool {
 // casillas are tagged Dyn slots). Objects/arrays/hashes/codeblocks are
 // named rejections (reference-cycle management pending).
 fn check_data_value(n: usize, name: &str, t: Ty) -> Result<(), String> {
+    if method_results::active() && t==Ty::Dyn{return Err(format!("line {}: B1 cannot store a Dyn result into DATA `{}` (object/container roots are not supported)",n,name));}
     match t {
         Ty::I64 | Ty::F64 | Ty::Bool | Ty::Str | Ty::StrOwn | Ty::Date | Ty::Dyn => Ok(()),
         Ty::Obj(_) => Err(format!("line {}: DATA `{}` holding an object is not in this increment (reference-cycle management pending)", n, name)),
@@ -4902,6 +4904,7 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
     let n = f.params.len();
     let mut pin: Vec<Option<Ty>> = vec![None; n];
     for (i,p) in f.params.iter().enumerate() {
+        if method_results::parameter(&f.name,p){pin[i]=Some(Ty::Dyn);}
         if shared_local::parameter(&f.name,i) || shared_local::value_parameter(&f.name,i) {pin[i]=Some(Ty::Dyn);}
         if retyped_val_param(f,p) {
             if !DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get()) {
@@ -5223,7 +5226,8 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
         }
     }
     fn walk(f: &Func, e: &Expr, sigs: &[Sig], lit: &[(String, Ty)], pin: &mut Vec<Option<Ty>>, printed: &mut Vec<ParamUse>, n: usize) -> Result<(), String> {
-        if method_valtype::active(&f.name,e) {return Ok(());}
+        if let Expr::Send(o,_,aa)=e {if matches!(o.as_ref(),Expr::Var(p) if method_results::parameter(&f.name,p)){for a in aa{walk(f,a,sigs,lit,pin,printed,n)?;}return Ok(());}}
+        if !method_results::active() && method_valtype::active(&f.name,e) {return Ok(());}
         match e {
             Expr::Seq(es) => { for e in es { walk(f, e, sigs, lit, pin, printed, n)?; } Ok(()) }
             // Inline assignment (parexpr): a write alone pins nothing;
@@ -5610,6 +5614,7 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
                 // the checker's named rejection.
                 if let Expr::Var(v) = o.as_ref() {
                     if let Some(i) = is_param(f, v) {
+                        if method_results::parameter(&f.name,v){for a in args{walk(f,a,sigs,lit,pin,printed,n)?;}return Ok(());}
                         if let Some(root) = receiver_pin_class(name).map_err(|m| format!("line {}: {}", n, m))? {
                             setpin(pin, i, Ty::Obj(root), n)?;
                         }
@@ -6910,6 +6915,9 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
             Some(v) => Ok(v.ty),
         },
         Expr::Call(id, args) => {
+            if method_results::active() && !USER_FUNC_NAMES.with(|v|v.borrow().contains(id)) && !is_output_call(id) && !is_builtin(id,"valtype") {
+                for a in args {if type_expr(a,env,sigs,n)?==Ty::Dyn{return Err(format!("line {}: B1 Dyn builtin consumer `{}` is not covered; use ValType, output, or a direct function",n,id));}}
+            }
             if let Some(ty) = dbf_result(id) {
                 if !DBF_NATIVE.with(|v|v.get()) {return Err(format!("line {}: DBF file adapter requires the Linux/Windows x86-64 ordinary native backend",n));}
                 DBF_USED.with(|v|v.set(true));
@@ -7303,7 +7311,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 return Ok(Ty::Bool);
             }
             if is_builtin(id, "valtype") {
-                if method_valtype::active(&CUR_FN.with(|c|c.borrow().clone()),e) {return method_valtype::check(e,env,sigs,n);}
+                if !method_results::active() && method_valtype::active(&CUR_FN.with(|c|c.borrow().clone()),e) {return method_valtype::check(e,env,sigs,n);}
                 // ValType(x): a one-character type tag (hk88-hk92). Borrows
                 // its argument; the argument evaluates fully with its
                 // effects (hk89). Only measured shapes: literals, plain
@@ -7314,6 +7322,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                     return Err(format!("line {}: `ValType` takes one argument", n));
                 }
                 match &args[0] {
+                    Expr::Send(..) if method_results::send(&args[0]) => {} ,
                     Expr::Int(_) | Expr::Str(_) | Expr::Nil | Expr::Var(_) => {}
                     Expr::Call(id, _) if is_output_call(id) || is_builtin(id,"date") || is_builtin(id,"ctod") || dbf_result(id).is_some() || timestamp::family(id) => {}
                     Expr::Index(v, _) => {
@@ -8501,6 +8510,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                         continue;
                     }
                     let t = type_expr(a, &mut item_env, sigs, n)?;
+                    if method_results::active() && matches!(t,Ty::Obj(_)) && matches!(a,Expr::Call(..)|Expr::Send(..)){return Err(format!("line {}: B1 typed object output temporaries must first be stored in a local",n));}
                     if matches!(t, Ty::Block(..)) { return Err(format!("line {}: cannot print a codeblock in this increment", n)); }
                     if matches!(t, Ty::Arr(_) | Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::Hash) && !matches!(a, Expr::Var(_)) {
                         return Err(format!("line {}: cannot print a temporary array or hash directly in this increment (assign it to a variable and print the variable)", n));
@@ -9420,11 +9430,12 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 // operand through the Dyn route (a float payload is combined by kind).
                 if sig_params[i] == Ty::Dyn { mark_dynplus(a, env, sigs, n); }
                 let ta = type_expr(a, env, sigs, n)?;
+                if method_results::active() && ta==Ty::Dyn && sig_params[i]==Ty::I64{return Err(format!("line {}: B1 does not implicitly extract a Dyn call argument as integer; use a typed local",n));}
                 if ta==Ty::Dyn && sig_params[i]==Ty::I64 && RETYPED_VAL_FUNCTIONS.with(|v|v.borrow().contains(&CUR_FN.with(|c|c.borrow().clone()))) {
                     return Err(format!("line {}: retyped VAL parameter to a static integer parameter is not covered in this increment; use a Dyn receiver",n));
                 }
-                if method_valtype::parameter(id,i) {method_valtype::argument(id,a,ta,n)?;}
-                if dd_call && matches!(ta, Ty::Obj(_)) && !DEFAULT_DYN.with(|m| m.borrow().contains(&(sigs[si].name.clone(), i))) {
+                if !method_results::active() && method_valtype::parameter(id,i) {method_valtype::argument(id,a,ta,n)?;}
+                if dd_call && !(method_results::active() && i==0 && METHOD_CLASS.with(|m|m.borrow().contains_key(id))) && !method_results::position(id,i) && matches!(ta, Ty::Obj(_)) && !DEFAULT_DYN.with(|m| m.borrow().contains(&(sigs[si].name.clone(), i))) {
                     return Err(format!("line {}: an object argument (argument {}) in a call to `{}`, which has a parameter without type evidence, is outside the dynamic increment in this increment (the boundary screen for object values could not release its reference)", n, i + 1, id));
                 }
                 if ta == Ty::AView && !sig_aview[i] {
@@ -9501,7 +9512,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 // tagged reference (print, FILE, SET, sequence temporaries, ...) would need its
                 // own tag-13 release (probed: print item, LOCAL init in a loop, FILE, SET, multi-item print and a
 // discarded call each leaked one reference per turn). Named rejection, not an ownership claim.
-                if matches!(ta, Ty::Obj(_)) && DEFAULT_DYN.with(|m| m.borrow().contains(&(sigs[si].name.clone(), i))) {
+                if matches!(ta, Ty::Obj(_)) && !method_results::position(id,i) && DEFAULT_DYN.with(|m| m.borrow().contains(&(sigs[si].name.clone(), i))) {
                     return Err(format!("line {}: passing an object as argument {} of `{}` is outside the dynamic increment in this increment (the parameter has no type evidence and defaults to the tagged slot, whose returned object reference would need a per-consumer release)", n, i + 1, id));
                 }
                 let ok = ta == sig_params[i]
@@ -9509,6 +9520,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                     || (ta == Ty::I64 && sig_params[i] == Ty::F64) // integer converts to a double at the boundary (63zd; oracles hk302/hk303/hk307)
                     || (matches!(ta,Ty::I64|Ty::F64) && sig_params[i] == Ty::Dyn) // tagged at the call
                     || ((ta == Ty::Str || ta == Ty::StrOwn) && sig_params[i] == Ty::Dyn) // cloned to an owned tag-4 payload at the boundary (hk259)
+                    || (method_results::active() && ta==Ty::Date && sig_params[i]==Ty::Dyn)
                     || (ta == Ty::Bool && sig_params[i] == Ty::Dyn) // tagged 3 at the call (hk264)
                     || (matches!(ta, Ty::Obj(_)) && sig_params[i] == Ty::Dyn) // object tags 13 in place (sharing, hk-registered)
                     || matches!((ta, sig_params[i]), (Ty::Obj(d), Ty::Obj(b)) if class_is_a(d, b)) // is-a: a descendant object fills a base slot
@@ -9555,6 +9567,8 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
             }
         }
         Expr::Bin(op, a, b) => {
+
+            if method_results::active() && (type_expr(a,env,sigs,n)?==Ty::Dyn || type_expr(b,env,sigs,n)?==Ty::Dyn){return Err(format!("line {}: B1 Dyn arithmetic/comparison is outside scope; inspect ValType or pass/store the result",n));}
             // `%` takes its operands as doubles by kind: an arithmetic operand with a Dyn side
             // takes the Dyn route so a float payload is combined by kind.
             if *op == '%' { mark_dynplus(a, env, sigs, n); mark_dynplus(b, env, sigs, n); }
@@ -9704,18 +9718,22 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
         Expr::FuncRef(_) => Err(format!("line {}: `@f()` function references are only valid as hb_threadStart's first argument in this increment", n)),
         Expr::Log(_) => Ok(Ty::Bool),
         Expr::LNot(a) => {
+            if method_results::active() && dyn_expr_owned(a) && type_expr(a,env,sigs,n)?==Ty::Dyn{return Err(format!("line {}: B1 owned Dyn logical operand is outside scope",n));}
             if !matches!(type_expr(a, env, sigs, n)?, Ty::Bool | Ty::Dyn) {
                 return Err(format!("line {}: `.NOT.` needs a logical operand (hk197)", n));
             }
             Ok(Ty::Bool)
         }
         Expr::LAnd(a, b) | Expr::LOr(a, b) => {
+            if method_results::active() && ((dyn_expr_owned(a)&&type_expr(a,env,sigs,n)?==Ty::Dyn)||(dyn_expr_owned(b)&&type_expr(b,env,sigs,n)?==Ty::Dyn)){return Err(format!("line {}: B1 owned Dyn logical operands are outside scope",n));}
             if !matches!(type_expr(a, env, sigs, n)?, Ty::Bool | Ty::Dyn) || !matches!(type_expr(b, env, sigs, n)?, Ty::Bool | Ty::Dyn) {
                 return Err(format!("line {}: `.AND.`/`.OR.` need logical operands (hk197/hk198)", n));
             }
             Ok(Ty::Bool)
         }
         Expr::Cmp(op, a, b) => {
+            if method_results::active() && (type_expr(a,env,sigs,n)?==Ty::Dyn || type_expr(b,env,sigs,n)?==Ty::Dyn){return Err(format!("line {}: B1 Dyn arithmetic/comparison is outside scope; inspect ValType or pass/store the result",n));}
+
             // `$` containment (oracle hk341): string-in-string only in
             // this increment - case-sensitive byte scan; an empty or
             // longer-than-haystack needle is .F. (measured). Array
@@ -10211,7 +10229,9 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
             _ => Err(format!("line {}: `Self` outside a method", n)),
         },
         Expr::Send(recv, name, args) => {
+            if method_results::send(e){return method_results::check(e,env,sigs,n);}
             let rt = type_expr(recv, env, sigs, n)?;
+            if method_results::active() && !args.iter().all(|a|matches!(a,Expr::Int(_)|Expr::Log(_)|Expr::Str(_)|Expr::Nil|Expr::Var(_))){return Err(format!("line {}: B1 typed message arguments must be plain variables or literals",n));}
             let ci = match rt {
                 Ty::Obj(ci) => ci,
                 Ty::Dyn => return Err(format!("line {}: `:{}` on a Dyn value (its class is not known at compile time) is not in this increment", n, name)),
@@ -10240,6 +10260,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                     return Err(format!("line {}: NIL-aware string method arguments require non-throwing expressions; user calls (including fresh), nested dispatch, indexing, division and inline effects are not in this increment",n));
                 }
             }
+            if method_results::active() && matches!(recv.as_ref(),Expr::Call(..)|Expr::Send(..)) && method_lookup(ci,&name.to_lowercase()).is_none() && name.to_lowercase()!="classname"{return Err(format!("line {}: B1 temporary DATA receivers must first be stored in a local",n));}
             let lname = name.to_lowercase();
             if let Some((_, fname)) = method_lookup(ci, &lname) {
                 if args.iter().any(|a| matches!(a, Expr::ByRef(_))) {
@@ -10577,6 +10598,10 @@ fn catch_finally_return(stmts: &[Stmt]) -> Option<usize> {
 }
 
 fn unify_ret(ret: Option<Ty>, t: Ty, n: usize, mixed_finally_line: Option<usize>) -> Result<Ty, String> {
+    if method_results::active() && CUR_METHOD_CLASS.with(|v|v.get()>=0) {
+        let scalar=|t|matches!(t,Ty::I64|Ty::Bool|Ty::Date|Ty::Str|Ty::StrOwn|Ty::F64|Ty::Dyn|Ty::Obj(_));
+        if let Some(p)=ret {if p!=t&&scalar(p)&&scalar(t){if let Some(line)=mixed_finally_line{return Err(format!("line {}: B1 mixed return in CATCH with FINALLY is outside scope",line));}return Ok(Ty::Dyn);}}
+    }
     match (ret, t) {
         (None, t) => Ok(t),
         (Some(p), t) if p == t => Ok(t),
@@ -11233,6 +11258,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                         continue;
                     }
                     let t = type_expr(e, env, sigs, *n)?;
+                    if method_results::active() && matches!(t,Ty::Obj(_)) && matches!(e,Expr::Call(..)|Expr::Send(..)){return Err(format!("line {}: B1 typed object output temporaries must first be stored in a local",n));}
                     if let Ty::Block(..) = t {
                         return Err(format!("line {}: cannot print a codeblock in this increment", n));
                     }
@@ -11333,6 +11359,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
             Stmt::If(n, cond, then_s, else_s) => {
                 mark_dynplus(cond, env, sigs, *n);
                 let ct = type_expr(cond, env, sigs, *n)?;
+                if method_results::active() && ct==Ty::Dyn && dyn_expr_owned(cond){return Err(format!("line {}: B1 Dyn conditions are outside scope",n));}
                 apply_moves(cond, env, sigs, false);
                 if !matches!(ct, Ty::Bool | Ty::Dyn) {
                     return Err(format!("line {}: `if` needs a comparison (e.g. `if x >= 1`); a bare value is not a condition in this PoC", n));
@@ -11350,6 +11377,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
             Stmt::While(n, cond, body) => {
                 mark_dynplus(cond, env, sigs, *n);
                 let ct = type_expr(cond, env, sigs, *n)?;
+                if method_results::active() && ct==Ty::Dyn && dyn_expr_owned(cond){return Err(format!("line {}: B1 Dyn conditions are outside scope",n));}
                 apply_moves(cond, env, sigs, false);
                 if !matches!(ct, Ty::Bool | Ty::Dyn) {
                     return Err(format!("line {}: `while` needs a comparison (e.g. `while x >= 1`); a bare value is not a condition in this PoC", n));
@@ -15599,6 +15627,7 @@ fn emit_class_runtime(sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, ta
         out.push_str(&format!("    .data\n    .align 8\nhrobj_desc_{}:\n    .quad .Lclsname{}\n    .quad {}\n    .long {}, {}\n    .long {}, 0\n    .quad {}\n    .quad {}\n    .quad 0\n    .quad 0\n    .quad 0\n    .quad 0\n{}    .text\n", i, i, parent, c.own_start, c.ndatas, c.slots.len(), mt, init, lock));
     }
     let blob = match (THREADS.with(|c| c.get()), matches!(target, Target::Windows)) {
+        (false, false) if method_results::active() => {out.push_str(&method_results::runtime()); ""},
         (false, false) => HROBJ_BLOB,
         (true, false) => HROBJ_BLOB_MT,
         (false, true) => HROBJ_BLOB_WIN,
@@ -15821,6 +15850,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             out.push_str(&format!("    mov -{}(%rbp), %rax\n    mov {}(%rax), %rdx\n    mov {}(%rax), %rax\n    call hbc_float_clone\n\n    cmp $4, %rax\n    jne 83f\n    mov %rdx, %rdi\n    mov -8(%rdx), %rsi\n    call hbc_strcpy\n    mov %rax, %rdx\n    mov $4, %eax\n83:\n", sv.off, 16 + off * 16 + 8, 16 + off * 16));
         }
         Expr::Send(recv, name, args) => {
+            if method_results::send(e){method_results::emit(e,env,sigs,strs,out,target);return;}
             let ci = match expr_ty(recv, env, sigs) { Ty::Obj(ci) => ci, _ => unreachable!("checked") };
             let lname = name.to_lowercase();
             if let Some((slot, fname)) = method_lookup(ci, &lname) {
@@ -16368,7 +16398,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             }
         }
         Expr::Call(id, args) if is_builtin(id, "valtype") => {
-            if method_valtype::active(&CUR_FN.with(|c|c.borrow().clone()),e) {method_valtype::emit(e,env,sigs,strs,out,target);return;}
+            if !method_results::active() && method_valtype::active(&CUR_FN.with(|c|c.borrow().clone()),e) {method_valtype::emit(e,env,sigs,strs,out,target);return;}
             // ValType(x) (hk88-hk92): a one-character tag as a 1-byte
             // string (rax=ptr, rdx=1). Static types classify at compile
             // time; Dyn casillas at runtime: a scalar casilla {tag,
@@ -16416,6 +16446,11 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                 out.push_str("97:\n");
             }
             match &args[0] {
+                Expr::Send(..) if method_results::send(&args[0])=>{
+                    cg_value(&args[0],env,sigs,strs,out,target);
+                    out.push_str("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n    mov %rax, %r10\n");
+                    vt_classify_scalar(strs,out);out.push_str("    mov %rax, 16(%rsp)\n    mov %rdx, 24(%rsp)\n");cg_concat_drop(out,0);out.push_str("    mov 16(%rsp), %rax\n    mov 24(%rsp), %rdx\n    add $32, %rsp\n");
+                }
                 Expr::Int(_) => vt_letter(strs, out, "N"),
                 Expr::Str(_) => vt_letter(strs, out, "C"),
                 Expr::Nil => vt_letter(strs, out, "U"),
@@ -19496,6 +19531,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                     out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
                     continue;
                 }
+                if method_results::active() && ta==Ty::Date && pty==Some(Ty::Dyn){out.push_str("    sub $16, %rsp\n    movq $11, (%rsp)\n    mov %rax, 8(%rsp)\n");continue;}
                 if ta == Ty::Bool && pty == Some(Ty::Dyn) {
                     // Logical argument to a Dyn parameter: tag 3, payload
                     // 0/1 (hk264). Scalar: no ownership transfer, the
@@ -19547,7 +19583,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                     continue;
                 }
                 if ta == Ty::Dyn {
-                    if pty == Some(Ty::Dyn) && CLASSES.with(|c| !c.borrow().is_empty()) && DEFAULT_DYN.with(|m| m.borrow().contains(&(id.clone(), ai))) {
+                    if pty == Some(Ty::Dyn) && CLASSES.with(|c| !c.borrow().is_empty()) && !method_results::position(id,ai) && DEFAULT_DYN.with(|m| m.borrow().contains(&(id.clone(), ai))) {
                         // Defaulted-Dyn parameter (no body evidence): an object held by a
                         // Dyn value is never transferred to it. The check runs after ALL
                         // arguments are materialized (the screen below), before the call.
@@ -19638,7 +19674,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                             Ty::Dyn => {
                                 cg_dyn_stack_release(out, off, false);
                                 // tag 13: only an owned temporary releases its object
-                                if dyn_expr_owned(&args[i]) {
+                                if !method_results::active() && dyn_expr_owned(&args[i]) {
                                     let kk = fresh_lbl();
                                     out.push_str(&format!("    @HBC_TAG_KIND@cmpq $13, {off}(%rsp)@HBC_TAG_END@\n    jne .Lddn{kk}\n    mov {}(%rsp), %rdi\n    test %rdi, %rdi\n    je .Lddn{kk}\n    call hrobj_release\n.Lddn{kk}:\n", off + 8));
                                 }
@@ -21173,6 +21209,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
         },
         Expr::SelfGet(_) => Ty::Dyn, // DATA casilla
         Expr::Send(recv, name, _) => {
+            if method_results::send(e){return Ty::Dyn;}
             if let Ty::Obj(ci) = expr_ty(recv, env, sigs) {
                 let lname = name.to_lowercase();
                 if let Some((_, fname)) = method_lookup(ci, &lname) {
@@ -21672,12 +21709,22 @@ fn cg_dyn_stack_release(out: &mut String, off: usize, preserve: bool) {
     out.push_str(&format!("    mov {}(%rsp), %rdi\n    call hbc_freestr\n",off+8+if preserve{16}else{0}));
     if preserve { out.push_str("    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    add $16, %rsp\n"); }
     out.push_str(&format!(".Lhashdrop{}:\n",k));
+    if method_results::active(){
+        let k=fresh_lbl();
+        out.push_str(&format!("    cmpq $13, {}(%rsp)\n    jne .Ldynobjdrop{k}\n",off));
+        if preserve{out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");}
+        out.push_str(&format!("    mov {}(%rsp), %rdi\n    call hrobj_release\n",off+8+if preserve{16}else{0}));
+        if preserve{out.push_str("    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    add $16, %rsp\n");}
+        out.push_str(&format!(".Ldynobjdrop{k}:\n"));
+    }
+
 }
 fn hash_cell_borrow(e: &Expr, env: &[CgLocal]) -> bool {
     matches!(e, Expr::Index(v, _) if env.iter().rev().any(|x|x.name==*v && x.ty==Ty::Hash))
 }
 
 fn cg_dyn_clone_if_str(out: &mut String) {
+    if method_results::active(){out.push_str("    cmp $13, %rax\n    jne 86f\n    mov %rdx, %rdi\n    call hrobj_retain\n86:\n");}
     out.push_str("    call hbc_float_clone\n");
     out.push_str("    @HBC_TAG_KIND@cmp $2, %rax@HBC_TAG_END@\n    je 88f\n    @HBC_TAG_KIND@cmp $4, %rax@HBC_TAG_END@\n    jne 89f\n88:\n    mov %rdx, %rdi\n    mov -8(%rdx), %rsi\n    call hbc_strcpy\n    mov %rax, %rdx\n    mov $4, %eax\n89:\n");
 }
@@ -21723,7 +21770,7 @@ fn cg_concat_drop(out:&mut String,off:usize) {
     cg_dyn_stack_release(out,off,false);
     let k=fresh_lbl();
     out.push_str(&format!("    @HBC_TAG_KIND@cmpq $8, {off}(%rsp)@HBC_TAG_END@\n    jne .Lcsobj{k}\n    mov {}(%rsp), %rdi\n    test %rdi, %rdi\n    je .Lcsdrop{k}\n    mov -8(%rdi), %rsi\n    call hbc_dfree\n    jmp .Lcsdrop{k}\n.Lcsobj{k}:\n",off+8));
-    if CLASSES.with(|c|!c.borrow().is_empty()) {
+    if !method_results::active() && CLASSES.with(|c|!c.borrow().is_empty()) {
         out.push_str(&format!("    @HBC_TAG_KIND@cmpq $13, {off}(%rsp)@HBC_TAG_END@\n    jne .Lcsdrop{k}\n    mov {}(%rsp), %rdi\n    test %rdi, %rdi\n    je .Lcsdrop{k}\n    call hrobj_release\n",off+8));
     }
     out.push_str(&format!(".Lcsdrop{k}:\n"));
@@ -23115,8 +23162,11 @@ fn cg_print_items(es: &[Expr], inline: bool, raw: bool, stderr: bool, env: &[CgL
                             // borrowed, never moved out).
                             let cell_borrow = dyn_cell_borrow(e, env);
                             if dyn_expr_owned(e) && !cell_borrow {
-                                cg_dyn_stack_release(out,off,false);
+                                if method_results::active(){cg_concat_drop(out,off);}else{cg_dyn_stack_release(out,off,false);}
                             } else {
+                                if method_results::active(){
+                                    let k=fresh_lbl();out.push_str(&format!("    cmpq $13, {}(%rsp)\n    jne .Lprintobj{k}\n    mov {}(%rsp), %rdi\n    call hrobj_release\n.Lprintobj{k}:\n",off,off+8));
+                                }
                                 // S4 review 3: the pushed pair is a snapshot
                                 // clone; free a tag-4 clone (the cell/slot
                                 // keeps its own payload). Mirrors
@@ -23447,6 +23497,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
     mov %rdx, %rsi
     call hbc_free2
 "),
+                    Ty::Dyn if method_results::active()=>{out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");cg_concat_drop(out,0);out.push_str("    add $16, %rsp\n");},
                     Ty::Dyn => out.push_str("    call hbc_float_release\n    @HBC_TAG_KIND@cmp $4, %rax@HBC_TAG_END@\n    jne 95f\n    mov %rdx, %rdi\n    test %rdi, %rdi\n    je 95f\n    call hbc_freestr\n95:\n"),
                     _ => {}
                 }
@@ -23635,6 +23686,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                                 } else if class == 8 {
                                     out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 85f\n    mov -{}(%rbp), %rsi\n    call hbc_dfree\n85:\n", off, off - 8));
                                 } else if class == 7 {
+                                    if method_results::active(){let k=fresh_lbl();out.push_str(&format!("    cmpq $13, -{}(%rbp)\n    jne .Llocobj{k}\n    mov -{}(%rbp), %rdi\n    call hrobj_release\n.Llocobj{k}:\n",off,off-8));}
                                     // ains P2 stage 1: tag-8 payload freed
                                     // with hbc_dfree verbatim (as the
                                     // epilogue); .L labels (numeric locals
@@ -23732,6 +23784,8 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                         Ty::Str => out.push_str("    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_strcpy\n    mov %rax, %rdx\n    mov $4, %eax\n"),
                         Ty::StrOwn => out.push_str("    mov %rax, %rdx\n    mov $4, %eax\n"),
                         Ty::Bool => out.push_str("    mov %rax, %rdx\n    mov $3, %eax\n"),
+                        Ty::Date => out.push_str("    mov %rax, %rdx\n    mov $11, %eax\n"),
+                        Ty::Obj(_) => out.push_str("    mov %rax, %rdx\n    mov $13, %eax\n"),
                         _ => {}
                     }
                 }
@@ -23743,7 +23797,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                     // A Dyn-held OBJECT likewise crosses with its own
                     // reference for the caller (class-free programs keep
                     // byte-identical asm).
-                    if CLASSES.with(|c| !c.borrow().is_empty()) {
+                    if CLASSES.with(|c| !c.borrow().is_empty()) && !method_results::active() {
                         out.push_str("    @HBC_TAG_KIND@cmp $13, %rax@HBC_TAG_END@\n    jne 80f\n    mov %rax, %r10\n    mov %rdx, %r11\n    mov %rdx, %rdi\n    call hrobj_retain\n    mov %r10, %rax\n    mov %r11, %rdx\n80:\n");
                     }
                     // ains P2 stage 1 closure (independent-review
@@ -31583,6 +31637,7 @@ hbc_persistent_payload_release:
             out.push_str(&format!("    mov {}(%rip), %rdi\n    movq $0, {}(%rip)\n    movq $0, {}+8(%rip)\n    test %rdi, %rdi\n    je 83f\n    call hbc_freestr\n83:\n",label,label,label));
         }
     }}}
+    method_results::cleanup(&mut out);
     out.push_str("    leave\n    ret\n");
     // Thread thunks (one per hb_threadStart target) and the clone+futex
     // runtime. Emitted BEFORE the helper-selection contains-checks below
@@ -38746,6 +38801,9 @@ fn main() {
     if shared_local::active() && llvm {eprintln!("error: local shared arrays require the native Linux backend in A2");process::exit(1);}
     if let Err(e)=shared_local::validate(&funcs){eprintln!("error: {}",e);process::exit(1);}
     if !shared_local::active() {optional_empty::analyze(&funcs);cell_len::analyze(&funcs);}
+    method_results::init(&funcs);
+    if method_results::active() && llvm {eprintln!("error: B1 method results require the native Linux backend");process::exit(1);}
+    if let Err(e)=method_results::validate(&funcs){eprintln!("error: {}",e);process::exit(1);}
     method_valtype::analyze(&funcs);
     let cap = 2 + 4 * funcs.iter().map(|f| f.params.len() + 1).sum::<usize>();
     // A single inline-IF return can carry its own concrete base-case
@@ -38871,6 +38929,7 @@ fn main() {
                 inferred[0] = true;
             }
             for i in 0..ptys.len() {
+                if method_results::parameter(&f.name,&f.params[i]) {ptys[i]=Ty::Dyn;view[fi].aview[i]=false;continue;}
                 if root_param(&f.name,&f.params[i]) {ptys[i]=Ty::Dyn;view[fi].aview[i]=false;continue;}
                 let evidence = aview_array_evidence(&f.stmts,&f.params[i]);
                 // Cell-classification evidence pins a view only when the
