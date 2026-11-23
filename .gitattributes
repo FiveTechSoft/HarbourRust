@@ -113,3 +113,7 @@ generated/*.s text eol=lf
 
 # Byte-exact Harbour 3.2 output for the SET DATE pins.
 tests/setdate-bb/expected/** -text
+tests/altd-stmt/*.out -text
+tests/altd-user/*.out -text
+tests/ctod-dyn/*.out -text
+tests/val-dyn/*.out -text

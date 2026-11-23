@@ -10,7 +10,7 @@ root=Path(__file__).resolve().parents[1]
 cc=os.environ.get('HR_DATE_CC',str(root/'tools/mingw/mingw64/bin/gcc.exe'))
 if not Path(cc).exists(): cc='gcc'
 src='runtime/hrdate.c'
-flags=['-D_WIN64','-std=c99','-O2','-S','-mabi=sysv','-ffreestanding','-fno-builtin','-fno-stack-protector','-fno-asynchronous-unwind-tables','-fno-unwind-tables','-fno-ident','-mno-red-zone','-fPIE','-fno-plt','-fno-tree-vectorize','-mno-stack-arg-probe','-minline-all-stringops','-mstringop-strategy=rep_byte','-fno-jump-tables','-mno-push-args','-fcf-protection=none','-Wall','-Wextra','-Werror','-Wno-misleading-indentation']
+flags=['-D_WIN64','-std=c99','-O2','-S','-mabi=sysv','-ffreestanding','-fno-builtin','-fno-stack-protector','-fno-asynchronous-unwind-tables','-fno-unwind-tables','-fno-ident','-mno-red-zone','-fno-pic','-fno-tree-vectorize','-mno-stack-arg-probe','-minline-all-stringops','-mstringop-strategy=rep_byte','-fno-jump-tables','-mno-push-args','-fcf-protection=none','-Wall','-Wextra','-Werror','-Wno-misleading-indentation']
 allowed={'hbc_alloc'}
 raw=root/'generated/hrdate.raw.s';subprocess.run([cc,*flags,src,'-o',str(raw)],cwd=root,check=True)
 raw_bytes=root/'generated/hrdate.raw.s'

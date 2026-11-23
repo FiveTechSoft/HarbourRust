@@ -1359,7 +1359,7 @@ pos2 tests/t1364_hb_pvalue_byref.prg tests/expectations/qout/t1364_hb_pvalue_byr
 neg tests/t1365_hb_pvalue_block_neg.prg `hb_PValue` inside a codeblock is not in this increment
 neg tests/t1366_omitted_float_pin_neg.prg arithmetic between a NIL-able (Dyn) value and a float
 pos2 tests/t1367_hb_pvalue_float_neg.prg tests/expectations/qout/t1367_hb_pvalue_float_neg.linux.out tests/expectations/qout/t1367_hb_pvalue_float_neg.windows.out
-neg tests/t1368_pcount_neg.prg `PCount` is not in this increment
+neg tests/t1368_pcount_neg.prg PCount takes no arguments
 neg tests/t1369_unknown_nested_arg_neg.prg unknown function `nosuchfn_xyzzy`
 pos2 tests/t1370_parexpr_inline_assign.prg tests/expectations/qout/t1370_parexpr_inline_assign.linux.out tests/expectations/qout/t1370_parexpr_inline_assign.windows.out
 pos2 tests/t1371_parexpr_if_seqcond.prg tests/expectations/qout/t1371_parexpr_if_seqcond.linux.out tests/expectations/qout/t1371_parexpr_if_seqcond.windows.out
@@ -1951,3 +1951,12 @@ pos2 tests/foreach-static/programs/nested_owned.prg tests/foreach-static/expecte
 pos2 tests/foreach-static/programs/static_dynamic_owned.prg tests/foreach-static/expected/static_dynamic_owned.linux.out tests/foreach-static/expected/static_dynamic_owned.windows.out
 pos2 tests/setdate-bb/programs/setter_only_date.prg tests/setdate-bb/expected/setter_only_date.linux.out tests/setdate-bb/expected/setter_only_date.windows.out
 pos2 tests/setdate-bb/programs/setter_only_century_off.prg tests/setdate-bb/expected/setter_only_century_off.linux.out tests/setdate-bb/expected/setter_only_century_off.windows.out
+pos2 tests/setdate-bb/programs/setdate_empty.prg tests/setdate-bb/expected/setdate_empty.linux.out tests/setdate-bb/expected/setdate_empty.windows.out
+pos2 tests/setdate-bb/programs/setdate_epoch_parse.prg tests/setdate-bb/expected/setdate_epoch_parse.linux.out tests/setdate-bb/expected/setdate_epoch_parse.windows.out
+pos2 tests/altd-stmt/altd_stmt.prg tests/altd-stmt/altd_stmt.linux.out tests/altd-stmt/altd_stmt.windows.out
+pos2 tests/setdate-bb/programs/setdate_epoch_only.prg tests/setdate-bb/expected/setdate_epoch_only.linux.out tests/setdate-bb/expected/setdate_epoch_only.windows.out
+pos2 tests/altd-user/altd_user.prg tests/altd-user/altd_user.linux.out tests/altd-user/altd_user.windows.out
+neg tests/altd-stmt/altd_value_print.prg `ALTD()` is accepted only as a statement
+neg tests/altd-stmt/altd_value_assign.prg `ALTD()` is accepted only as a statement
+neg tests/altd-stmt/altd_value_return.prg `ALTD()` is accepted only as a statement
+neg tests/ctod-dyn/neg_masked_error.prg `ctod` expects a string

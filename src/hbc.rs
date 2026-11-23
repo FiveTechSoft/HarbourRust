@@ -3071,6 +3071,14 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                 {
                     return Ok(());
                 }
+                if id.eq_ignore_ascii_case("altd") && toks.len()==3 && toks[1]==Tok::LParen && toks[2]==Tok::RParen {
+                    // Keep the call in the AST: whether it is the (no-op)
+                    // builtin or a user function ALTD is decided after the
+                    // user function names are registered.
+                    out.push(Stmt::CallStmt(n, Expr::Call(id.clone(), Vec::new())));
+                    *i += 1;
+                    continue;
+                }
                 if id.eq_ignore_ascii_case("set") && !(toks.len() >= 2 && toks[1] == Tok::LParen) {
                     if matches!(toks.get(1),Some(Tok::Ident(v)) if v.eq_ignore_ascii_case("default") || v.eq_ignore_ascii_case("path")) {
                         let name=if matches!(&toks[1],Tok::Ident(v) if v.eq_ignore_ascii_case("default")){"hrfile_setdefault"}else{"hrfile_setpath"};
@@ -3150,6 +3158,26 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                             }
                             None => return Err(format!("line {}: SET DATE needs AMERICAN, ANSI, BRITISH, FRENCH, GERMAN, ITALIAN, USA or JAPANESE in this increment", n)),
                         }
+                    }
+                    if matches!(toks.get(1), Some(Tok::Ident(name)) if name.eq_ignore_ascii_case("epoch")) {
+                        // SET EPOCH TO <year>: the pivot of the 2-digit year
+                        // rule in CTOD (see hbc_ctod). Integer literal 0..9999
+                        // only; the rule is a hypothesis, not oracle measured
+                        // (tests/setdate-bb/README.md).
+                        let wi = if matches!(toks.get(2), Some(Tok::KwTo)) { 3usize } else { 2usize };
+                        if toks.len() == wi + 1 {
+                            if let Some(Tok::Int(v)) = toks.get(wi) {
+                                match v.parse::<i64>() {
+                                    Ok(y) if (0..=9999).contains(&y) => {
+                                        out.push(Stmt::CallStmt(n, Expr::Call("hbc_set_epoch".to_string(), vec![Expr::Int(y.to_string())])));
+                                        *i += 1;
+                                        continue;
+                                    }
+                                    _ => return Err(format!("line {}: SET EPOCH TO needs an integer literal between 0 and 9999 in this increment", n)),
+                                }
+                            }
+                        }
+                        return Err(format!("line {}: SET EPOCH TO needs an integer literal between 0 and 9999 in this increment", n));
                     }
                     if matches!(toks.get(1), Some(Tok::Ident(name)) if name.eq_ignore_ascii_case("century")) {
                         // SET CENTURY ON/OFF: the 4-vs-2-digit year of the
@@ -4853,9 +4881,45 @@ fn minmax_mixed_tys(a:Ty,b:Ty)->bool {
 fn byref_param(function: &str, index: usize) -> bool {
     BYREF_PARAMS.with(|m|m.borrow().get(function).map_or(false,|v|v.contains(&index)))
 }
+// Bounded package A: explicit self-VAL reassignment opts a parameter into
+// tagged scalar storage. Other parameter inference remains unchanged.
+thread_local! {static RETYPED_VAL_FUNCTIONS: std::cell::RefCell<std::collections::HashSet<String>>=std::cell::RefCell::new(std::collections::HashSet::new());}
+thread_local! {
+    static PCOUNT_FUNCTIONS: std::cell::RefCell<std::collections::HashSet<String>>=std::cell::RefCell::new(std::collections::HashSet::new());
+    static PCOUNT_FRAME_OFF: std::cell::Cell<usize>=std::cell::Cell::new(0);
+}
+fn init_pcount_functions(funcs: &[Func]) {
+    let mut names=std::collections::HashSet::new();
+    for f in funcs {let mut hit=false;visit_stmts_ref(&f.stmts,&mut |_|{},&mut |e|{if matches!(e,Expr::Call(id,_) if is_builtin(id,"pcount")){hit=true;}});if hit{names.insert(f.name.clone());}}
+    PCOUNT_FUNCTIONS.with(|v|*v.borrow_mut()=names);
+}
+fn init_retyped_val_functions(funcs: &[Func]) {
+    // Dispatch must know all source definitions BEFORE testing self-VAL.
+    // The later signature pass refreshes names after synthetic functions.
+    USER_FUNC_NAMES.with(|u| *u.borrow_mut()=funcs.iter().map(|f|f.name.to_ascii_lowercase()).collect());
+    RETYPED_VAL_FUNCTIONS.with(|v| *v.borrow_mut()=funcs.iter().filter(|f|f.params.iter().any(|p|retyped_val_param(f,p))).map(|f|f.name.clone()).collect());
+}
+fn retyped_val_param(f: &Func, p: &str) -> bool {
+    let mut hit=false;
+    visit_stmts_ref(&f.stmts,&mut |st| {
+        if let Stmt::Assign(_,dst,Expr::Call(id,args))=st {
+            if dst==p && is_builtin(id,"val") && args.len()==1 && matches!(&args[0],Expr::Var(v) if v==p) {hit=true;}
+        }
+    },&mut |_|{});
+    hit
+}
 fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>), String> {
     let n = f.params.len();
     let mut pin: Vec<Option<Ty>> = vec![None; n];
+    for (i,p) in f.params.iter().enumerate() {
+        if retyped_val_param(f,p) {
+            if !DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get()) {
+                return Err("retyped VAL parameters require ordinary Linux without threads or macros in this increment".to_string());
+            }
+            if byref_param(&f.name,i) {return Err("retyped VAL parameters cannot be passed by reference in this increment".to_string());}
+            pin[i]=Some(Ty::Dyn);
+        }
+    }
     let mut lit: Vec<(String, Ty)> = Vec::new(); // literal-initialized locals
     #[derive(Clone,Default)]
     struct ParamUse { printed:bool, len_line:Option<usize> }
@@ -5036,7 +5100,7 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
     }
     // Pin parameter vars appearing directly (not under a call) in e.
     fn pin_vars(f: &Func, e: &Expr, ty: Ty, pin: &mut Vec<Option<Ty>>, n: usize) -> Result<(), String> {
-        if matches!(e,Expr::Var(v) if root_param(&f.name,v)){return Ok(());}
+        if matches!(e,Expr::Var(v) if root_param(&f.name,v) || retyped_val_param(f,v)){return Ok(());}
 
         // String parameters are uniformly OWNED strings (StrOwn): the
         // callee owns and frees its parameter, a rodata argument is
@@ -7836,6 +7900,15 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 }
                 return Ok(Ty::StrOwn);
             }
+            if is_builtin(id,"val") && args.len()==1 && matches!(&args[0],Expr::Var(v) if env.iter().rev().any(|l|l.name==*v&&l.ty==Ty::Dyn)) {
+                // VAL of a dynamic (untyped LOCAL) variable: a string is parsed
+                // like the static case; any other runtime value is the same
+                // catchable Argument error as a statically non-string argument.
+                // Same gate as the other Dyn string consumers.
+                if !DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get()) {return Err(format!("line {}: Dyn string consumers require ordinary Linux without threads or macros in this increment",n));}
+                apply_moves(&args[0],env,sigs,false);
+                return Ok(Ty::F64);
+            }
             if is_builtin(id, "val") {
                 // Clean-room Val, behaviour fitted from the black-box
                 // oracle spec only (val-oracle-spec):
@@ -8292,6 +8365,13 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 apply_moves(&args[0],env,sigs,false);
                 return Ok(Ty::Dyn);
             }
+            if is_builtin(id,"ctod") && args.len()==1 && matches!(&args[0],Expr::Var(v) if env.iter().rev().any(|l|l.name==*v&&l.ty==Ty::Dyn)) {
+                // CTOD of a dynamic (untyped LOCAL) variable holding a string:
+                // same Dyn string consumer gate as UPPER/LOWER/ALLTRIM.
+                if !DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get()) {return Err(format!("line {}: Dyn string consumers require ordinary Linux without threads or macros in this increment",n));}
+                apply_moves(&args[0],env,sigs,false);
+                return Ok(Ty::Date);
+            }
             if is_builtin(id,"ctod") {
                 if args.len()!=1 { return Err(format!("line {}: `ctod` takes one argument",n)); }
                 if !matches!(type_expr(&args[0],env,sigs,n)?,Ty::Str|Ty::StrOwn) {
@@ -8338,7 +8418,13 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 if args.len()!=1 || !matches!(&args[0],Expr::Int(_)) {return Err(format!("line {}: internal SET DECIMALS store expects one integer",n));}
                 return Ok(Ty::I64);
             }
-            if id=="hbc_set_datefmt" || id=="hbc_set_century" {
+            if is_builtin(id,"altd") {
+                // Reached only outside a bare `ALTD()` statement (that form is
+                // accepted in check_stmts): the value form has no defined result.
+                let _ = args;
+                return Err(format!("line {}: `ALTD()` is accepted only as a statement in this increment (it has no value here; a user function ALTD overrides it)",n));
+            }
+            if id=="hbc_set_datefmt" || id=="hbc_set_century" || id=="hbc_set_epoch" {
                 if args.len()!=1 || !matches!(&args[0],Expr::Int(_)) {return Err(format!("line {}: internal SET DATE/CENTURY store expects one integer",n));}
                 return Ok(Ty::I64);
             }
@@ -8531,11 +8617,9 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 return Ok(Ty::F64);
             }
             if is_builtin(id, "pcount") {
-                // PCount() needs the CALLER's argument count; the calling
-                // convention carries no count in this increment (extra
-                // arguments are already rejected by name), so the
-                // introspection is a named rejection, not a silent 0.
-                return Err(format!("line {}: `PCount` is not in this increment (the calling convention carries no argument count; `hb_PValue` over the declared parameters is the supported introspection)", n));
+                if !args.is_empty() {return Err(format!("line {}: PCount takes no arguments in this increment",n));}
+                if IN_BLOCK.with(|v|v.get()) {return Err(format!("line {}: PCount inside a codeblock is not in this increment",n));}
+                return Ok(Ty::I64);
             }
             if is_builtin(id, "hb_threadstart") {
                 // hb_threadStart(@f(), a1..an) - own clone+futex runtime
@@ -9331,6 +9415,9 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 // operand through the Dyn route (a float payload is combined by kind).
                 if sig_params[i] == Ty::Dyn { mark_dynplus(a, env, sigs, n); }
                 let ta = type_expr(a, env, sigs, n)?;
+                if ta==Ty::Dyn && sig_params[i]==Ty::I64 && RETYPED_VAL_FUNCTIONS.with(|v|v.borrow().contains(&CUR_FN.with(|c|c.borrow().clone()))) {
+                    return Err(format!("line {}: retyped VAL parameter to a static integer parameter is not covered in this increment; use a Dyn receiver",n));
+                }
                 if method_valtype::parameter(id,i) {method_valtype::argument(id,a,ta,n)?;}
                 if dd_call && matches!(ta, Ty::Obj(_)) && !DEFAULT_DYN.with(|m| m.borrow().contains(&(sigs[si].name.clone(), i))) {
                     return Err(format!("line {}: an object argument (argument {}) in a call to `{}`, which has a parameter without type evidence, is outside the dynamic increment in this increment (the boundary screen for object values could not release its reference)", n, i + 1, id));
@@ -10980,6 +11067,9 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 apply_moves(e, env, sigs, true);
             }
             Stmt::CallStmt(n, e) => {
+                if matches!(e, Expr::Call(id, args) if is_builtin(id,"altd") && args.is_empty()) {
+                    continue; // ALTD() statement: the only accepted form of the no-op builtin
+                }
                 if matches!(e, Expr::Var(_)) {
                     type_expr(e, env, sigs, *n)?;
                     continue; // parenthesized variable: borrow for a read
@@ -11171,6 +11261,9 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                     return Err(format!("line {}: `return` from within a FINALLY block is not in this increment (Harbour defers it through the unwind; CATCH bodies take a normal `return`)", n));
                 }
                 allow_mixed_iif(e);
+                // Return expressions in the opted-in functions must retain
+                // runtime numeric kinds just as assignments and print do.
+                if RETYPED_VAL_FUNCTIONS.with(|v|v.borrow().contains(&CUR_FN.with(|c|c.borrow().clone()))) {mark_dynplus(e,env,sigs,*n);}
                 let t = type_expr(e, env, sigs, *n)?;
                 if t==Ty::NumLocal {return Err(format!("line {}: mixed numeric LOCAL return ABI is not in this increment",n));}
                 if t == Ty::F64 {
@@ -12827,7 +12920,8 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
             if is_builtin(id,"hb_sha1") || is_builtin(id,"hb_hmac_sha1") {for a in args {apply_moves(a,env,sigs,false);}return;}
             if id=="hrbase_wait" {return;}
             if id=="hbc_set_decimals" {return;}
-            if id=="hbc_set_datefmt" || id=="hbc_set_century" {return;}
+            if id=="hbc_set_datefmt" || id=="hbc_set_century" || id=="hbc_set_epoch" {return;}
+            if is_builtin(id,"altd") {return;}
             if is_builtin(id,"inkey") {return;}
             if is_builtin(id,"file") || id=="hrfile_setdefault" || id=="hrfile_setpath" {
                 for a in args {apply_moves(a,env,sigs,false);}return;
@@ -12978,6 +13072,7 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
                 }
                 return;
             }
+            if is_builtin(id,"pcount") {return;}
             if is_builtin(id, "hb_pvalue") {
                 // Read-only mention: the PValue index moves nothing
                 // (multiarg).
@@ -16830,6 +16925,15 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             }
             out.push_str("    add $32, %rsp\n");
         }
+        Expr::Call(id,args) if is_builtin(id,"ctod") && args.len()==1 && expr_ty(&args[0],env,sigs)==Ty::Dyn => {
+            // Dyn string snapshot -> hbc_ctod (ptr,len) -> release the snapshot.
+            let k=fresh_lbl();cg_data_value(&args[0],env,sigs,strs,out,target);
+            out.push_str(&format!("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n    cmp $4, %al\n    jne .Ldctod_limit{k}\n    mov %rdx, %rdi\n    mov -8(%rdx), %rsi\n    call hbc_ctod\n"));
+            out.push_str("    mov %rax, 16(%rsp)\n");cg_dyn_stack_release(out,0,false);
+            out.push_str(&format!("    mov 16(%rsp), %rax\n    add $32, %rsp\n    jmp .Ldctod_end{k}\n.Ldctod_limit{k}:\n"));
+            cg_dyn_stack_release(out,0,false);let msg="Limit: CTOD of a dynamic value requires a string in this increment\n";let si=strs.len();strs.push(msg.to_string());
+            out.push_str(&format!("    add $32, %rsp\n    lea .Lstr{si}(%rip), %rax\n    mov ${}, %edx\n    call hbc_write_bytes\n    jmp hbc_panic_exit\n.Ldctod_end{k}:\n",msg.len()));
+        }
         Expr::Call(id,args) if is_builtin(id,"ctod") => {
             let temp=expr_ty(&args[0],env,sigs)==Ty::StrOwn && !matches!(&args[0],Expr::Var(_));
             cg_value(&args[0],env,sigs,strs,out,target);
@@ -16947,7 +17051,15 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
         }
         Expr::Call(id,args) if id=="hbc_set_datefmt" => {
             let v = match &args[0] { Expr::Int(v) => v.parse::<i64>().unwrap_or(0), _ => 0 };
-            out.push_str(&format!("    mov ${}, %edi\n    call hbc_date_set_fmt\n", v));
+            out.push_str(&format!("    mov ${}, %edi\n    call hbc_date_set_fmt\n    movq ${}, .Ldate_pfmt(%rip)\n", v, v));
+        }
+        Expr::Call(id,_) if is_builtin(id,"altd") => {
+            out.push_str("    xor %eax, %eax\n");
+        }
+        Expr::Call(id,args) if id=="hbc_set_epoch" => {
+            // The parser guarantees an integer literal in 0..=9999.
+            let v = match &args[0] { Expr::Int(v) => v.parse::<i64>().expect("SET EPOCH literal validated by the parser"), _ => unreachable!() };
+            out.push_str(&format!("    movq ${}, .Ldate_epoch(%rip)\n", v));
         }
         Expr::Call(id,args) if id=="hbc_set_century" => {
             let v = match &args[0] { Expr::Int(v) => v.parse::<i64>().unwrap_or(0), _ => 0 };
@@ -17341,6 +17453,14 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                 out.push_str("    mov %rax, 48(%rsp)\n    mov %rdx, 56(%rsp)\n    mov (%rsp), %rdi\n    call hbc_freestr\n    mov 48(%rsp), %rax\n    mov 56(%rsp), %rdx\n");
             }
             out.push_str("    add $96, %rsp\n");
+        }
+        Expr::Call(id,args) if is_builtin(id,"val") && args.len()==1 && expr_ty(&args[0],env,sigs)==Ty::Dyn => {
+            let k=fresh_lbl();cg_data_value(&args[0],env,sigs,strs,out,target);
+            out.push_str(&format!("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n    cmp $4, %al\n    jne .Ldval_bad{k}\n    mov %rdx, %rdi\n    mov -8(%rdx), %rsi\n    call hbc_val\n    movsd %xmm0, 16(%rsp)\n    mov %rdi, 24(%rsp)\n"));
+            cg_dyn_stack_release(out,0,false);
+            out.push_str(&format!("    movsd 16(%rsp), %xmm0\n    mov 24(%rsp), %rdi\n    add $32, %rsp\n    jmp .Ldval_end{k}\n.Ldval_bad{k}:\n"));
+            cg_dyn_stack_release(out,0,false);
+            out.push_str(&format!("    add $32, %rsp\n    call hbc_val_arg_error\n    xor %eax, %eax\n    cvtsi2sd %rax, %xmm0\n    mov $655370, %rdi\n.Ldval_end{k}:\n"));
         }
         Expr::Call(id,args) if is_builtin(id,"val") => {
             // Clean-room Val: the result follows the f64 pair convention
@@ -19116,6 +19236,10 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                 out.push_str(&format!("    add ${}, %rsp\n", 16 * k));
             }
         }
+        Expr::Call(id, _) if is_builtin(id,"pcount") => {
+            let off=PCOUNT_FRAME_OFF.with(|v|v.get());assert!(off>0,"PCount frame missing");
+            out.push_str(&format!("    mov -{}(%rbp), %rax\n    mov $1, %edx\n",off));
+        }
         Expr::Call(id, args) if is_builtin(id, "hb_pvalue") => {
             // hb_PValue(n) (multiarg): the n-th declared parameter of the
             // enclosing function as a Dyn casilla in rax=tag, rdx=payload;
@@ -19522,6 +19646,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                 }
                 out.push_str(&format!("    mov (%rax), %rax\n    mov 32(%rax), %rax\n    call *{}(%rax)\n",dslot*8));
             } else {
+                if PCOUNT_FUNCTIONS.with(|v|v.borrow().contains(id)) {out.push_str(&format!("    mov ${}, %r11\n",args.len()));}
                 out.push_str(&format!("    call hbc_fn_{}\n", call_lbl));
             }
             if total > 0 {
@@ -21077,6 +21202,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             if is_builtin(id, "empty") || is_builtin(id, "hb_isnumeric") || is_builtin(id, "hb_isarray") || is_builtin(id, "hb_isstring") { return Ty::Bool; }
             if is_output_call(id) { return Ty::Dyn; }
             if is_builtin(id, "hb_pvalue") { return Ty::Dyn; }
+            if is_builtin(id,"pcount") {return Ty::I64;}
             if is_builtin(id, "eval") { return match expr_ty(&args[0], env, sigs) { Ty::Block(_, BRet::Nil) => Ty::Dyn, Ty::Block(_, BRet::Bool) => Ty::Bool, _ => Ty::I64 }; }
             if is_builtin(id, "asc") || is_builtin(id, "len") || is_builtin(id, "hb_memcheck") || is_builtin(id, "procline") { return Ty::I64; }
             if is_builtin(id,"date") || is_builtin(id,"ctod") { return Ty::Date; }
@@ -21129,7 +21255,8 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             if is_builtin(id,"hb_sha1") || is_builtin(id,"hb_hmac_sha1") {return Ty::StrOwn;}
             if id=="hrbase_wait" {return Ty::I64;}
             if id=="hbc_set_decimals" {return Ty::I64;}
-            if id=="hbc_set_datefmt" || id=="hbc_set_century" {return Ty::I64;}
+            if id=="hbc_set_datefmt" || id=="hbc_set_century" || id=="hbc_set_epoch" {return Ty::I64;}
+            if is_builtin(id,"altd") {return Ty::I64;}
             if is_builtin(id,"setcursor") || is_builtin(id,"dirmake") || is_builtin(id,"inkey") {return Ty::I64;}
             if is_builtin(id,"file") {return Ty::Bool;}
             if id=="hrfile_setdefault"||id=="hrfile_setpath" {return Ty::Dyn;}
@@ -26468,6 +26595,8 @@ fn cg_func(f: &Func, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, tar
         }
     }
 
+    let pcount_off=if PCOUNT_FUNCTIONS.with(|v|v.borrow().contains(&f.name)) {frame+=16;frame} else {0};
+    PCOUNT_FRAME_OFF.with(|v|v.set(pcount_off));
     let trace_off = frame + if MACRO_CONTEXT.with(|c|c.get()){64}else{48};
     frame = trace_off;
     let unwind_off = if FRAME_UNWIND.with(|v|v.get()) && !darr_slots.is_empty() {frame+=48;Some(frame)} else {None};
@@ -26477,6 +26606,8 @@ fn cg_func(f: &Func, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, tar
     out.push_str("    push %rbp\n    mov %rsp, %rbp\n");
     // Forward absolute expression finalized after scratch allocation.
     out.push_str(&format!("    sub $.Lavframe{}, %rsp\n",avframe));
+    if pcount_off>0 {if f.name=="main" || f.init {out.push_str(&format!("    movq $0, -{}(%rbp)\n",pcount_off));}else{out.push_str(&format!("    mov %r11, -{}(%rbp)\n",pcount_off));}}
+
     PROC_NAME.with(|v| *v.borrow_mut() = f.name.split("__br").next().unwrap_or(&f.name).to_ascii_uppercase());
     CUR_FN.with(|c| *c.borrow_mut() = f.name.clone());
     CUR_METHOD_CLASS.with(|c| c.set(match METHOD_CLASS.with(|m| m.borrow().get(&f.name).copied()) { Some(ci) => ci as i64, None => -1 }));
@@ -34587,6 +34718,9 @@ hbc_panic_exit:
         out = out.replace("\n.pushsection .rodata\n", "\n.section .rdata,\"r\"\n")
             .replace("\n.popsection\n", "\n.text\n");
     }
+    if (out.contains(".Ldate_pfmt(%rip)") || out.contains(".Ldate_epoch(%rip)")) && !out.contains(".Ldate_pfmt:") {
+        out.push_str("\n.data\n.align 8\n.Ldate_pfmt: .quad 0\n.Ldate_epoch: .quad 1900\n.text\n");
+    }
     out
 }
 
@@ -38456,6 +38590,18 @@ fn main() {
     if hash_case_mode && (!DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get())) {eprintln!("error: hb_HCaseMatch logical mode requires ordinary Linux without threads or macros");process::exit(1);}
     HASH_CASE_LOGICAL_MODE.with(|v|v.set(hash_case_mode));
     narrow_bare_date_locals(&mut funcs);
+    init_retyped_val_functions(&funcs);
+    init_pcount_functions(&funcs);
+    let mut bad_pcount_arity=false;
+    for f in &funcs {visit_stmts_ref(&f.stmts,&mut |_|{},&mut |e|{if matches!(e,Expr::Call(id,args) if is_builtin(id,"pcount") && !args.is_empty()){bad_pcount_arity=true;}});}
+    if bad_pcount_arity {eprintln!("error: PCount takes no arguments in this increment");process::exit(1);}
+
+    if PCOUNT_FUNCTIONS.with(|v|!v.borrow().is_empty()) && (!DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get())) {eprintln!("error: PCount requires ordinary Linux without threads or macros in this increment");process::exit(1);}
+    for f in &funcs {if PCOUNT_FUNCTIONS.with(|v|v.borrow().contains(&f.name)) && METHOD_CLASS.with(|v|v.borrow().contains_key(&f.name)) {eprintln!("error: PCount in a method is not in this increment");process::exit(1);}}
+
+    if RETYPED_VAL_FUNCTIONS.with(|v|!v.borrow().is_empty()) && (!DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get())) {
+        eprintln!("error: retyped VAL parameters require ordinary Linux without threads or macros in this increment");process::exit(1);
+    }
     if let Err(e)=box_gtstd::validate(&funcs){eprintln!("error: {}",e);process::exit(1);}
     lift_thread_blocks(&mut funcs);
 
@@ -38527,6 +38673,9 @@ fn main() {
         scan_byref_stmts(&f.stmts, &f.name, &mut byref_params, &mut byref_locals, &mut byref_variants);
     }
     BYREF_PARAMS.with(|m|*m.borrow_mut()=byref_params.clone());
+    for f in &funcs {for (i,p) in f.params.iter().enumerate() {
+        if retyped_val_param(f,p) && byref_param(&f.name,i) {eprintln!("error: retyped VAL parameters cannot be passed by reference in this increment");process::exit(1);}
+    }}
 
     // Pass 1: semantic analysis - types, ownership/move, signatures.
     // ORDER-INDEPENDENT inference (oracle hk253: Harbour resolves calls
@@ -38644,6 +38793,7 @@ fn main() {
         // I64 -> F64 as its own parameter merges upward), so a sticky
         // recording cannot rest on a stale mid-convergence reading.
         let mut first_err: Option<String> = None;
+        let mut fn_errs: Vec<(String, String)> = Vec::new();
         let mut first_pin_err: Option<String> = None;
         let mut uninferred_parameter = false;
         for (fi, f) in funcs.iter_mut().enumerate() {
@@ -38762,6 +38912,7 @@ fn main() {
                 });
             }
             if let Err(m) = res {
+                fn_errs.push((f.name.clone(), m.clone()));
                 if first_err.is_none() { first_err = Some(m); }
             }
             if f.name == "main" {
@@ -38820,7 +38971,15 @@ fn main() {
                 round = 0;
                 continue;
             }
-            if let Some(m) = first_err.or(first_pin_err) {
+            if let Some(mut m) = first_err.or(first_pin_err) {
+                // A caller's "`g` never returns a value" is only a symptom
+                // when g's own body failed with a different error: report
+                // that real error instead of the masked symptom.
+                if m.contains("never returns a value") {
+                    if let Some((g, real)) = fn_errs.iter().find(|(g, e)| m.contains(&format!("`{}`", g)) && !e.contains("never returns a value")) {
+                        m = format!("{} (in function `{}`; callers only see a never-returns-a-value symptom)", real, g);
+                    }
+                }
                 eprintln!("error: {}", m);
                 process::exit(1);
             }
@@ -40060,12 +40219,46 @@ hbc_ctod:
     cmp $3, %r8d
     jb .Ldate_parse_byte
 .Ldate_parse_done:
-    mov (%rsp), %r9d
-    mov 4(%rsp), %r10d
+    # Field order follows SET DATE (.Ldate_pfmt, same index as the render
+    # table): 0 AMERICAN and 5 USA are M D Y; 2 BRITISH, 3 GERMAN and
+    # 4 ITALIAN are D M Y; 1 ANSI and 6 JAPANESE are Y M D.
+    mov .Ldate_pfmt(%rip), %rdi
+    mov (%rsp), %eax
+    mov 4(%rsp), %r9d
     mov 8(%rsp), %r8d
+    cmp $1, %rdi
+    je .Ldate_order_ymd
+    cmp $6, %rdi
+    je .Ldate_order_ymd
+    cmp $2, %rdi
+    jb .Ldate_order_mdy
+    cmp $4, %rdi
+    jbe .Ldate_order_dmy
+.Ldate_order_mdy:
+    mov %r9d, %r10d
+    mov %eax, %r9d
+    jmp .Ldate_order_done
+.Ldate_order_dmy:
+    mov %eax, %r10d
+    jmp .Ldate_order_done
+.Ldate_order_ymd:
+    mov %r8d, %r10d
+    mov %eax, %r8d
+.Ldate_order_done:
+    # 2-digit year: century of SET EPOCH (default 1900); a year below the
+    # epoch's last two digits goes to the next century.
     cmp $100, %r8d
     jae .Ldate_parse_year
-    add $1900, %r8d
+    mov .Ldate_epoch(%rip), %rax
+    xor %edx, %edx
+    mov $100, %ecx
+    div %rcx
+    imul $100, %eax, %eax
+    cmp %edx, %r8d
+    jae .Ldate_epoch_keep
+    add $100, %eax
+.Ldate_epoch_keep:
+    add %eax, %r8d
 .Ldate_parse_year:
     add $24, %rsp
     jmp hbc_date_pack
@@ -41883,6 +42076,32 @@ fn cg_dyn_substr(args:&[Expr],env:&[CgLocal],sigs:&[Sig],strs:&mut Vec<String>,o
 #[cfg(test)]
 mod internal_valtype_dispatch_tests {
     use super::*;
+    #[test]
+    fn retyped_val_scan_initializes_dispatch_before_building_persistent_set() {
+        let previous=USER_FUNC_NAMES.with(|u|u.borrow().clone());
+        let old=RETYPED_VAL_FUNCTIONS.with(|u|u.borrow().clone());
+        let make_f=||Func {init:false,name:"f".into(),params:vec!["p".into()],ret:None,
+            stmts:vec![Stmt::Assign(1,"p".into(),Expr::Call("val".into(),vec![Expr::Var("p".into())]))],
+            dyn_names:std::collections::HashSet::new()};
+        let make_val=||Func {init:false,name:"val".into(),params:vec!["x".into()],ret:None,
+            stmts:vec![Stmt::Ret(1,Some(Expr::Var("x".into())))],dyn_names:std::collections::HashSet::new()};
+        // Seed both stale and empty states: production initialization must
+        // replace them, not depend on a previous pass or compiler invocation.
+        for empty in [true,false] {
+            USER_FUNC_NAMES.with(|u|{u.borrow_mut().clear();if !empty {u.borrow_mut().insert("stale".into());}});
+            RETYPED_VAL_FUNCTIONS.with(|u|{u.borrow_mut().insert("f".into());});
+            init_retyped_val_functions(&[make_f(),make_val()]);
+            assert!(!retyped_val_param(&make_f(),"p"));
+            assert!(RETYPED_VAL_FUNCTIONS.with(|u|u.borrow().is_empty()));
+            assert!(!is_builtin("val","val"));
+            init_retyped_val_functions(&[make_f()]);
+            assert!(retyped_val_param(&make_f(),"p"));
+            assert!(RETYPED_VAL_FUNCTIONS.with(|u|u.borrow().contains("f")));
+        }
+        USER_FUNC_NAMES.with(|u|*u.borrow_mut()=previous);
+        RETYPED_VAL_FUNCTIONS.with(|u|*u.borrow_mut()=old);
+    }
+
 
     #[test]
     fn compiler_valtype_ignores_user_override_but_source_calls_do_not() {

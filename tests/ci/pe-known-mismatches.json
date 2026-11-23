@@ -62,7 +62,7 @@
       "kind": "pos",
       "source": "tests/t1625_curdir_return.prg",
       "rc": 1,
-      "stderr": "error: line 2: `place` never returns a value; its result cannot be used in an expression in this PoC\n",
+      "stderr": "error: line 6: CurDir is measured only on the ordinary Linux backend in this increment (in function `place`; callers only see a never-returns-a-value symptom)\n",
       "source_sha256": "05d8d8406e4a42e81e3418e036757b773f5f18b17eec30730de283862576a78a",
       "reason": "CurDir is outside the PE backend; includes diagnostic precedence differences."
     },
