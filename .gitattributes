@@ -115,3 +115,4 @@ generated/*.s text eol=lf
 tests/setdate-bb/expected/** -text
 tests/altd-stmt/*.out -text
 tests/altd-user/*.out -text
+tests/ctod-dyn/*.out -text

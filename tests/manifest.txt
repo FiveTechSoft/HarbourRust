@@ -1959,3 +1959,4 @@ pos2 tests/altd-user/altd_user.prg tests/altd-user/altd_user.linux.out tests/alt
 neg tests/altd-stmt/altd_value_print.prg `ALTD()` is accepted only as a statement
 neg tests/altd-stmt/altd_value_assign.prg `ALTD()` is accepted only as a statement
 neg tests/altd-stmt/altd_value_return.prg `ALTD()` is accepted only as a statement
+neg tests/ctod-dyn/neg_masked_error.prg `ctod` expects a string

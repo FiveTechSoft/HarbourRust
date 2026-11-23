@@ -73,3 +73,18 @@ a missing value) is a named compile error; it is never ignored and never
 falls back to 1900. Pins: `programs/setdate_epoch_parse.prg` (orders,
 pivot, "0049"/"049"/"49"), `programs/setdate_epoch_only.prg` (epoch set,
 no date used and no output), `setter_only_date` (format set, no date used).
+
+## CTOD of an untyped LOCAL (Dyn string)
+
+`local cDate` (no initializer) then `cDate := STR(..) + "." + ..` then
+`CTOD(cDate)` used to fail with `ctod expects a string`; because the
+caller then also reported "`f` never returns a value", the real error was
+hidden. Now CTOD accepts a Dyn variable holding a string, under the same
+gate as UPPER/LOWER/ALLTRIM on a Dyn (ordinary Linux, no threads or macros;
+other targets give that named rejection). A non-string Dyn at run time is
+a named Limit message. The diagnostic fix reports the failing function's
+own error instead of the caller's "never returns a value" symptom
+(`tests/ctod-dyn/neg_masked_error.prg`). Pin: `tests/ctod-dyn/check.py`
+(Linux only, not a manifest row). Hypothesis: nothing new beyond the
+gate; the result bytes (`19.05.91`, `01.12.24` under SET DATE GERMAN) rest
+on the field-order hypothesis above.

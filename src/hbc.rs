@@ -8320,6 +8320,13 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 apply_moves(&args[0],env,sigs,false);
                 return Ok(Ty::Dyn);
             }
+            if is_builtin(id,"ctod") && args.len()==1 && matches!(&args[0],Expr::Var(v) if env.iter().rev().any(|l|l.name==*v&&l.ty==Ty::Dyn)) {
+                // CTOD of a dynamic (untyped LOCAL) variable holding a string:
+                // same Dyn string consumer gate as UPPER/LOWER/ALLTRIM.
+                if !DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get()) {return Err(format!("line {}: Dyn string consumers require ordinary Linux without threads or macros in this increment",n));}
+                apply_moves(&args[0],env,sigs,false);
+                return Ok(Ty::Date);
+            }
             if is_builtin(id,"ctod") {
                 if args.len()!=1 { return Err(format!("line {}: `ctod` takes one argument",n)); }
                 if !matches!(type_expr(&args[0],env,sigs,n)?,Ty::Str|Ty::StrOwn) {
@@ -16867,6 +16874,15 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                 out.push_str("    mov %rax, 16(%rsp)\n    mov %rdx, 24(%rsp)\n    mov (%rsp), %rdi\n    call hbc_freestr\n    mov 16(%rsp), %rax\n    mov 24(%rsp), %rdx\n");
             }
             out.push_str("    add $32, %rsp\n");
+        }
+        Expr::Call(id,args) if is_builtin(id,"ctod") && args.len()==1 && expr_ty(&args[0],env,sigs)==Ty::Dyn => {
+            // Dyn string snapshot -> hbc_ctod (ptr,len) -> release the snapshot.
+            let k=fresh_lbl();cg_data_value(&args[0],env,sigs,strs,out,target);
+            out.push_str(&format!("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n    cmp $4, %al\n    jne .Ldctod_limit{k}\n    mov %rdx, %rdi\n    mov -8(%rdx), %rsi\n    call hbc_ctod\n"));
+            out.push_str("    mov %rax, 16(%rsp)\n");cg_dyn_stack_release(out,0,false);
+            out.push_str(&format!("    mov 16(%rsp), %rax\n    add $32, %rsp\n    jmp .Ldctod_end{k}\n.Ldctod_limit{k}:\n"));
+            cg_dyn_stack_release(out,0,false);let msg="Limit: CTOD of a dynamic value requires a string in this increment\n";let si=strs.len();strs.push(msg.to_string());
+            out.push_str(&format!("    add $32, %rsp\n    lea .Lstr{si}(%rip), %rax\n    mov ${}, %edx\n    call hbc_write_bytes\n    jmp hbc_panic_exit\n.Ldctod_end{k}:\n",msg.len()));
         }
         Expr::Call(id,args) if is_builtin(id,"ctod") => {
             let temp=expr_ty(&args[0],env,sigs)==Ty::StrOwn && !matches!(&args[0],Expr::Var(_));
@@ -38694,6 +38710,7 @@ fn main() {
         // I64 -> F64 as its own parameter merges upward), so a sticky
         // recording cannot rest on a stale mid-convergence reading.
         let mut first_err: Option<String> = None;
+        let mut fn_errs: Vec<(String, String)> = Vec::new();
         let mut first_pin_err: Option<String> = None;
         let mut uninferred_parameter = false;
         for (fi, f) in funcs.iter_mut().enumerate() {
@@ -38812,6 +38829,7 @@ fn main() {
                 });
             }
             if let Err(m) = res {
+                fn_errs.push((f.name.clone(), m.clone()));
                 if first_err.is_none() { first_err = Some(m); }
             }
             if f.name == "main" {
@@ -38870,7 +38888,15 @@ fn main() {
                 round = 0;
                 continue;
             }
-            if let Some(m) = first_err.or(first_pin_err) {
+            if let Some(mut m) = first_err.or(first_pin_err) {
+                // A caller's "`g` never returns a value" is only a symptom
+                // when g's own body failed with a different error: report
+                // that real error instead of the masked symptom.
+                if m.contains("never returns a value") {
+                    if let Some((g, real)) = fn_errs.iter().find(|(g, e)| m.contains(&format!("`{}`", g)) && !e.contains("never returns a value")) {
+                        m = format!("{} (in function `{}`; callers only see a never-returns-a-value symptom)", real, g);
+                    }
+                }
                 eprintln!("error: {}", m);
                 process::exit(1);
             }
