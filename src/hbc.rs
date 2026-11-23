@@ -11868,7 +11868,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                     Ty::DArr => {
                         // Elements are tagged values: an i64 or a Dyn (NIL
                         // included) both store with their tag.
-                        if !matches!(t, Ty::I64 | Ty::Bool | Ty::Date | Ty::Dyn) {
+                        if !matches!(t, Ty::I64 | Ty::Bool | Ty::Date | Ty::Dyn) && !(timestamp::flat_mixed() && matches!(t,Ty::Str|Ty::StrOwn)) {
                             return Err(format!("line {}: the elements of `{}` are tagged scalars (integer, logical, date or NIL)", n, id));
                         }
                         false
@@ -25093,7 +25093,11 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 // middle arm does, so growth reallocates through the
                 // owner's cell (oracle hk78).
                 let aptr = if v.ty == Ty::DArrRef || v.ty == Ty::DArrRef2 { format!("mov -{}(%rbp), %rdi", v.off) } else { format!("lea -{}(%rbp), %rdi", v.off) };
-                if v.ty == Ty::DArrS || (v.ty == Ty::DArrU && matches!(vt, Ty::Str | Ty::StrOwn)) {
+                if timestamp::flat_mixed() && v.ty==Ty::DArr && matches!(vt,Ty::Str|Ty::StrOwn){
+                    cg_data_value(e,env,sigs,strs,out,target);
+                    out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+                    vas::emit_flat(out,&format!("    mov %rsp, %rdx\n    mov $16, %esi\n    {}\n    call hbc_aadd\n    add $16, %rsp\n",aptr));
+                }else if v.ty == Ty::DArrS || (v.ty == Ty::DArrU && matches!(vt, Ty::Str | Ty::StrOwn)) {
                     // String element: a rodata value is copied (the array
                     // owns the copy); an owned value moves in (its source
                     // slot is nulled). The appended pair is {tag 2, ptr}.
