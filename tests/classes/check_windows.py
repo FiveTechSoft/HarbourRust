@@ -21,11 +21,35 @@ from pathlib import Path
 import argparse, hashlib, json, platform, struct, subprocess, sys, tempfile
 
 def pe64_ok(exe):
-    b = exe.read_bytes()
-    if len(b) < 0x40 or b[:2] != b'MZ':
+    # Structural PE32+ validation: DOS header, COFF file header and the
+    # PE32+ optional header, all bounds-checked. Any malformed or
+    # truncated file answers False (a FAIL for the case), never an
+    # exception aborting the battery.
+    try:
+        b = exe.read_bytes()
+        if len(b) < 0x40 or b[:2] != b'MZ':
+            return False
+        lfanew = struct.unpack_from('<I', b, 0x3C)[0]
+        if lfanew + 24 > len(b):  # signature (4) + COFF file header (20)
+            return False
+        if b[lfanew:lfanew+4] != b'PE\0\0':
+            return False
+        machine, nsec, _ts, _sym, _nsym, opt_size, _char = \
+            struct.unpack_from('<HHIIIHH', b, lfanew+4)
+        if machine != 0x8664 or nsec == 0:
+            return False
+        # PE32+ optional header: fixed part is 0x70 bytes plus data
+        # directories, and must lie inside the file.
+        if opt_size < 0x70 or lfanew + 24 + opt_size > len(b):
+            return False
+        if struct.unpack_from('<H', b, lfanew+24)[0] != 0x20B:
+            return False
+        # Section table follows the optional header (40 bytes per entry).
+        if lfanew + 24 + opt_size + 40*nsec > len(b):
+            return False
+        return True
+    except (OSError, struct.error, IndexError):
         return False
-    lfanew = struct.unpack_from('<I', b, 0x3C)[0]
-    return b[lfanew:lfanew+4] == b'PE\0\0' and struct.unpack_from('<H', b, lfanew+4)[0] == 0x8664
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
