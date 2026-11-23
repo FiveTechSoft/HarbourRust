@@ -1,7 +1,6 @@
 .gitattributes text eol=lf
 *.html text eol=lf
 *.rs text eol=lf
-dist/SHA256SUMS text eol=lf
 LICENSE text eol=lf
 *.txt text eol=lf
 *.yml text eol=lf
@@ -117,4 +116,6 @@ tests/altd-stmt/*.out -text
 tests/altd-user/*.out -text
 tests/ctod-dyn/*.out -text
 tests/val-dyn/*.out -text
+
+tests/date-aadd/*.out -text
 tests/ctod-bb/expected/** -text

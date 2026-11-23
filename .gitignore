@@ -29,3 +29,8 @@
 /hbc_t.exe
 /hbc_t.*.o
 __pycache__/
+
+# Cargo output; compilers are published as GitHub Release assets, not tracked
+/target/
+/bin/
+/dist/

@@ -11800,7 +11800,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 let moves = match env[kp].ty {
                     Ty::DArrU => {
                         match t {
-                            Ty::I64 | Ty::Bool | Ty::Dyn => { env[kp].ty = Ty::DArr; false }
+                            Ty::I64 | Ty::Bool | Ty::Date | Ty::Dyn => { env[kp].ty = Ty::DArr; false }
                             Ty::DArr | Ty::DArrU => { env[kp].ty = Ty::DArr2; true }
                             // A string pins an array of strings; an owned
                             // string moves in, a rodata one is copied.
@@ -11817,8 +11817,8 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                     Ty::DArr => {
                         // Elements are tagged values: an i64 or a Dyn (NIL
                         // included) both store with their tag.
-                        if !matches!(t, Ty::I64 | Ty::Bool | Ty::Dyn) {
-                            return Err(format!("line {}: the elements of `{}` are tagged scalars (integer, logical or NIL)", n, id));
+                        if !matches!(t, Ty::I64 | Ty::Bool | Ty::Date | Ty::Dyn) {
+                            return Err(format!("line {}: the elements of `{}` are tagged scalars (integer, logical, date or NIL)", n, id));
                         }
                         false
                     }
@@ -16380,12 +16380,11 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                     vt_letter(strs, out, "P");
                     out.push_str(&format!("    jmp 97f\n.Lvtp{}:\n", lp));
                 }
-                if DBF_USED.with(|v|v.get()) {
-                    let no_date=fresh_lbl();let done=fresh_lbl();
-                    out.push_str(&format!("    cmpb $11, %r10b\n    jne .Ldbfnotdate{}\n",no_date));
-                    vt_letter(strs,out,"D");out.push_str(&format!("    jmp .Ldbfvt{}\n.Ldbfnotdate{}:\n",done,no_date));
-                    vt_letter(strs,out,"N");out.push_str(&format!(".Ldbfvt{}:\n",done));
-                } else {vt_letter(strs,out,"N");}
+                // Date is a scalar Dyn kind, not a DBF-only value.
+                let no_date=fresh_lbl();let done=fresh_lbl();
+                out.push_str(&format!("    cmpb $11, %r10b\n    jne .Ldbfnotdate{}\n",no_date));
+                vt_letter(strs,out,"D");out.push_str(&format!("    jmp .Ldbfvt{}\n.Ldbfnotdate{}:\n",done,no_date));
+                vt_letter(strs,out,"N");out.push_str(&format!(".Ldbfvt{}:\n",done));
 
                 out.push_str("    jmp 97f\n95:\n");
                 vt_letter(strs, out, "U");
@@ -23051,6 +23050,11 @@ fn cg_print_items(es: &[Expr], inline: bool, raw: bool, stderr: bool, env: &[CgL
                             }
                         }
                         Ty::Dyn => {
+                            // Inline dates use the same SET DATE/CENTURY renderer as
+                            // static dates. No owned payload is created by rendering.
+                            let date_done=fresh_lbl();let not_date=fresh_lbl();
+                            let date_mode=if stderr {2} else if raw {0} else {1};
+                            out.push_str(&format!("    cmpb $11, %al\n    jne .Lprint_not_date{not_date}\n    mov %rdx, %rax\n    mov ${date_mode}, %edx\n    call hbc_date_render\n    jmp .Lprint_date_done{date_done}\n.Lprint_not_date{not_date}:\n"));
                             // DArrDyn cell reads carry literal provenance
                             // Integer tags carry their own display provenance;
                             // the container's static type does not choose it.
@@ -23061,6 +23065,7 @@ fn cg_print_items(es: &[Expr], inline: bool, raw: bool, stderr: bool, env: &[CgL
                             } else {
                                 out.push_str("    call hbc_print_dyn\n");
                             }
+                            out.push_str(&format!(".Lprint_date_done{date_done}:\n"));
                             // An owned temporary (a call result) releases a
                             // tag-4 payload right after printing; a Var stays
                             // owned by its slot, and a DArrDyn cell read stays
@@ -25036,6 +25041,8 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                     if expr_ty(e, env, sigs) == Ty::Bool {
                         out.push_str("    mov %rax, %rdx\n    mov $3, %eax\n");
                     }
+                    // Date is a non-owning scalar cell, not a heap pointer.
+                    if expr_ty(e,env,sigs)==Ty::Date {out.push_str("    mov %rax, %rdx\n    mov $11, %eax\n");}
                     out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
                     vas::emit_flat(out, &format!("    mov %rsp, %rdx\n    mov $16, %esi\n    {}\n    call hbc_aadd\n    add $16, %rsp\n", aptr));
                 }

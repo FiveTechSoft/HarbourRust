@@ -1,0 +1,17 @@
+[package]
+name = "hbc"
+version = "0.11.5"
+edition = "2021"
+license-file = "LICENSE"
+publish = false
+autobins = false
+
+[[bin]]
+name = "hbc"
+path = "src/hbc.rs"
+
+# Matches the CI release recipe: rustc -C opt-level=1 -C debuginfo=0 -C strip=symbols
+[profile.release]
+opt-level = 1
+debug = 0
+strip = "symbols"
