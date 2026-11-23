@@ -10,9 +10,10 @@ Windows Harbour 3.2 - no GPL source read):
 - `SET CENTURY ON` widens the year to four digits; OFF keeps two.
   The fields are always zero-padded; the empty date keeps the layout
   separators with spaces for every digit (default `  /  /  `; 8 bytes, or 10
-  with century on). The default AMERICAN shape is pinned by the CToD("")
-  qout expectations; the separators of the other formats for an empty date
-  are inferred from that shape, not measured.
+  with century on). `programs/setdate_empty.prg` pins the empty date in
+  every SET DATE layout, century off and on; its `.windows.out` is a
+  Harbour 3.2 measurement (mingw64, -gtcgi, native Windows 11, November 23,
+  2026) and its `.linux.out` has the same bytes with LF line ends.
 - `DToS` never changes (always YYYYMMDD). The `? Date()` display and
   `DToC` share the same state; the STATE also reaches
   `Transform(date, ...)` through `hbc_dtoc` - the
