@@ -52,6 +52,9 @@ thread_local! {
     static DIRMAKE_USED: std::cell::Cell<bool> = const {std::cell::Cell::new(false)};
     static DYNPLUS_NODES: std::cell::RefCell<std::collections::HashSet<usize>> = std::cell::RefCell::new(std::collections::HashSet::new());
     static INKEY_USED: std::cell::Cell<bool> = const {std::cell::Cell::new(false)};
+    // QUIT anywhere in the program: _start records the stack pointer at
+    // the call into Main so QUIT can return there (normal exit path).
+    static QUIT_USED: std::cell::Cell<bool> = const {std::cell::Cell::new(false)};
     static FILE_USED: std::cell::Cell<bool> = const {std::cell::Cell::new(false)};
     static FILE_PATH_LINE: std::cell::Cell<Option<usize>> = const {std::cell::Cell::new(None)};
 }
@@ -3079,6 +3082,25 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                     *i += 1;
                     continue;
                 }
+                if toks.len() == 1 && id.eq_ignore_ascii_case("quit") {
+                    // QUIT (Harbour 3.2, measured): ends the program from any
+                    // depth with exit code 0; output already written stays.
+                    // Lowered to a return into _start right after the call
+                    // to Main, so the normal exit path (output flush, DBF
+                    // close, cleanup) runs.
+                    QUIT_USED.with(|v|v.set(true));
+                    out.push(Stmt::CallStmt(n, Expr::Call("hbc_quit".to_string(), vec![])));
+                    *i += 1;
+                    continue;
+                }
+                if toks.len() == 1 && id.eq_ignore_ascii_case("cls") {
+                    // CLS (Harbour 3.2, measured under GTCGI and GTSTD with
+                    // redirected output): no bytes. hbc's console is a
+                    // stream, so CLS writes nothing; an interactive Harbour
+                    // console would clear the screen (registered difference).
+                    *i += 1;
+                    continue;
+                }
                 if id.eq_ignore_ascii_case("set") && !(toks.len() >= 2 && toks[1] == Tok::LParen) {
                     if matches!(toks.get(1),Some(Tok::Ident(v)) if v.eq_ignore_ascii_case("default") || v.eq_ignore_ascii_case("path")) {
                         let name=if matches!(&toks[1],Tok::Ident(v) if v.eq_ignore_ascii_case("default")){"hrfile_setdefault"}else{"hrfile_setpath"};
@@ -3951,6 +3973,7 @@ fn parse(src: &str) -> Result<Prog, String> {
     MACRO_CONTEXT.with(|c|c.set(false));
     DIRMAKE_USED.with(|v|v.set(false));
     INKEY_USED.with(|v|v.set(false));
+    QUIT_USED.with(|v|v.set(false));
     DYNPLUS_NODES.with(|v|v.borrow_mut().clear());
     FILE_USED.with(|v|v.set(false));
     FILE_PATH_LINE.with(|v|v.set(None));
@@ -8424,6 +8447,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 let _ = args;
                 return Err(format!("line {}: `ALTD()` is accepted only as a statement in this increment (it has no value here; a user function ALTD overrides it)",n));
             }
+            if id=="hbc_quit" {return Ok(Ty::I64);}
             if id=="hbc_set_datefmt" || id=="hbc_set_century" || id=="hbc_set_epoch" {
                 if args.len()!=1 || !matches!(&args[0],Expr::Int(_)) {return Err(format!("line {}: internal SET DATE/CENTURY store expects one integer",n));}
                 return Ok(Ty::I64);
@@ -12920,7 +12944,7 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
             if is_builtin(id,"hb_sha1") || is_builtin(id,"hb_hmac_sha1") {for a in args {apply_moves(a,env,sigs,false);}return;}
             if id=="hrbase_wait" {return;}
             if id=="hbc_set_decimals" {return;}
-            if id=="hbc_set_datefmt" || id=="hbc_set_century" || id=="hbc_set_epoch" {return;}
+            if id=="hbc_set_datefmt" || id=="hbc_set_century" || id=="hbc_set_epoch" || id=="hbc_quit" {return;}
             if is_builtin(id,"altd") {return;}
             if is_builtin(id,"inkey") {return;}
             if is_builtin(id,"file") || id=="hrfile_setdefault" || id=="hrfile_setpath" {
@@ -17055,6 +17079,11 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
         }
         Expr::Call(id,_) if is_builtin(id,"altd") => {
             out.push_str("    xor %eax, %eax\n");
+        }
+        Expr::Call(id,_) if id=="hbc_quit" => {
+            // Back to _start, just after `call hbc_fn_main`: the slot below
+            // the recorded stack pointer still holds that return address.
+            out.push_str("    mov hbc_quit_rsp(%rip), %rsp\n    sub $8, %rsp\n    ret\n");
         }
         Expr::Call(id,args) if id=="hbc_set_epoch" => {
             // The parser guarantees an integer literal in 0..=9999.
@@ -21255,7 +21284,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             if is_builtin(id,"hb_sha1") || is_builtin(id,"hb_hmac_sha1") {return Ty::StrOwn;}
             if id=="hrbase_wait" {return Ty::I64;}
             if id=="hbc_set_decimals" {return Ty::I64;}
-            if id=="hbc_set_datefmt" || id=="hbc_set_century" || id=="hbc_set_epoch" {return Ty::I64;}
+            if id=="hbc_set_datefmt" || id=="hbc_set_century" || id=="hbc_set_epoch" || id=="hbc_quit" {return Ty::I64;}
             if is_builtin(id,"altd") {return Ty::I64;}
             if is_builtin(id,"setcursor") || is_builtin(id,"dirmake") || is_builtin(id,"inkey") {return Ty::I64;}
             if is_builtin(id,"file") {return Ty::Bool;}
@@ -30992,6 +31021,10 @@ fn emit_asm(funcs: &[Func], sigs: &[Sig], externs: &[String], target: Target, in
     if STR_DYN.with(|c|c.get())&&!THREADS.with(|c|c.get()){MACRO_CONTEXT.with(|c|c.set(true));}
     FRAME_UNWIND.with(|v|v.set(recoverable && matches!(target,Target::Linux|Target::Windows) && !MACHO_MODE.with(|v|v.get()) && !THREADS.with(|c|c.get()) && !MACRO_CONTEXT.with(|c|c.get())));
     if MACRO_CONTEXT.with(|c|c.get())&&THREADS.with(|c|c.get()){eprintln!("error: MEMVAR/macro contexts with threads are outside this stage");process::exit(1);}
+    if QUIT_USED.with(|v|v.get()) {
+        if THREADS.with(|c|c.get()) {eprintln!("error: QUIT in a program with threads is outside this increment (it would return on the main thread's stack)");process::exit(1);}
+        if funcs.iter().any(|f| f.init && format!("{:?}", f.stmts).contains("\"hbc_quit\"")) {eprintln!("error: QUIT inside an INIT procedure is outside this increment (Main has not been entered)");process::exit(1);}
+    }
     let mut out = String::new();
     if FILE_USED.with(|v|v.get()) {
         if FILE_PATH_LINE.with(|v|v.get().is_some()) && (DBF_USED.with(|v|v.get()) || hb_rdd() || THREADS.with(|v|v.get())) {
@@ -31000,6 +31033,7 @@ fn emit_asm(funcs: &[Func], sigs: &[Sig], externs: &[String], target: Target, in
         out.push_str(match target {Target::Linux=>include_str!("../generated/hrfile_linux.s"),Target::Windows=>include_str!("../generated/hrfile_windows.s")});
     }
     out.push_str("# generated by hbc (PoC: Harbour syntax -> x86-64 assembly)\n");
+    if QUIT_USED.with(|v|v.get()) {out.push_str("    .data\n    .align 8\nhbc_quit_rsp: .quad 0\n    .text\n");}
     let gtstd_native=CURDIR_LINUX_NATIVE.with(|v|v.get())&&!THREADS.with(|v|v.get());
     if gtstd_native {out.push_str(include_str!("gtstd_linux.s"));out.push_str(include_str!("../generated/hrgtstd.s"));}
     else {out.push_str(CONSOLE_NUL_HELPER);}
@@ -31056,6 +31090,7 @@ fn emit_asm(funcs: &[Func], sigs: &[Sig], externs: &[String], target: Target, in
                 out.push_str(&format!("    call hbc_fn_{}\n", f.name));
             }
             if MACRO_CONTEXT.with(|c|c.get()){out.push_str("    mov %rsp, %r10\n");}
+            if QUIT_USED.with(|v|v.get()) {out.push_str("    mov %rsp, hbc_quit_rsp(%rip)\n");}
             out.push_str("    call hbc_fn_main\n");
             if MACRO_CONTEXT.with(|c|c.get()){out.push_str("    mov %rsp, %rdi\n    call hrmacro_destroy\n");}
             out.push_str("    call hbc_persistent_cleanup\n    call hbc_str_cache_flush\n");
@@ -31081,6 +31116,7 @@ fn emit_asm(funcs: &[Func], sigs: &[Sig], externs: &[String], target: Target, in
                 out.push_str(&format!("    call hbc_fn_{}\n", f.name));
             }
             if MACRO_CONTEXT.with(|c|c.get()){out.push_str("    mov %rsp, %r10\n");}
+            if QUIT_USED.with(|v|v.get()) {out.push_str("    mov %rsp, hbc_quit_rsp(%rip)\n");}
             out.push_str("    call hbc_fn_main\n");
             if MACRO_CONTEXT.with(|c|c.get()){out.push_str("    mov %rsp, %rdi\n    call hrmacro_destroy\n");}
             if nclasses > 0 { out.push_str("    call hbc_obj_drop_pending\n"); }
