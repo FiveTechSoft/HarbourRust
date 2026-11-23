@@ -64,13 +64,21 @@ known failures and the history of published increments.
 
 ## Active development
 
+- **Branch padding against the JCC erratum (21 November).** The internal
+  assembler pads direct jumps and fused compare+jump pairs with NOPs so none
+  crosses or ends on a 32-byte boundary, like GNU as
+  `-mbranches-within-32B-boundaries`. On a Skylake Xeon, tight integer loops
+  no longer swing up to 43 % in cycles with the position of their jumps; the
+  spread is 4 % at most. `.text` grows 1.7-2.0 %. `HASM_BRANCH_ALIGN=0` restores
+  the previous bytes. Details:
+  [docs/HASM-BRANCH-ALIGN-2026-11-21.md](docs/HASM-BRANCH-ALIGN-2026-11-21.md).
 - **Integer overflow stops (21 November).** Fixed-i64 `+`, `-`, `*`, unary
   minus and `op=` no longer wrap silently outside STATIC/by-reference
   functions: they stop with `Limit: integer overflow needs numeric
   promotion` and the callstack, where Harbour would promote to a double.
-  Tight call-free integer loops pay 23-31 % for the check with code layout
-  controlled, and up to 69 % in an unlucky default layout; loops with a call
-  pay nothing measurable. Details:
+  With per-statement overflow stubs, tight call-free integer loops pay 6-11 %
+  for the check with code layout controlled; loops with a call pay nothing
+  measurable. Details:
   [docs/I64-OVERFLOW-2026-11-21.md](docs/I64-OVERFLOW-2026-11-21.md).
 - **Loop register promotion (20 November).** `src/loopreg.rs` keeps the
   frame slots of call-free FOR/WHILE loops in registers, loading them before
