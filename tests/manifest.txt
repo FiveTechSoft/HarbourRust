@@ -1359,7 +1359,7 @@ pos2 tests/t1364_hb_pvalue_byref.prg tests/expectations/qout/t1364_hb_pvalue_byr
 neg tests/t1365_hb_pvalue_block_neg.prg `hb_PValue` inside a codeblock is not in this increment
 neg tests/t1366_omitted_float_pin_neg.prg arithmetic between a NIL-able (Dyn) value and a float
 pos2 tests/t1367_hb_pvalue_float_neg.prg tests/expectations/qout/t1367_hb_pvalue_float_neg.linux.out tests/expectations/qout/t1367_hb_pvalue_float_neg.windows.out
-neg tests/t1368_pcount_neg.prg `PCount` is not in this increment
+neg tests/t1368_pcount_neg.prg PCount takes no arguments
 neg tests/t1369_unknown_nested_arg_neg.prg unknown function `nosuchfn_xyzzy`
 pos2 tests/t1370_parexpr_inline_assign.prg tests/expectations/qout/t1370_parexpr_inline_assign.linux.out tests/expectations/qout/t1370_parexpr_inline_assign.windows.out
 pos2 tests/t1371_parexpr_if_seqcond.prg tests/expectations/qout/t1371_parexpr_if_seqcond.linux.out tests/expectations/qout/t1371_parexpr_if_seqcond.windows.out

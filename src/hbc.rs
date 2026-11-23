@@ -4884,6 +4884,15 @@ fn byref_param(function: &str, index: usize) -> bool {
 // Bounded package A: explicit self-VAL reassignment opts a parameter into
 // tagged scalar storage. Other parameter inference remains unchanged.
 thread_local! {static RETYPED_VAL_FUNCTIONS: std::cell::RefCell<std::collections::HashSet<String>>=std::cell::RefCell::new(std::collections::HashSet::new());}
+thread_local! {
+    static PCOUNT_FUNCTIONS: std::cell::RefCell<std::collections::HashSet<String>>=std::cell::RefCell::new(std::collections::HashSet::new());
+    static PCOUNT_FRAME_OFF: std::cell::Cell<usize>=std::cell::Cell::new(0);
+}
+fn init_pcount_functions(funcs: &[Func]) {
+    let mut names=std::collections::HashSet::new();
+    for f in funcs {let mut hit=false;visit_stmts_ref(&f.stmts,&mut |_|{},&mut |e|{if matches!(e,Expr::Call(id,_) if is_builtin(id,"pcount")){hit=true;}});if hit{names.insert(f.name.clone());}}
+    PCOUNT_FUNCTIONS.with(|v|*v.borrow_mut()=names);
+}
 fn init_retyped_val_functions(funcs: &[Func]) {
     // Dispatch must know all source definitions BEFORE testing self-VAL.
     // The later signature pass refreshes names after synthetic functions.
@@ -8608,11 +8617,9 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 return Ok(Ty::F64);
             }
             if is_builtin(id, "pcount") {
-                // PCount() needs the CALLER's argument count; the calling
-                // convention carries no count in this increment (extra
-                // arguments are already rejected by name), so the
-                // introspection is a named rejection, not a silent 0.
-                return Err(format!("line {}: `PCount` is not in this increment (the calling convention carries no argument count; `hb_PValue` over the declared parameters is the supported introspection)", n));
+                if !args.is_empty() {return Err(format!("line {}: PCount takes no arguments in this increment",n));}
+                if IN_BLOCK.with(|v|v.get()) {return Err(format!("line {}: PCount inside a codeblock is not in this increment",n));}
+                return Ok(Ty::I64);
             }
             if is_builtin(id, "hb_threadstart") {
                 // hb_threadStart(@f(), a1..an) - own clone+futex runtime
@@ -13065,6 +13072,7 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
                 }
                 return;
             }
+            if is_builtin(id,"pcount") {return;}
             if is_builtin(id, "hb_pvalue") {
                 // Read-only mention: the PValue index moves nothing
                 // (multiarg).
@@ -19228,6 +19236,10 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                 out.push_str(&format!("    add ${}, %rsp\n", 16 * k));
             }
         }
+        Expr::Call(id, _) if is_builtin(id,"pcount") => {
+            let off=PCOUNT_FRAME_OFF.with(|v|v.get());assert!(off>0,"PCount frame missing");
+            out.push_str(&format!("    mov -{}(%rbp), %rax\n    mov $1, %edx\n",off));
+        }
         Expr::Call(id, args) if is_builtin(id, "hb_pvalue") => {
             // hb_PValue(n) (multiarg): the n-th declared parameter of the
             // enclosing function as a Dyn casilla in rax=tag, rdx=payload;
@@ -19634,6 +19646,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                 }
                 out.push_str(&format!("    mov (%rax), %rax\n    mov 32(%rax), %rax\n    call *{}(%rax)\n",dslot*8));
             } else {
+                if PCOUNT_FUNCTIONS.with(|v|v.borrow().contains(id)) {out.push_str(&format!("    mov ${}, %r11\n",args.len()));}
                 out.push_str(&format!("    call hbc_fn_{}\n", call_lbl));
             }
             if total > 0 {
@@ -21189,6 +21202,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             if is_builtin(id, "empty") || is_builtin(id, "hb_isnumeric") || is_builtin(id, "hb_isarray") || is_builtin(id, "hb_isstring") { return Ty::Bool; }
             if is_output_call(id) { return Ty::Dyn; }
             if is_builtin(id, "hb_pvalue") { return Ty::Dyn; }
+            if is_builtin(id,"pcount") {return Ty::I64;}
             if is_builtin(id, "eval") { return match expr_ty(&args[0], env, sigs) { Ty::Block(_, BRet::Nil) => Ty::Dyn, Ty::Block(_, BRet::Bool) => Ty::Bool, _ => Ty::I64 }; }
             if is_builtin(id, "asc") || is_builtin(id, "len") || is_builtin(id, "hb_memcheck") || is_builtin(id, "procline") { return Ty::I64; }
             if is_builtin(id,"date") || is_builtin(id,"ctod") { return Ty::Date; }
@@ -26581,6 +26595,8 @@ fn cg_func(f: &Func, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, tar
         }
     }
 
+    let pcount_off=if PCOUNT_FUNCTIONS.with(|v|v.borrow().contains(&f.name)) {frame+=16;frame} else {0};
+    PCOUNT_FRAME_OFF.with(|v|v.set(pcount_off));
     let trace_off = frame + if MACRO_CONTEXT.with(|c|c.get()){64}else{48};
     frame = trace_off;
     let unwind_off = if FRAME_UNWIND.with(|v|v.get()) && !darr_slots.is_empty() {frame+=48;Some(frame)} else {None};
@@ -26590,6 +26606,8 @@ fn cg_func(f: &Func, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, tar
     out.push_str("    push %rbp\n    mov %rsp, %rbp\n");
     // Forward absolute expression finalized after scratch allocation.
     out.push_str(&format!("    sub $.Lavframe{}, %rsp\n",avframe));
+    if pcount_off>0 {if f.name=="main" || f.init {out.push_str(&format!("    movq $0, -{}(%rbp)\n",pcount_off));}else{out.push_str(&format!("    mov %r11, -{}(%rbp)\n",pcount_off));}}
+
     PROC_NAME.with(|v| *v.borrow_mut() = f.name.split("__br").next().unwrap_or(&f.name).to_ascii_uppercase());
     CUR_FN.with(|c| *c.borrow_mut() = f.name.clone());
     CUR_METHOD_CLASS.with(|c| c.set(match METHOD_CLASS.with(|m| m.borrow().get(&f.name).copied()) { Some(ci) => ci as i64, None => -1 }));
@@ -38573,6 +38591,14 @@ fn main() {
     HASH_CASE_LOGICAL_MODE.with(|v|v.set(hash_case_mode));
     narrow_bare_date_locals(&mut funcs);
     init_retyped_val_functions(&funcs);
+    init_pcount_functions(&funcs);
+    let mut bad_pcount_arity=false;
+    for f in &funcs {visit_stmts_ref(&f.stmts,&mut |_|{},&mut |e|{if matches!(e,Expr::Call(id,args) if is_builtin(id,"pcount") && !args.is_empty()){bad_pcount_arity=true;}});}
+    if bad_pcount_arity {eprintln!("error: PCount takes no arguments in this increment");process::exit(1);}
+
+    if PCOUNT_FUNCTIONS.with(|v|!v.borrow().is_empty()) && (!DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get())) {eprintln!("error: PCount requires ordinary Linux without threads or macros in this increment");process::exit(1);}
+    for f in &funcs {if PCOUNT_FUNCTIONS.with(|v|v.borrow().contains(&f.name)) && METHOD_CLASS.with(|v|v.borrow().contains_key(&f.name)) {eprintln!("error: PCount in a method is not in this increment");process::exit(1);}}
+
     if RETYPED_VAL_FUNCTIONS.with(|v|!v.borrow().is_empty()) && (!DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get())) {
         eprintln!("error: retyped VAL parameters require ordinary Linux without threads or macros in this increment");process::exit(1);
     }
