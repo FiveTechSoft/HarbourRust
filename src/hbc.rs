@@ -4884,6 +4884,12 @@ fn byref_param(function: &str, index: usize) -> bool {
 // Bounded package A: explicit self-VAL reassignment opts a parameter into
 // tagged scalar storage. Other parameter inference remains unchanged.
 thread_local! {static RETYPED_VAL_FUNCTIONS: std::cell::RefCell<std::collections::HashSet<String>>=std::cell::RefCell::new(std::collections::HashSet::new());}
+fn init_retyped_val_functions(funcs: &[Func]) {
+    // Dispatch must know all source definitions BEFORE testing self-VAL.
+    // The later signature pass refreshes names after synthetic functions.
+    USER_FUNC_NAMES.with(|u| *u.borrow_mut()=funcs.iter().map(|f|f.name.to_ascii_lowercase()).collect());
+    RETYPED_VAL_FUNCTIONS.with(|v| *v.borrow_mut()=funcs.iter().filter(|f|f.params.iter().any(|p|retyped_val_param(f,p))).map(|f|f.name.clone()).collect());
+}
 fn retyped_val_param(f: &Func, p: &str) -> bool {
     let mut hit=false;
     visit_stmts_ref(&f.stmts,&mut |st| {
@@ -38566,7 +38572,7 @@ fn main() {
     if hash_case_mode && (!DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get())) {eprintln!("error: hb_HCaseMatch logical mode requires ordinary Linux without threads or macros");process::exit(1);}
     HASH_CASE_LOGICAL_MODE.with(|v|v.set(hash_case_mode));
     narrow_bare_date_locals(&mut funcs);
-    RETYPED_VAL_FUNCTIONS.with(|v| *v.borrow_mut()=funcs.iter().filter(|f|f.params.iter().any(|p|retyped_val_param(f,p))).map(|f|f.name.clone()).collect());
+    init_retyped_val_functions(&funcs);
     if RETYPED_VAL_FUNCTIONS.with(|v|!v.borrow().is_empty()) && (!DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get())) {
         eprintln!("error: retyped VAL parameters require ordinary Linux without threads or macros in this increment");process::exit(1);
     }
@@ -42044,6 +42050,32 @@ fn cg_dyn_substr(args:&[Expr],env:&[CgLocal],sigs:&[Sig],strs:&mut Vec<String>,o
 #[cfg(test)]
 mod internal_valtype_dispatch_tests {
     use super::*;
+    #[test]
+    fn retyped_val_scan_initializes_dispatch_before_building_persistent_set() {
+        let previous=USER_FUNC_NAMES.with(|u|u.borrow().clone());
+        let old=RETYPED_VAL_FUNCTIONS.with(|u|u.borrow().clone());
+        let make_f=||Func {init:false,name:"f".into(),params:vec!["p".into()],ret:None,
+            stmts:vec![Stmt::Assign(1,"p".into(),Expr::Call("val".into(),vec![Expr::Var("p".into())]))],
+            dyn_names:std::collections::HashSet::new()};
+        let make_val=||Func {init:false,name:"val".into(),params:vec!["x".into()],ret:None,
+            stmts:vec![Stmt::Ret(1,Some(Expr::Var("x".into())))],dyn_names:std::collections::HashSet::new()};
+        // Seed both stale and empty states: production initialization must
+        // replace them, not depend on a previous pass or compiler invocation.
+        for empty in [true,false] {
+            USER_FUNC_NAMES.with(|u|{u.borrow_mut().clear();if !empty {u.borrow_mut().insert("stale".into());}});
+            RETYPED_VAL_FUNCTIONS.with(|u|{u.borrow_mut().insert("f".into());});
+            init_retyped_val_functions(&[make_f(),make_val()]);
+            assert!(!retyped_val_param(&make_f(),"p"));
+            assert!(RETYPED_VAL_FUNCTIONS.with(|u|u.borrow().is_empty()));
+            assert!(!is_builtin("val","val"));
+            init_retyped_val_functions(&[make_f()]);
+            assert!(retyped_val_param(&make_f(),"p"));
+            assert!(RETYPED_VAL_FUNCTIONS.with(|u|u.borrow().contains("f")));
+        }
+        USER_FUNC_NAMES.with(|u|*u.borrow_mut()=previous);
+        RETYPED_VAL_FUNCTIONS.with(|u|*u.borrow_mut()=old);
+    }
+
 
     #[test]
     fn compiler_valtype_ignores_user_override_but_source_calls_do_not() {

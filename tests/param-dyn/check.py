@@ -15,7 +15,7 @@ def run(cmd,label):
  for ext,data in [('stdout',r.stdout),('stderr',r.stderr),('rc',str(r.returncode).encode())]:
   (out/(label+'.'+ext)).write_bytes(data)
  return r
-for name,want in [('param_dyn',b'\n      2025\n         8\n        25.0\n        25\n      2024\nbalanced'),('direct_return',b'\n      2025'),('bad_value',b'\nrecovered'),('date_direct',b'\n 2024')]:
+for name,want in [('param_dyn',b'\n      2025\n         8\n        25.0\n        25\n      2024\nbalanced'),('direct_return',b'\n      2025'),('bad_value',b'\nrecovered'),('date_direct',b'\n 2024'),('early_string',b'\nabc!\n         8')]:
  src=here/(name+'.prg');exe=out/name
  r=run([cc,src,exe,'--target=linux','--instrument'],name+'-build');assert r.returncode==0,r.stderr
  r=run([exe],name+'-run');assert (r.returncode,r.stdout,r.stderr)==(0,want,b''),(name,r.returncode,r.stdout,r.stderr)
@@ -26,6 +26,17 @@ for name,needle in [('static_integer_limit',b'retyped VAL parameter to a static 
  r=run([cc,here/(name+'.prg'),out/name,'--target=linux'],name)
  assert r.returncode==1 and needle in r.stderr,(name,r.stderr)
  rows.append(dict(name=name,kind='named-rejection',rc=r.returncode))
+for name in ['thread_limit','macro_limit']:
+ r=run([cc,here/(name+'.prg'),out/name,'--target=linux'],name)
+ assert r.returncode==1 and b'retyped VAL parameters require ordinary Linux' in r.stderr,(name,r.stderr)
+ rows.append(dict(name=name,kind='named-profile-rejection',rc=r.returncode))
+# VAL remains an assembler-reserved definition in the current front end.
+# Pin that existing source-level limit on every target, with no false gate.
+for target in ['linux','macho','macho-arm64','windows']:
+ r=run([cc,here/'user_val_reserved.prg',out/'reserved','--target='+target],'user-val-'+target)
+ assert r.returncode==1 and b'`val` is reserved by the code generator' in r.stderr,(target,r.stderr)
+ assert b'retyped VAL' not in r.stderr
+ rows.append(dict(name='user-val-'+target,kind='existing-reserved-name-limit',rc=r.returncode))
 for target in ['macho','macho-arm64','windows']:
  r=run([cc,here/'param_dyn.prg',out/'rejected','--target='+target],'target-'+target)
  assert r.returncode==1 and b'retyped VAL parameters require ordinary Linux' in r.stderr,(target,r.stderr)
@@ -35,4 +46,4 @@ r=run([cc,here/'neg_str_arith.prg',out/'badconcat','--instrument'],'badconcat-bu
 r=run([out/'badconcat'],'badconcat-run');assert r.returncode==1 and b'Argument error: +' in r.stdout+r.stderr,(r.returncode,r.stdout,r.stderr)
 rows.append(dict(name='numeric-concat',kind='runtime-error',rc=r.returncode))
 (out/'results.json').write_text(json.dumps(rows,indent=2)+'\n')
-print('PASS param-dyn: 4 executions with final delta=0, 2 named limits, 3 profile rejections, 1 runtime error')
+print('PASS param-dyn: 5 executions with final delta=0, 2 named limits, 5 profile rejections, 4 existing VAL reserved-name checks, 1 runtime error')

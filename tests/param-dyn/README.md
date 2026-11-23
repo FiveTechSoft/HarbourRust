@@ -40,3 +40,21 @@ Existing unrelated limitation: a Dyn numeric expression directly returned by
 a function WITHOUT self-VAL, or a float-bearing Dyn passed into a statically
 integer receiver, can still fail runtime extraction. This package does not
 claim to repair either route globally.
+
+## v2 dispatch and profile regressions
+The initialization helper fills USER_FUNC_NAMES before computing the
+persistent retyped-function set and before the first profile gate. An internal
+Rust test constructs an AST containing a user VAL definition, starting from
+empty and stale registries, and proves that both opt-in and persistent set stay
+off. Removing the override turns them on. This is an internal dispatch test,
+not proof that the parser accepts a source-level VAL definition.
+
+In fact FUNCTION VAL is still assembler-reserved in current main. Four source
+regressions pin that existing named rejection on Linux/Mach-O/ARM64/PE, without
+claiming an executable override. The package does not widen reserved names.
+
+check.py adds a fifth exact-output execution: an early string return before
+conversion, with final allocation delta=0. It also checks explicit thread and
+macro profile rejection. Updated totals: 5 executions with final delta=0,
+2 named limits, 5 profile rejections, 4 reserved-name rejections, 1 runtime
+concat error. Internal Rust tests must be run separately with rustc --test.
