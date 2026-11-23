@@ -81,7 +81,13 @@ normalization:
 `--write-fixtures` versions the oracle streams (stdout, stderr, exit
 code) of the 27 runnable probes into `tests/classes/expected-windows/`;
 with those fixtures present the gate runs in replay mode (no
-`--hbmk2-win` needed) comparing candidate runs against them. The 3
+`--hbmk2-win` needed) comparing candidate runs against them: replay is
+27 byte comparisons + 16 named rejections (in replay the declared-limit
+probes check only the HarbourRust rejection; Harbour is not exercised).
+A timeout or OS error on any run involved in a case marks it INFRA: it
+counts against the gate like a FAIL and is never exported as a fixture
+or satisfied by replay, so two identical infrastructure failures can
+never pass as parity. The 3
 declared-limit probes must compile and run under Harbour and answer
 their recorded named rejection under HarbourRust; the 13 named
 negatives only exercise HarbourRust's rejection (several are programs

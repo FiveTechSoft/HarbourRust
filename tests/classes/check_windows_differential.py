@@ -23,7 +23,15 @@ Oracle scope per probe set (same policy as the Linux differential gate):
 of the 27 runnable probes into tests/classes/expected-windows/. With those
 fixtures present, the gate runs in replay mode: no --hbmk2-win needed, the
 candidate runs are compared against the versioned oracle streams. Replay
-still needs a runner for the candidate (Wine off Windows).
+still needs a runner for the candidate (Wine off Windows). In replay the
+3 declared-limit probes check only the HarbourRust rejection (Harbour is
+not exercised), so replay is 27 byte comparisons + 16 named rejections.
+
+Infrastructure failures are a separate state, never a PASS: a timeout or
+an OS error on ANY run involved in a case marks the case INFRA, which
+counts against the gate like a FAIL and is never exported as a fixture
+and never satisfied by replay. Two identical infrastructure failures
+(candidate and oracle both timing out, say) can never pass as parity.
 
 --emit-only covers hosts with no Windows runner (no Wine, no Windows
 hbmk2.exe): HarbourRust compilation, PE32+ structure and named rejections
@@ -109,64 +117,80 @@ def main():
 
     runner = [a.wine] if a.wine else []
     def run(cmd, label, limit):
+        # Returns (rc, stdout, stderr, infra): infra is True when the run
+        # itself failed (timeout or OS error), as opposed to the program
+        # answering a nonzero exit. INFRA marks the case, never a PASS.
+        infra = False
         try:
             p = subprocess.run([str(x) for x in cmd], cwd=work, capture_output=True, timeout=limit)
             rc, out, err = p.returncode, p.stdout, p.stderr
         except subprocess.TimeoutExpired as e:
-            rc, out, err = 124, e.stdout or b'', (e.stderr or b'') + b'\nTIMEOUT\n'
+            rc, out, err, infra = 124, e.stdout or b'', (e.stderr or b'') + b'\nTIMEOUT\n', True
         except OSError as e:
-            rc, out, err = 127, b'', str(e).encode()
+            rc, out, err, infra = 127, b'', str(e).encode(), True
         for suffix, data in [('stdout', out), ('stderr', err), ('rc', str(rc).encode())]:
             (work/(label+'.'+suffix)).write_bytes(data)
-        return rc, out, err
+        return rc, out, err, infra
 
     failed = []
     for name in sorted(actual):
         src = inputs/(name + '.prg')
         cand = work/(name + '.exe')
-        rc, out, err = run([hbc, src, cand, '--target=windows', '-I', root/'tests'],
-                           name + '.hbc.compile', 60)
+        infra = False
+        rc, out, err, inf = run([hbc, src, cand, '--target=windows', '-I', root/'tests'],
+                                name + '.hbc.compile', 60)
+        infra |= inf
         if name in NEGATIVES:
             # HarbourRust increment limit; Harbour is not exercised.
             ok = rc == 1 and negative[name].encode() in err and b'panic' not in err.lower()
         elif name in DECLARED_LIMITS:
             ok = rc == 1 and negative[name].encode() in err and b'panic' not in err.lower()
             if ok and not a.emit_only and not replay:
+                # Harbour compile + run rc 0, full mode only. In replay the
+                # declared-limit probes check only the HarbourRust rejection.
                 oracle = work/(name + '_hb.exe')
-                orc, oout, oerr = run(runner + [hbmk2, '-quiet', '-gtstd', '-w0',
-                                                '-o' + str(oracle), src], name + '.hb.compile', 300)
+                orc, oout, oerr, inf = run(runner + [hbmk2, '-quiet', '-gtstd', '-w0',
+                                                     '-o' + str(oracle), src], name + '.hb.compile', 300)
+                infra |= inf
                 ok = orc == 0 and oracle.is_file()
                 if ok:
-                    orc, oout, oerr = run(runner + [oracle], name + '.hb.run', 20)
+                    orc, oout, oerr, inf = run(runner + [oracle], name + '.hb.run', 20)
+                    infra |= inf
                     ok = orc == 0
         else:
             ok = rc == 0 and cand.is_file() and pe64_ok(cand)
             if ok and not a.emit_only:
-                crc, cout, cerr = run(runner + [cand], name + '.hbc.run', 20)
+                crc, cout, cerr, inf = run(runner + [cand], name + '.hbc.run', 20)
+                infra |= inf
                 if replay:
                     ok = (cout == (fixtures/(name + '.out')).read_bytes()
                           and cerr == (fixtures/(name + '.err')).read_bytes()
                           and str(crc).encode() == (fixtures/(name + '.rc')).read_bytes())
                 else:
                     oracle = work/(name + '_hb.exe')
-                    orc, oout, oerr = run(runner + [hbmk2, '-quiet', '-gtstd', '-w0',
-                                                    '-o' + str(oracle), src], name + '.hb.compile', 300)
+                    orc, oout, oerr, inf = run(runner + [hbmk2, '-quiet', '-gtstd', '-w0',
+                                                         '-o' + str(oracle), src], name + '.hb.compile', 300)
+                    infra |= inf
                     ok = orc == 0 and oracle.is_file()
                     if ok:
-                        orc, oout, oerr = run(runner + [oracle], name + '.hb.run', 20)
+                        orc, oout, oerr, inf = run(runner + [oracle], name + '.hb.run', 20)
+                        infra |= inf
                         ok = crc == orc and cout == oout and cerr == oerr
-                        if ok and a.write_fixtures:
+                        if ok and a.write_fixtures and not infra:
                             fixtures.mkdir(exist_ok=True)
                             (fixtures/(name + '.out')).write_bytes(oout)
                             (fixtures/(name + '.err')).write_bytes(oerr)
                             (fixtures/(name + '.rc')).write_text(str(orc))
-        print(('PASS ' if ok else 'FAIL ') + name, flush=True)
-        if not ok:
-            failed.append(name)
+        status = 'INFRA' if infra else ('PASS ' if ok else 'FAIL ')
+        print(f'{status} {name}', flush=True)
+        if infra or not ok:
+            failed.append(f'{name}({status.strip()})')
     mode = 'emit-only' if a.emit_only else ('replay' if replay else 'differential')
-    print(f'windows differential class gate ({mode}): {43-len(failed)} pass, {len(failed)} fail (of 43)')
+    n_infra = sum(1 for f in failed if f.endswith('(INFRA)'))
+    print(f'windows differential class gate ({mode}): {43-len(failed)} pass, '
+          f'{len(failed)-n_infra} fail, {n_infra} infra (of 43)')
     if failed:
-        print('FAILED:', ', '.join(failed))
+        print('NOT-PASS:', ', '.join(failed))
     sys.exit(bool(failed))
 
 if __name__ == '__main__':
