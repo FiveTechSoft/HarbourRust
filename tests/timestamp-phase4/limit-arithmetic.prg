@@ -1,0 +1,4 @@
+FUNCTION Main()
+ LOCAL t:=hb_SToT("20261123")
+ ? t+1
+RETURN NIL

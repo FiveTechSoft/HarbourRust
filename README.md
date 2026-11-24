@@ -104,11 +104,14 @@ known failures and the history of published increments.
   **23** rejected at compile time with a message, **1** rejected at run time
   with a message (a DBF of more than 128 fields), **0** silent mismatches.
   Arrays changed by a callee, a silent wrong result in 0.11.1, are now a
-  compile-time error. Still rejected: shared DBF open, `dbSetOrder`/`dbSeek` on
-  a structural CDX, `dbGoto`/`FCount` on the native adapter, codeblocks over
-  strings or with assignments, `PRIVATE`, `BEGIN SEQUENCE`, `SET DATE`,
-  `Transform` and others. This is not the issue's 117-probe kit, which is not
-  in the repository.
+  compile-time error. Still rejected at that commit: shared DBF open,
+  `dbSetOrder`/`dbSeek` on a structural CDX, `dbGoto`/`FCount` on the native
+  adapter, codeblocks over strings or with assignments, `PRIVATE`, `BEGIN
+  SEQUENCE`, `SET DATE`, `Transform` and others. This is not the issue's
+  117-probe kit, which is not in the repository. Later main landed
+  `dbSetOrder`/`dbGoto`/`FCount` (x4/x5, tests/dbf/goto-setorder/), shared
+  read-only opens (tests/dbf/shared-readonly/) and structural CDX autoopen
+  (tests/dbf/cdx-autoopen/README.md).
 
 - **String accumulation (18 November).** `local c := "a"` followed by
   `c += "b"` or `c := c + "b"` was a "type mismatch in assignment" (issue #1,
@@ -135,14 +138,17 @@ work in progress. No unmeasured speed or capability claims are made.
 - **DBF write and decimals (v0.11.x).** On the native adapter (Linux and Windows
   x86-64, one workarea): exclusive read-write open (`readonly=.F.`, `shared=.F.`),
   bare field-name access, `REPLACE field WITH expr` (single field, no scope
-  clause), `ALIAS->field := expr`, `FieldPut` and `dbAppend`. Decimal numeric
-  values follow Harbour's rules for `+ - * / % ^` and for `= <> < > <= >=`.
-  Against Harbour 3.2 with DBFCDX, the acceptance programs print identical
-  values and leave a byte-identical DBF on the anonymised fixture
-  (tests/dbf/acceptance-test4 to test7). Not in this increment: `dbCommit`,
-  `dbDelete`, `dbRecall`, `dbGoTo`, `ordCreate`, index updates, multi-field or
-  scoped `REPLACE`, shared/record locking. Failure modes differ from Harbour's
-  recoverable error dialogs. See [open and field names](docs/DBF-WRITE-OPEN-D1.md).
+  clause), `ALIAS->field := expr`, `FieldPut` and `dbAppend`; navigation and
+  order control (`dbGoto`, `dbGoTop`, `dbGoBottom`, `dbSetOrder`, `FCount`);
+  decimal numeric values following Harbour's rules for `+ - * / % ^` and for
+  `= <> < > <= >=`. Against Harbour 3.2 with DBFCDX, the acceptance programs
+  print identical values and leave a byte-identical DBF on the anonymised
+  fixture (tests/dbf/acceptance-test4 to test7) and the x4/x5 differential gate
+  covers dbSetOrder/dbGoto/FCount (tests/dbf/goto-setorder/). Not in this
+  increment: `dbCommit`, `dbDelete`, `dbRecall`, `ordCreate`, `ordSetFocus`,
+  index updates, multi-field or scoped `REPLACE`, shared/record locking.
+  Failure modes differ from Harbour's recoverable error dialogs. See
+  [open and field names](docs/DBF-WRITE-OPEN-D1.md).
 - **DBF support (read-only base).** Read-only dBASE III tables are in main and v0.4.0: one
   workarea, C/N/L/D fields, `dbUseArea`, `FieldGet`, `dbGoTop`, `dbSkip`,
   `RecNo`/`LastRec`, `BOF`/`EOF`, `Deleted` and `dbCloseArea`, on Linux x86-64 and the bounded Windows PE adapter.

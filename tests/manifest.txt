@@ -1960,5 +1960,6 @@ neg tests/altd-stmt/altd_value_print.prg `ALTD()` is accepted only as a statemen
 neg tests/altd-stmt/altd_value_assign.prg `ALTD()` is accepted only as a statement
 neg tests/altd-stmt/altd_value_return.prg `ALTD()` is accepted only as a statement
 neg tests/ctod-dyn/neg_masked_error.prg `ctod` expects a string
+pos2 tests/ctod-bb/programs/ctod_order_epoch.prg tests/ctod-bb/expected/ctod_order_epoch.linux.out tests/ctod-bb/expected/ctod_order_epoch.windows.out
 pos2 tests/quit-bb/programs/cls_altd_quit.prg tests/quit-bb/expected/cls_altd_quit.linux.out tests/quit-bb/expected/cls_altd_quit.windows.out
 pos2 tests/quit-bb/programs/quit_nested.prg tests/quit-bb/expected/quit_nested.linux.out tests/quit-bb/expected/quit_nested.windows.out

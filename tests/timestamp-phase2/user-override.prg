@@ -1,0 +1,7 @@
+FUNCTION hb_TToC(x)
+RETURN x+7
+FUNCTION hb_DToC(x)
+RETURN x+9
+FUNCTION Main()
+ ? hb_TToC(1),hb_DToC(2)
+RETURN NIL
