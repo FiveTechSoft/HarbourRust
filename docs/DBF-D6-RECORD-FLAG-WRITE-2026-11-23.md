@@ -1,9 +1,14 @@
 # DBF D6: record-state write surface (dbDelete / dbRecall / dbCommit) — design proposal
 
-Status: **design proposal, not implemented, not measured, not published**
-(2026-11-23). No builtin below is wired into the native adapter by this
-document. Every Harbour semantic it defines is to be confirmed against the
-oracle before the increment is published, exactly as D1–D5 were. See
+Status: **landed on the native adapter 2026-11-24** (Windows x86-64; the
+measured semantics below were confirmed against the oracle that day:
+EOF is a silent no-op, readonly/open-index stay named failures, dbCommit
+is a named no-op accepting zero or one integer arguments, reopen
+persistence holds; the differential gate is
+[tests/dbf/delete-recall](../tests/dbf/delete-recall/README.md), blobs
+regenerated through the pinned dbf-blobs workflow). The original
+proposal text is kept below for the record; its unmeasured hypotheses
+that the oracle contradicted are noted in the gate README. Context:
 [DBF write and decimals](../README.md#active-development), the
 [D1 record](DBF-WRITE-OPEN-D1.md), acceptance programs
 [tests/dbf/acceptance-test4..7](../tests/dbf/acceptance-test4/README.md), and

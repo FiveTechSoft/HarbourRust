@@ -37,7 +37,9 @@ def main():
     def hb_build(prg, exe):
         src = out / (exe + '_hb.prg')
         src.write_text(prg.read_text() + '\nREQUEST HB_GT_CGI_DEFAULT\nREQUEST DBFNTX\n')
-        subprocess.run([hb / 'bin/harbour.exe', '-n2', '-q0', src.name, '-o./', '-i' + str(hb / 'include')],
+        hbexe = hb / 'bin/harbour.exe'
+        if not hbexe.exists(): hbexe = hb / 'bin/win/mingw64/harbour.exe'
+        subprocess.run([hbexe, '-n2', '-q0', src.name, '-o./', '-i' + str(hb / 'include')],
                        cwd=out, check=True, capture_output=True)
         cmd = [gcc, '-O1', src.stem + '.c', '-mconsole', '-I' + str(hb / 'include'), *libs,
                '-L' + str(hb / 'lib/win/mingw64'), '-o', exe + '_hb.exe']

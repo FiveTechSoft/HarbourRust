@@ -1,0 +1,10 @@
+function main()
+ dbUseArea(.T., "DBFNTX", "del_rec.dbf", "X", .F., .F.)
+ dbGoBottom()
+ dbSkip()
+ ? Eof(), Deleted()
+ dbDelete()
+ ? Eof(), Deleted(), RecNo()
+ dbRecall()
+ ? Eof(), Deleted(), RecNo()
+return nil
