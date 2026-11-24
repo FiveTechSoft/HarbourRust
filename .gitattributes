@@ -154,4 +154,32 @@ tests/nested-array-entry/** -text
 tests/asort-phase1/** -text
 
 tests/asort-phase2/** -text
+
+tests/asort-phase3/** -text
+
+tests/asort-phase4/** -text
+
+tests/asort-phase5/** -text
+
+tests/asort-phase6/** -text
+
+tests/asort-phase7/** -text
+
+tests/asort-phase8/** -text
+
+tests/asort-phase9/** -text
+
+tests/asort-phase10/** -text
+
+tests/asort-phase11/** -text
+
+tests/asort-phase12/** -text
+
+tests/asort-phase13/** -text
+
+tests/asort-phase14/** -text
+
+tests/asort-phase15/** -text
+
+tests/asort-phase16/** -text
 tests/main-return/expected/** -text

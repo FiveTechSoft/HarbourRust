@@ -69,9 +69,9 @@ Linux rejection that the Linux compiler no longer enforces.
 | tests/t1068_minmax_mixed_neg.prg | `? Min(1, 1.0)` | compiles, runs, exits 0, output `         1` (int result) |
 | tests/t1691_iif_mixed_neg_dynvar.prg | `local y := NIL; local x := iif(.T., y, 1)` (dead result) | compiles, runs, exits 0, no output |
 
-The Linux relaxation is real and deliberate-looking (the manifest expectation
-was recorded before the Linux-only gates in main: CTOD untyped LOCAL, VAL
-Dyn local, argument-count tracking, scoped optional array mutation). NOT
+The Linux relaxation is real and deliberate: each row has a confirmed
+root cause in the current source (`src/hbc.rs` + `src/shared_local.rs`), and
+the oracle confirms the relaxed behaviour is what Harbour does. NOT
 re-pinned here. The maintainer's options are:
 
 1. Re-pin these four rows as positive cases with the oracle outputs above as
@@ -80,6 +80,41 @@ re-pinned here. The maintainer's options are:
 
 (The Windows diagnostic for these four cases still matches the manifest
 substring, so the pending Linux decision is confined to Linux.)
+
+### Root causes (2026-11-23, against the current tree)
+
+| Case | Root cause in current source |
+| --- | --- |
+| t436 | `main`'s local `a := {}` enters shared-local discovery
+  (`shared_local::init`, `src/shared_local.rs`): `a` lowers into the
+  shared module-array family for self-owned AAdd params (commit
+  `001fcdee`, "Select shared local array identity for explicit self-cell
+  cycles"), so the callee's `x` is pinned to Dyn (`"mut params [I64] ->
+  [Dyn]"` under `HBC_INFER_TRACE=1`) through the `shared_local::parameter`
+  branch (`src/hbc.rs:4937`). `a` is therefore shared and mutated in place
+  - it never moves - so the move-ownership diagnostic in `Expr::Var` can
+  no longer fire. The caller's array keeps growing in place, exactly like
+  Harbour's behavior (the `0\n2` oracle output above), so the manifest's
+  "use of moved value `a`" expectation is superseded - not a lost check. |
+| t988 | The inline Dyn-`iif` gate is now implemented on Linux (`allow_mixed_iif`
+  in `check_stmts`, plus the Dyn slot representation for locals), so the
+  rejection "branches must share a scalar type" is intentionally gone.
+  The oracle prints the taken branch (output `.NIL`). Windows still
+  rejects, preserving the manifest substring there. |
+| t1068 | Mixed numeric `Min`/`Max` (int literal vs F64 literal) is now
+  implemented on Linux (the float-boundary/literal fold in `type_expr`
+  propagates F64 through the argument fold, producing `1`), so the
+  rejection "needs matching integer, float or logical arguments" is
+  intentionally gone. Windows still rejects. |
+| t1691 | Mixed-iif with a Dyn local (`local y := NIL; local x := iif(.T., y, 1)`)
+  is accepted on Linux by the same mixed-iif machinery (the Dyn-local
+  `iif` path, `allow_mixed_iif`), so the rejection is gone. Windows
+  still rejects. |
+
+Note also that the shared-local family gives the owner's slot a tagged
+`{tag 16, object pointer}` shape rather than a `{descriptor, kind}` pair, and
+`? len(a)` takes the generic Dyn-variable len path (`src/hbc.rs:7538`) -
+the tag-16 runtime dispatch lands at the C-emit layer, not the checker.
 
 ## t1634 / t1635 / t1636 / t1637 / t1638 / t1639 / t1640 / t1641 / t1642 - nine CurDir neg rows
 

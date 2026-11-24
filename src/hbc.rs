@@ -4499,7 +4499,9 @@ thread_local! {
 fn static_dyn(id: &str) -> bool { STATIC_DYN.with(|s|s.borrow().contains(id)) }
 // S4: is `id` in the current function a module dynamic array (shared
 // heap object, Dyn casilla {tag 16, object pointer})?
-fn is_sarr(id: &str) -> bool { module_static::current(id) == Some(Ty::Dyn) || shared_local::current(id) }
+thread_local! {static SHARED_CALLBACK_IDS: std::cell::RefCell<std::collections::HashSet<usize>> = std::cell::RefCell::new(std::collections::HashSet::new());}
+thread_local! {static SHARED_BLOCK_PARAMS: std::cell::RefCell<Vec<String>> = std::cell::RefCell::new(Vec::new());}
+fn is_sarr(id: &str) -> bool { module_static::current(id) == Some(Ty::Dyn) || shared_local::current(id) || SHARED_BLOCK_PARAMS.with(|v|v.borrow().iter().any(|p|p==id)) }
 
 // S4 shared module array multi-level STORE. Harbour order (probes
 // p14/m7): the RHS evaluates FIRST (tagged; strings cloned to owned
@@ -7372,7 +7374,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                     Expr::Send(..) if method_results::send(&args[0]) => {} ,
                     Expr::Send(o,_,aa) if timestamp::scalar_empty() && aa.is_empty() && matches!(o.as_ref(),Expr::Var(_)) && type_expr(&args[0],env,sigs,n)?==Ty::Dyn => {},
                     Expr::Int(_) | Expr::Str(_) | Expr::Nil | Expr::Var(_) => {}
-                    Expr::Call(id, _) if is_output_call(id) || is_builtin(id,"date") || is_builtin(id,"ctod") || dbf_result(id).is_some() || timestamp::family(id) => {}
+                    Expr::Call(id, _) if is_output_call(id) || is_builtin(id,"date") || is_builtin(id,"ctod") || dbf_result(id).is_some() || timestamp::family(id) || (DECIMAL_LOCAL_PROFILE.with(|v|v.get())&&is_builtin(id,"asort")) => {}
                     Expr::Index(v, _) => {
                         // DArr4 first level: child-array casilla -
                         // "A" (hk114, byte-measured via hk117 markers).
@@ -7498,6 +7500,8 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                         };
                     }
                     Expr::Index2(id, ie, ie2) => {
+                        // Shared indexed scalars dispatch LEN at runtime.
+                        if shared_local::active()&&is_sarr(id)&&env.iter().any(|v|v.name==*id&&v.ty==Ty::Dyn){type_expr(&args[0],env,sigs,n)?;return Ok(Ty::I64);}
                         // len(a[i][j]): borrow two levels (oracle pr4).
                         if type_expr(ie, env, sigs, n)? != Ty::I64 || type_expr(ie2, env, sigs, n)? != Ty::I64 {
                             return Err(format!("line {}: array indices must be integers", n));
@@ -7535,7 +7539,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                     // ains P2 stage 1: len of a Dyn VARIABLE dispatches on
                     // the runtime tag (string or tag-8 array: length/count
                     // at payload-8; anything else is hbc_len_error).
-                    Ty::Dyn if method_arrays::active() || matches!(&args[0], Expr::Var(_)) => Ok(Ty::I64),
+                    Ty::Dyn if method_arrays::active() || matches!(&args[0], Expr::Var(_)) || (shared_local::active()&&matches!(&args[0],Expr::Call(id,_)if is_builtin(id,"asort"))) => Ok(Ty::I64),
                     _ => return Err(format!("line {}: `len` expects an array", n)),
                 };
             }
@@ -8015,7 +8019,8 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 // DToS(d) (issue #1): the packed date as yyyymmdd text; an
                 // empty date renders 8 spaces (Harbour DToS(CToD(""))).
                 if args.len()!=1 { return Err(format!("line {}: `DToS` takes exactly one argument in this increment",n)); }
-                if type_expr(&args[0],env,sigs,n)? != Ty::Date {
+                let t=type_expr(&args[0],env,sigs,n)?;
+                if t!=Ty::Date && !(shared_local::active()&&t==Ty::Dyn) {
                     return Err(format!("line {}: `DToS` expects a date",n));
                 }
                 return Ok(Ty::StrOwn);
@@ -8091,13 +8096,38 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 if args.is_empty() || args.len()>4 {
                     return Err(format!("line {}: `ASort` takes one to four arguments in this increment",n));
                 }
-                if !matches!(&args[0], Expr::Var(_)) {
-                    return Err(format!("line {}: `ASort` expects an array variable (the slot is passed by address)",n));
-                }
                 let ta = type_expr(&args[0],env,sigs,n)?;
+                if DECIMAL_LOCAL_PROFILE.with(|v|v.get())&&!MACRO_CONTEXT.with(|v|v.get())&&(matches!(ta,Ty::I64|Ty::Bool|Ty::Str|Ty::StrOwn)||matches!(&args[0],Expr::Nil)) {
+                    for e in args.iter().skip(1){let t=type_expr(e,env,sigs,n)?;if !matches!(t,Ty::I64|Ty::Bool|Ty::Str|Ty::StrOwn)&&!matches!(e,Expr::Nil){return Err(format!("line {}: nonarray ASort extra arguments require scalar values in this increment",n));}}
+                    return Ok(Ty::Dyn);
+                }
+                if !matches!(&args[0], Expr::Var(_)) {return Err(format!("line {}: `ASort` expects an array variable (the slot is passed by address)",n));}
+
                 if shared_local::active()&&ta==Ty::Dyn&&matches!(&args[0],Expr::Var(v) if is_sarr(v)){
-                    if args.len()>3{return Err(format!("line {}: shared ASort callbacks are outside this increment",n));}
-                    for e in args.iter().skip(1){if !matches!(e,Expr::Nil)&&type_expr(e,env,sigs,n)?!=Ty::I64{return Err(format!("line {}: shared ASort start/count require integer or literal NIL",n));}}
+                    if let Some(e)=args.get(3){
+                        if let Expr::BlockLit(bid,ps,body)=e {
+                            fn safe(e:&Expr,ps:&[String],env:&[Local])->bool{match e{
+                                Expr::Var(v)=>ps.contains(v)||env.iter().any(|l|l.name==*v&&matches!(l.ty,Ty::I64|Ty::Bool)),
+                                Expr::Int(_)|Expr::Str(_)|Expr::Log(_)|Expr::Nil=>true,
+                                Expr::Index(v,i)=>ps.contains(v)&&safe(i,ps,env),
+                                Expr::Cmp(_,a,b)|Expr::Bin('+',a,b)=>safe(a,ps,env)&&safe(b,ps,env),
+                                Expr::Call(id,aa)if is_builtin(id,"iif")||shared_local::pure_helper(id)=>aa.iter().all(|e|safe(e,ps,env)),
+                                _=>false,
+                            }}
+                            fn atom(e:&Expr,ps:&[String])->bool{matches!(e,Expr::Var(v)if ps.contains(v))||matches!(e,Expr::Int(_)|Expr::Str(_)|Expr::Log(_)|Expr::Nil)}
+                            let helper=matches!(body.as_slice(),[Expr::Call(id,aa)]if shared_local::trace_helper(id)&&aa.len()==2&&aa.iter().all(|e|matches!(e,Expr::Var(v)if ps.contains(v))));
+                            let throwing=matches!(body.as_slice(),[Expr::Call(id,aa)]if shared_local::throw_helper(id)&&aa.iter().all(|e|safe(e,ps,env)));
+                            let tail=helper||throwing||matches!(body.last(),Some(Expr::Cmp(..)|Expr::Log(_)|Expr::Nil|Expr::Int(_)|Expr::Str(_))if safe(body.last().unwrap(),ps,env));
+                            let prefix=body.iter().take(body.len().saturating_sub(1)).all(|e|matches!(e,Expr::Call(id,aa)if is_builtin(id,"qout")&&aa.iter().all(|a|atom(a,ps))));
+                            if ps.len()>2 || (ps.len()!=2&&body.iter().any(|e|matches!(e,Expr::Cmp(..)))) || !tail || !prefix {return Err(format!("line {}: shared ASort callback requires bounded read-only expressions, checked pure helpers and optional QOut trace",n));}
+                            SHARED_CALLBACK_IDS.with(|v|v.borrow_mut().insert(*bid));
+                            COMPARATOR_MODE.set(true);CAPTURE_MODE.set(Some(2));
+                            let t=type_expr(e,env,sigs,n);
+                            CAPTURE_MODE.set(None);COMPARATOR_MODE.set(false);
+                            t?;
+                        } else {let t=type_expr(e,env,sigs,n)?;if !matches!(t,Ty::I64|Ty::Bool|Ty::Str|Ty::StrOwn)&&!matches!(e,Expr::Nil){return Err(format!("line {}: shared ASort fourth argument requires direct callback or scalar",n));}}
+                    }
+                    for e in args.iter().skip(1).take(2){if !matches!(e,Expr::Nil)&&type_expr(e,env,sigs,n)?!=Ty::I64{return Err(format!("line {}: shared ASort start/count require integer or literal NIL",n));}}
                     return Ok(Ty::Dyn);
                 }
                 match ta {
@@ -10275,7 +10305,9 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
         }
         Expr::BlockLit(id, params, body) => {
             let prev_block = IN_BLOCK.with(|c| c.replace(true));
+            let prev_shared=SHARED_BLOCK_PARAMS.with(|v|v.replace(if CAPTURE_MODE.get()==Some(2){params.clone()}else{Vec::new()}));
             let r = check_block_body(*id, params, body, env, sigs, n);
+            SHARED_BLOCK_PARAMS.with(|v|*v.borrow_mut()=prev_shared);
             IN_BLOCK.with(|c| c.set(prev_block));
             r
         }
@@ -10397,6 +10429,7 @@ fn check_block_body(id: usize, params: &[String], body: &[Expr], env: &[Local], 
     let comparator = COMPARATOR_MODE.get();
     let pty = |i: usize| match CAPTURE_MODE.get() {
         Some(0) => Ty::I64,
+        Some(2) => Ty::Dyn,
         Some(1) if i == 0 && !comparator => Ty::Str,
         Some(1) if comparator => Ty::Str,
         _ => Ty::I64,
@@ -10421,7 +10454,7 @@ fn check_block_body(id: usize, params: &[String], body: &[Expr], env: &[Local], 
                         if loc.byref {
                             return Err(format!("line {}: codeblock capture of the `@`-parameter `{}` is not in this increment", n, v));
                         }
-                        if !matches!(loc.ty, Ty::Str | Ty::StrOwn | Ty::I64 | Ty::Dyn) {
+                        if !matches!(loc.ty, Ty::Str | Ty::StrOwn | Ty::I64 | Ty::Dyn) && !(CAPTURE_MODE.get()==Some(2)&&loc.ty==Ty::Bool) {
                             return Err(format!("line {}: codeblock capture of `{}` ({}) is not in this increment (strings, integers and Dyn casillas only)", n, v, ty_name(loc.ty)));
                         }
                         caps.push((v, loc.ty));
@@ -10455,8 +10488,9 @@ fn check_block_body(id: usize, params: &[String], body: &[Expr], env: &[Local], 
         // (oracle t1f: {|| 42, QOut("test") } prints and returns NIL).
         let discarded_nil = i + 1 < body.len() && matches!(e, Expr::Call(id, _) if is_output_call(id) || sigs.iter().any(|s| s.name == *id && s.nil_ret_only));
         let final_nil = i + 1 == body.len() && t == Ty::Dyn && matches!(e, Expr::Call(id, _) if is_output_call(id) || sigs.iter().any(|s| s.name == *id && s.nil_ret_only));
-        let final_bool = i + 1 == body.len() && t == Ty::Bool && block_bool_tail(e);
-        if t != Ty::I64 && !discarded_nil && !final_nil && !final_bool {
+        let final_bool = i + 1 == body.len() && t == Ty::Bool && (block_bool_tail(e)||(CAPTURE_MODE.get()==Some(2)&&matches!(e,Expr::Call(id,_)if shared_local::trace_helper(id)||shared_local::throw_helper(id))));
+        let asort_literal=CAPTURE_MODE.get()==Some(2)&&i+1==body.len()&&matches!(e,Expr::Nil|Expr::Str(_));
+        if t != Ty::I64 && !discarded_nil && !final_nil && !final_bool && !asort_literal {
             return Err(format!("line {}: codeblock bodies are integer expressions, NIL-only calls or a final logical comparison in this increment", n));
         }
     }
@@ -11030,6 +11064,10 @@ fn bare_local_is_for_counter(stmts: &[Stmt], idx: usize, name: &str) -> bool {
             Stmt::For(_, lv, start, end, _, _) if lv == name => {
                 return !expr_mentions(start, name) && !expr_mentions(end, name);
             }
+            Stmt::For(_,outer,Expr::Int(start),Expr::Int(end),step,body)
+                if shared_local::active()&&outer!=name&&start.parse::<i64>().ok().zip(end.parse::<i64>().ok()).map_or(false,|(a,b)|if *step>0{a<=b}else{a>=b}) => {
+                if stmts_mention(body,name){return first_nested_counter(body,name);}
+            }
             _ => {
                 if stmt_mentions(s, name) {
                     return false;
@@ -11039,6 +11077,22 @@ fn bare_local_is_for_counter(stmts: &[Stmt], idx: usize, name: &str) -> bool {
     }
     false
 }
+fn first_nested_counter(ss:&[Stmt],name:&str)->bool{
+ for s in ss {if let Stmt::For(_,v,a,b,_,_)=s{if v==name{return !expr_mentions(a,name)&&!expr_mentions(b,name);}}
+ // Before the nested FOR, admit only initialized LOCAL/assignment
+ // statements whose expressions contain no calls or inline effects.
+ // Any control-flow or transfer statement keeps the local tagged/NIL.
+ match s {
+  Stmt::Local(_,_,e)|Stmt::Assign(_,_,e) if !stmt_mentions(s,name)&&counter_prefix_pure(e)=>{},
+  _=>return false,
+ }
+ }
+ false
+}
+fn counter_prefix_pure(e:&Expr)->bool{match e{
+ Expr::Int(_)|Expr::Str(_)|Expr::Log(_)|Expr::Nil|Expr::Var(_)=>true,
+ _=>false,
+}}
 
 fn stmts_mention(stmts: &[Stmt], name: &str) -> bool {
     stmts.iter().any(|s| stmt_mentions(s, name))
@@ -11927,7 +11981,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                     if !matches!(t, Ty::I64 | Ty::Bool | Ty::Str | Ty::Dyn) && !(shared_local::active() && matches!(t,Ty::StrOwn|Ty::F64|Ty::Date)) {
                         return Err(format!("line {}: `AAdd` on the shared module array `{}` takes an integer, logical, string, NIL or dynamic value in this increment", n, id));
                     }
-                    if matches!(e, Expr::ArrLit(..) | Expr::DArrNew) {
+                    if matches!(e, Expr::ArrLit(..) | Expr::DArrNew) && !(shared_local::active()&&shared_local::literal(e)) {
                         return Err(format!("line {}: `AAdd` with a literal array value is not in this increment (materialize it in a variable first)", n));
                     }
                     apply_moves(e, env, sigs, false);
@@ -12786,7 +12840,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                     // and the slot's reference is replaced (the old object
                     // is registry garbage; aliases keep it - probe p8).
                     // Constants only, same shape as the STATIC initializer.
-                    let const_lit = matches!(e, Expr::DArrNew) || const_array_init(e);
+                    let const_lit = matches!(e, Expr::DArrNew) || const_array_init(e) || (shared_local::active()&&shared_local::literal(e));
                     if !const_lit {
                         return Err(format!("line {}: rebuilding the shared module array `{}` takes a literal of constants (integers, logicals, strings, NIL or nested constant literals) in this increment", n, id));
                     }
@@ -16565,6 +16619,10 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                     cg_expr(&args[0], env, sigs, strs, out, target);
                     vt_letter(strs, out, "U");
                 }
+                Expr::Call(id,_) if is_builtin(id,"asort") => {
+                    cg_value(&args[0],env,sigs,strs,out,target);
+                    out.push_str("    mov %rax, %r10\n");vt_classify_scalar(strs,out);
+                }
                 Expr::Call(id,_) if timestamp::family(id) => {
                     cg_value(&args[0],env,sigs,strs,out,target);
                     match timestamp::result(id).unwrap(){
@@ -17687,6 +17745,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
         Expr::Call(id,args) if timestamp::family(id) => {timestamp::emit(id,args,env,sigs,strs,out,target);}
         Expr::Call(id,args) if is_builtin(id,"dtos") => {
             cg_value(&args[0],env,sigs,strs,out,target);
+            if expr_ty(&args[0],env,sigs)==Ty::Dyn{out.push_str("    cmp $11, %rax\n    jne hbc_type_error\n    mov %rdx, %rax\n");}
             out.push_str("    mov %rax, %rdi\n    call hbc_dtos\n");
         }
         Expr::Call(id,args) if is_builtin(id,"stod") || is_builtin(id,"hb_stod") => {
@@ -17776,6 +17835,10 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             }
         }
         Expr::Call(id,args) if is_builtin(id,"asort") => {
+            if !matches!(expr_ty(&args[0],env,sigs),Ty::Dyn|Ty::DArr|Ty::DArrS|Ty::Arr(_))||matches!(&args[0],Expr::Nil){
+                for a in args {cg_val_discard_arg(a,env,sigs,strs,out,target);}
+                out.push_str("    mov $1, %eax\n    xor %edx, %edx\n");return;
+            }
             let av = match &args[0] { Expr::Var(v) => v.clone(), _ => unreachable!("checked") };
             let var = env.iter().rev().find(|x| x.name == *av).expect("checked");
             if shared_local::active()&&expr_ty(&args[0],env,sigs)==Ty::Dyn {
@@ -17784,8 +17847,12 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                     if let Some(e)=args.get(i).filter(|e|!matches!(e,Expr::Nil)){cg_expr(e,env,sigs,strs,out,target);}else{out.push_str(if i==1{"    mov $1, %rax\n"}else{"    mov $-1, %rax\n"});}
                     out.push_str(&format!("    mov %rax, {}(%rsp)\n",(i-1)*8));
                 }
+                if let Some(e)=args.get(3).filter(|e|!matches!(e,Expr::BlockLit(..))){cg_val_discard_arg(e,env,sigs,strs,out,target);}
                 cg_sarr_root(&av,var.off,"%r11",out);
-                out.push_str("    mov %r11, 16(%rsp)\n    mov 24(%r11), %rdi\n    mov (%r11), %rsi\n    mov (%rsp), %rdx\n    mov 8(%rsp), %rcx\n    call hbc_asort_flat_shared\n    mov 16(%rsp), %rdx\n    mov $16, %eax\n    add $32, %rsp\n");
+                out.push_str("    mov %r11, 16(%rsp)\n    mov 24(%r11), %rdi\n    mov (%r11), %rsi\n    mov (%rsp), %rdx\n    mov 8(%rsp), %rcx\n");
+                if let Some(Expr::BlockLit(id,..))=args.get(3){out.push_str(&format!("    lea hbc_blk_{id}(%rip), %r8\n    mov %rbp, %r10\n    call hbc_asort_callback_shared\n"));}
+                else{out.push_str("    call hbc_asort_flat_shared\n");}
+                out.push_str("    mov 16(%rsp), %rdx\n    mov $16, %eax\n    add $32, %rsp\n");
             } else if args.len()==4 {
                 // Block sort: the helper gets the cells, the clamped
                 // start/count and the block function pointer; blocks with
@@ -17988,7 +18055,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             out.push_str("    test %rax, %rax\n    jne hbc_type_error\n    call hbc_round\n");
         }
         Expr::Call(id, args) if is_builtin(id, "len") => {
-            if method_arrays::active() && expr_ty(&args[0],env,sigs)==Ty::Dyn && !matches!(&args[0],Expr::Var(_)|Expr::Index(..)|Expr::Index2(..)|Expr::Index3(..)){
+            if (shared_local::active()&&matches!(&args[0],Expr::Index2(id,..)if is_sarr(id)))||(method_arrays::active()||(shared_local::active()&&matches!(&args[0],Expr::Call(id,_)if is_builtin(id,"asort")))) && expr_ty(&args[0],env,sigs)==Ty::Dyn && !matches!(&args[0],Expr::Var(_)|Expr::Index(..)|Expr::Index2(..)|Expr::Index3(..)){
                 cg_value(&args[0],env,sigs,strs,out,target);
                 let k=fresh_lbl();out.push_str(&format!("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n    cmp $16, %rax\n    jne .Lb2lenstr{k}\n    mov (%rdx), %rax\n    jmp .Lb2lendone{k}\n.Lb2lenstr{k}:\n    cmp $2, %rax\n    je .Lb2lenok{k}\n    cmp $4, %rax\n    jne .Lb2lenbad{k}\n.Lb2lenok{k}:\n    mov -8(%rdx), %rax\n.Lb2lendone{k}:\n    mov %rax, 16(%rsp)\n"));
                 if dyn_expr_owned(&args[0]){cg_dyn_stack_release(out,0,false);}
@@ -26632,6 +26699,7 @@ fn emit_block(owner: &str, id: usize, params: &[String], body: &[Expr], sigs: &[
     let mut lenv: Vec<CgLocal> = Vec::new();
     let mut frame = 0usize;
     let ptys = BLOCK_PARAM_TYS.with(|m| m.borrow().get(&id).cloned());
+    let prev_shared=SHARED_BLOCK_PARAMS.with(|v|v.replace(if ptys.as_ref().map_or(false,|ts|ts.iter().all(|t|*t==Ty::Dyn)){params.to_vec()}else{Vec::new()}));
     for (i, p) in params.iter().enumerate() {
         let ty = ptys.as_ref().and_then(|v| v.get(i).copied()).unwrap_or(Ty::I64);
         frame += size_of(ty);
@@ -26649,7 +26717,7 @@ fn emit_block(owner: &str, id: usize, params: &[String], body: &[Expr], sigs: &[
     let mut cap_offs: Vec<(String, usize)> = Vec::new();
     let mut f = ctx_off;
     for (cname, _, cty) in caps {
-        f += size_of(*cty);
+        f += size_of(*cty).max(16);
         cap_offs.push((cname.clone(), f));
         lenv.push(CgLocal { name: cname.clone(), ty: *cty, off: f });
     }
@@ -26687,13 +26755,17 @@ fn emit_block(owner: &str, id: usize, params: &[String], body: &[Expr], sigs: &[
         out.push_str(&format!("    mov %rax, -{}(%rbp)\n    mov %rdx, -{}(%rbp)\n", v.off,v.off-8));
     }
     for (i, e) in body.iter().enumerate() {
-        cg_expr(e, &lenv, sigs, strs, out, target);
+        if SHARED_CALLBACK_IDS.with(|v|v.borrow().contains(&id)) && i+1==body.len() && matches!(e,Expr::Nil|Expr::Int(_)|Expr::Str(_)) {
+            let truth=!matches!(e,Expr::Int(t)if t.parse::<i64>()==Ok(0));
+            out.push_str(if truth{"    mov $1, %eax\n"}else{"    xor %eax, %eax\n"});
+        }else{cg_expr(e, &lenv, sigs, strs, out, target);}
         if i + 1 < body.len() {
             out.push_str("    # intermediate block expression: value discarded (probe c4)\n");
         }
     }
     trace_unlink(trace_off, out);
     out.push_str("    leave\n    ret\n\n");
+    SHARED_BLOCK_PARAMS.with(|v|*v.borrow_mut()=prev_shared);
 }
 
 fn cg_func(f: &Func, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target, byref: Option<&Vec<bool>>) {
@@ -28763,8 +28835,8 @@ hbc_aclone_s:
     pop %rbp
     ret
 
-# Own MIT: bounded shared flat ASort. Only integer/text families, no callback.
-# Validate before moving cells, so a rejected mixed array remains unchanged.
+# Own MIT: bounded shared default ASort, no callback.
+# Validate payload kinds before moving cells.
 hbc_asort_flat_shared:
     test %rsi, %rsi
     jz .Lasfsdone
@@ -28775,25 +28847,26 @@ hbc_asort_flat_shared:
 .Lasfsstart:
     cmp %rsi, %rdx
     jg .Lasfsdone
-    mov (%rdi), %r10
-    cmp $9, %r10
-    jne .Lasfsfamily
-    xor %r10d, %r10d
-.Lasfsfamily:
-    test %r10, %r10
-    jz .Lasfsscan
-    cmp $4, %r10
-    jne hbc_type_error
-.Lasfsscan:
     xor %r8d, %r8d
 .Lasfsloop:
     mov (%rdi,%r8), %r9
+    cmp $5, %r9b
+    je .Lasfstagok
+    cmp $0, %r9
+    je .Lasfstagok
     cmp $9, %r9
-    jne .Lasfstag
-    xor %r9d, %r9d
-.Lasfstag:
-    cmp %r10, %r9
+    je .Lasfstagok
+    cmp $1, %r9
+    je .Lasfstagok
+    cmp $3, %r9
+    je .Lasfstagok
+    cmp $4, %r9
+    je .Lasfstagok
+    cmp $11, %r9
+    je .Lasfstagok
+    cmp $16, %r9
     jne hbc_type_error
+.Lasfstagok:
     add $16, %r8
     mov %r8, %r9
     shr $4, %r9
@@ -29022,7 +29095,61 @@ hbc_asort_shared_cells:
 # Full-length binary text order, independent of asymmetric expression '='
 # semantics. Integer payloads use signed comparison. Input families were
 # checked in the wrapper before the first cell was moved.
+# Rank: array1,text3,logical4,date5,number6,NIL7.
 hbc_asort_flat_cmp:
+    mov $6, %r10d
+    mov $6, %r11d
+    cmp $4, %rax
+    jne .Lasfcrankabool
+    mov $3, %r10d
+.Lasfcrankabool:
+    cmp $3, %rax
+    jne .Lasfcrankadate
+    mov $4, %r10d
+.Lasfcrankadate:
+    cmp $11, %rax
+    jne .Lasfcrankanil
+    mov $5, %r10d
+.Lasfcrankanil:
+    cmp $1, %rax
+    jne .Lasfcrankaarray
+    mov $7, %r10d
+.Lasfcrankaarray:
+    cmp $16, %rax
+    jne .Lasfcrankbtext
+    mov $1, %r10d
+.Lasfcrankbtext:
+    cmp $4, %rcx
+    jne .Lasfcrankbbool
+    mov $3, %r11d
+.Lasfcrankbbool:
+    cmp $3, %rcx
+    jne .Lasfcrankbdate
+    mov $4, %r11d
+.Lasfcrankbdate:
+    cmp $11, %rcx
+    jne .Lasfcrankbnil
+    mov $5, %r11d
+.Lasfcrankbnil:
+    cmp $1, %rcx
+    jne .Lasfcrankbarray
+    mov $7, %r11d
+.Lasfcrankbarray:
+    cmp $16, %rcx
+    jne .Lasfcranked
+    mov $1, %r11d
+.Lasfcranked:
+    cmp %r11, %r10
+    jl .Lasfcless
+    jg .Lasfcgreater
+    cmp $1, %r10d
+    je .Lasfcequal
+    cmp $7, %r10d
+    je .Lasfcequal
+    cmp $5, %al
+    je .Lasfcnumeric
+    cmp $5, %cl
+    je .Lasfcnumeric
     cmp $4, %rax
     je .Lasfcstr
     xor %eax, %eax
@@ -29031,6 +29158,9 @@ hbc_asort_flat_cmp:
     jl .Lasfcless
     mov $1, %eax
     ret
+.Lasfcnumeric:
+    mov $1, %r9d
+    jmp hbc_dynxcmp
 .Lasfcstr:
     mov -8(%rdx), %r10
     mov -8(%r8), %r11
@@ -29050,6 +29180,7 @@ hbc_asort_flat_cmp:
 .Lasfcleftend:
     cmp %r11, %rcx
     jb .Lasfcless
+.Lasfcequal:
     xor %eax, %eax
 .Lasfcret:
     ret
@@ -31336,7 +31467,8 @@ fn finalize_tag_kind_accessors(out: String, dbf: bool) -> String {
 
 // Emit one descriptor tree per module array literal. String cells point at
 // an emitted {length, bytes} pair; child arrays recurse. Returns the
-// descriptor label.
+// descriptor label. Private105/106 leaves become owned float/scalar date
+// runtime cells during build; neither descriptor tag escapes into cells.
 fn emit_sarr_desc(out: &mut String, strs: &mut Vec<String>, expr: &Expr) -> String {
     let id = fresh_lbl();
     let label = format!(".Lsarrd{}", id);
@@ -31345,6 +31477,21 @@ fn emit_sarr_desc(out: &mut String, strs: &mut Vec<String>, expr: &Expr) -> Stri
     for e in &es {
         match e {
             Expr::Int(v) => body.push_str(&format!("    .quad 0, {}\n", v)),
+            Expr::Call(_,aa)=>{
+                let text=match &aa[0]{Expr::Str(t)=>t,_=>unreachable!("checked date literal")};
+                let ix=strs.len();strs.push(text.clone());
+                out.push_str(&format!("    .data\n    .align 8\n.Lsarrdate{id}_{ix}: .quad {}, .Lstr{ix}\n    .text\n",text.len()));
+                body.push_str(&format!("    .quad 106, .Lsarrdate{id}_{ix}\n"));
+            }
+            Expr::Float(..)|Expr::FloatV(..)=>{
+                let (bits,meta)=match e{
+                    Expr::Float(t,d)=>(harbour_parse_f64(t).expect("checked float").to_bits(),(10u64<<16)|(*d as u64)),
+                    Expr::FloatV(b,d)=>{let v=f64::from_bits(*b);(*b,((if v>9999999999.0||v< -999999999.0{20u64}else{10u64})<<16)|(*d as u64))},
+                    _=>unreachable!(),
+                };
+                out.push_str(&format!("    .data\n    .align 8\n.Lsarrf{id}_{}: .quad {bits}, {meta}\n    .text\n",body.len()));
+                body.push_str(&format!("    .quad 105, .Lsarrf{id}_{}\n",body.len()));
+            }
             Expr::Log(v) => body.push_str(&format!("    .quad 3, {}\n", if *v {1} else {0})),
             Expr::Nil => body.push_str("    .quad 1, 0\n"),
             Expr::Str(text) => {
@@ -31650,6 +31797,10 @@ hbc_sarr_build:
     add %rcx, %r15
     mov (%rbx), %rax
     mov 8(%rbx), %rdx
+    cmp $106, %rax
+    je 24f
+    cmp $105, %rax
+    je 23f
     cmp $4, %rax
     je 21f
     cmp $16, %rax
@@ -31666,6 +31817,18 @@ hbc_sarr_build:
 22: mov %rdx, %rdi
     call hbc_sarr_build
     movq $16, (%r15)
+    mov %rax, 8(%r15)
+    jmp 25f
+23: mov (%rdx), %rdi
+    mov 8(%rdx), %rsi
+    call hbc_float_new
+    mov %rax, (%r15)
+    mov %rdx, 8(%r15)
+    jmp 25f
+24: mov (%rdx), %rsi
+    mov 8(%rdx), %rdi
+    call hbc_stod
+    movq $11, (%r15)
     mov %rax, 8(%r15)
 25: add $16, %rbx
     inc %r14
@@ -34943,6 +35106,12 @@ fn finalize_trace(mut out: String, target: Target) -> String {
     if macro_mode {
         out.push_str(&macro_helpers(target));
     }
+    // New helpers must be present before timestamp/date dependency closure.
+    if timestamp::active()&&out.contains("hbc_asort_flat_shared:") {
+        out=out.replace("    jmp hbc_asort_shared_cells\n","    lea hbc_asort_temporal_before(%rip), %r8\n    xor %r10d, %r10d\n    jmp hbc_asort_callback_shared\n");
+        out=out.replace("    cmp $16, %r9\n    jne hbc_type_error\n.Lasfstagok:","    cmp $17, %r9\n    je .Lasfstagok\n    cmp $16, %r9\n    jne hbc_type_error\n.Lasfstagok:");
+        out.push_str(include_str!("asort_temporal.s"));
+    }
     if out.contains("call hbc_ts_") {
         let ro=if target==Target::Windows{".section .rdata,\"r\""}else{".section .rodata"};
         out.push_str(&include_str!("../generated/hrtimestamp.s").replace("@HRTIMESTAMP_RODATA@",ro));
@@ -34975,6 +35144,7 @@ fn finalize_trace(mut out: String, target: Target) -> String {
     if out.contains("call hbc_atokens") {
         out.push_str(ATOKENS_HELPER);
     }
+    if out.contains("call hbc_asort_callback_shared")||out.contains("jmp hbc_asort_callback_shared") {out.push_str(include_str!("asort_callback.s"));}
     if out.contains("call hbc_asort_b") {
         out.push_str(ASORT_BLOCK_HELPER);
     }
