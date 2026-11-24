@@ -43,3 +43,15 @@ hbc_sarr_cmp_error:
 .Lsaeq_throw:
     lea .LseqD_roundarg(%rip), %rsi
     jmp hbc_seq_throw_error
+
+# r9d order selector follows hbc_dynxcmp (1=<,2=>,3=<=,4=>=).
+hbc_sarr_order_error:
+    cmpq $0, hbc_seq_depth(%rip)
+    jne .Lsaeq_throw
+    cmp $1, %r9d
+    je hbc_dyncmp_lt_error
+    cmp $2, %r9d
+    je hbc_dyncmp_gt_error
+    cmp $3, %r9d
+    je hbc_dyncmp_le_error
+    jmp hbc_dyncmp_ge_error

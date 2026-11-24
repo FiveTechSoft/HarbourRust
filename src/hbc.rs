@@ -22745,11 +22745,12 @@ fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<Strin
                 } else {
                     out.push_str("    mov %rcx, %r10\n    mov %r8, %r11\n");
                 }
-                if shared_local::active() && matches!(op,CmpOp::Eq|CmpOp::Ne|CmpOp::EqEq) {
+                if shared_local::active() && !matches!(op,CmpOp::Contains) {
                     let skip=fresh_lbl();
                     out.push_str(&format!("    cmp $16, %r10\n    jne .Lsaeqstr{skip}\n"));
                     if tmp {out.push_str("    mov %rax, %rdi\n    call hbc_freestr\n");}
-                    out.push_str(&format!("    mov ${}, %r9d\n    jmp hbc_sarr_cmp_error\n.Lsaeqstr{skip}:\n",match op{CmpOp::Ne=>1,CmpOp::EqEq=>2,_=>0}));
+                    let (sel,helper)=match op {CmpOp::Lt=>(1,"hbc_sarr_order_error"),CmpOp::Gt=>(2,"hbc_sarr_order_error"),CmpOp::Le=>(3,"hbc_sarr_order_error"),CmpOp::Ge=>(4,"hbc_sarr_order_error"),CmpOp::Ne=>(1,"hbc_sarr_cmp_error"),CmpOp::EqEq=>(2,"hbc_sarr_cmp_error"),_=>(0,"hbc_sarr_cmp_error")};
+                    out.push_str(&format!("    mov ${sel}, %r9d\n    jmp {helper}\n.Lsaeqstr{skip}:\n"));
                 }
                 if DBF_USED.with(|v|v.get()) {out.push_str("    cmpb $11, %r10b\n    je hbc_dbf_unsupported\n    cmpb $12, %r10b\n    je hbc_dbf_unsupported\n");}
                 let lid = fresh_lbl();
@@ -22880,6 +22881,7 @@ fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<Strin
                         _ => {
                             let sel = match op { CmpOp::Lt => 1, CmpOp::Gt => 2, CmpOp::Le => 3, CmpOp::Ge => 4, _ => unreachable!("CmpOp variants") };
                             let cmph = if DBF_USED.with(|v| v.get()) { "hbc_dynxcmp" } else { "hbc_dynxcmp_n" };
+                            if shared_local::active(){out.push_str(&format!("    mov ${sel}, %r9d\n    cmp $16, %rax\n    je hbc_sarr_order_error\n    cmp $16, %rcx\n    je hbc_sarr_order_error\n"));}
                             out.push_str(&format!("    mov ${}, %r9d\n    call {}\n    test %rax, %rax\n", sel, cmph));
                             let j = match op { CmpOp::Lt => "js", CmpOp::Le => "jle", CmpOp::Gt => "jg", CmpOp::Ge => "jns", _ => unreachable!() };
                             out.push_str(&format!("    {} {}\n", j, true_label));
@@ -22946,6 +22948,7 @@ fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<Strin
                             Target::Windows => out.push_str("    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    add $16, %rsp\n"),
                         }
                         let sel = match op { CmpOp::Lt => 1, CmpOp::Gt => 2, CmpOp::Le => 3, CmpOp::Ge => 4, _ => unreachable!("CmpOp variants") };
+                        if shared_local::active(){out.push_str(&format!("    mov ${sel}, %r9d\n    cmp $16, %rax\n    je hbc_sarr_order_error\n    cmp $16, %rcx\n    je hbc_sarr_order_error\n"));}
                         out.push_str(&format!("    mov ${}, %r9d\n    call hbc_dynxcmp\n    test %rax, %rax\n", sel));
                         let j = match op { CmpOp::Lt => "js", CmpOp::Le => "jle", CmpOp::Gt => "jg", CmpOp::Ge => "jns", _ => unreachable!() };
                         out.push_str(&format!("    {} {}\n", j, true_label));
