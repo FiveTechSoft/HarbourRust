@@ -2346,6 +2346,7 @@ thread_local! {
 // ValType calls implement predicate semantics, not source-level RTL lookup.
 const INTERNAL_VALTYPE: &str = "\0valtype";
 const INTERNAL_STOD: &str = "\0date_literal";
+const INTERNAL_DECL_ARRAY: &str = "\0decl_array";
 const INTERNAL_MEMVAR_READ: &str = "\0memvar_read";
 const INTERNAL_CELL_INC: &str = "\0cell_increment";
 fn cell_path(e:&Expr)->Option<(&str,Vec<&Expr>)>{match e{Expr::Index(v,a)=>Some((v,vec![a])),Expr::Index2(v,a,b)=>Some((v,vec![a,b])),Expr::Index3(v,a,b,c)=>Some((v,vec![a,b,c])),Expr::Index4(v,a,b,c,d)=>Some((v,vec![a,b,c,d])),_=>None}}
@@ -2380,6 +2381,7 @@ fn strformat_parts(e:&Expr)->Option<Vec<String>> {
 }
 
 fn is_builtin(id: &str, name: &str) -> bool {
+    if id==INTERNAL_DECL_ARRAY {return name.eq_ignore_ascii_case("array");}
     if id == INTERNAL_VALTYPE { return name.eq_ignore_ascii_case("valtype"); }
     if id == INTERNAL_STOD {return name.eq_ignore_ascii_case("stod");}
     if USER_FUNC_NAMES.with(|u| { let u = u.borrow(); !u.is_empty() && u.contains(&id.to_ascii_lowercase()) }) { return false; }
@@ -2817,6 +2819,19 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                     };
                     if it.len() == 1 {
                         out.push(Stmt::Local(n, id, Expr::Nil));
+                    } else if it.get(1)==Some(&Tok::LBracket) {
+                        if it.last()!=Some(&Tok::RBracket) || it[2..it.len()-1].iter().any(|t|matches!(t,Tok::LBracket|Tok::RBracket|Tok::Assign)) {
+                            return Err(format!("line {}: LOCAL array declaration supports one dimension group without initializer in this increment",n));
+                        }
+                        let mut dims=Vec::new();let mut start=2;let mut depth=0i32;
+                        for k in 2..it.len()-1 {
+                            match it[k] {
+                                Tok::LParen|Tok::LBrace=>depth+=1,Tok::RParen|Tok::RBrace=>depth-=1,
+                                Tok::Comma if depth==0=>{dims.push(parse_expr_tokens(it[start..k].to_vec(),n)?);start=k+1;},_=>{}
+                            }
+                        }
+                        dims.push(parse_expr_tokens(it[start..it.len()-1].to_vec(),n)?);
+                        out.push(Stmt::Local(n,id,Expr::Call(INTERNAL_DECL_ARRAY.into(),dims)));
                     } else if it.len() >= 3 && it[1] == Tok::Assign {
                         let e = parse_expr_tokens(it[2..].to_vec(), n)?;
                         out.push(Stmt::Local(n, id, e));

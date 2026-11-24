@@ -1,0 +1,3 @@
+PROCEDURE Main()
+ LOCAL a[2]:={1,2}
+RETURN
