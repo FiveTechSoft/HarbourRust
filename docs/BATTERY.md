@@ -4085,6 +4085,26 @@ Parameters without type evidence (Julio Ponce, MIT): programs whose parameters h
 
 ## Battery known failures recorded on 2026-11-23 (Linux subset, aarch64 host)
 
+## Native-Windows lane re-check (2026-11-24, fresh main eeb71d24)
+
+Issue #10's three native-Windows battery rows (t989/t1002/t1686, all
+"output newline profile") were pinned byte-exact per target: the three
+manifest rows became posx2 with oracle-recorded pins (native Harbour 3.2
+mingw64 -gtcgi, Windows 11; hbc stdout matches byte-for-byte, rc 0), so
+they now report strict PASS instead of the normalized PASS*. The rest of
+the full lane (`HBC_INTERNAL_PE=1 bash tests/run_battery_win.sh`, 1286
+cases) is green with a fresh compiler: 1285/1286 strict PASS. The single
+remaining row is t896 (`local x := NIL; ? ++x`), a posx runtime row that
+the Windows target still rejects at compile time by the
+DECIMAL_LOCAL_PROFILE family gate ("Dyn expression ++/-- requires
+ordinary Linux non-macro local storage"); extending that family to
+Windows is a maintainer decision, not part of this increment.
+
+Operational note: the lane runs `./hbc` from the repo root; with a stale
+root binary (a day-old build) 16 unrelated rows fail with output-profile
+noise that a fresh `cargo build --release --locked` + copy to `./hbc.exe`
+clears. Verify the compiler date before interpreting lane failures.
+
 Recorded while the Linux-only subset of the battery was being run (aarch64
 host; x86-64 output cannot execute natively here, so the 1308-row
 positive/execution set stays unverified; run the normal runner on an
