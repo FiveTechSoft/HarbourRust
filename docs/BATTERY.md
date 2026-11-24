@@ -4112,11 +4112,24 @@ integer, float or logical arguments; mixed numeric/Dyn/other types are not in
 this increment" (t1068), "`iif` branches must share a scalar type (float absorbs
 an int side), got Dyn and I64" (t1691) and "use of moved value `a` (heap values -
 strings and dynamic arrays - move on assignment, call or return; they do not
-copy)" (t436) - all matching the manifest substring. The Linux relaxations
-correspond to the recent Linux-only gates in main (CTOD untyped LOCAL, VAL
-Dyn local, argument-count tracking); the full cause of each relaxation is a
-maintainer audit, not this note. NOT re-pinned yet: the maintainer owns
-changing the manifest contract; do not edit these rows without an audit.
+copy)" (t436) - all matching the manifest substring.
+
+Root cause per row (verified 2026-11-23, `HBC_INFER_TRACE=1` + source audit;
+see `docs/HARBOUR-ORACLE-2026-11-23.md` for the full evidence and the
+Harbour oracle runs): t436 - the compiler lowers `local a := {}` in main into
+into the shared module-array family (`shared_local::init`; commit
+`001fcdee`), so `mut`'s parameter `x` is pinned Dyn through the
+`shared_local::parameter` branch (`src/hbc.rs:4937`), not DArrS - the
+callee mutates the caller's array in place and `a` never moves,
+superseding the move-ownership diagnostic; the oracle confirms shared
+in-place semantics (`0\n2`). t988 / t1691 - the inline Dyn-`iif` path is now
+implemented on Linux (`allow_mixed_iif`), superseding the "branches must
+share a scalar type" rejection. t1068 - mixed numeric Min/Max is now
+implemented on Linux (float fold propagates F64, result `1`), superseding
+"needs matching integer, float or logical arguments".
+
+NOT re-pinned yet: the maintainer owns changing the manifest contract; do not
+edit these rows without an audit.
 
 Nine `neg` rows are the known-mismatch PE CurDir debt (same source state as
 the known-mismatches file). Linux rejects with the manifest substring;
