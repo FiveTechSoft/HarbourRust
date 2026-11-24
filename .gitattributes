@@ -154,3 +154,4 @@ tests/nested-array-entry/** -text
 tests/asort-phase1/** -text
 
 tests/asort-phase2/** -text
+tests/main-return/expected/** -text
