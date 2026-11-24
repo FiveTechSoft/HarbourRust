@@ -2973,6 +2973,15 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                 out.push(Stmt::Break(n, e));
                 *i += 1;
             }
+            Tok::Ident(id) if id.eq_ignore_ascii_case("break") &&
+                (toks.len()==1 || !matches!(toks[1],Tok::LParen|Tok::Assign|Tok::Eq)) => {
+                // Harbour command spelling: a bare BREAK carries NIL.
+                // Parenthesized Break(value) retains its existing parser;
+                // empty Break() is a Harbour syntax error, not bare BREAK.
+                let e=if toks.len()==1 {Expr::Nil}else{parse_expr_tokens(toks[1..].to_vec(),n)?};
+                out.push(Stmt::Break(n,e));
+                *i+=1;
+            }
             Tok::Ident(id) if id.eq_ignore_ascii_case("begin") && toks.len() >= 2 && matches!(&toks[1], Tok::Ident(s) if s.eq_ignore_ascii_case("sequence")) => {
                 // BEGIN SEQUENCE [WITH <block>] ... RECOVER [USING <var>] ... END [SEQUENCE]
                 // Harbour-native spelling of the TRY/CATCH machinery (same hbc_seq_*
