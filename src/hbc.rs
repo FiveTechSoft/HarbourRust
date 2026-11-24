@@ -2104,7 +2104,7 @@ const ASM_RESERVED: &[&str] = &[
     // hbc itself emits; a user function with one of these names would
     // collide with a helper symbol.
     "dtos", "stod", "year", "day", "month", "dow", "cdow", "cmonth", "dtoc", "sqrt", "exp", "log", "mod", "padc", "rat", "stuff", "isdigit", "isalpha", "isupper", "islower", "strzero", "ischar", "strzero_fix", "str_f64", "fmt_f64", "date_add", "date_diff", "date_days", "date_from_days", "seconds",
-    "hb_osdriveseparator", "hb_base64encode", "hb_stod", "hb_hextonum", "hb_asciiupper", "hb_strtohex", "hb_dirsepadd", "getenv", "hb_at", "hb_bchar", "hb_bcode", "__defaultnil", "hb_default", "hb_defaultvalue", "hb_sha1", "hb_hmac_sha1", "tr_dims", "tr_apply", "strtran", "space", "substr", "date", "ctod", "date_pack", "date_render", "date_today", "dispbox", "hrbase_wait", "setcursor", "hb_flink", "hb_flinksym", "hb_flinkread", "hb_memowrit", "hb_dircreate", "ferror", "curdir", "fread", "fcreate", "fopen", "fwrite", "fclose", "freadstr", "hb_libname", "hb_ps", "os", "dirmake", "inkey", "file", "hrfile_setdefault", "hrfile_setpath", "qout", "qqout", "outstd", "outerr", "empty", "procname", "min", "max", "str", "padr", "hb_ntos", "replicate", "aeval", "hb_isnumeric", "hb_isarray", "hb_isstring", "dfree", "upper", "lower", "left", "right", "at", "int", "abs", "padl", "val", "ascan", "aclone", "atail", "asort", "hb_bitand", "hb_bitor", "hb_bitxor", "hb_bitnot", "hb_bittest", "hb_bitset", "hb_bitreset", "eprint_str", "eprint_sep", "eprint_i64", "eprint_i64c", "eprint_dyn", "eprint_dynlit", "print_dynlit", "eprint_f64", "hb_eol", "procline", "asc", "trim", "ltrim", "rtrim", "alltrim", "chr", "trace_top", "print_trace", "panic_exit", "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_arg_error", "val_arg_error", "atokens_arg_error", "hb_memcheck", "aadd", "asize", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
+    "hb_osdriveseparator", "hb_base64encode", "hb_stod", "hb_hextonum", "hb_asciiupper", "hb_strtohex", "hb_dirsepadd", "getenv", "hb_at", "hb_bchar", "hb_bcode", "__defaultnil", "hb_default", "hb_defaultvalue", "hb_sha1", "hb_hmac_sha1", "tr_dims", "tr_apply", "strtran", "space", "substr", "date", "ctod", "date_pack", "date_render", "date_today", "dispbox", "hrbase_wait", "setcursor", "hb_flink", "hb_flinksym", "hb_flinkread", "hb_memowrit", "hb_dircreate", "ferror", "curdir", "fread", "fcreate", "fopen", "fwrite", "fclose", "freadstr", "hb_libname", "hb_ps", "os", "dirmake", "inkey", "file", "hrfile_setdefault", "hrfile_setpath", "qout", "qqout", "outstd", "outerr", "empty", "procname", "min", "max", "str", "padr", "hb_ntos", "replicate", "aeval", "hb_isnumeric", "hb_isarray", "hb_isstring", "dfree", "upper", "lower", "left", "right", "at", "int", "abs", "padl", "val", "ascan", "aclone", "atail", "asort", "hb_bitand", "hb_bitor", "hb_bitxor", "hb_bitnot", "hb_bittest", "hb_bitset", "hb_bitreset", "eprint_str", "eprint_sep", "eprint_i64", "eprint_i64c", "eprint_dyn", "eprint_dynlit", "print_dynlit", "eprint_f64", "hb_eol", "procline", "asc", "trim", "ltrim", "rtrim", "alltrim", "chr", "trace_top", "print_trace", "panic_exit", "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_arg_error", "val_arg_error", "atokens_arg_error", "hb_memcheck", "aadd", "asize", "afill", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
 ];
 
 fn dbf_result(id: &str) -> Option<Ty> {
@@ -7379,6 +7379,17 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                     return Err(format!("line {}: `hb_memcheck` takes no arguments", n));
                 }
                 return Ok(Ty::I64);
+            }
+            if is_builtin(id, "afill") {
+                if !CURDIR_LINUX_NATIVE.with(|v|v.get()) || !DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get()) || shared_local::active() {
+                    return Err(format!("line {}: AFill expression requires ordinary Linux native without shared-array context", n));
+                }
+                if args.len()!=2 || !matches!(&args[0],Expr::Call(id,aa) if is_builtin(id,"array") && aa.len()==1)
+                    || !matches!(&args[1],Expr::Int(_)|Expr::Log(_)|Expr::Nil) {
+                    return Err(format!("line {}: AFill expression supports only Array(n) with constant integer/logical/NIL fill and no optional range", n));
+                }
+                if type_expr(&args[0],env,sigs,n)? != Ty::DArr {unreachable!("single Array dimension");}
+                return Ok(Ty::DArr);
             }
             if is_builtin(id, "array") {
                 // Array(n[, m[, k]]) constructor (oracles m3/m10/a0/avar/pr7).
@@ -13383,6 +13394,12 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
                 return;
             }
             if id=="__mvexist" {
+                for a in args { apply_moves(a, env, sigs, false); }
+                return;
+            }
+            if is_builtin(id, "afill") {
+                // Fresh constructor and scalar constants cannot borrow or
+                // move an existing owner. Only dimensions have effects.
                 for a in args { apply_moves(a, env, sigs, false); }
                 return;
             }
@@ -19572,6 +19589,20 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                 unreachable!("checked: hb_HValues takes a hash variable");
             }
         }
+        Expr::Call(id,args) if is_builtin(id,"afill") => {
+            // Own MIT fresh Array(n) scalar fill. The constructor owns its
+            // buffer; constants cannot throw or alias after allocation.
+            cg_expr(&args[0],env,sigs,strs,out,target);
+            out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+            match &args[1] {
+                Expr::Int(_) => {cg_expr(&args[1],env,sigs,strs,out,target);cg_i64_tagged(out);},
+                Expr::Log(b) => out.push_str(&format!("    mov $3, %rax\n    mov ${}, %rdx\n",if *b{1}else{0})),
+                Expr::Nil => out.push_str("    mov $1, %eax\n    xor %edx, %edx\n"),
+                _=>unreachable!("checked AFill constant"),
+            }
+            let k=fresh_lbl();
+            out.push_str(&format!("    mov (%rsp), %r10\n    mov 8(%rsp), %rcx\n    test %rcx, %rcx\n    jle .Lafnew_done{k}\n.Lafnew_loop{k}:\n    mov %rax, (%r10)\n    mov %rdx, 8(%r10)\n    add $16, %r10\n    dec %rcx\n    jne .Lafnew_loop{k}\n.Lafnew_done{k}:\n    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    add $16, %rsp\n"));
+        }
         Expr::Call(id, args) if is_builtin(id, "array") => {
             // Array(n): Dyn-element array with n NIL slots (oracle m10).
             // Array(n, m): n children of m NILs each (oracle m3). The
@@ -21772,6 +21803,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             if id==INTERNAL_CELL_INC{return Ty::I64;}
             if let Some(ty)=dbf_result(id){return ty;}
 
+            if is_builtin(id, "afill") {return Ty::DArr;}
             if is_builtin(id, "array") { return match args.len() { 1 => Ty::DArr, 2 => Ty::DArr2, 3 => Ty::DArr3, _ => Ty::DArr4 }; }
             if is_builtin(id, "hb_hkeys") { return Ty::DArrS; }
             if is_builtin(id, "hb_hhaskey") { return Ty::Bool; }
