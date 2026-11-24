@@ -22745,11 +22745,11 @@ fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<Strin
                 } else {
                     out.push_str("    mov %rcx, %r10\n    mov %r8, %r11\n");
                 }
-                if shared_local::active() && matches!(op,CmpOp::Eq|CmpOp::Ne) {
+                if shared_local::active() && matches!(op,CmpOp::Eq|CmpOp::Ne|CmpOp::EqEq) {
                     let skip=fresh_lbl();
                     out.push_str(&format!("    cmp $16, %r10\n    jne .Lsaeqstr{skip}\n"));
                     if tmp {out.push_str("    mov %rax, %rdi\n    call hbc_freestr\n");}
-                    out.push_str(&format!("    mov ${}, %r9d\n    jmp hbc_sarr_cmp_error\n.Lsaeqstr{skip}:\n",if matches!(op,CmpOp::Ne){1}else{0}));
+                    out.push_str(&format!("    mov ${}, %r9d\n    jmp hbc_sarr_cmp_error\n.Lsaeqstr{skip}:\n",match op{CmpOp::Ne=>1,CmpOp::EqEq=>2,_=>0}));
                 }
                 if DBF_USED.with(|v|v.get()) {out.push_str("    cmpb $11, %r10b\n    je hbc_dbf_unsupported\n    cmpb $12, %r10b\n    je hbc_dbf_unsupported\n");}
                 let lid = fresh_lbl();
@@ -22867,7 +22867,8 @@ fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<Strin
                     match op {
                         CmpOp::Eq | CmpOp::Ne | CmpOp::EqEq => {
                             match op {
-                                CmpOp::EqEq => out.push_str("    call hbc_dynxeq_dd\n"),
+                                CmpOp::EqEq if shared_local::active() => out.push_str("    call hbc_sarr_exact_guard\n"),
+                            CmpOp::EqEq => out.push_str("    call hbc_dynxeq_dd\n"),
                                 CmpOp::Eq if shared_local::active() => out.push_str("    call hbc_sarr_equal_guard\n"),
                                 CmpOp::Ne if shared_local::active() => out.push_str("    call hbc_sarr_unequal_guard\n"),
                                 _ => out.push_str("    call hbc_dyn_eq\n"),
@@ -22916,6 +22917,7 @@ fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<Strin
                             Target::Windows => out.push_str("    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    add $16, %rsp\n"),
                         }
                         match op {
+                            CmpOp::EqEq if shared_local::active() => out.push_str("    call hbc_sarr_exact_guard\n"),
                             CmpOp::EqEq => out.push_str("    call hbc_dynxeq_dd\n"),
                             CmpOp::Eq if shared_local::active() => out.push_str("    call hbc_sarr_equal_guard\n"),
                             CmpOp::Ne if shared_local::active() => out.push_str("    call hbc_sarr_unequal_guard\n"),

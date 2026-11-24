@@ -2,6 +2,22 @@
 # = and <> reject a registered array against any non-NIL value.
 # The caller still owns the final inversion for <>.
 .text
+hbc_sarr_exact_guard:
+    cmp $1, %rax
+    je hbc_dynxeq_dd
+    cmp $1, %rcx
+    je hbc_dynxeq_dd
+    cmp $16, %rax
+    jne .Lsaex_right
+    cmp $16, %rcx
+    je hbc_dynxeq_dd
+    jmp .Lsaex_error
+.Lsaex_right:
+    cmp $16, %rcx
+    jne hbc_dynxeq_dd
+.Lsaex_error:
+    mov $2, %r9d
+    jmp hbc_sarr_cmp_error
 hbc_sarr_equal_guard:
     mov $0, %r9d
     jmp .Lsaeq_check
@@ -19,6 +35,8 @@ hbc_sarr_unequal_guard:
 hbc_sarr_cmp_error:
     cmpq $0, hbc_seq_depth(%rip)
     jne .Lsaeq_throw
+    cmp $2, %r9d
+    je hbc_dynxeq_error
     test %r9d, %r9d
     jnz hbc_dyncmp_ne_error
     jmp hbc_dyncmp_eq_error
