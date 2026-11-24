@@ -108,7 +108,7 @@ pub fn init(ff:&[Func]) {
  // Initially keep unsupported profiles closed, rather than changing existing
  // native/PE/Mach-O contracts with an untested collector.
  if !DECIMAL_LOCAL_PROFILE.with(|v|v.get())||MACRO_CONTEXT.with(|v|v.get())||EXTERNS.with(|v|!v.borrow().is_empty())||(!method_arrays::active()&&CLASSES.with(|v|!v.borrow().is_empty())){return;}
- for f in ff {visit_stmts_ref(&f.stmts,&mut |s|{if let Stmt::Local(_,n,e)|Stmt::Assign(_,n,e)=s{if literal(e){names.entry(f.name.clone()).or_default().insert(n.clone());}}},&mut |_|{});}
+ for f in ff {visit_stmts_ref(&f.stmts,&mut |s|{if let Stmt::Local(_,n,e)|Stmt::Assign(_,n,e)=s{if literal(e)||constructor(e).is_some(){names.entry(f.name.clone()).or_default().insert(n.clone());}}},&mut |_|{});}
  let mut params=HashSet::new();
  for f in ff {if pure_helper(&f.name){if let [Stmt::Ret(_,Some(Expr::Index(n,_)))]=f.stmts.as_slice(){if let Some(i)=f.params.iter().position(|p|p==n){names.entry(f.name.clone()).or_default().insert(n.clone());params.insert((f.name.clone(),i));}}}}
  let mut returns=HashSet::<String>::new();
@@ -143,6 +143,8 @@ pub fn init(ff:&[Func]) {
  for f in ff {visit_stmts_ref(&f.stmts,&mut |s|{if let Stmt::AAdd(_,n,Expr::Var(p))=s {if names.get(&f.name).map_or(false,|ns|ns.contains(n)){if let Some(i)=f.params.iter().position(|x|x==p){VALUES.with(|v|{v.borrow_mut().insert((f.name.clone(),i));});}}}},&mut |_|{});}
  NAMES.with(|v|*v.borrow_mut()=names);PARAMS.with(|v|*v.borrow_mut()=params);ACTIVE.with(|v|v.set(true));
 }
+// Only constant one-dimensional constructors enter shared identity here.
+pub fn constructor(e:&Expr)->Option<usize>{if let Expr::Call(id,aa)=e{if is_builtin(id,"array"){if let [Expr::Int(n)]=aa.as_slice(){return n.parse::<usize>().ok().filter(|n|*n<=10000);}}}None}
 pub fn literal(e:&Expr)->bool {
  fn leaf(e:&Expr)->bool{match e{Expr::Float(..)|Expr::FloatV(..)|Expr::DArrNew=>true,Expr::Call(id,aa) if (is_builtin(id,"stod")||is_builtin(id,"hb_stod"))&&matches!(aa.as_slice(),[Expr::Str(_)])=>true,Expr::ArrLit(es)=>es.iter().all(leaf),_=>const_array_init(e)}}
  matches!(e,Expr::DArrNew)||(matches!(e,Expr::ArrLit(_))&&leaf(e))
@@ -166,7 +168,9 @@ pub fn validate(ff:&[Func])->Result<(),String> {
  for f in ff {visit_stmts_ref(&f.stmts,&mut |s|{if matches!(s,Stmt::MemvarDecl(..)|Stmt::MemvarSet(..)|Stmt::ForEach(..)){bad=true;}},&mut |_|{});
  visit_stmts_ref(&f.stmts,&mut |_|{},&mut |e|{if matches!(e,Expr::HashLit(_)|Expr::FuncRef(_)|Expr::ByRef(_)){bad=true;}
  if matches!(e,Expr::BlockLit(id,..) if !allowed.contains(id)){bad=true;}
- if matches!(e,Expr::Call(id,_) if is_builtin(id,"array")||is_builtin(id,"hb_hkeys")||is_builtin(id,"hb_hvalues")){bad=true;}
+ if matches!(e,Expr::Call(id,_) if (is_builtin(id,"array")&&constructor(e).is_none())||is_builtin(id,"hb_hkeys")||is_builtin(id,"hb_hvalues")){bad=true;}
  if matches!(e,Expr::ArrLit(_) if !literal(e)){bad=true;}});}
  if bad{return Err("local shared arrays with hashes, non-ASort blocks, indirect calls, by-reference storage, MEMVAR, FOR EACH or unique/computed array constructors are outside A2".to_string());}Ok(())
 }
+
+pub fn emit_constructor(e:&Expr,strs:&mut Vec<String>,out:&mut String){let n=constructor(e).expect("checked");emit_literal(&Expr::DArrNew,strs,out);out.push_str(&format!("    sub $16, %rsp\n    mov %rdx, (%rsp)\n    mov %rdx, %rdi\n    mov ${n}, %eax\n    call hbc_sarr_asize\n    mov (%rsp), %rdx\n    add $16, %rsp\n    mov $16, %eax\n"));}

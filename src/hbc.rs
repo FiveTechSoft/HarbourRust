@@ -6922,7 +6922,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
 
     if let Expr::Cmp(_,a,b)=e{if timestamp::known(a)||timestamp::known(b){let ta=type_expr(a,env,sigs,n)?;let tb=type_expr(b,env,sigs,n)?;if ta!=Ty::Dyn||tb!=Ty::Dyn{return Err(format!("line {}: timestamp comparison requires two Dyn cells; mixed static kinds are outside phase4",n));}}}
 
-    if shared_local::active() && shared_local::literal(e) {return Ok(Ty::Dyn);}
+    if shared_local::active() && (shared_local::literal(e)||shared_local::constructor(e).is_some()) {return Ok(Ty::Dyn);}
     if shared_local::optional(e).is_some() {return Ok(Ty::Dyn);}
     match e {
         Expr::Seq(es) => {
@@ -15984,6 +15984,7 @@ fn cg_val_discard_arg(a: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<St
 }
 
 fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target) {
+    if shared_local::active() && shared_local::constructor(e).is_some(){shared_local::emit_constructor(e,strs,out);return;}
     if shared_local::active() && shared_local::literal(e) {shared_local::emit_literal(e,strs,out);return;}
     if let Some(p)=shared_local::optional(e) {
         let v=env.iter().rev().find(|v|v.name==p).expect("shared optional");let k=fresh_lbl();
@@ -21343,6 +21344,7 @@ fn cg_str_builtin(id: &str, args: &[Expr], env: &[CgLocal], sigs: &[Sig], strs: 
     if str_builtin_ty(id)!=Ty::StrOwn { out.push_str("    xor %edx, %edx\n"); }
 }
 fn cg_value(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target) {
+    if shared_local::active() && shared_local::constructor(e).is_some(){shared_local::emit_constructor(e,strs,out);return;}
     if shared_local::active() && shared_local::literal(e) {shared_local::emit_literal(e,strs,out);return;}
     if let Expr::ArrLit(es) = e {
         if es.iter().any(|x| matches!(x, Expr::ArrLit(inner) if inner.iter().any(|y| matches!(y, Expr::ArrLit(_) | Expr::DArrNew)))) {
@@ -21466,7 +21468,7 @@ fn cg_array_value(e: &Expr, off: usize, env: &[CgLocal], sigs: &[Sig], strs: &mu
 }
 
 fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
-    if shared_local::active() && shared_local::literal(e) {return Ty::Dyn;}
+    if shared_local::active() && (shared_local::literal(e)||shared_local::constructor(e).is_some()) {return Ty::Dyn;}
     if shared_local::optional(e).is_some() {return Ty::Dyn;}
     match e {
         Expr::Seq(es) => expr_ty(es.last().expect("nonempty"), env, sigs),
