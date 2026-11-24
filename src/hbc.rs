@@ -8017,7 +8017,8 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 // DToS(d) (issue #1): the packed date as yyyymmdd text; an
                 // empty date renders 8 spaces (Harbour DToS(CToD(""))).
                 if args.len()!=1 { return Err(format!("line {}: `DToS` takes exactly one argument in this increment",n)); }
-                if type_expr(&args[0],env,sigs,n)? != Ty::Date {
+                let t=type_expr(&args[0],env,sigs,n)?;
+                if t!=Ty::Date && !(shared_local::active()&&t==Ty::Dyn) {
                     return Err(format!("line {}: `DToS` expects a date",n));
                 }
                 return Ok(Ty::StrOwn);
@@ -17666,6 +17667,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
         Expr::Call(id,args) if timestamp::family(id) => {timestamp::emit(id,args,env,sigs,strs,out,target);}
         Expr::Call(id,args) if is_builtin(id,"dtos") => {
             cg_value(&args[0],env,sigs,strs,out,target);
+            if expr_ty(&args[0],env,sigs)==Ty::Dyn{out.push_str("    cmp $11, %rax\n    jne hbc_type_error\n    mov %rdx, %rax\n");}
             out.push_str("    mov %rax, %rdi\n    call hbc_dtos\n");
         }
         Expr::Call(id,args) if is_builtin(id,"stod") || is_builtin(id,"hb_stod") => {
