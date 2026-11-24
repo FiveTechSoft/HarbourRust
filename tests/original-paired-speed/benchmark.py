@@ -14,6 +14,7 @@ for s in sources:
 parent_affinity=sorted(os.sched_getaffinity(0));cpu=parent_affinity[0];os.sched_setaffinity(0,{cpu})
 rows=[]
 def build(cmd,w,label):
+ (w/(label+'.command.json')).write_text(json.dumps(dict(argv=cmd,cwd=str(root)),indent=2)+'\n')
  r=subprocess.run(cmd,capture_output=True,stdin=subprocess.DEVNULL,timeout=60,cwd=root)
  for ext,v in [('stdout',r.stdout),('stderr',r.stderr),('rc',str(r.returncode).encode())]:(w/(label+'.'+ext)).write_bytes(v)
  assert r.returncode==0,(label,r.stderr)
@@ -24,12 +25,13 @@ for src in sources:
  w=out/src.stem;w.mkdir();(w/src.name).write_bytes(src.read_bytes())
  build([hb,str(src),'-quiet','-gtstd','-w0','-o'+str(w/'harbour')],w,'harbour-build')
  build([cc,str(src),str(w/'harbourrust')],w,'harbourrust-build')
- expected=None
+ expected=None;warm=[]
  for i in range(5):
   for kind in ['harbour','harbourrust']:
    r,ns=execute(w/kind)
    if expected is None:expected=(r.returncode,r.stdout,r.stderr)
    assert expected==(0,r.stdout,r.stderr) and r.returncode==0 and (r.returncode,r.stdout,r.stderr)==expected,(src,kind,i,r.returncode)
+   warm.append(dict(round=i,engine=kind,ns=ns,rc=r.returncode,stdout_sha256=hashlib.sha256(r.stdout).hexdigest(),stderr_sha256=hashlib.sha256(r.stderr).hexdigest()))
    if i==0:
     for ext,v in [('stdout',r.stdout),('stderr',r.stderr),('rc',str(r.returncode).encode())]:(w/(kind+'-warm.'+ext)).write_bytes(v)
  pairs=[]
@@ -39,9 +41,10 @@ for src in sources:
    r,ns=execute(w/kind)
    assert (r.returncode,r.stdout,r.stderr)==expected,(src,kind,i,r.returncode)
    pair[kind+'_ns']=ns
+   pair[kind+'_result']=dict(rc=r.returncode,stdout_sha256=hashlib.sha256(r.stdout).hexdigest(),stderr_sha256=hashlib.sha256(r.stderr).hexdigest())
   pair['harbour_over_harbourrust']=pair['harbour_ns']/pair['harbourrust_ns'];pairs.append(pair)
  med={k:statistics.median(x[k+'_ns'] for x in pairs) for k in ['harbour','harbourrust']}
- result=dict(source=src.name,source_sha256=hashlib.sha256(src.read_bytes()).hexdigest(),pairs=pairs,median_ns=med,ratio_of_medians=med['harbour']/med['harbourrust'],median_paired_ratio=statistics.median(x['harbour_over_harbourrust'] for x in pairs),range_ns={k:[min(x[k+'_ns']for x in pairs),max(x[k+'_ns']for x in pairs)]for k in med},stdout_bytes=len(expected[1]),stderr_bytes=len(expected[2]))
+ result=dict(run_command=dict(argv=[str(w/'ENGINE')],cwd=str(root),stdin='DEVNULL'),warmups=warm,source=src.name,source_sha256=hashlib.sha256(src.read_bytes()).hexdigest(),pairs=pairs,median_ns=med,ratio_of_medians=med['harbour']/med['harbourrust'],median_paired_ratio=statistics.median(x['harbour_over_harbourrust'] for x in pairs),range_ns={k:[min(x[k+'_ns']for x in pairs),max(x[k+'_ns']for x in pairs)]for k in med},stdout_bytes=len(expected[1]),stderr_bytes=len(expected[2]))
  (w/'measurements.json').write_text(json.dumps(result,indent=2)+'\n');rows.append(result)
  for kind in ['harbour','harbourrust']:(w/kind).unlink()
  print(src.name,med,'Harbour/HarbourRust',round(result['ratio_of_medians'],3),flush=True)

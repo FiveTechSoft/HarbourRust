@@ -39,3 +39,27 @@ to72437161 and were not rerun for this test-only benchmark.
 Compiler SHA256 eb36afb9bc6529e7ddec61bcfc839c3c9267485150891965c86014ce8a3d9c70.
 
     python tests/original-paired-speed/benchmark.py --compiler target/release/hbc --hbmk2 /path/to/hbmk2 --spec-root /path/to/harbour --output /tmp/original-speed --pairs 101
+
+## Refresh on compiler9e422bd1,2026-11-24
+
+Test-only evidence refresh on41db9661. Benchmark now records build argv/cwd,
+run cwd/stdin and each warm/timed output's rc and SHA256. ENGINE in the
+recorded run template means the harbour or harbourrust binary within the
+source's work directory. All triples are still checked byte-exact before
+recording. No compiler change or new original implementation closure.
+
+Two full independent101-pair runs on compiler
+263cd7a814ae7027d9a12f90b55b06c68a332b7eacfee31a79bbe35a372828a1:
+
+- fib.prg: medians6.612285ms Harbour,2.327308ms HarbourRust,ratio2.841x; repeat6.893142/2.418953,2.850x.
+- recursiv.prg:2.548080/1.399895ms,1.820x;repeat2.507141/1.384672,1.811x.
+- longstr2.prg:4.233916/4.930862ms,0.859x;repeat4.189331/4.877668,0.859x.
+
+The longstr2 loss remains visible. These process timings include startup,
+captured output and shutdown,not algorithm-only or universal speed claims.
+Both engines inherit the same one-CPU affinity;no frequency/host isolation.
+Across repeats606pairs,1212timed executions and60warmups all exact.
+No global regression repeated for this tests-only change. Latest compiler
+regression remains9e422bd1,including122prior suites,Rust106,Linux1177,
+LLVM21,PE1912/22known/0fail emission-only,negative622same18,census58/1041.
+Harbour extracted source has no git metadata,commit not verified;hash recorded.
