@@ -22036,7 +22036,7 @@ fn obj_fresh(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> bool {
 // container/date/object tags before any borrowed payload is cloned.
 fn iif_mixed(a: &Expr, b: &Expr, ta: Ty, tb: Ty) -> bool {
     let dyn_arm = DECIMAL_LOCAL_PROFILE.with(|v|v.get()) && (ta==Ty::Dyn || tb==Ty::Dyn);
-    let arm = |e: &Expr, t: Ty| matches!(t, Ty::I64 | Ty::Bool | Ty::Str | Ty::StrOwn | Ty::F64) || matches!(e, Expr::Nil) || (dyn_arm && t==Ty::Dyn && matches!(e,Expr::Var(_)));
+    let arm = |e: &Expr, t: Ty| matches!(t, Ty::I64 | Ty::Bool | Ty::Str | Ty::StrOwn | Ty::F64) || matches!(e, Expr::Nil) || (dyn_arm && t==Ty::Dyn && (matches!(e,Expr::Var(_))||(shared_local::active()&&matches!(e,Expr::Index(v,_)if shared_local::current(v)))));
     if !arm(a, ta) || !arm(b, tb) { return false; }
     if matches!(a, Expr::Nil) && matches!(b, Expr::Nil) { return false; }
     if ta == tb && !(dyn_arm && ta==Ty::Dyn) { return false; }
