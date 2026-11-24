@@ -11,3 +11,10 @@ Gate35:3 fuentes propias intactas por5 modos=15 exactas frescas,3 balances cero,
 Regresión122 suites previas reconciliadas por nombre y119 registros SHA del compilador donde existe;Rust106,LLVM21 frescas exactas,Linux1177 stdout/golden,PE solo emisión1912PASS/22conocidas/0FAIL,negativos622 mismos18 exactos,censo58/1041 sin cambios. Sin cierre original ni velocidad nueva. RC/objetos y división numérica siguen aparcados. Sin push/publicación/workflows/rebase.
 
 python tests/fname-parts/check.py --compiler target/release/hbc --hbmk2 /ruta/hbmk2 --spec-root /ruta/harbour --output /ruta/nueva
+
+Boundary follow-up on aaba4f6f,tests only: boundary-paths.prg adds slash
+positions259..264,extension positions and directory prefixes near the cap,
+NUL before/after cap,UTF-8 byte paths,all-slash oversized paths. This is
+byte behavior of the measured Linux oracle,not Unicode normalization or
+character-counting support. Gate expands35 to45:20exact,4strict-zero,
+16profile rejects,5limits. Compiler unchanged13f71f9fabf999778014a6b829efab171c2e4d55eb1201d0b9d314d3c6830e6b.
