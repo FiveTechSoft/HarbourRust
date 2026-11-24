@@ -7220,8 +7220,12 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 if (unary && args.len() != 1) || (!unary && args.len() < 2) {
                     return Err(format!("line {}: `{}` needs {} argument(s) in this increment", n,id, if unary {"exactly one"} else {"at least two"}));
                 }
+                let has_dyn=args.iter().any(|a|matches!(a,Expr::Var(v) if env.iter().rev().find(|l|l.name==*v).map_or(false,|l|l.ty==Ty::Dyn)));
+                if has_dyn && !args.iter().all(|a|matches!(a,Expr::Int(_)|Expr::Var(_))){return Err(format!("line {}: Dyn bitops require leaf integer literals/variables in this increment",n));}
                 for a in args {
-                    if type_expr(a, env, sigs, n)? != Ty::I64 {
+                    let t=type_expr(a,env,sigs,n)?;
+                    let dyn_leaf=t==Ty::Dyn && matches!(a,Expr::Var(_)) && args.iter().all(|a|matches!(a,Expr::Int(_)|Expr::Var(_))) && CURDIR_LINUX_NATIVE.with(|v|v.get()) && DECIMAL_LOCAL_PROFILE.with(|v|v.get()) && !MACRO_CONTEXT.with(|v|v.get()) && !shared_local::active();
+                    if t!=Ty::I64 && !dyn_leaf {
                         return Err(format!("line {}: `{}` arguments must be integers in this increment; float/Dyn conversions are not covered", n,id));
                     }
                     apply_moves(a,env,sigs,false);
@@ -19835,12 +19839,12 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             if is_builtin(id,"hb_bittest") { out.push_str("    setc %al\n    movzbq %al, %rax\n"); }
         }
         Expr::Call(id, args) if is_bitop(id) => {
-            cg_expr(&args[0], env, sigs, strs, out, target);
+            if expr_ty(&args[0],env,sigs)==Ty::Dyn {cg_dyn_int_trunc(&args[0],env,sigs,strs,out,target);}else{cg_expr(&args[0], env, sigs, strs, out, target);}
             if is_builtin(id,"hb_bitnot") { out.push_str("    not %rax\n"); }
             else {
                 for a in &args[1..] {
                     out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n");
-                    cg_expr(a, env, sigs, strs, out, target);
+                    if expr_ty(a,env,sigs)==Ty::Dyn {cg_dyn_int_trunc(a,env,sigs,strs,out,target);}else{cg_expr(a, env, sigs, strs, out, target);}
                     let op = if is_builtin(id,"hb_bitand") {"and"} else if is_builtin(id,"hb_bitor") {"or"} else {"xor"};
                     out.push_str(&format!("    {} (%rsp), %rax\n    add $16, %rsp\n",op));
                 }
