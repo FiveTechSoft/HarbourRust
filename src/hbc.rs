@@ -10006,6 +10006,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 if matches!(ta, Ty::Str | Ty::StrOwn) && matches!(tb, Ty::Str | Ty::StrOwn) {
                     return Ok(Ty::Bool);
                 }
+                if ta==Ty::Str && tb==Ty::Dyn && matches!(a.as_ref(),Expr::Str(_)) && matches!(b.as_ref(),Expr::Var(_)) && CURDIR_LINUX_NATIVE.with(|v|v.get()) && DECIMAL_LOCAL_PROFILE.with(|v|v.get()) && !MACRO_CONTEXT.with(|v|v.get()) && !shared_local::active(){return Ok(Ty::Bool);}
                 return Err(format!("line {}: containment `$` is measured for string-in-string only (oracle hk341); array membership is not in this increment", n));
             }
             // Objects (cl7/cl19): `==` is pointer identity. `!=`/`#` is a
@@ -22941,6 +22942,14 @@ fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<Strin
             out.push_str("    test %rax, %rax\n    jmp 98f\n97:\n    call hbc_bound_error\n98:\n");
             let j = match op { CmpOp::Eq | CmpOp::EqEq => "jz", _ => "jnz" };
             out.push_str(&format!("    {} {}\n", j, true_label));
+        }
+        Expr::Cmp(CmpOp::Contains,a,b) if matches!(a.as_ref(),Expr::Str(_)) && matches!(b.as_ref(),Expr::Var(_)) && expr_ty(b,env,sigs)==Ty::Dyn && CURDIR_LINUX_NATIVE.with(|v|v.get()) => {
+            // Both inputs are leaves: no effects can replace the borrowed
+            // source between loading its counted bytes and the inline scan.
+            let k=fresh_lbl();cg_value(b,env,sigs,strs,out,target);
+            out.push_str(&format!("    cmp $2, %rax\n    je .Ldcstring{k}\n    cmp $4, %rax\n    jne hbc_type_error\n.Ldcstring{k}:\n    mov %rdx, %rcx\n    mov -8(%rcx), %r8\n"));
+            cg_value(a,env,sigs,strs,out,target);cg_str_contains(out,fresh_lbl());
+            out.push_str(&format!("    test %rax, %rax\n    jnz {}\n",true_label));
         }
         Expr::Cmp(op, a, b) if expr_ty(a, env, sigs) == Ty::Dyn || expr_ty(b, env, sigs) == Ty::Dyn => {
             let ta = expr_ty(a, env, sigs);
