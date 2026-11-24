@@ -10577,6 +10577,12 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
             _ => Err(format!("line {}: `Self` outside a method", n)),
         },
         Expr::Send(recv, name, args) => {
+            if (name.eq_ignore_ascii_case("__enumisfirst")||name.eq_ignore_ascii_case("__enumislast")) && CURDIR_LINUX_NATIVE.with(|v|v.get()) && DECIMAL_LOCAL_PROFILE.with(|v|v.get()) && !MACRO_CONTEXT.with(|v|v.get())
+                && !IN_BLOCK.with(|v|v.get()) && !shared_local::active()
+                && matches!(recv.as_ref(),Expr::Var(id) if ENUM_KEY_CHECK.with(|v|v.borrow().iter().rev().find(|(n,_)|n==id).map_or(false,|(_,hash)|*hash)) && env.iter().rev().find(|v|v.name==*id).map_or(false,|v|v.ty==Ty::Dyn && v.ro)) {
+                if !args.is_empty(){return Err(format!("line {}: __enumIsFirst/__enumIsLast only support active hash iterator getters without arguments",n));}
+                return Ok(Ty::Bool);
+            }
             if name.eq_ignore_ascii_case("__enumkey") && CURDIR_LINUX_NATIVE.with(|v|v.get()) && DECIMAL_LOCAL_PROFILE.with(|v|v.get()) && !MACRO_CONTEXT.with(|v|v.get())
                 && !IN_BLOCK.with(|v|v.get()) && !shared_local::active()
                 && matches!(recv.as_ref(),Expr::Var(id) if ENUM_KEY_CHECK.with(|v|v.borrow().iter().rev().find(|(n,_)|n==id).map_or(false,|(_,hash)|*hash)) && env.iter().rev().find(|v|v.name==*id).map_or(false,|v|v.ty==Ty::Dyn && v.ro)) {
@@ -11216,7 +11222,7 @@ fn foreach_lv_readonly(stmts: &[Stmt], name: &str) -> bool {
             Expr::Var(v) => v == name,
             Expr::Bin(_, a, b) | Expr::Cmp(_, a, b) => mentions(a, name) || mentions(b, name),
             Expr::Call(_, args) => args.iter().any(|a| mentions(a, name)),
-            Expr::Send(recv,method,args) if (method.eq_ignore_ascii_case("__enumindex")||method.eq_ignore_ascii_case("__enumkey")) && args.is_empty() && matches!(recv.as_ref(),Expr::Var(v) if v==name)=>false,
+            Expr::Send(recv,method,args) if (method.eq_ignore_ascii_case("__enumindex")||method.eq_ignore_ascii_case("__enumkey")||method.eq_ignore_ascii_case("__enumisfirst")||method.eq_ignore_ascii_case("__enumislast")) && args.is_empty() && matches!(recv.as_ref(),Expr::Var(v) if v==name)=>false,
             Expr::Send(recv,_,args)=>mentions(recv,name)||args.iter().any(|a|mentions(a,name)),
             Expr::Index(id, i) | Expr::Index2(id, i, _) | Expr::Index3(id, i, _, _) | Expr::Index4(id, i, ..) => id == name || mentions(i, name),
             Expr::IdxCompound(id, i, _, r) => id == name || mentions(i, name) || mentions(r, name),
@@ -16647,6 +16653,13 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             out.push_str(&format!("    mov -{}(%rbp), %rax\n    mov {}(%rax), %rdx\n    mov {}(%rax), %rax\n    call hbc_float_clone\n\n    cmp $4, %rax\n    jne 83f\n    mov %rdx, %rdi\n    mov -8(%rdx), %rsi\n    call hbc_strcpy\n    mov %rax, %rdx\n    mov $4, %eax\n83:\n", sv.off, 16 + off * 16 + 8, 16 + off * 16));
         }
         Expr::Send(recv, name, args) => {
+            if (name.eq_ignore_ascii_case("__enumisfirst")||name.eq_ignore_ascii_case("__enumislast")) && matches!(recv.as_ref(),Expr::Var(id) if ENUM_KEY_EMIT.with(|v|v.borrow().iter().rev().find(|(n,_,_,_)|n==id).map_or(false,|(_,_,_,hash)|*hash))) && expr_ty(recv,env,sigs)==Ty::Dyn {
+                let id=if let Expr::Var(id)=recv.as_ref(){id}else{unreachable!("checked iterator")};
+                let (coll,index)=ENUM_KEY_EMIT.with(|v|v.borrow().iter().rev().find(|(n,_,_,_)|n==id).map(|(_,c,i,_)|(*c,*i))).expect("checked hash iterator");
+                out.push_str(&format!("    mov -{}(%rbp), %rax\n",index));
+                if name.eq_ignore_ascii_case("__enumisfirst") {out.push_str("    cmp $1, %rax\n");}else{out.push_str(&format!("    cmp -{}(%rbp), %rax\n",coll-8));}
+                out.push_str("    sete %al\n    movzbq %al, %rax\n    xor %edx, %edx\n");return;
+            }
             if name.eq_ignore_ascii_case("__enumkey") && matches!(recv.as_ref(),Expr::Var(id) if ENUM_KEY_EMIT.with(|v|v.borrow().iter().rev().find(|(n,_,_,_)|n==id).map_or(false,|(_,_,_,hash)|*hash))) && expr_ty(recv,env,sigs)==Ty::Dyn {
                 let id=if let Expr::Var(id)=recv.as_ref(){id}else{unreachable!("checked iterator")};
                 let (coll,index)=ENUM_KEY_EMIT.with(|v|v.borrow().iter().rev().find(|(n,_,_,_)|n==id).map(|(_,c,i,_)|(*c,*i))).expect("checked hash iterator");
@@ -22224,6 +22237,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
         },
         Expr::SelfGet(_) => Ty::Dyn, // DATA casilla
         Expr::Send(recv, name, _) => {
+            if (name.eq_ignore_ascii_case("__enumisfirst")||name.eq_ignore_ascii_case("__enumislast")) && matches!(recv.as_ref(),Expr::Var(id) if ENUM_KEY_EMIT.with(|v|v.borrow().iter().rev().find(|(n,_,_,_)|n==id).map_or(false,|(_,_,_,hash)|*hash))) && expr_ty(recv,env,sigs)==Ty::Dyn {return Ty::Bool;}
             if name.eq_ignore_ascii_case("__enumkey") && matches!(recv.as_ref(),Expr::Var(id) if ENUM_KEY_EMIT.with(|v|v.borrow().iter().rev().find(|(n,_,_,_)|n==id).map_or(false,|(_,_,_,hash)|*hash))) && expr_ty(recv,env,sigs)==Ty::Dyn {return Ty::StrOwn;}
             if name.eq_ignore_ascii_case("__enumindex") && matches!(recv.as_ref(),Expr::Var(id) if ENUM_INDEX_EMIT.with(|v|v.borrow().iter().any(|(n,_)|n==id))) && expr_ty(recv,env,sigs)==Ty::Dyn {return Ty::I64;}
 
