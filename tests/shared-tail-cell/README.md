@@ -26,3 +26,17 @@ hashes identical. Original calls keeps40exact/6zero/2knownDELTA2;object
 lifetime debt remains open. No newly closed original or speed claim.
 
     python tests/shared-tail-cell/check.py --compiler target/release/hbc --hbmk2 /path/to/hbmk2 --spec-root /path/to/harbour --output /tmp/tail-cell
+
+## Error-path coverage, test-only follow-up
+
+Own MIT follow-up onbf014ccd0a4ec0d74987b72da5b38effe730e922.
+No compiler change or broad regression rerun. Gate now27:10direct exact,
+5adapted recovery-count comparisons,3strict zero balances,9profiles.
+The new errors fixture repeats six failures117times:root bounds0/high,
+depth2/3/4high index and non-array intermediate parent,then restores and
+checks the original root. 702recoveries and final17 match. To avoid
+Harbour's interactive default handler,only the oracle copy adds INIT
+ErrorBlock({|err|Break(err)}). Candidate source stays unchanged.
+This compares recovery count/state,NOT Error-object fields,description,
+raw error text or default-handler behavior. It is not an intact-original
+execution claim. Both oracle adapter and source hashes/raw logs are kept.
