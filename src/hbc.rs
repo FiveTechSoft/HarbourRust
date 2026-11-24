@@ -11008,6 +11008,26 @@ fn foreach_lv_readonly(stmts: &[Stmt], name: &str) -> bool {
 // exposes its initial NIL. Narrow only this dominated, non-byref shape.
 // Unknown/control-flow forms fail closed; the existing Date checker still
 // rejects all later non-Date stores. No inference invokes type_expr here.
+// main's parameters receive the command-line arguments in Harbour 3.2
+// (measured: strings, NIL when not supplied). The startup code passes no
+// arguments, so each parameter is a local that starts NIL, the value
+// Harbour gives a run without arguments (tests/main-params). Kept as real
+// parameters when the program itself calls main.
+fn main_params_as_nil_locals(funcs:&mut [Func]) {
+    let mut called=false;
+    for f in funcs.iter() {
+        visit_stmts_ref(&f.stmts,&mut |_|{},&mut |e| {if let Expr::Call(id,_)=e {if id.eq_ignore_ascii_case("main") {called=true;}}});
+    }
+    if called { return; }
+    for f in funcs.iter_mut().filter(|f|f.name=="main" && !f.params.is_empty()) {
+        let n=f.stmts.first().map_or(1,stmt_line);
+        let params=std::mem::take(&mut f.params);
+        for (i,p) in params.into_iter().enumerate() {
+            f.stmts.insert(i,Stmt::Local(n,p,Expr::Nil));
+        }
+    }
+}
+
 fn narrow_bare_date_locals(funcs:&mut [Func]) {
     if !DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get()) { return; }
     fn date_producer(e:&Expr,name:&str,known:&std::collections::HashSet<String>)->bool {
@@ -39120,10 +39140,11 @@ fn main() {
 
     TRACE_ORIGINS.with(|m| *m.borrow_mut() = pre.origins.clone());
     PROC_LINES.with(|m| *m.borrow_mut() = pre.end_lines.clone());
-    let prog = match parse(&src) {
+    let mut prog = match parse(&src) {
         Ok(p) => p,
         Err(msg) => { eprintln!("error: {}", msg); process::exit(1); }
     };
+    main_params_as_nil_locals(&mut prog.funcs);
     // Extend-System bridge (docs/EXTEND-BRIDGE.md): deduped EXTERNAL
     // symbols. A symbol also defined in this file is inert (like a
     // REQUEST of a local symbol); the definition wins every call.
