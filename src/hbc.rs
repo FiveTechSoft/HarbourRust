@@ -8165,6 +8165,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 if !matches!(&args[0], Expr::Var(_)) {
                     return Err(format!("line {}: `ATail` expects an array variable (the slot is passed by address)",n));
                 }
+                if shared_local::active()&&matches!(&args[0],Expr::Var(v)if shared_local::current(v))&&type_expr(&args[0],env,sigs,n)?==Ty::Dyn{return Ok(Ty::Dyn);}
                 match type_expr(&args[0],env,sigs,n)? {
                     Ty::DArr | Ty::DArrS => {}
                     _ => return Err(format!("line {}: `ATail` supports flat integer or string arrays in this increment",n)),
@@ -17929,7 +17930,12 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             let av = match &args[0] { Expr::Var(v) => v.clone(), _ => unreachable!("checked") };
             let var = env.iter().rev().find(|x| x.name == *av).expect("checked");
             let l = fresh_lbl();
-            if expr_ty(&args[0],env,sigs) == Ty::DArrS {
+            if shared_local::active()&&shared_local::current(&av)&&expr_ty(&args[0],env,sigs)==Ty::Dyn {
+                cg_sarr_root(&av,var.off,"%r11",out);
+                out.push_str(&format!("    mov (%r11), %rax\n    test %rax, %rax\n    jle .LatSharedEmpty{l}\n    dec %rax\n    shl $4, %rax\n    add 24(%r11), %rax\n    mov 8(%rax), %rdx\n    mov (%rax), %rax\n"));
+                cg_dyn_clone_if_str(out);
+                out.push_str(&format!("    jmp .LatSharedDone{l}\n.LatSharedEmpty{l}:\n    mov $1, %eax\n    xor %edx, %edx\n.LatSharedDone{l}:\n"));
+            } else if expr_ty(&args[0],env,sigs) == Ty::DArrS {
                 out.push_str(&format!("    mov -{}(%rbp), %rax\n    test %rax, %rax\n    jle .LatS{}\n    mov -{}(%rbp), %r11\n    dec %rax\n    shl $4, %rax\n    add %rax, %r11\n    mov 8(%r11), %rdi\n    mov -8(%rdi), %rsi\n    call hbc_strcpy\n    mov %rax, %rdx\n    mov $4, %eax\n    jmp .LatSe{}\n.LatS{}:\n    mov $1, %eax\n    xor %edx, %edx\n.LatSe{}:\n", var.off-8, l, var.off, l, l, l));
             } else {
                 // The returned pair leaves the cell: floats AND strings
