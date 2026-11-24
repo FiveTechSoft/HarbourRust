@@ -174,3 +174,5 @@ tests/asort-phase10/** -text
 tests/asort-phase11/** -text
 
 tests/asort-phase12/** -text
+
+tests/asort-phase13/** -text

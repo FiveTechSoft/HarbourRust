@@ -15,8 +15,19 @@ pub fn parameter(f:&str,i:usize)->bool{PARAMS.with(|v|v.borrow().contains(&(f.to
 pub fn value_parameter(f:&str,i:usize)->bool {VALUES.with(|v|v.borrow().contains(&(f.to_string(),i)))}
 thread_local! {static VALUES: std::cell::RefCell<HashSet<(String,usize)>> = std::cell::RefCell::new(HashSet::new());}
 thread_local! {static TRACE_HELPERS: std::cell::RefCell<HashSet<String>>=std::cell::RefCell::new(HashSet::new());}
+thread_local! {static PURE_HELPERS: std::cell::RefCell<HashSet<String>>=std::cell::RefCell::new(HashSet::new());}
+pub fn pure_helper(id:&str)->bool{PURE_HELPERS.with(|v|v.borrow().contains(id))}
 pub fn trace_helper(id:&str)->bool{TRACE_HELPERS.with(|v|v.borrow().contains(id))}
 pub fn init(ff:&[Func]) {
+ PURE_HELPERS.with(|v|v.borrow_mut().clear());
+ for f in ff {
+  fn pure(e:&Expr,ps:&[String])->bool{match e{
+   Expr::Var(v)=>ps.contains(v),Expr::Int(_)|Expr::Log(_)|Expr::Str(_)|Expr::Nil=>true,
+   Expr::Cmp(_,a,b)=>pure(a,ps)&&pure(b,ps),
+   Expr::Index(v,i)=>ps.contains(v)&&pure(i,ps),
+   Expr::Call(id,aa)if is_builtin(id,"iif")=>aa.len()==3&&aa.iter().all(|a|pure(a,ps)),_=>false}}
+  if matches!(f.stmts.as_slice(),[Stmt::Ret(_,Some(e))]if pure(e,&f.params)){PURE_HELPERS.with(|v|v.borrow_mut().insert(f.name.clone()));}
+ }
  TRACE_HELPERS.with(|v|v.borrow_mut().clear());
  for f in ff {
   fn text(e:&Expr,ps:&[String],slot:&str)->bool{match e{
@@ -76,7 +87,7 @@ pub fn init(ff:&[Func]) {
   visit_stmts_ref(&f.stmts,&mut |_|{},&mut |e|{if let Expr::Call(id,args)=e{
    if let Some(to)=ff.iter().find(|f|f.name==*id){for (i,a)in args.iter().enumerate().take(to.params.len()){
     if matches!(a,Expr::Var(n)if literals.contains(n)){
-     visit_stmts_ref(&to.stmts,&mut |_|{},&mut |e|{if matches!(e,Expr::Call(id,aa)if is_builtin(id,"asort")&&aa.len()<=3&&matches!(aa.first(),Some(Expr::Var(n))if n==&to.params[i])){need=true;}});
+     visit_stmts_ref(&to.stmts,&mut |_|{},&mut |e|{if matches!(e,Expr::Call(id,aa)if is_builtin(id,"asort")&&aa.len()<=4&&matches!(aa.first(),Some(Expr::Var(n))if n==&to.params[i])){need=true;}});
     }
    }}
   }});
@@ -89,7 +100,9 @@ pub fn init(ff:&[Func]) {
  // native/PE/Mach-O contracts with an untested collector.
  if !DECIMAL_LOCAL_PROFILE.with(|v|v.get())||MACRO_CONTEXT.with(|v|v.get())||EXTERNS.with(|v|!v.borrow().is_empty())||(!method_arrays::active()&&CLASSES.with(|v|!v.borrow().is_empty())){return;}
  for f in ff {visit_stmts_ref(&f.stmts,&mut |s|{if let Stmt::Local(_,n,e)|Stmt::Assign(_,n,e)=s{if literal(e){names.entry(f.name.clone()).or_default().insert(n.clone());}}},&mut |_|{});}
- let mut params=HashSet::new();let mut returns=HashSet::<String>::new();
+ let mut params=HashSet::new();
+ for f in ff {if pure_helper(&f.name){if let [Stmt::Ret(_,Some(Expr::Index(n,_)))]=f.stmts.as_slice(){if let Some(i)=f.params.iter().position(|p|p==n){names.entry(f.name.clone()).or_default().insert(n.clone());params.insert((f.name.clone(),i));}}}}
+ let mut returns=HashSet::<String>::new();
  loop {
   let old=names.clone();let np=params.len();let nr=returns.len();
   for f in ff {

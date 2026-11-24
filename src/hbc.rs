@@ -8104,12 +8104,19 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 if shared_local::active()&&ta==Ty::Dyn&&matches!(&args[0],Expr::Var(v) if is_sarr(v)){
                     if let Some(e)=args.get(3){
                         if let Expr::BlockLit(bid,ps,body)=e {
+                            fn safe(e:&Expr,ps:&[String],env:&[Local])->bool{match e{
+                                Expr::Var(v)=>ps.contains(v)||env.iter().any(|l|l.name==*v&&matches!(l.ty,Ty::I64|Ty::Bool)),
+                                Expr::Int(_)|Expr::Str(_)|Expr::Log(_)|Expr::Nil=>true,
+                                Expr::Index(v,i)=>ps.contains(v)&&safe(i,ps,env),
+                                Expr::Cmp(_,a,b)=>safe(a,ps,env)&&safe(b,ps,env),
+                                Expr::Call(id,aa)if is_builtin(id,"iif")||shared_local::pure_helper(id)=>aa.iter().all(|e|safe(e,ps,env)),
+                                _=>false,
+                            }}
                             fn atom(e:&Expr,ps:&[String])->bool{matches!(e,Expr::Var(v)if ps.contains(v))||matches!(e,Expr::Int(_)|Expr::Str(_)|Expr::Log(_)|Expr::Nil)}
-                            fn operand(e:&Expr,ps:&[String])->bool{atom(e,ps)||matches!(e,Expr::Index(v,i)if ps.contains(v)&&matches!(i.as_ref(),Expr::Int(t)if t.parse::<i64>().map_or(false,|v|v>0)))}
                             let helper=matches!(body.as_slice(),[Expr::Call(id,aa)]if shared_local::trace_helper(id)&&aa.len()==2&&aa.iter().all(|e|matches!(e,Expr::Var(v)if ps.contains(v))));
-                            let tail=helper||matches!(body.last(),Some(Expr::Cmp(_,a,b))if operand(a,ps)&&operand(b,ps))||matches!(body.last(),Some(Expr::Log(_)|Expr::Nil|Expr::Int(_)|Expr::Str(_)));
+                            let tail=helper||matches!(body.last(),Some(Expr::Cmp(..)|Expr::Log(_)|Expr::Nil|Expr::Int(_)|Expr::Str(_))if safe(body.last().unwrap(),ps,env));
                             let prefix=body.iter().take(body.len().saturating_sub(1)).all(|e|matches!(e,Expr::Call(id,aa)if is_builtin(id,"qout")&&aa.iter().all(|a|atom(a,ps))));
-                            if ps.len()>2 || (ps.len()!=2&&body.iter().any(|e|matches!(e,Expr::Cmp(..)))) || !tail || !prefix {return Err(format!("line {}: shared ASort callback requires at most two parameters, a direct scalar comparison/literal and optional QOut trace",n));}
+                            if ps.len()>2 || (ps.len()!=2&&body.iter().any(|e|matches!(e,Expr::Cmp(..)))) || !tail || !prefix {return Err(format!("line {}: shared ASort callback requires bounded read-only expressions, checked pure helpers and optional QOut trace",n));}
                             SHARED_CALLBACK_IDS.with(|v|v.borrow_mut().insert(*bid));
                             COMPARATOR_MODE.set(true);CAPTURE_MODE.set(Some(2));
                             let t=type_expr(e,env,sigs,n);
@@ -10444,7 +10451,7 @@ fn check_block_body(id: usize, params: &[String], body: &[Expr], env: &[Local], 
                         if loc.byref {
                             return Err(format!("line {}: codeblock capture of the `@`-parameter `{}` is not in this increment", n, v));
                         }
-                        if !matches!(loc.ty, Ty::Str | Ty::StrOwn | Ty::I64 | Ty::Dyn) {
+                        if !matches!(loc.ty, Ty::Str | Ty::StrOwn | Ty::I64 | Ty::Dyn) && !(CAPTURE_MODE.get()==Some(2)&&loc.ty==Ty::Bool) {
                             return Err(format!("line {}: codeblock capture of `{}` ({}) is not in this increment (strings, integers and Dyn casillas only)", n, v, ty_name(loc.ty)));
                         }
                         caps.push((v, loc.ty));
@@ -11903,7 +11910,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                     if !matches!(t, Ty::I64 | Ty::Bool | Ty::Str | Ty::Dyn) && !(shared_local::active() && matches!(t,Ty::StrOwn|Ty::F64|Ty::Date)) {
                         return Err(format!("line {}: `AAdd` on the shared module array `{}` takes an integer, logical, string, NIL or dynamic value in this increment", n, id));
                     }
-                    if matches!(e, Expr::ArrLit(..) | Expr::DArrNew) {
+                    if matches!(e, Expr::ArrLit(..) | Expr::DArrNew) && !(shared_local::active()&&shared_local::literal(e)) {
                         return Err(format!("line {}: `AAdd` with a literal array value is not in this increment (materialize it in a variable first)", n));
                     }
                     apply_moves(e, env, sigs, false);
@@ -26639,7 +26646,7 @@ fn emit_block(owner: &str, id: usize, params: &[String], body: &[Expr], sigs: &[
     let mut cap_offs: Vec<(String, usize)> = Vec::new();
     let mut f = ctx_off;
     for (cname, _, cty) in caps {
-        f += size_of(*cty);
+        f += size_of(*cty).max(16);
         cap_offs.push((cname.clone(), f));
         lenv.push(CgLocal { name: cname.clone(), ty: *cty, off: f });
     }
