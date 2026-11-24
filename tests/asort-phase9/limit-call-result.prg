@@ -1,0 +1,6 @@
+FUNCTION Nope()
+RETURN 7
+FUNCTION Main()
+ LOCAL a:={3,1,2}
+ ASort(a,NIL,NIL,{||Nope()})
+RETURN NIL
