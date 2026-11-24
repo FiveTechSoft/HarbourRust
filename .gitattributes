@@ -145,3 +145,4 @@ tests/timestamp-phase8/*.prg -text
 
 tests/timestamp-phase9/** -text
 tests/ctod-bb/expected/** -text
+tests/quit-bb/expected/** -text
