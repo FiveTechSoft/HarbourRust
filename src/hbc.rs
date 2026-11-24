@@ -25724,7 +25724,12 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
     movq $0, 8(%r11,%rax)
 .Laid@K@:
 "#.replace("@P@", &(v.off - 8).to_string()).replace("@T@", &v.off.to_string()).replace("@K@", &k.to_string());
-                out.push_str(&asm);
+                if shared_local::active()&&shared_local::current(id)&&v.ty==Ty::Dyn {
+                    let old=format!("    mov -{}(%rbp), %r11\n    @HBC_TAG_KIND@cmpq $8, -{}(%rbp)@HBC_TAG_END@\n    jne hbc_type_error\n",v.off-8,v.off);
+                    let mut root=String::new();cg_sarr_root(id,v.off,"%r11",&mut root);
+                    root.push_str("    push %r12\n    sub $8, %rsp\n    mov (%r11), %r12\n    mov 24(%r11), %r11\n");
+                    let shared=asm.replace(&old,&root).replace("-8(%r11)","%r12");out.push_str(&shared);out.push_str("    add $8, %rsp\n    pop %r12\n");
+                }else{out.push_str(&asm);}
             }
             Stmt::ADel(_, id, ie) => {
                 // ains P2 stage 2: delete the cell at i (len fixed; the
