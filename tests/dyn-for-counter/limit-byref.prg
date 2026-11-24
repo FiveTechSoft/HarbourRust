@@ -1,0 +1,10 @@
+PROCEDURE Main()
+ LOCAL n:=NIL,m:=NIL
+ ? ValType(n)
+FOR n:=1 TO 3
+ F(@n)
+NEXT
+RETURN
+FUNCTION F(x)
+ x:=2
+RETURN NIL

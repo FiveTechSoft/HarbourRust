@@ -1,0 +1,9 @@
+PROCEDURE Main()
+ F(NIL)
+RETURN
+FUNCTION F(n)
+ ? ValType(n)
+ FOR n:=1 TO 3
+  ? n
+ NEXT
+RETURN NIL

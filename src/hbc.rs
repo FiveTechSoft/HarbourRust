@@ -4715,7 +4715,14 @@ fn cg_sarr_index(id: &str, var_off: usize, ies: &[&Expr], env: &[CgLocal], sigs:
     out.push_str("    mov 24(%r11), %r11\n    dec %rax\n    shl $4, %rax\n    add %r11, %rax\n    mov (%rax), %r11\n    mov 8(%rax), %rdx\n    mov %r11, %rax\n    jmp 82f\n");
     out.push_str("81:\n    call hbc_bound_error\n82:\n");
 }
+thread_local! {static FOR_LOCAL_NAMES: std::cell::RefCell<std::collections::HashSet<String>> = std::cell::RefCell::new(std::collections::HashSet::new());}
 fn set_numeric(f: &Func) {
+    let mut locals=std::collections::HashSet::new();
+    visit_stmts_ref(&f.stmts,&mut |s|if let Stmt::Local(_,v,_)=s{locals.insert(v.clone());},&mut |_|{});
+    // Captures anywhere in the function are excluded, including a block
+    // created before the FOR and called indirectly from its body.
+    visit_stmts_ref(&f.stmts,&mut |_|{},&mut |e|if let Expr::BlockLit(..)=e{locals.retain(|v|!expr_mentions(e,v));});
+    FOR_LOCAL_NAMES.with(|m|*m.borrow_mut()=locals);
     NUM_LOCALS.with(|s| *s.borrow_mut()=prescan_numeric(f));
     STATIC_DYN.with(|s|{
         let mut roots:std::collections::HashSet<String>=f.stmts.iter().filter_map(|s|if let Stmt::Static(_,id,Expr::Nil)=s {if !matches!(module_static::kind(&f.name,id),Some(Ty::Obj(_))){Some(id.clone())}else{None}}else{None}).collect();
@@ -11373,6 +11380,27 @@ fn bare_local_is_tokens(stmts:&[Stmt],idx:usize,name:&str)->bool {
     }
     let mut saw=false;walk(&stmts[idx+1..],name,false,&mut saw).is_some()&&saw
 }
+// Preserve a reused Dyn slot, including the observable NIL before FOR.
+// Only the loop itself may reseat it. Unknown statement forms fail closed.
+fn dyn_for_reads_only(body:&[Stmt],end:&Expr,name:&str)->bool {
+    let mut ok=true;
+    let mut expr=|e:&Expr| {match e {
+        Expr::Set(v,_)|Expr::Inc(v,_,_)|Expr::ByRef(v) if v==name=>ok=false,
+        Expr::BlockLit(..) if expr_mentions(e,name)=>ok=false,
+        _=>{}
+    }};
+    visit_expr_ref(end,&mut expr);
+    visit_stmts_ref(body,&mut |_|{},&mut expr);
+    let mut targets=true;
+    visit_stmts_ref(body,&mut |st| {match st {
+        Stmt::Assign(_,v,_)|Stmt::Local(_,v,_)|Stmt::Static(_,v,_)=>if v==name{targets=false;},
+        Stmt::For(_,v,_,_,_,_)|Stmt::ForEach(_,v,_,_)=>if v==name{targets=false;},
+        Stmt::Print(..)|Stmt::Ret(..)|Stmt::If(..)|Stmt::While(..)|Stmt::Exit(..)|Stmt::Loop(..)|Stmt::CallStmt(..)=>{},
+        Stmt::ArrSet(_,v,_,_)=>if v==name{targets=false;},
+        _=>if stmt_mentions(st,name){targets=false;},
+    }},&mut |_|{});
+    ok&&targets
+}
 fn bare_local_is_for_counter(stmts: &[Stmt], idx: usize, name: &str) -> bool {
     for s in &stmts[idx + 1..] {
         match s {
@@ -11910,7 +11938,13 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 // over an outer `x` leaves x at 5, no shadowing). A
                 // non-integer or read-only slot keeps a named rejection.
                 let reuse = if let Some(pos) = env.iter().position(|v| v.name == *var) {
-                    if env[pos].ty != Ty::I64 || env[pos].ro {
+                    let dyn_counter=env[pos].ty==Ty::Dyn && !env[pos].ro && !env[pos].byref
+                        && FOR_LOCAL_NAMES.with(|m|m.borrow().contains(var))
+                        && !byref_names.contains(var) && !module_static::is_module_binding(var)
+                        && CURDIR_LINUX_NATIVE.with(|v|v.get()) && DECIMAL_LOCAL_PROFILE.with(|v|v.get())
+                        && !MACRO_CONTEXT.with(|v|v.get()) && !shared_local::active()
+                        && ts==Ty::I64 && te==Ty::I64 && dyn_for_reads_only(body,end,var);
+                    if (env[pos].ty != Ty::I64 && !dyn_counter) || env[pos].ro {
                         return Err(format!("line {}: `for` loop variable `{}` reuses a non-integer or read-only slot in this PoC", n, var));
                     }
                     true
@@ -24775,10 +24809,17 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 // STEP is already a compile-time non-zero integer.
                 // Reuse (hk323): an already-visible integer slot is the
                 // counter; otherwise a fresh slot.
-                let reuse_off = env.iter().rev().find(|v| v.name == *var && v.ty == Ty::I64).map(|v| v.off);
+                let dyn_counter=env.iter().rev().any(|v|v.name==*var&&v.ty==Ty::Dyn);
+                let reuse_off = env.iter().rev().find(|v| v.name == *var && matches!(v.ty,Ty::I64|Ty::Dyn)).map(|v| v.off);
                 cg_value(start, env, sigs, strs, out, target);
                 if method_arrays::active() && expr_ty(start,env,sigs)==Ty::Dyn{method_arrays::integer(start,out);}
                 let i_off = if let Some(o) = reuse_off { o } else { *frame += size_of(Ty::I64); *frame };
+                if dyn_counter {
+                    out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+                    cg_dyn_free_old(out,i_off);
+                    out.push_str("    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    add $16, %rsp\n");
+                    cg_i64_tagged(out);
+                }
                 out.push_str(&format!("    mov %rax, -{}(%rbp)\n    mov %rdx, -{}(%rbp)\n", i_off,i_off-8));
                 *frame += 8;
                 let end_off = *frame;
@@ -24789,7 +24830,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 cg_value(end, env, sigs, strs, out, target);
                 if method_arrays::active() && expr_ty(end,env,sigs)==Ty::Dyn{method_arrays::integer(end,out);}
                 out.push_str(&format!("    mov %rax, -{}(%rbp)\n", end_off));
-                out.push_str(&format!("    mov -{}(%rbp), %rax\n", i_off));
+                out.push_str(&format!("    mov -{}(%rbp), %rax\n", if dyn_counter{i_off-8}else{i_off}));
                 out.push_str(&format!("    cmp -{}(%rbp), %rax\n", end_off));
                 if *step > 0 {
                     out.push_str(&format!("    jg .Lfore_{}_{}\n", fname, id));
@@ -24810,12 +24851,16 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                     }
                 }
                 env.truncate(mark);
-                out.push_str(&format!("    mov -{}(%rbp), %rax\n", i_off));
+                out.push_str(&format!("    mov -{}(%rbp), %rax\n", if dyn_counter{i_off-8}else{i_off}));
                 out.push_str(&format!("    add ${}, %rax\n", step));
                 // Advancing past the i64 range would wrap the counter and
                 // the loop would not terminate: overflow ends the loop.
                 out.push_str(&format!("    jo .Lfore_{}_{}\n", fname, id));
-                out.push_str(&format!("    mov %rax, -{}(%rbp)\n    movq $0, -{}(%rbp)\n", i_off,i_off-8));
+                if dyn_counter {
+                    out.push_str(&format!("    mov %rax, -{}(%rbp)\n    movq $0, -{}(%rbp)\n",i_off-8,i_off));
+                } else {
+                    out.push_str(&format!("    mov %rax, -{}(%rbp)\n    movq $0, -{}(%rbp)\n", i_off,i_off-8));
+                }
                 out.push_str(&format!("    jmp .Lforc_{}_{}\n", fname, id));
                 out.push_str(&format!(".Lfore_{}_{}:\n", fname, id));
             }
