@@ -18048,6 +18048,8 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             let var = env.iter().rev().find(|x| x.name == *av).expect("checked");
             let l = fresh_lbl();
             if shared_local::active()&&shared_local::current(&av)&&expr_ty(&args[0],env,sigs)==Ty::Dyn {
+                let slot=if module_static::is_module_binding(&av){let owner=CUR_FN.with(|c|c.borrow().clone());format!("{}(%rip)",module_static::storage(&owner,&av))}else{format!("-{}(%rbp)",var.off)};
+                out.push_str(&format!("    cmpq $16, {slot}\n    jne .LatSharedEmpty{l}\n"));
                 cg_sarr_root(&av,var.off,"%r11",out);
                 out.push_str(&format!("    mov (%r11), %rax\n    test %rax, %rax\n    jle .LatSharedEmpty{l}\n    dec %rax\n    shl $4, %rax\n    add 24(%r11), %rax\n    mov 8(%rax), %rdx\n    mov (%rax), %rax\n"));
                 cg_dyn_clone_if_str(out);
