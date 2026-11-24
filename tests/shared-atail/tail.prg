@@ -4,7 +4,7 @@ FUNCTION Main()
  b:=Array(0)
  ? ATail(b)
  AAdd(b,17)
- ? ATail(b),Last(b)
+ ? ATail(b),SharedLast(b)
  AAdd(b,"word")
  c:=ATail(b)
  b[2]:="changed"
@@ -19,5 +19,5 @@ FUNCTION Main()
  ? b[4,1]
 RETURN NIL
 
-FUNCTION Last(a)
+FUNCTION SharedLast(a)
 RETURN ATail(a)
