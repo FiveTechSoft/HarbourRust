@@ -100,3 +100,41 @@ environment can pick up this doc as the scoped starting point.
   covers the numeric builtins; character-code names at Dyn operand sites are
   a separate unit if wanted).
 - A general `Desc`/`TransLit-like` character-set semantics argument.
+
+## Oracle evidence captured 2026-11-23 (compiled Harbour, Linux aarch64)
+
+The oracle now works on this host (see the setup in
+`docs/HARBOUR-ORACLE-2026-11-23.md`). No code here is implemented; the
+values below are Harbour's own behavior and motivate the named limits:
+
+- `? "chrc-32:", Chr(32)` → empty output (a space) — the exact print shape is
+  the same HarbourRust `?` semantics.
+- `? "chr-65:", Chr(65)` → `A`; `Chr(97)` → `a`
+- `? "chr-127:", Chr(127)` → `.`; `Chr(0)` → `.`; `Chr(128)` → the replacement
+  character `\uFFFD` - the real runtime prints these through the same
+  terminal rendering path (not a claim about byte output)
+- `? "chr-255:", Chr(255)` → the replacement character `\uFFFD`
+- `? "asc-A:", Asc("A")` → `65`; `Asc("a")` → `97`
+- `? "asc-CH:", Asc("CH")` → `67` (first byte only)
+- `? "asc-empty-is-0:", Asc("")` → `0`
+- `? "chr-100:", Chr(100)` → `d`; `? "chr-99:", Chr(99)` → `c`
+
+Implications for the named limits:
+
+- `Asc("")` is accepted and returns `0` (not an error) - the empty-string
+  "named limit" in this increment's proposal is stricter than Harbour's own
+  behavior; to stay faithful the empty-argument gate should either accept
+  the Harbour semantics or document the stricter boundary as an intentional
+  difference (like the CurDir conservative call).
+- `Chr` of a value outside the ASCII range is accepted and rendered
+  through the terminal rendering path (control byte → `.` or the
+  replacement character) - a byte-level `Chr` inside the admitted range must
+  still byte-match Harbour's first-byte output and the codepage table is out
+  of scope, as the M2 limits say. No 64-bit gate of any kind applies.
+- `Chr`/`Asc` are single-byte ASCII semantics; Harbour prints the resulting
+  string through the same `?` semantics as everything else (no padding,
+  no trailing space differences).
+
+This is only a record of Harbour's behavior for planning purposes. The
+gates still require a full byte-exact oracle run on an x86-64 host before
+publication.
