@@ -123,8 +123,10 @@ environment can pick up this doc as the scoped starting point.
 ## Oracle evidence captured 2026-11-23 (compiled Harbour, Linux aarch64)
 
 The oracle now works on this host (see the setup in
-`docs/HARBOUR-ORACLE-2026-11-23.md`). No code here is implemented; the
-values below are Harbour's own behavior and motivate the named limits:
+`docs/HARBOUR-ORACLE-2026-11-23.md`). As of the 2026-11-24 status update
+above (eeb71d24), the Chr/Asc dispatch below landed on Windows with the
+same oracle-measured contract; the values below are Harbour's own
+behavior and motivate the named limits:
 
 - `? "chrc-32:", Chr(32)` → empty output (a space) — the exact print shape is
   the same HarbourRust `?` semantics.
@@ -154,6 +156,8 @@ Implications for the named limits:
   string through the same `?` semantics as everything else (no padding,
   no trailing space differences).
 
-This is only a record of Harbour's behavior for planning purposes. The
-gates still require a full byte-exact oracle run on an x86-64 host before
-publication.
+This is only a record of Harbour's behavior for planning purposes. As
+landed on Windows it is byte-exact per the 2026-11-24 status update;
+the Linux-side and Wine-oracle fatal/limits/abi runners, and the Linux
+manifest battery, still require the publication owner's x86-64 runs
+before publication closes.
