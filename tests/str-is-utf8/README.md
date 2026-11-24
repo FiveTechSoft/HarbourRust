@@ -9,3 +9,12 @@ Gate35:3 own intact sources in5 modes=15exact fresh Harbour,3strict-zero balance
 Regression131prior native suites PASS reconciled by name,128result files compiler SHA checked where present. Rust106,LLVM21fresh exact,Linux1177stdout/golden,PE emission-only1912PASS/22known/0FAIL,negative622same18,census58/1041unchanged. No original closure/speed claim,paired benchmark not rerun. RC/objects and numeric-array division parked. No push/publication/workflows/rebase.
 
 python tests/str-is-utf8/check.py --compiler target/release/hbc --hbmk2 /path/hbmk2 --spec-root /path/harbour --output /new/path
+
+Mixed-sequence follow-up,tests-only on e24df0a3:512deterministic byte
+strings(length0..24,seed240112026) and256compositions around all64high
+leads:ASCII prefix/suffix,NUL between groups,stray continuation and
+truncated tail. Fixed bytes embedded as hex,not runtime randomness.
+Gate expands35to45:20exact,4zero,16profile,5limits. This is further
+heuristic compatibility evidence,NOT proof of valid Unicode or safe
+security filtering. Compiler unchanged3518b33d1b5c487e4a9c9f33de5217b426e15f9a776ca3e6fd595e35beac1216.
+No global repeat for tests-only commit.
