@@ -24279,6 +24279,12 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 *frame += size_of(t);
                 let off = *frame;
                 if bare_cnt || bare_arr || bare_tokens {
+                    if bare_tokens {
+                        // LOCAL executes again on every loop entry. The slot
+                        // is zeroed by the prologue only once, not per entry.
+                        let k=fresh_lbl();
+                        out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je .Lbaretoken_empty{k}\n    mov -{}(%rbp), %rsi\n    call hbc_sfree\n.Lbaretoken_empty{k}:\n",off,off-8));
+                    }
                     out.push_str(&format!("    movq $0, -{}(%rbp)\n    movq $0, -{}(%rbp)\n", off,off-8));
                     env.push(CgLocal { name: id.clone(), ty: t, off });
                     continue;

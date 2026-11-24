@@ -14,11 +14,18 @@ for src in [*sorted(here.glob('*.prg'))]:
  w=out/src.stem;w.mkdir();(w/src.name).write_bytes(src.read_bytes());(w/'input.sha256').write_text(hashlib.sha256(src.read_bytes()).hexdigest()+'  '+src.name+'\n')
  if src.stem.startswith('limit-'):
   r=run([cc,src,w/'limit'],w,'build');assert r.returncode==1 and (b'error:' in r.stderr.lower()) and not (w/'limit').exists(),(src,r.stderr);rows.append(dict(name=src.stem,kind='named-rejection'));continue
- r=run([a.hbmk2,src,'-quiet','-gtstd','-w0','-o'+str(w/'oracle')],w,'oracle-build');assert r.returncode==0,(src,r.stderr)
+ oracle_src=src
+ if src.stem.startswith('redeclare'):
+  # Harbour forbids late LOCAL syntax. Explicit adapted reset harness,
+  # not intact-source compatibility: declaration at top, NIL each entry.
+  oracle_src=w/'oracle-adapted.prg'
+  text=src.read_text().replace('PROCEDURE Main()','PROCEDURE Main()\n LOCAL a:=NIL').replace('  LOCAL a:=NIL','  a:=NIL').replace('   LOCAL a:=NIL','   a:=NIL')
+  oracle_src.write_text(text);(w/'oracle-input.sha256').write_text(hashlib.sha256(oracle_src.read_bytes()).hexdigest()+'  oracle-adapted.prg\n')
+ r=run([a.hbmk2,oracle_src,'-quiet','-gtstd','-w0','-o'+str(w/'oracle')],w,'oracle-build');assert r.returncode==0,(src,r.stderr)
  r=run([w/'oracle'],w,'oracle-run');assert r.returncode==0 and r.stderr==b'',(src,r.stderr);want=r.stdout;(w/'oracle').unlink()
  for mode,flags in [('native',[]),('external',['--external-as']),('flat',['--no-vas-arrays']),('noescape',['--no-escape-analysis']),('noprune',['--no-prune'])]:
   r=run([cc,src,w/mode,'--instrument',*flags],w,mode+'-build');assert r.returncode==0,(src,r.stderr)
-  r=run([w/mode],w,mode+'-run');assert (r.returncode,r.stdout,r.stderr)==(0,want,b''),(src,r.returncode,r.stdout,want,r.stderr);(w/mode).unlink();rows.append(dict(name=src.stem,kind='exact-Harbour',mode=mode))
+  r=run([w/mode],w,mode+'-run');assert (r.returncode,r.stdout,r.stderr)==(0,want,b''),(src,r.returncode,r.stdout,want,r.stderr);(w/mode).unlink();rows.append(dict(name=src.stem,kind=('adapted-reset-Harbour' if src.stem.startswith('redeclare') else 'exact-Harbour'),mode=mode))
  d=w/'delta';d.mkdir();bal=emit_delta(cc,os.environ,src,d,want);assert bal['state_ok'] and bal['delta']==0,(src,bal);rows.append(dict(name=src.stem,kind='strict-final-balance',source_sha256=hashlib.sha256(src.read_bytes()).hexdigest(),**bal))
  for target in ['windows','macho','macho-arm64','llvm']:
   r=run([cc,src,w/(target+'.s'),*(['--experimental-llvm'] if target=='llvm' else ['--target='+target])],w,target);assert r.returncode==1,(src,target,r.stderr);rows.append(dict(name=src.stem,kind='profile-rejection',target=target))

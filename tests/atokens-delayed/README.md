@@ -13,3 +13,11 @@ La combinación Empty(iterador) descubrió omisión de dependencia del blob time
 Árbol Harbour extraído sin git, commit no verificado. ORACLE.txt conserva versión/hash hbmk2. Paquete sin binarios/objetos/assembly desechable; sin push/publicación/workflows.
 
 python tests/atokens-delayed/check.py --compiler target/release/hbc --hbmk2 /ruta/hbmk2 --spec-root /ruta/harbour --output /ruta/nueva
+
+## Corrección de redeclaración dentro de loop
+
+El revisor encontró FAIL en e84477b6: el atajo bare_tokens ponía ptr/len a cero sin liberar el array vivo de la ronda previa. Las cuatro fuentes originales declaraban el slot fuera del loop. Reproducción propia previa al fix: redeclare-flow daba stdout correcto y DELTA=3170. Ahora bare_tokens llama hbc_sfree null-safe antes del cero. El slot ya se inicializa a cero en prologue, así que la primera entrada y las siguientes comparten la liberación segura.
+
+Gate ampliado68:20exactas intactas anteriores,10ejecuciones contra harness de reset adaptado,6balances finales cero,24rechazos perfil y8límites. Dos fuentes nuevas: redeclaración mínima3rondas y127rondas anidadas con LOOP/EXIT. Harbour rechaza LOCAL tardío E0004; el harness explícito declara el local arriba y ejecuta a:=NIL en cada entrada. La fuente native conserva LOCAL dentro del loop. Es equivalencia del reset adaptado más balance native, no ejecución intacta de esa sintaxis en Harbour. Ambas fuentes/hashes y comandos quedan separados.
+
+Regresión del fix:106suites nativas completas (incluye gate68), Rust104, LLVM21exactas frescas, Linux1177stdout/golden, PE emisión1912PASS/22conocidas/0FAIL, negativos622 mismos16desajustes y censo57/1041 idéntico. Fallos de Harbour E0004 y balance previo retenidos, no cuentan PASS. No push/publicación/workflows. Investigación Dyn containment pausada sin commit durante esta corrección.
