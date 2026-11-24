@@ -1065,6 +1065,121 @@ hbc_ts_empty:
 	movl	$2, %r8d
 	movq	%r8, %rax
 	ret
+	.p2align 4
+	.globl	hbc_ts_construct
+hbc_ts_construct:
+	pushq	%r12
+	pushq	%rbx
+	movq	%rdi, %rbx
+	subq	$24, %rsp
+	movq	(%rdi), %rcx
+	leaq	-1(%rcx), %rax
+	cmpq	$9998, %rax
+	ja	.Lhtimestamp_192
+	movq	8(%rdi), %rdi
+	leaq	-1(%rdi), %rax
+	cmpq	$11, %rax
+	jbe	.Lhtimestamp_209
+.Lhtimestamp_192:
+	movq	24(%rbx), %rdx
+	xorl	%r12d, %r12d
+	cmpq	$23, %rdx
+	ja	.Lhtimestamp_191
+	movq	32(%rbx), %rcx
+	cmpq	$59, %rcx
+	ja	.Lhtimestamp_191
+	movq	40(%rbx), %rax
+	cmpq	$59, %rax
+	ja	.Lhtimestamp_191
+	xorl	%edi, %edi
+.Lhtimestamp_196:
+	movq	48(%rbx), %rsi
+	xorl	%r12d, %r12d
+	cmpq	$999, %rsi
+	jbe	.Lhtimestamp_210
+.Lhtimestamp_194:
+	testq	%rdi, %rdi
+	je	.Lhtimestamp_191
+	call	hbc_date_days
+	addq	$2440588, %rax
+	salq	$32, %rax
+	orq	%rax, %r12
+.Lhtimestamp_191:
+	addq	$24, %rsp
+	movq	%r12, %rax
+	popq	%rbx
+	popq	%r12
+	ret
+	.p2align 4,,10
+	.p2align 3
+.Lhtimestamp_209:
+	movq	16(%rbx), %r9
+	leaq	-1(%r9), %rax
+	cmpq	$30, %rax
+	ja	.Lhtimestamp_192
+	leaq	8(%rsp), %rsi
+	leaq	4(%rsp), %r10
+	movabs	$-3689348814741910323, %r8
+	.p2align 4,,10
+	.p2align 3
+.Lhtimestamp_193:
+	movq	%rcx, %rax
+	subq	$1, %rsi
+	mulq	%r8
+	shrq	$3, %rdx
+	leaq	(%rdx,%rdx,4), %rax
+	addq	%rax, %rax
+	subq	%rax, %rcx
+	addl	$48, %ecx
+	movb	%cl, 4(%rsi)
+	movq	%rdx, %rcx
+	cmpq	%rsi, %r10
+	jne	.Lhtimestamp_193
+	movq	%rdi, %rax
+	movl	$8, %esi
+	xorl	%r12d, %r12d
+	mulq	%r8
+	shrq	$3, %rdx
+	leaq	(%rdx,%rdx,4), %rax
+	addl	$48, %edx
+	addq	%rax, %rax
+	movb	%dl, 12(%rsp)
+	subq	%rax, %rdi
+	movq	%r9, %rax
+	mulq	%r8
+	addl	$48, %edi
+	movb	%dil, 13(%rsp)
+	leaq	8(%rsp), %rdi
+	shrq	$3, %rdx
+	leaq	(%rdx,%rdx,4), %rax
+	addl	$48, %edx
+	addq	%rax, %rax
+	movb	%dl, 14(%rsp)
+	subq	%rax, %r9
+	addl	$48, %r9d
+	movb	%r9b, 15(%rsp)
+	call	hbc_stod
+	movq	24(%rbx), %rdx
+	movq	%rax, %rdi
+	cmpq	$23, %rdx
+	ja	.Lhtimestamp_194
+	movq	32(%rbx), %rcx
+	cmpq	$59, %rcx
+	ja	.Lhtimestamp_194
+	movq	40(%rbx), %rax
+	cmpq	$59, %rax
+	ja	.Lhtimestamp_194
+	jmp	.Lhtimestamp_196
+	.p2align 4,,10
+	.p2align 3
+.Lhtimestamp_210:
+	imulq	$1000, %rax, %rax
+	imulq	$3600000, %rdx, %rdx
+	imulq	$60000, %rcx, %rcx
+	addq	%rsi, %rax
+	addq	%rdx, %rax
+	leaq	(%rax,%rcx), %r12
+	jmp	.Lhtimestamp_194
 @HRTIMESTAMP_RODATA@
 	.align 8
 .Lhtimestamp_C0:

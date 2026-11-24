@@ -1,14 +1,19 @@
 // Own MIT. Bounded scalar timestamp integration; tag16 remains shared arrays.
 use super::*;
 
-pub(super) fn family(id:&str)->bool { ["hb_stot","hb_ttos","hb_ttod","hb_dtot","hb_isdatetime","hb_istimestamp","hb_ttoc","hb_dtoc"].iter().any(|b|is_builtin(id,b)) }
+pub(super) fn family(id:&str)->bool { ["hb_datetime","hb_stot","hb_ttos","hb_ttod","hb_dtot","hb_isdatetime","hb_istimestamp","hb_ttoc","hb_dtoc"].iter().any(|b|is_builtin(id,b)) }
 pub(super) fn result(id:&str)->Option<Ty>{
- if is_builtin(id,"hb_stot")||is_builtin(id,"hb_dtot"){Some(Ty::Dyn)}
+ if is_builtin(id,"hb_datetime")||is_builtin(id,"hb_stot")||is_builtin(id,"hb_dtot"){Some(Ty::Dyn)}
  else if is_builtin(id,"hb_ttos")||is_builtin(id,"hb_ttoc")||is_builtin(id,"hb_dtoc"){Some(Ty::StrOwn)}
  else if is_builtin(id,"hb_ttod"){Some(Ty::Date)}
  else if is_builtin(id,"hb_isdatetime")||is_builtin(id,"hb_istimestamp"){Some(Ty::Bool)}else{None}
 }
 pub(super) fn check(id:&str,args:&[Expr],env:&mut [Local],sigs:&mut Vec<Sig>,n:usize)->Result<Ty,String>{
+ if is_builtin(id,"hb_datetime") {
+  if !DECIMAL_LOCAL_PROFILE.with(|v|v.get())||MACRO_CONTEXT.with(|v|v.get()){return Err(format!("line {}: hb_DateTime requires ordinary Linux without threads or macros",n));}
+  if args.len()>7||!args.iter().all(|a|matches!(a,Expr::Nil)||matches!(a,Expr::Int(v)if v.parse::<i32>().is_ok())){return Err(format!("line {}: hb_DateTime admits zero arguments or1..7 literal i32/NIL components",n));}
+  return Ok(Ty::Dyn);
+ }
  if format_builtin(id){return check_format(id,args,env,sigs,n);}
  if args.len()!=1{return Err(format!("line {}: {} takes exactly one argument in timestamp phase 1",n,id));}
  if !DECIMAL_LOCAL_PROFILE.with(|v|v.get())||MACRO_CONTEXT.with(|v|v.get()){return Err(format!("line {}: timestamp phase 1 requires ordinary Linux without threads or macros",n));}
@@ -19,6 +24,15 @@ pub(super) fn check(id:&str,args:&[Expr],env:&mut [Local],sigs:&mut Vec<Sig>,n:u
  Ok(result(id).unwrap())
 }
 pub(super) fn emit(id:&str,args:&[Expr],env:&[CgLocal],sigs:&[Sig],strs:&mut Vec<String>,out:&mut String,target:Target){
+ if is_builtin(id,"hb_datetime") {
+  if args.is_empty(){out.push_str("    call hbc_ts_now\n");}
+  else {
+   out.push_str("    sub $64,%rsp\n");
+   for i in 0..7 {let v=match args.get(i){Some(Expr::Int(v))=>v.as_str(),_=>"0"};out.push_str(&format!("    movq ${v},{}(%rsp)\n",i*8));}
+   out.push_str("    mov %rsp,%rdi\n    call hbc_ts_construct\n    add $64,%rsp\n");
+  }
+  out.push_str("    mov %rax,%rdx\n    mov $17,%eax\n");return;
+ }
  if format_builtin(id){emit_format(id,args,env,sigs,strs,out,target);return;}
  let e=&args[0];let t=expr_ty(e,env,sigs);cg_value(e,env,sigs,strs,out,target);
  if is_builtin(id,"hb_isdatetime")||is_builtin(id,"hb_istimestamp"){
@@ -55,10 +69,10 @@ pub(super) fn emit(id:&str,args:&[Expr],env:&[CgLocal],sigs:&[Sig],strs:&mut Vec
 }
 
 thread_local!{static ACTIVE:std::cell::Cell<bool>=const{std::cell::Cell::new(false)};static NAMES:std::cell::RefCell<std::collections::HashSet<(String,String)>>=std::cell::RefCell::new(std::collections::HashSet::new());}
-pub(super) fn known(e:&Expr)->bool{match e{Expr::Call(id,_)=>is_builtin(id,"hb_stot")||is_builtin(id,"hb_dtot"),Expr::Var(v)=>NAMES.with(|m|m.borrow().contains(&(CUR_FN.with(|f|f.borrow().clone()),v.clone()))),_=>false}}
+pub(super) fn known(e:&Expr)->bool{match e{Expr::Call(id,_)=>is_builtin(id,"hb_datetime")||is_builtin(id,"hb_stot")||is_builtin(id,"hb_dtot"),Expr::Var(v)=>NAMES.with(|m|m.borrow().contains(&(CUR_FN.with(|f|f.borrow().clone()),v.clone()))),_=>false}}
 pub(super) fn active()->bool{ACTIVE.with(|v|v.get())}
 pub(super) fn init(fs:&[Func]){
- let mut fmt=false;let mut arr=false;for f in fs{visit_stmts_ref(&f.stmts,&mut |_|{},&mut |e|{if matches!(e,Expr::Call(id,_) if is_builtin(id,"hb_stot")||is_builtin(id,"hb_dtot")){fmt=true;}if matches!(e,Expr::DArrNew){arr=true;}});}
+ let mut fmt=false;let mut arr=false;for f in fs{visit_stmts_ref(&f.stmts,&mut |_|{},&mut |e|{if matches!(e,Expr::Call(id,_) if is_builtin(id,"hb_datetime")||is_builtin(id,"hb_stot")||is_builtin(id,"hb_dtot")){fmt=true;}if matches!(e,Expr::DArrNew){arr=true;}});}
  CONTAINERS.with(|v|v.set(fmt&&arr&&CLASSES.with(|c|c.borrow().is_empty())&&DECIMAL_LOCAL_PROFILE.with(|v|v.get())&&!MACRO_CONTEXT.with(|v|v.get())));
  ACTIVE.with(|v|v.set(false));
  NAMES.with(|v|v.borrow_mut().clear());
@@ -183,3 +197,47 @@ pub(super) fn foreach_calls(body:&[Stmt],name:&str,collection:Option<&str>,sigs:
   _=>false,
  })
 }
+
+pub(super) const NOW_HELPER:&str=r#"
+.text
+hbc_ts_now:
+    push %rbp
+    mov %rsp,%rbp
+    sub $32,%rsp
+    xor %edi,%edi
+    lea -16(%rbp),%rsi
+    mov $228,%eax
+    syscall
+    test %rax,%rax
+    jnz .Ltsnow_fail
+    mov -16(%rbp),%rdi
+    call hbc_tz_off
+    add -16(%rbp),%rax
+    cqto
+    mov $86400,%ecx
+    idiv %rcx
+    test %rdx,%rdx
+    jns .Ltsnow_positive
+    dec %rax
+    add $86400,%rdx
+.Ltsnow_positive:
+    mov %rax,-24(%rbp)
+    imul $1000,%rdx,%rdx
+    mov %rdx,-32(%rbp)
+    mov -8(%rbp),%rax
+    xor %edx,%edx
+    mov $1000000,%ecx
+    div %rcx
+    add %rax,-32(%rbp)
+    mov -24(%rbp),%rdi
+    call hbc_date_from_days
+    mov %rax,%rdi
+    call hbc_ts_from_date
+    or -32(%rbp),%rax
+    leave
+    ret
+.Ltsnow_fail:
+    xor %eax,%eax
+    leave
+    ret
+"#;

@@ -1,0 +1,15 @@
+FUNCTION Work()
+ LOCAL i,n:=0
+ FOR i:=1 TO 117
+  IF HB_ISARRAY({"word",{19.25,SToD("20040229")}}).AND.!HB_ISNUMERIC({1,2}).AND.!HB_ISSTRING({})
+   n++
+  ENDIF
+ NEXT
+RETURN n
+FUNCTION Main()
+ LOCAL i,n:=0
+ FOR i:=1 TO 37
+  n+=Work()
+ NEXT
+ ? n
+RETURN NIL

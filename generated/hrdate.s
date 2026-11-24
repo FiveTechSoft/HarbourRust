@@ -867,6 +867,12 @@ hbc_dtoc_c:
 .byte 121,121,109,109,109,109,109,47,100,100,0
 .Lhdate_C16:
 .byte 121,121,121,121,109,109,109,109,109,47,100,100,0
+.Lhdate_C17:
+.byte 121,121,121,45,109,109,45,100,100,0
+.Lhdate_C18:
+.byte 121,121,45,109,109,45,100,100,0
+.Lhdate_C19:
+.byte 121,121,121,121,45,109,109,45,100,100,0
 	.text
 	.p2align 4
 	.globl	hbc_date_check_mask
@@ -882,7 +888,7 @@ hbc_date_check_mask:
 	pushq	%r12
 	pushq	%rbp
 	pushq	%rbx
-	subq	$152, %rsp
+	subq	$168, %rsp
 	movq	%rax, 24(%rsp)
 	leaq	.Lhdate_C4(%rip), %rax
 	movq	%rax, 32(%rsp)
@@ -910,6 +916,12 @@ hbc_date_check_mask:
 	movq	%rax, 120(%rsp)
 	leaq	.Lhdate_C16(%rip), %rax
 	movq	%rax, 128(%rsp)
+	leaq	.Lhdate_C17(%rip), %rax
+	movq	%rax, 136(%rsp)
+	leaq	.Lhdate_C18(%rip), %rax
+	movq	%rax, 144(%rsp)
+	leaq	.Lhdate_C19(%rip), %rax
+	movq	%rax, 152(%rsp)
 	testq	%rsi, %rsi
 	jne	.Lhdate_191
 	jmp	.Lhdate_192
@@ -932,7 +944,7 @@ hbc_date_check_mask:
 	jne	.Lhdate_188
 .Lhdate_186:
 	addq	$1, %r11
-	cmpq	$15, %r11
+	cmpq	$18, %r11
 	je	.Lhdate_190
 	movq	16(%rsp,%r11,8), %r10
 	xorl	%edx, %edx
@@ -957,7 +969,15 @@ hbc_date_check_mask:
 	addq	$9, %rcx
 	salq	$4, %rax
 	orq	%rcx, %rax
-	jmp	.Lhdate_183
+.Lhdate_183:
+	addq	$168, %rsp
+	popq	%rbx
+	popq	%rbp
+	popq	%r12
+	popq	%r13
+	popq	%r14
+	popq	%r15
+	ret
 	.p2align 4,,10
 	.p2align 3
 .Lhdate_187:
@@ -1105,15 +1125,7 @@ hbc_date_check_mask:
 	movq	%r15, %rax
 	salq	$4, %rax
 	orq	(%rsp), %rax
-.Lhdate_183:
-	addq	$152, %rsp
-	popq	%rbx
-	popq	%rbp
-	popq	%r12
-	popq	%r13
-	popq	%r14
-	popq	%r15
-	ret
+	jmp	.Lhdate_183
 .Lhdate_198:
 	movq	$-1, %rax
 	jmp	.Lhdate_183

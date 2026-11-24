@@ -1,0 +1,3 @@
+FUNCTION Main()
+ ? 0d00
+RETURN NIL
