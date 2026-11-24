@@ -4958,6 +4958,15 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
             pin[i]=Some(Ty::Dyn);
         }
     }
+    // Direct Date consumers establish parameter evidence before enclosing
+    // arithmetic is visited (for example d - DoW(d) + 2).
+    visit_stmts_ref(&f.stmts,&mut |_|{},&mut |e|{
+        if let Expr::Call(id,args)=e {
+            if ["dtos","dtoc","day","month","year","dow","cdow","cmonth"].iter().any(|b|is_builtin(id,b)) {
+                if let Some(Expr::Var(v))=args.first(){if let Some(i)=f.params.iter().position(|p|p==v){if pin[i].is_none(){pin[i]=Some(Ty::Date);}}}
+            }
+        }
+    });
     let mut lit: Vec<(String, Ty)> = Vec::new(); // literal-initialized locals
     #[derive(Clone,Default)]
     struct ParamUse { printed:bool, len_line:Option<usize> }
@@ -5060,8 +5069,9 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
         match e {
             Expr::Var(v) => lit.iter().any(|(x,t)| x == v && *t == Ty::Date)
                 || is_param(f,v).map(|i|pin[i] == Some(Ty::Date)).unwrap_or(false),
-            Expr::Call(id,_) => ["date","stod","ctod"].iter().any(|b|is_builtin(id,b))
+            Expr::Call(id,_) => ["date","stod","hb_stod","ctod"].iter().any(|b|is_builtin(id,b))
                 || sigs.iter().any(|s|s.name == *id && s.ret == Some(Ty::Date)),
+            Expr::Bin('+'|'-',a,b) => date_typed(a,lit,sigs,f,pin) && !date_typed(b,lit,sigs,f,pin),
             Expr::Seq(es) => es.last().map_or(false,|e|date_typed(e,lit,sigs,f,pin)),
             Expr::Set(_,r) => date_typed(r,lit,sigs,f,pin),
             _ => false,
@@ -5291,7 +5301,10 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
                 // (hb_vmDivide, oracle hk292), so p keeps its own type
                 // and converts inside the op like Harbour's (double)n.
                 let f64_side = *op != '/' && (f64_typed(a, lit, sigs, f, pin) || f64_typed(b, lit, sigs, f, pin));
-                if *op == '+' && str_side {
+                if matches!(*op,'+'|'-') && date_typed(a,lit,sigs,f,pin) {
+                    pin_vars(f,a,Ty::Date,pin,n)?;
+                    if !date_typed(b,lit,sigs,f,pin){pin_vars(f,b,Ty::I64,pin,n)?;}
+                } else if *op == '+' && str_side {
                     pin_vars(f, a, Ty::Str, pin, n)?;
                     pin_vars(f, b, Ty::Str, pin, n)?;
                 } else if f64_side {
@@ -10996,7 +11009,7 @@ fn narrow_bare_date_locals(funcs:&mut [Func]) {
     fn date_producer(e:&Expr,name:&str,known:&std::collections::HashSet<String>)->bool {
         if expr_mentions(e,name){return false;}
         match e {
-            Expr::Call(id,_) => ["date","stod","ctod"].iter().any(|b|is_builtin(id,b)),
+            Expr::Call(id,_) => ["date","stod","hb_stod","ctod"].iter().any(|b|is_builtin(id,b)),
             Expr::Var(v) => known.contains(v),
             Expr::Bin('+'|'-',a,b) => date_producer(a,name,known) && matches!(b.as_ref(),Expr::Int(v) if v.parse::<i64>().is_ok()),
             _=>false,
@@ -39197,6 +39210,10 @@ fn main() {
     if hash_case_mode && (!DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get())) {eprintln!("error: hb_HCaseMatch logical mode requires ordinary Linux without threads or macros");process::exit(1);}
     HASH_CASE_LOGICAL_MODE.with(|v|v.set(hash_case_mode));
     if optional_block::lower(&mut funcs) && (!DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get())) {eprintln!("error: static optional-block wrappers require ordinary Linux without threads or macros");process::exit(1);}
+    // Normalize the measured no-argument empty-date constructor before
+    // all existing SToD checker/lowering paths index its sole argument.
+    let source_names:std::collections::HashSet<_>=funcs.iter().map(|f|f.name.clone()).collect();
+    for f in &mut funcs {visit_stmts_mut(&mut f.stmts,&mut |e,_|{if let Expr::Call(id,args)=e{if ["stod","hb_stod"].contains(&id.as_str())&&!source_names.contains(id)&&args.is_empty(){args.push(Expr::Str(String::new()));}}});}
     narrow_bare_date_locals(&mut funcs);
     init_retyped_val_functions(&funcs);
     init_pcount_functions(&funcs);
