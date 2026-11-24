@@ -1,7 +1,12 @@
 # Own MIT Linux hb_FNameExtSet leaf-string helper.
 # rdi/rsi=path,rdx/rcx=extension -> owned result rax/rdx.
 .text
+hbc_fnameextsetdef_linux:
+    mov $1, %r8d
+    jmp .Lfes_entry
 hbc_fnameextset_linux:
+    xor %r8d, %r8d
+.Lfes_entry:
     push %rbp
     mov %rsp, %rbp
     push %rbx
@@ -10,6 +15,7 @@ hbc_fnameextset_linux:
     push %r14
     push %r15
     sub $24, %rsp
+    mov %r8, 16(%rsp)
     mov %rdi, %r12
     mov %rdx, %r13
     mov %rcx, %r14
@@ -41,8 +47,16 @@ hbc_fnameextset_linux:
     inc %rax
     jmp .Lfes_path
 .Lfes_path_done:
+    cmpq $0, 16(%rsp)
+    je .Lfes_replace
+    cmp $-1, %r9
+    je .Lfes_replace
+    xor %r14d, %r14d
+    jmp .Lfes_cap
+.Lfes_replace:
     cmp $-1, %r9
     cmovne %r9, %rax
+.Lfes_cap:
     cmp $262, %rax
     jbe .Lfes_base
     mov $262, %eax
