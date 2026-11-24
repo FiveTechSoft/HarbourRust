@@ -9,7 +9,8 @@ an exact integer result,although the mathematical result fits i64.
 Therefore multiplication reduction now also requires every product to
 have magnitude at most2^53. That provenance propagates through every
 later addition/subtraction,whose intermediate results must also stay
-within2^53,even if a subsequent cancellation would bring them back. Checked addition/subtraction still reject
+within2^53,and both operands at every such node must also stay within
+that range,even if a subsequent cancellation would bring them back. Checked addition/subtraction still reject
 any i64 overflow. An overflow or precision refusal leaves the original
 call for existing Eval analysis,not a claim that generic Eval gains
 large-integer fidelity here. No change to c02's small integer behavior.

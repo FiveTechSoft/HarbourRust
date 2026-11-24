@@ -21,6 +21,7 @@ fn integer_value(e:&Expr,p:&str,value:i64)->Option<i64> {
   Expr::Bin(op @ ('+'|'-'|'*'),a,b)=>{
    let (a,af)=eval(a,p,value)?;let (b,bf)=eval(b,p,value)?;
    let fp=af||bf||*op=='*';
+   if fp&&(a.unsigned_abs()>9_007_199_254_740_992||b.unsigned_abs()>9_007_199_254_740_992){return None;}
    let n=match op {'+'=>a.checked_add(b),'-'=>a.checked_sub(b),'*'=>a.checked_mul(b),_=>None}?;
    if fp&&n.unsigned_abs()>9_007_199_254_740_992{return None;}
    Some((n,fp))
@@ -106,6 +107,7 @@ mod tests {
  }
  #[test] fn multiplication_provenance_bounds_all_later_intermediates(){
   let edge=9_007_199_254_740_992;
+  assert_eq!(integer_value(&op('-',op('*',x(),n(1)),n(9_007_199_254_740_993)),"x",1),None);
   for sign in [-1,1]{
    let product=op('*',x(),n(1));
    let beyond=op('+',product.clone(),n(sign));
