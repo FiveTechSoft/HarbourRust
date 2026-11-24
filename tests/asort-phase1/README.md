@@ -1,6 +1,6 @@
 # ASort phase 1: flat local literals and bounded ranges
 
-Own MIT on main adee538e. Julio Ponce's MIT ASort package contributes
+Own MIT on main63c5ee7d961b23ebf4253294476f85ff57d93806. Julio Ponce's MIT ASort package contributes
 programs a01/a02 and Harbour output specifications; no implementation or
 diff was copied. cambio.diff was not opened. Checkers read external specs
 from --spec-root, not vendored sources. No workflow changes,push or publish.
@@ -38,7 +38,7 @@ never means success. Len(ASort(...)) remains a separate static-check gap.
 
     python tests/asort-phase1/check.py --compiler target/release/hbc --hbmk2 /path/to/harbour/bin/linux/gcc/hbmk2 --spec-root /path/to/julio/programas --output /tmp/asort-check
 
-Current main adee538e rejects all16 supplied ASort programs;head closes
+Current main63c5ee7d rejects all16 supplied ASort programs;head closes
 only a01/a02 here. Of15 freshly executable Harbour sources,the13minimals
 match Julio's supplied bytes. e18 has GTSTD long-line wrapping differences;
 e19 has GTSTD trailing-space trimming differences. These are preserved,
@@ -47,7 +47,7 @@ because hb_memcheck is not linked by the standard oracle. No fake adapter.
 
 Regressions:timestamp1..9,B1=152,B2=115,A1/A2,cycle59,nested51,Rust99.
 Linux1177:1176 exact and inherited ctod_order_epoch output failure,
-reproduced identical with main adee538e. Negatives622 unchanged including
+reproduced identical with main63c5ee7d. Negatives622 unchanged including
 13known mismatches. PE emission only1912PASS,22known,0FAIL. Census48/1041
 admitted in both current main and head,no admission changes in this phase.
 No native Windows/Mac runtime extension. Reduced bundle/patch,LEEME,
