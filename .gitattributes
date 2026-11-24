@@ -204,3 +204,4 @@ tests/set-dateformat/** -text
 tests/set-runtime-mask/** -text
 
 tests/date-original3/** -text
+tests/main-return/expected/** -text

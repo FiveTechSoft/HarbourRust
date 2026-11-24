@@ -11078,6 +11078,54 @@ fn foreach_lv_readonly(stmts: &[Stmt], name: &str) -> bool {
 // exposes its initial NIL. Narrow only this dominated, non-byref shape.
 // Unknown/control-flow forms fail closed; the existing Date checker still
 // rejects all later non-Date stores. No inference invokes type_expr here.
+// Harbour discards the value main returns: the process exit code comes
+// only from ErrorLevel() (measured against Harbour 3.2, tests/main-return).
+// `return <value>` in main therefore runs as a bare `return`: a literal or
+// variable is dropped, a call still runs for its effect first, and a
+// parenthesized list does both in order. Any other value form (operators,
+// indexing) keeps the "main must end with return" rejection.
+fn discard_main_return_values(funcs:&mut [Func]) {
+    fn pure(e:&Expr)->bool {
+        matches!(e, Expr::Int(_) | Expr::Float(..) | Expr::FloatV(..) | Expr::Str(_) | Expr::Var(_) | Expr::Log(_) | Expr::Nil)
+    }
+    // The value's parts in evaluation order; None when one part is neither
+    // a plain value nor a call.
+    fn parts(e:Expr,out:&mut Vec<Expr>)->bool {
+        match e {
+            Expr::Seq(es) => es.into_iter().all(|x|parts(x,out)),
+            // ALTD() stays a statement only (tests/altd-stmt).
+            Expr::Call(id,_) if is_builtin(&id,"altd") => false,
+            Expr::Call(..) => {out.push(e);true}
+            e => pure(&e),
+        }
+    }
+    fn walk(stmts:&mut Vec<Stmt>) {
+        let mut i=0;
+        while i<stmts.len() {
+            match &mut stmts[i] {
+                Stmt::If(_,_,t,e) => {walk(t);walk(e);}
+                // FOR EACH bodies are left alone: returning the loop
+                // variable keeps its borrow diagnostics (t346, t1556).
+                Stmt::While(_,_,b) | Stmt::For(_,_,_,_,_,b) => walk(b),
+                Stmt::Ret(n,Some(e)) => {
+                    let n=*n;
+                    let mut calls=Vec::new();
+                    if parts(e.clone(),&mut calls) {
+                        stmts[i]=Stmt::Ret(n,None);
+                        for c in calls {
+                            stmts.insert(i,Stmt::CallStmt(n,c));
+                            i+=1;
+                        }
+                    }
+                }
+                _ => {}
+            }
+            i+=1;
+        }
+    }
+    for f in funcs.iter_mut().filter(|f|f.name=="main") { walk(&mut f.stmts); }
+}
+
 fn narrow_bare_date_locals(funcs:&mut [Func]) {
     if !DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get()) { return; }
     fn date_producer(e:&Expr,name:&str,known:&std::collections::HashSet<String>)->bool {
@@ -39430,6 +39478,7 @@ fn main() {
             }}
         });}
     }
+    discard_main_return_values(&mut funcs);
     narrow_bare_date_locals(&mut funcs);
     init_retyped_val_functions(&funcs);
     init_pcount_functions(&funcs);
