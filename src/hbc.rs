@@ -7500,6 +7500,8 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                         };
                     }
                     Expr::Index2(id, ie, ie2) => {
+                        // Shared indexed scalars dispatch LEN at runtime.
+                        if shared_local::active()&&is_sarr(id)&&env.iter().any(|v|v.name==*id&&v.ty==Ty::Dyn){type_expr(&args[0],env,sigs,n)?;return Ok(Ty::I64);}
                         // len(a[i][j]): borrow two levels (oracle pr4).
                         if type_expr(ie, env, sigs, n)? != Ty::I64 || type_expr(ie2, env, sigs, n)? != Ty::I64 {
                             return Err(format!("line {}: array indices must be integers", n));
@@ -11014,6 +11016,10 @@ fn bare_local_is_for_counter(stmts: &[Stmt], idx: usize, name: &str) -> bool {
             Stmt::For(_, lv, start, end, _, _) if lv == name => {
                 return !expr_mentions(start, name) && !expr_mentions(end, name);
             }
+            Stmt::For(_,outer,Expr::Int(start),Expr::Int(end),step,body)
+                if shared_local::active()&&outer!=name&&start.parse::<i64>().ok().zip(end.parse::<i64>().ok()).map_or(false,|(a,b)|if *step>0{a<=b}else{a>=b}) => {
+                if stmts_mention(body,name){return first_nested_counter(body,name);}
+            }
             _ => {
                 if stmt_mentions(s, name) {
                     return false;
@@ -11022,6 +11028,11 @@ fn bare_local_is_for_counter(stmts: &[Stmt], idx: usize, name: &str) -> bool {
         }
     }
     false
+}
+fn first_nested_counter(ss:&[Stmt],name:&str)->bool{
+ for s in ss {if let Stmt::For(_,v,a,b,_,_)=s{if v==name{return !expr_mentions(a,name)&&!expr_mentions(b,name);}}
+ if stmt_mentions(s,name){return false;}}
+ false
 }
 
 fn stmts_mention(stmts: &[Stmt], name: &str) -> bool {
@@ -17985,7 +17996,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             out.push_str("    test %rax, %rax\n    jne hbc_type_error\n    call hbc_round\n");
         }
         Expr::Call(id, args) if is_builtin(id, "len") => {
-            if (method_arrays::active()||(shared_local::active()&&matches!(&args[0],Expr::Call(id,_)if is_builtin(id,"asort")))) && expr_ty(&args[0],env,sigs)==Ty::Dyn && !matches!(&args[0],Expr::Var(_)|Expr::Index(..)|Expr::Index2(..)|Expr::Index3(..)){
+            if (shared_local::active()&&matches!(&args[0],Expr::Index2(id,..)if is_sarr(id)))||(method_arrays::active()||(shared_local::active()&&matches!(&args[0],Expr::Call(id,_)if is_builtin(id,"asort")))) && expr_ty(&args[0],env,sigs)==Ty::Dyn && !matches!(&args[0],Expr::Var(_)|Expr::Index(..)|Expr::Index2(..)|Expr::Index3(..)){
                 cg_value(&args[0],env,sigs,strs,out,target);
                 let k=fresh_lbl();out.push_str(&format!("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n    cmp $16, %rax\n    jne .Lb2lenstr{k}\n    mov (%rdx), %rax\n    jmp .Lb2lendone{k}\n.Lb2lenstr{k}:\n    cmp $2, %rax\n    je .Lb2lenok{k}\n    cmp $4, %rax\n    jne .Lb2lenbad{k}\n.Lb2lenok{k}:\n    mov -8(%rdx), %rax\n.Lb2lendone{k}:\n    mov %rax, 16(%rsp)\n"));
                 if dyn_expr_owned(&args[0]){cg_dyn_stack_release(out,0,false);}
