@@ -1965,3 +1965,5 @@ pos2 tests/quit-bb/programs/cls_altd_quit.prg tests/quit-bb/expected/cls_altd_qu
 pos2 tests/quit-bb/programs/quit_nested.prg tests/quit-bb/expected/quit_nested.linux.out tests/quit-bb/expected/quit_nested.windows.out
 pos2 tests/main-return/programs/main_return_call.prg tests/main-return/expected/main_return_call.linux.out tests/main-return/expected/main_return_call.windows.out
 pos2 tests/main-return/programs/main_return_value.prg tests/main-return/expected/main_return_value.linux.out tests/main-return/expected/main_return_value.windows.out
+pos2 tests/main-params/programs/main_params_nil.prg tests/main-params/expected/main_params_nil.linux.out tests/main-params/expected/main_params_nil.windows.out
+pos2 tests/main-params/programs/main_params_assign.prg tests/main-params/expected/main_params_assign.linux.out tests/main-params/expected/main_params_assign.windows.out
