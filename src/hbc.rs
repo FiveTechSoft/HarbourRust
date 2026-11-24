@@ -11320,6 +11320,47 @@ fn bare_local_is_fresh_array(stmts:&[Stmt],idx:usize,name:&str)->bool {
     }
     false
 }
+// A typed string-array slot can replace an invisible initial NIL only
+// when every reachable read is dominated by an exact ATokens store.
+// A loop can run zero times, so its stores never initialize the suffix.
+fn bare_local_is_tokens(stmts:&[Stmt],idx:usize,name:&str)->bool {
+    if !CURDIR_LINUX_NATIVE.with(|v|v.get()) || !DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get()) || shared_local::active(){return false;}
+    let mut escaped=false;
+    visit_stmts_ref(stmts,&mut |_|{},&mut |e| {match e {
+        Expr::ByRef(n)|Expr::Set(n,_)|Expr::Inc(n,_,_) if n==name=>escaped=true,
+        Expr::BlockLit(_,_,_) if expr_mentions(e,name)=>escaped=true,
+        _=>{}
+    }});
+    if escaped{return false;}
+    fn walk(ss:&[Stmt],name:&str,mut ready:bool,saw:&mut bool)->Option<bool> {
+        for st in ss {match st {
+            Stmt::Assign(_,id,e) if id==name=> {
+                if !matches!(e,Expr::Call(f,aa) if is_builtin(f,"hb_atokens") && matches!(aa.as_slice(),[Expr::Var(v),Expr::Str(_)] if v!=name)){return None;}
+                ready=true;*saw=true;
+            },
+            Stmt::Local(_,id,_)|Stmt::Static(_,id,_) if id==name=>return None,
+            Stmt::If(_,c,a,b)=> {
+                if !ready&&expr_mentions(c,name){return None;}
+                let ra=walk(a,name,ready,saw)?;let rb=walk(b,name,ready,saw)?;ready=ra&&rb;
+            },
+            Stmt::While(_,c,b)=> {if !ready&&expr_mentions(c,name){return None;}walk(b,name,ready,saw)?;},
+            Stmt::For(_,id,a,b,_,body)=> {
+                if id==name || (!ready&&(expr_mentions(a,name)||expr_mentions(b,name))){return None;}
+                walk(body,name,ready,saw)?;
+            },
+            Stmt::ForEach(_,id,c,body)=> {
+                if id==name || (!ready&&expr_mentions(c,name)){return None;}
+                walk(body,name,ready,saw)?;
+            },
+            // Exception paths, switch flow and dynamic storage are not
+            // a definite-initialization proof in this bounded analysis.
+            Stmt::Try(..)|Stmt::Switch(..)|Stmt::MemvarDecl(..)|Stmt::MemvarSet(..)|Stmt::CatchBind(..) if stmt_mentions(st,name)=>return None,
+            _ if !ready&&stmt_mentions(st,name)=>return None,
+            _=>{}
+        }}Some(ready)
+    }
+    let mut saw=false;walk(&stmts[idx+1..],name,false,&mut saw).is_some()&&saw
+}
 fn bare_local_is_for_counter(stmts: &[Stmt], idx: usize, name: &str) -> bool {
     for s in &stmts[idx + 1..] {
         match s {
@@ -11628,6 +11669,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 };
                 let t = if t==Ty::Dyn && matches!(e,Expr::Nil) && !byref_names.contains(id)
                     && bare_local_is_fresh_array(stmts,si,id) {Ty::DArr} else {t};
+                let t=if t==Ty::Dyn && matches!(e,Expr::Nil) && !byref_names.contains(id) && bare_local_is_tokens(stmts,si,id){Ty::DArrS}else{t};
                 env.push(Local { name: id.clone(), ty: t, moved: false, ro: false, byref: false });
                 // Object narrowing handoff, recorded AT the narrowing
                 // (a declaration inside a loop body leaves the final env
@@ -22568,6 +22610,7 @@ fn layout_locals(stmts: &[Stmt], env: &mut Vec<CgLocal>, sigs: &[Sig], frame: &m
                 // one shared predicate.
                 if t == Ty::Dyn && matches!(e, Expr::Nil) && !byref_names.contains(id) && bare_local_is_for_counter(stmts, si, id) { t = Ty::I64; }
                 if t==Ty::Dyn && matches!(e,Expr::Nil) && !byref_names.contains(id) && bare_local_is_fresh_array(stmts,si,id) {t=Ty::DArr;}
+                if t==Ty::Dyn && matches!(e,Expr::Nil) && !byref_names.contains(id) && bare_local_is_tokens(stmts,si,id){t=Ty::DArrS;}
                 // Object narrowing handoff (see OBJ_NARROW): the slot is
                 // the 8-byte object casilla the checker settled on.
                 if let Some(ci) = OBJ_NARROW.with(|m| m.borrow().get(&(CUR_FN.with(|c| c.borrow().clone()), id.clone())).copied()) { t = Ty::Obj(ci); }
@@ -24229,11 +24272,13 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 if bare_cnt { t = Ty::I64; }
                 let bare_arr=t==Ty::Dyn && matches!(e,Expr::Nil) && !byref_names.contains(id) && bare_local_is_fresh_array(stmts,si,id);
                 if bare_arr {t=Ty::DArr;}
+                let bare_tokens=t==Ty::Dyn && matches!(e,Expr::Nil) && !byref_names.contains(id) && bare_local_is_tokens(stmts,si,id);
+                if bare_tokens {t=Ty::DArrS;}
                 // Same object-narrowing handoff as layout_locals.
                 if let Some(ci) = OBJ_NARROW.with(|m| m.borrow().get(&(CUR_FN.with(|c| c.borrow().clone()), id.clone())).copied()) { t = Ty::Obj(ci); }
                 *frame += size_of(t);
                 let off = *frame;
-                if bare_cnt || bare_arr {
+                if bare_cnt || bare_arr || bare_tokens {
                     out.push_str(&format!("    movq $0, -{}(%rbp)\n    movq $0, -{}(%rbp)\n", off,off-8));
                     env.push(CgLocal { name: id.clone(), ty: t, off });
                     continue;
@@ -35605,7 +35650,9 @@ fn finalize_trace(mut out: String, target: Target) -> String {
         timestamp::comparison_helpers(&mut out);
 
     }
-    if ["ts_parse", "ts_to_date", "date_core_c", "ctod", "date_today", "date_render", "stod", "dtos", "year", "day", "month", "dow", "cdow", "cmonth", "dtoc", "date_add", "date_diff", "date_days", "date_from_days", "descend_date"].iter().any(|name| out.contains(&format!("call hbc_{}",name))) {
+    // Generated timestamp assembly uses tabs after call; emitted helpers
+    // use spaces. Dependency closure must recognize either spelling.
+    if ["ts_parse", "ts_to_date", "date_core_c", "ctod", "date_today", "date_render", "stod", "dtos", "year", "day", "month", "dow", "cdow", "cmonth", "dtoc", "date_add", "date_diff", "date_days", "date_from_days", "descend_date"].iter().any(|name| out.contains(&format!("call hbc_{}",name)) || out.contains(&format!("call\thbc_{}",name))) {
         out.push_str(DATE_PORT_HELPERS);
     }
     if matches!(target, Target::Linux) && !MACHO_MODE.with(|v| v.get()) && (out.contains("call hbc_date_today") || out.contains("call hbc_seconds") || out.contains("call hbc_time_str") || out.contains("call hbc_ts_now")) {
