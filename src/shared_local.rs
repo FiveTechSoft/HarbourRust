@@ -77,6 +77,8 @@ pub fn init(ff:&[Func]) {
   visit_stmts_ref(&f.stmts,&mut |s|{if let Stmt::ArrSet2(_,n,..)|Stmt::ArrSet3(_,n,..)|Stmt::ArrSet4(_,n,..)=s{if nested.contains(n){need=true;}}},&mut |_|{});
   // Replacing a cell by a constant nested tagged array needs identity.
   visit_stmts_ref(&f.stmts,&mut |s|{if let Stmt::ArrSet(_,n,_,e)=s{if constants.contains(n)&&literal(e)&&tagged_nested(e){need=true;}}},&mut |_|{});
+  // An explicit constant-literal clone selects registered array identity.
+  visit_stmts_ref(&f.stmts,&mut |_|{},&mut |e|{if matches!(e,Expr::Call(id,aa)if is_builtin(id,"aclone")&&matches!(aa.as_slice(),[a]if literal(a))){need=true;}});
   // ASort on a constant local flat literal requires an addressable array
   // identity. Direct callbacks are checked separately; computed literals stay closed.
   let mut sortable=HashSet::new();
