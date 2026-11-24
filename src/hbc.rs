@@ -8099,7 +8099,18 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 if !matches!(&args[0], Expr::Var(_)) {return Err(format!("line {}: `ASort` expects an array variable (the slot is passed by address)",n));}
 
                 if shared_local::active()&&ta==Ty::Dyn&&matches!(&args[0],Expr::Var(v) if is_sarr(v)){
-                    if let Some(e)=args.get(3){let t=type_expr(e,env,sigs,n)?;if !matches!(t,Ty::I64|Ty::Bool|Ty::Str|Ty::StrOwn)&&!matches!(e,Expr::Nil){return Err(format!("line {}: shared ASort callbacks are outside this increment",n));}}
+                    if let Some(e)=args.get(3){
+                        if let Expr::BlockLit(_,ps,body)=e {
+                            fn atom(e:&Expr,ps:&[String])->bool{matches!(e,Expr::Var(v)if ps.contains(v))||matches!(e,Expr::Int(_)|Expr::Str(_)|Expr::Log(_)|Expr::Nil)}
+                            let tail=matches!(body.last(),Some(Expr::Cmp(_,a,b))if atom(a,ps)&&atom(b,ps))||matches!(body.last(),Some(Expr::Log(_)));
+                            let prefix=body.iter().take(body.len().saturating_sub(1)).all(|e|matches!(e,Expr::Call(id,aa)if is_builtin(id,"qout")&&aa.iter().all(|a|atom(a,ps))));
+                            if ps.len()!=2 || !tail || !prefix {return Err(format!("line {}: shared ASort callback requires two parameters, a direct scalar comparison and optional QOut trace",n));}
+                            COMPARATOR_MODE.set(true);CAPTURE_MODE.set(Some(2));
+                            let t=type_expr(e,env,sigs,n);
+                            CAPTURE_MODE.set(None);COMPARATOR_MODE.set(false);
+                            t?;
+                        } else {let t=type_expr(e,env,sigs,n)?;if !matches!(t,Ty::I64|Ty::Bool|Ty::Str|Ty::StrOwn)&&!matches!(e,Expr::Nil){return Err(format!("line {}: shared ASort fourth argument requires direct callback or scalar",n));}}
+                    }
                     for e in args.iter().skip(1).take(2){if !matches!(e,Expr::Nil)&&type_expr(e,env,sigs,n)?!=Ty::I64{return Err(format!("line {}: shared ASort start/count require integer or literal NIL",n));}}
                     return Ok(Ty::Dyn);
                 }
@@ -10400,6 +10411,7 @@ fn check_block_body(id: usize, params: &[String], body: &[Expr], env: &[Local], 
     let comparator = COMPARATOR_MODE.get();
     let pty = |i: usize| match CAPTURE_MODE.get() {
         Some(0) => Ty::I64,
+        Some(2) => Ty::Dyn,
         Some(1) if i == 0 && !comparator => Ty::Str,
         Some(1) if comparator => Ty::Str,
         _ => Ty::I64,
@@ -17747,9 +17759,12 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                     if let Some(e)=args.get(i).filter(|e|!matches!(e,Expr::Nil)){cg_expr(e,env,sigs,strs,out,target);}else{out.push_str(if i==1{"    mov $1, %rax\n"}else{"    mov $-1, %rax\n"});}
                     out.push_str(&format!("    mov %rax, {}(%rsp)\n",(i-1)*8));
                 }
-                if let Some(e)=args.get(3){cg_val_discard_arg(e,env,sigs,strs,out,target);}
+                if let Some(e)=args.get(3).filter(|e|!matches!(e,Expr::BlockLit(..))){cg_val_discard_arg(e,env,sigs,strs,out,target);}
                 cg_sarr_root(&av,var.off,"%r11",out);
-                out.push_str("    mov %r11, 16(%rsp)\n    mov 24(%r11), %rdi\n    mov (%r11), %rsi\n    mov (%rsp), %rdx\n    mov 8(%rsp), %rcx\n    call hbc_asort_flat_shared\n    mov 16(%rsp), %rdx\n    mov $16, %eax\n    add $32, %rsp\n");
+                out.push_str("    mov %r11, 16(%rsp)\n    mov 24(%r11), %rdi\n    mov (%r11), %rsi\n    mov (%rsp), %rdx\n    mov 8(%rsp), %rcx\n");
+                if let Some(Expr::BlockLit(id,..))=args.get(3){out.push_str(&format!("    lea hbc_blk_{id}(%rip), %r8\n    mov %rbp, %r10\n    call hbc_asort_callback_shared\n"));}
+                else{out.push_str("    call hbc_asort_flat_shared\n");}
+                out.push_str("    mov 16(%rsp), %rdx\n    mov $16, %eax\n    add $32, %rsp\n");
             } else if args.len()==4 {
                 // Block sort: the helper gets the cells, the clamped
                 // start/count and the block function pointer; blocks with
@@ -28727,8 +28742,8 @@ hbc_aclone_s:
     pop %rbp
     ret
 
-# Own MIT: bounded shared flat ASort. Only integer/text families, no callback.
-# Validate before moving cells, so a rejected mixed array remains unchanged.
+# Own MIT: bounded shared default ASort, no callback.
+# Validate payload kinds before moving cells.
 hbc_asort_flat_shared:
     test %rsi, %rsi
     jz .Lasfsdone
@@ -35030,6 +35045,7 @@ fn finalize_trace(mut out: String, target: Target) -> String {
     if out.contains("call hbc_atokens") {
         out.push_str(ATOKENS_HELPER);
     }
+    if out.contains("call hbc_asort_callback_shared") {out.push_str(include_str!("asort_callback.s"));}
     if out.contains("call hbc_asort_b") {
         out.push_str(ASORT_BLOCK_HELPER);
     }

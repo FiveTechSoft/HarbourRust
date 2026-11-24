@@ -42,13 +42,13 @@ pub fn init(ff:&[Func]) {
   visit_stmts_ref(&f.stmts,&mut |s|{if let Stmt::Local(_,n,e)=s{if literal(e)&&tagged_nested(e){nested.insert(n.clone());}}},&mut |_|{});
   visit_stmts_ref(&f.stmts,&mut |s|{if let Stmt::ArrSet2(_,n,..)=s{if nested.contains(n){need=true;}}},&mut |_|{});
   // ASort on a constant local flat literal requires an addressable array
-  // identity. Keep callback and arbitrary computed literals for later stages.
+  // identity. Direct callbacks are checked separately; computed literals stay closed.
   let mut sortable=HashSet::new();
   visit_stmts_ref(&f.stmts,&mut |s|{if let Stmt::Local(_,n,Expr::ArrLit(es))=s{
    if !es.iter().all(|e|matches!(e,Expr::Str(_)))&&literal(&Expr::ArrLit(es.clone())){sortable.insert(n.clone());}
   }},&mut |_|{});
   visit_stmts_ref(&f.stmts,&mut |_|{},&mut |e|{if let Expr::Call(id,args)=e{
-   if is_builtin(id,"asort")&&args.len()<=4&&!matches!(args.get(3),Some(Expr::BlockLit(..)))&&matches!(args.first(),Some(Expr::Var(n)) if sortable.contains(n)){need=true;}
+   if is_builtin(id,"asort")&&args.len()<=4&&matches!(args.first(),Some(Expr::Var(n)) if sortable.contains(n)){need=true;}
   }});
   // A literal handed to a function that stores a dynamic parameter in
   // one of its cells needs shared identity at the call boundary.
@@ -124,10 +124,13 @@ pub fn screen_value(out:&mut String) {
 
 pub fn validate(ff:&[Func])->Result<(),String> {
  if !active(){return Ok(());}
+ let mut allowed=HashSet::new();
+ for f in ff {visit_stmts_ref(&f.stmts,&mut |_|{},&mut |e|{if let Expr::Call(id,aa)=e{if is_builtin(id,"asort"){if let Some(Expr::BlockLit(id,_,_))=aa.get(3){allowed.insert(*id);}}}});}
  let mut bad=false;
  for f in ff {visit_stmts_ref(&f.stmts,&mut |s|{if matches!(s,Stmt::MemvarDecl(..)|Stmt::MemvarSet(..)|Stmt::ForEach(..)){bad=true;}},&mut |_|{});
- visit_stmts_ref(&f.stmts,&mut |_|{},&mut |e|{if matches!(e,Expr::HashLit(_)|Expr::BlockLit(..)|Expr::FuncRef(_)|Expr::ByRef(_)){bad=true;}
+ visit_stmts_ref(&f.stmts,&mut |_|{},&mut |e|{if matches!(e,Expr::HashLit(_)|Expr::FuncRef(_)|Expr::ByRef(_)){bad=true;}
+ if matches!(e,Expr::BlockLit(id,..) if !allowed.contains(id)){bad=true;}
  if matches!(e,Expr::Call(id,_) if is_builtin(id,"array")||is_builtin(id,"hb_hkeys")||is_builtin(id,"hb_hvalues")){bad=true;}
  if matches!(e,Expr::ArrLit(_) if !literal(e)){bad=true;}});}
- if bad{return Err("local shared arrays with hashes, blocks, indirect calls, by-reference storage, MEMVAR, FOR EACH or unique/computed array constructors are outside A2".to_string());}Ok(())
+ if bad{return Err("local shared arrays with hashes, non-ASort blocks, indirect calls, by-reference storage, MEMVAR, FOR EACH or unique/computed array constructors are outside A2".to_string());}Ok(())
 }
