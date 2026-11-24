@@ -8110,7 +8110,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                                 Expr::Var(v)=>ps.contains(v)||env.iter().any(|l|l.name==*v&&matches!(l.ty,Ty::I64|Ty::Bool)),
                                 Expr::Int(_)|Expr::Str(_)|Expr::Log(_)|Expr::Nil=>true,
                                 Expr::Index(v,i)=>ps.contains(v)&&safe(i,ps,env),
-                                Expr::Cmp(_,a,b)=>safe(a,ps,env)&&safe(b,ps,env),
+                                Expr::Cmp(_,a,b)|Expr::Bin('+',a,b)=>safe(a,ps,env)&&safe(b,ps,env),
                                 Expr::Call(id,aa)if is_builtin(id,"iif")||shared_local::pure_helper(id)=>aa.iter().all(|e|safe(e,ps,env)),
                                 _=>false,
                             }}
