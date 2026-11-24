@@ -4083,7 +4083,7 @@ assembly is unchanged.
 
 Parameters without type evidence (Julio Ponce, MIT): programs whose parameters have no body or call-site evidence now compile with a tagged slot; the S4 guard keeps the shared module array out. `tests/manifest.txt` row of `module-static-array/negative/call_arg.prg` now expects the S4 diagnostic. See `tests/param-no-evidence/README.md`.
 
-## Battery known failures recorded on 2026-11-23 (Linux subset, aarch64 host)
+## Battery known failures recorded on 2026-11-23/24 (Linux subset, aarch64 host)
 
 ## Native-Windows lane re-check (2026-11-24, fresh main eeb71d24)
 
@@ -4108,12 +4108,18 @@ clears. Verify the compiler date before interpreting lane failures.
 Recorded while the Linux-only subset of the battery was being run (aarch64
 host; x86-64 output cannot execute natively here, so the 1308-row
 positive/execution set stays unverified; run the normal runner on an
-x86-64 host to complete it). The 13 cases below fail the plain battery
-`neg` check on the current tree; none is a fresh rejection regression by
-this compiler. The PE compile-only gate with this fresh binary is 0 FAIL
-(1909 PASS / 22 known-mismatches, exact run against commit 89c00e3f): all 13
-are diagnostic-contract, Linux-only-gate or PE-known-mismatch changes, not
-assembly defects.
+x86-64 host to complete it). The fresh binary (commit 6b917da3) passes the
+full Linux `neg` check on all 622 `neg` rows except the four stale ones
+below (verified 2026-11-24 with the plain substring rule, not the full
+runner: 622 checked, 4 failures, rc=0 silent accept). Windows still
+rejects those four with the manifest substring, so the shared manifest
+rows only fail on the Linux half. The 9 CurDir rows pass the Linux check
+(rc=1, manifest substring) and fail only the Windows/PE side, already
+recorded as the PE known-mismatch debt (`tests/ci/pe-known-mismatches.json`,
+base f70407f1d3). The PE compile-only gate with this fresh binary is 0 FAIL
+(1912 PASS / 22 known-mismatches, exact run against commit 6b917da3): the
+13 diagnostic-contract cases are either Linux-only acceptance or PE
+known-mismatch, not fresh regressions.
 
 Four `neg` rows are stale on Linux only; Linux now
 compiles them (Windows still rejects, with a message matching the
@@ -4160,11 +4166,13 @@ stays red and visible until the baseline re-cut, rather than a silent re-pin.
 Whatever is chosen, re-run this battery + the PE gate afterwards.
 
 Nine `neg` rows are the known-mismatch PE CurDir debt (same source state as
-the known-mismatches file). Linux rejects with the manifest substring;
+the known-mismatches file). Linux rejects with the manifest substring -
+the four-row audit above confirms all 622 `neg` rows still reject on Linux
+except the stale four, and these nine are among the rejecting ones.
 Windows rejects with "CurDir is measured only on the ordinary Linux backend
 in this increment", which is the PE debt recorded for the PE gate
 (`tests/ci/pe-known-mismatches.json`, base f70407f1d3) - recorded as known
-mismatches for the PE gate only, not for the battery:
+mismatches for the PE gate only:
 
 | Case | Windows diagnostic |
 | --- | --- |
