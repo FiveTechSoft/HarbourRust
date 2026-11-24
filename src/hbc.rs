@@ -2314,7 +2314,7 @@ const INTERNAL_STOD: &str = "\0date_literal";
 fn standard_date_mask(e:&Expr)->Option<(usize,bool)> {
  let Expr::Str(mask)=e else{return None};
  let mask=mask.to_ascii_lowercase();
- for (i,family) in ["yyy/mm/ddd","yy/mm/ddd","yyyy/mm/ddd","yyy/m/d/yyy","yy/m/d/yyy","yyyy/m/d/yyy","m/d/y/m/d","m/d/yy/m/d","m/d/yyyy/m/d","mmmm/ddddd","yymmmm/ddddd","yyyymmmm/ddddd","mmmmm/dd","yymmmmm/dd","yyyymmmmm/dd"].iter().enumerate(){if mask==*family{return Some((9+i/3,i%3==2));}}
+ for (i,family) in ["yyy/mm/ddd","yy/mm/ddd","yyyy/mm/ddd","yyy/m/d/yyy","yy/m/d/yyy","yyyy/m/d/yyy","m/d/y/m/d","m/d/yy/m/d","m/d/yyyy/m/d","mmmm/ddddd","yymmmm/ddddd","yyyymmmm/ddddd","mmmmm/dd","yymmmmm/dd","yyyymmmmm/dd","yyy-mm-dd","yy-mm-dd","yyyy-mm-dd"].iter().enumerate(){if mask==*family{return Some((9+i/3,i%3==2));}}
 
  if mask=="ddd/mmm/yy" {return Some((8,false));}
  if mask=="ddd/mmm/yyyy" {return Some((8,true));}

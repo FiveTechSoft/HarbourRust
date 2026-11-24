@@ -14,7 +14,7 @@ typedef unsigned long long hrt_u64;
 
 extern void *hbc_alloc(hrt_u64 n);
 
-static hrt_u64 g_date_fmt = 0;     /* 0..8 layouts, 9..13 whitelisted original families */
+static hrt_u64 g_date_fmt = 0;     /* 0..8 layouts, 9..14 whitelisted measured families */
 static hrt_u64 g_century = 0;      /* 0: two-digit year, 1: four digits */
 
 struct hrt_dout {          /* SysV: returned in rax/rdx */
@@ -191,9 +191,9 @@ hrt_u64 hbc_date_check_mask(const char *mask,hrt_u64 len)
 {
     hrt_u64 f,c,i,j,pos,count,field;char actual,expect;
     {
-        const char *families[15]={"yyy/mm/ddd","yy/mm/ddd","yyyy/mm/ddd","yyy/m/d/yyy","yy/m/d/yyy","yyyy/m/d/yyy","m/d/y/m/d","m/d/yy/m/d","m/d/yyyy/m/d","mmmm/ddddd","yymmmm/ddddd","yyyymmmm/ddddd","mmmmm/dd","yymmmmm/dd","yyyymmmmm/dd"};
+        const char *families[18]={"yyy/mm/ddd","yy/mm/ddd","yyyy/mm/ddd","yyy/m/d/yyy","yy/m/d/yyy","yyyy/m/d/yyy","m/d/y/m/d","m/d/yy/m/d","m/d/yyyy/m/d","mmmm/ddddd","yymmmm/ddddd","yyyymmmm/ddddd","mmmmm/dd","yymmmmm/dd","yyyymmmmm/dd","yyy-mm-dd","yy-mm-dd","yyyy-mm-dd"};
         hrt_u64 n;
-        for(n=0;n<15;n++) {
+        for(n=0;n<18;n++) {
             for(i=0;i<len&&families[n][i];i++){actual=mask[i];if(actual>='A'&&actual<='Z')actual=(char)(actual-'A'+'a');if(actual!=families[n][i])break;}
             if(i==len&&!families[n][i])return (9+n/3)|((n%3==2?1:0)<<4);
         }
