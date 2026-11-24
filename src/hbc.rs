@@ -12806,7 +12806,8 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                         if !matches!(vt, Ty::I64 | Ty::Bool | Ty::Dyn) {
                             return Err(format!("line {}: dynamic-array elements are tagged scalars (integer, logical or NIL)", n));
                         }
-                        if type_expr(ie, env, sigs, *n)? != Ty::I64 {
+                        let it=type_expr(ie,env,sigs,*n)?;
+                        if it!=Ty::I64 && !(it==Ty::Dyn && matches!(ie,Expr::Var(_)) && CURDIR_LINUX_NATIVE.with(|v|v.get()) && DECIMAL_LOCAL_PROFILE.with(|v|v.get()) && !MACRO_CONTEXT.with(|v|v.get()) && !shared_local::active()) {
                             return Err(format!("line {}: array index must be an integer", n));
                         }
                         apply_moves(e, env, sigs, true);
@@ -26895,7 +26896,11 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                     } else {
                         out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
                     }
-                    if expr_ty(ie, env, sigs) == Ty::Dyn {
+                    if expr_ty(ie, env, sigs) == Ty::Dyn && v.ty==Ty::DArr && matches!(ie,Expr::Var(_)) && CURDIR_LINUX_NATIVE.with(|v|v.get()) {
+                        // Index semantics truncate floats toward zero. Do not
+                        // change the integer-only helper used by arithmetic.
+                        cg_dyn_int_trunc(ie,env,sigs,strs,out,target);
+                    } else if expr_ty(ie, env, sigs) == Ty::Dyn {
                         cg_expr(ie, env, sigs, strs, out, target);
                         out.push_str("    call hbc_dyn_to_i64\n");
                     } else {
