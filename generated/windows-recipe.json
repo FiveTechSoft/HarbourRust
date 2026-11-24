@@ -35,6 +35,6 @@
     "runtime/hrvalue.c": "bc4970cd86c7a2ac71ad8bd974908c4302aaa1b870fbaa3cba6ebaa5d83999d1",
     "runtime/hrvalue.h": "962dee2ca2d6f75dc45d4d6597a1e84e62568b869a897911c496501fdc8a4dfe"
   },
-  "asm_sha256": "df01bb823f075a9707c3263c9a53cf0c55461f26416286469a80832190cd96bf",
+  "asm_sha256": "395db115792edee6fdb4e269851daf2872c4d31df4603db4c1de3bfb1ec74068",
   "notes": "Win64 C bodies; explicit internal ABI and copy callback bridges; DLL import pointer references normalised to named thunks"
 }

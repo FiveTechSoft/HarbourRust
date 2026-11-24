@@ -11338,6 +11338,30 @@ hrdbf_app_append:
     leave
     ret
 
+hrdbf_app_delete:
+    push %rbp
+    mov %rsp, %rbp
+    sub $32, %rsp
+    call hrdbfw_app_delete
+    leave
+    ret
+
+hrdbf_app_recall:
+    push %rbp
+    mov %rsp, %rbp
+    sub $32, %rsp
+    call hrdbfw_app_recall
+    leave
+    ret
+
+hrdbf_app_commit:
+    push %rbp
+    mov %rsp, %rbp
+    sub $32, %rsp
+    call hrdbfw_app_commit
+    leave
+    ret
+
 hrdbf_app_render:
     push %rbp
     mov %rsp, %rbp
