@@ -132,7 +132,7 @@ pub fn init(ff:&[Func]) {
      Stmt::Try(_,_,Some((Some(n),_)),_)=>{names.entry(f.name.clone()).or_default().insert(n.clone());},
      Stmt::Ret(_,Some(Expr::SelfGet(_))) if method_arrays::active()=>{returns.insert(f.name.clone());},
      Stmt::Ret(_,Some(e)) if method_arrays::active() && method_arrays::expr(e,&own,&oldret)=>{returns.insert(f.name.clone());},
-     Stmt::Ret(_,Some(Expr::Call(id,aa))) if is_builtin(id,"aclone")&&matches!(aa.as_slice(),[Expr::Var(n)]if own.contains(n))=>{returns.insert(f.name.clone());},
+     Stmt::Ret(_,Some(Expr::Call(id,aa))) if is_builtin(id,"aclone")&&matches!(aa.as_slice(),[a]if literal(a)||matches!(a,Expr::Var(n)if own.contains(n)))=>{returns.insert(f.name.clone());},
      Stmt::Ret(_,Some(Expr::Var(n))) if own.contains(n)=>{returns.insert(f.name.clone());},
      _=>{}
     }
