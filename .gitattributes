@@ -140,3 +140,5 @@ tests/timestamp-phase5/*.prg -text
 tests/timestamp-phase6/*.prg -text
 
 tests/timestamp-phase7/*.prg -text
+
+tests/timestamp-phase8/*.prg -text

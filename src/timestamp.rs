@@ -151,3 +151,5 @@ pub(super) fn comparison_helpers(out:&mut String){
 pub(super) fn scalar_empty()->bool{active()&&DECIMAL_LOCAL_PROFILE.with(|v|v.get())&&!MACRO_CONTEXT.with(|v|v.get())}
 
 pub(super) fn flat_mixed()->bool{scalar_empty()&&CLASSES.with(|c|!c.borrow().is_empty())&&!method_results::active()}
+
+pub(super) fn object_lifetimes()->bool{scalar_empty()&&CLASSES.with(|c|!c.borrow().is_empty())}

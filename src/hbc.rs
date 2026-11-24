@@ -7334,6 +7334,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 }
                 match &args[0] {
                     Expr::Send(..) if method_results::send(&args[0]) => {} ,
+                    Expr::Send(o,_,aa) if timestamp::scalar_empty() && aa.is_empty() && matches!(o.as_ref(),Expr::Var(_)) && type_expr(&args[0],env,sigs,n)?==Ty::Dyn => {},
                     Expr::Int(_) | Expr::Str(_) | Expr::Nil | Expr::Var(_) => {}
                     Expr::Call(id, _) if is_output_call(id) || is_builtin(id,"date") || is_builtin(id,"ctod") || dbf_result(id).is_some() || timestamp::family(id) => {}
                     Expr::Index(v, _) => {
@@ -9441,13 +9442,13 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 // operand through the Dyn route (a float payload is combined by kind).
                 if sig_params[i] == Ty::Dyn { mark_dynplus(a, env, sigs, n); }
                 let ta = type_expr(a, env, sigs, n)?;
-                if method_arrays::active() && sig_params[i]==Ty::StrOwn{return Err(format!("line {}: B2 owned-string parameters are outside argument-unwind scope",n));}
+                if (method_arrays::active()||timestamp::object_lifetimes()) && sig_params[i]==Ty::StrOwn{return Err(format!("line {}: B2 owned-string parameters are outside argument-unwind scope",n));}
                 if method_results::active() && ta==Ty::Dyn && sig_params[i]==Ty::I64{return Err(format!("line {}: B1 does not implicitly extract a Dyn call argument as integer; use a typed local",n));}
                 if ta==Ty::Dyn && sig_params[i]==Ty::I64 && RETYPED_VAL_FUNCTIONS.with(|v|v.borrow().contains(&CUR_FN.with(|c|c.borrow().clone()))) {
                     return Err(format!("line {}: retyped VAL parameter to a static integer parameter is not covered in this increment; use a Dyn receiver",n));
                 }
                 if !method_results::active() && method_valtype::parameter(id,i) {method_valtype::argument(id,a,ta,n)?;}
-                if dd_call && !(method_results::active() && i==0 && METHOD_CLASS.with(|m|m.borrow().contains_key(id))) && !method_results::position(id,i) && matches!(ta, Ty::Obj(_)) && !DEFAULT_DYN.with(|m| m.borrow().contains(&(sigs[si].name.clone(), i))) {
+                if dd_call && !((method_results::active()||timestamp::scalar_empty()) && i==0 && METHOD_CLASS.with(|m|m.borrow().contains_key(id))) && !method_results::position(id,i) && matches!(ta, Ty::Obj(_)) && !DEFAULT_DYN.with(|m| m.borrow().contains(&(sigs[si].name.clone(), i))) {
                     return Err(format!("line {}: an object argument (argument {}) in a call to `{}`, which has a parameter without type evidence, is outside the dynamic increment in this increment (the boundary screen for object values could not release its reference)", n, i + 1, id));
                 }
                 if ta == Ty::AView && !sig_aview[i] {
@@ -15641,7 +15642,7 @@ fn emit_class_runtime(sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, ta
         out.push_str(&format!("    .data\n    .align 8\nhrobj_desc_{}:\n    .quad .Lclsname{}\n    .quad {}\n    .long {}, {}\n    .long {}, 0\n    .quad {}\n    .quad {}\n    .quad 0\n    .quad 0\n    .quad 0\n    .quad 0\n{}    .text\n", i, i, parent, c.own_start, c.ndatas, c.slots.len(), mt, init, lock));
     }
     let blob = match (THREADS.with(|c| c.get()), matches!(target, Target::Windows)) {
-        (false, false) if method_results::active() => {out.push_str(&method_results::runtime()); ""},
+        (false, false) if method_results::active()||timestamp::object_lifetimes() => {out.push_str(&method_results::runtime()); ""},
         (false, false) => HROBJ_BLOB,
         (true, false) => HROBJ_BLOB_MT,
         (false, true) => HROBJ_BLOB_WIN,
@@ -16460,7 +16461,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                 out.push_str("97:\n");
             }
             match &args[0] {
-                Expr::Send(..) if method_results::send(&args[0])=>{
+                Expr::Send(..) if method_results::send(&args[0]) || (timestamp::scalar_empty()&&expr_ty(&args[0],env,sigs)==Ty::Dyn)=>{
                     cg_value(&args[0],env,sigs,strs,out,target);
                     out.push_str("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n    mov %rax, %r10\n");
                     vt_classify_scalar(strs,out);out.push_str("    mov %rax, 16(%rsp)\n    mov %rdx, 24(%rsp)\n");cg_concat_drop(out,0);out.push_str("    mov 16(%rsp), %rax\n    mov 24(%rsp), %rdx\n    add $32, %rsp\n");
@@ -19425,7 +19426,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             let mut dd_checks: Vec<(usize, bool)> = Vec::new();
             let mut b2guards=0usize;
             for (ai, a) in args.iter().enumerate() {
-                if method_arrays::active() && ai>0 {
+                if (method_arrays::active()||timestamp::object_lifetimes()) && ai>0 {
                     match psig.as_ref().and_then(|p|p.get(ai-1)) {
                         Some(Ty::Dyn)=>{out.push_str("    mov (%rsp), %rdi\n    mov 8(%rsp), %rsi\n    call hbc_aux_push\n");b2guards+=1;},
                         Some(Ty::Obj(_))=>{out.push_str("    mov $13, %edi\n    mov (%rsp), %rsi\n    call hbc_aux_push\n");b2guards+=1;},
@@ -19707,6 +19708,9 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                     for (i, t) in params.iter().enumerate().take(args.len()) {
                         let off = 16 * (total - 1 - i);
                         // defensive: a `@` casilla is a slot ADDRESS and an object casilla holds a reference; both are rejected at compile time in such a call
+                        if timestamp::object_lifetimes() && matches!(t,Ty::Obj(_)){
+                            out.push_str(&format!("    mov {off}(%rsp), %rdi\n    call hrobj_release\n"));continue;
+                        }
                         if matches!(args[i], Expr::ByRef(_)) || matches!(t, Ty::Obj(_)) { continue; }
                         match t {
                             Ty::StrOwn => out.push_str(&format!("    mov {}(%rsp), %rdi\n    test %rdi, %rdi\n    je 81f\n    call hbc_freestr\n81:\n", off)),
@@ -34357,7 +34361,7 @@ hbc_free_lists: .skip 10240
     emit_f64_consts(&mut out);
     // Allocation registry: only instrumented builds (--instrument, the
     // battery's mode) carry it; normal output has no registry at all.
-    if method_arrays::active(){out=out.replace("    jne .Lauxdrain\n    mov 16(%rbx), %rdi", "    je .Lb2auxstr\n    cmpq $13, 8(%rbx)\n    jne .Lauxdrain\n    mov 16(%rbx), %rdi\n    call hrobj_release\n    jmp .Lauxdrain\n.Lb2auxstr:\n    mov 16(%rbx), %rdi");}
+    if method_arrays::active()||timestamp::object_lifetimes(){out=out.replace("    jne .Lauxdrain\n    mov 16(%rbx), %rdi", "    je .Lb2auxstr\n    cmpq $13, 8(%rbx)\n    jne .Lauxdrain\n    mov 16(%rbx), %rdi\n    call hrobj_release\n    jmp .Lauxdrain\n.Lb2auxstr:\n    mov 16(%rbx), %rdi");}
     out = out.replace("@REG_ALLOC_L@", if instrument { REG_ALLOC_L } else { "" });
     out = out.replace("@REG_FREE_L@", if instrument { REG_FREE_L } else { "" });
     out = out.replace("@REG_HFREE_W@", if instrument { REG_HFREE_W } else { "" });

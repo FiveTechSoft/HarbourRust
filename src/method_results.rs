@@ -60,7 +60,7 @@ pub fn runtime()->String{
  s.replace_range(a..b,".Lhrobj_39:\n    mov 0(%rbp), %rax\n    movl 20(%rax), %esi\n    add $1, %esi\n    shl $4, %esi\n    mov %rbp, %rdi\n@REG_FREE_L@    incq hbc_mem_frees(%rip)\n    call hbc_release\n");method_arrays::runtime(s)
 }
 pub fn cleanup(out:&mut String){
- if !active(){return;}
+ if !active()&&!timestamp::scalar_empty(){return;}
  for ci in 0..CLASSES.with(|c|c.borrow().len()){
  let k=fresh_lbl();out.push_str(&format!("    lea hrobj_desc_{ci}(%rip), %rax\n    mov 48(%rax), %rdi\n    test %rdi, %rdi\n    je .Lmrtemplate{k}\n    movq $0, 48(%rax)\n    mov %rdi, -8(%rbp)\n    movl 20(%rax), %eax\n    mov %rax, -16(%rbp)\n    movq $0, -24(%rbp)\n.Lmrtemplloop{k}:\n    mov -24(%rbp), %rcx\n    cmp -16(%rbp), %rcx\n    jge .Lmrtemplfree{k}\n    shl $4, %rcx\n    add -8(%rbp), %rcx\n    mov (%rcx), %rax\n    mov 8(%rcx), %rdx\n    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n"));
  cg_dyn_stack_release(out,0,false);
