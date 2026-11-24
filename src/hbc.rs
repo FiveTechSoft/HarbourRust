@@ -11262,6 +11262,24 @@ fn narrow_bare_date_locals(funcs:&mut [Func]) {
 // before the FOR keeps the Dyn slot and the named `for` rejection: a
 // covered limit of this increment, not a Harbour rule. Checker, layout
 // and codegen must agree, so all three call this one pure predicate.
+// Own MIT delayed fresh-array initialization. NIL is not observable:
+// only leaf stores or effect-free constant constructors precede the first
+// unconditional store. Keep reads, capture, calls and control flow closed.
+fn constant_afill(e:&Expr)->bool {
+    matches!(e,Expr::Call(id,aa) if is_builtin(id,"afill") && matches!(aa.as_slice(),[Expr::Call(ar,dims),Expr::Int(_)|Expr::Log(_)|Expr::Nil] if is_builtin(ar,"array") && matches!(dims.as_slice(),[Expr::Int(n)] if n.parse::<i64>().map_or(false,|n|n>=0))))
+}
+fn bare_local_is_fresh_array(stmts:&[Stmt],idx:usize,name:&str)->bool {
+    if !CURDIR_LINUX_NATIVE.with(|v|v.get()) || !DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get()) || shared_local::active(){return false;}
+    for s in &stmts[idx+1..] {
+        match s {
+            Stmt::Assign(_,id,e) if id==name=>return constant_afill(e),
+            Stmt::Local(_,id,e)|Stmt::Assign(_,id,e) if id!=name && !expr_mentions(e,name)
+                && (counter_prefix_pure(e)||constant_afill(e))=>{},
+            _=>return false,
+        }
+    }
+    false
+}
 fn bare_local_is_for_counter(stmts: &[Stmt], idx: usize, name: &str) -> bool {
     for s in &stmts[idx + 1..] {
         match s {
@@ -11568,6 +11586,8 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 } else {
                     t
                 };
+                let t = if t==Ty::Dyn && matches!(e,Expr::Nil) && !byref_names.contains(id)
+                    && bare_local_is_fresh_array(stmts,si,id) {Ty::DArr} else {t};
                 env.push(Local { name: id.clone(), ty: t, moved: false, ro: false, byref: false });
                 // Object narrowing handoff, recorded AT the narrowing
                 // (a declaration inside a loop body leaves the final env
@@ -11841,7 +11861,6 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 // writes THROUGH to the element (hk32), a borrow of a
                 // mutable cell this increment does not implement -
                 // registered limitation.
-                apply_moves(coll, env, sigs, false);
                 // A nested collection a[i] whose root is an array of
                 // arrays is BORROWED from the root owner for the loop
                 // (hk53/hk54): the index expression is evaluated once,
@@ -11929,6 +11948,9 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 } else {
                     type_expr(coll, env, sigs, *n)?
                 };
+                // Validate the collection before ownership walking. Unknown
+                // callees must produce a diagnostic, never a checker panic.
+                apply_moves(coll, env, sigs, false);
                 // A temporary collection (a call result: hb_HKeys(h),
                 // Array(n) or a user function returning an array or a
                 // hash; oracles hk52/hk55/hk56) is OWNED by the loop:
@@ -22474,6 +22496,7 @@ fn layout_locals(stmts: &[Stmt], env: &mut Vec<CgLocal>, sigs: &[Sig], frame: &m
                 // declaration, in lockstep with the checker through the
                 // one shared predicate.
                 if t == Ty::Dyn && matches!(e, Expr::Nil) && !byref_names.contains(id) && bare_local_is_for_counter(stmts, si, id) { t = Ty::I64; }
+                if t==Ty::Dyn && matches!(e,Expr::Nil) && !byref_names.contains(id) && bare_local_is_fresh_array(stmts,si,id) {t=Ty::DArr;}
                 // Object narrowing handoff (see OBJ_NARROW): the slot is
                 // the 8-byte object casilla the checker settled on.
                 if let Some(ci) = OBJ_NARROW.with(|m| m.borrow().get(&(CUR_FN.with(|c| c.borrow().clone()), id.clone())).copied()) { t = Ty::Obj(ci); }
@@ -24133,11 +24156,13 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 // and the FOR writes it.
                 let bare_cnt = t == Ty::Dyn && matches!(e, Expr::Nil) && !byref_names.contains(id) && bare_local_is_for_counter(stmts, si, id);
                 if bare_cnt { t = Ty::I64; }
+                let bare_arr=t==Ty::Dyn && matches!(e,Expr::Nil) && !byref_names.contains(id) && bare_local_is_fresh_array(stmts,si,id);
+                if bare_arr {t=Ty::DArr;}
                 // Same object-narrowing handoff as layout_locals.
                 if let Some(ci) = OBJ_NARROW.with(|m| m.borrow().get(&(CUR_FN.with(|c| c.borrow().clone()), id.clone())).copied()) { t = Ty::Obj(ci); }
                 *frame += size_of(t);
                 let off = *frame;
-                if bare_cnt {
+                if bare_cnt || bare_arr {
                     out.push_str(&format!("    movq $0, -{}(%rbp)\n    movq $0, -{}(%rbp)\n", off,off-8));
                     env.push(CgLocal { name: id.clone(), ty: t, off });
                     continue;
