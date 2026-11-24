@@ -8159,6 +8159,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
             }
             if is_builtin(id, "aclone") {
                 if args.len()==1&&shared_local::active()&&shared_local::literal(&args[0]){return Ok(Ty::Dyn);}
+                if args.len()==1&&shared_local::active()&&matches!(&args[0],Expr::Var(v)if shared_local::current(v))&&type_expr(&args[0],env,sigs,n)?==Ty::Dyn{return Ok(Ty::Dyn);}
                 if args.len()!=1 { return Err(format!("line {}: `AClone` takes one argument in this increment",n)); }
                 if !matches!(&args[0], Expr::Var(_)) {
                     return Err(format!("line {}: `AClone` expects an array variable (the slot is passed by address)",n));
@@ -17955,6 +17956,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             if shared_local::active()&&shared_local::literal(&args[0]){shared_local::emit_literal(&args[0],strs,out);return;}
             let av = match &args[0] { Expr::Var(v) => v.clone(), _ => unreachable!("checked") };
             let var = env.iter().rev().find(|x| x.name == *av).expect("checked");
+            if shared_local::active()&&shared_local::current(&av)&&var.ty==Ty::Dyn{cg_sarr_root(&av,var.off,"%rdi",out);out.push_str("    call hbc_sarr_clone\n");return;}
             let helper = if expr_ty(&args[0],env,sigs) == Ty::DArrS { "hbc_aclone_s" } else { "hbc_aclone_i" };
             out.push_str(&format!("    mov -{}(%rbp), %rdi\n    mov -{}(%rbp), %rsi\n    call {}\n", var.off, var.off-8, helper));
         }
@@ -21698,7 +21700,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             if ["cdow","cmonth","dtoc"].iter().any(|b|is_builtin(id,b)) { return Ty::StrOwn; }
             if is_builtin(id, "ascan") { return Ty::I64; }
             if is_builtin(id, "aclone") {
-                if shared_local::active()&&shared_local::literal(&args[0]){return Ty::Dyn;}
+                if shared_local::active()&&(shared_local::literal(&args[0])||matches!(&args[0],Expr::Var(v)if shared_local::current(v))){return Ty::Dyn;}
                 return match expr_ty(&args[0],env,sigs) { Ty::DArrS => Ty::DArrS, _ => Ty::DArr };
             }
             if is_builtin(id, "atail") || is_builtin(id, "asort") { return Ty::Dyn; }
@@ -31897,6 +31899,7 @@ fn emit_asm(funcs: &[Func], sigs: &[Sig], externs: &[String], target: Target, in
         out.push_str(SARR_HELPERS);
         if shared_local::active() {
             out.push_str(include_str!("shared_collect.s"));
+            out.push_str(include_str!("shared_clone.s"));
             out.push_str("hbc_sarr_mark_globals:\n    push %rbp\n    mov %rsp, %rbp\n");
             let mut seen=std::collections::HashSet::new();
             for f in funcs {for st in &f.stmts {if let Stmt::Static(_,n,_)=st {if module_static::kind(&f.name,n)==Some(Ty::Dyn) {let l=module_static::storage(&f.name,n);if seen.insert(l.clone()){out.push_str(&format!("    cmpq $16, {l}(%rip)\n    jne 1f\n    mov {l}+8(%rip), %rax\n    movq $1, 32(%rax)\n1:\n"));}}}}}

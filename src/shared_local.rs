@@ -124,6 +124,7 @@ pub fn init(ff:&[Func]) {
    visit_stmts_ref(&f.stmts,&mut |s|{
     match s {
      Stmt::Local(_,n,Expr::Var(p))|Stmt::Assign(_,n,Expr::Var(p)) if own.contains(p)=>{names.entry(f.name.clone()).or_default().insert(n.clone());},
+     Stmt::Local(_,n,Expr::Call(id,aa))|Stmt::Assign(_,n,Expr::Call(id,aa)) if is_builtin(id,"aclone")&&matches!(aa.as_slice(),[Expr::Var(p)]if own.contains(p))=>{names.entry(f.name.clone()).or_default().insert(n.clone());},
      Stmt::Local(_,n,e) if optional_empty::selected(e).map_or(false,|p|own.contains(p))=>{names.entry(f.name.clone()).or_default().insert(n.clone());},
      Stmt::Local(_,n,Expr::Call(id,_))|Stmt::Assign(_,n,Expr::Call(id,_)) if oldret.contains(id)=>{names.entry(f.name.clone()).or_default().insert(n.clone());},
      Stmt::Local(_,n,e)|Stmt::Assign(_,n,e) if method_arrays::active() && method_arrays::expr(e,&own,&oldret)=>{names.entry(f.name.clone()).or_default().insert(n.clone());},
