@@ -50,6 +50,15 @@ pub fn init(ff:&[Func]) {
   visit_stmts_ref(&f.stmts,&mut |_|{},&mut |e|{if let Expr::Call(id,args)=e{
    if is_builtin(id,"asort")&&args.len()<=3&&matches!(args.first(),Some(Expr::Var(n)) if sortable.contains(n)){need=true;}
   }});
+  // A literal handed to a function that stores a dynamic parameter in
+  // one of its cells needs shared identity at the call boundary.
+  let mut literals=HashSet::new();
+  visit_stmts_ref(&f.stmts,&mut |s|{if let Stmt::Local(_,n,e)=s{if literal(e){literals.insert(n.clone());}}},&mut |_|{});
+  visit_stmts_ref(&f.stmts,&mut |_|{},&mut |e|{if let Expr::Call(id,args)=e{
+   if let Some(to)=ff.iter().find(|f|f.name==*id){for (i,a)in args.iter().enumerate().take(to.params.len()){
+    if matches!(a,Expr::Var(n)if literals.contains(n))&&to.stmts.iter().any(|s|matches!(s,Stmt::ArrSet(_,n,_,Expr::Var(v)) if n==&to.params[i]&&v!=n&&(to.params.contains(v)||to.stmts.iter().any(|s|matches!(s,Stmt::Local(_,local,Expr::Call(_,aa))if local==v&&aa.iter().any(|e|matches!(e,Expr::Index(root,_)if root==n))))))){need=true;}
+   }}
+  }});
   names.insert(f.name.clone(),arrays);
  }
  for f in ff {let own=names.get(&f.name).unwrap();visit_stmts_ref(&f.stmts,&mut |_|{},&mut |e|{if let Expr::Call(id,aa)=e {if let Some(to)=ff.iter().find(|x|x.name==*id){for(i,a)in aa.iter().enumerate().take(to.params.len()){if matches!(a,Expr::Var(n) if own.contains(n)) && to.stmts.iter().any(|s|matches!(s,Stmt::AAdd(_,p,_) if p==&to.params[i])) {need=true;}}}}});}
