@@ -10970,16 +10970,22 @@ fn foreach_lv_readonly(stmts: &[Stmt], name: &str) -> bool {
 // rejects all later non-Date stores. No inference invokes type_expr here.
 fn narrow_bare_date_locals(funcs:&mut [Func]) {
     if !DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get()) { return; }
-    fn date_producer(e:&Expr,name:&str)->bool {
-        !expr_mentions(e,name) && matches!(e,Expr::Call(id,_) if ["date","stod","ctod"].iter().any(|b|is_builtin(id,b)))
+    fn date_producer(e:&Expr,name:&str,known:&std::collections::HashSet<String>)->bool {
+        if expr_mentions(e,name){return false;}
+        match e {
+            Expr::Call(id,_) => ["date","stod","ctod"].iter().any(|b|is_builtin(id,b)),
+            Expr::Var(v) => known.contains(v),
+            Expr::Bin('+'|'-',a,b) => date_producer(a,name,known) && matches!(b.as_ref(),Expr::Int(v) if v.parse::<i64>().is_ok()),
+            _=>false,
+        }
     }
-    fn first_store(s:&Stmt,name:&str)->bool {
+    fn first_store(s:&Stmt,name:&str,known:&std::collections::HashSet<String>)->bool {
         match s {
-            Stmt::Assign(_,id,e) if id==name => date_producer(e,name),
+            Stmt::Assign(_,id,e) if id==name => date_producer(e,name,known),
             Stmt::Print(_,es,_) => {
                 for e in es {
                     if !expr_mentions(e,name) { continue; }
-                    return matches!(e,Expr::Set(id,r) if id==name && date_producer(r,name));
+                    return matches!(e,Expr::Set(id,r) if id==name && date_producer(r,name,known));
                 }
                 false
             }
@@ -10987,14 +10993,16 @@ fn narrow_bare_date_locals(funcs:&mut [Func]) {
         }
     }
     for f in funcs {
+        let mut known=std::collections::HashSet::new();
         let mut byrefs=std::collections::HashSet::new();
         visit_stmts_ref(&f.stmts,&mut |_|{},&mut |e| {if let Expr::ByRef(id)=e {byrefs.insert(id.clone());}});
         for i in 0..f.stmts.len() {
             let name=match &f.stmts[i] {Stmt::Local(_,id,Expr::Nil) if !byrefs.contains(id)=>id.clone(),_=>continue};
             let first=f.stmts[i+1..].iter().find(|s|stmt_mentions(s,&name));
-            if first.map_or(false,|s|first_store(s,&name)) {
+            if first.map_or(false,|s|first_store(s,&name,&known)) {
                 if let Stmt::Local(_,_,e)=&mut f.stmts[i] {
                     *e=Expr::Call("stod".to_string(),vec![Expr::Str(String::new())]);
+                    known.insert(name.clone());
                 }
             }
         }

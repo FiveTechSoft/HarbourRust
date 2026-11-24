@@ -192,3 +192,5 @@ tests/asort-phase19/** -text
 tests/asort-phase20/** -text
 
 tests/asort-phase21/** -text
+
+tests/inline-date-arithmetic/** -text
