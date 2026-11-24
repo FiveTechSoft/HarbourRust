@@ -26,6 +26,12 @@ pub fn init(ff:&[Func]) {
    _=>{}
   }},&mut |_|{});
   loop {let old=arrays.clone();visit_stmts_ref(&f.stmts,&mut |s|{if let Stmt::Local(_,n,Expr::Var(p))|Stmt::Assign(_,n,Expr::Var(p))=s{if old.contains(p){need=true;arrays.insert(n.clone());}}},&mut |_|{});if arrays==old{break}}
+  // A constant local array stored into its own cell needs identity, not
+  // the legacy fixed-cell copy. Enter the existing shared heap only for
+  // this explicit cycle-producing shape; ordinary literals keep their ABI.
+  let mut constants=HashSet::new();
+  visit_stmts_ref(&f.stmts,&mut |s|{if let Stmt::Local(_,n,e)=s{if literal(e){constants.insert(n.clone());}}},&mut |_|{});
+  visit_stmts_ref(&f.stmts,&mut |s|{if let Stmt::ArrSet(_,n,_,Expr::Var(v))=s{if n==v&&constants.contains(n){need=true;}}},&mut |_|{});
   names.insert(f.name.clone(),arrays);
  }
  for f in ff {let own=names.get(&f.name).unwrap();visit_stmts_ref(&f.stmts,&mut |_|{},&mut |e|{if let Expr::Call(id,aa)=e {if let Some(to)=ff.iter().find(|x|x.name==*id){for(i,a)in aa.iter().enumerate().take(to.params.len()){if matches!(a,Expr::Var(n) if own.contains(n)) && to.stmts.iter().any(|s|matches!(s,Stmt::AAdd(_,p,_) if p==&to.params[i])) {need=true;}}}}});}
