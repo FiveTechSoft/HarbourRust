@@ -22958,13 +22958,19 @@ fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<Strin
                         // Harbour type error; extraction raises it (clean
                         // exit 1, registered failure mode).
                         cg_expr(a, env, sigs, strs, out, target);
-                        if ta == Ty::Dyn { out.push_str("    call hbc_dyn_to_i64\n"); }
+                        if ta == Ty::Dyn {
+                            if shared_local::active(){let sel=match op{CmpOp::Lt=>1,CmpOp::Gt=>2,CmpOp::Le=>3,CmpOp::Ge=>4,_=>unreachable!()};out.push_str(&format!("    mov ${sel}, %r9d\n    cmp $16, %rax\n    je hbc_sarr_order_error\n"));}
+                            out.push_str("    call hbc_dyn_to_i64\n");
+                        }
                         match target {
                             Target::Linux => out.push_str("    push %rax\n"),
                             Target::Windows => out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n"),
                         }
                         cg_expr(b, env, sigs, strs, out, target);
-                        if tb == Ty::Dyn { out.push_str("    call hbc_dyn_to_i64\n"); }
+                        if tb == Ty::Dyn {
+                            if shared_local::active(){let sel=match op{CmpOp::Lt=>1,CmpOp::Gt=>2,CmpOp::Le=>3,CmpOp::Ge=>4,_=>unreachable!()};out.push_str(&format!("    mov ${sel}, %r9d\n    cmp $16, %rax\n    je hbc_sarr_order_error\n"));}
+                            out.push_str("    call hbc_dyn_to_i64\n");
+                        }
                         match target {
                             Target::Linux => out.push_str("    pop %rcx\n"),
                             Target::Windows => out.push_str("    mov (%rsp), %rcx\n    add $16, %rsp\n"),
