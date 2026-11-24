@@ -16,8 +16,23 @@ same-source differential gate 5/5 byte-identical
 program) and the host cleanup harness all-PASS exit 0 (unsanitized: the
 bundled MinGW has no ASAN/UBSAN runtimes). Not yet re-run: the Wine
 oracle fatal/limits/abi runners and the Linux manifest battery (they are
-pinned to the recorded Linux environment); the publication owner runs
-those before closing the gate. The original proposal text is kept below.
+pinned to the recorded Linux environment).
+
+Status update (2026-11-24, Linux-side emission only): the Chr/Asc
+dispatch compiles and emits valid-looking x86-64 assembly on the Linux
+target, not only the Windows target eeb71d24 verified. A same-source
+probe (`Chr(32)`/`Chr(65)`/`Asc("A")`/`Asc("")`, `--target=linux` and
+`--target=windows`) emits the 4 call sites and the `hbc_chr`/`hbc_asc`
+frames under both targets, and the 2026-11-24 manifest gate at 98a17da8
+stays at 1912 PASS / 22 known-mismatch / 0 FAIL on PE with the Linux
+`neg` check failing only the 7 stale rows (all documented in
+docs/BATTERY.md). This is emission-level evidence only: the Chr/Asc ELF
+binary cannot be executed on this aarch64 host (no x86-64 runtime, no
+Wine), and the Linux manifest battery + the Wine-oracle fatal/limits/abi
+runners remain the publication owner's gates. The Chr/Asc gate stays open
+on that axis; no closure is claimed here.
+
+The original proposal text is kept below.
 
 Design proposal only (2026-11-23). **Nothing here is implemented, measured or
 published.** No builtin is added to the M2 dispatcher by this document; the work
