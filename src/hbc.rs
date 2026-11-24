@@ -1478,6 +1478,7 @@ impl P {
         if matches!(self.peek(), Some(Tok::IncTok | Tok::DecTok)) {
             let delta = if self.peek() == Some(&Tok::IncTok) { 1 } else { -1 };
             self.pos += 1;
+            if matches!(e,Expr::Index(..)){return Ok(cell_increment(e,delta,false));}
             let id = match e {
                 Expr::Var(id) => id,
                 _ => return Err(format!("line {}: expression ++/-- requires a variable lvalue in this increment", self.n)),
@@ -1542,6 +1543,7 @@ impl P {
                 let e = self.factor()?;
                 match e {
                     Expr::Var(id) => Ok(Expr::Inc(id, 1, true)),
+                    e @ Expr::Index(..)=>Ok(cell_increment(e,1,true)),
                     _ => Err(format!("line {}: expression ++/-- requires a variable lvalue in this increment", self.n)),
                 }
             }
@@ -1549,6 +1551,7 @@ impl P {
                 let e = self.factor()?;
                 match e {
                     Expr::Var(id) => Ok(Expr::Inc(id, -1, true)),
+                    e @ Expr::Index(..)=>Ok(cell_increment(e,-1,true)),
                     _ => Err(format!("line {}: expression ++/-- requires a variable lvalue in this increment", self.n)),
                 }
             }
@@ -2330,6 +2333,8 @@ thread_local! {
 // ValType calls implement predicate semantics, not source-level RTL lookup.
 const INTERNAL_VALTYPE: &str = "\0valtype";
 const INTERNAL_STOD: &str = "\0date_literal";
+const INTERNAL_CELL_INC: &str = "\0cell_increment";
+fn cell_increment(e:Expr,delta:i8,pre:bool)->Expr {Expr::Call(INTERNAL_CELL_INC.to_string(),vec![e,Expr::Int(delta.to_string()),Expr::Log(pre)])}
 
 // Bounded public Set date-format masks, matched without case folding output.
 fn standard_date_mask(e:&Expr)->Option<(usize,bool)> {
@@ -5397,6 +5402,7 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
                 walk(f, b, sigs, lit, pin, printed, n)
             }
             Expr::Call(id, args) => {
+                if id==INTERNAL_CELL_INC {if matches!(&args[0],Expr::Index(v,_)if is_param(f,v).is_some()){return Err(format!("line {}: cell increment through parameters is outside this increment",n));}return walk(f,&args[0],sigs,lit,pin,printed,n);}
                 if is_output_call(id) {
                     for a in args {
                         if let Expr::Var(v) = a {
@@ -7017,6 +7023,15 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
             Some(v) => Ok(v.ty),
         },
         Expr::Call(id, args) => {
+            if id==INTERNAL_CELL_INC {
+                if !DECIMAL_LOCAL_PROFILE.with(|v|v.get())||MACRO_CONTEXT.with(|v|v.get()){return Err(format!("line {}: expression ++/-- requires a variable lvalue in this increment (cell update needs ordinary Linux without macros)",n));}
+                if let Expr::Index(v,i)=&args[0] {
+                    if module_static::current(v).is_some()||!matches!(env.iter().find(|x|x.name==*v),Some(x)if matches!(x.ty,Ty::Arr(_))&&!x.moved&&!x.ro){return Err(format!("line {}: cell increment covers fixed integer arrays only",n));}
+                    if type_expr(i,env,sigs,n)?!=Ty::I64{return Err(format!("line {}: cell increment needs an integer index",n));}
+                    type_expr(&args[0],env,sigs,n)?;return Ok(Ty::I64);
+                }
+                unreachable!();
+            }
             if method_results::active() && !USER_FUNC_NAMES.with(|v|v.borrow().contains(id)) && !is_output_call(id) && !is_builtin(id,"valtype") && !(method_arrays::active() && is_builtin(id,"len")) {
                 for a in args {if type_expr(a,env,sigs,n)?==Ty::Dyn{return Err(format!("line {}: B1 Dyn builtin consumer `{}` is not covered; use ValType, output, or a direct function",n,id));}}
             }
@@ -13054,6 +13069,7 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
         Expr::Bin(_, a, b) => { apply_moves(a, env, sigs, false); apply_moves(b, env, sigs, false); }
         Expr::Cmp(_, a, b) => { apply_moves(a, env, sigs, false); apply_moves(b, env, sigs, false); }
         Expr::Call(id, args) => {
+            if id==INTERNAL_CELL_INC {apply_moves(&args[0],env,sigs,false);return;}
             if dbf_result(id).is_some(){for a in args{apply_moves(a,env,sigs,false);}return;}
 
             if is_builtin(id,"dispbox") {return;} // validated inert literal expressions
@@ -19643,6 +19659,16 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             }
             out.push_str(&format!(".Lpve{}:\n", k));
         }
+        Expr::Call(id,args) if id==INTERNAL_CELL_INC=>{
+            let Expr::Index(name,idx)=&args[0]else{unreachable!()};
+            let v=env.iter().rev().find(|x|x.name==*name).expect("checked");let Ty::Arr(k)=v.ty else{unreachable!()};
+            let delta=if matches!(&args[1],Expr::Int(t)if t=="1"){1}else{-1};let pre=matches!(args[2],Expr::Log(true));let l=fresh_lbl();
+            cg_expr(idx,env,sigs,strs,out,target);
+            out.push_str(&format!("    cmp $1, %rax\n    jl .Lcierr{l}\n    cmp ${k}, %rax\n    jg .Lcierr{l}\n    lea -{}(%rbp), %r11\n    lea -8(%r11,%rax,8), %r11\n    mov (%r11), %rax\n    mov %rax, %rcx\n    add ${delta}, %rcx\n",v.off));
+            if CHECKED_I64.with(|v|v.get()){out.push_str(&ovf_jump());}else{out.push_str("    jo hbc_type_error\n");}
+            out.push_str("    mov %rcx, (%r11)\n");if pre{out.push_str("    mov %rcx, %rax\n");}
+            out.push_str(&format!("    jmp .Lcidone{l}\n.Lcierr{l}:\n    call hbc_bound_error\n.Lcidone{l}:\n"));
+        }
         Expr::Call(id, args) => {
             // A Send hands its dispatch slot to this call only. Nested
             // argument calls must not inherit or erase the outer slot.
@@ -21540,6 +21566,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             t => t,
         },
         Expr::Call(id, args) => {
+            if id==INTERNAL_CELL_INC{return Ty::I64;}
             if let Some(ty)=dbf_result(id){return ty;}
 
             if is_builtin(id, "array") { return match args.len() { 1 => Ty::DArr, 2 => Ty::DArr2, 3 => Ty::DArr3, _ => Ty::DArr4 }; }

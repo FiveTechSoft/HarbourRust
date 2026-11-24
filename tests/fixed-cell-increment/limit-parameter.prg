@@ -1,0 +1,6 @@
+FUNCTION Inc(a)
+RETURN a[1]++
+FUNCTION Main()
+ LOCAL a:={1}
+ ? Inc(a)
+RETURN NIL

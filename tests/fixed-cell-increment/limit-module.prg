@@ -1,0 +1,4 @@
+STATIC a:={1,2}
+FUNCTION Main()
+ ? a[1]++
+RETURN NIL
