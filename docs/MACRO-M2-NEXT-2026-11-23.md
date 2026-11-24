@@ -1,5 +1,24 @@
 # M2 next unit: character-code builtins (Chr/Asc)
 
+Status update (2026-11-24): **the Chr/Asc dispatch landed on Windows**
+with the oracle-measured shape below confirmed against native Harbour 3.2
+(probes m2_p1/m2_p2*): Chr takes exactly one numeric argument (int or heap
+float, float truncates toward zero, value & 255 with no range error,
+Chr(0) a one-byte NUL string) and rejects others with "Error BASE/1104
+Argument error: CHR"; Asc takes exactly one string argument (empty string
+is 0, no error) and rejects others with BASE/1107; both zero-argument
+forms give the same argument errors. The helpers hbc_chr/hbc_asc were
+already in main (hk387/hk389); this increment added the dispatch IDs 4/5
+(src/macro_call_shims.s), the names/validation/error codes
+(runtime/hrmacro.c) and the regenerated blob. Evidence this session:
+same-source differential gate 5/5 byte-identical
+(tests/macro/m2/chrasc/check_chrasc.py, including the mixed ID 1..5
+program) and the host cleanup harness all-PASS exit 0 (unsanitized: the
+bundled MinGW has no ASAN/UBSAN runtimes). Not yet re-run: the Wine
+oracle fatal/limits/abi runners and the Linux manifest battery (they are
+pinned to the recorded Linux environment); the publication owner runs
+those before closing the gate. The original proposal text is kept below.
+
 Design proposal only (2026-11-23). **Nothing here is implemented, measured or
 published.** No builtin is added to the M2 dispatcher by this document; the work
 below is a scoped plan that must pass the gates listed

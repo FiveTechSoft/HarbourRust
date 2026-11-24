@@ -470,11 +470,11 @@ static val binary_value(int op,val a,val b,int folding){
 /* No lookup is possible in this pass. Only literal-source values are cached.
  * Boolean constant elimination is allowed with an unresolved other subtree. */
 static int builtin_id(const unsigned char*s,size_t n){
- static const char names[][6]={"UPPER","LOWER","ROUND"};
- for(int id=1;id<=3;id++){const char*t=names[id-1];size_t j=0;while(j<n&&t[j]&&upper(s[j])==t[j])j++;if(j==n&&!t[j])return id;}
+ static const char names[][6]={"UPPER","LOWER","ROUND","CHR","ASC"};
+ for(int id=1;id<=5;id++){const char*t=names[id-1];size_t j=0;while(j<n&&t[j]&&upper(s[j])==t[j])j++;if(j==n&&!t[j])return id;}
  return 0;
 }
-static val call_error(int id){val v=mkerr(id==1?"Error BASE/1102  Argument error: UPPER":id==2?"Error BASE/1103  Argument error: LOWER":"Error BASE/1094  Argument error: ROUND");v.builtin=id==1?"UPPER":id==2?"LOWER":"ROUND";return v;}
+static val call_error(int id){val v=mkerr(id==1?"Error BASE/1102  Argument error: UPPER":id==2?"Error BASE/1103  Argument error: LOWER":id==4?"Error BASE/1104  Argument error: CHR":id==5?"Error BASE/1107  Argument error: ASC":"Error BASE/1094  Argument error: ROUND");v.builtin=id==1?"UPPER":id==2?"LOWER":id==4?"CHR":id==5?"ASC":"ROUND";return v;}
 static node *fold(node*n){
  if(!n)return n;
  n->a=fold(n->a);n->b=fold(n->b);
@@ -538,7 +538,19 @@ static val evaluate_call(hrmacro_context*c,node*n,unsigned nesting){
   drop(&v);if(rc!=HRMV_OK){v=status_error(rc,0,0);goto done;}argv[used++]=cell;
  }
  if(!id){v=mkerr2("Error: macro function not supported (M2): ",n->name,n->len);goto done;}
- if((id<=2&&(!count||(argv[0].tag&255u)!=4))||(id==3&&(count<2||((argv[0].tag&255u)!=0&&(argv[0].tag&255u)!=5)||((argv[1].tag&255u)!=0&&(argv[1].tag&255u)!=5)))){v=call_error(id);goto done;}
+  /* CHR/ASC argument classes and arity are oracle-measured (2026-11-24,
+   * m2_p1/m2_p2 probes, Harbour 3.2 -gtcgi native): Chr() and Asc() take
+   * exactly one argument; CHR requires a numeric tag (0 int, 5 heap float
+   * - Chr(65.7) truncates toward zero) and rejects strings and logicals
+   * with "Error BASE/1104  Argument error: CHR"; ASC requires a string
+   * tag and rejects numerics with BASE/1107; the zero-argument forms give
+   * the same argument errors. Range needs no check: hbc_chr wraps to the
+   * low byte (Chr(256)=0x00, Chr(-1)=0xFF) and Chr(0) is a one-byte NUL
+   * string; ASC of an empty string is 0 (both measured, no error). */
+  if((id<=2&&(!count||(argv[0].tag&255u)!=4))
+   ||(id==4&&(count!=1||((argv[0].tag&255u)!=0&&(argv[0].tag&255u)!=5)))
+   ||(id==5&&(count!=1||(argv[0].tag&255u)!=4))
+   ||(id==3&&(count<2||((argv[0].tag&255u)!=0&&(argv[0].tag&255u)!=5)||((argv[1].tag&255u)!=0&&(argv[1].tag&255u)!=5)))){v=call_error(id);goto done;}
  if(id==3){
   double d;if((argv[1].tag&255u)==5)d=*(const double*)(uintptr_t)argv[1].payload;else d=(double)(int64_t)argv[1].payload;
   /* Validate before integer conversion or production helper's legacy fatal. */

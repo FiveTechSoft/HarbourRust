@@ -1,0 +1,17 @@
+function main()
+private s:="A", n:=65.7
+OutStd("p", Chr(10))
+OutStd(&('Chr(65)'), Chr(10))
+OutStd(&('Asc("A")'), Chr(10))
+OutStd(&('Asc("ABC")'), Chr(10))
+OutStd(&('Chr(0)'), Chr(10))
+OutStd(&('Chr(n)'), Chr(10))
+OutStd(&('Asc(Chr(200))'), Chr(10))
+OutStd(&('Chr(256)'), Chr(10))
+OutStd(&('Chr(-1)'), Chr(10))
+OutStd(&('Asc("")'), Chr(10))
+OutStd(&('Asc(s)'), Chr(10))
+OutStd(&('Chr(72)+Chr(73)'), Chr(10))
+OutStd(&('Lower(Chr(72)+Chr(73))'), Chr(10))
+OutStd(&('Chr(Asc("Q"))'), Chr(10))
+return nil

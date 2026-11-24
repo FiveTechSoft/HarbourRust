@@ -20,6 +20,10 @@ hrm_call:
     je .Lhrm_call_lower
     cmp $3,%edi
     je .Lhrm_call_round
+    cmp $4,%edi
+    je .Lhrm_call_chr
+    cmp $5,%edi
+    je .Lhrm_call_asc
     xor %eax,%eax
     jmp .Lhrm_call_done
 .Lhrm_call_upper:
@@ -34,6 +38,29 @@ hrm_call:
 .Lhrm_call_string:
     mov (%rsp),%rcx
     movq $4,(%rcx)
+    mov %rax,8(%rcx)
+    jmp .Lhrm_call_ok
+.Lhrm_call_chr:
+    # The C evaluator validated tag 0 (int) or 5 (heap float {double,meta}):
+    # a float truncates toward zero (oracle Chr(65.7)="A"); hbc_chr wraps
+    # to the low byte (oracle Chr(256)=0x00, Chr(-1)=0xFF) and returns an
+    # owned one-byte string.
+    mov 8(%rdx),%rdi
+    cmpb $5,(%rdx)
+    jne .Lhrm_call_chr_int
+    movsd (%rdi),%xmm0
+    cvttsd2siq %xmm0,%rdi
+.Lhrm_call_chr_int:
+    call hbc_chr
+    jmp .Lhrm_call_string
+.Lhrm_call_asc:
+    # Validated tag 4 (string): the unsigned first byte; empty input is 0
+    # (oracle Asc("")=0, no error).
+    mov 8(%rdx),%rdi
+    mov -8(%rdi),%rsi
+    call hbc_asc
+    mov (%rsp),%rcx
+    movq $0,(%rcx)
     mov %rax,8(%rcx)
     jmp .Lhrm_call_ok
 .Lhrm_call_round:
