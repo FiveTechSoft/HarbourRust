@@ -1824,7 +1824,7 @@ impl P {
                     return Ok(Expr::HashLit(Vec::new()));
                 }
                 let mut items = Vec::new();
-                let first = self.expr()?;
+                let first = if self.peek()==Some(&Tok::Comma){Expr::Nil}else{self.expr()?};
                 if self.peek() == Some(&Tok::FatArrow) {
                     // Hash literal {k => v, ...} (probes d4, h5).
                     let mut pairs = Vec::new();
@@ -1846,7 +1846,7 @@ impl P {
                 items.push(first);
                 loop {
                     match self.bump() {
-                        Some(Tok::Comma) => { items.push(self.expr()?); continue; }
+                        Some(Tok::Comma) => { items.push(if matches!(self.peek(),Some(Tok::Comma|Tok::RBrace)){Expr::Nil}else{self.expr()?}); continue; }
                         Some(Tok::RBrace) => break,
                         other => return Err(format!("line {}: expected `,` or `}}` in the array literal, got {:?}", self.n, other)),
                     }
@@ -39232,6 +39232,14 @@ fn main() {
     // all existing SToD checker/lowering paths index its sole argument.
     let source_names:std::collections::HashSet<_>=funcs.iter().map(|f|f.name.clone()).collect();
     for f in &mut funcs {visit_stmts_mut(&mut f.stmts,&mut |e,_|{if let Expr::Call(id,args)=e{if ["stod","hb_stod"].contains(&id.as_str())&&!source_names.contains(id)&&args.is_empty(){args.push(Expr::Str(String::new()));}}});}
+    // Pure decimal literal Val indexes have an exact integer spelling.
+    // Keep computed/decimal Val and source-owned Val calls on old paths.
+    if DECIMAL_LOCAL_PROFILE.with(|v|v.get())&&!MACRO_CONTEXT.with(|v|v.get()) {for f in &mut funcs {visit_stmts_mut(&mut f.stmts,&mut |e,_|{
+        fn index(e:&mut Expr,source_names:&std::collections::HashSet<String>){
+            if let Expr::Call(id,args)=e{if is_builtin(id,"val")&&!source_names.contains(id){if let [Expr::Str(s)]=args.as_slice(){let t=s.trim_matches(' ');let digits=t.strip_prefix('+').or_else(||t.strip_prefix('-')).unwrap_or(t);if !digits.is_empty()&&digits.bytes().all(|b|b.is_ascii_digit()){if let Ok(v)=t.parse::<i64>(){*e=Expr::Int(v.to_string());}}}}}
+        }
+        match e {Expr::Index(_,a)=>index(a,&source_names),Expr::Index2(_,a,b)=>{index(a,&source_names);index(b,&source_names);},Expr::Index3(_,a,b,c)=>{index(a,&source_names);index(b,&source_names);index(c,&source_names);},Expr::Index4(_,a,b,c,d)=>{index(a,&source_names);index(b,&source_names);index(c,&source_names);index(d,&source_names);},_=>{}}
+    });}}
     narrow_bare_date_locals(&mut funcs);
     init_retyped_val_functions(&funcs);
     init_pcount_functions(&funcs);
