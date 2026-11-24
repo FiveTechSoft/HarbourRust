@@ -26034,7 +26034,11 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
     add $96, %rsp
 .Lfx@K@:
 "#.replace("@P@", &(v.off - 8).to_string()).replace("@T@", &v.off.to_string()).replace("@K@", &k.to_string());
-                out.push_str(&asm);
+                if shared_local::active()&&shared_local::current(id)&&v.ty==Ty::Dyn {
+                    let old=format!("    mov -{}(%rbp), %r11\n    @HBC_TAG_KIND@cmpq $8, -{}(%rbp)@HBC_TAG_END@\n    jne hbc_type_error\n    test %r11, %r11\n    jz .Lfdn{k}\n    mov %r11, (%rsp)\n    mov -8(%r11), %r10\n",v.off-8,v.off);
+                    let mut root=String::new();cg_sarr_root(id,v.off,"%r11",&mut root);
+                    root.push_str("    mov (%r11), %r10\n    mov 24(%r11), %r11\n    mov %r11, (%rsp)\n");out.push_str(&asm.replace(&old,&root));
+                }else{out.push_str(&asm);}
             }
             Stmt::ASize(_, id, e) => {
                 let v = env.iter().find(|v| v.name == *id).expect("checked").clone();
