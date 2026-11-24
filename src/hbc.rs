@@ -7459,6 +7459,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 }
                 if DECIMAL_LOCAL_PROFILE.with(|v|v.get())&&!MACRO_CONTEXT.with(|v|v.get())&&shared_local::literal(&args[0]){return Ok(Ty::Str);}
                 match &args[0] {
+                    Expr::Call(id,aa) if shared_local::active()&&is_builtin(id,"atail")&&matches!(aa.as_slice(),[Expr::Var(v)]if shared_local::current(v))=>{},
                     Expr::Send(..) if method_results::send(&args[0]) => {} ,
                     Expr::Send(o,_,aa) if timestamp::scalar_empty() && aa.is_empty() && matches!(o.as_ref(),Expr::Var(_)) && type_expr(&args[0],env,sigs,n)?==Ty::Dyn => {},
                     Expr::Int(_) | Expr::Str(_) | Expr::Nil | Expr::Var(_) => {}
@@ -16692,6 +16693,12 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                     cg_value(&args[0],env,sigs,strs,out,target);
                     out.push_str("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n    mov %rax, %r10\n");
                     vt_classify_scalar(strs,out);out.push_str("    mov %rax, 16(%rsp)\n    mov %rdx, 24(%rsp)\n");cg_concat_drop(out,0);out.push_str("    mov 16(%rsp), %rax\n    mov 24(%rsp), %rdx\n    add $32, %rsp\n");
+                }
+                Expr::Call(id,aa) if shared_local::active()&&is_builtin(id,"atail")&&matches!(aa.as_slice(),[Expr::Var(v)]if shared_local::current(v))=>{
+                    cg_value(&args[0],env,sigs,strs,out,target);
+                    out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n    mov %rax, %r10\n");
+                    vt_classify_scalar(strs,out);cg_dyn_stack_release(out,0,true);
+                    out.push_str("    add $16, %rsp\n");
                 }
                 Expr::Call(id,_) if id==INTERNAL_STOD => vt_letter(strs,out,"D"),
                 Expr::Int(_) => vt_letter(strs, out, "N"),
