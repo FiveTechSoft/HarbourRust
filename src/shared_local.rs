@@ -59,6 +59,13 @@ pub fn init(ff:&[Func]) {
     if matches!(a,Expr::Var(n)if literals.contains(n))&&to.stmts.iter().any(|s|matches!(s,Stmt::ArrSet(_,n,_,Expr::Var(v)) if n==&to.params[i]&&v!=n&&(to.params.contains(v)||to.stmts.iter().any(|s|matches!(s,Stmt::Local(_,local,Expr::Call(_,aa))if local==v&&aa.iter().any(|e|matches!(e,Expr::Index(root,_)if root==n))))))){need=true;}
    }}
   }});
+  visit_stmts_ref(&f.stmts,&mut |_|{},&mut |e|{if let Expr::Call(id,args)=e{
+   if let Some(to)=ff.iter().find(|f|f.name==*id){for (i,a)in args.iter().enumerate().take(to.params.len()){
+    if matches!(a,Expr::Var(n)if literals.contains(n)){
+     visit_stmts_ref(&to.stmts,&mut |_|{},&mut |e|{if matches!(e,Expr::Call(id,aa)if is_builtin(id,"asort")&&aa.len()<=3&&matches!(aa.first(),Some(Expr::Var(n))if n==&to.params[i])){need=true;}});
+    }
+   }}
+  }});
   names.insert(f.name.clone(),arrays);
  }
  for f in ff {let own=names.get(&f.name).unwrap();visit_stmts_ref(&f.stmts,&mut |_|{},&mut |e|{if let Expr::Call(id,aa)=e {if let Some(to)=ff.iter().find(|x|x.name==*id){for(i,a)in aa.iter().enumerate().take(to.params.len()){if matches!(a,Expr::Var(n) if own.contains(n)) && to.stmts.iter().any(|s|matches!(s,Stmt::AAdd(_,p,_) if p==&to.params[i])) {need=true;}}}}});}
