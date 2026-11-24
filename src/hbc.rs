@@ -10924,7 +10924,7 @@ fn foreach_coll_untouched(stmts: &[Stmt], name: &str) -> bool {
             Expr::Seq(es) => es.iter().all(|e| expr_ok(e, name)),
             Expr::Set(v, r) => *v != name && expr_ok(r, name),
             Expr::Call(id, args) => {
-                if (is_builtin(id, "AAdd") || is_builtin(id, "ASize"))
+                if (["aadd","asize","hb_hsetdef","hb_hset","hb_hdel","hb_hclear","hb_hfill","hb_hmerge","hb_hcopy","hb_hsetcasematch","hb_hdelat"].iter().any(|b|is_builtin(id,b)))
                     && matches!(args.first(), Some(Expr::Var(v)) if v == name)
                 {
                     return false;
@@ -10940,7 +10940,11 @@ fn foreach_coll_untouched(stmts: &[Stmt], name: &str) -> bool {
                 }
                 args.iter().all(|a| expr_ok(a, name))
             }
-            Expr::Bin(_, a, b) | Expr::Cmp(_, a, b) => expr_ok(a, name) && expr_ok(b, name),
+            Expr::Bin(_, a, b) | Expr::Cmp(_, a, b) | Expr::LAnd(a,b) | Expr::LOr(a,b) => expr_ok(a, name) && expr_ok(b, name),
+            Expr::LNot(e)=>expr_ok(e,name),
+            Expr::ByRef(v)=>v!=name,
+            Expr::BlockLit(..) if expr_mentions(e,name)=>false,
+            Expr::Send(r,_,args)=>expr_ok(r,name)&&args.iter().all(|a|expr_ok(a,name)),
             Expr::IdxCompound(id, ie, _, re) => id != name && expr_ok(ie, name) && expr_ok(re, name),
             _ => true,
         }
@@ -10950,6 +10954,8 @@ fn foreach_coll_untouched(stmts: &[Stmt], name: &str) -> bool {
         Stmt::ArrSet(_, id, ie, e) | Stmt::ArrSet2(_, id, ie, e, _) | Stmt::ArrSet3(_, id, ie, e, _, _) | Stmt::ArrSet4(_, id, ie, e, ..) => id != name && expr_ok(ie, name) && expr_ok(e, name),
         Stmt::AAdd(_, id, _) | Stmt::ASize(_, id, _) | Stmt::AAddSub(_, id, _, _) | Stmt::ASizeSub(_, id, _, _) | Stmt::AAddSub2(_, id, _, _, _) | Stmt::ASizeSub2(_, id, _, _, _) | Stmt::AAddSub3(_, id, ..) | Stmt::ASizeSub3(_, id, ..) => id != name,
         Stmt::AIns(_, id, _) | Stmt::ADel(_, id, _) | Stmt::AFill(_, id, ..) => id != name,
+        Stmt::HClear(_,id)|Stmt::HDel(_,id,_)|Stmt::HDelAt(_,id,_)|Stmt::HFill(_,id,_)|Stmt::HSet(_,id,_,_)|Stmt::HSetCaseMatch(_,id,_)=>id!=name,
+        Stmt::HMerge(_,a,b)|Stmt::HCopy(_,a,b,_,_)=>a!=name&&b!=name,
         Stmt::SendStmt(_, e) => expr_ok(e, name),
         Stmt::If(_, c, a, b) => expr_ok(c, name) && foreach_coll_untouched(a, name) && foreach_coll_untouched(b, name),
         Stmt::While(_, c, b) => expr_ok(c, name) && foreach_coll_untouched(b, name),
@@ -40338,6 +40344,7 @@ fn main() {
         let mut enumeration=false;let mut case_mutation=false;
         for f in &funcs { visit_stmts_ref(&f.stmts,&mut |s| {if matches!(s,Stmt::HSetCaseMatch(..)) {case_mutation=true;}},&mut |e| {
             if matches!(e,Expr::Call(id,_) if is_builtin(id,"hb_hkeys") || is_builtin(id,"hb_hkeyat")) { enumeration=true; }
+            if matches!(e,Expr::Send(_,method,_) if method.eq_ignore_ascii_case("__enumkey")){enumeration=true;}
         }); }
         if case_mutation { eprintln!("error: Limit: literal integer hash keys cannot be combined with hb_HSetCaseMatch in this increment");process::exit(1); }
         if enumeration { eprintln!("error: Limit: literal integer hash keys cannot be combined with hb_HKeys/hb_HKeyAt in this increment (their result ABI is string-only)");process::exit(1); }

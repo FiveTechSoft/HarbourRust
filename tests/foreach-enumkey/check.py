@@ -13,7 +13,7 @@ def run(cmd,w,label):
 for src in [*sorted(here.glob('*.prg'))]:
  w=out/src.stem;w.mkdir();(w/src.name).write_bytes(src.read_bytes());(w/'input.sha256').write_text(hashlib.sha256(src.read_bytes()).hexdigest()+'  '+src.name+'\n')
  if src.stem.startswith('limit-'):
-  r=run([cc,src,w/'limit'],w,'build');assert r.returncode==1 and ((b'codeblock' if src.stem=='limit-capture' else b'__enum') in r.stderr.lower()) and not (w/'limit').exists(),(src,r.stderr);rows.append(dict(name=src.stem,kind='named-rejection'));continue
+  r=run([cc,src,w/'limit'],w,'build');assert r.returncode==1 and ((b'cannot be modified' if src.stem.startswith('limit-mutate-') else b'string-only' if src.stem=='limit-numeric-key' else b'codeblock' if src.stem=='limit-capture' else b'__enum') in r.stderr.lower()) and not (w/'limit').exists(),(src,r.stderr);rows.append(dict(name=src.stem,kind='named-rejection'));continue
  r=run([a.hbmk2,src,'-quiet','-gtstd','-w0','-o'+str(w/'oracle')],w,'oracle-build');assert r.returncode==0,(src,r.stderr)
  r=run([w/'oracle'],w,'oracle-run');assert r.returncode==0 and r.stderr==b'',(src,r.stderr);want=r.stdout;(w/'oracle').unlink()
  for mode,flags in [('native',[]),('external',['--external-as']),('flat',['--no-vas-arrays']),('noescape',['--no-escape-analysis']),('noprune',['--no-prune'])]:
