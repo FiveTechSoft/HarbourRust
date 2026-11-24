@@ -11646,7 +11646,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 } else if sub_mid {
                     foreach_barr_lv_ok(body, var)
                 } else {
-                    foreach_lv_readonly(body, var)
+                    foreach_lv_readonly(body, var) || (timestamp::flat_mixed() && ct==Ty::DArr && timestamp::foreach_calls(body,var,cname.as_deref(),sigs))
                 };
                 if !lv_ok {
                     if sub_mid {
@@ -12745,6 +12745,8 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 } else if env[idx].ty == Ty::DArrU && matches!(t, Ty::DArr | Ty::DArr2 | Ty::DArrDyn) {
                     // Assigning a pinned dynamic array pins the empty `{}`.
                     env[idx].ty = t;
+                } else if timestamp::flat_mixed() && env[idx].ty==Ty::DArr && t==Ty::DArrU && matches!(e,Expr::DArrNew) {
+                    // Empty reinitialization keeps the established tagged element family.
                 } else if env[idx].ty == Ty::Dyn && matches!(t, Ty::I64 | Ty::Bool | Ty::Dyn | Ty::Str | Ty::StrOwn | Ty::F64) {
                     // Dyn slot: an i64 is tagged in, a Dyn is copied (probe
                     // n2: reassignment re-tags a live variable), a string

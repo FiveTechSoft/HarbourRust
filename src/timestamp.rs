@@ -153,3 +153,33 @@ pub(super) fn scalar_empty()->bool{active()&&DECIMAL_LOCAL_PROFILE.with(|v|v.get
 pub(super) fn flat_mixed()->bool{scalar_empty()&&CLASSES.with(|c|!c.borrow().is_empty())&&!method_results::active()}
 
 pub(super) fn object_lifetimes()->bool{scalar_empty()&&CLASSES.with(|c|!c.borrow().is_empty())}
+
+// A flat cell can cross an ordinary Dyn boundary by value: existing
+// codegen clones string/float payloads, while timestamp/Date are scalars.
+// This proof adds no borrowed-variable storage or byref escape. Do not let
+// a sibling argument change the collection while its element is borrowed.
+pub(super) fn foreach_calls(body:&[Stmt],name:&str,collection:Option<&str>,sigs:&[Sig])->bool{
+ fn ex(e:&Expr,name:&str,collection:Option<&str>,sigs:&[Sig])->bool{
+  if collection.map_or(false,|n|expr_mentions(e,n)){return false;}
+  let mut e=e.clone();
+  let mut captures=false;
+  visit_expr_mut(&mut e,0,&mut |e,_|{if matches!(e,Expr::BlockLit(..))&&expr_mentions(e,name){captures=true;}});
+  if captures{return false;}
+  visit_expr_mut(&mut e,0,&mut |e,_|{
+   if let Expr::Call(id,args)=e{if USER_FUNC_NAMES.with(|v|v.borrow().contains(id)){
+    if let Some(s)=sigs.iter().find(|s|s.name==*id){
+     for(i,a)in args.iter_mut().enumerate(){
+      if s.params.get(i)==Some(&Ty::Dyn)&&!byref_param(id,i)&&matches!(a,Expr::Var(n) if n==name){*a=Expr::Nil;}
+     }
+    }
+   }}
+  });
+  !expr_mentions(&e,name)
+ }
+ body.iter().all(|s|match s{
+  Stmt::Assign(_,n,e) if n!=name&&collection!=Some(n.as_str())=>ex(e,name,collection,sigs),
+  Stmt::Print(_,ee,_)=>ee.iter().all(|e|ex(e,name,collection,sigs)),
+  Stmt::If(_,c,a,b)=>ex(c,name,collection,sigs)&&foreach_calls(a,name,collection,sigs)&&foreach_calls(b,name,collection,sigs),
+  _=>false,
+ })
+}
