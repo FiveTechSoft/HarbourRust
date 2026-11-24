@@ -21,7 +21,7 @@ changes or other-target support. Shared parameter variables use the same
 existing name/typing contract. The literal-clone fast path is unchanged.
 
 Fresh oracle probe confirmed shared-child preservation and self-cycle
-remapping before implementation. Gate18:two own sources x5modes=10 exact
+remapping before implementation. Initial gate18:two own sources x5modes=10 exact
 fresh-Harbour executions,2 zero final balances,6 profile rejections. Covers
 independent graph identity,repeated child aliases,self-cycle,mixed scalar
 payloads,string/float mutation,date,NIL/logical,nested mutation and
@@ -32,5 +32,17 @@ intact ains/arrays/array16 gates. Rust104,Linux1177stdout exact,
 PE1912PASS22known0FAIL emission only,negative622combined16unchanged
 (Linux7/Windows9).Census57/1041unchanged.No performance claim.
 ASort2 stays58=42+16 with mandatory original source files.
+
+Parameter/return follow-up on 3f70b838ad0e52d63418531aa3fdab9750f4e9c9:
+two additional own MIT fixtures exercise parameter clone/return,mutual
+cycles,repeated children,independent invocations,empty graphs,self-cycle
+and 37x117 repeated double-clone calls with replaced scalar payloads.
+Full updated gate36 = 20 exact fresh-Harbour executions,4 zero final
+balances,12 target-profile rejections. Compiler code and SHA unchanged.
+The 72-suite and broad regression counts above belong to the preceding
+code commit,not a new run for this test-only follow-up. No original newly
+closes. Array inequality is intentionally not asserted: a separate fresh
+probe found Harbour BASE/1072 for <> whereas current native emitted a
+logical result. That mismatch is not fixed by these tests.
 
     python tests/shared-graph-clone/check.py --compiler target/release/hbc --hbmk2 /path/to/hbmk2 --spec-root /path/to/harbour --output /tmp/shared-graph-clone-gate
