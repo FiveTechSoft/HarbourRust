@@ -5293,6 +5293,9 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
                 pin_vars(f, a, t, pin, n)?;
                 pin_vars(f, b, t, pin, n)
             }
+            // A comparison has a logical result, not logical operands.
+            // Its own walk supplies operand evidence (including NIL Dyn).
+            Expr::Cmp(..) if ty==Ty::Bool => Ok(()),
             Expr::Cmp(_, a, b) => { pin_vars(f, a, ty, pin, n)?; pin_vars(f, b, ty, pin, n) }
             Expr::Log(_) => Ok(()),
             Expr::LNot(a) => pin_vars(f, a, Ty::Bool, pin, n),
