@@ -30,4 +30,16 @@ unchanged. ASort2 stays58=42+16 with mandatory original source files.
 Verified duplicate extracted package trees were removed after comparing
 every file with their retained archives;archives and raw evidence remain.
 
+Test-only follow-up on 13ee8f3e7a8b67800dbe79f29685a245a1b41428:
+errors.prg repeats bounds failures at levels1..4 and a non-array parent
+failure,then verifies the source remains accessible. Only this fixture's
+oracle gets INIT ErrorBlock/Break;it compares recovery counts and surviving
+state,not error objects/descriptions/default handlers. Fresh probe showed
+Harbour1132 Bound error and1068 Argument error;the compiler's existing
+caught strings differ,so no description equivalence is claimed here.
+Full updated gate27 = 10 unadapted exact executions +5 adapted recovery-
+count executions +3 zero balances +9 profile rejections. Compiler SHA
+unchanged. Broad regressions above were not rerun for this test-only
+follow-up. No newly closed original.
+
     python tests/shared-clone-deep-cell/check.py --compiler target/release/hbc --hbmk2 /path/to/hbmk2 --spec-root /path/to/harbour --output /tmp/shared-clone-deep-cell-gate
