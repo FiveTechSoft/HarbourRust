@@ -138,3 +138,27 @@ struct hrt_dout hbc_dtoc_c(hrt_u64 packed)
     out.len = n;
     return out;
 }
+
+/* Validate only the standard layouts supported by this increment.
+ * Result encodes layout bits0..2 and century bit3; invalid is all ones. */
+hrt_u64 hbc_date_check_mask(const char *mask,hrt_u64 len)
+{
+    hrt_u64 f,c,i,j,pos,count,field;char actual,expect;
+    if(len!=8&&len!=10)return ~(hrt_u64)0;
+    for(f=0;f<7;f++)for(c=0;c<2;c++) {
+        const unsigned char *row=g_layouts[f];hrt_u64 fields[3];
+        fields[0]=row[0];fields[1]=row[2];fields[2]=3-fields[0]-fields[1];pos=0;
+        for(i=0;i<3;i++) {
+            field=fields[i];count=field==2&&c?4:2;expect=field==0?'m':field==1?'d':'y';
+            for(j=0;j<count;j++) {
+                if(pos>=len)break;
+                actual=mask[pos];if(actual>='A'&&actual<='Z')actual=(char)(actual-'A'+'a');
+                if(actual!=expect)break;pos++;
+            }
+            if(j!=count)break;
+            if(i<2){if(pos>=len||mask[pos]!=(char)row[i==0?1:3])break;pos++;}
+        }
+        if(i==3&&pos==len)return f|(c<<3);
+    }
+    return ~(hrt_u64)0;
+}

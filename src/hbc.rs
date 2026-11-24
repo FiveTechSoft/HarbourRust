@@ -8544,7 +8544,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 return Ok(Ty::Bool);
             }
             if is_builtin(id,"set") {
-                if DECIMAL_LOCAL_PROFILE.with(|v|v.get()) && !MACRO_CONTEXT.with(|v|v.get()) && set_date_mask_call(args) && (args.len()==1 || args.len()==2&&standard_date_mask(&args[1]).is_some()) {return Ok(Ty::StrOwn);}
+                if DECIMAL_LOCAL_PROFILE.with(|v|v.get()) && !MACRO_CONTEXT.with(|v|v.get()) && set_date_mask_call(args) && (args.len()==1 || args.len()==2&&(standard_date_mask(&args[1]).is_some() || matches!(&args[1],Expr::Var(_))&&matches!(type_expr(&args[1],env,sigs,n)?,Ty::Str|Ty::StrOwn))) {return Ok(Ty::StrOwn);}
                 if !DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get()) || !(args.len()==1||args.len()==2) || !matches!(args.first(),Some(Expr::Int(v)) if v=="5") {return Err(format!("line {}: unknown function `set` (only literal epoch5 or checked standard dateformat4 on ordinary Linux is measured in this increment)",n));}
                 if let Some(value)=args.get(1) {if !matches!(value,Expr::Nil) && !matches!(value,Expr::Int(v) if v.parse::<u16>().ok().map_or(false,|n|n<=9999)) {return Err(format!("line {}: Set epoch value requires NIL or an integer literal0..9999 in this increment",n));}}
                 return Ok(Ty::I64);
@@ -17292,6 +17292,12 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             out.push_str("    mov $1,%edx\n");
         }
         Expr::Call(id,args) if is_builtin(id,"set") && set_date_mask_call(args) => {
+            if let Some(value @ Expr::Var(_))=args.get(1) {
+                cg_expr(value,env,sigs,strs,out,target);
+                let k=fresh_lbl();let si=strs.len();let msg="Limit: Set dateformat runtime value must be a standard mask\n";strs.push(msg.to_string());
+                out.push_str(&format!("    sub $48,%rsp\n    mov %rax,(%rsp)\n    mov %rdx,8(%rsp)\n    mov %rax,%rdi\n    mov %rdx,%rsi\n    call hbc_date_check_mask\n    cmp $-1,%rax\n    jne .Lmaskvalid{k}\n    add $48,%rsp\n    lea .Lstr{si}(%rip),%rax\n    mov ${},%edx\n    call hbc_write_bytes\n    jmp hbc_panic_exit\n.Lmaskvalid{k}:\n    mov %rax,16(%rsp)\n    call hbc_date_get_mask\n    mov %rax,32(%rsp)\n    mov %rdx,40(%rsp)\n    mov (%rsp),%rdi\n    mov 8(%rsp),%rsi\n    mov 16(%rsp),%rdx\n    mov %rdx,%rcx\n    and $7,%edx\n    shr $3,%rcx\n    call hbc_date_set_mask\n    mov 16(%rsp),%rcx\n    and $7,%ecx\n    mov %rcx,.Ldate_pfmt(%rip)\n    mov 32(%rsp),%rax\n    mov 40(%rsp),%rdx\n    add $48,%rsp\n",msg.len()));
+                return;
+            }
             out.push_str("    call hbc_date_get_mask\n");
             if let Some((fmt,century))=args.get(1).and_then(standard_date_mask) {
                 let Expr::Str(mask)=&args[1]else{unreachable!()};let si=strs.len();strs.push(mask.clone());
@@ -35182,7 +35188,7 @@ fn finalize_trace(mut out: String, target: Target) -> String {
     // and the layout core): hbc_dtoc / hbc_date_render reference it.
     if out.contains("hbc_date_core_c")
         || out.contains("call hbc_date_set_fmt")
-        || out.contains("call hbc_date_set_century") || out.contains("call hbc_date_get_century") || out.contains("call hbc_date_get_mask") || out.contains("call hbc_date_set_mask") {
+        || out.contains("call hbc_date_set_century") || out.contains("call hbc_date_get_century") || out.contains("call hbc_date_get_mask") || out.contains("call hbc_date_set_mask") || out.contains("call hbc_date_check_mask") {
         let date_rodata = if target == Target::Windows { ".section .rdata,\"r\"" } else { ".section .rodata" };
         out.push_str(&include_str!("../generated/hrdate.s").replace("@HRDATE_RODATA@", date_rodata));
     }

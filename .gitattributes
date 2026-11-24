@@ -200,3 +200,5 @@ tests/set-epoch/** -text
 tests/set-century/** -text
 
 tests/set-dateformat/** -text
+
+tests/set-runtime-mask/** -text
