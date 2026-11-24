@@ -4156,14 +4156,18 @@ implemented on Linux (float fold propagates F64, result `1`), superseding
 
 The audit is complete (2026-11-23/24: root causes + Harbour oracle evidence in
 `docs/HARBOUR-ORACLE-2026-11-23.md`). The rows stay in the manifest as-is:
-Windows still enforces them, and a shared manifest row cannot express
-"Linux accepts / Windows rejects". The maintainer's sign-off options:
-(1) keep the rows as documented Windows-side contract + reject the files at
-Linux with a skip/override mechanism; (2) re-pin the four rows as Windows-only
-neg rows with a Linux-only companion record; (3) leave as known Linux-stale
-debt until the next battery baseline. My recommendation: (3), so the Linux side
-stays red and visible until the baseline re-cut, rather than a silent re-pin.
-Whatever is chosen, re-run this battery + the PE gate afterwards.
+Windows still enforces them (verified 2026-11-24: all seven stale rows reject
+with rc=1 and the manifest substring on the PE target), and a shared manifest
+row cannot express "Linux accepts / Windows rejects". The maintainer's sign-off
+options: (1) keep the rows as documented Windows-side contract + reject the files
+at Linux with a skip/override mechanism; (2) re-pin the rows as Windows-only neg
+rows with a Linux-only companion record; (3) leave as known Linux-stale debt
+until the next battery baseline. Decision (2026-11-24, maintainer delegated
+"como tu veas"): (3) - option (3) - so the Linux side stays red and visible
+until the baseline re-cut, rather than a silent re-pin. Verified on the PE gate
+at the time: 1912 PASS / 22 known-mismatch / 0 FAIL (the stale rows are PE
+rejects, not mismatches). Re-run this battery + the PE gate before any baseline
+re-cut.
 
 Three additional stale rows appeared on 2026-11-24 after the Linux-only
 landings below; each is a manifest-sync gap in its feature commit (repo
@@ -4181,7 +4185,9 @@ Harbour oracle agrees (compiles and runs; oracle outputs in
 The total Linux `neg` failures are now exactly 7 (the four stale rows above,
 plus these three); no other row regressed (622 checked). The three rows
 are left in the manifest as-is for the same sign-off path as the four:
-re-pin as positive cases (oracle-confirmed values) or leave as debt.
+the maintained decision is option (3) - leave as known Linux-stale debt
+until the baseline re-cut. PE-side enforcement verified 2026-11-24 for
+all seven rows (rc=1 with manifest substring).
 
 Nine `neg` rows are the known-mismatch PE CurDir debt (same source state as
 the known-mismatches file). Linux rejects with the manifest substring -
