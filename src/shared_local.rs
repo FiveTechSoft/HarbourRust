@@ -110,7 +110,7 @@ pub fn init(ff:&[Func]) {
  // Initially keep unsupported profiles closed, rather than changing existing
  // native/PE/Mach-O contracts with an untested collector.
  if !DECIMAL_LOCAL_PROFILE.with(|v|v.get())||MACRO_CONTEXT.with(|v|v.get())||EXTERNS.with(|v|!v.borrow().is_empty())||(!method_arrays::active()&&CLASSES.with(|v|!v.borrow().is_empty())){return;}
- for f in ff {visit_stmts_ref(&f.stmts,&mut |s|{if let Stmt::Local(_,n,e)|Stmt::Assign(_,n,e)=s{if literal(e)||constructor(e).is_some(){names.entry(f.name.clone()).or_default().insert(n.clone());}}},&mut |_|{});}
+ for f in ff {visit_stmts_ref(&f.stmts,&mut |s|{if let Stmt::Local(_,n,e)|Stmt::Assign(_,n,e)=s{if literal(e)||constructor(e).is_some()||matches!(e,Expr::Call(id,aa)if is_builtin(id,"aclone")&&matches!(aa.as_slice(),[a]if literal(a))){names.entry(f.name.clone()).or_default().insert(n.clone());}}},&mut |_|{});}
  let mut params=HashSet::new();
  for f in ff {if pure_helper(&f.name){if let [Stmt::Ret(_,Some(Expr::Index(n,_)))]=f.stmts.as_slice(){if let Some(i)=f.params.iter().position(|p|p==n){names.entry(f.name.clone()).or_default().insert(n.clone());params.insert((f.name.clone(),i));}}}}
  let mut returns=HashSet::<String>::new();

@@ -8158,6 +8158,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 return Ok(Ty::StrOwn);
             }
             if is_builtin(id, "aclone") {
+                if args.len()==1&&shared_local::active()&&shared_local::literal(&args[0]){return Ok(Ty::Dyn);}
                 if args.len()!=1 { return Err(format!("line {}: `AClone` takes one argument in this increment",n)); }
                 if !matches!(&args[0], Expr::Var(_)) {
                     return Err(format!("line {}: `AClone` expects an array variable (the slot is passed by address)",n));
@@ -17947,6 +17948,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             }
         }
         Expr::Call(id,args) if is_builtin(id,"aclone") => {
+            if shared_local::active()&&shared_local::literal(&args[0]){shared_local::emit_literal(&args[0],strs,out);return;}
             let av = match &args[0] { Expr::Var(v) => v.clone(), _ => unreachable!("checked") };
             let var = env.iter().rev().find(|x| x.name == *av).expect("checked");
             let helper = if expr_ty(&args[0],env,sigs) == Ty::DArrS { "hbc_aclone_s" } else { "hbc_aclone_i" };
@@ -21692,6 +21694,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             if ["cdow","cmonth","dtoc"].iter().any(|b|is_builtin(id,b)) { return Ty::StrOwn; }
             if is_builtin(id, "ascan") { return Ty::I64; }
             if is_builtin(id, "aclone") {
+                if shared_local::active()&&shared_local::literal(&args[0]){return Ty::Dyn;}
                 return match expr_ty(&args[0],env,sigs) { Ty::DArrS => Ty::DArrS, _ => Ty::DArr };
             }
             if is_builtin(id, "atail") || is_builtin(id, "asort") { return Ty::Dyn; }
