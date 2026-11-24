@@ -89,7 +89,7 @@ jobs:
             (cd bin && set +e; timeout 60 "./ext_$n" > "../ref/ext_$n.stdout" 2> "../ref/ext_$n.stderr" < /dev/null; echo $? > "../ref/ext_$n.rc")
           done
           ls ref | wc -l
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: thread-reference
           path: ref
@@ -117,7 +117,7 @@ jobs:
           otool -hl smoke | head -60
           codesign -v -vvv smoke || true
           ./smoke; echo "exit=$?"
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: thread-reference
           path: thread-ref
@@ -150,7 +150,7 @@ jobs:
           file smoke
           otool -hl smoke | head -80
           ./smoke; echo "exit=$?"
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: thread-reference
           path: thread-ref
