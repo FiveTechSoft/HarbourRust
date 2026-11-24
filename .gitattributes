@@ -194,3 +194,5 @@ tests/asort-phase20/** -text
 tests/asort-phase21/** -text
 
 tests/inline-date-arithmetic/** -text
+
+tests/set-epoch/** -text

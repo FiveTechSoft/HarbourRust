@@ -8526,6 +8526,11 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 if args.len()!=1 || !matches!(&args[0],Expr::Int(_)) {return Err(format!("line {}: internal SET DATE/CENTURY store expects one integer",n));}
                 return Ok(Ty::I64);
             }
+            if is_builtin(id,"set") {
+                if !DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get()) || !(args.len()==1||args.len()==2) || !matches!(args.first(),Some(Expr::Int(v)) if v=="5") {return Err(format!("line {}: unknown function `set` (only literal epoch selector5 on ordinary Linux is measured in this increment)",n));}
+                if let Some(value)=args.get(1) {if !matches!(value,Expr::Nil) && !matches!(value,Expr::Int(v) if v.parse::<u16>().ok().map_or(false,|n|n<=9999)) {return Err(format!("line {}: Set epoch value requires NIL or an integer literal0..9999 in this increment",n));}}
+                return Ok(Ty::I64);
+            }
             if is_builtin(id,"setcursor") {
                 if !CURDIR_LINUX_NATIVE.with(|v|v.get()) {return Err(format!("line {}: SetCursor is measured only on ordinary Linux GTSTD",n));}
                 if args.len()>1{return Err(format!("line {}: SetCursor takes zero or one typed integer argument",n));}
@@ -13076,6 +13081,7 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
             if is_builtin(id,"ctod") { apply_moves(&args[0],env,sigs,false); return; }
             if is_builtin(id,"dirmake") {for a in args {apply_moves(a,env,sigs,false);}return;}
             if ["hb_flink","hb_flinksym","hb_flinkread","hb_memowrit","hb_dircreate","ferror"].iter().any(|b|is_builtin(id,b)) {for a in args {apply_moves(a,env,sigs,false);}return;}
+            if is_builtin(id,"set") {return;}
             if is_builtin(id,"setcursor") {for a in args {apply_moves(a,env,sigs,false);}return;}
             if is_builtin(id,"transform") {for a in args {apply_moves(a,env,sigs,false);}return;}
             if is_builtin(id,"hb_sha1") || is_builtin(id,"hb_hmac_sha1") {for a in args {apply_moves(a,env,sigs,false);}return;}
@@ -17259,6 +17265,12 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
         Expr::Call(id,args) if id=="hbc_set_century" => {
             let v = match &args[0] { Expr::Int(v) => v.parse::<i64>().unwrap_or(0), _ => 0 };
             out.push_str(&format!("    mov ${}, %edi\n    call hbc_date_set_century\n", v));
+        }
+        Expr::Call(id,args) if is_builtin(id,"set") => {
+            // Source checker admits only selector5 and literal/NIL values.
+            // Set returns the previous epoch, including on a NIL no-op.
+            out.push_str("    mov .Ldate_epoch(%rip), %rax\n    xor %edx, %edx\n");
+            if let Some(Expr::Int(v))=args.get(1) {out.push_str(&format!("    movq ${}, .Ldate_epoch(%rip)\n",v));}
         }
         Expr::Call(id,args) if is_builtin(id,"setcursor") => {
             if let Some(a)=args.first(){cg_expr(a,env,sigs,strs,out,target);out.push_str("    mov %rax, %rdi\n    call hbc_cursor_set\n");}
@@ -21506,6 +21518,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             if id=="hrbase_wait" {return Ty::I64;}
             if id=="hbc_set_decimals" {return Ty::I64;}
             if id=="hbc_set_datefmt" || id=="hbc_set_century" || id=="hbc_set_epoch" || id=="hbc_quit" {return Ty::I64;}
+            if is_builtin(id,"set") {return Ty::I64;}
             if is_builtin(id,"altd") {return Ty::I64;}
             if is_builtin(id,"setcursor") || is_builtin(id,"dirmake") || is_builtin(id,"inkey") {return Ty::I64;}
             if is_builtin(id,"file") {return Ty::Bool;}

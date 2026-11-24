@@ -67,6 +67,9 @@ impl Pp {
         // 3.2.0dev, measured on the pinned harbour-core, oracle hk248): it
         // lets conditional compilation take Harbour branches. It is not a
         // claim of Harbour runtime completeness.
+        // Public epoch selector exposed by Harbour's implicit standard header.
+        // User #define/#undef keeps ordinary macro precedence.
+        defs.insert("_SET_EPOCH".to_string(), Def {params:Vec::new(),funclike:false,body:"5".to_string(),dup:1});
         defs.insert("__HARBOUR__".to_string(), Def { params: Vec::new(), funclike: false, body: "197121".to_string(), dup: 1 });
         // The platform macro follows the COMPILE TARGET, not the host:
         // hk248 measured the Linux target (defines __PLATFORM__UNIX, not
