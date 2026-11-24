@@ -223,14 +223,151 @@ hbc_date_set_fmt:
 	.globl	hbc_date_set_century
 hbc_date_set_century:
 	cmpq	%rdi, hdate_local_g_century(%rip)
-	jne	.Lhdate_42
+	je	.Lhdate_80
+	cmpq	$8, hdate_local_g_date_fmt(%rip)
+	movq	%rdi, hdate_local_g_century(%rip)
+	jbe	.Lhdate_42
+	pushq	%r12
+	pushq	%rbp
+	pushq	%rbx
+	subq	$32, %rsp
+	movq	hdate_local_g_mask_len(%rip), %r8
+	testq	%r8, %r8
+	je	.Lhdate_83
+	cmpq	$1, %rdi
+	movq	%rsp, %rbp
+	leaq	hdate_local_g_mask(%rip), %rsi
+	sbbq	%rbx, %rbx
+	xorl	%r11d, %r11d
+	xorl	%ecx, %ecx
+	xorl	%eax, %eax
+	andq	$-2, %rbx
+	addq	$4, %rbx
+	leaq	0(%rbp,%rbx), %r12
+	.p2align 4,,10
+	.p2align 3
+.Lhdate_53:
+	movzbl	(%rsi,%rax), %edx
+	leal	-97(%rdx), %r10d
+	leal	-32(%rdx), %r9d
+	cmpb	$26, %r10b
+	cmovb	%r9d, %edx
+	cmpb	$89, %dl
+	jne	.Lhdate_46
+	testq	%r11, %r11
+	je	.Lhdate_84
+.Lhdate_46:
+	movb	%dl, (%rsp,%rcx)
+	addq	$1, %rax
+	addq	$1, %rcx
+.Lhdate_49:
+	cmpq	%rax, %r8
+	ja	.Lhdate_53
+	testq	%r11, %r11
+	je	.Lhdate_85
+.Lhdate_54:
+	xorl	%eax, %eax
+	leaq	hdate_local_g_mask(%rip), %rsi
+	movq	%rsp, %rdx
+	testq	%rcx, %rcx
+	je	.Lhdate_61
+	.p2align 4,,10
+	.p2align 3
+.Lhdate_60:
+	movzbl	(%rdx,%rax), %edi
+	movb	%dil, (%rsi,%rax)
+	addq	$1, %rax
+	cmpq	%rax, %rcx
+	jne	.Lhdate_60
+.Lhdate_61:
+	movq	%rcx, hdate_local_g_mask_len(%rip)
+	addq	$32, %rsp
+	popq	%rbx
+	popq	%rbp
+	popq	%r12
 	ret
 	.p2align 4,,10
 	.p2align 3
 .Lhdate_42:
-	movq	%rdi, hdate_local_g_century(%rip)
 	movl	$1, %edi
 	jmp	hdate_local_hrt_mask_standard
+	.p2align 4,,10
+	.p2align 3
+.Lhdate_84:
+	leaq	0(%rbp,%rcx), %rdx
+	leaq	(%r12,%rcx), %r9
+	jmp	.Lhdate_47
+	.p2align 4,,10
+	.p2align 3
+.Lhdate_48:
+	movb	$89, (%rdx)
+	addq	$1, %rdx
+.Lhdate_47:
+	cmpq	%r9, %rdx
+	jne	.Lhdate_48
+	addq	%rbx, %rcx
+	jmp	.Lhdate_50
+	.p2align 4,,10
+	.p2align 3
+.Lhdate_87:
+	movzbl	(%rsi,%rax), %edx
+	andl	$-33, %edx
+	cmpb	$89, %dl
+	jne	.Lhdate_86
+.Lhdate_50:
+	addq	$1, %rax
+	cmpq	%r8, %rax
+	jb	.Lhdate_87
+	movl	$1, %r11d
+	jmp	.Lhdate_49
+	.p2align 4,,10
+	.p2align 3
+.Lhdate_86:
+	movl	$1, %r11d
+	jmp	.Lhdate_53
+	.p2align 4,,10
+	.p2align 3
+.Lhdate_80:
+	ret
+	.p2align 4,,10
+	.p2align 3
+.Lhdate_85:
+	cmpq	$1, %rdi
+	movq	%rsp, %rdx
+	sbbq	%rdi, %rdi
+	andq	$-2, %rdi
+	addq	$4, %rdi
+	testq	%rcx, %rcx
+	je	.Lhdate_59
+	leaq	(%rdx,%rcx), %rax
+	.p2align 4,,10
+	.p2align 3
+.Lhdate_58:
+	movzbl	-1(%rax), %esi
+	subq	$1, %rax
+	movb	%sil, (%rax,%rdi)
+	cmpq	%rdx, %rax
+	jne	.Lhdate_58
+.Lhdate_59:
+	leaq	(%rdx,%rdi), %rax
+.Lhdate_57:
+	movb	$89, (%rdx)
+	addq	$1, %rdx
+	cmpq	%rdx, %rax
+	jne	.Lhdate_57
+	addq	%rdi, %rcx
+	jmp	.Lhdate_54
+.Lhdate_83:
+	xorl	%ecx, %ecx
+	testq	%rdi, %rdi
+	je	.Lhdate_65
+	movl	$4, %edi
+	movq	%rsp, %rdx
+	jmp	.Lhdate_59
+.Lhdate_65:
+	movl	$2, %edi
+	movq	%rsp, %rdx
+	jmp	.Lhdate_59
 	.p2align 4
 	.globl	hbc_date_get_century
 hbc_date_get_century:
@@ -247,18 +384,18 @@ hbc_date_get_mask:
 	movq	%r8, (%rax)
 	movq	%r8, 8(%rax)
 	testq	%r8, %r8
-	je	.Lhdate_45
+	je	.Lhdate_90
 	xorl	%edx, %edx
 	leaq	hdate_local_g_mask(%rip), %rsi
 	.p2align 4,,10
 	.p2align 3
-.Lhdate_46:
+.Lhdate_91:
 	movzbl	(%rsi,%rdx), %ecx
 	movb	%cl, 16(%rax,%rdx)
 	addq	$1, %rdx
 	cmpq	%rdx, %r8
-	jne	.Lhdate_46
-.Lhdate_45:
+	jne	.Lhdate_91
+.Lhdate_90:
 	addq	$16, %rax
 	movq	%r8, %rdx
 	addq	$8, %rsp
@@ -270,18 +407,18 @@ hbc_date_set_mask:
 	movq	%rcx, hdate_local_g_century(%rip)
 	movq	%rsi, hdate_local_g_mask_len(%rip)
 	testq	%rsi, %rsi
-	je	.Lhdate_52
+	je	.Lhdate_97
 	xorl	%eax, %eax
 	leaq	hdate_local_g_mask(%rip), %rcx
 	.p2align 4,,10
 	.p2align 3
-.Lhdate_54:
+.Lhdate_99:
 	movzbl	(%rdi,%rax), %edx
 	movb	%dl, (%rcx,%rax)
 	addq	$1, %rax
 	cmpq	%rax, %rsi
-	jne	.Lhdate_54
-.Lhdate_52:
+	jne	.Lhdate_99
+.Lhdate_97:
 	ret
 	.p2align 4
 	.globl	hbc_date_core_c
@@ -299,34 +436,16 @@ hbc_date_core_c:
 	pushq	%rbp
 	pushq	%rbx
 	movq	%rdi, %rbx
-	movq	%rdx, %r12
+	movq	%rdx, %r15
 	shrq	$4, %rdx
-	shrq	$2, %r12
-	leaq	(%r12,%r12,4), %rax
-	movq	%r12, %rsi
-	movq	%rdi, %r12
-	subq	$8, %rsp
+	shrq	$2, %r15
+	leaq	(%r15,%r15,4), %rax
+	movq	%r15, %rsi
+	movq	%rdi, %r15
+	subq	$32, %rsp
 	leaq	(%rax,%rax,4), %rax
 	salq	$2, %rax
-	subq	%rax, %r12
-	movq	%rdx, %rax
-	mulq	%rcx
-	movq	%rdx, %r13
-	andq	$-4, %rdx
-	shrq	$2, %r13
-	addq	%r13, %rdx
-	leaq	(%rdx,%rdx,4), %rax
-	movabs	$3777893186295716171, %rdx
-	salq	$2, %rax
-	subq	%rax, %rsi
-	movq	%rdi, %rax
-	mulq	%rdx
-	movq	%rsi, %r13
-	movq	%rdx, %rbp
-	shrq	$11, %rbp
-	cmpq	$0, hdate_local_g_century(%rip)
-	jne	.Lhdate_60
-	shrq	$13, %rdx
+	subq	%rax, %r15
 	movq	%rdx, %rax
 	mulq	%rcx
 	movq	%rdx, %rax
@@ -334,72 +453,87 @@ hbc_date_core_c:
 	shrq	$2, %rax
 	addq	%rax, %rdx
 	leaq	(%rdx,%rdx,4), %rax
+	movabs	$3777893186295716171, %rdx
 	salq	$2, %rax
-	subq	%rax, %rbp
-.Lhdate_60:
-	movq	hdate_local_g_date_fmt(%rip), %rcx
-	cmpq	$8, %rcx
-	je	.Lhdate_73
-	movq	%rcx, %rax
+	subq	%rax, %rsi
+	movq	%rdi, %rax
+	mulq	%rdx
+	movq	%rsi, (%rsp)
+	movq	%rdx, %rsi
+	shrq	$11, %rsi
+	cmpq	$0, hdate_local_g_century(%rip)
+	movq	%rsi, 16(%rsp)
+	movq	%rsi, %rbp
+	jne	.Lhdate_105
+	shrq	$13, %rdx
+	movq	%rdx, %rax
+	mulq	%rcx
+	movq	%rdx, %rbp
+	andq	$-4, %rdx
+	shrq	$2, %rbp
+	leaq	(%rdx,%rbp), %rax
+	leaq	(%rax,%rax,4), %rax
+	salq	$2, %rax
+	subq	%rax, %rsi
+	movq	%rsi, %rbp
+.Lhdate_105:
+	movq	hdate_local_g_date_fmt(%rip), %rax
+	cmpq	$8, %rax
+	ja	.Lhdate_167
+	je	.Lhdate_168
+	leaq	hdate_local_g_layouts(%rip), %rdx
+	movq	(%rsp), %rcx
 	movq	%rbp, %r8
 	movq	%r11, %rdi
-	movabs	$-2049638230412172401, %rdx
-	mulq	%rdx
-	movq	%rdx, %rax
-	andq	$-8, %rdx
-	shrq	$3, %rax
-	addq	%rax, %rdx
-	leaq	hdate_local_g_layouts(%rip), %rax
-	subq	%rdx, %rcx
-	movq	%r12, %rdx
-	leaq	(%rax,%rcx,4), %r14
-	movq	%r13, %rcx
-	movzbl	(%r14), %r15d
-	movzbl	2(%r14), %eax
-	movq	%r15, %rsi
-	movq	%rax, (%rsp)
+	leaq	(%rdx,%rax,4), %r14
+	movq	%r15, %rdx
+	movzbl	(%r14), %r13d
+	movzbl	2(%r14), %r12d
+	movq	%r13, %rsi
+	addq	%r12, %r13
 	call	hdate_local_hrt_field
 	movzbl	1(%r14), %edx
 	movq	%rbp, %r8
-	movq	%r13, %rcx
+	movq	%r12, %rsi
 	addq	%r11, %rax
-	movq	(%rsp), %rsi
+	movq	(%rsp), %rcx
 	movb	%dl, (%rax)
 	leaq	1(%rax), %rdi
-	movq	%r12, %rdx
+	movq	%r15, %rdx
 	call	hdate_local_hrt_field
 	movzbl	3(%r14), %edx
+	movq	(%rsp), %rcx
 	movq	%rbp, %r8
-	movq	%r13, %rcx
 	addq	%rdi, %rax
-	addq	(%rsp), %r15
 	movl	$3, %esi
 	movb	%dl, (%rax)
 	leaq	1(%rax), %rdi
-	subq	%r15, %rsi
-	movq	%r12, %rdx
+	subq	%r13, %rsi
+	movq	%r15, %rdx
 	call	hdate_local_hrt_field
-	addq	%rdi, %rax
+	leaq	(%rdi,%rax), %r8
 	testq	%rbx, %rbx
-	jne	.Lhdate_67
-	cmpq	%rax, %r11
-	jnb	.Lhdate_67
-	movq	%r11, %rdx
+	jne	.Lhdate_131
+	cmpq	%r8, %r11
+	jnb	.Lhdate_131
+	movq	%r11, %rax
 	.p2align 4,,10
 	.p2align 3
-.Lhdate_69:
-	movzbl	(%rdx), %ebx
-	leal	-48(%rbx), %ecx
-	cmpb	$9, %cl
-	ja	.Lhdate_68
-	movb	$32, (%rdx)
-.Lhdate_68:
-	addq	$1, %rdx
-	cmpq	%rax, %rdx
-	jne	.Lhdate_69
-.Lhdate_67:
-	addq	$8, %rsp
-	subq	%r11, %rax
+.Lhdate_133:
+	movzbl	(%rax), %ebx
+	leal	-48(%rbx), %edx
+	cmpb	$9, %dl
+	ja	.Lhdate_132
+	movb	$32, (%rax)
+.Lhdate_132:
+	addq	$1, %rax
+	cmpq	%rax, %r8
+	jne	.Lhdate_133
+.Lhdate_131:
+	subq	%r11, %r8
+.Lhdate_104:
+	addq	$32, %rsp
+	movq	%r8, %rax
 	popq	%rbx
 	popq	%rbp
 	popq	%r12
@@ -407,45 +541,229 @@ hbc_date_core_c:
 	popq	%r14
 	popq	%r15
 	ret
+.Lhdate_167:
+	movq	hdate_local_g_mask_len(%rip), %r10
+	testq	%r10, %r10
+	je	.Lhdate_137
+	movq	$0, 8(%rsp)
+	xorl	%r8d, %r8d
+	movq	%r15, 24(%rsp)
+	jmp	.Lhdate_125
 	.p2align 4,,10
 	.p2align 3
-.Lhdate_73:
+.Lhdate_169:
+	cmpb	$68, %dl
+	je	.Lhdate_140
+	movl	$4, %ebp
+	cmpb	$89, %dl
+	je	.Lhdate_109
+.Lhdate_110:
+	leaq	1(%r8), %rax
+	movb	%dl, (%r11,%r8)
+	cmpq	%r10, %rax
+	movq	%rax, %r8
+	setb	%r9b
+	cmpq	$9, %rax
+	setbe	%dl
+	andl	%edx, %r9d
+.Lhdate_124:
+	testb	%r9b, %r9b
+	je	.Lhdate_104
+.Lhdate_125:
+	leaq	hdate_local_g_mask(%rip), %rax
+	movzbl	(%rax,%r8), %eax
+	leal	-97(%rax), %ecx
+	leal	-32(%rax), %edx
+	cmpb	$26, %cl
+	cmovnb	%eax, %edx
+	cmpb	$77, %dl
+	jne	.Lhdate_169
+	movl	$1, %ebp
+.Lhdate_109:
+	movq	8(%rsp), %rdi
+	andq	%rbp, %rdi
+	jne	.Lhdate_110
+	cmpq	%r8, %r10
+	seta	%r12b
+	cmpq	$9, %r8
+	setbe	%cl
+	andb	%cl, %r12b
+	je	.Lhdate_111
+	leaq	1(%r8), %r15
+	leaq	hdate_local_g_mask(%rip), %r14
+	xorl	%esi, %esi
+	movq	%r15, %rcx
+	addq	%r8, %r14
+	jmp	.Lhdate_114
+	.p2align 4,,10
+	.p2align 3
+.Lhdate_170:
+	movzbl	(%r14,%rsi), %eax
+.Lhdate_114:
+	leal	-97(%rax), %r13d
+	leal	-32(%rax), %r9d
+	cmpb	$26, %r13b
+	cmovb	%r9d, %eax
+	cmpb	%al, %dl
+	jne	.Lhdate_113
+	addq	$1, %rsi
+	cmpq	%rcx, %r10
+	seta	%r9b
+	cmpq	$9, %rcx
+	setbe	%al
+	addq	$1, %rcx
+	testb	%al, %r9b
+	jne	.Lhdate_170
+.Lhdate_113:
+	cmpq	$4, %rsi
+	jbe	.Lhdate_171
+	cmpq	$9, %r15
+	setbe	%r9b
+	cmpq	%r15, %r10
+	seta	%al
+	andl	%eax, %r9d
+	cmpq	$1, %rbp
+	je	.Lhdate_146
+	movq	24(%rsp), %r13
+	cmpq	$2, %rbp
+	movl	$1, %esi
+	cmovne	16(%rsp), %r13
+	jmp	.Lhdate_135
+	.p2align 4,,10
+	.p2align 3
+.Lhdate_140:
+	movl	$2, %ebp
+	jmp	.Lhdate_109
+.Lhdate_171:
+	leaq	(%r8,%rsi), %r15
+	movq	(%rsp), %r13
+	cmpq	$9, %r15
+	setbe	%r9b
+	cmpq	%r15, %r10
+	seta	%al
+	andl	%eax, %r9d
+	cmpq	$1, %rbp
+	je	.Lhdate_117
+	movq	24(%rsp), %r13
+	cmpq	$2, %rbp
+	cmovne	16(%rsp), %r13
+.Lhdate_117:
+	testq	%rsi, %rsi
+	je	.Lhdate_118
+.Lhdate_135:
+	cmpq	$4, %rbp
+	leaq	-1(%rsi), %rax
+	setne	%r12b
+.Lhdate_134:
+	leaq	(%r11,%r8), %r14
+	jmp	.Lhdate_123
+	.p2align 4,,10
+	.p2align 3
+.Lhdate_173:
+	movl	$10, %ecx
+	leaq	-1(%rax), %r8
+	testb	%r12b, %r12b
+	je	.Lhdate_172
+.Lhdate_119:
+	movl	$32, %eax
+	testq	%rbx, %rbx
+	je	.Lhdate_122
+	movq	%r13, %rax
+	xorl	%edx, %edx
+	divq	%rcx
+	movq	%rax, %rcx
+	movabs	$-3689348814741910323, %rax
+	mulq	%rcx
+	shrq	$3, %rdx
+	leaq	(%rdx,%rdx,4), %rax
+	addq	%rax, %rax
+	subq	%rax, %rcx
+	leal	48(%rcx), %eax
+.Lhdate_122:
+	movb	%al, (%r14,%rdi)
+	addq	$1, %rdi
+	movq	%r8, %rax
+	cmpq	%rsi, %rdi
+	jnb	.Lhdate_118
+.Lhdate_123:
+	testq	%rax, %rax
+	jne	.Lhdate_173
+.Lhdate_144:
+	movl	$1, %ecx
+	movq	$-1, %r8
+	jmp	.Lhdate_119
+	.p2align 4,,10
+	.p2align 3
+.Lhdate_172:
+	testq	%rax, %rax
+	je	.Lhdate_144
+	movq	%r8, %rax
+	movl	$1, %ecx
+	.p2align 4,,10
+	.p2align 3
+.Lhdate_121:
+	leaq	(%rcx,%rcx,4), %rcx
+	addq	%rcx, %rcx
+	subq	$1, %rax
+	jnb	.Lhdate_121
+	jmp	.Lhdate_119
+.Lhdate_111:
+	cmpq	$1, %rbp
+	je	.Lhdate_104
+	cmpq	$2, %rbp
+	jne	.Lhdate_104
+	xorl	%r9d, %r9d
+	movq	%r8, %r15
+	.p2align 4,,10
+	.p2align 3
+.Lhdate_118:
+	orq	%rbp, 8(%rsp)
+	movq	%r15, %r8
+	jmp	.Lhdate_124
+.Lhdate_146:
+	movq	(%rsp), %r13
+	xorl	%eax, %eax
+	movl	$1, %esi
+	jmp	.Lhdate_134
+.Lhdate_168:
 	movabs	$-3689348814741910323, %rsi
-	movq	%r12, %rax
+	movq	%r15, %rax
 	movb	$47, 3(%r11)
 	movabs	$2951479051793528259, %rdi
 	mulq	%rsi
+	movq	%r15, %rax
 	movb	$47, 7(%r11)
 	shrq	$3, %rdx
-	leaq	(%rdx,%rdx,4), %rax
 	leal	48(%rdx), %ecx
-	addq	%rax, %rax
+	leaq	(%rdx,%rdx,4), %rdx
+	addq	%rdx, %rdx
 	movb	%cl, (%r11)
-	subq	%rax, %r12
-	movq	%r13, %rax
+	subq	%rdx, %rax
 	movb	%cl, 1(%r11)
+	addl	$48, %eax
+	movb	%al, 2(%r11)
+	movq	(%rsp), %rax
 	mulq	%rsi
-	addl	$48, %r12d
-	movb	%r12b, 2(%r11)
 	shrq	$3, %rdx
 	leal	48(%rdx), %eax
+	leaq	(%rdx,%rdx,4), %rdx
 	movb	%al, 4(%r11)
+	addq	%rdx, %rdx
 	movb	%al, 5(%r11)
-	leaq	(%rdx,%rdx,4), %rax
+	movq	(%rsp), %rax
+	subq	%rdx, %rax
 	movq	%rbp, %rdx
-	addq	%rax, %rax
+	addl	$48, %eax
 	shrq	$2, %rdx
-	subq	%rax, %r13
+	movb	%al, 6(%r11)
 	movq	%rdx, %rax
 	mulq	%rdi
-	addl	$48, %r13d
-	movb	%r13b, 6(%r11)
 	movq	%rdx, %rdi
 	andq	$-4, %rdx
 	shrq	$2, %rdi
-	addq	%rdi, %rdx
+	leaq	(%rdx,%rdi), %rax
 	movq	%rbp, %rdi
-	leaq	(%rdx,%rdx,4), %rax
+	leaq	(%rax,%rax,4), %rax
 	salq	$2, %rax
 	subq	%rax, %rdi
 	movq	%rdi, %rax
@@ -456,36 +774,32 @@ hbc_date_core_c:
 	leaq	(%rdx,%rdx,4), %rax
 	addq	%rax, %rax
 	subq	%rax, %rdi
-	leaq	10(%r11), %rax
-	addl	$48, %edi
-	movb	%dil, 9(%r11)
+	leal	48(%rdi), %eax
+	movb	%al, 9(%r11)
 	testq	%rbx, %rbx
-	je	.Lhdate_63
-	movl	$10, %eax
-.Lhdate_75:
-	addq	$8, %rsp
-	popq	%rbx
-	popq	%rbp
-	popq	%r12
-	popq	%r13
-	popq	%r14
-	popq	%r15
-	ret
+	jne	.Lhdate_127
+	leaq	10(%r11), %rax
+	movl	%ecx, %edx
+	jmp	.Lhdate_128
 	.p2align 4,,10
 	.p2align 3
-.Lhdate_74:
-	movzbl	(%r11), %ecx
-.Lhdate_63:
-	subl	$48, %ecx
-	cmpb	$9, %cl
-	ja	.Lhdate_65
+.Lhdate_174:
+	movzbl	(%r11), %edx
+.Lhdate_128:
+	subl	$48, %edx
+	cmpb	$9, %dl
+	ja	.Lhdate_129
 	movb	$32, (%r11)
-.Lhdate_65:
+.Lhdate_129:
 	addq	$1, %r11
 	cmpq	%r11, %rax
-	jne	.Lhdate_74
-	movl	$10, %eax
-	jmp	.Lhdate_75
+	jne	.Lhdate_174
+.Lhdate_127:
+	movl	$10, %r8d
+	jmp	.Lhdate_104
+.Lhdate_137:
+	xorl	%r8d, %r8d
+	jmp	.Lhdate_104
 	.p2align 4
 	.globl	hbc_dtoc_c
 hbc_dtoc_c:
@@ -501,17 +815,17 @@ hbc_dtoc_c:
 	movq	%r12, (%rax)
 	movq	%r12, 8(%rax)
 	testq	%r12, %r12
-	je	.Lhdate_77
+	je	.Lhdate_176
 	xorl	%ecx, %ecx
 	.p2align 4,,10
 	.p2align 3
-.Lhdate_78:
+.Lhdate_177:
 	movzbl	(%rbx,%rcx), %esi
 	movb	%sil, 16(%rax,%rcx)
 	addq	$1, %rcx
 	cmpq	%rcx, %r12
-	jne	.Lhdate_78
-.Lhdate_77:
+	jne	.Lhdate_177
+.Lhdate_176:
 	addq	$24, %rsp
 	movq	%r12, %rdx
 	addq	$16, %rax
@@ -520,160 +834,279 @@ hbc_dtoc_c:
 	ret
 @HRDATE_RODATA@
 .Lhdate_C0:
-.byte 100,100,100,47,109,109,109,47,121,121,0
+.byte 121,121,121,47,109,109,47,100,100,100,0
 .Lhdate_C1:
+.byte 100,100,100,47,109,109,109,47,121,121,0
+.Lhdate_C2:
 .byte 100,100,100,47,109,109,109,47,121,121,121,121,0
+.Lhdate_C3:
+.byte 121,121,47,109,109,47,100,100,100,0
+.Lhdate_C4:
+.byte 121,121,121,121,47,109,109,47,100,100,100,0
+.Lhdate_C5:
+.byte 121,121,121,47,109,47,100,47,121,121,121,0
+.Lhdate_C6:
+.byte 121,121,47,109,47,100,47,121,121,121,0
+.Lhdate_C7:
+.byte 121,121,121,121,47,109,47,100,47,121,121,121,0
+.Lhdate_C8:
+.byte 109,47,100,47,121,47,109,47,100,0
+.Lhdate_C9:
+.byte 109,47,100,47,121,121,47,109,47,100,0
+.Lhdate_C10:
+.byte 109,47,100,47,121,121,121,121,47,109,47,100,0
+.Lhdate_C11:
+.byte 109,109,109,109,47,100,100,100,100,100,0
+.Lhdate_C12:
+.byte 121,121,109,109,109,109,47,100,100,100,100,100,0
+.Lhdate_C13:
+.byte 121,121,121,121,109,109,109,109,47,100,100,100,100,100,0
+.Lhdate_C14:
+.byte 109,109,109,109,109,47,100,100,0
+.Lhdate_C15:
+.byte 121,121,109,109,109,109,109,47,100,100,0
+.Lhdate_C16:
+.byte 121,121,121,121,109,109,109,109,109,47,100,100,0
 	.text
 	.p2align 4
 	.globl	hbc_date_check_mask
 hbc_date_check_mask:
-	leaq	-10(%rsi), %rdx
-	movq	%rdi, %r10
-	movq	%rsi, %r8
-	andq	$-3, %rdx
-	jne	.Lhdate_85
-	cmpq	$10, %rsi
-	je	.Lhdate_104
-	leaq	.Lhdate_C1(%rip), %r9
+	pushq	%r15
+	leaq	.Lhdate_C3(%rip), %rax
+	movl	$121, %ecx
+	xorl	%edx, %edx
+	pushq	%r14
+	leaq	.Lhdate_C0(%rip), %r10
+	xorl	%r11d, %r11d
+	pushq	%r13
+	pushq	%r12
+	pushq	%rbp
+	pushq	%rbx
+	subq	$152, %rsp
+	movq	%rax, 24(%rsp)
+	leaq	.Lhdate_C4(%rip), %rax
+	movq	%rax, 32(%rsp)
+	leaq	.Lhdate_C5(%rip), %rax
+	movq	%rax, 40(%rsp)
+	leaq	.Lhdate_C6(%rip), %rax
+	movq	%rax, 48(%rsp)
+	leaq	.Lhdate_C7(%rip), %rax
+	movq	%rax, 56(%rsp)
+	leaq	.Lhdate_C8(%rip), %rax
+	movq	%rax, 64(%rsp)
+	leaq	.Lhdate_C9(%rip), %rax
+	movq	%rax, 72(%rsp)
+	leaq	.Lhdate_C10(%rip), %rax
+	movq	%rax, 80(%rsp)
+	leaq	.Lhdate_C11(%rip), %rax
+	movq	%rax, 88(%rsp)
+	leaq	.Lhdate_C12(%rip), %rax
+	movq	%rax, 96(%rsp)
+	leaq	.Lhdate_C13(%rip), %rax
+	movq	%rax, 104(%rsp)
+	leaq	.Lhdate_C14(%rip), %rax
+	movq	%rax, 112(%rsp)
+	leaq	.Lhdate_C15(%rip), %rax
+	movq	%rax, 120(%rsp)
+	leaq	.Lhdate_C16(%rip), %rax
+	movq	%rax, 128(%rsp)
 	testq	%rsi, %rsi
-	je	.Lhdate_130
-.Lhdate_86:
-	movl	$100, %edi
-	jmp	.Lhdate_90
+	jne	.Lhdate_191
+	jmp	.Lhdate_192
 	.p2align 4,,10
 	.p2align 3
-.Lhdate_131:
+.Lhdate_188:
+	movzbl	(%rdi,%rdx), %eax
+	leal	-65(%rax), %r9d
+	leal	32(%rax), %r8d
+	cmpb	$26, %r9b
+	cmovb	%r8d, %eax
+	cmpb	%cl, %al
+	jne	.Lhdate_186
 	addq	$1, %rdx
-	cmpq	%rdx, %r8
-	jbe	.Lhdate_89
-	movzbl	(%r9,%rdx), %edi
-.Lhdate_90:
-	movzbl	(%r10,%rdx), %eax
-	leal	-65(%rax), %esi
+	cmpq	%rdx, %rsi
+	je	.Lhdate_187
+	movzbl	(%r10,%rdx), %ecx
+.Lhdate_191:
+	testb	%cl, %cl
+	jne	.Lhdate_188
+.Lhdate_186:
+	addq	$1, %r11
+	cmpq	$15, %r11
+	je	.Lhdate_190
+	movq	16(%rsp,%r11,8), %r10
+	xorl	%edx, %edx
+	movzbl	(%r10), %ecx
+	testq	%rsi, %rsi
+	jne	.Lhdate_191
+.Lhdate_192:
+	testb	%cl, %cl
+	jne	.Lhdate_186
+.Lhdate_235:
+	movabs	$-6148914691236517205, %rdx
+	movq	%r11, %rax
+	mulq	%rdx
+	movq	%rdx, %rcx
+	andq	$-2, %rdx
+	shrq $1, %rcx
+	leaq	(%rdx,%rcx), %rax
+	subq	%rax, %r11
+	xorl	%eax, %eax
+	cmpq	$2, %r11
+	sete	%al
+	addq	$9, %rcx
+	salq	$4, %rax
+	orq	%rcx, %rax
+	jmp	.Lhdate_183
+	.p2align 4,,10
+	.p2align 3
+.Lhdate_187:
+	movzbl	(%r10,%rsi), %ecx
+	testb	%cl, %cl
+	jne	.Lhdate_186
+	jmp	.Lhdate_235
+.Lhdate_190:
+	leaq	-10(%rsi), %rdx
+	andq	$-3, %rdx
+	jne	.Lhdate_193
+	cmpq	$10, %rsi
+	je	.Lhdate_212
+	leaq	.Lhdate_C2(%rip), %r10
+	testq	%rsi, %rsi
+	je	.Lhdate_236
+.Lhdate_194:
+	movl	$100, %r9d
+	jmp	.Lhdate_197
+	.p2align 4,,10
+	.p2align 3
+.Lhdate_237:
+	addq	$1, %rdx
+	cmpq	%rdx, %rsi
+	jbe	.Lhdate_196
+	movzbl	(%r10,%rdx), %r9d
+.Lhdate_197:
+	movzbl	(%rdi,%rdx), %eax
+	leal	-65(%rax), %r8d
 	leal	32(%rax), %ecx
-	cmpb	$26, %sil
+	cmpb	$26, %r8b
 	cmovb	%ecx, %eax
-	cmpb	%al, %dil
-	je	.Lhdate_131
-.Lhdate_85:
-	movq	%r8, %rax
+	cmpb	%r9b, %al
+	je	.Lhdate_237
+.Lhdate_193:
+	movq	%rsi, %rax
 	andq	$-3, %rax
 	cmpq	$8, %rax
-	jne	.Lhdate_127
-	pushq	%r15
-	pushq	%r14
-	pushq	%r13
-	movl	$1, %r13d
-	pushq	%r12
-	xorl	%r12d, %r12d
-	pushq	%rbp
+	jne	.Lhdate_198
 	leaq	hdate_local_g_layouts(%rip), %rbp
-	pushq	%rbx
-	subq	$56, %rsp
 	movq	$0, (%rsp)
-.Lhdate_92:
-	leaq	(%r12,%r13), %rax
+	movl	$1, %r13d
+	xorl	%r12d, %r12d
+.Lhdate_199:
+	movzbl	%r12b, %r14d
+	movzbl	%r13b, %r12d
 	movl	$3, %edx
 	xorl	%r15d, %r15d
+	leaq	(%r12,%r14), %rax
 	subq	%rax, %rdx
 	movq	%rdx, 8(%rsp)
-.Lhdate_101:
+.Lhdate_208:
 	movq	8(%rsp), %rax
-	movq	%r13, 24(%rsp)
-	movl	%r15d, %r14d
+	movq	%r12, 24(%rsp)
+	movl	%r15d, %r13d
 	xorl	%edx, %edx
 	xorl	%ebx, %ebx
 	movq	%rax, 32(%rsp)
-	movq	%r12, %rax
+	movq	%r14, %rax
 	cmpq	$2, %rax
-	jne	.Lhdate_112
-.Lhdate_132:
-	movl	$4, %r9d
-	movl	$121, %edi
-	testb	%r14b, %r14b
-	je	.Lhdate_112
-.Lhdate_93:
+	jne	.Lhdate_220
+.Lhdate_238:
+	movl	$4, %r10d
+	movl	$121, %r9d
+	testb	%r13b, %r13b
+	je	.Lhdate_220
+.Lhdate_200:
 	xorl	%ecx, %ecx
-	jmp	.Lhdate_97
+	jmp	.Lhdate_204
 	.p2align 4,,10
 	.p2align 3
-.Lhdate_110:
+.Lhdate_218:
 	movq	%rax, %rdx
-.Lhdate_97:
-	cmpq	%rdx, %r8
-	jbe	.Lhdate_95
-	movzbl	(%r10,%rdx), %eax
+.Lhdate_204:
+	cmpq	%rdx, %rsi
+	jbe	.Lhdate_202
+	movzbl	(%rdi,%rdx), %eax
 	leal	-65(%rax), %r11d
-	leal	32(%rax), %esi
+	leal	32(%rax), %r8d
 	cmpb	$26, %r11b
-	cmovb	%esi, %eax
-	cmpb	%dil, %al
-	jne	.Lhdate_95
+	cmovb	%r8d, %eax
+	cmpb	%r9b, %al
+	jne	.Lhdate_202
 	addq	$1, %rcx
 	leaq	1(%rdx), %rax
-	cmpq	%r9, %rcx
-	jne	.Lhdate_110
+	cmpq	%r10, %rcx
+	jne	.Lhdate_218
 	cmpq	$2, %rbx
-	je	.Lhdate_98
-	cmpq	%rax, %r8
-	jbe	.Lhdate_95
-	movzbl	(%r10,%rax), %eax
+	je	.Lhdate_205
+	cmpq	%rax, %rsi
+	jbe	.Lhdate_202
+	movzbl	(%rdi,%rax), %eax
 	testq	%rbx, %rbx
-	je	.Lhdate_99
+	je	.Lhdate_206
 	cmpb	3(%rbp), %al
-	jne	.Lhdate_95
+	jne	.Lhdate_202
 	addq	$2, %rdx
 	movl	$2, %ebx
-.Lhdate_102:
+.Lhdate_209:
 	movq	16(%rsp,%rbx,8), %rax
 	cmpq	$2, %rax
-	je	.Lhdate_132
-.Lhdate_112:
-	movl	$2, %r9d
+	je	.Lhdate_238
+.Lhdate_220:
+	movl	$2, %r10d
 	testq	%rax, %rax
-	jne	.Lhdate_133
-	movl	$109, %edi
-	jmp	.Lhdate_93
+	jne	.Lhdate_239
+	movl	$109, %r9d
+	jmp	.Lhdate_200
 	.p2align 4,,10
 	.p2align 3
-.Lhdate_98:
-	cmpq	%rax, %r8
-	je	.Lhdate_134
-.Lhdate_95:
+.Lhdate_205:
+	cmpq	%rax, %rsi
+	je	.Lhdate_240
+.Lhdate_202:
 	cmpq	$1, %r15
-	jne	.Lhdate_111
+	jne	.Lhdate_219
 	addq	$1, (%rsp)
 	movq	(%rsp), %rax
 	addq	$4, %rbp
 	cmpq	$8, %rax
-	je	.Lhdate_91
+	je	.Lhdate_198
 	movzbl	0(%rbp), %r12d
 	movzbl	2(%rbp), %r13d
-	jmp	.Lhdate_92
+	jmp	.Lhdate_199
 	.p2align 4,,10
 	.p2align 3
-.Lhdate_99:
+.Lhdate_206:
 	cmpb	1(%rbp), %al
-	jne	.Lhdate_95
+	jne	.Lhdate_202
 	addq	$2, %rdx
 	movl	$1, %ebx
-	jmp	.Lhdate_102
+	jmp	.Lhdate_209
 	.p2align 4,,10
 	.p2align 3
-.Lhdate_111:
+.Lhdate_219:
 	movl	$1, %r15d
-	jmp	.Lhdate_101
-.Lhdate_133:
+	jmp	.Lhdate_208
+.Lhdate_239:
 	cmpq	$1, %rax
-	movl	$121, %edi
+	movl	$121, %r9d
 	movl	$100, %eax
-	cmove	%eax, %edi
-	jmp	.Lhdate_93
-.Lhdate_134:
+	cmove	%eax, %r9d
+	jmp	.Lhdate_200
+.Lhdate_240:
 	movq	%r15, %rax
 	salq	$4, %rax
 	orq	(%rsp), %rax
-	addq	$56, %rsp
+.Lhdate_183:
+	addq	$152, %rsp
 	popq	%rbx
 	popq	%rbp
 	popq	%r12
@@ -681,40 +1114,58 @@ hbc_date_check_mask:
 	popq	%r14
 	popq	%r15
 	ret
-.Lhdate_91:
-	addq	$56, %rsp
+.Lhdate_198:
 	movq	$-1, %rax
-	popq	%rbx
-	popq	%rbp
-	popq	%r12
-	popq	%r13
-	popq	%r14
-	popq	%r15
-	ret
-.Lhdate_89:
-	jne	.Lhdate_85
-	cmpq	$12, %r8
+	jmp	.Lhdate_183
+.Lhdate_196:
+	jne	.Lhdate_193
+	cmpq	$12, %rsi
+	movl	$8, %eax
 	movl	$24, %edx
-	movl	$8, %eax
 	cmove	%rdx, %rax
-	ret
-.Lhdate_104:
-	leaq	.Lhdate_C0(%rip), %r9
-	jmp	.Lhdate_86
-.Lhdate_127:
-	movq	$-1, %rax
-	ret
-.Lhdate_130:
+	jmp	.Lhdate_183
+.Lhdate_212:
+	leaq	.Lhdate_C1(%rip), %r10
+	jmp	.Lhdate_194
+.Lhdate_236:
 	movl	$8, %eax
+	jmp	.Lhdate_183
+	.p2align 4
+	.globl	hbc_date_mask_has_year
+hbc_date_mask_has_year:
+	movq	hdate_local_g_mask_len(%rip), %rax
+	testq	%rax, %rax
+	je	.Lhdate_241
+	leaq	hdate_local_g_mask(%rip), %rdx
+	addq	%rdx, %rax
+	jmp	.Lhdate_243
+	.p2align 4,,10
+	.p2align 3
+.Lhdate_250:
+	addq	$1, %rdx
+	cmpq	%rax, %rdx
+	je	.Lhdate_249
+.Lhdate_243:
+	movzbl	(%rdx), %ecx
+	andl	$-33, %ecx
+	cmpb	$89, %cl
+	jne	.Lhdate_250
+	movl	$1, %eax
+.Lhdate_241:
+	ret
+	.p2align 4,,10
+	.p2align 3
+.Lhdate_249:
+	xorl	%eax, %eax
 	ret
 	.data
 	.align 8
 hdate_local_g_mask_len:
 	.quad	8
-	.align 8
+	.align 16
 hdate_local_g_mask:
 .byte 109,109,47,100,100,47,121,121,0
-	.zero	4
+	.zero	8
 @HRDATE_RODATA@
 	.align 32
 hdate_local_g_layouts:

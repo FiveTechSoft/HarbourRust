@@ -30,7 +30,7 @@ s=re.sub(r'^\s*\.local\s+[A-Za-z_][\w.]*\s*\n','',s,flags=re.M)  # ELF gcc: .loc
 s=re.sub(r'^\s*\.(string|ascii)\s+("(?:[^"\\]|\\.)*")\s*$',lambda m:(lambda bs:('.byte '+','.join(map(str,bs))) if bs else '')(list(ast.literal_eval('b'+m[2]))+([0] if m[1]=='string' else [])),s,flags=re.M)  # .string adds NUL, .ascii does not; empty -> nothing
 s=re.sub(r'^\s*\.section\s+\.(?:rodata|rdata)[^\n]*', '@HRDATE_RODATA@', s, flags=re.M)
 for name in re.findall(r'^([A-Za-z_][A-Za-z0-9_.$]*):',s,re.M):
-    if not name.startswith(('hbc_date_set_fmt','hbc_date_set_century','hbc_date_get_century','hbc_date_get_mask','hbc_date_set_mask','hbc_date_check_mask','hbc_date_core_c','hbc_dtoc_c')):s=re.sub(r'(?<![A-Za-z0-9_.])'+re.escape(name)+r'(?![A-Za-z0-9_.$])','hdate_local_'+name,s)
+    if not name.startswith(('hbc_date_mask_has_year','hbc_date_set_fmt','hbc_date_set_century','hbc_date_get_century','hbc_date_get_mask','hbc_date_set_mask','hbc_date_check_mask','hbc_date_core_c','hbc_dtoc_c')):s=re.sub(r'(?<![A-Za-z0-9_.])'+re.escape(name)+r'(?![A-Za-z0-9_.$])','hdate_local_'+name,s)
 labels=set(re.findall(r'^([A-Za-z_.$][A-Za-z0-9_.$]*):',s,re.M))
 calls=set(re.findall(r'\b(?:call|jmp)\s+([A-Za-z_][A-Za-z0-9_.$]*)',s))
 externals={c for c in calls if c not in labels}

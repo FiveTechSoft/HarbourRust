@@ -2300,6 +2300,8 @@ const INTERNAL_VALTYPE: &str = "\0valtype";
 fn standard_date_mask(e:&Expr)->Option<(usize,bool)> {
  let Expr::Str(mask)=e else{return None};
  let mask=mask.to_ascii_lowercase();
+ for (i,family) in ["yyy/mm/ddd","yy/mm/ddd","yyyy/mm/ddd","yyy/m/d/yyy","yy/m/d/yyy","yyyy/m/d/yyy","m/d/y/m/d","m/d/yy/m/d","m/d/yyyy/m/d","mmmm/ddddd","yymmmm/ddddd","yyyymmmm/ddddd","mmmmm/dd","yymmmmm/dd","yyyymmmmm/dd"].iter().enumerate(){if mask==*family{return Some((9+i/3,i%3==2));}}
+
  if mask=="ddd/mmm/yy" {return Some((8,false));}
  if mask=="ddd/mmm/yyyy" {return Some((8,true));}
  for (fmt,short) in ["mm/dd/yy","yy.mm.dd","dd/mm/yy","dd.mm.yy","dd-mm-yy","mm-dd-yy","yy/mm/dd","yy/dd/mm"].iter().enumerate(){
@@ -35217,7 +35219,7 @@ fn finalize_trace(mut out: String, target: Target) -> String {
     // and the layout core): hbc_dtoc / hbc_date_render reference it.
     if out.contains("hbc_date_core_c")
         || out.contains("call hbc_date_set_fmt")
-        || out.contains("call hbc_date_set_century") || out.contains("call hbc_date_get_century") || out.contains("call hbc_date_get_mask") || out.contains("call hbc_date_set_mask") || out.contains("call hbc_date_check_mask") {
+        || out.contains("call hbc_date_set_century") || out.contains("call hbc_date_get_century") || out.contains("call hbc_date_get_mask") || out.contains("call hbc_date_set_mask") || out.contains("call hbc_date_check_mask") || out.contains("call hbc_date_mask_has_year") {
         let date_rodata = if target == Target::Windows { ".section .rdata,\"r\"" } else { ".section .rodata" };
         out.push_str(&include_str!("../generated/hrdate.s").replace("@HRDATE_RODATA@", date_rodata));
     }
@@ -40881,6 +40883,27 @@ hbc_ctod:
     je .Ldate_order_ymd
     cmp $6, %rdi
     je .Ldate_order_ymd
+    cmp $9, %rdi
+    je .Ldate_order_ymd
+    cmp $10, %rdi
+    je .Ldate_order_ymd
+    cmp $11, %rdi
+    je .Ldate_order_mdy
+    cmp $12, %rdi
+    jb .Ldate_order_known
+    # Families12/13 lack year only when their mask century encoding is
+    # the original no-year variant; helper reports that from live mask.
+    mov %rdi, 16(%rsp)
+    call hbc_date_mask_has_year
+    test %rax,%rax
+    mov 16(%rsp),%rdi
+    mov (%rsp),%eax
+    mov 4(%rsp),%r9d
+    mov 8(%rsp),%r8d
+    jnz .Ldate_order_ymd
+    xor %r8d,%r8d
+    jmp .Ldate_order_mdy
+.Ldate_order_known:
     cmp $7, %rdi
     je .Ldate_order_ydm
     cmp $8, %rdi

@@ -21,7 +21,7 @@ for src in [*sorted(here.glob('*.prg'))]:
  for target in ['windows','macho','macho-arm64']:
   r=run([cc,src,w/(target+'.s'),'--target='+target],w,target);assert r.returncode==1,(src,target,r.stderr);rows.append(dict(name=src.stem,kind='profile-rejection',target=target))
 # Unsupported runtime masks stop before copying into bounded state.
-for value in ['yyy/mm/ddd','','x'*1000]:
+for value in ['yyy/mm/dddd','','x'*1000]:
  w=out/('invalid-'+str(len(value)));w.mkdir();src=w/'invalid.prg';src.write_text('FUNCTION Main()\n LOCAL mask:= '+json.dumps(value)+'\n ? Set(4,mask)\nRETURN NIL\n')
  r=run([cc,src,w/'program'],w,'build');assert r.returncode==0,r.stderr
  r=run([w/'program'],w,'run');assert r.returncode==1 and b'Limit: Set dateformat runtime value' in r.stdout,(r.returncode,r.stdout,r.stderr);(w/'program').unlink();rows.append(dict(name=str(len(value)),kind='runtime-named-limit'))
