@@ -198,3 +198,5 @@ tests/inline-date-arithmetic/** -text
 tests/set-epoch/** -text
 
 tests/set-century/** -text
+
+tests/set-dateformat/** -text

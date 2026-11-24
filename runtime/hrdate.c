@@ -17,10 +17,6 @@ extern void *hbc_alloc(hrt_u64 n);
 static hrt_u64 g_date_fmt = 0;     /* 0..6, the layout table row */
 static hrt_u64 g_century = 0;      /* 0: two-digit year, 1: four digits */
 
-void hbc_date_set_fmt(hrt_u64 f) { g_date_fmt = f; }
-void hbc_date_set_century(hrt_u64 c) { g_century = c; }
-hrt_u64 hbc_date_get_century(void) { return g_century; }
-
 struct hrt_dout {          /* SysV: returned in rax/rdx */
     char *ptr;
     hrt_u64 len;
@@ -35,6 +31,41 @@ static const unsigned char g_layouts[7][4] = {
     { 0, '-', 1, '-' },   /* USA: M - D - Y */
     { 2, '/', 0, '/' }    /* JAPANESE: Y / M / D */
 };
+
+static char g_mask[11] = "mm/dd/yy";
+static hrt_u64 g_mask_len = 8;
+static void hrt_mask_standard(hrt_u64 upper)
+{
+    const unsigned char *row = g_layouts[g_date_fmt % 7];
+    hrt_u64 fields[3],i,j,n=0;
+    fields[0]=row[0];fields[1]=row[2];fields[2]=3-fields[0]-fields[1];
+    for(i=0;i<3;i++) {
+        hrt_u64 k=fields[i],count=k==2&&g_century?4:2;
+        char c=k==0?'m':k==1?'d':'y';
+        if(upper)c=(char)(c-'a'+'A');
+        for(j=0;j<count;j++)g_mask[n++]=c;
+        if(i<2)g_mask[n++]=(char)row[i==0?1:3];
+    }
+    g_mask_len=n;
+}
+void hbc_date_set_fmt(hrt_u64 f) { g_date_fmt = f; hrt_mask_standard(0); }
+void hbc_date_set_century(hrt_u64 c) {
+    if(g_century!=c){g_century=c;hrt_mask_standard(1);}
+}
+hrt_u64 hbc_date_get_century(void) { return g_century; }
+struct hrt_dout hbc_date_get_mask(void)
+{
+    struct hrt_dout out;hrt_u64 i;char *b=(char*)hbc_alloc(g_mask_len+16);
+    ((hrt_u64*)b)[0]=g_mask_len;((hrt_u64*)b)[1]=g_mask_len;
+    for(i=0;i<g_mask_len;i++)b[16+i]=g_mask[i];
+    out.ptr=b+16;out.len=g_mask_len;return out;
+}
+/* Only the compiler's checked standard literal masks reach this entry. */
+void hbc_date_set_mask(const char *mask,hrt_u64 len,hrt_u64 fmt,hrt_u64 century)
+{
+    hrt_u64 i;g_date_fmt=fmt;g_century=century;g_mask_len=len;
+    for(i=0;i<len;i++)g_mask[i]=mask[i];
+}
 
 /* two zero-padded digits at p */
 static void hrt_w2(char *p, hrt_u64 v)

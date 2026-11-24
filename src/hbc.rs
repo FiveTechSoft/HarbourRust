@@ -2296,6 +2296,18 @@ thread_local! {
 // ValType calls implement predicate semantics, not source-level RTL lookup.
 const INTERNAL_VALTYPE: &str = "\0valtype";
 
+// Bounded public Set date-format masks, matched without case folding output.
+fn standard_date_mask(e:&Expr)->Option<(usize,bool)> {
+ let Expr::Str(mask)=e else{return None};
+ let mask=mask.to_ascii_lowercase();
+ for (fmt,short) in ["mm/dd/yy","yy.mm.dd","dd/mm/yy","dd.mm.yy","dd-mm-yy","mm-dd-yy","yy/mm/dd"].iter().enumerate(){
+  if mask==*short{return Some((fmt,false));}
+  if mask==short.replace("yy","yyyy"){return Some((fmt,true));}
+ }
+ None
+}
+fn set_date_mask_call(args:&[Expr])->bool {matches!(args.first(),Some(Expr::Int(v))if v=="4")}
+
 fn is_builtin(id: &str, name: &str) -> bool {
     if id == INTERNAL_VALTYPE { return name.eq_ignore_ascii_case("valtype"); }
     if USER_FUNC_NAMES.with(|u| { let u = u.borrow(); !u.is_empty() && u.contains(&id.to_ascii_lowercase()) }) { return false; }
@@ -8532,7 +8544,8 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 return Ok(Ty::Bool);
             }
             if is_builtin(id,"set") {
-                if !DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get()) || !(args.len()==1||args.len()==2) || !matches!(args.first(),Some(Expr::Int(v)) if v=="5") {return Err(format!("line {}: unknown function `set` (only literal epoch selector5 on ordinary Linux is measured in this increment)",n));}
+                if DECIMAL_LOCAL_PROFILE.with(|v|v.get()) && !MACRO_CONTEXT.with(|v|v.get()) && set_date_mask_call(args) && (args.len()==1 || args.len()==2&&standard_date_mask(&args[1]).is_some()) {return Ok(Ty::StrOwn);}
+                if !DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get()) || !(args.len()==1||args.len()==2) || !matches!(args.first(),Some(Expr::Int(v)) if v=="5") {return Err(format!("line {}: unknown function `set` (only literal epoch5 or checked standard dateformat4 on ordinary Linux is measured in this increment)",n));}
                 if let Some(value)=args.get(1) {if !matches!(value,Expr::Nil) && !matches!(value,Expr::Int(v) if v.parse::<u16>().ok().map_or(false,|n|n<=9999)) {return Err(format!("line {}: Set epoch value requires NIL or an integer literal0..9999 in this increment",n));}}
                 return Ok(Ty::I64);
             }
@@ -17278,6 +17291,13 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             if let Some(v)=change {out.push_str(&format!("    sub $16,%rsp\n    mov %rax,(%rsp)\n    mov ${},%edi\n    call hbc_date_set_century\n    mov (%rsp),%rax\n    add $16,%rsp\n",if v{1}else{0}));}
             out.push_str("    mov $1,%edx\n");
         }
+        Expr::Call(id,args) if is_builtin(id,"set") && set_date_mask_call(args) => {
+            out.push_str("    call hbc_date_get_mask\n");
+            if let Some((fmt,century))=args.get(1).and_then(standard_date_mask) {
+                let Expr::Str(mask)=&args[1]else{unreachable!()};let si=strs.len();strs.push(mask.clone());
+                out.push_str(&format!("    sub $16,%rsp\n    mov %rax,(%rsp)\n    mov %rdx,8(%rsp)\n    lea .Lstr{si}(%rip),%rdi\n    mov ${},%esi\n    mov ${fmt},%edx\n    mov ${},%ecx\n    call hbc_date_set_mask\n    movq ${fmt},.Ldate_pfmt(%rip)\n    mov (%rsp),%rax\n    mov 8(%rsp),%rdx\n    add $16,%rsp\n",mask.len(),if century{1}else{0}));
+            }
+        }
         Expr::Call(id,args) if is_builtin(id,"set") => {
             // Source checker admits only selector5 and literal/NIL values.
             // Set returns the previous epoch, including on a NIL no-op.
@@ -21531,7 +21551,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             if id=="hbc_set_decimals" {return Ty::I64;}
             if id=="hbc_set_datefmt" || id=="hbc_set_century" || id=="hbc_set_epoch" || id=="hbc_quit" {return Ty::I64;}
             if is_builtin(id,"__setcentury") {return Ty::Bool;}
-            if is_builtin(id,"set") {return Ty::I64;}
+            if is_builtin(id,"set") {return if set_date_mask_call(args){Ty::StrOwn}else{Ty::I64};}
             if is_builtin(id,"altd") {return Ty::I64;}
             if is_builtin(id,"setcursor") || is_builtin(id,"dirmake") || is_builtin(id,"inkey") {return Ty::I64;}
             if is_builtin(id,"file") {return Ty::Bool;}
@@ -35162,7 +35182,7 @@ fn finalize_trace(mut out: String, target: Target) -> String {
     // and the layout core): hbc_dtoc / hbc_date_render reference it.
     if out.contains("hbc_date_core_c")
         || out.contains("call hbc_date_set_fmt")
-        || out.contains("call hbc_date_set_century") || out.contains("call hbc_date_get_century") {
+        || out.contains("call hbc_date_set_century") || out.contains("call hbc_date_get_century") || out.contains("call hbc_date_get_mask") || out.contains("call hbc_date_set_mask") {
         let date_rodata = if target == Target::Windows { ".section .rdata,\"r\"" } else { ".section .rodata" };
         out.push_str(&include_str!("../generated/hrdate.s").replace("@HRDATE_RODATA@", date_rodata));
     }
