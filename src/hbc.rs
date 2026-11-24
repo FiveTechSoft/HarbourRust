@@ -1626,6 +1626,14 @@ impl P {
                 }
             }
             Some(Tok::Ident(id)) => {
+                if (id.eq_ignore_ascii_case("m") || id.eq_ignore_ascii_case("memvar")) && self.peek()==Some(&Tok::Minus) && self.toks.get(self.pos+1)==Some(&Tok::Gt) {
+                    let name=match self.toks.get(self.pos+2) {Some(Tok::Ident(v))=>v.clone(),_=>return Err(format!("line {}: explicit MEMVAR read requires a literal identifier",self.n))};
+                    check_global_ident(&name,self.n)?;
+                    if !CURDIR_LINUX_NATIVE.with(|v|v.get()) {return Err(format!("line {}: explicit MEMVAR reads require ordinary Linux native",self.n));}
+                    self.pos+=3;
+                    MACRO_CONTEXT.with(|v|v.set(true));
+                    return Ok(Expr::Call(INTERNAL_MEMVAR_READ.into(),vec![Expr::Str(name)]));
+                }
                 // alias->field / FIELD->field: `->` lexes as `-` `>`. A
                 // run-time field read by name (dbffieldref, optional alias).
                 if self.peek() == Some(&Tok::Minus) && self.toks.get(self.pos + 1) == Some(&Tok::Gt) && !id.eq_ignore_ascii_case("m") && !id.eq_ignore_ascii_case("memvar") {
@@ -2333,6 +2341,7 @@ thread_local! {
 // ValType calls implement predicate semantics, not source-level RTL lookup.
 const INTERNAL_VALTYPE: &str = "\0valtype";
 const INTERNAL_STOD: &str = "\0date_literal";
+const INTERNAL_MEMVAR_READ: &str = "\0memvar_read";
 const INTERNAL_CELL_INC: &str = "\0cell_increment";
 fn cell_path(e:&Expr)->Option<(&str,Vec<&Expr>)>{match e{Expr::Index(v,a)=>Some((v,vec![a])),Expr::Index2(v,a,b)=>Some((v,vec![a,b])),Expr::Index3(v,a,b,c)=>Some((v,vec![a,b,c])),Expr::Index4(v,a,b,c,d)=>Some((v,vec![a,b,c,d])),_=>None}}
 fn cell_increment(e:Expr,delta:i8,pre:bool)->Expr {Expr::Call(INTERNAL_CELL_INC.to_string(),vec![e,Expr::Int(delta.to_string()),Expr::Log(pre)])}
@@ -5493,6 +5502,7 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
                     for a in args { pin_vars(f,a,Ty::Str,pin,n)?; walk(f,a,sigs,lit,pin,printed,n)?; }
                     return Ok(());
                 }
+                if id==INTERNAL_MEMVAR_READ {return Ok(());}
                 if id=="&" {
                     // Macro text is a string; nothing pins through it.
                     for a in args { pin_vars(f,a,Ty::Str,pin,n)?; walk(f,a,sigs,lit,pin,printed,n)?; }
@@ -8035,6 +8045,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 if args.len()!=1||!matches!(type_expr(&args[0],env,sigs,n)?,Ty::Str|Ty::StrOwn){return Err(format!("line {}: __mvExist expects one string",n));}
                 return Ok(Ty::Bool);
             }
+            if id==INTERNAL_MEMVAR_READ {return Ok(Ty::Dyn);}
             if id=="&" {
                 if !matches!(type_expr(&args[0],env,sigs,n)?,Ty::Str|Ty::StrOwn) {
                     return Err(macro_m1::limit(n, "macro text must be a string"));
@@ -13233,6 +13244,7 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
                 for a in args { apply_moves(a,env,sigs,false); }
                 return;
             }
+            if id==INTERNAL_MEMVAR_READ {return;}
             if id=="&" || ["padc","rat","stuff","isdigit","isalpha","isupper","islower","strzero"].iter().any(|b|is_builtin(id,b)) {
                 for a in args { apply_moves(a,env,sigs,false); }
                 return;
@@ -17881,6 +17893,11 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             } else { cg_expr(&args[0],env,sigs,strs,out,target); }
             out.push_str("    mov %rax, %rdi\n    call hbc_space\n");
         }
+        Expr::Call(id,args) if id==INTERNAL_MEMVAR_READ=>{
+            let name=match &args[0]{Expr::Str(v)=>v,_=>unreachable!("internal literal name")};
+            let ix=strs.len();strs.push(name.clone());cg_memvar_context(out);
+            out.push_str(&format!("    lea .Lstr{}(%rip), %rsi\n    mov ${}, %edx\n    call hrmacro_lookup\n",ix,name.len()));
+        }
         Expr::Call(id,args) if id=="__mvexist"=>{
             let temp=expr_ty(&args[0],env,sigs)==Ty::StrOwn&&!matches!(&args[0],Expr::Var(_));
             cg_value(&args[0],env,sigs,strs,out,target);
@@ -21798,7 +21815,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             if ["upper", "lower"].iter().any(|b| is_builtin(id,b)) { return Ty::StrOwn; }
             if ["left", "right"].iter().any(|b| is_builtin(id,b)) { return Ty::StrOwn; }
             if is_builtin(id, "at") || is_builtin(id,"hb_at") { return Ty::I64; }
-            if id=="&" { return Ty::Dyn; }
+            if id=="&" || id==INTERNAL_MEMVAR_READ { return Ty::Dyn; }
             if id=="__mvexist" { return Ty::Bool; }
             if ["padc","rat","stuff","isdigit","isalpha","isupper","islower","strzero"].iter().any(|b|is_builtin(id,b)) { return str_builtin_ty(id); }
             if is_builtin(id, "padl") { return Ty::StrOwn; }
