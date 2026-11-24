@@ -7458,6 +7458,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                     return Err(format!("line {}: `ValType` takes one argument", n));
                 }
                 if DECIMAL_LOCAL_PROFILE.with(|v|v.get())&&!MACRO_CONTEXT.with(|v|v.get())&&shared_local::literal(&args[0]){return Ok(Ty::Str);}
+                if shared_local::active()&&matches!(&args[0],Expr::Index2(v,..)|Expr::Index3(v,..)|Expr::Index4(v,..)if shared_local::current(v)&&env.iter().any(|x|x.name==*v&&x.ty==Ty::Dyn)){type_expr(&args[0],env,sigs,n)?;return Ok(Ty::Str);}
                 match &args[0] {
                     Expr::Call(id,aa) if shared_local::active()&&is_builtin(id,"atail")&&matches!(aa.as_slice(),[Expr::Var(v)]if shared_local::current(v))=>{},
                     Expr::Send(..) if method_results::send(&args[0]) => {} ,
@@ -16690,6 +16691,9 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                 out.push_str("97:\n");
             }
             if DECIMAL_LOCAL_PROFILE.with(|v|v.get())&&!MACRO_CONTEXT.with(|v|v.get())&&shared_local::literal(&args[0]){vt_letter(strs,out,"A");return;}
+            if shared_local::active()&&matches!(&args[0],Expr::Index2(v,..)|Expr::Index3(v,..)|Expr::Index4(v,..)if shared_local::current(v)&&env.iter().any(|x|x.name==*v&&x.ty==Ty::Dyn)){
+                cg_value(&args[0],env,sigs,strs,out,target);out.push_str("    mov %rax, %r10\n");vt_classify_scalar(strs,out);return;
+            }
             match &args[0] {
                 Expr::Send(..) if method_results::send(&args[0]) || (timestamp::scalar_empty()&&expr_ty(&args[0],env,sigs)==Ty::Dyn)=>{
                     cg_value(&args[0],env,sigs,strs,out,target);
