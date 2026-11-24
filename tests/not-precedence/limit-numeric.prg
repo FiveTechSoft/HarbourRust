@@ -1,0 +1,3 @@
+PROCEDURE Main()
+ ? .NOT. 3
+RETURN

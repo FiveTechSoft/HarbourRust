@@ -1903,8 +1903,9 @@ impl P {
             Some(Tok::LogT) => Ok(Expr::Log(true)),
             Some(Tok::LogF) => Ok(Expr::Log(false)),
             Some(Tok::LogNot) => {
-                // .NOT. binds tighter than comparisons (xBase precedence).
-                let e = self.factor()?;
+                // Harbour NOT binds below arithmetic/comparison and above
+                // AND/OR. Consume the complete comparison operand here.
+                let e = self.cmp_expr()?;
                 Ok(Expr::LNot(Box::new(e)))
             }
             None => Err(format!("line {}: incomplete expression (operand or ) missing)", self.n)),
