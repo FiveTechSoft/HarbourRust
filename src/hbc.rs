@@ -28739,31 +28739,26 @@ hbc_asort_flat_shared:
 .Lasfsstart:
     cmp %rsi, %rdx
     jg .Lasfsdone
-    mov (%rdi), %r10
-    cmp $5, %r10b
-    je .Lasfsnumeric
-    cmp $9, %r10
-    jne .Lasfsfamily
-.Lasfsnumeric:
-    xor %r10d, %r10d
-.Lasfsfamily:
-    test %r10, %r10
-    jz .Lasfsscan
-    cmp $4, %r10
-    jne hbc_type_error
-.Lasfsscan:
     xor %r8d, %r8d
 .Lasfsloop:
     mov (%rdi,%r8), %r9
     cmp $5, %r9b
-    je .Lasfscellnumeric
+    je .Lasfstagok
+    cmp $0, %r9
+    je .Lasfstagok
     cmp $9, %r9
-    jne .Lasfstag
-.Lasfscellnumeric:
-    xor %r9d, %r9d
-.Lasfstag:
-    cmp %r10, %r9
+    je .Lasfstagok
+    cmp $1, %r9
+    je .Lasfstagok
+    cmp $3, %r9
+    je .Lasfstagok
+    cmp $4, %r9
+    je .Lasfstagok
+    cmp $11, %r9
+    je .Lasfstagok
+    cmp $16, %r9
     jne hbc_type_error
+.Lasfstagok:
     add $16, %r8
     mov %r8, %r9
     shr $4, %r9
@@ -28992,7 +28987,57 @@ hbc_asort_shared_cells:
 # Full-length binary text order, independent of asymmetric expression '='
 # semantics. Integer payloads use signed comparison. Input families were
 # checked in the wrapper before the first cell was moved.
+# Rank: array1,text3,logical4,date5,number6,NIL7.
 hbc_asort_flat_cmp:
+    mov $6, %r10d
+    mov $6, %r11d
+    cmp $4, %rax
+    jne .Lasfcrankabool
+    mov $3, %r10d
+.Lasfcrankabool:
+    cmp $3, %rax
+    jne .Lasfcrankadate
+    mov $4, %r10d
+.Lasfcrankadate:
+    cmp $11, %rax
+    jne .Lasfcrankanil
+    mov $5, %r10d
+.Lasfcrankanil:
+    cmp $1, %rax
+    jne .Lasfcrankaarray
+    mov $7, %r10d
+.Lasfcrankaarray:
+    cmp $16, %rax
+    jne .Lasfcrankbtext
+    mov $1, %r10d
+.Lasfcrankbtext:
+    cmp $4, %rcx
+    jne .Lasfcrankbbool
+    mov $3, %r11d
+.Lasfcrankbbool:
+    cmp $3, %rcx
+    jne .Lasfcrankbdate
+    mov $4, %r11d
+.Lasfcrankbdate:
+    cmp $11, %rcx
+    jne .Lasfcrankbnil
+    mov $5, %r11d
+.Lasfcrankbnil:
+    cmp $1, %rcx
+    jne .Lasfcrankbarray
+    mov $7, %r11d
+.Lasfcrankbarray:
+    cmp $16, %rcx
+    jne .Lasfcranked
+    mov $1, %r11d
+.Lasfcranked:
+    cmp %r11, %r10
+    jl .Lasfcless
+    jg .Lasfcgreater
+    cmp $1, %r10d
+    je .Lasfcequal
+    cmp $7, %r10d
+    je .Lasfcequal
     cmp $5, %al
     je .Lasfcnumeric
     cmp $5, %cl
@@ -29027,6 +29072,7 @@ hbc_asort_flat_cmp:
 .Lasfcleftend:
     cmp %r11, %rcx
     jb .Lasfcless
+.Lasfcequal:
     xor %eax, %eax
 .Lasfcret:
     ret
@@ -31313,7 +31359,8 @@ fn finalize_tag_kind_accessors(out: String, dbf: bool) -> String {
 
 // Emit one descriptor tree per module array literal. String cells point at
 // an emitted {length, bytes} pair; child arrays recurse. Returns the
-// descriptor label.
+// descriptor label. Private105/106 leaves become owned float/scalar date
+// runtime cells during build; neither descriptor tag escapes into cells.
 fn emit_sarr_desc(out: &mut String, strs: &mut Vec<String>, expr: &Expr) -> String {
     let id = fresh_lbl();
     let label = format!(".Lsarrd{}", id);
@@ -31322,6 +31369,12 @@ fn emit_sarr_desc(out: &mut String, strs: &mut Vec<String>, expr: &Expr) -> Stri
     for e in &es {
         match e {
             Expr::Int(v) => body.push_str(&format!("    .quad 0, {}\n", v)),
+            Expr::Call(_,aa)=>{
+                let text=match &aa[0]{Expr::Str(t)=>t,_=>unreachable!("checked date literal")};
+                let ix=strs.len();strs.push(text.clone());
+                out.push_str(&format!("    .data\n    .align 8\n.Lsarrdate{id}_{ix}: .quad {}, .Lstr{ix}\n    .text\n",text.len()));
+                body.push_str(&format!("    .quad 106, .Lsarrdate{id}_{ix}\n"));
+            }
             Expr::Float(..)|Expr::FloatV(..)=>{
                 let (bits,meta)=match e{
                     Expr::Float(t,d)=>(harbour_parse_f64(t).expect("checked float").to_bits(),(10u64<<16)|(*d as u64)),
@@ -31636,6 +31689,8 @@ hbc_sarr_build:
     add %rcx, %r15
     mov (%rbx), %rax
     mov 8(%rbx), %rdx
+    cmp $106, %rax
+    je 24f
     cmp $105, %rax
     je 23f
     cmp $4, %rax
@@ -31661,6 +31716,12 @@ hbc_sarr_build:
     call hbc_float_new
     mov %rax, (%r15)
     mov %rdx, 8(%r15)
+    jmp 25f
+24: mov (%rdx), %rsi
+    mov 8(%rdx), %rdi
+    call hbc_stod
+    movq $11, (%r15)
+    mov %rax, 8(%r15)
 25: add $16, %rbx
     inc %r14
     jmp 20b

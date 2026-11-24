@@ -42,10 +42,10 @@ pub fn init(ff:&[Func]) {
   visit_stmts_ref(&f.stmts,&mut |s|{if let Stmt::Local(_,n,e)=s{if literal(e)&&tagged_nested(e){nested.insert(n.clone());}}},&mut |_|{});
   visit_stmts_ref(&f.stmts,&mut |s|{if let Stmt::ArrSet2(_,n,..)=s{if nested.contains(n){need=true;}}},&mut |_|{});
   // ASort on a constant local flat literal requires an addressable array
-  // identity. Keep callback and mixed/computed literals for later stages.
+  // identity. Keep callback and arbitrary computed literals for later stages.
   let mut sortable=HashSet::new();
   visit_stmts_ref(&f.stmts,&mut |s|{if let Stmt::Local(_,n,Expr::ArrLit(es))=s{
-   if es.iter().all(|e|matches!(e,Expr::Int(_)|Expr::Float(..)|Expr::FloatV(..))){sortable.insert(n.clone());}
+   if !es.iter().all(|e|matches!(e,Expr::Str(_)))&&literal(&Expr::ArrLit(es.clone())){sortable.insert(n.clone());}
   }},&mut |_|{});
   visit_stmts_ref(&f.stmts,&mut |_|{},&mut |e|{if let Expr::Call(id,args)=e{
    if is_builtin(id,"asort")&&args.len()<=4&&!matches!(args.get(3),Some(Expr::BlockLit(..)))&&matches!(args.first(),Some(Expr::Var(n)) if sortable.contains(n)){need=true;}
@@ -108,7 +108,7 @@ pub fn init(ff:&[Func]) {
  NAMES.with(|v|*v.borrow_mut()=names);PARAMS.with(|v|*v.borrow_mut()=params);ACTIVE.with(|v|v.set(true));
 }
 pub fn literal(e:&Expr)->bool {
- fn leaf(e:&Expr)->bool{match e{Expr::Float(..)|Expr::FloatV(..)=>true,Expr::ArrLit(es)=>es.iter().all(leaf),_=>const_array_init(e)}}
+ fn leaf(e:&Expr)->bool{match e{Expr::Float(..)|Expr::FloatV(..)|Expr::DArrNew=>true,Expr::Call(id,aa) if (is_builtin(id,"stod")||is_builtin(id,"hb_stod"))&&matches!(aa.as_slice(),[Expr::Str(_)])=>true,Expr::ArrLit(es)=>es.iter().all(leaf),_=>const_array_init(e)}}
  matches!(e,Expr::DArrNew)||(matches!(e,Expr::ArrLit(_))&&leaf(e))
 }
 pub fn optional(e:&Expr)->Option<&str>{let p=optional_empty::selected(e)?;if current(p){Some(p)}else{None}}

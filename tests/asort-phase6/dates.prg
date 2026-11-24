@@ -1,0 +1,7 @@
+FUNCTION Main()
+ LOCAL a:={SToD("20260102"),SToD(""),SToD("20260229"),SToD("20240229"),SToD("20260101ignored"),SToD("00000101"),SToD("2026010x")},i
+ ASort(a)
+ FOR i:=1 TO Len(a)
+  ? a[i]
+ NEXT
+RETURN NIL
