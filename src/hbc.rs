@@ -169,6 +169,7 @@ fn block_body_kind(body: &[Expr], sigs: &[Sig]) -> BRet {
 enum Tok {
     Ident(String),
     Int(String),
+    Date(String), // validated 0dYYYYMMDD source literal
     Str(String), // already unescaped content
     IncTok, DecTok, Plus, Minus, Star, Slash, Pct, Dollar, Caret,
     LParen, RParen, Comma,
@@ -1033,6 +1034,18 @@ fn tokenize(line: &str, n: usize) -> Result<Vec<Tok>, String> {
                 while let Some(&(_, c2)) = it.peek() {
                     if c2.is_ascii_digit() { num.push(c2); it.next(); } else { break; }
                 }
+                if num=="0" && matches!(it.peek(),Some(&(_, 'd'))|Some(&(_, 'D'))) {
+                    it.next();let mut text=String::new();
+                    while let Some(&(_,c))=it.peek(){if !c.is_ascii_digit(){break;}text.push(c);it.next();}
+                    if text=="0" {text="00000000".to_string();}
+                    let valid=if text.len()==8 {
+                        let y=text[..4].parse::<u32>().unwrap();let m=text[4..6].parse::<u32>().unwrap();let d=text[6..].parse::<u32>().unwrap();
+                        if y==0&&m==0&&d==0{true}else if (1..=12).contains(&m){let max=match m{4|6|9|11=>30,2=>if y%4==0&&(y%100!=0||y%400==0){29}else{28},_=>31};d>=1&&d<=max}else{false}
+                    }else{false};
+                    if !valid||it.peek().map_or(false,|&(_,c)|c.is_ascii_alphanumeric()||c=='_'||c=='.'){return Err(format!("line {}: invalid date constant 0d{}",n,text));}
+                    if text.starts_with("0000") && text!="00000000" {return Err(format!("line {}: nonempty year-zero date literals are not measured in this increment",n));}
+                    toks.push(Tok::Date(text));continue;
+                }
                 if num=="0" && matches!(it.peek(),Some(&(_, 'b'))|Some(&(_, 'B'))) {
                     it.next();let mut value=0u64;let mut count=0usize;
                     while let Some(&(_,c))=it.peek() {if c!='0'&&c!='1'{break;}value=value.wrapping_mul(2).wrapping_add((c as u8-b'0') as u64);count+=1;it.next();}
@@ -1161,7 +1174,7 @@ fn tokenize(line: &str, n: usize) -> Result<Vec<Tok>, String> {
             '{' => { toks.push(Tok::LBrace); it.next(); }
             '}' => { toks.push(Tok::RBrace); it.next(); }
             '[' => {
-                let expression_end=matches!(toks.last(),Some(Tok::Ident(_)|Tok::Int(_)|Tok::Float(_,_)|Tok::Str(_)|Tok::KwNil|Tok::LogT|Tok::LogF|Tok::KwSelfTok|Tok::RParen|Tok::RBracket|Tok::RBrace|Tok::IncTok|Tok::DecTok));
+                let expression_end=matches!(toks.last(),Some(Tok::Ident(_)|Tok::Int(_)|Tok::Date(_)|Tok::Float(_,_)|Tok::Str(_)|Tok::KwNil|Tok::LogT|Tok::LogF|Tok::KwSelfTok|Tok::RParen|Tok::RBracket|Tok::RBrace|Tok::IncTok|Tok::DecTok));
                 if expression_end {toks.push(Tok::LBracket);it.next();}
                 else {
                     it.next();let mut value=String::new();let mut closed=false;
@@ -1209,6 +1222,26 @@ fn tokenize(line: &str, n: usize) -> Result<Vec<Tok>, String> {
             }
             o => return Err(format!("line {}: character not allowed `{}` (U+{:04X})", n, o, o as u32)),
         }
+    }
+    // Mixed comma/chained groups describe one nested path. Normalize only
+    // such paths, leaving existing single-group and pure-chain contracts intact.
+    let mut at=0usize;
+    while at+1<toks.len() {
+        if !matches!(toks[at],Tok::Ident(_)) || toks[at+1]!=Tok::LBracket {at+=1;continue;}
+        let mut pos=at+1;let mut groups=0;let mut comma=false;let mut ends=Vec::new();
+        loop {
+            if toks.get(pos)!=Some(&Tok::LBracket){break;}
+            groups+=1;let mut depth=1i32;let mut k=pos+1;
+            while k<toks.len()&&depth>0 {
+                match toks[k]{Tok::LBracket|Tok::LParen|Tok::LBrace=>depth+=1,Tok::RBracket|Tok::RParen|Tok::RBrace=>depth-=1,Tok::Comma if depth==1=>comma=true,_=>{}}
+                if depth==0{break;}k+=1;
+            }
+            if depth!=0{break;}ends.push(k);pos=k+1;
+        }
+        if groups>1&&comma&&ends.len()==groups {
+            for &end in ends[..ends.len()-1].iter().rev(){toks.splice(end..end+2,[Tok::Comma]);}
+        }
+        at+=1;
     }
     Ok(toks)
 }
@@ -1445,6 +1478,7 @@ impl P {
         if matches!(self.peek(), Some(Tok::IncTok | Tok::DecTok)) {
             let delta = if self.peek() == Some(&Tok::IncTok) { 1 } else { -1 };
             self.pos += 1;
+            if matches!(e,Expr::Index(..)|Expr::Index2(..)|Expr::Index3(..)|Expr::Index4(..)){return Ok(cell_increment(e,delta,false));}
             let id = match e {
                 Expr::Var(id) => id,
                 _ => return Err(format!("line {}: expression ++/-- requires a variable lvalue in this increment", self.n)),
@@ -1509,6 +1543,7 @@ impl P {
                 let e = self.factor()?;
                 match e {
                     Expr::Var(id) => Ok(Expr::Inc(id, 1, true)),
+                    e @ (Expr::Index(..)|Expr::Index2(..)|Expr::Index3(..)|Expr::Index4(..))=>Ok(cell_increment(e,1,true)),
                     _ => Err(format!("line {}: expression ++/-- requires a variable lvalue in this increment", self.n)),
                 }
             }
@@ -1516,6 +1551,7 @@ impl P {
                 let e = self.factor()?;
                 match e {
                     Expr::Var(id) => Ok(Expr::Inc(id, -1, true)),
+                    e @ (Expr::Index(..)|Expr::Index2(..)|Expr::Index3(..)|Expr::Index4(..))=>Ok(cell_increment(e,-1,true)),
                     _ => Err(format!("line {}: expression ++/-- requires a variable lvalue in this increment", self.n)),
                 }
             }
@@ -1579,6 +1615,7 @@ impl P {
                 // old artifact-zone frontier (F/M/G sections); admit them all.
                 Ok(Expr::Float(txt, dec))
             }
+            Some(Tok::Date(s)) => Ok(Expr::Call(INTERNAL_STOD.to_string(),vec![Expr::Str(s)])),
             Some(Tok::Str(s)) => Ok(Expr::Str(s)),
             Some(Tok::KwNil) => Ok(Expr::Nil),
             Some(Tok::KwSelfTok) => Ok(Expr::SelfObj),
@@ -2295,12 +2332,16 @@ thread_local! {
 // This name cannot be produced by the identifier lexer. Compiler-created
 // ValType calls implement predicate semantics, not source-level RTL lookup.
 const INTERNAL_VALTYPE: &str = "\0valtype";
+const INTERNAL_STOD: &str = "\0date_literal";
+const INTERNAL_CELL_INC: &str = "\0cell_increment";
+fn cell_path(e:&Expr)->Option<(&str,Vec<&Expr>)>{match e{Expr::Index(v,a)=>Some((v,vec![a])),Expr::Index2(v,a,b)=>Some((v,vec![a,b])),Expr::Index3(v,a,b,c)=>Some((v,vec![a,b,c])),Expr::Index4(v,a,b,c,d)=>Some((v,vec![a,b,c,d])),_=>None}}
+fn cell_increment(e:Expr,delta:i8,pre:bool)->Expr {Expr::Call(INTERNAL_CELL_INC.to_string(),vec![e,Expr::Int(delta.to_string()),Expr::Log(pre)])}
 
 // Bounded public Set date-format masks, matched without case folding output.
 fn standard_date_mask(e:&Expr)->Option<(usize,bool)> {
  let Expr::Str(mask)=e else{return None};
  let mask=mask.to_ascii_lowercase();
- for (i,family) in ["yyy/mm/ddd","yy/mm/ddd","yyyy/mm/ddd","yyy/m/d/yyy","yy/m/d/yyy","yyyy/m/d/yyy","m/d/y/m/d","m/d/yy/m/d","m/d/yyyy/m/d","mmmm/ddddd","yymmmm/ddddd","yyyymmmm/ddddd","mmmmm/dd","yymmmmm/dd","yyyymmmmm/dd"].iter().enumerate(){if mask==*family{return Some((9+i/3,i%3==2));}}
+ for (i,family) in ["yyy/mm/ddd","yy/mm/ddd","yyyy/mm/ddd","yyy/m/d/yyy","yy/m/d/yyy","yyyy/m/d/yyy","m/d/y/m/d","m/d/yy/m/d","m/d/yyyy/m/d","mmmm/ddddd","yymmmm/ddddd","yyyymmmm/ddddd","mmmmm/dd","yymmmmm/dd","yyyymmmmm/dd","yyy-mm-dd","yy-mm-dd","yyyy-mm-dd"].iter().enumerate(){if mask==*family{return Some((9+i/3,i%3==2));}}
 
  if mask=="ddd/mmm/yy" {return Some((8,false));}
  if mask=="ddd/mmm/yyyy" {return Some((8,true));}
@@ -2314,6 +2355,7 @@ fn set_date_mask_call(args:&[Expr])->bool {matches!(args.first(),Some(Expr::Int(
 
 fn is_builtin(id: &str, name: &str) -> bool {
     if id == INTERNAL_VALTYPE { return name.eq_ignore_ascii_case("valtype"); }
+    if id == INTERNAL_STOD {return name.eq_ignore_ascii_case("stod");}
     if USER_FUNC_NAMES.with(|u| { let u = u.borrow(); !u.is_empty() && u.contains(&id.to_ascii_lowercase()) }) { return false; }
     id.eq_ignore_ascii_case(name)
         || (name=="chr" && id.eq_ignore_ascii_case("hb_bchar"))
@@ -5361,6 +5403,7 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
                 walk(f, b, sigs, lit, pin, printed, n)
             }
             Expr::Call(id, args) => {
+                if id==INTERNAL_CELL_INC {if cell_path(&args[0]).map_or(false,|(v,_)|is_param(f,v).is_some()){return Err(format!("line {}: cell increment through parameters is outside this increment",n));}return walk(f,&args[0],sigs,lit,pin,printed,n);}
                 if is_output_call(id) {
                     for a in args {
                         if let Expr::Var(v) = a {
@@ -6880,7 +6923,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
 
     if let Expr::Cmp(_,a,b)=e{if timestamp::known(a)||timestamp::known(b){let ta=type_expr(a,env,sigs,n)?;let tb=type_expr(b,env,sigs,n)?;if ta!=Ty::Dyn||tb!=Ty::Dyn{return Err(format!("line {}: timestamp comparison requires two Dyn cells; mixed static kinds are outside phase4",n));}}}
 
-    if shared_local::active() && shared_local::literal(e) {return Ok(Ty::Dyn);}
+    if shared_local::active() && (shared_local::literal(e)||shared_local::constructor(e).is_some()) {return Ok(Ty::Dyn);}
     if shared_local::optional(e).is_some() {return Ok(Ty::Dyn);}
     match e {
         Expr::Seq(es) => {
@@ -6981,6 +7024,20 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
             Some(v) => Ok(v.ty),
         },
         Expr::Call(id, args) => {
+            if id==INTERNAL_CELL_INC {
+                if !DECIMAL_LOCAL_PROFILE.with(|v|v.get())||MACRO_CONTEXT.with(|v|v.get()){return Err(format!("line {}: expression ++/-- requires a variable lvalue in this increment (cell update needs ordinary Linux without macros)",n));}
+                if let Some((v,ies))=cell_path(&args[0]){if shared_local::active()&&shared_local::current(v){
+                    if module_static::is_module_binding(v)||!matches!(env.iter().find(|x|x.name==v),Some(x)if x.ty==Ty::Dyn&&!x.moved&&!x.ro&&!x.byref){return Err(format!("line {}: shared cell increment requires a local shared array",n));}
+                    for i in ies{if expr_mentions(i,v)||type_expr(i,env,sigs,n)?!=Ty::I64{return Err(format!("line {}: shared cell increment requires integer indexes independent of its root",n));}}
+                    return Ok(Ty::I64);
+                }}
+                if let Expr::Index(v,i)=&args[0] {
+                    if module_static::current(v).is_some()||!matches!(env.iter().find(|x|x.name==*v),Some(x)if matches!(x.ty,Ty::Arr(_))&&!x.moved&&!x.ro){return Err(format!("line {}: cell increment covers fixed integer arrays only",n));}
+                    if type_expr(i,env,sigs,n)?!=Ty::I64{return Err(format!("line {}: cell increment needs an integer index",n));}
+                    type_expr(&args[0],env,sigs,n)?;return Ok(Ty::I64);
+                }
+                return Err(format!("line {}: nested cell increment requires local shared identity",n));
+            }
             if method_results::active() && !USER_FUNC_NAMES.with(|v|v.borrow().contains(id)) && !is_output_call(id) && !is_builtin(id,"valtype") && !(method_arrays::active() && is_builtin(id,"len")) {
                 for a in args {if type_expr(a,env,sigs,n)?==Ty::Dyn{return Err(format!("line {}: B1 Dyn builtin consumer `{}` is not covered; use ValType, output, or a direct function",n,id));}}
             }
@@ -7341,6 +7398,9 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 if args.len() != 1 {
                     return Err(format!("line {}: `{}` takes one argument", n, id));
                 }
+                if DECIMAL_LOCAL_PROFILE.with(|v|v.get())&&!MACRO_CONTEXT.with(|v|v.get())&&shared_local::literal(&args[0]){return Ok(Ty::Bool);}
+                if shared_local::active()&&matches!(&args[0],Expr::Index2(v,..)|Expr::Index3(v,..)|Expr::Index4(v,..)if shared_local::current(v)&&env.iter().any(|x|x.name==*v&&x.ty==Ty::Dyn)){type_expr(&args[0],env,sigs,n)?;return Ok(Ty::Bool);}
+                if shared_local::active()&&matches!(&args[0],Expr::Call(c,aa)if is_builtin(c,"atail")&&matches!(aa.as_slice(),[Expr::Var(v)]if shared_local::current(v))){type_expr(&args[0],env,sigs,n)?;return Ok(Ty::Bool);}
                 match &args[0] {
                     Expr::Int(_) | Expr::Str(_) | Expr::Nil | Expr::Log(_) | Expr::Float(..) | Expr::FloatV(..) => {}
                     Expr::Var(v) => {
@@ -7400,11 +7460,14 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 if args.len() != 1 {
                     return Err(format!("line {}: `ValType` takes one argument", n));
                 }
+                if DECIMAL_LOCAL_PROFILE.with(|v|v.get())&&!MACRO_CONTEXT.with(|v|v.get())&&shared_local::literal(&args[0]){return Ok(Ty::Str);}
+                if shared_local::active()&&matches!(&args[0],Expr::Index2(v,..)|Expr::Index3(v,..)|Expr::Index4(v,..)if shared_local::current(v)&&env.iter().any(|x|x.name==*v&&x.ty==Ty::Dyn)){type_expr(&args[0],env,sigs,n)?;return Ok(Ty::Str);}
                 match &args[0] {
+                    Expr::Call(id,aa) if shared_local::active()&&is_builtin(id,"atail")&&matches!(aa.as_slice(),[Expr::Var(v)]if shared_local::current(v))=>{},
                     Expr::Send(..) if method_results::send(&args[0]) => {} ,
                     Expr::Send(o,_,aa) if timestamp::scalar_empty() && aa.is_empty() && matches!(o.as_ref(),Expr::Var(_)) && type_expr(&args[0],env,sigs,n)?==Ty::Dyn => {},
                     Expr::Int(_) | Expr::Str(_) | Expr::Nil | Expr::Var(_) => {}
-                    Expr::Call(id, _) if is_output_call(id) || is_builtin(id,"date") || is_builtin(id,"ctod") || dbf_result(id).is_some() || timestamp::family(id) || (DECIMAL_LOCAL_PROFILE.with(|v|v.get())&&is_builtin(id,"asort")) => {}
+                    Expr::Call(id, _) if id==INTERNAL_STOD || is_output_call(id) || is_builtin(id,"date") || is_builtin(id,"ctod") || dbf_result(id).is_some() || timestamp::family(id) || (DECIMAL_LOCAL_PROFILE.with(|v|v.get())&&is_builtin(id,"asort")) => {}
                     Expr::Index(v, _) => {
                         // DArr4 first level: child-array casilla -
                         // "A" (hk114, byte-measured via hk117 markers).
@@ -7492,6 +7555,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 return Ok(Ty::Str);
             }
             if is_builtin(id, "len") {
+                if args.len()==1&&DECIMAL_LOCAL_PROFILE.with(|v|v.get())&&!MACRO_CONTEXT.with(|v|v.get())&&shared_local::literal(&args[0]){return Ok(Ty::I64);}
                 // len(a): number of elements of an array (probe e4:
                 // len({}) == 0). Borrows its argument.
                 if args.len() != 1 {
@@ -7517,7 +7581,9 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                             _ => Err(format!("line {}: `len` of a[i] needs an array of arrays", n)),
                         };
                     }
+                    Expr::Index4(id,..) if shared_local::active()&&is_sarr(id)&&env.iter().any(|v|v.name==*id&&v.ty==Ty::Dyn)=>{type_expr(&args[0],env,sigs,n)?;return Ok(Ty::I64);}
                     Expr::Index3(id, ie, ie2, ie3) => {
+                        if shared_local::active()&&is_sarr(id)&&env.iter().any(|v|v.name==*id&&v.ty==Ty::Dyn){type_expr(&args[0],env,sigs,n)?;return Ok(Ty::I64);}
                         // len(a[i][j][k]) on a four-level array: borrow
                         // three levels (hk103).
                         if type_expr(ie, env, sigs, n)? != Ty::I64 || type_expr(ie2, env, sigs, n)? != Ty::I64 || type_expr(ie3, env, sigs, n)? != Ty::I64 {
@@ -7569,7 +7635,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                     // ains P2 stage 1: len of a Dyn VARIABLE dispatches on
                     // the runtime tag (string or tag-8 array: length/count
                     // at payload-8; anything else is hbc_len_error).
-                    Ty::Dyn if method_arrays::active() || matches!(&args[0], Expr::Var(_)) || (shared_local::active()&&matches!(&args[0],Expr::Call(id,_)if is_builtin(id,"asort"))) => Ok(Ty::I64),
+                    Ty::Dyn if method_arrays::active() || matches!(&args[0], Expr::Var(_)) || (shared_local::active()&&matches!(&args[0],Expr::Call(id,aa)if is_builtin(id,"asort")||(is_builtin(id,"atail")&&matches!(aa.as_slice(),[Expr::Var(v)]if shared_local::current(v))))) => Ok(Ty::I64),
                     _ => return Err(format!("line {}: `len` expects an array", n)),
                 };
             }
@@ -8056,6 +8122,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 return Ok(Ty::StrOwn);
             }
             if is_builtin(id, "stod") || is_builtin(id,"hb_stod") {
+                if id==INTERNAL_STOD && (!DECIMAL_LOCAL_PROFILE.with(|v|v.get())||MACRO_CONTEXT.with(|v|v.get())){return Err(format!("line {}: date literals require ordinary Linux without threads or macros",n));}
                 if is_builtin(id,"hb_stod") && (!DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get())) {return Err(format!("line {}: hb_SToD requires ordinary Linux without threads or macros in this increment",n));}
                 // SToD(s) (issue #1): strict yyyymmdd digit text -> date;
                 // the pack helper validates ranges and answers 0
@@ -8091,6 +8158,8 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 return Ok(Ty::StrOwn);
             }
             if is_builtin(id, "aclone") {
+                if args.len()==1&&shared_local::active()&&shared_local::literal(&args[0]){return Ok(Ty::Dyn);}
+                if args.len()==1&&shared_local::active()&&matches!(&args[0],Expr::Var(v)if shared_local::current(v))&&type_expr(&args[0],env,sigs,n)?==Ty::Dyn{return Ok(Ty::Dyn);}
                 if args.len()!=1 { return Err(format!("line {}: `AClone` takes one argument in this increment",n)); }
                 if !matches!(&args[0], Expr::Var(_)) {
                     return Err(format!("line {}: `AClone` expects an array variable (the slot is passed by address)",n));
@@ -8106,6 +8175,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 if !matches!(&args[0], Expr::Var(_)) {
                     return Err(format!("line {}: `ATail` expects an array variable (the slot is passed by address)",n));
                 }
+                if shared_local::active()&&matches!(&args[0],Expr::Var(v)if shared_local::current(v))&&type_expr(&args[0],env,sigs,n)?==Ty::Dyn{return Ok(Ty::Dyn);}
                 match type_expr(&args[0],env,sigs,n)? {
                     Ty::DArr | Ty::DArrS => {}
                     _ => return Err(format!("line {}: `ATail` supports flat integer or string arrays in this increment",n)),
@@ -11008,6 +11078,54 @@ fn foreach_lv_readonly(stmts: &[Stmt], name: &str) -> bool {
 // exposes its initial NIL. Narrow only this dominated, non-byref shape.
 // Unknown/control-flow forms fail closed; the existing Date checker still
 // rejects all later non-Date stores. No inference invokes type_expr here.
+// Harbour discards the value main returns: the process exit code comes
+// only from ErrorLevel() (measured against Harbour 3.2, tests/main-return).
+// `return <value>` in main therefore runs as a bare `return`: a literal or
+// variable is dropped, a call still runs for its effect first, and a
+// parenthesized list does both in order. Any other value form (operators,
+// indexing) keeps the "main must end with return" rejection.
+fn discard_main_return_values(funcs:&mut [Func]) {
+    fn pure(e:&Expr)->bool {
+        matches!(e, Expr::Int(_) | Expr::Float(..) | Expr::FloatV(..) | Expr::Str(_) | Expr::Var(_) | Expr::Log(_) | Expr::Nil)
+    }
+    // The value's parts in evaluation order; None when one part is neither
+    // a plain value nor a call.
+    fn parts(e:Expr,out:&mut Vec<Expr>)->bool {
+        match e {
+            Expr::Seq(es) => es.into_iter().all(|x|parts(x,out)),
+            // ALTD() stays a statement only (tests/altd-stmt).
+            Expr::Call(id,_) if is_builtin(&id,"altd") => false,
+            Expr::Call(..) => {out.push(e);true}
+            e => pure(&e),
+        }
+    }
+    fn walk(stmts:&mut Vec<Stmt>) {
+        let mut i=0;
+        while i<stmts.len() {
+            match &mut stmts[i] {
+                Stmt::If(_,_,t,e) => {walk(t);walk(e);}
+                // FOR EACH bodies are left alone: returning the loop
+                // variable keeps its borrow diagnostics (t346, t1556).
+                Stmt::While(_,_,b) | Stmt::For(_,_,_,_,_,b) => walk(b),
+                Stmt::Ret(n,Some(e)) => {
+                    let n=*n;
+                    let mut calls=Vec::new();
+                    if parts(e.clone(),&mut calls) {
+                        stmts[i]=Stmt::Ret(n,None);
+                        for c in calls {
+                            stmts.insert(i,Stmt::CallStmt(n,c));
+                            i+=1;
+                        }
+                    }
+                }
+                _ => {}
+            }
+            i+=1;
+        }
+    }
+    for f in funcs.iter_mut().filter(|f|f.name=="main") { walk(&mut f.stmts); }
+}
+
 // main's parameters receive the command-line arguments in Harbour 3.2
 // (measured: strings, NIL when not supplied). The startup code passes no
 // arguments, so each parameter is a local that starts NIL, the value
@@ -13037,6 +13155,7 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
         Expr::Bin(_, a, b) => { apply_moves(a, env, sigs, false); apply_moves(b, env, sigs, false); }
         Expr::Cmp(_, a, b) => { apply_moves(a, env, sigs, false); apply_moves(b, env, sigs, false); }
         Expr::Call(id, args) => {
+            if id==INTERNAL_CELL_INC {apply_moves(&args[0],env,sigs,false);return;}
             if dbf_result(id).is_some(){for a in args{apply_moves(a,env,sigs,false);}return;}
 
             if is_builtin(id,"dispbox") {return;} // validated inert literal expressions
@@ -15951,6 +16070,7 @@ fn cg_val_discard_arg(a: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<St
 }
 
 fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target) {
+    if shared_local::active() && shared_local::constructor(e).is_some(){shared_local::emit_constructor(e,strs,out);return;}
     if shared_local::active() && shared_local::literal(e) {shared_local::emit_literal(e,strs,out);return;}
     if let Some(p)=shared_local::optional(e) {
         let v=env.iter().rev().find(|v|v.name==p).expect("shared optional");let k=fresh_lbl();
@@ -16455,6 +16575,11 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             // arguments evaluate once with their effects, bounds-checked
             // exactly like ValType (hbc_bound_error on a miss). Borrows.
             let want_num = is_builtin(id, "hb_isnumeric");
+            if DECIMAL_LOCAL_PROFILE.with(|v|v.get())&&!MACRO_CONTEXT.with(|v|v.get())&&shared_local::literal(&args[0]){out.push_str(if want_num{"    xor %eax, %eax\n"}else{"    mov $1, %eax\n"});return;}
+            if shared_local::active()&&matches!(&args[0],Expr::Call(c,aa)if is_builtin(c,"atail")&&matches!(aa.as_slice(),[Expr::Var(v)]if shared_local::current(v))){
+                let vt=Expr::Call(INTERNAL_VALTYPE.to_string(),args.clone());cg_expr(&vt,env,sigs,strs,out,target);
+                out.push_str(if want_num{"    cmpb $78, (%rax)\n    sete %al\n    movzbq %al, %rax\n"}else{"    cmpb $65, (%rax)\n    sete %al\n    movzbq %al, %rax\n"});return;
+            }
             let konst = |out: &mut String, b: bool| out.push_str(if b { "    mov $1, %rax
 " } else { "    xor %eax, %eax
 " });
@@ -16484,6 +16609,10 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
 ");
                 }
             };
+            if shared_local::active()&&matches!(&args[0],Expr::Index2(v,..)|Expr::Index3(v,..)|Expr::Index4(v,..)if shared_local::current(v)&&env.iter().any(|x|x.name==*v&&x.ty==Ty::Dyn)){
+                cg_value(&args[0],env,sigs,strs,out,target);out.push_str("    mov %rax, %r10\n");classify_tag(out,want_num);
+                if want_num{out.push_str("    cmpb $5, %r10b\n    sete %dl\n    or %dl, %al\n    movzbq %al, %rax\n");}return;
+            }
             match &args[0] {
                 Expr::Int(_) | Expr::Float(..) | Expr::FloatV(..) => konst(out, want_num),
                 Expr::Str(_) | Expr::Nil | Expr::Log(_) => konst(out, false),
@@ -16513,6 +16642,10 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                 }
                 Expr::Index(v, ie) => {
                     let var = env.iter().rev().find(|x| x.name == *v).expect("checked");
+                    if shared_local::active()&&shared_local::current(v)&&var.ty==Ty::Dyn {
+                        cg_value(&args[0],env,sigs,strs,out,target);out.push_str("    mov %rax, %r10\n");classify_tag(out,want_num);
+                        if want_num{out.push_str("    cmpb $5, %r10b\n    sete %dl\n    or %dl, %al\n    movzbq %al, %rax\n");}return;
+                    }
                     if var.ty == Ty::RefDyn {
                         cg_expr(&args[0], env, sigs, strs, out, target);
                         out.push_str("    mov %rax, %r10\n");
@@ -16644,12 +16777,23 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                 vt_letter(strs,out,"A");
                 out.push_str("97:\n");
             }
+            if DECIMAL_LOCAL_PROFILE.with(|v|v.get())&&!MACRO_CONTEXT.with(|v|v.get())&&shared_local::literal(&args[0]){vt_letter(strs,out,"A");return;}
+            if shared_local::active()&&matches!(&args[0],Expr::Index2(v,..)|Expr::Index3(v,..)|Expr::Index4(v,..)if shared_local::current(v)&&env.iter().any(|x|x.name==*v&&x.ty==Ty::Dyn)){
+                cg_value(&args[0],env,sigs,strs,out,target);out.push_str("    mov %rax, %r10\n");vt_classify_scalar(strs,out);return;
+            }
             match &args[0] {
                 Expr::Send(..) if method_results::send(&args[0]) || (timestamp::scalar_empty()&&expr_ty(&args[0],env,sigs)==Ty::Dyn)=>{
                     cg_value(&args[0],env,sigs,strs,out,target);
                     out.push_str("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n    mov %rax, %r10\n");
                     vt_classify_scalar(strs,out);out.push_str("    mov %rax, 16(%rsp)\n    mov %rdx, 24(%rsp)\n");cg_concat_drop(out,0);out.push_str("    mov 16(%rsp), %rax\n    mov 24(%rsp), %rdx\n    add $32, %rsp\n");
                 }
+                Expr::Call(id,aa) if shared_local::active()&&is_builtin(id,"atail")&&matches!(aa.as_slice(),[Expr::Var(v)]if shared_local::current(v))=>{
+                    cg_value(&args[0],env,sigs,strs,out,target);
+                    out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n    mov %rax, %r10\n");
+                    vt_classify_scalar(strs,out);cg_dyn_stack_release(out,0,true);
+                    out.push_str("    add $16, %rsp\n");
+                }
+                Expr::Call(id,_) if id==INTERNAL_STOD => vt_letter(strs,out,"D"),
                 Expr::Int(_) => vt_letter(strs, out, "N"),
                 Expr::Str(_) => vt_letter(strs, out, "C"),
                 Expr::Nil => vt_letter(strs, out, "U"),
@@ -17877,8 +18021,10 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             }
         }
         Expr::Call(id,args) if is_builtin(id,"aclone") => {
+            if shared_local::active()&&shared_local::literal(&args[0]){shared_local::emit_literal(&args[0],strs,out);return;}
             let av = match &args[0] { Expr::Var(v) => v.clone(), _ => unreachable!("checked") };
             let var = env.iter().rev().find(|x| x.name == *av).expect("checked");
+            if shared_local::active()&&shared_local::current(&av)&&var.ty==Ty::Dyn{cg_sarr_root(&av,var.off,"%rdi",out);out.push_str("    call hbc_sarr_clone\n");return;}
             let helper = if expr_ty(&args[0],env,sigs) == Ty::DArrS { "hbc_aclone_s" } else { "hbc_aclone_i" };
             out.push_str(&format!("    mov -{}(%rbp), %rdi\n    mov -{}(%rbp), %rsi\n    call {}\n", var.off, var.off-8, helper));
         }
@@ -17886,7 +18032,12 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             let av = match &args[0] { Expr::Var(v) => v.clone(), _ => unreachable!("checked") };
             let var = env.iter().rev().find(|x| x.name == *av).expect("checked");
             let l = fresh_lbl();
-            if expr_ty(&args[0],env,sigs) == Ty::DArrS {
+            if shared_local::active()&&shared_local::current(&av)&&expr_ty(&args[0],env,sigs)==Ty::Dyn {
+                cg_sarr_root(&av,var.off,"%r11",out);
+                out.push_str(&format!("    mov (%r11), %rax\n    test %rax, %rax\n    jle .LatSharedEmpty{l}\n    dec %rax\n    shl $4, %rax\n    add 24(%r11), %rax\n    mov 8(%rax), %rdx\n    mov (%rax), %rax\n"));
+                cg_dyn_clone_if_str(out);
+                out.push_str(&format!("    jmp .LatSharedDone{l}\n.LatSharedEmpty{l}:\n    mov $1, %eax\n    xor %edx, %edx\n.LatSharedDone{l}:\n"));
+            } else if expr_ty(&args[0],env,sigs) == Ty::DArrS {
                 out.push_str(&format!("    mov -{}(%rbp), %rax\n    test %rax, %rax\n    jle .LatS{}\n    mov -{}(%rbp), %r11\n    dec %rax\n    shl $4, %rax\n    add %rax, %r11\n    mov 8(%r11), %rdi\n    mov -8(%rdi), %rsi\n    call hbc_strcpy\n    mov %rax, %rdx\n    mov $4, %eax\n    jmp .LatSe{}\n.LatS{}:\n    mov $1, %eax\n    xor %edx, %edx\n.LatSe{}:\n", var.off-8, l, var.off, l, l, l));
             } else {
                 // The returned pair leaves the cell: floats AND strings
@@ -18118,7 +18269,10 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             out.push_str("    test %rax, %rax\n    jne hbc_type_error\n    call hbc_round\n");
         }
         Expr::Call(id, args) if is_builtin(id, "len") => {
-            if (shared_local::active()&&matches!(&args[0],Expr::Index2(id,..)if is_sarr(id)))||(method_arrays::active()||(shared_local::active()&&matches!(&args[0],Expr::Call(id,_)if is_builtin(id,"asort")))) && expr_ty(&args[0],env,sigs)==Ty::Dyn && !matches!(&args[0],Expr::Var(_)|Expr::Index(..)|Expr::Index2(..)|Expr::Index3(..)){
+            if DECIMAL_LOCAL_PROFILE.with(|v|v.get())&&!MACRO_CONTEXT.with(|v|v.get())&&shared_local::literal(&args[0]){
+                let len=if let Expr::ArrLit(es)=&args[0]{es.len()}else{0};out.push_str(&format!("    mov ${len}, %rax\n"));return;
+            }
+            if (shared_local::active()&&matches!(&args[0],Expr::Index2(id,..)|Expr::Index3(id,..)|Expr::Index4(id,..)if is_sarr(id)))||(method_arrays::active()||(shared_local::active()&&matches!(&args[0],Expr::Call(id,aa)if is_builtin(id,"asort")||(is_builtin(id,"atail")&&matches!(aa.as_slice(),[Expr::Var(v)]if shared_local::current(v)))))) && expr_ty(&args[0],env,sigs)==Ty::Dyn && !matches!(&args[0],Expr::Var(_)|Expr::Index(..)|Expr::Index2(..)|Expr::Index3(..)){
                 cg_value(&args[0],env,sigs,strs,out,target);
                 let k=fresh_lbl();out.push_str(&format!("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n    cmp $16, %rax\n    jne .Lb2lenstr{k}\n    mov (%rdx), %rax\n    jmp .Lb2lendone{k}\n.Lb2lenstr{k}:\n    cmp $2, %rax\n    je .Lb2lenok{k}\n    cmp $4, %rax\n    jne .Lb2lenbad{k}\n.Lb2lenok{k}:\n    mov -8(%rdx), %rax\n.Lb2lendone{k}:\n    mov %rax, 16(%rsp)\n"));
                 if dyn_expr_owned(&args[0]){cg_dyn_stack_release(out,0,false);}
@@ -19624,6 +19778,27 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                 out.push_str(&format!("    jmp .Lpve{}\n", k));
             }
             out.push_str(&format!(".Lpve{}:\n", k));
+        }
+        Expr::Call(id,args) if id==INTERNAL_CELL_INC=>{
+            if let Some((name,ies))=cell_path(&args[0]){if shared_local::active()&&shared_local::current(name){
+                let v=env.iter().rev().find(|x|x.name==name).expect("checked");let l=fresh_lbl();
+                for x in &ies {cg_expr(x,env,sigs,strs,out,target);out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n");}
+                cg_sarr_root(name,v.off,"%r11",out);
+                for(k,_)in ies.iter().enumerate(){out.push_str(&format!("    mov {}(%rsp), %rcx\n    cmp $1, %rcx\n    jl .Lscierr{l}\n    cmp (%r11), %rcx\n    jg .Lscierr{l}\n    mov 24(%r11), %r11\n    dec %rcx\n    shl $4, %rcx\n    add %rcx, %r11\n",16*(ies.len()-1-k)));
+                    if k+1<ies.len(){out.push_str("    cmpq $16, (%r11)\n    jne hbc_type_error\n    mov 8(%r11), %r11\n");}
+                }
+                out.push_str(&format!("    add ${}, %rsp\n    mov (%r11), %rax\n    cmp $0, %rax\n    je .Lscinum{l}\n    cmp $9, %rax\n    jne hbc_type_error\n.Lscinum{l}:\n    mov 8(%r11), %rax\n    mov %rax, %rcx\n",16*ies.len()));
+                let delta=if matches!(&args[1],Expr::Int(t)if t=="1"){1}else{-1};out.push_str(&format!("    add ${delta}, %rcx\n    jo hbc_type_error\n    mov %rcx, 8(%r11)\n"));if matches!(args[2],Expr::Log(true)){out.push_str("    mov %rcx, %rax\n");}
+                out.push_str(&format!("    jmp .Lscidone{l}\n.Lscierr{l}:\n    call hbc_bound_error\n.Lscidone{l}:\n"));return;
+            }}
+            let Expr::Index(name,idx)=&args[0]else{unreachable!()};
+            let v=env.iter().rev().find(|x|x.name==*name).expect("checked");let Ty::Arr(k)=v.ty else{unreachable!()};
+            let delta=if matches!(&args[1],Expr::Int(t)if t=="1"){1}else{-1};let pre=matches!(args[2],Expr::Log(true));let l=fresh_lbl();
+            cg_expr(idx,env,sigs,strs,out,target);
+            out.push_str(&format!("    cmp $1, %rax\n    jl .Lcierr{l}\n    cmp ${k}, %rax\n    jg .Lcierr{l}\n    lea -{}(%rbp), %r11\n    lea -8(%r11,%rax,8), %r11\n    mov (%r11), %rax\n    mov %rax, %rcx\n    add ${delta}, %rcx\n",v.off));
+            if CHECKED_I64.with(|v|v.get()){out.push_str(&ovf_jump());}else{out.push_str("    jo hbc_type_error\n");}
+            out.push_str("    mov %rcx, (%r11)\n");if pre{out.push_str("    mov %rcx, %rax\n");}
+            out.push_str(&format!("    jmp .Lcidone{l}\n.Lcierr{l}:\n    call hbc_bound_error\n.Lcidone{l}:\n"));
         }
         Expr::Call(id, args) => {
             // A Send hands its dispatch slot to this call only. Nested
@@ -21299,6 +21474,7 @@ fn cg_str_builtin(id: &str, args: &[Expr], env: &[CgLocal], sigs: &[Sig], strs: 
     if str_builtin_ty(id)!=Ty::StrOwn { out.push_str("    xor %edx, %edx\n"); }
 }
 fn cg_value(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target) {
+    if shared_local::active() && shared_local::constructor(e).is_some(){shared_local::emit_constructor(e,strs,out);return;}
     if shared_local::active() && shared_local::literal(e) {shared_local::emit_literal(e,strs,out);return;}
     if let Expr::ArrLit(es) = e {
         if es.iter().any(|x| matches!(x, Expr::ArrLit(inner) if inner.iter().any(|y| matches!(y, Expr::ArrLit(_) | Expr::DArrNew)))) {
@@ -21422,7 +21598,7 @@ fn cg_array_value(e: &Expr, off: usize, env: &[CgLocal], sigs: &[Sig], strs: &mu
 }
 
 fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
-    if shared_local::active() && shared_local::literal(e) {return Ty::Dyn;}
+    if shared_local::active() && (shared_local::literal(e)||shared_local::constructor(e).is_some()) {return Ty::Dyn;}
     if shared_local::optional(e).is_some() {return Ty::Dyn;}
     match e {
         Expr::Seq(es) => expr_ty(es.last().expect("nonempty"), env, sigs),
@@ -21522,6 +21698,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             t => t,
         },
         Expr::Call(id, args) => {
+            if id==INTERNAL_CELL_INC{return Ty::I64;}
             if let Some(ty)=dbf_result(id){return ty;}
 
             if is_builtin(id, "array") { return match args.len() { 1 => Ty::DArr, 2 => Ty::DArr2, 3 => Ty::DArr3, _ => Ty::DArr4 }; }
@@ -21591,6 +21768,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             if ["cdow","cmonth","dtoc"].iter().any(|b|is_builtin(id,b)) { return Ty::StrOwn; }
             if is_builtin(id, "ascan") { return Ty::I64; }
             if is_builtin(id, "aclone") {
+                if shared_local::active()&&(shared_local::literal(&args[0])||matches!(&args[0],Expr::Var(v)if shared_local::current(v))){return Ty::Dyn;}
                 return match expr_ty(&args[0],env,sigs) { Ty::DArrS => Ty::DArrS, _ => Ty::DArr };
             }
             if is_builtin(id, "atail") || is_builtin(id, "asort") { return Ty::Dyn; }
@@ -21932,7 +22110,7 @@ fn obj_fresh(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> bool {
 // container/date/object tags before any borrowed payload is cloned.
 fn iif_mixed(a: &Expr, b: &Expr, ta: Ty, tb: Ty) -> bool {
     let dyn_arm = DECIMAL_LOCAL_PROFILE.with(|v|v.get()) && (ta==Ty::Dyn || tb==Ty::Dyn);
-    let arm = |e: &Expr, t: Ty| matches!(t, Ty::I64 | Ty::Bool | Ty::Str | Ty::StrOwn | Ty::F64) || matches!(e, Expr::Nil) || (dyn_arm && t==Ty::Dyn && matches!(e,Expr::Var(_)));
+    let arm = |e: &Expr, t: Ty| matches!(t, Ty::I64 | Ty::Bool | Ty::Str | Ty::StrOwn | Ty::F64) || matches!(e, Expr::Nil) || (dyn_arm && t==Ty::Dyn && (matches!(e,Expr::Var(_))||(shared_local::active()&&matches!(e,Expr::Index(v,_)if shared_local::current(v)))));
     if !arm(a, ta) || !arm(b, tb) { return false; }
     if matches!(a, Expr::Nil) && matches!(b, Expr::Nil) { return false; }
     if ta == tb && !(dyn_arm && ta==Ty::Dyn) { return false; }
@@ -22567,6 +22745,12 @@ fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<Strin
                 } else {
                     out.push_str("    mov %rcx, %r10\n    mov %r8, %r11\n");
                 }
+                if shared_local::active() && matches!(op,CmpOp::Eq|CmpOp::Ne) {
+                    let skip=fresh_lbl();
+                    out.push_str(&format!("    cmp $16, %r10\n    jne .Lsaeqstr{skip}\n"));
+                    if tmp {out.push_str("    mov %rax, %rdi\n    call hbc_freestr\n");}
+                    out.push_str(&format!("    mov ${}, %r9d\n    jmp hbc_sarr_cmp_error\n.Lsaeqstr{skip}:\n",if matches!(op,CmpOp::Ne){1}else{0}));
+                }
                 if DBF_USED.with(|v|v.get()) {out.push_str("    cmpb $11, %r10b\n    je hbc_dbf_unsupported\n    cmpb $12, %r10b\n    je hbc_dbf_unsupported\n");}
                 let lid = fresh_lbl();
                 out.push_str(&format!("    @HBC_TAG_KIND@cmp $2, %r10@HBC_TAG_END@\n    je .Ldys{}\n    @HBC_TAG_KIND@cmp $4, %r10@HBC_TAG_END@\n    je .Ldys{}\n", lid, lid));
@@ -22684,6 +22868,8 @@ fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<Strin
                         CmpOp::Eq | CmpOp::Ne | CmpOp::EqEq => {
                             match op {
                                 CmpOp::EqEq => out.push_str("    call hbc_dynxeq_dd\n"),
+                                CmpOp::Eq if shared_local::active() => out.push_str("    call hbc_sarr_equal_guard\n"),
+                                CmpOp::Ne if shared_local::active() => out.push_str("    call hbc_sarr_unequal_guard\n"),
                                 _ => out.push_str("    call hbc_dyn_eq\n"),
                             }
                             out.push_str("    test %rax, %rax\n");
@@ -22731,6 +22917,8 @@ fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<Strin
                         }
                         match op {
                             CmpOp::EqEq => out.push_str("    call hbc_dynxeq_dd\n"),
+                            CmpOp::Eq if shared_local::active() => out.push_str("    call hbc_sarr_equal_guard\n"),
+                            CmpOp::Ne if shared_local::active() => out.push_str("    call hbc_sarr_unequal_guard\n"),
                             _ => out.push_str("    call hbc_dyn_eq\n"),
                         }
                         out.push_str("    test %rax, %rax\n");
@@ -25620,7 +25808,12 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
     movq $0, 8(%r11,%rax)
 .Laid@K@:
 "#.replace("@P@", &(v.off - 8).to_string()).replace("@T@", &v.off.to_string()).replace("@K@", &k.to_string());
-                out.push_str(&asm);
+                if shared_local::active()&&shared_local::current(id)&&v.ty==Ty::Dyn {
+                    let old=format!("    mov -{}(%rbp), %r11\n    @HBC_TAG_KIND@cmpq $8, -{}(%rbp)@HBC_TAG_END@\n    jne hbc_type_error\n",v.off-8,v.off);
+                    let mut root=String::new();cg_sarr_root(id,v.off,"%r11",&mut root);
+                    root.push_str("    push %r12\n    sub $8, %rsp\n    mov (%r11), %r12\n    mov 24(%r11), %r11\n");
+                    let shared=asm.replace(&old,&root).replace("-8(%r11)","%r12");out.push_str(&shared);out.push_str("    add $8, %rsp\n    pop %r12\n");
+                }else{out.push_str(&asm);}
             }
             Stmt::ADel(_, id, ie) => {
                 // ains P2 stage 2: delete the cell at i (len fixed; the
@@ -25702,7 +25895,12 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
     movq $0, 8(%r11,%rax)
 .Ladd@K@:
 "#.replace("@P@", &(v.off - 8).to_string()).replace("@T@", &v.off.to_string()).replace("@K@", &k.to_string());
-                out.push_str(&asm);
+                if shared_local::active()&&shared_local::current(id)&&v.ty==Ty::Dyn {
+                    let old=format!("    mov -{}(%rbp), %r11\n    @HBC_TAG_KIND@cmpq $8, -{}(%rbp)@HBC_TAG_END@\n    jne hbc_type_error\n",v.off-8,v.off);
+                    let mut root=String::new();cg_sarr_root(id,v.off,"%r11",&mut root);
+                    root.push_str("    push %r12\n    sub $8, %rsp\n    mov (%r11), %r12\n    mov 24(%r11), %r11\n");
+                    let shared=asm.replace(&old,&root).replace("-8(%r11)","%r12");out.push_str(&shared);out.push_str("    add $8, %rsp\n    pop %r12\n");
+                }else{out.push_str(&asm);}
             }
             Stmt::AFill(_, id, e, se, ce) => {
                 // ains P2 stage 2 (reviewer M1): scalar fill on a Dyn-held
@@ -25920,7 +26118,11 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
     add $96, %rsp
 .Lfx@K@:
 "#.replace("@P@", &(v.off - 8).to_string()).replace("@T@", &v.off.to_string()).replace("@K@", &k.to_string());
-                out.push_str(&asm);
+                if shared_local::active()&&shared_local::current(id)&&v.ty==Ty::Dyn {
+                    let old=format!("    mov -{}(%rbp), %r11\n    @HBC_TAG_KIND@cmpq $8, -{}(%rbp)@HBC_TAG_END@\n    jne hbc_type_error\n    test %r11, %r11\n    jz .Lfdn{k}\n    mov %r11, (%rsp)\n    mov -8(%r11), %r10\n",v.off-8,v.off);
+                    let mut root=String::new();cg_sarr_root(id,v.off,"%r11",&mut root);
+                    root.push_str("    mov (%r11), %r10\n    mov 24(%r11), %r11\n    mov %r11, (%rsp)\n");out.push_str(&asm.replace(&old,&root));
+                }else{out.push_str(&asm);}
             }
             Stmt::ASize(_, id, e) => {
                 let v = env.iter().find(|v| v.name == *id).expect("checked").clone();
@@ -31775,6 +31977,8 @@ fn emit_asm(funcs: &[Func], sigs: &[Sig], externs: &[String], target: Target, in
         out.push_str(SARR_HELPERS);
         if shared_local::active() {
             out.push_str(include_str!("shared_collect.s"));
+            out.push_str(include_str!("shared_clone.s"));
+            out.push_str(include_str!("shared_compare.s"));
             out.push_str("hbc_sarr_mark_globals:\n    push %rbp\n    mov %rsp, %rbp\n");
             let mut seen=std::collections::HashSet::new();
             for f in funcs {for st in &f.stmts {if let Stmt::Static(_,n,_)=st {if module_static::kind(&f.name,n)==Some(Ty::Dyn) {let l=module_static::storage(&f.name,n);if seen.insert(l.clone()){out.push_str(&format!("    cmpq $16, {l}(%rip)\n    jne 1f\n    mov {l}+8(%rip), %rax\n    movq $1, 32(%rax)\n1:\n"));}}}}}
@@ -35177,6 +35381,7 @@ fn finalize_trace(mut out: String, target: Target) -> String {
         out=out.replace("    cmp $16, %r9\n    jne hbc_type_error\n.Lasfstagok:","    cmp $17, %r9\n    je .Lasfstagok\n    cmp $16, %r9\n    jne hbc_type_error\n.Lasfstagok:");
         out.push_str(include_str!("asort_temporal.s"));
     }
+    if out.contains("call hbc_ts_now") {out.push_str(timestamp::NOW_HELPER);}
     if out.contains("call hbc_ts_") {
         let ro=if target==Target::Windows{".section .rdata,\"r\""}else{".section .rodata"};
         out.push_str(&include_str!("../generated/hrtimestamp.s").replace("@HRTIMESTAMP_RODATA@",ro));
@@ -35187,7 +35392,7 @@ fn finalize_trace(mut out: String, target: Target) -> String {
     if ["ts_parse", "ts_to_date", "date_core_c", "ctod", "date_today", "date_render", "stod", "dtos", "year", "day", "month", "dow", "cdow", "cmonth", "dtoc", "date_add", "date_diff", "date_days", "date_from_days", "descend_date"].iter().any(|name| out.contains(&format!("call hbc_{}",name))) {
         out.push_str(DATE_PORT_HELPERS);
     }
-    if matches!(target, Target::Linux) && !MACHO_MODE.with(|v| v.get()) && (out.contains("call hbc_date_today") || out.contains("call hbc_seconds") || out.contains("call hbc_time_str")) {
+    if matches!(target, Target::Linux) && !MACHO_MODE.with(|v| v.get()) && (out.contains("call hbc_date_today") || out.contains("call hbc_seconds") || out.contains("call hbc_time_str") || out.contains("call hbc_ts_now")) {
         out.push_str(TZ_LINUX);
     }
     if out.contains("call hbc_date_today") {
@@ -39282,6 +39487,19 @@ fn main() {
             }
         }
     }
+    // Direct timestamp producers can feed the existing date consumers
+    // through the measured timestamp-to-date conversion. Generic Dyn
+    // consumers and variables retain their existing admission boundary.
+    if DECIMAL_LOCAL_PROFILE.with(|v|v.get())&&!MACRO_CONTEXT.with(|v|v.get())&&!source_names.contains("hb_ttod") {
+        for f in &mut funcs {visit_stmts_mut(&mut f.stmts,&mut |e,_|{
+            if let Expr::Call(id,args)=e {if ["year","month","day","dow","cdow","cmonth","dtoc"].iter().any(|b|is_builtin(id,b))&&args.len()==1 {
+                if matches!(&args[0],Expr::Call(id,_)if ["hb_datetime","hb_stot","hb_dtot"].contains(&id.as_str())&&!source_names.contains(id)) {
+                    args[0]=Expr::Call("hb_ttod".to_string(),vec![args[0].clone()]);
+                }
+            }}
+        });}
+    }
+    discard_main_return_values(&mut funcs);
     narrow_bare_date_locals(&mut funcs);
     init_retyped_val_functions(&funcs);
     init_pcount_functions(&funcs);

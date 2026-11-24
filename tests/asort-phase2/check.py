@@ -8,7 +8,12 @@ def run(cmd,w,label):
  r=subprocess.run(list(map(str,cmd)),cwd=root,capture_output=True,timeout=60,stdin=subprocess.DEVNULL)
  for k,v in [('stdout',r.stdout),('stderr',r.stderr),('rc',str(r.returncode).encode())]:(w/(label+'.'+k)).write_bytes(v)
  return r
-for src in [*sorted(here.glob('*.prg')),*sorted(Path(a.spec_root).glob('c01*.prg')),*sorted(Path(a.spec_root).glob('c04*.prg'))]:
+originals=[]
+for pattern in ['c01*.prg','c04*.prg']:
+ found=sorted(Path(a.spec_root).glob(pattern))
+ if len(found)!=1:p.error('ASort2 requires exactly one '+pattern+' in --spec-root; found '+str(len(found)))
+ originals.extend(found)
+for src in [*sorted(here.glob('*.prg')),*originals]:
  w=out/src.stem;w.mkdir()
  if src.stem.startswith('limit-'):
   r=run([cc,src,w/'limit'],w,'build');assert r.returncode==1 and not (w/'limit').exists(),(src,r.stderr);rows.append(dict(name=src.stem,kind='named-rejection'));continue
@@ -23,4 +28,4 @@ for src in [*sorted(here.glob('*.prg')),*sorted(Path(a.spec_root).glob('c01*.prg
  d=w/'delta';d.mkdir();bal=emit_delta(cc,os.environ,src,d,want);assert bal['state_ok'] and bal['delta']==0,(src,bal);rows.append(dict(name=src.stem,kind='strict-final-balance',source_sha256=hashlib.sha256(src.read_bytes()).hexdigest(),**bal))
  for target in ['windows','macho','macho-arm64']:
   r=run([cc,src,w/(target+'.s'),'--target='+target],w,target);assert r.returncode==1,(src,target,r.stderr);rows.append(dict(name=src.stem,kind='profile-rejection',target=target))
-(out/'results.json').write_text(json.dumps(dict(compiler_sha256=hashlib.sha256(Path(cc).read_bytes()).hexdigest(),rows=rows),indent=2)+'\n');print('PASS',len(rows))
+(out/'results.json').write_text(json.dumps(dict(compiler_sha256=hashlib.sha256(Path(cc).read_bytes()).hexdigest(),rows=rows),indent=2)+'\n');print('PASS',len(rows),'own='+str(sum(x['name'] not in {s.stem for s in originals} for x in rows)),'originals='+str(sum(x['name'] in {s.stem for s in originals} for x in rows)))

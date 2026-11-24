@@ -78,3 +78,13 @@ u64 hbc_ts_empty(u64 tag,u64 payload){
  if(tag==2||tag==4){p=(const char *)payload;n=((const u64 *)p)[-1];for(i=0;i<n;i++)if(p[i]!=' '&&p[i]!='\t'&&p[i]!='\n'&&p[i]!='\r')return 0;return 1;}
  return 2;
 }
+
+/* Bounded literal component constructor, measured against Harbour. */
+u64 hbc_ts_construct(const long long *v){
+ char str[8];u64 d=0,ms=0;
+ if(v[0]>=1&&v[0]<=9999&&v[1]>=1&&v[1]<=12&&v[2]>=1&&v[2]<=31){
+  put(str,(u64)v[0],4);put(str+4,(u64)v[1],2);put(str+6,(u64)v[2],2);d=hbc_stod(str,8);
+ }
+ if(v[3]>=0&&v[3]<24&&v[4]>=0&&v[4]<60&&v[5]>=0&&v[5]<60&&v[6]>=0&&v[6]<1000)ms=(u64)v[3]*3600000+(u64)v[4]*60000+(u64)v[5]*1000+(u64)v[6];
+ return (day(d)<<32)|ms;
+}

@@ -83,9 +83,10 @@ TARGET = '--target=macho-arm64'  # --target=macho runs the same battery on Intel
 # Empty date in every SET DATE layout, Harbour-measured (+1).
 # CToD order / SET EPOCH: one Harbour-measured matrix (+1).
 # QUIT / CLS: two Harbour-measured fixtures (+2).
+# main return value discarded: two Harbour-measured fixtures (+2).
 # main parameters NIL without arguments: two Harbour-measured fixtures (+2).
-# Full total:1313+6+4+38+9 =1370,1 named REJ on both Mac targets.
-EXPECTED_MANIFEST_ROWS = 1313
+# Full total:1315+6+4+38+9 =1372,1 named REJ on both Mac targets.
+EXPECTED_MANIFEST_ROWS = 1315
 # Post-run m_clie.dbf SHA-256 per DBF acceptance test (generated on Linux,
 # stdout checked against the committed expectations). t4 appends records:
 # dbAppend rewrites the header last-update date (bytes 1-3, YY MM DD of the

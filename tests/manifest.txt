@@ -1963,5 +1963,7 @@ neg tests/ctod-dyn/neg_masked_error.prg `ctod` expects a string
 pos2 tests/ctod-bb/programs/ctod_order_epoch.prg tests/ctod-bb/expected/ctod_order_epoch.linux.out tests/ctod-bb/expected/ctod_order_epoch.windows.out
 pos2 tests/quit-bb/programs/cls_altd_quit.prg tests/quit-bb/expected/cls_altd_quit.linux.out tests/quit-bb/expected/cls_altd_quit.windows.out
 pos2 tests/quit-bb/programs/quit_nested.prg tests/quit-bb/expected/quit_nested.linux.out tests/quit-bb/expected/quit_nested.windows.out
+pos2 tests/main-return/programs/main_return_call.prg tests/main-return/expected/main_return_call.linux.out tests/main-return/expected/main_return_call.windows.out
+pos2 tests/main-return/programs/main_return_value.prg tests/main-return/expected/main_return_value.linux.out tests/main-return/expected/main_return_value.windows.out
 pos2 tests/main-params/programs/main_params_nil.prg tests/main-params/expected/main_params_nil.linux.out tests/main-params/expected/main_params_nil.windows.out
 pos2 tests/main-params/programs/main_params_assign.prg tests/main-params/expected/main_params_assign.linux.out tests/main-params/expected/main_params_assign.windows.out

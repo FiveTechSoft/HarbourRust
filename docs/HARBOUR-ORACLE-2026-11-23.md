@@ -8,8 +8,10 @@ compiled, not interpreted, so its output is byte-identical to what the real
 oracle produces on this host.
 
 This record documents how the oracle was set up and what it says for the
-13 Linux-subset `neg` cases recorded on 2026-11-23, plus the hello.prg sanity
-check at the start.
+16 Linux-subset `neg` cases recorded on 2026-11-23/24 (four stale on Linux
+since the Linux-only gates, plus three more stale since the Set/fixed-cell/
+shared-array landings of 2026-11-24), plus the hello.prg sanity check at the
+start.
 
 ## Setup (no Harbour tree was modified)
 
@@ -116,6 +118,32 @@ Note also that the shared-local family gives the owner's slot a tagged
 `? len(a)` takes the generic Dyn-variable len path (`src/hbc.rs:7538`) -
 the tag-16 runtime dispatch lands at the C-emit layer, not the checker.
 
+## t813 / t897 / t1043 - three more Linux-stale neg rows (2026-11-24)
+
+The full 622-row Linux `neg` check was rerun on 2026-11-24 after the
+recent Linux-only landings (Set date-format selector 4, ordinary fixed
+cell increments, bare-local string-copy rewrite). Three additional rows
+now accept instead of rejecting. All three are manifest-sync gaps from
+their feature commits (the repo convention in
+`tests/manifest.txt` - re-pin in the same PR - was missed), not
+regressions: each row's expectation was deleted by the feature, not by a
+behaviour change to the existing checker.
+
+| Case | Source (shape) | Oracle behaviour (compiled Harbour) |
+| --- | --- | --- |
+| tests/t813_set_callstmt_neg.prg | `Set(_SET_DATEFORMAT, "yyyy-mm-dd")` (selector 4 = date format, mask admitted by 5b40695b) | compiles, runs, exits 0, no output |
+| tests/t897_inc_elem_neg.prg | `local a := {1,2}; ? a[1]++` (ordinary fixed integer cell increments, 0f39467f) | compiles, runs, exits 0, output `1` (post-increment prints the pre-increment value) |
+| tests/t1043_original_longstr2_move_neg.prg | original longstr2 shape (OutErr/QOut/OutStd triple with `short`/`long`/`very_long`) | compiles, runs, exits 0, prints the length triple `10 / 40960 / 1310720` and the long strings (no moved-source rejection) |
+
+The Linux compiler still accepts each of the three with rc=0 (verified
+2026-11-24). The Windows/PE side behavior is unchanged from the 2026-11-23
+record. NOT re-pinned here: the same manifest-sync gap category as the
+four stale rows, and the same sign-off path:
+
+1. Re-pin these three as `pos2` rows (oracle-confirmed values), or
+2. Leave as documented debt until the next baseline, and re-run the
+   full 622-row check + the PE gate afterwards.
+
 ## t1634 / t1635 / t1636 / t1637 / t1638 / t1639 / t1640 / t1641 / t1642 - nine CurDir neg rows
 
 All nine COMPILE cleanly under compiled Harbour. `CurDir` is a Harbour
@@ -147,7 +175,7 @@ expectation. The 9 rows stay as `neg` expectations.
 
 ## Known limitations of this record
 
-- The oracle here covers the 13 `neg` cases above plus `hello.prg`. All other
+- The oracle here covers the 16 `neg` cases above plus `hello.prg`. All other
   positive rows still need the x86-64 harness (e.g. the full battery) to
   complete the verification.
 - `CurDir` output is environment-dependent (the cwd), so only compile
