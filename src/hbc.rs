@@ -2109,7 +2109,7 @@ const ASM_RESERVED: &[&str] = &[
     // hbc itself emits; a user function with one of these names would
     // collide with a helper symbol.
     "dtos", "stod", "year", "day", "month", "dow", "cdow", "cmonth", "dtoc", "sqrt", "exp", "log", "mod", "padc", "rat", "stuff", "isdigit", "isalpha", "isupper", "islower", "strzero", "ischar", "strzero_fix", "str_f64", "fmt_f64", "date_add", "date_diff", "date_days", "date_from_days", "seconds",
-    "hb_osdriveseparator", "hb_osfilemask", "hb_fnameext", "hb_fnamenameext", "hb_fnamename", "hb_fnamedir", "hb_dirsepdel", "hb_fileexists", "hb_direxists", "hb_strformat", "hb_base64decode", "hb_base64encode", "hb_stod", "hb_hextonum", "hb_asciiupper", "hb_strtohex", "hb_dirsepadd", "getenv", "hb_at", "hb_bchar", "hb_bcode", "__defaultnil", "hb_default", "hb_defaultvalue", "hb_sha1", "hb_hmac_sha1", "tr_dims", "tr_apply", "strtran", "space", "substr", "date", "ctod", "date_pack", "date_render", "date_today", "dispbox", "hrbase_wait", "setcursor", "hb_flink", "hb_flinksym", "hb_flinkread", "hb_memowrit", "hb_dircreate", "ferror", "curdir", "fread", "fcreate", "fopen", "fwrite", "fclose", "freadstr", "hb_memoread", "hb_libname", "hb_ps", "os", "dirmake", "inkey", "file", "hrfile_setdefault", "hrfile_setpath", "qout", "qqout", "outstd", "outerr", "empty", "procname", "min", "max", "str", "padr", "hb_ntos", "replicate", "aeval", "hb_isnumeric", "hb_isarray", "hb_isstring", "dfree", "upper", "lower", "left", "right", "at", "int", "abs", "padl", "val", "ascan", "aclone", "atail", "asort", "hb_bitand", "hb_bitor", "hb_bitxor", "hb_bitnot", "hb_bittest", "hb_bitset", "hb_bitreset", "eprint_str", "eprint_sep", "eprint_i64", "eprint_i64c", "eprint_dyn", "eprint_dynlit", "print_dynlit", "eprint_f64", "hb_eol", "procline", "asc", "trim", "ltrim", "rtrim", "alltrim", "chr", "trace_top", "print_trace", "panic_exit", "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_arg_error", "val_arg_error", "atokens_arg_error", "hb_memcheck", "aadd", "asize", "afill", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
+    "hb_osdriveseparator", "hb_osfilemask", "hb_fnameext", "hb_fnamenameext", "hb_fnamename", "hb_fnamedir", "hb_dirsepdel", "hb_dirseptoos", "hb_fileexists", "hb_direxists", "hb_strformat", "hb_base64decode", "hb_base64encode", "hb_stod", "hb_hextonum", "hb_asciiupper", "hb_strtohex", "hb_dirsepadd", "getenv", "hb_at", "hb_bchar", "hb_bcode", "__defaultnil", "hb_default", "hb_defaultvalue", "hb_sha1", "hb_hmac_sha1", "tr_dims", "tr_apply", "strtran", "space", "substr", "date", "ctod", "date_pack", "date_render", "date_today", "dispbox", "hrbase_wait", "setcursor", "hb_flink", "hb_flinksym", "hb_flinkread", "hb_memowrit", "hb_dircreate", "ferror", "curdir", "fread", "fcreate", "fopen", "fwrite", "fclose", "freadstr", "hb_memoread", "hb_libname", "hb_ps", "os", "dirmake", "inkey", "file", "hrfile_setdefault", "hrfile_setpath", "qout", "qqout", "outstd", "outerr", "empty", "procname", "min", "max", "str", "padr", "hb_ntos", "replicate", "aeval", "hb_isnumeric", "hb_isarray", "hb_isstring", "dfree", "upper", "lower", "left", "right", "at", "int", "abs", "padl", "val", "ascan", "aclone", "atail", "asort", "hb_bitand", "hb_bitor", "hb_bitxor", "hb_bitnot", "hb_bittest", "hb_bitset", "hb_bitreset", "eprint_str", "eprint_sep", "eprint_i64", "eprint_i64c", "eprint_dyn", "eprint_dynlit", "print_dynlit", "eprint_f64", "hb_eol", "procline", "asc", "trim", "ltrim", "rtrim", "alltrim", "chr", "trace_top", "print_trace", "panic_exit", "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_arg_error", "val_arg_error", "atokens_arg_error", "hb_memcheck", "aadd", "asize", "afill", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
 ];
 
 fn dbf_result(id: &str) -> Option<Ty> {
@@ -5548,7 +5548,7 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
                     return Ok(());
                 }
                 if is_builtin(id,"hb_fileexists")||is_builtin(id,"hb_direxists") {for a in args {pin_vars(f,a,Ty::Str,pin,n)?;walk(f,a,sigs,lit,pin,printed,n)?;}return Ok(());}
-                if is_builtin(id,"hb_memoread") || is_builtin(id,"getenv") || is_builtin(id,"hb_dirsepadd") || is_builtin(id,"hb_dirsepdel") || is_builtin(id,"hb_fnameext") || is_builtin(id,"hb_fnamenameext") || is_builtin(id,"hb_fnamename") || is_builtin(id,"hb_fnamedir") || is_builtin(id,"hb_strtohex") || is_builtin(id,"hb_asciiupper") || is_builtin(id,"hb_hextonum") || is_builtin(id,"hb_base64encode") {
+                if is_builtin(id,"hb_memoread") || is_builtin(id,"getenv") || is_builtin(id,"hb_dirsepadd") || is_builtin(id,"hb_dirsepdel") || is_builtin(id,"hb_dirseptoos") || is_builtin(id,"hb_fnameext") || is_builtin(id,"hb_fnamenameext") || is_builtin(id,"hb_fnamename") || is_builtin(id,"hb_fnamedir") || is_builtin(id,"hb_strtohex") || is_builtin(id,"hb_asciiupper") || is_builtin(id,"hb_hextonum") || is_builtin(id,"hb_base64encode") {
                     for a in args {pin_vars(f,a,Ty::Str,pin,n)?;walk(f,a,sigs,lit,pin,printed,n)?;}
                     return Ok(());
                 }
@@ -7431,6 +7431,12 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 if !DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get()) {return Err(format!("line {}: hb_DirSepDel requires ordinary Linux without threads or macros in this increment",n));}
                 if args.len()!=1 {return Err(format!("line {}: hb_DirSepDel requires exactly one typed string in this increment",n));}
                 if !matches!(type_expr(&args[0],env,sigs,n)?,Ty::Str|Ty::StrOwn) {return Err(format!("line {}: hb_DirSepDel requires a typed string in this increment",n));}
+                return Ok(Ty::StrOwn);
+            }
+            if is_builtin(id,"hb_dirseptoos") {
+                if !DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get()) {return Err(format!("line {}: hb_DirSepToOS requires ordinary Linux without threads or macros in this increment",n));}
+                if args.len()!=1 {return Err(format!("line {}: hb_DirSepToOS requires exactly one typed string in this increment",n));}
+                if !matches!(type_expr(&args[0],env,sigs,n)?,Ty::Str|Ty::StrOwn) {return Err(format!("line {}: hb_DirSepToOS requires a typed string in this increment",n));}
                 return Ok(Ty::StrOwn);
             }
             if is_builtin(id,"hb_fnameext") {
@@ -13796,7 +13802,7 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
                 return;
             }
             if is_builtin(id,"hb_fileexists")||is_builtin(id,"hb_direxists") {for a in args {apply_moves(a,env,sigs,false);}return;}
-            if is_builtin(id,"getenv") || is_builtin(id,"hb_dirsepadd") || is_builtin(id,"hb_dirsepdel") || is_builtin(id,"hb_fnameext") || is_builtin(id,"hb_fnamenameext") || is_builtin(id,"hb_fnamename") || is_builtin(id,"hb_fnamedir") || is_builtin(id,"hb_strtohex") || is_builtin(id,"hb_asciiupper") || is_builtin(id,"hb_hextonum") || is_builtin(id,"hb_base64encode") {for a in args {apply_moves(a,env,sigs,false);}return;}
+            if is_builtin(id,"getenv") || is_builtin(id,"hb_dirsepadd") || is_builtin(id,"hb_dirsepdel") || is_builtin(id,"hb_dirseptoos") || is_builtin(id,"hb_fnameext") || is_builtin(id,"hb_fnamenameext") || is_builtin(id,"hb_fnamename") || is_builtin(id,"hb_fnamedir") || is_builtin(id,"hb_strtohex") || is_builtin(id,"hb_asciiupper") || is_builtin(id,"hb_hextonum") || is_builtin(id,"hb_base64encode") {for a in args {apply_moves(a,env,sigs,false);}return;}
             if is_builtin(id,"hb_libname") {
                 // The builtin borrows its results, but nested calls still
                 // consume their own arguments under the usual contract.
@@ -18216,6 +18222,12 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             if expr_ty(&args[0],env,sigs)==Ty::StrOwn && !matches!(&args[0],Expr::Var(_)) {out.push_str("    mov (%rsp), %rdi\n    call hbc_freestr\n");}
             out.push_str("    mov 8(%rsp), %rax\n    mov 16(%rsp), %rdx\n    add $32, %rsp\n");
         }
+        Expr::Call(id,args) if is_builtin(id,"hb_dirseptoos") => {
+            cg_value(&args[0],env,sigs,strs,out,target);
+            out.push_str("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_dirseptoos_linux\n    mov %rax, 8(%rsp)\n    mov %rdx, 16(%rsp)\n");
+            if expr_ty(&args[0],env,sigs)==Ty::StrOwn && !matches!(&args[0],Expr::Var(_)) {out.push_str("    mov (%rsp), %rdi\n    call hbc_freestr\n");}
+            out.push_str("    mov 8(%rsp), %rax\n    mov 16(%rsp), %rdx\n    add $32, %rsp\n");
+        }
         Expr::Call(id,args) if is_builtin(id,"hb_fnameext") => {
             cg_value(&args[0],env,sigs,strs,out,target);
             out.push_str("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rax, %rdi\n    mov %rdx, %rsi\n    mov $0, %edx\n    call hbc_fname_linux\n    mov %rax, 8(%rsp)\n    mov %rdx, 16(%rsp)\n");
@@ -22453,7 +22465,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             if ["fread","fcreate","fopen","fwrite"].iter().any(|b|is_builtin(id,b)) {return Ty::I64;}
             if is_builtin(id,"hb_hextonum") {return Ty::I64;}
             if is_builtin(id,"hb_strformat") || is_builtin(id,"hb_base64decode") {return Ty::StrOwn;}
-            if is_builtin(id,"hb_osfilemask") || is_builtin(id,"hb_osdriveseparator") || is_builtin(id,"hb_base64encode") || is_builtin(id,"hb_asciiupper") || is_builtin(id,"hb_strtohex") || is_builtin(id,"hb_dirsepadd") || is_builtin(id,"hb_dirsepdel") || is_builtin(id,"hb_fnameext") || is_builtin(id,"hb_fnamenameext") || is_builtin(id,"hb_fnamename") || is_builtin(id,"hb_fnamedir") || is_builtin(id,"getenv") || is_builtin(id,"hb_libname") || is_builtin(id,"hb_ps") || is_builtin(id, "os") || is_builtin(id, "curdir") || is_builtin(id, "chr") || is_builtin(id, "str") || is_builtin(id, "hb_ntos") || is_builtin(id, "hb_cstr") || is_builtin(id, "padr") || is_builtin(id, "replicate") { return Ty::StrOwn; }
+            if is_builtin(id,"hb_osfilemask") || is_builtin(id,"hb_osdriveseparator") || is_builtin(id,"hb_base64encode") || is_builtin(id,"hb_asciiupper") || is_builtin(id,"hb_strtohex") || is_builtin(id,"hb_dirsepadd") || is_builtin(id,"hb_dirsepdel") || is_builtin(id,"hb_dirseptoos") || is_builtin(id,"hb_fnameext") || is_builtin(id,"hb_fnamenameext") || is_builtin(id,"hb_fnamename") || is_builtin(id,"hb_fnamedir") || is_builtin(id,"getenv") || is_builtin(id,"hb_libname") || is_builtin(id,"hb_ps") || is_builtin(id, "os") || is_builtin(id, "curdir") || is_builtin(id, "chr") || is_builtin(id, "str") || is_builtin(id, "hb_ntos") || is_builtin(id, "hb_cstr") || is_builtin(id, "padr") || is_builtin(id, "replicate") { return Ty::StrOwn; }
             if is_builtin(id, "round") { return Ty::F64; } // hk384-hk386
             if is_builtin(id, "iif") {
                 if optional_empty::active(e,env).is_some(){return Ty::AView;}
@@ -35841,6 +35853,7 @@ hbc_free_lists: .skip 10240
     if out.contains("call hbc_strtohex_linux") {out.push_str(include_str!("strtohex_linux.s"));}
     if out.contains("call hbc_dirsepadd_linux") {out.push_str(include_str!("dirsepadd_linux.s"));}
     if out.contains("call hbc_fname_linux") {out.push_str(include_str!("fname_linux.s"));}
+    if out.contains("call hbc_dirseptoos_linux") {out.push_str(include_str!("dirseptoos_linux.s"));}
     if out.contains("call hbc_dirsepdel_linux") {out.push_str(include_str!("dirsepdel_linux.s"));}
     if out.contains("call hbc_getenv_linux") {
         out=out.replacen("_start:\n","_start:\n    mov (%rsp), %rax\n    lea 16(%rsp,%rax,8), %rax\n    mov %rax, hbc_getenv_envp(%rip)\n",1);
