@@ -1,0 +1,3 @@
+FUNCTION Main()
+ ? hb_TToS(hb_DateTime())
+RETURN NIL

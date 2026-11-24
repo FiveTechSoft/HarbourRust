@@ -35157,6 +35157,7 @@ fn finalize_trace(mut out: String, target: Target) -> String {
         out=out.replace("    cmp $16, %r9\n    jne hbc_type_error\n.Lasfstagok:","    cmp $17, %r9\n    je .Lasfstagok\n    cmp $16, %r9\n    jne hbc_type_error\n.Lasfstagok:");
         out.push_str(include_str!("asort_temporal.s"));
     }
+    if out.contains("call hbc_ts_now") {out.push_str(timestamp::NOW_HELPER);}
     if out.contains("call hbc_ts_") {
         let ro=if target==Target::Windows{".section .rdata,\"r\""}else{".section .rodata"};
         out.push_str(&include_str!("../generated/hrtimestamp.s").replace("@HRTIMESTAMP_RODATA@",ro));
@@ -35167,7 +35168,7 @@ fn finalize_trace(mut out: String, target: Target) -> String {
     if ["ts_parse", "ts_to_date", "date_core_c", "ctod", "date_today", "date_render", "stod", "dtos", "year", "day", "month", "dow", "cdow", "cmonth", "dtoc", "date_add", "date_diff", "date_days", "date_from_days", "descend_date"].iter().any(|name| out.contains(&format!("call hbc_{}",name))) {
         out.push_str(DATE_PORT_HELPERS);
     }
-    if matches!(target, Target::Linux) && !MACHO_MODE.with(|v| v.get()) && (out.contains("call hbc_date_today") || out.contains("call hbc_seconds") || out.contains("call hbc_time_str")) {
+    if matches!(target, Target::Linux) && !MACHO_MODE.with(|v| v.get()) && (out.contains("call hbc_date_today") || out.contains("call hbc_seconds") || out.contains("call hbc_time_str") || out.contains("call hbc_ts_now")) {
         out.push_str(TZ_LINUX);
     }
     if out.contains("call hbc_date_today") {
@@ -39260,6 +39261,18 @@ fn main() {
                 }
             }
         }
+    }
+    // Direct timestamp producers can feed the existing date consumers
+    // through the measured timestamp-to-date conversion. Generic Dyn
+    // consumers and variables retain their existing admission boundary.
+    if DECIMAL_LOCAL_PROFILE.with(|v|v.get())&&!MACRO_CONTEXT.with(|v|v.get())&&!source_names.contains("hb_ttod") {
+        for f in &mut funcs {visit_stmts_mut(&mut f.stmts,&mut |e,_|{
+            if let Expr::Call(id,args)=e {if ["year","month","day","dow","cdow","cmonth","dtoc"].iter().any(|b|is_builtin(id,b))&&args.len()==1 {
+                if matches!(&args[0],Expr::Call(id,_)if ["hb_datetime","hb_stot","hb_dtot"].contains(&id.as_str())&&!source_names.contains(id)) {
+                    args[0]=Expr::Call("hb_ttod".to_string(),vec![args[0].clone()]);
+                }
+            }}
+        });}
     }
     narrow_bare_date_locals(&mut funcs);
     init_retyped_val_functions(&funcs);

@@ -1,0 +1,4 @@
+FUNCTION Main()
+ LOCAL n:=2000
+ ? hb_DateTime(2000.1,2,29)
+RETURN NIL
