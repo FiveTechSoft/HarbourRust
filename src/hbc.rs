@@ -7555,6 +7555,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 return Ok(Ty::Str);
             }
             if is_builtin(id, "len") {
+                if args.len()==1&&DECIMAL_LOCAL_PROFILE.with(|v|v.get())&&!MACRO_CONTEXT.with(|v|v.get())&&shared_local::literal(&args[0]){return Ok(Ty::I64);}
                 // len(a): number of elements of an array (probe e4:
                 // len({}) == 0). Borrows its argument.
                 if args.len() != 1 {
@@ -18192,6 +18193,9 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             out.push_str("    test %rax, %rax\n    jne hbc_type_error\n    call hbc_round\n");
         }
         Expr::Call(id, args) if is_builtin(id, "len") => {
+            if DECIMAL_LOCAL_PROFILE.with(|v|v.get())&&!MACRO_CONTEXT.with(|v|v.get())&&shared_local::literal(&args[0]){
+                let len=if let Expr::ArrLit(es)=&args[0]{es.len()}else{0};out.push_str(&format!("    mov ${len}, %rax\n"));return;
+            }
             if (shared_local::active()&&matches!(&args[0],Expr::Index2(id,..)|Expr::Index3(id,..)|Expr::Index4(id,..)if is_sarr(id)))||(method_arrays::active()||(shared_local::active()&&matches!(&args[0],Expr::Call(id,aa)if is_builtin(id,"asort")||(is_builtin(id,"atail")&&matches!(aa.as_slice(),[Expr::Var(v)]if shared_local::current(v)))))) && expr_ty(&args[0],env,sigs)==Ty::Dyn && !matches!(&args[0],Expr::Var(_)|Expr::Index(..)|Expr::Index2(..)|Expr::Index3(..)){
                 cg_value(&args[0],env,sigs,strs,out,target);
                 let k=fresh_lbl();out.push_str(&format!("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n    cmp $16, %rax\n    jne .Lb2lenstr{k}\n    mov (%rdx), %rax\n    jmp .Lb2lendone{k}\n.Lb2lenstr{k}:\n    cmp $2, %rax\n    je .Lb2lenok{k}\n    cmp $4, %rax\n    jne .Lb2lenbad{k}\n.Lb2lenok{k}:\n    mov -8(%rdx), %rax\n.Lb2lendone{k}:\n    mov %rax, 16(%rsp)\n"));
