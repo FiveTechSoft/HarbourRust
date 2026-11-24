@@ -11134,9 +11134,16 @@ fn foreach_lv_readonly(stmts: &[Stmt], name: &str) -> bool {
             && matches!(&aa[0],Expr::Str(_)) && matches!(&aa[1],Expr::Var(v) if v==name)
             && aa.iter().skip(2).all(|e|matches!(e,Expr::Int(_)|Expr::Nil)))
     }
+    fn hex_slice_observer(e:&Expr,name:&str)->bool {
+        fn bound(e:&Expr,name:&str)->bool {match e {
+            Expr::Int(_)=>true,Expr::Var(v)=>v!=name,
+            Expr::Bin('+'|'-'|'*',a,b)=>bound(a,name)&&bound(b,name),_=>false
+        }}
+        CURDIR_LINUX_NATIVE.with(|v|v.get()) && matches!(e,Expr::Call(f,aa) if is_builtin(f,"hb_hextonum") && matches!(aa.as_slice(),[Expr::Call(g,bb)] if is_builtin(g,"substr") && (2..=3).contains(&bb.len()) && matches!(&bb[0],Expr::Var(v) if v==name) && bb.iter().skip(1).all(|a|bound(a,name))))
+    }
     fn in_call(e: &Expr, name: &str) -> bool {
         match e {
-            e if at_observer(e,name)=>false,
+            e if at_observer(e,name)||hex_slice_observer(e,name)=>false,
             Expr::Seq(es) => es.iter().any(|e| in_call(e, name)),
             Expr::Set(_, r) => in_call(r, name),
             Expr::Call(id,args) if CURDIR_LINUX_NATIVE.with(|v|v.get()) && is_builtin(id,"empty") && matches!(args.as_slice(),[Expr::Var(v)] if v==name)=>false,
@@ -11148,7 +11155,7 @@ fn foreach_lv_readonly(stmts: &[Stmt], name: &str) -> bool {
     }
     stmts.iter().all(|s| match s {
         Stmt::Print(_, items, _) => items.iter().all(|i| !in_call(i, name)),
-        Stmt::Assign(_,id,e) if id!=name && at_observer(e,name)=>true,
+        Stmt::Assign(_,id,e) if id!=name && (at_observer(e,name)||hex_slice_observer(e,name))=>true,
         Stmt::Assign(_,id,Expr::Call(f,aa)) if CURDIR_LINUX_NATIVE.with(|v|v.get()) && id!=name && is_builtin(f,"hb_atokens")
             && matches!(aa.as_slice(),[Expr::Var(v),Expr::Str(_)] if v==name)=>true,
         Stmt::Assign(_, _, e) | Stmt::Ret(_, Some(e)) => !mentions(e, name),
