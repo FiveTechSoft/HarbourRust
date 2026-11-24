@@ -11032,7 +11032,8 @@ fn bare_local_is_for_counter(stmts: &[Stmt], idx: usize, name: &str) -> bool {
 fn first_nested_counter(ss:&[Stmt],name:&str)->bool{
  for s in ss {if let Stmt::For(_,v,a,b,_,_)=s{if v==name{return !expr_mentions(a,name)&&!expr_mentions(b,name);}}
  // Before the nested FOR, admit only initialized LOCAL/assignment
- // statements whose expressions contain no calls or inline effects.
+ // statements with leaf expressions or a fresh empty-array constructor.
+ // The constructor cannot transfer control or invoke user code.
  // Any control-flow or transfer statement keeps the local tagged/NIL.
  match s {
   Stmt::Local(_,_,e)|Stmt::Assign(_,_,e) if !stmt_mentions(s,name)&&counter_prefix_pure(e)=>{},
@@ -11042,7 +11043,7 @@ fn first_nested_counter(ss:&[Stmt],name:&str)->bool{
  false
 }
 fn counter_prefix_pure(e:&Expr)->bool{match e{
- Expr::Int(_)|Expr::Str(_)|Expr::Log(_)|Expr::Nil|Expr::Var(_)=>true,
+ Expr::Int(_)|Expr::Str(_)|Expr::Log(_)|Expr::Nil|Expr::Var(_)|Expr::DArrNew=>true,
  _=>false,
 }}
 
