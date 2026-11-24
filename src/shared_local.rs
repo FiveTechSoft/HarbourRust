@@ -32,6 +32,15 @@ pub fn init(ff:&[Func]) {
   let mut constants=HashSet::new();
   visit_stmts_ref(&f.stmts,&mut |s|{if let Stmt::Local(_,n,e)=s{if literal(e){constants.insert(n.clone());}}},&mut |_|{});
   visit_stmts_ref(&f.stmts,&mut |s|{if let Stmt::ArrSet(_,n,_,Expr::Var(v))=s{if n==v&&constants.contains(n){need=true;}}},&mut |_|{});
+  // A constant nested array with a noninteger leaf and an explicit
+  // nested store uses tagged shared cells, not integer-only DArr2 cells.
+  fn tagged_nested(e:&Expr)->bool{
+   match e{Expr::ArrLit(es)=>es.iter().any(|e|matches!(e,Expr::ArrLit(_)))&&es.iter().any(has_tagged_leaf),_=>false}
+  }
+  fn has_tagged_leaf(e:&Expr)->bool{match e{Expr::Str(_)|Expr::Nil|Expr::Log(_)=>true,Expr::ArrLit(es)=>es.iter().any(has_tagged_leaf),_=>false}}
+  let mut nested=HashSet::new();
+  visit_stmts_ref(&f.stmts,&mut |s|{if let Stmt::Local(_,n,e)=s{if literal(e)&&tagged_nested(e){nested.insert(n.clone());}}},&mut |_|{});
+  visit_stmts_ref(&f.stmts,&mut |s|{if let Stmt::ArrSet2(_,n,..)=s{if nested.contains(n){need=true;}}},&mut |_|{});
   names.insert(f.name.clone(),arrays);
  }
  for f in ff {let own=names.get(&f.name).unwrap();visit_stmts_ref(&f.stmts,&mut |_|{},&mut |e|{if let Expr::Call(id,aa)=e {if let Some(to)=ff.iter().find(|x|x.name==*id){for(i,a)in aa.iter().enumerate().take(to.params.len()){if matches!(a,Expr::Var(n) if own.contains(n)) && to.stmts.iter().any(|s|matches!(s,Stmt::AAdd(_,p,_) if p==&to.params[i])) {need=true;}}}}});}

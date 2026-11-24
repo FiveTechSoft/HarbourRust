@@ -148,3 +148,5 @@ tests/ctod-bb/expected/** -text
 tests/quit-bb/expected/** -text
 
 tests/array-cycle-entry/** -text
+
+tests/nested-array-entry/** -text
