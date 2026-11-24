@@ -4379,14 +4379,25 @@ fn parse(src: &str) -> Result<Prog, String> {
         i += 1;
         PARSE_MEMVARS.with(|c| c.borrow_mut().clear()); let mut f = Func { init, name: if init { format!("{}$", name) } else { name }, params, ret: None, stmts: Vec::new(), dyn_names: std::collections::HashSet::new() };
         parse_stmts(&lines, &mut i, &mut f.stmts, 0)?;
-        if i >= lines.len() || lines[i].1[0] != Tok::KwReturn {
+        let explicit_return = i < lines.len() && lines[i].1[0] == Tok::KwReturn;
+        let boundary = i >= lines.len()
+            || matches!(lines[i].1.as_slice(), [Tok::KwFunction, ..]
+                | [Tok::KwInit, Tok::KwFunction, ..] | [Tok::KwExit, Tok::KwFunction, ..])
+            || matches!(lines[i].1.as_slice(), [Tok::Ident(k), Tok::KwFunction, ..]
+                if k.eq_ignore_ascii_case("static"));
+        let stmt = if explicit_return {
+            let (rn, rt) = &lines[i];
+            match rt.len() {
+                1 => Stmt::Ret(*rn, None),
+                2 if rt[1] == Tok::KwNil => Stmt::Ret(*rn, None),
+                _ => parse_ret_expr(rt[1..].to_vec(), *rn)?,
+            }
+        } else if boundary && matches!(f.stmts.last(), Some(Stmt::Break(..))) {
+            // The closing NIL return is unreachable after unconditional
+            // BREAK. Keep the old closure requirement for fallthrough.
+            Stmt::Ret(f.stmts.last().map(stmt_line).unwrap_or(n), None)
+        } else {
             return Err(format!("function `{}` without closing return", f.name));
-        }
-        let (n, toks) = &lines[i];
-        let stmt = match toks.len() {
-            1 => Stmt::Ret(*n, None),
-            2 if toks[1] == Tok::KwNil => Stmt::Ret(*n, None),
-            _ => parse_ret_expr(toks[1..].to_vec(), *n)?,
         };
         f.stmts.push(stmt);
         if init {
@@ -4408,7 +4419,7 @@ fn parse(src: &str) -> Result<Prog, String> {
             }
         }
         funcs.push(f);
-        i += 1;
+        if explicit_return { i += 1; }
     }
     if funcs.is_empty() {
         return Err("no functions found".to_string());
