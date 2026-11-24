@@ -4499,7 +4499,8 @@ thread_local! {
 fn static_dyn(id: &str) -> bool { STATIC_DYN.with(|s|s.borrow().contains(id)) }
 // S4: is `id` in the current function a module dynamic array (shared
 // heap object, Dyn casilla {tag 16, object pointer})?
-fn is_sarr(id: &str) -> bool { module_static::current(id) == Some(Ty::Dyn) || shared_local::current(id) }
+thread_local! {static SHARED_BLOCK_PARAMS: std::cell::RefCell<Vec<String>> = std::cell::RefCell::new(Vec::new());}
+fn is_sarr(id: &str) -> bool { module_static::current(id) == Some(Ty::Dyn) || shared_local::current(id) || SHARED_BLOCK_PARAMS.with(|v|v.borrow().iter().any(|p|p==id)) }
 
 // S4 shared module array multi-level STORE. Harbour order (probes
 // p14/m7): the RHS evaluates FIRST (tagged; strings cloned to owned
@@ -8102,7 +8103,8 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                     if let Some(e)=args.get(3){
                         if let Expr::BlockLit(_,ps,body)=e {
                             fn atom(e:&Expr,ps:&[String])->bool{matches!(e,Expr::Var(v)if ps.contains(v))||matches!(e,Expr::Int(_)|Expr::Str(_)|Expr::Log(_)|Expr::Nil)}
-                            let tail=matches!(body.last(),Some(Expr::Cmp(_,a,b))if atom(a,ps)&&atom(b,ps))||matches!(body.last(),Some(Expr::Log(_)));
+                            fn operand(e:&Expr,ps:&[String])->bool{atom(e,ps)||matches!(e,Expr::Index(v,i)if ps.contains(v)&&matches!(i.as_ref(),Expr::Int(t)if t.parse::<i64>().map_or(false,|v|v>0)))}
+                            let tail=matches!(body.last(),Some(Expr::Cmp(_,a,b))if operand(a,ps)&&operand(b,ps))||matches!(body.last(),Some(Expr::Log(_)));
                             let prefix=body.iter().take(body.len().saturating_sub(1)).all(|e|matches!(e,Expr::Call(id,aa)if is_builtin(id,"qout")&&aa.iter().all(|a|atom(a,ps))));
                             if ps.len()!=2 || !tail || !prefix {return Err(format!("line {}: shared ASort callback requires two parameters, a direct scalar comparison and optional QOut trace",n));}
                             COMPARATOR_MODE.set(true);CAPTURE_MODE.set(Some(2));
@@ -10289,7 +10291,9 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
         }
         Expr::BlockLit(id, params, body) => {
             let prev_block = IN_BLOCK.with(|c| c.replace(true));
+            let prev_shared=SHARED_BLOCK_PARAMS.with(|v|v.replace(if CAPTURE_MODE.get()==Some(2){params.clone()}else{Vec::new()}));
             let r = check_block_body(*id, params, body, env, sigs, n);
+            SHARED_BLOCK_PARAMS.with(|v|*v.borrow_mut()=prev_shared);
             IN_BLOCK.with(|c| c.set(prev_block));
             r
         }
@@ -26611,6 +26615,7 @@ fn emit_block(owner: &str, id: usize, params: &[String], body: &[Expr], sigs: &[
     let mut lenv: Vec<CgLocal> = Vec::new();
     let mut frame = 0usize;
     let ptys = BLOCK_PARAM_TYS.with(|m| m.borrow().get(&id).cloned());
+    let prev_shared=SHARED_BLOCK_PARAMS.with(|v|v.replace(if ptys.as_ref().map_or(false,|ts|ts.iter().all(|t|*t==Ty::Dyn)){params.to_vec()}else{Vec::new()}));
     for (i, p) in params.iter().enumerate() {
         let ty = ptys.as_ref().and_then(|v| v.get(i).copied()).unwrap_or(Ty::I64);
         frame += size_of(ty);
@@ -26673,6 +26678,7 @@ fn emit_block(owner: &str, id: usize, params: &[String], body: &[Expr], sigs: &[
     }
     trace_unlink(trace_off, out);
     out.push_str("    leave\n    ret\n\n");
+    SHARED_BLOCK_PARAMS.with(|v|*v.borrow_mut()=prev_shared);
 }
 
 fn cg_func(f: &Func, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target, byref: Option<&Vec<bool>>) {

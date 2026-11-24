@@ -44,7 +44,7 @@ pub fn init(ff:&[Func]) {
   // ASort on a constant local flat literal requires an addressable array
   // identity. Direct callbacks are checked separately; computed literals stay closed.
   let mut sortable=HashSet::new();
-  visit_stmts_ref(&f.stmts,&mut |s|{if let Stmt::Local(_,n,Expr::ArrLit(es))=s{
+  visit_stmts_ref(&f.stmts,&mut |s|{if let Stmt::Local(_,n,Expr::ArrLit(es))|Stmt::Assign(_,n,Expr::ArrLit(es))=s{
    if !es.iter().all(|e|matches!(e,Expr::Str(_)))&&literal(&Expr::ArrLit(es.clone())){sortable.insert(n.clone());}
   }},&mut |_|{});
   visit_stmts_ref(&f.stmts,&mut |_|{},&mut |e|{if let Expr::Call(id,args)=e{
