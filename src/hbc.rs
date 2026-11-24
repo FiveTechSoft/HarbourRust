@@ -25841,9 +25841,10 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
 "#.replace("@P@", &(v.off - 8).to_string()).replace("@T@", &v.off.to_string()).replace("@K@", &k.to_string());
                 if shared_local::active()&&shared_local::current(id)&&v.ty==Ty::Dyn {
                     let old=format!("    mov -{}(%rbp), %r11\n    @HBC_TAG_KIND@cmpq $8, -{}(%rbp)@HBC_TAG_END@\n    jne hbc_type_error\n",v.off-8,v.off);
-                    let mut root=String::new();cg_sarr_root(id,v.off,"%r11",&mut root);
+                    let slot=if module_static::is_module_binding(id){let owner=CUR_FN.with(|c|c.borrow().clone());format!("{}(%rip)",module_static::storage(&owner,id))}else{format!("-{}(%rbp)",v.off)};
+                    let mut root=format!("    cmpq $16, {slot}\n    jne .Lmutrootdone{k}\n");cg_sarr_root(id,v.off,"%r11",&mut root);
                     root.push_str("    push %r12\n    sub $8, %rsp\n    mov (%r11), %r12\n    mov 24(%r11), %r11\n");
-                    let shared=asm.replace(&old,&root).replace("-8(%r11)","%r12");out.push_str(&shared);out.push_str("    add $8, %rsp\n    pop %r12\n");
+                    let shared=asm.replace(&old,&root).replace("-8(%r11)","%r12");out.push_str(&shared);out.push_str(&format!("    add $8, %rsp\n    pop %r12\n.Lmutrootdone{k}:\n"));
                 }else{out.push_str(&asm);}
             }
             Stmt::ADel(_, id, ie) => {
@@ -25928,9 +25929,10 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
 "#.replace("@P@", &(v.off - 8).to_string()).replace("@T@", &v.off.to_string()).replace("@K@", &k.to_string());
                 if shared_local::active()&&shared_local::current(id)&&v.ty==Ty::Dyn {
                     let old=format!("    mov -{}(%rbp), %r11\n    @HBC_TAG_KIND@cmpq $8, -{}(%rbp)@HBC_TAG_END@\n    jne hbc_type_error\n",v.off-8,v.off);
-                    let mut root=String::new();cg_sarr_root(id,v.off,"%r11",&mut root);
+                    let slot=if module_static::is_module_binding(id){let owner=CUR_FN.with(|c|c.borrow().clone());format!("{}(%rip)",module_static::storage(&owner,id))}else{format!("-{}(%rbp)",v.off)};
+                    let mut root=format!("    cmpq $16, {slot}\n    jne .Lmutrootdone{k}\n");cg_sarr_root(id,v.off,"%r11",&mut root);
                     root.push_str("    push %r12\n    sub $8, %rsp\n    mov (%r11), %r12\n    mov 24(%r11), %r11\n");
-                    let shared=asm.replace(&old,&root).replace("-8(%r11)","%r12");out.push_str(&shared);out.push_str("    add $8, %rsp\n    pop %r12\n");
+                    let shared=asm.replace(&old,&root).replace("-8(%r11)","%r12");out.push_str(&shared);out.push_str(&format!("    add $8, %rsp\n    pop %r12\n.Lmutrootdone{k}:\n"));
                 }else{out.push_str(&asm);}
             }
             Stmt::AFill(_, id, e, se, ce) => {
