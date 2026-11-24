@@ -1,7 +1,7 @@
 {
   "section_policy": "@HRDATE_RODATA@ expands only at date inclusion: Linux .rodata; Windows .rdata,\"r\"",
   "newline_policy": "LF bytes; CR rejected in source; assembly emitted as UTF-8 LF",
-  "compiler": "gcc.exe (MinGW-W64 x86_64-ucrt-posix-seh, built by Brecht Sanders, r3) 16.2.0",
+  "compiler": "gcc (Ubuntu 11.4.0-1ubuntu1~22.04.3) 11.4.0",
   "flags": [
     "-D_WIN64",
     "-std=c99",
@@ -15,7 +15,7 @@
     "-fno-unwind-tables",
     "-fno-ident",
     "-mno-red-zone",
-    "-fno-pic",
+    "-fPIE",
     "-fno-tree-vectorize",
     "-mno-stack-arg-probe",
     "-minline-all-stringops",
@@ -28,8 +28,8 @@
     "-Werror",
     "-Wno-misleading-indentation"
   ],
-  "source_sha256": "46cd87667c3877ba3f66343a6ee5fc1d8fa0bfccea0abf6c0c42a7356f578b3e",
-  "asm_sha256": "7290df866e56cf5fea4330459585a0633a33314668ba74bab843e245d92c8bad",
+  "source_sha256": "03a189424c2797ee07bfee169f49cdb09f774adae4052eb9649db0924ba68840",
+  "asm_sha256": "10b23b15bebf915363d1ae13b2b8883e9c47d914ccfbfebc2f774746284d37eb",
   "external_calls": [
     "hbc_alloc"
   ]

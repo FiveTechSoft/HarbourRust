@@ -983,7 +983,7 @@ pos2 tests/t992_inline_if_block_condition.prg tests/expectations/qout/t992_inlin
 neg tests/t986_inline_if_move_neg.prg use of moved value
 neg tests/t987_inline_if_qout_move_neg.prg use of moved value
 neg tests/t988_inline_if_dyn_limit_neg.prg branches must share a scalar type
-pos tests/t989_inline_if_numeric_nil_neg.prg \n         1
+posx2 tests/t989_inline_if_numeric_nil_neg.prg 0 tests/expectations/qout/t989_inline_if_numeric_nil_neg.linux.out tests/expectations/qout/t989_inline_if_numeric_nil_neg.windows.out
 neg tests/t990_inline_if_condition_neg.prg condition must be logical
 neg tests/t991_inline_if_arity_neg.prg without `endif`
 pos2 tests/t993_inline_if_discard_balance.prg tests/expectations/qout/t993_inline_if_discard_balance.linux.out tests/expectations/qout/t993_inline_if_discard_balance.windows.out
@@ -995,7 +995,7 @@ pos2 tests/t998_recursive_inline_mutual.prg tests/expectations/qout/t998_recursi
 pos2 tests/t999_recursive_inline_float.prg tests/expectations/qout/t999_recursive_inline_float.linux.out tests/expectations/qout/t999_recursive_inline_float.windows.out
 pos2 tests/t1000_recursive_inline_bool.prg tests/expectations/qout/t1000_recursive_inline_bool.linux.out tests/expectations/qout/t1000_recursive_inline_bool.windows.out
 pos2 tests/t1001_recursive_inline_str.prg tests/expectations/qout/t1001_recursive_inline_str.linux.out tests/expectations/qout/t1001_recursive_inline_str.windows.out
-pos tests/t1002_recursive_inline_mixed.prg \nbad
+posx2 tests/t1002_recursive_inline_mixed.prg 0 tests/expectations/qout/t1002_recursive_inline_mixed.linux.out tests/expectations/qout/t1002_recursive_inline_mixed.windows.out
 neg tests/t1003_recursive_inline_wrongarg.prg never returns a value
 neg tests/t1004_recursive_inline_nonanchor.prg never returns a value
 neg tests/t1005_recursive_inline_noground.prg never returns a value
@@ -1868,7 +1868,7 @@ pos2 tests/t1683_dyn_div_objdata.prg tests/expectations/qout/t1683_dyn_div_objda
 pos2 tests/t1684_dyn_div_seq_catch.prg tests/expectations/qout/t1684_dyn_div_seq_catch.linux.out tests/expectations/qout/t1684_dyn_div_seq_catch.windows.out
 posx tests/t1685_dyn_div_zero.prg 1 Error: division by zero\nCallstack:\n  at main (tests/t1685_dyn_div_zero.prg:8)
 # Dyn float minus a static float literal: formerly a named rejection (neg), enabled by tests/dyn-static-float.
-pos tests/t1686_dyn_float_sub_literal.prg \n         7.0
+posx2 tests/t1686_dyn_float_sub_literal.prg 0 tests/expectations/qout/t1686_dyn_float_sub_literal.linux.out tests/expectations/qout/t1686_dyn_float_sub_literal.windows.out
 pos2 tests/module-static-objects/programs/borrowed_null.prg tests/module-static-objects/expected/borrowed_null.linux.out tests/module-static-objects/expected/borrowed_null.windows.out
 pos2 tests/module-static-objects/programs/callee_rebind.prg tests/module-static-objects/expected/callee_rebind.linux.out tests/module-static-objects/expected/callee_rebind.windows.out
 pos2 tests/module-static-objects/programs/nil_assign.prg tests/module-static-objects/expected/nil_assign.linux.out tests/module-static-objects/expected/nil_assign.windows.out

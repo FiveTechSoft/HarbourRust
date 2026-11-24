@@ -10,7 +10,7 @@ root=Path(__file__).resolve().parents[1]
 cc=os.environ.get('HR_DATE_CC',str(root/'tools/mingw/mingw64/bin/gcc.exe'))
 if not Path(cc).exists(): cc='gcc'
 src='runtime/hrdate.c'
-flags=['-D_WIN64','-std=c99','-O2','-S','-mabi=sysv','-ffreestanding','-fno-builtin','-fno-stack-protector','-fno-asynchronous-unwind-tables','-fno-unwind-tables','-fno-ident','-mno-red-zone','-fno-pic','-fno-tree-vectorize','-mno-stack-arg-probe','-minline-all-stringops','-mstringop-strategy=rep_byte','-fno-jump-tables','-mno-push-args','-fcf-protection=none','-Wall','-Wextra','-Werror','-Wno-misleading-indentation']
+flags=['-D_WIN64','-std=c99','-O2','-S','-mabi=sysv','-ffreestanding','-fno-builtin','-fno-stack-protector','-fno-asynchronous-unwind-tables','-fno-unwind-tables','-fno-ident','-mno-red-zone','-fPIE','-fno-tree-vectorize','-mno-stack-arg-probe','-minline-all-stringops','-mstringop-strategy=rep_byte','-fno-jump-tables','-mno-push-args','-fcf-protection=none','-Wall','-Wextra','-Werror','-Wno-misleading-indentation']
 allowed={'hbc_alloc'}
 raw=root/'generated/hrdate.raw.s';subprocess.run([cc,*flags,src,'-o',str(raw)],cwd=root,check=True)
 raw_bytes=root/'generated/hrdate.raw.s'
@@ -22,6 +22,7 @@ s=re.sub(r'^\s*\.(file|def|ident|type|size)\s+.*\n','',s,flags=re.M)
 s=re.sub(r'^\s*\.section\s+\.note\.[^\n]*\n','',s,flags=re.M)
 s=re.sub(r'\.L([A-Za-z0-9_.$]+)',r'.Lhdate_\1',s)
 s=s.replace('movabsq','movabs')
+s=re.sub(r'call\s+(hbc_alloc)@PLT',r'call \1',s)
 s=re.sub(r'call\s+\*(hbc_alloc)@GOTPCREL\(%rip\)',r'call \1',s)  # -fPIE gives RIP-relative data; keep the direct call of the -fno-pic recipe
 s=re.sub(r'^(\s*(?:sal|sar|shl|shr|rol|ror)[bwlq]?)\s+(%\w+)\s*$',r'\1 $1, \2',s,flags=re.M)
 s=re.sub(r'^\s*\.(?:lcomm|comm)\s+([A-Za-z_][\w.]*),(\d+)(?:,\s*\d+)?\s*$',lambda m:'\n.bss\n.balign '+m[2]+'\n'+m[1]+':\n.zero '+m[2]+'\n.text',s,flags=re.M)
@@ -29,7 +30,7 @@ s=re.sub(r'^\s*\.local\s+[A-Za-z_][\w.]*\s*\n','',s,flags=re.M)  # ELF gcc: .loc
 s=re.sub(r'^\s*\.(string|ascii)\s+("(?:[^"\\]|\\.)*")\s*$',lambda m:(lambda bs:('.byte '+','.join(map(str,bs))) if bs else '')(list(ast.literal_eval('b'+m[2]))+([0] if m[1]=='string' else [])),s,flags=re.M)  # .string adds NUL, .ascii does not; empty -> nothing
 s=re.sub(r'^\s*\.section\s+\.(?:rodata|rdata)[^\n]*', '@HRDATE_RODATA@', s, flags=re.M)
 for name in re.findall(r'^([A-Za-z_][A-Za-z0-9_.$]*):',s,re.M):
-    if not name.startswith(('hbc_date_set_fmt','hbc_date_set_century','hbc_date_core_c','hbc_dtoc_c')):s=re.sub(r'(?<![A-Za-z0-9_.])'+re.escape(name)+r'(?![A-Za-z0-9_.$])','hdate_local_'+name,s)
+    if not name.startswith(('hbc_date_mask_has_year','hbc_date_set_fmt','hbc_date_set_century','hbc_date_get_century','hbc_date_get_mask','hbc_date_set_mask','hbc_date_check_mask','hbc_date_core_c','hbc_dtoc_c')):s=re.sub(r'(?<![A-Za-z0-9_.])'+re.escape(name)+r'(?![A-Za-z0-9_.$])','hdate_local_'+name,s)
 labels=set(re.findall(r'^([A-Za-z_.$][A-Za-z0-9_.$]*):',s,re.M))
 calls=set(re.findall(r'\b(?:call|jmp)\s+([A-Za-z_][A-Za-z0-9_.$]*)',s))
 externals={c for c in calls if c not in labels}

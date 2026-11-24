@@ -4,6 +4,7 @@ mod shared_local;
 mod timestamp;
 mod bin_concat;
 mod optional_empty;
+mod optional_block;
 mod cell_len;
 mod method_valtype;
 mod box_gtstd;
@@ -2294,6 +2295,22 @@ thread_local! {
 // This name cannot be produced by the identifier lexer. Compiler-created
 // ValType calls implement predicate semantics, not source-level RTL lookup.
 const INTERNAL_VALTYPE: &str = "\0valtype";
+
+// Bounded public Set date-format masks, matched without case folding output.
+fn standard_date_mask(e:&Expr)->Option<(usize,bool)> {
+ let Expr::Str(mask)=e else{return None};
+ let mask=mask.to_ascii_lowercase();
+ for (i,family) in ["yyy/mm/ddd","yy/mm/ddd","yyyy/mm/ddd","yyy/m/d/yyy","yy/m/d/yyy","yyyy/m/d/yyy","m/d/y/m/d","m/d/yy/m/d","m/d/yyyy/m/d","mmmm/ddddd","yymmmm/ddddd","yyyymmmm/ddddd","mmmmm/dd","yymmmmm/dd","yyyymmmmm/dd"].iter().enumerate(){if mask==*family{return Some((9+i/3,i%3==2));}}
+
+ if mask=="ddd/mmm/yy" {return Some((8,false));}
+ if mask=="ddd/mmm/yyyy" {return Some((8,true));}
+ for (fmt,short) in ["mm/dd/yy","yy.mm.dd","dd/mm/yy","dd.mm.yy","dd-mm-yy","mm-dd-yy","yy/mm/dd","yy/dd/mm"].iter().enumerate(){
+  if mask==*short{return Some((fmt,false));}
+  if mask==short.replace("yy","yyyy"){return Some((fmt,true));}
+ }
+ None
+}
+fn set_date_mask_call(args:&[Expr])->bool {matches!(args.first(),Some(Expr::Int(v))if v=="4")}
 
 fn is_builtin(id: &str, name: &str) -> bool {
     if id == INTERNAL_VALTYPE { return name.eq_ignore_ascii_case("valtype"); }
@@ -4945,6 +4962,15 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
             pin[i]=Some(Ty::Dyn);
         }
     }
+    // Direct Date consumers establish parameter evidence before enclosing
+    // arithmetic is visited (for example d - DoW(d) + 2).
+    visit_stmts_ref(&f.stmts,&mut |_|{},&mut |e|{
+        if let Expr::Call(id,args)=e {
+            if ["dtos","dtoc","day","month","year","dow","cdow","cmonth"].iter().any(|b|is_builtin(id,b)) {
+                if let Some(Expr::Var(v))=args.first(){if let Some(i)=f.params.iter().position(|p|p==v){if pin[i].is_none(){pin[i]=Some(Ty::Date);}}}
+            }
+        }
+    });
     let mut lit: Vec<(String, Ty)> = Vec::new(); // literal-initialized locals
     #[derive(Clone,Default)]
     struct ParamUse { printed:bool, len_line:Option<usize> }
@@ -5047,8 +5073,9 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
         match e {
             Expr::Var(v) => lit.iter().any(|(x,t)| x == v && *t == Ty::Date)
                 || is_param(f,v).map(|i|pin[i] == Some(Ty::Date)).unwrap_or(false),
-            Expr::Call(id,_) => ["date","stod","ctod"].iter().any(|b|is_builtin(id,b))
+            Expr::Call(id,_) => ["date","stod","hb_stod","ctod"].iter().any(|b|is_builtin(id,b))
                 || sigs.iter().any(|s|s.name == *id && s.ret == Some(Ty::Date)),
+            Expr::Bin('+'|'-',a,b) => date_typed(a,lit,sigs,f,pin) && !date_typed(b,lit,sigs,f,pin),
             Expr::Seq(es) => es.last().map_or(false,|e|date_typed(e,lit,sigs,f,pin)),
             Expr::Set(_,r) => date_typed(r,lit,sigs,f,pin),
             _ => false,
@@ -5278,7 +5305,10 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
                 // (hb_vmDivide, oracle hk292), so p keeps its own type
                 // and converts inside the op like Harbour's (double)n.
                 let f64_side = *op != '/' && (f64_typed(a, lit, sigs, f, pin) || f64_typed(b, lit, sigs, f, pin));
-                if *op == '+' && str_side {
+                if matches!(*op,'+'|'-') && date_typed(a,lit,sigs,f,pin) {
+                    pin_vars(f,a,Ty::Date,pin,n)?;
+                    if !date_typed(b,lit,sigs,f,pin){pin_vars(f,b,Ty::I64,pin,n)?;}
+                } else if *op == '+' && str_side {
                     pin_vars(f, a, Ty::Str, pin, n)?;
                     pin_vars(f, b, Ty::Str, pin, n)?;
                 } else if f64_side {
@@ -8525,6 +8555,17 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 if args.len()!=1 || !matches!(&args[0],Expr::Int(_)) {return Err(format!("line {}: internal SET DATE/CENTURY store expects one integer",n));}
                 return Ok(Ty::I64);
             }
+            if is_builtin(id,"__setcentury") {
+                if !DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get()) {return Err(format!("line {}: __SetCentury requires ordinary Linux without threads or macros",n));}
+                if args.len()>1 || !args.iter().all(|a|matches!(a,Expr::Str(_)|Expr::Log(_)|Expr::Int(_)|Expr::Nil)){return Err(format!("line {}: __SetCentury supports zero or one literal string/logical/integer/NIL argument in this increment",n));}
+                return Ok(Ty::Bool);
+            }
+            if is_builtin(id,"set") {
+                if DECIMAL_LOCAL_PROFILE.with(|v|v.get()) && !MACRO_CONTEXT.with(|v|v.get()) && set_date_mask_call(args) && (args.len()==1 || args.len()==2&&(standard_date_mask(&args[1]).is_some() || matches!(&args[1],Expr::Var(_))&&matches!(type_expr(&args[1],env,sigs,n)?,Ty::Str|Ty::StrOwn))) {return Ok(Ty::StrOwn);}
+                if !DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get()) || !(args.len()==1||args.len()==2) || !matches!(args.first(),Some(Expr::Int(v)) if v=="5") {return Err(format!("line {}: unknown function `set` (only literal epoch5 or checked standard dateformat4 on ordinary Linux is measured in this increment)",n));}
+                if let Some(value)=args.get(1) {if !matches!(value,Expr::Nil) && !matches!(value,Expr::Int(v) if v.parse::<u16>().ok().map_or(false,|n|n<=9999)) {return Err(format!("line {}: Set epoch value requires NIL or an integer literal0..9999 in this increment",n));}}
+                return Ok(Ty::I64);
+            }
             if is_builtin(id,"setcursor") {
                 if !CURDIR_LINUX_NATIVE.with(|v|v.get()) {return Err(format!("line {}: SetCursor is measured only on ordinary Linux GTSTD",n));}
                 if args.len()>1{return Err(format!("line {}: SetCursor takes zero or one typed integer argument",n));}
@@ -11017,16 +11058,22 @@ fn discard_main_return_values(funcs:&mut [Func]) {
 
 fn narrow_bare_date_locals(funcs:&mut [Func]) {
     if !DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get()) { return; }
-    fn date_producer(e:&Expr,name:&str)->bool {
-        !expr_mentions(e,name) && matches!(e,Expr::Call(id,_) if ["date","stod","ctod"].iter().any(|b|is_builtin(id,b)))
+    fn date_producer(e:&Expr,name:&str,known:&std::collections::HashSet<String>)->bool {
+        if expr_mentions(e,name){return false;}
+        match e {
+            Expr::Call(id,_) => ["date","stod","hb_stod","ctod"].iter().any(|b|is_builtin(id,b)),
+            Expr::Var(v) => known.contains(v),
+            Expr::Bin('+'|'-',a,b) => date_producer(a,name,known) && matches!(b.as_ref(),Expr::Int(v) if v.parse::<i64>().is_ok()),
+            _=>false,
+        }
     }
-    fn first_store(s:&Stmt,name:&str)->bool {
+    fn first_store(s:&Stmt,name:&str,known:&std::collections::HashSet<String>)->bool {
         match s {
-            Stmt::Assign(_,id,e) if id==name => date_producer(e,name),
+            Stmt::Assign(_,id,e) if id==name => date_producer(e,name,known),
             Stmt::Print(_,es,_) => {
                 for e in es {
                     if !expr_mentions(e,name) { continue; }
-                    return matches!(e,Expr::Set(id,r) if id==name && date_producer(r,name));
+                    return matches!(e,Expr::Set(id,r) if id==name && date_producer(r,name,known));
                 }
                 false
             }
@@ -11034,14 +11081,30 @@ fn narrow_bare_date_locals(funcs:&mut [Func]) {
         }
     }
     for f in funcs {
+        let mut known=std::collections::HashSet::new();
         let mut byrefs=std::collections::HashSet::new();
         visit_stmts_ref(&f.stmts,&mut |_|{},&mut |e| {if let Expr::ByRef(id)=e {byrefs.insert(id.clone());}});
         for i in 0..f.stmts.len() {
             let name=match &f.stmts[i] {Stmt::Local(_,id,Expr::Nil) if !byrefs.contains(id)=>id.clone(),_=>continue};
             let first=f.stmts[i+1..].iter().find(|s|stmt_mentions(s,&name));
-            if first.map_or(false,|s|first_store(s,&name)) {
+            // Date-input strings: only a dominated literal first store and
+            // a direct date consumer justify replacing the invisible NIL.
+            // Subsequent non-string assignments remain a checker error.
+            let mut date_input=false;
+            visit_stmts_ref(&f.stmts,&mut |_|{},&mut |e|{
+                if let Expr::Call(id,args)=e {
+                    let value=if is_builtin(id,"set")&&set_date_mask_call(args){args.get(1)}else if is_builtin(id,"ctod"){args.first()}else{None};
+                    if matches!(value,Some(Expr::Var(v))if v==&name){date_input=true;}
+                }
+            });
+            if date_input&&matches!(first,Some(Stmt::Assign(_,id,Expr::Str(_)))if id==&name) {
+                if let Stmt::Local(_,_,e)=&mut f.stmts[i]{*e=Expr::Str(String::new());}
+                continue;
+            }
+            if first.map_or(false,|s|first_store(s,&name,&known)) {
                 if let Stmt::Local(_,_,e)=&mut f.stmts[i] {
                     *e=Expr::Call("stod".to_string(),vec![Expr::Str(String::new())]);
+                    known.insert(name.clone());
                 }
             }
         }
@@ -11080,7 +11143,8 @@ fn bare_local_is_for_counter(stmts: &[Stmt], idx: usize, name: &str) -> bool {
 fn first_nested_counter(ss:&[Stmt],name:&str)->bool{
  for s in ss {if let Stmt::For(_,v,a,b,_,_)=s{if v==name{return !expr_mentions(a,name)&&!expr_mentions(b,name);}}
  // Before the nested FOR, admit only initialized LOCAL/assignment
- // statements whose expressions contain no calls or inline effects.
+ // statements with leaf expressions or a fresh empty-array constructor.
+ // The constructor cannot transfer control or invoke user code.
  // Any control-flow or transfer statement keeps the local tagged/NIL.
  match s {
   Stmt::Local(_,_,e)|Stmt::Assign(_,_,e) if !stmt_mentions(s,name)&&counter_prefix_pure(e)=>{},
@@ -11090,7 +11154,7 @@ fn first_nested_counter(ss:&[Stmt],name:&str)->bool{
  false
 }
 fn counter_prefix_pure(e:&Expr)->bool{match e{
- Expr::Int(_)|Expr::Str(_)|Expr::Log(_)|Expr::Nil|Expr::Var(_)=>true,
+ Expr::Int(_)|Expr::Str(_)|Expr::Log(_)|Expr::Nil|Expr::Var(_)|Expr::DArrNew=>true,
  _=>false,
 }}
 
@@ -13114,6 +13178,8 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
             if is_builtin(id,"ctod") { apply_moves(&args[0],env,sigs,false); return; }
             if is_builtin(id,"dirmake") {for a in args {apply_moves(a,env,sigs,false);}return;}
             if ["hb_flink","hb_flinksym","hb_flinkread","hb_memowrit","hb_dircreate","ferror"].iter().any(|b|is_builtin(id,b)) {for a in args {apply_moves(a,env,sigs,false);}return;}
+            if is_builtin(id,"__setcentury") {return;}
+            if is_builtin(id,"set") {return;}
             if is_builtin(id,"setcursor") {for a in args {apply_moves(a,env,sigs,false);}return;}
             if is_builtin(id,"transform") {for a in args {apply_moves(a,env,sigs,false);}return;}
             if is_builtin(id,"hb_sha1") || is_builtin(id,"hb_hmac_sha1") {for a in args {apply_moves(a,env,sigs,false);}return;}
@@ -17297,6 +17363,31 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
         Expr::Call(id,args) if id=="hbc_set_century" => {
             let v = match &args[0] { Expr::Int(v) => v.parse::<i64>().unwrap_or(0), _ => 0 };
             out.push_str(&format!("    mov ${}, %edi\n    call hbc_date_set_century\n", v));
+        }
+        Expr::Call(id,args) if is_builtin(id,"__setcentury") => {
+            out.push_str("    call hbc_date_get_century\n");
+            let change=match args.first(){Some(Expr::Log(v))=>Some(*v),Some(Expr::Str(s))if s.eq_ignore_ascii_case("on")=>Some(true),Some(Expr::Str(s))if s.eq_ignore_ascii_case("off")=>Some(false),_=>None};
+            if let Some(v)=change {out.push_str(&format!("    sub $16,%rsp\n    mov %rax,(%rsp)\n    mov ${},%edi\n    call hbc_date_set_century\n    mov (%rsp),%rax\n    add $16,%rsp\n",if v{1}else{0}));}
+            out.push_str("    mov $1,%edx\n");
+        }
+        Expr::Call(id,args) if is_builtin(id,"set") && set_date_mask_call(args) => {
+            if let Some(value @ Expr::Var(_))=args.get(1) {
+                cg_expr(value,env,sigs,strs,out,target);
+                let k=fresh_lbl();let si=strs.len();let msg="Limit: Set dateformat runtime value must be a standard mask\n";strs.push(msg.to_string());
+                out.push_str(&format!("    sub $48,%rsp\n    mov %rax,(%rsp)\n    mov %rdx,8(%rsp)\n    mov %rax,%rdi\n    mov %rdx,%rsi\n    call hbc_date_check_mask\n    cmp $-1,%rax\n    jne .Lmaskvalid{k}\n    add $48,%rsp\n    lea .Lstr{si}(%rip),%rax\n    mov ${},%edx\n    call hbc_write_bytes\n    jmp hbc_panic_exit\n.Lmaskvalid{k}:\n    mov %rax,16(%rsp)\n    call hbc_date_get_mask\n    mov %rax,32(%rsp)\n    mov %rdx,40(%rsp)\n    mov (%rsp),%rdi\n    mov 8(%rsp),%rsi\n    mov 16(%rsp),%rdx\n    mov %rdx,%rcx\n    and $15,%edx\n    shr $4,%rcx\n    call hbc_date_set_mask\n    mov 16(%rsp),%rcx\n    and $15,%ecx\n    mov %rcx,.Ldate_pfmt(%rip)\n    mov 32(%rsp),%rax\n    mov 40(%rsp),%rdx\n    add $48,%rsp\n",msg.len()));
+                return;
+            }
+            out.push_str("    call hbc_date_get_mask\n");
+            if let Some((fmt,century))=args.get(1).and_then(standard_date_mask) {
+                let Expr::Str(mask)=&args[1]else{unreachable!()};let si=strs.len();strs.push(mask.clone());
+                out.push_str(&format!("    sub $16,%rsp\n    mov %rax,(%rsp)\n    mov %rdx,8(%rsp)\n    lea .Lstr{si}(%rip),%rdi\n    mov ${},%esi\n    mov ${fmt},%edx\n    mov ${},%ecx\n    call hbc_date_set_mask\n    movq ${fmt},.Ldate_pfmt(%rip)\n    mov (%rsp),%rax\n    mov 8(%rsp),%rdx\n    add $16,%rsp\n",mask.len(),if century{1}else{0}));
+            }
+        }
+        Expr::Call(id,args) if is_builtin(id,"set") => {
+            // Source checker admits only selector5 and literal/NIL values.
+            // Set returns the previous epoch, including on a NIL no-op.
+            out.push_str("    mov .Ldate_epoch(%rip), %rax\n    xor %edx, %edx\n");
+            if let Some(Expr::Int(v))=args.get(1) {out.push_str(&format!("    movq ${}, .Ldate_epoch(%rip)\n",v));}
         }
         Expr::Call(id,args) if is_builtin(id,"setcursor") => {
             if let Some(a)=args.first(){cg_expr(a,env,sigs,strs,out,target);out.push_str("    mov %rax, %rdi\n    call hbc_cursor_set\n");}
@@ -21544,6 +21635,8 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             if id=="hrbase_wait" {return Ty::I64;}
             if id=="hbc_set_decimals" {return Ty::I64;}
             if id=="hbc_set_datefmt" || id=="hbc_set_century" || id=="hbc_set_epoch" || id=="hbc_quit" {return Ty::I64;}
+            if is_builtin(id,"__setcentury") {return Ty::Bool;}
+            if is_builtin(id,"set") {return if set_date_mask_call(args){Ty::StrOwn}else{Ty::I64};}
             if is_builtin(id,"altd") {return Ty::I64;}
             if is_builtin(id,"setcursor") || is_builtin(id,"dirmake") || is_builtin(id,"inkey") {return Ty::I64;}
             if is_builtin(id,"file") {return Ty::Bool;}
@@ -35174,7 +35267,7 @@ fn finalize_trace(mut out: String, target: Target) -> String {
     // and the layout core): hbc_dtoc / hbc_date_render reference it.
     if out.contains("hbc_date_core_c")
         || out.contains("call hbc_date_set_fmt")
-        || out.contains("call hbc_date_set_century") {
+        || out.contains("call hbc_date_set_century") || out.contains("call hbc_date_get_century") || out.contains("call hbc_date_get_mask") || out.contains("call hbc_date_set_mask") || out.contains("call hbc_date_check_mask") || out.contains("call hbc_date_mask_has_year") {
         let date_rodata = if target == Target::Windows { ".section .rdata,\"r\"" } else { ".section .rodata" };
         out.push_str(&include_str!("../generated/hrdate.s").replace("@HRDATE_RODATA@", date_rodata));
     }
@@ -39182,6 +39275,11 @@ fn main() {
     DECIMAL_LOCAL_PROFILE.with(|v|v.set(CURDIR_LINUX_NATIVE.with(|v|v.get()) && !decimal_thread_profile));
     if hash_case_mode && (!DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get())) {eprintln!("error: hb_HCaseMatch logical mode requires ordinary Linux without threads or macros");process::exit(1);}
     HASH_CASE_LOGICAL_MODE.with(|v|v.set(hash_case_mode));
+    if optional_block::lower(&mut funcs) && (!DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get())) {eprintln!("error: static optional-block wrappers require ordinary Linux without threads or macros");process::exit(1);}
+    // Normalize the measured no-argument empty-date constructor before
+    // all existing SToD checker/lowering paths index its sole argument.
+    let source_names:std::collections::HashSet<_>=funcs.iter().map(|f|f.name.clone()).collect();
+    for f in &mut funcs {visit_stmts_mut(&mut f.stmts,&mut |e,_|{if let Expr::Call(id,args)=e{if ["stod","hb_stod"].contains(&id.as_str())&&!source_names.contains(id)&&args.is_empty(){args.push(Expr::Str(String::new()));}}});}
     discard_main_return_values(&mut funcs);
     narrow_bare_date_locals(&mut funcs);
     init_retyped_val_functions(&funcs);
@@ -40834,6 +40932,31 @@ hbc_ctod:
     je .Ldate_order_ymd
     cmp $6, %rdi
     je .Ldate_order_ymd
+    cmp $9, %rdi
+    je .Ldate_order_ymd
+    cmp $10, %rdi
+    je .Ldate_order_ymd
+    cmp $11, %rdi
+    je .Ldate_order_mdy
+    cmp $12, %rdi
+    jb .Ldate_order_known
+    # Families12/13 lack year only when their mask century encoding is
+    # the original no-year variant; helper reports that from live mask.
+    mov %rdi, 16(%rsp)
+    call hbc_date_mask_has_year
+    test %rax,%rax
+    mov 16(%rsp),%rdi
+    mov (%rsp),%eax
+    mov 4(%rsp),%r9d
+    mov 8(%rsp),%r8d
+    jnz .Ldate_order_ymd
+    xor %r8d,%r8d
+    jmp .Ldate_order_mdy
+.Ldate_order_known:
+    cmp $7, %rdi
+    je .Ldate_order_ydm
+    cmp $8, %rdi
+    je .Ldate_order_dmy
     cmp $2, %rdi
     jb .Ldate_order_mdy
     cmp $4, %rdi
@@ -40847,6 +40970,11 @@ hbc_ctod:
     jmp .Ldate_order_done
 .Ldate_order_ymd:
     mov %r8d, %r10d
+    mov %eax, %r8d
+    jmp .Ldate_order_done
+.Ldate_order_ydm:
+    mov %r9d, %r10d
+    mov %r8d, %r9d
     mov %eax, %r8d
 .Ldate_order_done:
     # 2-digit year: century of SET EPOCH (default 1900); a year below the

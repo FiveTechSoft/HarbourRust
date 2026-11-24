@@ -182,4 +182,26 @@ tests/asort-phase14/** -text
 tests/asort-phase15/** -text
 
 tests/asort-phase16/** -text
+
+tests/asort-phase17/** -text
+
+tests/asort-phase18/** -text
+
+tests/asort-phase19/** -text
+
+tests/asort-phase20/** -text
+
+tests/asort-phase21/** -text
+
+tests/inline-date-arithmetic/** -text
+
+tests/set-epoch/** -text
+
+tests/set-century/** -text
+
+tests/set-dateformat/** -text
+
+tests/set-runtime-mask/** -text
+
+tests/date-original3/** -text
 tests/main-return/expected/** -text

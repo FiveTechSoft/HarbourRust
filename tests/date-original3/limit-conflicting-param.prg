@@ -1,0 +1,6 @@
+FUNCTION Bad(d)
+ ? DoW(d)
+RETURN d*2
+FUNCTION Main()
+ ? Bad(SToD("20240229"))
+RETURN NIL

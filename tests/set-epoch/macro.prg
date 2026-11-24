@@ -1,0 +1,5 @@
+#undef _SET_EPOCH
+#define _SET_EPOCH 5
+FUNCTION Main()
+ ? Set(_SET_EPOCH,1960),Set(_SET_EPOCH)
+RETURN NIL

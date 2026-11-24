@@ -1,0 +1,4 @@
+FUNCTION Main()
+ LOCAL n:=1950
+ ? Set(4)
+RETURN NIL
