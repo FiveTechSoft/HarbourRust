@@ -8053,7 +8053,11 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 if !DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get()) {return Err(format!("line {}: hb_At requires ordinary Linux without threads or PRIVATE/PUBLIC/macro context",n));}
                 for (i,a) in args.iter().enumerate() {
                     if i<2 {
-                        if !matches!(type_expr(a,env,sigs,n)?,Ty::Str|Ty::StrOwn) {return Err(format!("line {}: hb_At expects typed strings",n));}
+                        let t=type_expr(a,env,sigs,n)?;
+                        let iterator=i==1 && t==Ty::Dyn && CURDIR_LINUX_NATIVE.with(|v|v.get())
+                            && matches!(&args[0],Expr::Str(_)) && args.iter().skip(2).all(|e|matches!(e,Expr::Int(_)|Expr::Nil))
+                            && matches!(a,Expr::Var(id) if env.iter().rev().any(|v|v.name==*id && v.ro));
+                        if !matches!(t,Ty::Str|Ty::StrOwn) && !iterator {return Err(format!("line {}: hb_At expects typed strings or a readonly iterator with constant needle/bounds",n));}
                     } else if !matches!(a,Expr::Nil) && type_expr(a,env,sigs,n)?!=Ty::I64 {return Err(format!("line {}: hb_At bounds require I64 or literal NIL in this increment",n));}
                 }
                 return Ok(Ty::I64);
@@ -11105,8 +11109,14 @@ fn foreach_lv_readonly(stmts: &[Stmt], name: &str) -> bool {
             _ => false,
         }
     }
+    fn at_observer(e:&Expr,name:&str)->bool {
+        CURDIR_LINUX_NATIVE.with(|v|v.get()) && matches!(e,Expr::Call(f,aa) if is_builtin(f,"hb_at") && (2..=4).contains(&aa.len())
+            && matches!(&aa[0],Expr::Str(_)) && matches!(&aa[1],Expr::Var(v) if v==name)
+            && aa.iter().skip(2).all(|e|matches!(e,Expr::Int(_)|Expr::Nil)))
+    }
     fn in_call(e: &Expr, name: &str) -> bool {
         match e {
+            e if at_observer(e,name)=>false,
             Expr::Seq(es) => es.iter().any(|e| in_call(e, name)),
             Expr::Set(_, r) => in_call(r, name),
             Expr::Call(id,args) if CURDIR_LINUX_NATIVE.with(|v|v.get()) && is_builtin(id,"empty") && matches!(args.as_slice(),[Expr::Var(v)] if v==name)=>false,
@@ -11118,6 +11128,7 @@ fn foreach_lv_readonly(stmts: &[Stmt], name: &str) -> bool {
     }
     stmts.iter().all(|s| match s {
         Stmt::Print(_, items, _) => items.iter().all(|i| !in_call(i, name)),
+        Stmt::Assign(_,id,e) if id!=name && at_observer(e,name)=>true,
         Stmt::Assign(_,id,Expr::Call(f,aa)) if CURDIR_LINUX_NATIVE.with(|v|v.get()) && id!=name && is_builtin(f,"hb_atokens")
             && matches!(aa.as_slice(),[Expr::Var(v),Expr::Str(_)] if v==name)=>true,
         Stmt::Assign(_, _, e) | Stmt::Ret(_, Some(e)) => !mentions(e, name),
@@ -16071,6 +16082,10 @@ fn cg_hb_at(args:&[Expr],env:&[CgLocal],sigs:&[Sig],strs:&mut Vec<String>,out:&m
     out.push_str(&format!("    sub $80, %rsp\n    movq $0, (%rsp)\n    movq $0, 16(%rsp)\n    movq $0, 56(%rsp)\n    cmpq $0, hbc_seq_depth(%rip)\n    je .Lhbat_eval{guard}\n    lea .Lhbat_catch{guard}(%rip), %rdi\n    call hbc_seq_push\n    movq $1, 56(%rsp)\n.Lhbat_eval{guard}:\n"));
     for i in 0..2 {
         cg_value(&args[i],env,sigs,strs,out,target);
+        if expr_ty(&args[i],env,sigs)==Ty::Dyn {
+            let k=fresh_lbl();
+            out.push_str(&format!("    @HBC_TAG_KIND@cmp $2, %rax@HBC_TAG_END@\n    je .Lhbat_string{k}\n    @HBC_TAG_KIND@cmp $4, %rax@HBC_TAG_END@\n    jne hbc_type_error\n.Lhbat_string{k}:\n    mov %rdx, %rax\n    mov -8(%rax), %rdx\n"));
+        }
         out.push_str("    mov %rax, 64(%rsp)\n    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_strcpy\n");
         out.push_str(&format!("    mov %rax, {}(%rsp)\n    mov %rdx, {}(%rsp)\n",i*16,i*16+8));
         if expr_ty(&args[i],env,sigs)==Ty::StrOwn && !matches!(&args[i],Expr::Var(_)) {out.push_str("    mov 64(%rsp), %rdi\n    call hbc_freestr\n");}
