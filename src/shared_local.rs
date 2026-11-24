@@ -14,7 +14,21 @@ pub fn current(n:&str)->bool{CUR_FN.with(|f|named(&f.borrow(),n))}
 pub fn parameter(f:&str,i:usize)->bool{PARAMS.with(|v|v.borrow().contains(&(f.to_string(),i)))}
 pub fn value_parameter(f:&str,i:usize)->bool {VALUES.with(|v|v.borrow().contains(&(f.to_string(),i)))}
 thread_local! {static VALUES: std::cell::RefCell<HashSet<(String,usize)>> = std::cell::RefCell::new(HashSet::new());}
+thread_local! {static TRACE_HELPERS: std::cell::RefCell<HashSet<String>>=std::cell::RefCell::new(HashSet::new());}
+pub fn trace_helper(id:&str)->bool{TRACE_HELPERS.with(|v|v.borrow().contains(id))}
 pub fn init(ff:&[Func]) {
+ TRACE_HELPERS.with(|v|v.borrow_mut().clear());
+ for f in ff {
+  fn text(e:&Expr,ps:&[String],slot:&str)->bool{match e{
+   Expr::Str(_)=>true,Expr::Var(v)=>v==slot,
+   Expr::Bin(op,a,b)if *op=='+'=>text(a,ps,slot)&&text(b,ps,slot),
+   Expr::Call(id,aa)if is_builtin(id,"hb_ntos")=>matches!(aa.as_slice(),[Expr::Var(v)]if ps.contains(v)),_=>false}}
+  let body:Vec<_>=f.stmts.iter().filter(|s|!matches!(s,Stmt::Static(..))).collect();
+  if f.params.len()==2 {if let [Stmt::Assign(_,slot,e),Stmt::Ret(_,Some(Expr::Cmp(_,a,b)))]=body.as_slice(){
+   if module_static::kind(&f.name,slot)==Some(Ty::StrOwn)&&text(e,&f.params,slot)&&matches!(a.as_ref(),Expr::Var(v)if f.params.contains(v))&&matches!(b.as_ref(),Expr::Var(v)if f.params.contains(v)) {TRACE_HELPERS.with(|v|v.borrow_mut().insert(f.name.clone()));}
+  }}
+ }
+
  VALUES.with(|v|v.borrow_mut().clear());
  NAMES.with(|v|v.borrow_mut().clear());PARAMS.with(|v|v.borrow_mut().clear());ACTIVE.with(|v|v.set(false));
  let mut names=HashMap::<String,HashSet<String>>::new();let mut need=false;

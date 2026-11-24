@@ -204,6 +204,17 @@ fn check_payload_uses(f: &Func, name: &str, ty: Ty) -> Result<(), String> {
             Expr::FloatV(..)|Expr::Float(..)|Expr::Int(_)|Expr::Str(_)|Expr::Var(_)|Expr::ByRef(_)|Expr::FuncRef(_)|Expr::DArrNew|Expr::SelfObj|Expr::SelfGet(_)|Expr::Nil|Expr::Log(_)=>false,
         }
     }
+    // Pure integer formatting in a persistent-string concat cannot call
+    // user code or mutate its borrowed left operand. Keep the whitelist
+    // structural and closed; no computed arguments or arbitrary helpers.
+    fn format_concat(e:&Expr,name:&str)->bool {
+        match e {
+            Expr::Var(_)|Expr::Str(_)|Expr::Int(_)=>true,
+            Expr::Bin(op,a,b) if *op=='+' => format_concat(a,name)&&format_concat(b,name),
+            Expr::Call(id,aa) if crate::is_builtin(id,"hb_ntos") => matches!(aa.as_slice(),[Expr::Var(v)]if v!=name)||matches!(aa.as_slice(),[Expr::Int(_)]),
+            _=>false,
+        }
+    }
     // Admission check for one expression. Also exhaustive without a wildcard,
     // for the same reason: an unclassified form must stop the build, never
     // fall through to a permissive default.
@@ -214,7 +225,7 @@ fn check_payload_uses(f: &Func, name: &str, ty: Ty) -> Result<(), String> {
             Expr::ArrLit(es) => !es.iter().any(|e| crate::expr_mentions(e,name)),
             Expr::HashLit(es) => !es.iter().any(|(k,v)| crate::expr_mentions(k,name)||crate::expr_mentions(v,name)),
             Expr::Bin(_,a,b) | Expr::Cmp(_,a,b) | Expr::LAnd(a,b) | Expr::LOr(a,b) => {
-                if matches!(ty,Ty::StrOwn|Ty::Obj(_)) && crate::expr_mentions(e,name) && crate::expr_has_call(e) {return false;}
+                if matches!(ty,Ty::StrOwn|Ty::Obj(_)) && crate::expr_mentions(e,name) && crate::expr_has_call(e) && !(ty==Ty::StrOwn&&format_concat(e,name)) {return false;}
                 expr(a,name,ty) && expr(b,name,ty)
             }
             Expr::Seq(es) => !(ty == Ty::StrOwn && es.iter().any(|e|crate::expr_mentions(e,name))) && es.iter().all(|e|expr(e,name,ty)),

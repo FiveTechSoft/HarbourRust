@@ -8105,7 +8105,8 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                         if let Expr::BlockLit(bid,ps,body)=e {
                             fn atom(e:&Expr,ps:&[String])->bool{matches!(e,Expr::Var(v)if ps.contains(v))||matches!(e,Expr::Int(_)|Expr::Str(_)|Expr::Log(_)|Expr::Nil)}
                             fn operand(e:&Expr,ps:&[String])->bool{atom(e,ps)||matches!(e,Expr::Index(v,i)if ps.contains(v)&&matches!(i.as_ref(),Expr::Int(t)if t.parse::<i64>().map_or(false,|v|v>0)))}
-                            let tail=matches!(body.last(),Some(Expr::Cmp(_,a,b))if operand(a,ps)&&operand(b,ps))||matches!(body.last(),Some(Expr::Log(_)|Expr::Nil|Expr::Int(_)|Expr::Str(_)));
+                            let helper=matches!(body.as_slice(),[Expr::Call(id,aa)]if shared_local::trace_helper(id)&&aa.len()==2&&aa.iter().all(|e|matches!(e,Expr::Var(v)if ps.contains(v))));
+                            let tail=helper||matches!(body.last(),Some(Expr::Cmp(_,a,b))if operand(a,ps)&&operand(b,ps))||matches!(body.last(),Some(Expr::Log(_)|Expr::Nil|Expr::Int(_)|Expr::Str(_)));
                             let prefix=body.iter().take(body.len().saturating_sub(1)).all(|e|matches!(e,Expr::Call(id,aa)if is_builtin(id,"qout")&&aa.iter().all(|a|atom(a,ps))));
                             if ps.len()>2 || (ps.len()!=2&&body.iter().any(|e|matches!(e,Expr::Cmp(..)))) || !tail || !prefix {return Err(format!("line {}: shared ASort callback requires at most two parameters, a direct scalar comparison/literal and optional QOut trace",n));}
                             SHARED_CALLBACK_IDS.with(|v|v.borrow_mut().insert(*bid));
@@ -10476,7 +10477,7 @@ fn check_block_body(id: usize, params: &[String], body: &[Expr], env: &[Local], 
         // (oracle t1f: {|| 42, QOut("test") } prints and returns NIL).
         let discarded_nil = i + 1 < body.len() && matches!(e, Expr::Call(id, _) if is_output_call(id) || sigs.iter().any(|s| s.name == *id && s.nil_ret_only));
         let final_nil = i + 1 == body.len() && t == Ty::Dyn && matches!(e, Expr::Call(id, _) if is_output_call(id) || sigs.iter().any(|s| s.name == *id && s.nil_ret_only));
-        let final_bool = i + 1 == body.len() && t == Ty::Bool && block_bool_tail(e);
+        let final_bool = i + 1 == body.len() && t == Ty::Bool && (block_bool_tail(e)||(CAPTURE_MODE.get()==Some(2)&&matches!(e,Expr::Call(id,_)if shared_local::trace_helper(id))));
         let asort_literal=CAPTURE_MODE.get()==Some(2)&&i+1==body.len()&&matches!(e,Expr::Nil|Expr::Str(_));
         if t != Ty::I64 && !discarded_nil && !final_nil && !final_bool && !asort_literal {
             return Err(format!("line {}: codeblock bodies are integer expressions, NIL-only calls or a final logical comparison in this increment", n));
