@@ -73,7 +73,7 @@ pub fn init(ff:&[Func]) {
   }
   fn has_tagged_leaf(e:&Expr)->bool{match e{Expr::Str(_)|Expr::Nil|Expr::Log(_)=>true,Expr::ArrLit(es)=>es.iter().any(has_tagged_leaf),_=>false}}
   let mut nested=HashSet::new();
-  visit_stmts_ref(&f.stmts,&mut |s|{if let Stmt::Local(_,n,e)=s{if literal(e)&&tagged_nested(e){nested.insert(n.clone());}}},&mut |_|{});
+  visit_stmts_ref(&f.stmts,&mut |s|{if let Stmt::Local(_,n,e)|Stmt::Assign(_,n,e)=s{if literal(e)&&tagged_nested(e){nested.insert(n.clone());}}},&mut |_|{});
   visit_stmts_ref(&f.stmts,&mut |s|{if let Stmt::ArrSet2(_,n,..)=s{if nested.contains(n){need=true;}}},&mut |_|{});
   // ASort on a constant local flat literal requires an addressable array
   // identity. Direct callbacks are checked separately; computed literals stay closed.
