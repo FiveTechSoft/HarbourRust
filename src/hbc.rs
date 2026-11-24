@@ -169,6 +169,7 @@ fn block_body_kind(body: &[Expr], sigs: &[Sig]) -> BRet {
 enum Tok {
     Ident(String),
     Int(String),
+    Date(String), // validated 0dYYYYMMDD source literal
     Str(String), // already unescaped content
     IncTok, DecTok, Plus, Minus, Star, Slash, Pct, Dollar, Caret,
     LParen, RParen, Comma,
@@ -1033,6 +1034,17 @@ fn tokenize(line: &str, n: usize) -> Result<Vec<Tok>, String> {
                 while let Some(&(_, c2)) = it.peek() {
                     if c2.is_ascii_digit() { num.push(c2); it.next(); } else { break; }
                 }
+                if num=="0" && matches!(it.peek(),Some(&(_, 'd'))|Some(&(_, 'D'))) {
+                    it.next();let mut text=String::new();
+                    while let Some(&(_,c))=it.peek(){if !c.is_ascii_digit(){break;}text.push(c);it.next();}
+                    let valid=if text.len()==8 {
+                        let y=text[..4].parse::<u32>().unwrap();let m=text[4..6].parse::<u32>().unwrap();let d=text[6..].parse::<u32>().unwrap();
+                        if y==0&&m==0&&d==0{true}else if (1..=12).contains(&m){let max=match m{4|6|9|11=>30,2=>if y%4==0&&(y%100!=0||y%400==0){29}else{28},_=>31};d>=1&&d<=max}else{false}
+                    }else{false};
+                    if !valid||it.peek().map_or(false,|&(_,c)|c.is_ascii_alphanumeric()||c=='_'||c=='.'){return Err(format!("line {}: invalid date constant 0d{}",n,text));}
+                    if text.starts_with("0000") && text!="00000000" {return Err(format!("line {}: nonempty year-zero date literals are not measured in this increment",n));}
+                    toks.push(Tok::Date(text));continue;
+                }
                 if num=="0" && matches!(it.peek(),Some(&(_, 'b'))|Some(&(_, 'B'))) {
                     it.next();let mut value=0u64;let mut count=0usize;
                     while let Some(&(_,c))=it.peek() {if c!='0'&&c!='1'{break;}value=value.wrapping_mul(2).wrapping_add((c as u8-b'0') as u64);count+=1;it.next();}
@@ -1161,7 +1173,7 @@ fn tokenize(line: &str, n: usize) -> Result<Vec<Tok>, String> {
             '{' => { toks.push(Tok::LBrace); it.next(); }
             '}' => { toks.push(Tok::RBrace); it.next(); }
             '[' => {
-                let expression_end=matches!(toks.last(),Some(Tok::Ident(_)|Tok::Int(_)|Tok::Float(_,_)|Tok::Str(_)|Tok::KwNil|Tok::LogT|Tok::LogF|Tok::KwSelfTok|Tok::RParen|Tok::RBracket|Tok::RBrace|Tok::IncTok|Tok::DecTok));
+                let expression_end=matches!(toks.last(),Some(Tok::Ident(_)|Tok::Int(_)|Tok::Date(_)|Tok::Float(_,_)|Tok::Str(_)|Tok::KwNil|Tok::LogT|Tok::LogF|Tok::KwSelfTok|Tok::RParen|Tok::RBracket|Tok::RBrace|Tok::IncTok|Tok::DecTok));
                 if expression_end {toks.push(Tok::LBracket);it.next();}
                 else {
                     it.next();let mut value=String::new();let mut closed=false;
@@ -1579,6 +1591,7 @@ impl P {
                 // old artifact-zone frontier (F/M/G sections); admit them all.
                 Ok(Expr::Float(txt, dec))
             }
+            Some(Tok::Date(s)) => Ok(Expr::Call(INTERNAL_STOD.to_string(),vec![Expr::Str(s)])),
             Some(Tok::Str(s)) => Ok(Expr::Str(s)),
             Some(Tok::KwNil) => Ok(Expr::Nil),
             Some(Tok::KwSelfTok) => Ok(Expr::SelfObj),
@@ -2295,6 +2308,7 @@ thread_local! {
 // This name cannot be produced by the identifier lexer. Compiler-created
 // ValType calls implement predicate semantics, not source-level RTL lookup.
 const INTERNAL_VALTYPE: &str = "\0valtype";
+const INTERNAL_STOD: &str = "\0date_literal";
 
 // Bounded public Set date-format masks, matched without case folding output.
 fn standard_date_mask(e:&Expr)->Option<(usize,bool)> {
@@ -2314,6 +2328,7 @@ fn set_date_mask_call(args:&[Expr])->bool {matches!(args.first(),Some(Expr::Int(
 
 fn is_builtin(id: &str, name: &str) -> bool {
     if id == INTERNAL_VALTYPE { return name.eq_ignore_ascii_case("valtype"); }
+    if id == INTERNAL_STOD {return name.eq_ignore_ascii_case("stod");}
     if USER_FUNC_NAMES.with(|u| { let u = u.borrow(); !u.is_empty() && u.contains(&id.to_ascii_lowercase()) }) { return false; }
     id.eq_ignore_ascii_case(name)
         || (name=="chr" && id.eq_ignore_ascii_case("hb_bchar"))
@@ -7404,7 +7419,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                     Expr::Send(..) if method_results::send(&args[0]) => {} ,
                     Expr::Send(o,_,aa) if timestamp::scalar_empty() && aa.is_empty() && matches!(o.as_ref(),Expr::Var(_)) && type_expr(&args[0],env,sigs,n)?==Ty::Dyn => {},
                     Expr::Int(_) | Expr::Str(_) | Expr::Nil | Expr::Var(_) => {}
-                    Expr::Call(id, _) if is_output_call(id) || is_builtin(id,"date") || is_builtin(id,"ctod") || dbf_result(id).is_some() || timestamp::family(id) || (DECIMAL_LOCAL_PROFILE.with(|v|v.get())&&is_builtin(id,"asort")) => {}
+                    Expr::Call(id, _) if id==INTERNAL_STOD || is_output_call(id) || is_builtin(id,"date") || is_builtin(id,"ctod") || dbf_result(id).is_some() || timestamp::family(id) || (DECIMAL_LOCAL_PROFILE.with(|v|v.get())&&is_builtin(id,"asort")) => {}
                     Expr::Index(v, _) => {
                         // DArr4 first level: child-array casilla -
                         // "A" (hk114, byte-measured via hk117 markers).
@@ -8056,6 +8071,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 return Ok(Ty::StrOwn);
             }
             if is_builtin(id, "stod") || is_builtin(id,"hb_stod") {
+                if id==INTERNAL_STOD && (!DECIMAL_LOCAL_PROFILE.with(|v|v.get())||MACRO_CONTEXT.with(|v|v.get())){return Err(format!("line {}: date literals require ordinary Linux without threads or macros",n));}
                 if is_builtin(id,"hb_stod") && (!DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get())) {return Err(format!("line {}: hb_SToD requires ordinary Linux without threads or macros in this increment",n));}
                 // SToD(s) (issue #1): strict yyyymmdd digit text -> date;
                 // the pack helper validates ranges and answers 0
@@ -16630,6 +16646,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                     out.push_str("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n    mov %rax, %r10\n");
                     vt_classify_scalar(strs,out);out.push_str("    mov %rax, 16(%rsp)\n    mov %rdx, 24(%rsp)\n");cg_concat_drop(out,0);out.push_str("    mov 16(%rsp), %rax\n    mov 24(%rsp), %rdx\n    add $32, %rsp\n");
                 }
+                Expr::Call(id,_) if id==INTERNAL_STOD => vt_letter(strs,out,"D"),
                 Expr::Int(_) => vt_letter(strs, out, "N"),
                 Expr::Str(_) => vt_letter(strs, out, "C"),
                 Expr::Nil => vt_letter(strs, out, "U"),
