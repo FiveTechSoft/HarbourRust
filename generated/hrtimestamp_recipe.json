@@ -1,0 +1,40 @@
+{
+  "section_policy": "@HRTIMESTAMP_RODATA@ expands only at timestamp inclusion: Linux .rodata; Windows .rdata,\"r\"",
+  "newline_policy": "LF bytes; CR rejected in source; assembly emitted as UTF-8 LF",
+  "compiler": "gcc (Ubuntu 11.4.0-1ubuntu1~22.04.3) 11.4.0",
+  "flags": [
+    "-D_WIN64",
+    "-std=c99",
+    "-O2",
+    "-S",
+    "-mabi=sysv",
+    "-ffreestanding",
+    "-fno-builtin",
+    "-fno-stack-protector",
+    "-fno-asynchronous-unwind-tables",
+    "-fno-unwind-tables",
+    "-fno-ident",
+    "-mno-red-zone",
+    "-fno-pic",
+    "-fno-tree-vectorize",
+    "-mno-stack-arg-probe",
+    "-minline-all-stringops",
+    "-mstringop-strategy=rep_byte",
+    "-fno-jump-tables",
+    "-mno-push-args",
+    "-fcf-protection=none",
+    "-Wall",
+    "-Wextra",
+    "-Werror",
+    "-Wno-misleading-indentation"
+  ],
+  "source_sha256": "445ddc8d93f44562240388e46e9cf3ab79c00c33eb7bfa482625da39750784ad",
+  "asm_sha256": "9bfc43b468b8dc59b1b3a182396e2401a9eee10c3441150c053abc886f833933",
+  "external_calls": [
+    "hbc_alloc",
+    "hbc_date_core_c",
+    "hbc_date_days",
+    "hbc_date_from_days",
+    "hbc_stod"
+  ]
+}
