@@ -30,4 +30,12 @@ Census57/1041 and diagnostic hashes unchanged. ASort2 stays58=42+16.
 All final evidence uses compiler f4946502c26be85431d7ffca982cab44b8dbd18b5ab1e6eabb50c91e7a695ec5.
 An earlier exploratory build's results are not used for these counts.
 
+Test-only follow-up on 3c73a5ba0cd67d12f9937a8dad14d7daa74f91af:
+scalars-index.prg adds integer,logical,date,string,float and NIL cell
+fallbacks,117 repeated rounds and a STATIC counter proving one evaluation
+of an effectful index. Updated full gate27=15 exact fresh-Harbour
+executions,3 zero balances,9 profile rejections. Compiler SHA unchanged.
+Broad regression numbers above belong to the code commit and were not
+rerun for this fixture-only follow-up. No newly closed original.
+
     python tests/shared-clone-cell/check.py --compiler target/release/hbc --hbmk2 /path/to/hbmk2 --spec-root /path/to/harbour --output /tmp/shared-clone-cell-gate
