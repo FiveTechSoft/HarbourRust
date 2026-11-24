@@ -1478,7 +1478,7 @@ impl P {
         if matches!(self.peek(), Some(Tok::IncTok | Tok::DecTok)) {
             let delta = if self.peek() == Some(&Tok::IncTok) { 1 } else { -1 };
             self.pos += 1;
-            if matches!(e,Expr::Index(..)){return Ok(cell_increment(e,delta,false));}
+            if matches!(e,Expr::Index(..)|Expr::Index2(..)|Expr::Index3(..)|Expr::Index4(..)){return Ok(cell_increment(e,delta,false));}
             let id = match e {
                 Expr::Var(id) => id,
                 _ => return Err(format!("line {}: expression ++/-- requires a variable lvalue in this increment", self.n)),
@@ -1543,7 +1543,7 @@ impl P {
                 let e = self.factor()?;
                 match e {
                     Expr::Var(id) => Ok(Expr::Inc(id, 1, true)),
-                    e @ Expr::Index(..)=>Ok(cell_increment(e,1,true)),
+                    e @ (Expr::Index(..)|Expr::Index2(..)|Expr::Index3(..)|Expr::Index4(..))=>Ok(cell_increment(e,1,true)),
                     _ => Err(format!("line {}: expression ++/-- requires a variable lvalue in this increment", self.n)),
                 }
             }
@@ -1551,7 +1551,7 @@ impl P {
                 let e = self.factor()?;
                 match e {
                     Expr::Var(id) => Ok(Expr::Inc(id, -1, true)),
-                    e @ Expr::Index(..)=>Ok(cell_increment(e,-1,true)),
+                    e @ (Expr::Index(..)|Expr::Index2(..)|Expr::Index3(..)|Expr::Index4(..))=>Ok(cell_increment(e,-1,true)),
                     _ => Err(format!("line {}: expression ++/-- requires a variable lvalue in this increment", self.n)),
                 }
             }
@@ -2334,6 +2334,7 @@ thread_local! {
 const INTERNAL_VALTYPE: &str = "\0valtype";
 const INTERNAL_STOD: &str = "\0date_literal";
 const INTERNAL_CELL_INC: &str = "\0cell_increment";
+fn cell_path(e:&Expr)->Option<(&str,Vec<&Expr>)>{match e{Expr::Index(v,a)=>Some((v,vec![a])),Expr::Index2(v,a,b)=>Some((v,vec![a,b])),Expr::Index3(v,a,b,c)=>Some((v,vec![a,b,c])),Expr::Index4(v,a,b,c,d)=>Some((v,vec![a,b,c,d])),_=>None}}
 fn cell_increment(e:Expr,delta:i8,pre:bool)->Expr {Expr::Call(INTERNAL_CELL_INC.to_string(),vec![e,Expr::Int(delta.to_string()),Expr::Log(pre)])}
 
 // Bounded public Set date-format masks, matched without case folding output.
@@ -5402,7 +5403,7 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
                 walk(f, b, sigs, lit, pin, printed, n)
             }
             Expr::Call(id, args) => {
-                if id==INTERNAL_CELL_INC {if matches!(&args[0],Expr::Index(v,_)if is_param(f,v).is_some()){return Err(format!("line {}: cell increment through parameters is outside this increment",n));}return walk(f,&args[0],sigs,lit,pin,printed,n);}
+                if id==INTERNAL_CELL_INC {if cell_path(&args[0]).map_or(false,|(v,_)|is_param(f,v).is_some()){return Err(format!("line {}: cell increment through parameters is outside this increment",n));}return walk(f,&args[0],sigs,lit,pin,printed,n);}
                 if is_output_call(id) {
                     for a in args {
                         if let Expr::Var(v) = a {
@@ -7025,12 +7026,17 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
         Expr::Call(id, args) => {
             if id==INTERNAL_CELL_INC {
                 if !DECIMAL_LOCAL_PROFILE.with(|v|v.get())||MACRO_CONTEXT.with(|v|v.get()){return Err(format!("line {}: expression ++/-- requires a variable lvalue in this increment (cell update needs ordinary Linux without macros)",n));}
+                if let Some((v,ies))=cell_path(&args[0]){if shared_local::active()&&shared_local::current(v){
+                    if module_static::is_module_binding(v)||!matches!(env.iter().find(|x|x.name==v),Some(x)if x.ty==Ty::Dyn&&!x.moved&&!x.ro&&!x.byref){return Err(format!("line {}: shared cell increment requires a local shared array",n));}
+                    for i in ies{if expr_mentions(i,v)||type_expr(i,env,sigs,n)?!=Ty::I64{return Err(format!("line {}: shared cell increment requires integer indexes independent of its root",n));}}
+                    return Ok(Ty::I64);
+                }}
                 if let Expr::Index(v,i)=&args[0] {
                     if module_static::current(v).is_some()||!matches!(env.iter().find(|x|x.name==*v),Some(x)if matches!(x.ty,Ty::Arr(_))&&!x.moved&&!x.ro){return Err(format!("line {}: cell increment covers fixed integer arrays only",n));}
                     if type_expr(i,env,sigs,n)?!=Ty::I64{return Err(format!("line {}: cell increment needs an integer index",n));}
                     type_expr(&args[0],env,sigs,n)?;return Ok(Ty::I64);
                 }
-                unreachable!();
+                return Err(format!("line {}: nested cell increment requires local shared identity",n));
             }
             if method_results::active() && !USER_FUNC_NAMES.with(|v|v.borrow().contains(id)) && !is_output_call(id) && !is_builtin(id,"valtype") && !(method_arrays::active() && is_builtin(id,"len")) {
                 for a in args {if type_expr(a,env,sigs,n)?==Ty::Dyn{return Err(format!("line {}: B1 Dyn builtin consumer `{}` is not covered; use ValType, output, or a direct function",n,id));}}
@@ -19661,6 +19667,17 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             out.push_str(&format!(".Lpve{}:\n", k));
         }
         Expr::Call(id,args) if id==INTERNAL_CELL_INC=>{
+            if let Some((name,ies))=cell_path(&args[0]){if shared_local::active()&&shared_local::current(name){
+                let v=env.iter().rev().find(|x|x.name==name).expect("checked");let l=fresh_lbl();
+                for x in &ies {cg_expr(x,env,sigs,strs,out,target);out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n");}
+                cg_sarr_root(name,v.off,"%r11",out);
+                for(k,_)in ies.iter().enumerate(){out.push_str(&format!("    mov {}(%rsp), %rcx\n    cmp $1, %rcx\n    jl .Lscierr{l}\n    cmp (%r11), %rcx\n    jg .Lscierr{l}\n    mov 24(%r11), %r11\n    dec %rcx\n    shl $4, %rcx\n    add %rcx, %r11\n",16*(ies.len()-1-k)));
+                    if k+1<ies.len(){out.push_str("    cmpq $16, (%r11)\n    jne hbc_type_error\n    mov 8(%r11), %r11\n");}
+                }
+                out.push_str(&format!("    add ${}, %rsp\n    mov (%r11), %rax\n    cmp $0, %rax\n    je .Lscinum{l}\n    cmp $9, %rax\n    jne hbc_type_error\n.Lscinum{l}:\n    mov 8(%r11), %rax\n    mov %rax, %rcx\n",16*ies.len()));
+                let delta=if matches!(&args[1],Expr::Int(t)if t=="1"){1}else{-1};out.push_str(&format!("    add ${delta}, %rcx\n    jo hbc_type_error\n    mov %rcx, 8(%r11)\n"));if matches!(args[2],Expr::Log(true)){out.push_str("    mov %rcx, %rax\n");}
+                out.push_str(&format!("    jmp .Lscidone{l}\n.Lscierr{l}:\n    call hbc_bound_error\n.Lscidone{l}:\n"));return;
+            }}
             let Expr::Index(name,idx)=&args[0]else{unreachable!()};
             let v=env.iter().rev().find(|x|x.name==*name).expect("checked");let Ty::Arr(k)=v.ty else{unreachable!()};
             let delta=if matches!(&args[1],Expr::Int(t)if t=="1"){1}else{-1};let pre=matches!(args[2],Expr::Log(true));let l=fresh_lbl();
