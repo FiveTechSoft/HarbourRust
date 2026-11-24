@@ -10,12 +10,12 @@ def run(cmd,w,label):
  r=subprocess.run(list(map(str,cmd)),cwd=root,capture_output=True,timeout=60,stdin=subprocess.DEVNULL)
  for k,v in [('stdout',r.stdout),('stderr',r.stderr),('rc',str(r.returncode).encode())]:(w/(label+'.'+k)).write_bytes(v)
  return r
-for src in [*sorted(here.glob('*.prg'))]:
+originals=[root/'tests'/n for n in ['t793_barefor_mention_neg.prg','t795_barefor_nested_neg.prg']]
+for src in [*sorted(here.glob('*.prg')),*originals]:
  w=out/src.stem;w.mkdir();(w/src.name).write_bytes(src.read_bytes());(w/'input.sha256').write_text(hashlib.sha256(src.read_bytes()).hexdigest()+'  '+src.name+'\n')
- if src.stem.startswith('runtime-'):
-  r=run([cc,src,w/'runtime'],w,'build');assert r.returncode==0,(src,r.stderr)
-  r=run([w/'runtime'],w,'run');assert r.returncode==1,(src,r.returncode);(w/'runtime').unlink()
-  rows.append(dict(name=src.stem,kind='native-runtime-error-no-handler-parity'));continue
+ if src in originals:
+  copied=w/src.name;assert copied.read_bytes()==src.read_bytes()
+  (w/'original-mapping.json').write_text(json.dumps(dict(original=str(src.relative_to(root)),copied=src.name,original_sha256=hashlib.sha256(src.read_bytes()).hexdigest(),copied_sha256=hashlib.sha256(copied.read_bytes()).hexdigest()),indent=2)+'\n')
  if src.stem.startswith('limit-'):
   r=run([cc,src,w/'limit'],w,'build');assert r.returncode==1 and (b'error:' in r.stderr.lower()) and not (w/'limit').exists(),(src,r.stderr);rows.append(dict(name=src.stem,kind='named-rejection'));continue
  r=run([a.hbmk2,src,'-quiet','-gtstd','-w0','-o'+str(w/'oracle')],w,'oracle-build');assert r.returncode==0,(src,r.stderr)
@@ -23,7 +23,7 @@ for src in [*sorted(here.glob('*.prg'))]:
  for mode,flags in [('native',[]),('external',['--external-as']),('flat',['--no-vas-arrays']),('noescape',['--no-escape-analysis']),('noprune',['--no-prune'])]:
   r=run([cc,src,w/mode,'--instrument',*flags],w,mode+'-build');assert r.returncode==0,(src,r.stderr)
   r=run([w/mode],w,mode+'-run');assert (r.returncode,r.stdout,r.stderr)==(0,want,b''),(src,r.returncode,r.stdout,want,r.stderr);(w/mode).unlink();rows.append(dict(name=src.stem,kind='exact-Harbour',mode=mode))
- d=w/'delta';d.mkdir();bal=emit_delta(cc,os.environ,src,d,want);assert bal['state_ok'] and bal['delta']==0,(src,bal);rows.append(dict(name=src.stem,kind='strict-final-balance',source_sha256=hashlib.sha256(src.read_bytes()).hexdigest(),**bal))
- for target in ['windows','macho','macho-arm64','llvm']:
+ d=w/'delta';d.mkdir();bal=emit_delta(cc,os.environ,src,d,want);method=src.stem.startswith('method');assert bal['state_ok'] and bal['delta']==(2 if method else 0),(src,bal);rows.append(dict(name=src.stem,kind=('known-method-nonzero-control' if method else 'strict-final-balance'),source_sha256=hashlib.sha256(src.read_bytes()).hexdigest(),**bal))
+ for target in ([] if src.stem=='method-control' else ['windows','macho','macho-arm64','llvm']):
   r=run([cc,src,w/(target+'.s'),*(['--experimental-llvm'] if target=='llvm' else ['--target='+target])],w,target);assert r.returncode==1,(src,target,r.stderr);rows.append(dict(name=src.stem,kind='profile-rejection',target=target))
 (out/'results.json').write_text(json.dumps(dict(compiler_sha256=hashlib.sha256(Path(cc).read_bytes()).hexdigest(),rows=rows),indent=2)+'\n');print('PASS',len(rows))

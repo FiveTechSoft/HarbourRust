@@ -11943,7 +11943,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                         && !byref_names.contains(var) && !module_static::is_module_binding(var)
                         && CURDIR_LINUX_NATIVE.with(|v|v.get()) && DECIMAL_LOCAL_PROFILE.with(|v|v.get())
                         && !MACRO_CONTEXT.with(|v|v.get()) && !shared_local::active()
-                        && ts==Ty::I64 && te==Ty::I64 && dyn_for_reads_only(body,end,var);
+                        && ts==Ty::I64 && te==Ty::I64 && !expr_mentions(start,var) && dyn_for_reads_only(body,end,var);
                     if (env[pos].ty != Ty::I64 && !dyn_counter) || env[pos].ro {
                         return Err(format!("line {}: `for` loop variable `{}` reuses a non-integer or read-only slot in this PoC", n, var));
                     }
@@ -14191,6 +14191,7 @@ fn escape_analysis(
     let saved_fn = CUR_FN.with(|c| c.borrow().clone());
     let saved_method = CUR_METHOD_CLASS.with(|c| c.get());
     let saved_num = NUM_LOCALS.with(|c| c.borrow().clone());
+    let saved_for_locals = FOR_LOCAL_NAMES.with(|c|c.borrow().clone());
     let saved_static = STATIC_DYN.with(|c| c.borrow().clone());
     let saved_narrow = OBJ_NARROW.with(|c| c.borrow().clone());
     let mut out = Vec::new();
@@ -14254,6 +14255,7 @@ fn escape_analysis(
     CUR_FN.with(|c| *c.borrow_mut() = saved_fn);
     CUR_METHOD_CLASS.with(|c| c.set(saved_method));
     NUM_LOCALS.with(|c| *c.borrow_mut() = saved_num);
+    FOR_LOCAL_NAMES.with(|c|*c.borrow_mut()=saved_for_locals);
     STATIC_DYN.with(|c| *c.borrow_mut() = saved_static);
     OBJ_NARROW.with(|c| *c.borrow_mut() = saved_narrow);
     out
@@ -43417,4 +43419,29 @@ mod internal_valtype_dispatch_tests {
         assert!(matches!(&tokenize("ValType", 1).unwrap()[..],
             [Tok::Ident(name)] if name == "valtype"));
     }
+}
+
+#[cfg(test)]
+mod dyn_for_context_tests {
+ use super::*;
+ #[test]
+ fn numeric_context_resets_for_every_function_kind() {
+  let make=|name:&str,stmts:Vec<Stmt>|Func{init:false,name:name.into(),params:vec![],ret:None,stmts,dyn_names:std::collections::HashSet::new()};
+  let local=||Stmt::Local(1,"n".into(),Expr::Nil);
+  for name in ["main","box__run","threadblock$1"] {
+   set_numeric(&make(name,vec![local()]));
+   assert!(FOR_LOCAL_NAMES.with(|m|m.borrow().contains("n")));
+   set_numeric(&make("next",vec![]));
+   assert!(FOR_LOCAL_NAMES.with(|m|m.borrow().is_empty()));
+   set_numeric(&make(name,vec![local(),Stmt::Print(2,vec![Expr::BlockLit(991,vec![],vec![Expr::Var("n".into())])],false)]));
+   assert!(FOR_LOCAL_NAMES.with(|m|m.borrow().is_empty()));
+  }
+ }
+ #[test]
+ fn nested_writes_and_to_set_rejected() {
+  let end=Expr::Int("3".into());
+  let write=Stmt::Assign(2,"n".into(),Expr::Int("2".into()));
+  assert!(!dyn_for_reads_only(&[Stmt::While(1,Expr::Log(true),vec![Stmt::If(2,Expr::Log(true),vec![write],vec![])])],&end,"n"));
+  assert!(!dyn_for_reads_only(&[],&Expr::Set("n".into(),Box::new(end)),"n"));
+ }
 }
