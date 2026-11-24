@@ -11,8 +11,11 @@ value matches too. The Linux golden is replaced with that exact fresh
 stdout. The Windows golden is deliberately untouched: this run does not
 establish Windows output. No newline normalization or ignored bytes.
 
-Gate9: five modes byte-exact against fresh Harbour; strict balance0;
-three unsupported profile rejections. Entire Linux positive manifest now
+Gate6: five modes byte-exact against fresh Harbour; strict balance0.
+No cross-target admission or execution assertion. The discovery gate
+incorrectly expected Windows rejection and was corrected in a follow-up
+commit before delivery; Windows already supports this source.
+Entire Linux positive manifest now
 1177/1177 byte-exact. Previous1176plus1 mismatch becomes1177 because the
 golden is corrected, not because the compiler acquired new semantics.
 Compiler SHA stays a1d24f196f0c0a0afc3435ec63b53e96e8b59a5ae8073ca0138b8f51f0601bff.
