@@ -124,7 +124,7 @@ pub fn init(ff:&[Func]) {
    visit_stmts_ref(&f.stmts,&mut |s|{
     match s {
      Stmt::Local(_,n,Expr::Var(p))|Stmt::Assign(_,n,Expr::Var(p)) if own.contains(p)=>{names.entry(f.name.clone()).or_default().insert(n.clone());},
-     Stmt::Local(_,n,Expr::Call(id,aa))|Stmt::Assign(_,n,Expr::Call(id,aa)) if is_builtin(id,"aclone")&&matches!(aa.as_slice(),[Expr::Var(p)|Expr::Index(p,_)]if own.contains(p))=>{names.entry(f.name.clone()).or_default().insert(n.clone());},
+     Stmt::Local(_,n,Expr::Call(id,aa))|Stmt::Assign(_,n,Expr::Call(id,aa)) if is_builtin(id,"aclone")&&matches!(aa.as_slice(),[Expr::Var(p)|Expr::Index(p,_)|Expr::Index2(p,..)|Expr::Index3(p,..)|Expr::Index4(p,..)]if own.contains(p))=>{names.entry(f.name.clone()).or_default().insert(n.clone());},
      Stmt::Local(_,n,e) if optional_empty::selected(e).map_or(false,|p|own.contains(p))=>{names.entry(f.name.clone()).or_default().insert(n.clone());},
      Stmt::Local(_,n,Expr::Call(id,_))|Stmt::Assign(_,n,Expr::Call(id,_)) if oldret.contains(id)=>{names.entry(f.name.clone()).or_default().insert(n.clone());},
      Stmt::Local(_,n,e)|Stmt::Assign(_,n,e) if method_arrays::active() && method_arrays::expr(e,&own,&oldret)=>{names.entry(f.name.clone()).or_default().insert(n.clone());},
@@ -132,7 +132,7 @@ pub fn init(ff:&[Func]) {
      Stmt::Try(_,_,Some((Some(n),_)),_)=>{names.entry(f.name.clone()).or_default().insert(n.clone());},
      Stmt::Ret(_,Some(Expr::SelfGet(_))) if method_arrays::active()=>{returns.insert(f.name.clone());},
      Stmt::Ret(_,Some(e)) if method_arrays::active() && method_arrays::expr(e,&own,&oldret)=>{returns.insert(f.name.clone());},
-     Stmt::Ret(_,Some(Expr::Call(id,aa))) if is_builtin(id,"aclone")&&matches!(aa.as_slice(),[a]if literal(a)||matches!(a,Expr::Var(n)|Expr::Index(n,_)if own.contains(n)))=>{returns.insert(f.name.clone());},
+     Stmt::Ret(_,Some(Expr::Call(id,aa))) if is_builtin(id,"aclone")&&matches!(aa.as_slice(),[a]if literal(a)||matches!(a,Expr::Var(n)|Expr::Index(n,_)|Expr::Index2(n,..)|Expr::Index3(n,..)|Expr::Index4(n,..)if own.contains(n)))=>{returns.insert(f.name.clone());},
      Stmt::Ret(_,Some(Expr::Var(n))) if own.contains(n)=>{returns.insert(f.name.clone());},
      _=>{}
     }
@@ -140,7 +140,7 @@ pub fn init(ff:&[Func]) {
    visit_stmts_ref(&f.stmts,&mut |_|{},&mut |e|{
     if method_arrays::active(){if let Expr::Send(_,n,aa)=e{for(_,id)in method_results::choices(n){if let Some(to)=ff.iter().find(|f|f.name==id){for(i,a)in aa.iter().enumerate(){if i+1<to.params.len() && method_arrays::expr(a,&own,&oldret){params.insert((id.clone(),i+1));names.entry(id.clone()).or_default().insert(to.params[i+1].clone());}}}}}}
     if let Expr::Call(id,aa)=e {if let Some(to)=ff.iter().find(|x|x.name==*id){for(i,a)in aa.iter().enumerate().take(to.params.len()){
-     if matches!(a,Expr::Var(n)|Expr::Index(n,_) if own.contains(n)) || matches!(a,Expr::Call(id,_) if oldret.contains(id)) || matches!(a,Expr::Call(id,aa)if is_builtin(id,"aclone")&&matches!(aa.as_slice(),[x]if literal(x)||matches!(x,Expr::Var(n)|Expr::Index(n,_)if own.contains(n)))) || (method_arrays::active() && method_arrays::expr(a,&own,&oldret)) {params.insert((id.clone(),i));names.entry(id.clone()).or_default().insert(to.params[i].clone());}
+     if matches!(a,Expr::Var(n)|Expr::Index(n,_) if own.contains(n)) || matches!(a,Expr::Call(id,_) if oldret.contains(id)) || matches!(a,Expr::Call(id,aa)if is_builtin(id,"aclone")&&matches!(aa.as_slice(),[x]if literal(x)||matches!(x,Expr::Var(n)|Expr::Index(n,_)|Expr::Index2(n,..)|Expr::Index3(n,..)|Expr::Index4(n,..)if own.contains(n)))) || (method_arrays::active() && method_arrays::expr(a,&own,&oldret)) {params.insert((id.clone(),i));names.entry(id.clone()).or_default().insert(to.params[i].clone());}
     }}}
    });
   }

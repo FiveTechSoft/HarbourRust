@@ -8160,7 +8160,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
             if is_builtin(id, "aclone") {
                 if args.len()==1&&shared_local::active()&&shared_local::literal(&args[0]){return Ok(Ty::Dyn);}
                 if args.len()==1&&shared_local::active()&&matches!(&args[0],Expr::Var(v)if shared_local::current(v))&&type_expr(&args[0],env,sigs,n)?==Ty::Dyn{return Ok(Ty::Dyn);}
-                if args.len()==1&&shared_local::active()&&matches!(&args[0],Expr::Index(v,_)if shared_local::current(v))&&type_expr(&args[0],env,sigs,n)?==Ty::Dyn{return Ok(Ty::Dyn);}
+                if args.len()==1&&shared_local::active()&&matches!(&args[0],Expr::Index(v,_)|Expr::Index2(v,..)|Expr::Index3(v,..)|Expr::Index4(v,..)if shared_local::current(v))&&type_expr(&args[0],env,sigs,n)?==Ty::Dyn{return Ok(Ty::Dyn);}
                 if args.len()!=1 { return Err(format!("line {}: `AClone` takes one argument in this increment",n)); }
                 if !matches!(&args[0], Expr::Var(_)) {
                     return Err(format!("line {}: `AClone` expects an array variable (the slot is passed by address)",n));
@@ -18023,7 +18023,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
         }
         Expr::Call(id,args) if is_builtin(id,"aclone") => {
             if shared_local::active()&&shared_local::literal(&args[0]){shared_local::emit_literal(&args[0],strs,out);return;}
-            if shared_local::active(){if let Expr::Index(v,ix)=&args[0]{if shared_local::current(v){let var=env.iter().rev().find(|x|x.name==*v).expect("checked");cg_sarr_index(v,var.off,&[ix.as_ref()],env,sigs,strs,out,target);let k=fresh_lbl();out.push_str(&format!("    cmp $16, %rax\n    jne .Lclonecellnil{k}\n    mov %rdx, %rdi\n    call hbc_sarr_clone\n    jmp .Lclonecellend{k}\n.Lclonecellnil{k}:\n    mov $1, %eax\n    xor %edx, %edx\n.Lclonecellend{k}:\n"));return;}}}
+            if shared_local::active(){let indexed=match &args[0]{Expr::Index(v,i)=>Some((v,vec![i.as_ref()])),Expr::Index2(v,i,j)=>Some((v,vec![i.as_ref(),j.as_ref()])),Expr::Index3(v,i,j,k)=>Some((v,vec![i.as_ref(),j.as_ref(),k.as_ref()])),Expr::Index4(v,i,j,k,l)=>Some((v,vec![i.as_ref(),j.as_ref(),k.as_ref(),l.as_ref()])),_=>None};if let Some((v,ix))=indexed{if shared_local::current(v){let var=env.iter().rev().find(|x|x.name==*v).expect("checked");cg_sarr_index(v,var.off,&ix,env,sigs,strs,out,target);let k=fresh_lbl();out.push_str(&format!("    cmp $16, %rax\n    jne .Lclonecellnil{k}\n    mov %rdx, %rdi\n    call hbc_sarr_clone\n    jmp .Lclonecellend{k}\n.Lclonecellnil{k}:\n    mov $1, %eax\n    xor %edx, %edx\n.Lclonecellend{k}:\n"));return;}}}
             let av = match &args[0] { Expr::Var(v) => v.clone(), _ => unreachable!("checked") };
             let var = env.iter().rev().find(|x| x.name == *av).expect("checked");
             if shared_local::active()&&shared_local::current(&av)&&var.ty==Ty::Dyn{cg_sarr_root(&av,var.off,"%rdi",out);out.push_str("    call hbc_sarr_clone\n");return;}
@@ -21770,7 +21770,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             if ["cdow","cmonth","dtoc"].iter().any(|b|is_builtin(id,b)) { return Ty::StrOwn; }
             if is_builtin(id, "ascan") { return Ty::I64; }
             if is_builtin(id, "aclone") {
-                if shared_local::active()&&(shared_local::literal(&args[0])||matches!(&args[0],Expr::Var(v)|Expr::Index(v,_)if shared_local::current(v))){return Ty::Dyn;}
+                if shared_local::active()&&(shared_local::literal(&args[0])||matches!(&args[0],Expr::Var(v)|Expr::Index(v,_)|Expr::Index2(v,..)|Expr::Index3(v,..)|Expr::Index4(v,..)if shared_local::current(v))){return Ty::Dyn;}
                 return match expr_ty(&args[0],env,sigs) { Ty::DArrS => Ty::DArrS, _ => Ty::DArr };
             }
             if is_builtin(id, "atail") || is_builtin(id, "asort") { return Ty::Dyn; }
