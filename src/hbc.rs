@@ -3219,6 +3219,14 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                         return Err(format!("line {}: SET FIXED requires ON or OFF in this increment", n));
                     }
                     if matches!(toks.get(1), Some(Tok::Ident(name)) if name.eq_ignore_ascii_case("date")) {
+                        // Command spelling uses the same checked mask path as
+                        // Set(4, value). Keep expression/type/profile limits there.
+                        if matches!(toks.get(2), Some(Tok::Ident(w)) if w.eq_ignore_ascii_case("format")) {
+                            let start=if toks.get(3)==Some(&Tok::KwTo){4}else{3};
+                            let value=parse_expr_tokens(toks[start..].to_vec(),n)?;
+                            out.push(Stmt::CallStmt(n,Expr::Call("set".to_string(),vec![Expr::Int("4".to_string()),value])));
+                            *i+=1;continue;
+                        }
                         // SET DATE [TO] <format>: the runtime date render
                         // state (runtime/hrdate.c). Oracle-fitted table
                         // (Harbour 3.2, native Windows): AMERICAN MM/DD/YY,

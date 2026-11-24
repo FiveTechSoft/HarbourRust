@@ -1,0 +1,3 @@
+FUNCTION Main()
+ SET DATE FORMAT TO Left("dd/mm/yyyy",10)
+RETURN NIL
