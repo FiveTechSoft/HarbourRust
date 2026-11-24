@@ -7399,6 +7399,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                     return Err(format!("line {}: `{}` takes one argument", n, id));
                 }
                 if shared_local::active()&&matches!(&args[0],Expr::Index2(v,..)|Expr::Index3(v,..)|Expr::Index4(v,..)if shared_local::current(v)&&env.iter().any(|x|x.name==*v&&x.ty==Ty::Dyn)){type_expr(&args[0],env,sigs,n)?;return Ok(Ty::Bool);}
+                if shared_local::active()&&matches!(&args[0],Expr::Call(c,aa)if is_builtin(c,"atail")&&matches!(aa.as_slice(),[Expr::Var(v)]if shared_local::current(v))){type_expr(&args[0],env,sigs,n)?;return Ok(Ty::Bool);}
                 match &args[0] {
                     Expr::Int(_) | Expr::Str(_) | Expr::Nil | Expr::Log(_) | Expr::Float(..) | Expr::FloatV(..) => {}
                     Expr::Var(v) => {
@@ -16502,6 +16503,10 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             // arguments evaluate once with their effects, bounds-checked
             // exactly like ValType (hbc_bound_error on a miss). Borrows.
             let want_num = is_builtin(id, "hb_isnumeric");
+            if shared_local::active()&&matches!(&args[0],Expr::Call(c,aa)if is_builtin(c,"atail")&&matches!(aa.as_slice(),[Expr::Var(v)]if shared_local::current(v))){
+                let vt=Expr::Call(INTERNAL_VALTYPE.to_string(),args.clone());cg_expr(&vt,env,sigs,strs,out,target);
+                out.push_str(if want_num{"    cmpb $78, (%rax)\n    sete %al\n    movzbq %al, %rax\n"}else{"    cmpb $65, (%rax)\n    sete %al\n    movzbq %al, %rax\n"});return;
+            }
             let konst = |out: &mut String, b: bool| out.push_str(if b { "    mov $1, %rax
 " } else { "    xor %eax, %eax
 " });
