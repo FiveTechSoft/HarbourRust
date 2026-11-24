@@ -524,8 +524,10 @@ fn cg_dyn_f64(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, o
 // Int(Dyn): integer tags are returned exactly, a float payload truncates toward zero.
 fn cg_dyn_int_trunc(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target) {
     cg_expr(e, env, sigs, strs, out, target);
+    cg_loaded_int_trunc(dyn_expr_owned(e),out);
+}
+fn cg_loaded_int_trunc(owned:bool,out:&mut String) {
     let k=fresh_lbl();
-    let owned=dyn_expr_owned(e);
     out.push_str("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n    movq $0, 24(%rsp)\n");
     out.push_str(&format!("    cmp $5, %al\n    je .Ldivfloat{k}\n    test %rax, %rax\n    je .Ldivint{k}\n    cmp $9, %rax\n    je .Ldivint{k}\n    movq $1, 24(%rsp)\n    movq $0, 16(%rsp)\n    jmp .Ldivsave{k}\n.Ldivfloat{k}:\n    call hbc_float_unpack\n    cvttsd2si %xmm0, %rax\n    mov %rax, 16(%rsp)\n    jmp .Ldivsave{k}\n.Ldivint{k}:\n    mov %rdx, 16(%rsp)\n.Ldivsave{k}:\n"));
     cg_dyn_owned_release32(owned, k, out);
@@ -11324,6 +11326,12 @@ fn narrow_bare_date_locals(funcs:&mut [Func]) {
 // Own MIT delayed fresh-array initialization. NIL is not observable:
 // only leaf stores or effect-free constant constructors precede the first
 // unconditional store. Keep reads, capture, calls and control flow closed.
+// Store index from a borrowed flat scalar cell. Both address expressions
+// are leaves, so no call/store can invalidate either owner while pending.
+fn scalar_cell_store_index(e:&Expr,env:&[Local])->bool {
+    matches!(e,Expr::Index(root,i) if env.iter().any(|v|v.name==*root&&v.ty==Ty::DArr&&!v.moved)
+        && matches!(i.as_ref(),Expr::Int(_)|Expr::Var(_)))
+}
 fn constant_afill(e:&Expr)->bool {
     matches!(e,Expr::Call(id,aa) if is_builtin(id,"afill") && matches!(aa.as_slice(),[Expr::Call(ar,dims),Expr::Int(_)|Expr::Log(_)|Expr::Nil] if is_builtin(ar,"array") && matches!(dims.as_slice(),[Expr::Int(n)] if n.parse::<i64>().map_or(false,|n|n>=0))))
 }
@@ -12890,12 +12898,15 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                         apply_moves(ie, env, sigs, false);
                     }
                     Ty::DArr => {
+                        if let Expr::Index(src,_)=ie {
+                            if expr_mentions(e,src) {return Err(format!("line {}: cell-derived array index must not share its source with the RHS in this increment",n));}
+                        }
                         let vt = type_expr(e, env, sigs, *n)?;
                         if !matches!(vt, Ty::I64 | Ty::Bool | Ty::Dyn) {
                             return Err(format!("line {}: dynamic-array elements are tagged scalars (integer, logical or NIL)", n));
                         }
                         let it=type_expr(ie,env,sigs,*n)?;
-                        if it!=Ty::I64 && !(it==Ty::Dyn && matches!(ie,Expr::Var(_)) && CURDIR_LINUX_NATIVE.with(|v|v.get()) && DECIMAL_LOCAL_PROFILE.with(|v|v.get()) && !MACRO_CONTEXT.with(|v|v.get()) && !shared_local::active()) {
+                        if it!=Ty::I64 && !(it==Ty::Dyn && (matches!(ie,Expr::Var(_))||scalar_cell_store_index(ie,env)) && CURDIR_LINUX_NATIVE.with(|v|v.get()) && DECIMAL_LOCAL_PROFILE.with(|v|v.get()) && !MACRO_CONTEXT.with(|v|v.get()) && !shared_local::active()) {
                             return Err(format!("line {}: array index must be an integer", n));
                         }
                         apply_moves(e, env, sigs, true);
@@ -27019,10 +27030,18 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                     } else {
                         out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
                     }
-                    if expr_ty(ie, env, sigs) == Ty::Dyn && v.ty==Ty::DArr && matches!(ie,Expr::Var(_)) && CURDIR_LINUX_NATIVE.with(|v|v.get()) {
-                        // Index semantics truncate floats toward zero. Do not
-                        // change the integer-only helper used by arithmetic.
-                        cg_dyn_int_trunc(ie,env,sigs,strs,out,target);
+                    if expr_ty(ie, env, sigs) == Ty::Dyn && v.ty==Ty::DArr && CURDIR_LINUX_NATIVE.with(|v|v.get()) {
+                        // Exact admitted cell-read indexes have a leaf inner
+                        // index. Truncate that numeric Dyn as well, without
+                        // changing the general read or arithmetic helpers.
+                        if let Expr::Index(root,i)=ie {
+                            let src=env.iter().rev().find(|v|v.name==*root).expect("checked");
+                            if expr_ty(i,env,sigs)==Ty::Dyn {cg_dyn_int_trunc(i,env,sigs,strs,out,target);}
+                            else {cg_expr(i,env,sigs,strs,out,target);}
+                            let k=fresh_lbl();
+                            out.push_str(&format!("    cmp $1, %rax\n    jl .Lcellidxbad{k}\n    cmp -{}(%rbp), %rax\n    jg .Lcellidxbad{k}\n    mov -{}(%rbp), %r11\n    dec %rax\n    shl $4, %rax\n    add %r11, %rax\n    mov 8(%rax), %rdx\n    mov (%rax), %rax\n    jmp .Lcellidxok{k}\n.Lcellidxbad{k}:\n    call hbc_bound_error\n.Lcellidxok{k}:\n",src.off-8,src.off));
+                            cg_loaded_int_trunc(false,out);
+                        } else {cg_dyn_int_trunc(ie,env,sigs,strs,out,target);}
                     } else if expr_ty(ie, env, sigs) == Ty::Dyn {
                         cg_expr(ie, env, sigs, strs, out, target);
                         out.push_str("    call hbc_dyn_to_i64\n");
