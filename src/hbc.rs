@@ -7257,7 +7257,9 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 if arr && !matches!(&args[0], Expr::Var(_)) {
                     return Err(format!("line {}: `Empty` on an array/hash needs a variable in this increment", n));
                 }
-                if t == Ty::Dyn && !matches!(&args[0], Expr::Nil) && !DBF_USED.with(|v|v.get()) && !timestamp::known(&args[0]) && !timestamp::scalar_empty() {
+                let readonly_dyn = CURDIR_LINUX_NATIVE.with(|v|v.get()) && DECIMAL_LOCAL_PROFILE.with(|v|v.get()) && !MACRO_CONTEXT.with(|v|v.get())
+                    && matches!(&args[0],Expr::Var(id) if env.iter().rev().any(|v|v.name==*id && v.ty==Ty::Dyn && v.ro));
+                if t == Ty::Dyn && !readonly_dyn && !matches!(&args[0], Expr::Nil) && !DBF_USED.with(|v|v.get()) && !timestamp::known(&args[0]) && !timestamp::scalar_empty() {
                     return Err(format!("line {}: `Empty` on generic Dyn values is not in this increment", n));
                 }
                 if matches!(t, Ty::DArrRef | Ty::DArrRef2) {
@@ -11104,6 +11106,7 @@ fn foreach_lv_readonly(stmts: &[Stmt], name: &str) -> bool {
         match e {
             Expr::Seq(es) => es.iter().any(|e| in_call(e, name)),
             Expr::Set(_, r) => in_call(r, name),
+            Expr::Call(id,args) if CURDIR_LINUX_NATIVE.with(|v|v.get()) && is_builtin(id,"empty") && matches!(args.as_slice(),[Expr::Var(v)] if v==name)=>false,
             Expr::Call(_, args) => args.iter().any(|a| mentions(a, name)),
             Expr::Bin(_, a, b) | Expr::Cmp(_, a, b) => in_call(a, name) || in_call(b, name),
             Expr::Index(_, i) | Expr::Index2(_, i, _) | Expr::Index3(_, i, _, _) | Expr::Index4(_, i, ..) => in_call(i, name),
@@ -19790,7 +19793,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                     out.push_str("    test %rdx, %rdx\n    sete %al\n    movzbq %al, %rax\n");
                 }
                 Ty::Dyn => {
-                    if timestamp::scalar_empty(){
+                    if timestamp::scalar_empty() || (CURDIR_LINUX_NATIVE.with(|v|v.get()) && DECIMAL_LOCAL_PROFILE.with(|v|v.get()) && !MACRO_CONTEXT.with(|v|v.get()) && !DBF_USED.with(|v|v.get()) && !timestamp::known(e) && matches!(e,Expr::Var(_))){
                         cg_value(e,env,sigs,strs,out,target);
                         out.push_str("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_ts_empty\n    mov %rax, 16(%rsp)\n");
                         if dyn_expr_owned(e){cg_concat_drop(out,0);}
