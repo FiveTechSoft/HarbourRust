@@ -21,6 +21,6 @@ function main()
  ? "[" + DToC(d) + "]"
  set date american
  ? "[" + DToC(d) + "]"
- ? Date()
+ ? d
  ? DToS(d)
 return nil

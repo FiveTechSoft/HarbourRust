@@ -7,6 +7,6 @@ function main()
  ? "[" + Transform(d, "") + "]"
  set century off
  ? "[" + DToC(d) + "]"
- ? Date()
+ ? d
  ? "[" + DToS(d) + "]"
 return nil

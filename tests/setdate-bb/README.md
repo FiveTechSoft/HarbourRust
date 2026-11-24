@@ -22,11 +22,13 @@ Named rejections: `SET CENTURY TO <year> ROLLOVER`, unknown format
 words (SPANISH is not a Harbour format word, measured E0030).
 
 `expected/setdate_matrix.windows.out` and
-`expected/setdate_transform.windows.out` are the original recorded Harbour
+`expected/setdate_transform.windows.out` are recorded Harbour
 3.2 outputs (hbmk2 -comp=mingw64 -gtcgi, native Windows 11); their Linux
-counterparts have the same bytes with LF line ends. The two original
-programs matched those dated pins in local Linux checks on November 23,
-2026. This provenance does not apply to the empty setter-only regression
+counterparts have the same bytes with LF line ends. The original programs
+printed `Date()`, so those pins rotted daily; both programs now print the
+fixed date `d` (CToD'd in the default AMERICAN state, so the pin is
+deterministic) and the pins were re-recorded from the same oracle on
+November 24, 2026. This provenance does not apply to the empty setter-only regression
 outputs added later; those are not Harbour measurements.
 
 Setter-only regression: `python tests/setdate-bb/check.py --compiler ./hbc`
