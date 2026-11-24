@@ -7576,7 +7576,9 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                             _ => Err(format!("line {}: `len` of a[i] needs an array of arrays", n)),
                         };
                     }
+                    Expr::Index4(id,..) if shared_local::active()&&is_sarr(id)&&env.iter().any(|v|v.name==*id&&v.ty==Ty::Dyn)=>{type_expr(&args[0],env,sigs,n)?;return Ok(Ty::I64);}
                     Expr::Index3(id, ie, ie2, ie3) => {
+                        if shared_local::active()&&is_sarr(id)&&env.iter().any(|v|v.name==*id&&v.ty==Ty::Dyn){type_expr(&args[0],env,sigs,n)?;return Ok(Ty::I64);}
                         // len(a[i][j][k]) on a four-level array: borrow
                         // three levels (hk103).
                         if type_expr(ie, env, sigs, n)? != Ty::I64 || type_expr(ie2, env, sigs, n)? != Ty::I64 || type_expr(ie3, env, sigs, n)? != Ty::I64 {
@@ -18174,7 +18176,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             out.push_str("    test %rax, %rax\n    jne hbc_type_error\n    call hbc_round\n");
         }
         Expr::Call(id, args) if is_builtin(id, "len") => {
-            if (shared_local::active()&&matches!(&args[0],Expr::Index2(id,..)if is_sarr(id)))||(method_arrays::active()||(shared_local::active()&&matches!(&args[0],Expr::Call(id,_)if is_builtin(id,"asort")))) && expr_ty(&args[0],env,sigs)==Ty::Dyn && !matches!(&args[0],Expr::Var(_)|Expr::Index(..)|Expr::Index2(..)|Expr::Index3(..)){
+            if (shared_local::active()&&matches!(&args[0],Expr::Index2(id,..)|Expr::Index3(id,..)|Expr::Index4(id,..)if is_sarr(id)))||(method_arrays::active()||(shared_local::active()&&matches!(&args[0],Expr::Call(id,_)if is_builtin(id,"asort")))) && expr_ty(&args[0],env,sigs)==Ty::Dyn && !matches!(&args[0],Expr::Var(_)|Expr::Index(..)|Expr::Index2(..)|Expr::Index3(..)){
                 cg_value(&args[0],env,sigs,strs,out,target);
                 let k=fresh_lbl();out.push_str(&format!("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n    cmp $16, %rax\n    jne .Lb2lenstr{k}\n    mov (%rdx), %rax\n    jmp .Lb2lendone{k}\n.Lb2lenstr{k}:\n    cmp $2, %rax\n    je .Lb2lenok{k}\n    cmp $4, %rax\n    jne .Lb2lenbad{k}\n.Lb2lenok{k}:\n    mov -8(%rdx), %rax\n.Lb2lendone{k}:\n    mov %rax, 16(%rsp)\n"));
                 if dyn_expr_owned(&args[0]){cg_dyn_stack_release(out,0,false);}
