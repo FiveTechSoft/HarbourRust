@@ -4,6 +4,7 @@ mod shared_local;
 mod timestamp;
 mod bin_concat;
 mod optional_empty;
+mod optional_block;
 mod cell_len;
 mod method_valtype;
 mod box_gtstd;
@@ -39135,6 +39136,7 @@ fn main() {
     DECIMAL_LOCAL_PROFILE.with(|v|v.set(CURDIR_LINUX_NATIVE.with(|v|v.get()) && !decimal_thread_profile));
     if hash_case_mode && (!DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get())) {eprintln!("error: hb_HCaseMatch logical mode requires ordinary Linux without threads or macros");process::exit(1);}
     HASH_CASE_LOGICAL_MODE.with(|v|v.set(hash_case_mode));
+    if optional_block::lower(&mut funcs) && (!DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get())) {eprintln!("error: static optional-block wrappers require ordinary Linux without threads or macros");process::exit(1);}
     narrow_bare_date_locals(&mut funcs);
     init_retyped_val_functions(&funcs);
     init_pcount_functions(&funcs);
