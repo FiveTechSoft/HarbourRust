@@ -4182,12 +4182,16 @@ Harbour oracle agrees (compiles and runs; oracle outputs in
 | tests/t897_inc_elem_neg.prg | 0f39467f (fixed cell increments) | requires a variable lvalue | compiles, runs, exits 0, prints `1` |
 | tests/t1043_original_longstr2_move_neg.prg | 6e640993 (bare-local string copy) | use of moved value `short` | compiles, runs, exits 0, prints the length triple |
 
-The total Linux `neg` failures are now exactly 7 (the four stale rows above,
-plus these three); no other row regressed (622 checked). The three rows
-are left in the manifest as-is for the same sign-off path as the four:
-the maintained decision is option (3) - leave as known Linux-stale debt
-until the baseline re-cut. PE-side enforcement verified 2026-11-24 for
-all seven rows (rc=1 with manifest substring).
+The total Linux `neg` failures are now exactly 9 (the four stale rows above,
+plus these three, plus two more from the main-args landing in 14e81327):
+tests/t793_barefor_mention_neg.prg and tests/t795_barefor_nested_neg.prg
+("reuses a non-integer or read-only slot" - the bare-FOR feature,
+commit d0cd3a4b, now reuses the slot on Linux while PE still rejects with
+the manifest substring; verified 2026-11-24: Linux rc=0, PE rc=1 and
+matching message). Oracle (Harbour 3.2, native aarch64): both programs
+compile and run, output `1 2 3`. The rows are left in the manifest as-is
+for the same sign-off path as the others (option 3). PE-side enforcement
+verified 2026-11-24 for all nine rows (rc=1 with manifest substring).
 
 Nine `neg` rows are the known-mismatch PE CurDir debt (same source state as
 the known-mismatches file). Linux rejects with the manifest substring -

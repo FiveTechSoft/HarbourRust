@@ -168,6 +168,20 @@ cannot be executed on aarch64 (verified: `exec` gives
 suite's own README; the oracle side captured above complements them but
 is not a substitute for the hbc gates.
 
+## t793 / t795 - two more Linux-stale neg rows (2026-11-24)
+
+The main-args landing (14e81327 - `Reuse existing Dyn local for bounded
+integer FOR` in d0cd3a4b) changed the bare-FOR slot reuse semantics on
+Linux only. Both rows now pass on Linux while PE still rejects:
+
+| Case | Source (shape) | Oracle behaviour (compiled Harbour) |
+| --- | --- | --- |
+| tests/t793_barefor_mention_neg.prg | `i := 7` before a bare FOR loop | compiles, runs, exits 0, output `1 2 3` |
+| tests/t795_barefor_nested_neg.prg | `if .t. i := 2 endif` before bare FOR | compiles, runs, exits 0, output `1 2 3` |
+
+Manifest expectation (deleted): `reuses a non-integer or read-only slot`;
+both rows still reject on the PE target (rc=1, substring matches).
+
 ## t1634 / t1635 / t1636 / t1637 / t1638 / t1639 / t1640 / t1641 / t1642 - nine CurDir neg rows
 
 All nine COMPILE cleanly under compiled Harbour. `CurDir` is a Harbour
