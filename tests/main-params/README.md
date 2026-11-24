@@ -10,11 +10,11 @@ Windows 11, November 24, 2026); no Harbour source was read.
 - Run without arguments, every parameter is NIL (`main_params_nil.prg`)
   and can be assigned any value afterwards (`main_params_assign.prg`).
 
-This increment covers the run without arguments: hbc's startup code
-passes none, so each parameter of main is a local that starts NIL.
-Registered difference: arguments given on the command line are not yet
-delivered (hbc still sees NIL). Programs that call main themselves keep
-main's parameters as ordinary parameters.
+Each parameter of main is a local initialized from the command line
+(tests/main-args): NIL when the run has no argument for it. Mach-O and
+LLVM targets do not deliver arguments yet, so there the parameters always
+start NIL. Programs that call main themselves keep main's parameters as
+ordinary parameters.
 
 `expected/*.windows.out` are the Harbour outputs; the `.linux.out` files
 have the same bytes with LF line ends.

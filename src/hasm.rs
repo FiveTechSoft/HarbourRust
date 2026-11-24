@@ -1870,7 +1870,7 @@ impl Asm {
         // D2: SetFilePointerEx + GetSystemTime feed record write-back and
         // the UTC header date on appends. D7: SetEndOfFile sizes the
         // close-time NTX flush.
-        const WHITELIST: [&str; 35] = ["VirtualAlloc", "VirtualFree", "GetSystemInfo", "ExitProcess", "GetEnvironmentVariableA", "GetLocalTime", "GetProcessHeap",
+        const WHITELIST: [&str; 36] = ["GetCommandLineA", "VirtualAlloc", "VirtualFree", "GetSystemInfo", "ExitProcess", "GetEnvironmentVariableA", "GetLocalTime", "GetProcessHeap",
             "GetStdHandle", "HeapAlloc", "HeapFree", "WriteFile", "CreateFileW", "ReadFile", "GetFileSizeEx", "CloseHandle",
             "GetLastError", "SetFilePointerEx", "SetEndOfFile", "GetSystemTime",
             // Threads on Windows (CreateThread runtime, TEB TLS slots,

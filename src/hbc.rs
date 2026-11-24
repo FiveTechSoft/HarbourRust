@@ -60,6 +60,8 @@ thread_local! {
     // QUIT anywhere in the program: _start records the stack pointer at
     // the call into Main so QUIT can return there (normal exit path).
     static QUIT_USED: std::cell::Cell<bool> = const {std::cell::Cell::new(false)};
+    // main's parameters read the command-line arguments (hbc_main_arg).
+    static MAIN_ARGS_USED: std::cell::Cell<bool> = const {std::cell::Cell::new(false)};
     static FILE_USED: std::cell::Cell<bool> = const {std::cell::Cell::new(false)};
     static FILE_PATH_LINE: std::cell::Cell<Option<usize>> = const {std::cell::Cell::new(None)};
 }
@@ -4071,6 +4073,7 @@ fn parse(src: &str) -> Result<Prog, String> {
     DIRMAKE_USED.with(|v|v.set(false));
     INKEY_USED.with(|v|v.set(false));
     QUIT_USED.with(|v|v.set(false));
+    MAIN_ARGS_USED.with(|v|v.set(false));
     DYNPLUS_NODES.with(|v|v.borrow_mut().clear());
     FILE_USED.with(|v|v.set(false));
     FILE_PATH_LINE.with(|v|v.set(None));
@@ -8701,6 +8704,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 return Err(format!("line {}: `ALTD()` is accepted only as a statement in this increment (it has no value here; a user function ALTD overrides it)",n));
             }
             if id=="hbc_quit" {return Ok(Ty::I64);}
+            if id=="hbc_main_arg" {return Ok(Ty::Dyn);}
             if id=="hbc_set_datefmt" || id=="hbc_set_century" || id=="hbc_set_epoch" {
                 if args.len()!=1 || !matches!(&args[0],Expr::Int(_)) {return Err(format!("line {}: internal SET DATE/CENTURY store expects one integer",n));}
                 return Ok(Ty::I64);
@@ -11206,6 +11210,143 @@ fn foreach_lv_readonly(stmts: &[Stmt], name: &str) -> bool {
 // exposes its initial NIL. Narrow only this dominated, non-byref shape.
 // Unknown/control-flow forms fail closed; the existing Date checker still
 // rejects all later non-Date stores. No inference invokes type_expr here.
+// hbc_main_arg: rdi = argument index (1-based) -> rax tag, rdx payload: an
+// owned copy of the argument (tag 4) or NIL (tag 1) past the last one.
+// Linux reads the argc/argv block _start recorded.
+const MAIN_ARG_LINUX: &str = "    .data
+    .align 8
+hbc_main_argc: .quad 0
+hbc_main_argv: .quad 0
+    .text
+hbc_main_arg:
+    cmp hbc_main_argc(%rip), %rdi
+    jae .Lmarg_nil
+    mov hbc_main_argv(%rip), %rax
+    mov (%rax,%rdi,8), %rdi
+    xor %esi, %esi
+.Lmarg_len:
+    cmpb $0, (%rdi,%rsi)
+    je .Lmarg_copy
+    inc %rsi
+    jmp .Lmarg_len
+.Lmarg_copy:
+    push %rbp
+    mov %rsp, %rbp
+    and $-16, %rsp
+    call hbc_strcpy
+    mov %rax, %rdx
+    mov $4, %eax
+    leave
+    ret
+.Lmarg_nil:
+    mov $1, %eax
+    xor %edx, %edx
+    ret
+";
+
+// Windows splits GetCommandLineA as Harbour 3.2 does (measured,
+// tests/main-args): blanks and tabs separate arguments outside quotes; a
+// double quote toggles quoting and is dropped (a quoted pair is an empty
+// argument); backslashes are ordinary characters. Token 0 is the program.
+const MAIN_ARG_WINDOWS: &str = "    .text
+hbc_main_arg:
+    push %rbp
+    mov %rsp, %rbp
+    push %rbx
+    push %r12
+    push %r13
+    push %r14
+    push %r15
+    sub $40, %rsp
+    mov %rdi, %r12
+    call GetCommandLineA
+    mov %rax, %rbx
+    xor %r13d, %r13d
+.Lwmarg_skip:
+    movzbl (%rbx), %eax
+    cmp $32, %eax
+    je .Lwmarg_adv
+    cmp $9, %eax
+    je .Lwmarg_adv
+    test %eax, %eax
+    jz .Lwmarg_nil
+    mov %rbx, %r14
+    xor %r15d, %r15d
+    xor %ecx, %ecx
+.Lwmarg_tok:
+    movzbl (%rbx), %eax
+    test %eax, %eax
+    jz .Lwmarg_end
+    cmp $34, %eax
+    jne .Lwmarg_ch
+    xor $1, %ecx
+    inc %rbx
+    jmp .Lwmarg_tok
+.Lwmarg_ch:
+    test %ecx, %ecx
+    jnz .Lwmarg_take
+    cmp $32, %eax
+    je .Lwmarg_end
+    cmp $9, %eax
+    je .Lwmarg_end
+.Lwmarg_take:
+    inc %r15
+    inc %rbx
+    jmp .Lwmarg_tok
+.Lwmarg_end:
+    cmp %r12, %r13
+    je .Lwmarg_found
+    inc %r13
+    jmp .Lwmarg_skip
+.Lwmarg_adv:
+    inc %rbx
+    jmp .Lwmarg_skip
+.Lwmarg_found:
+    mov %r15, %rsi
+    call hbc_stralloc
+    mov %rax, %rbx
+    mov %rax, %rdi
+    mov %r14, %rsi
+    xor %ecx, %ecx
+.Lwmarg_copy:
+    movzbl (%rsi), %eax
+    test %eax, %eax
+    jz .Lwmarg_done
+    cmp $34, %eax
+    jne .Lwmarg_c2
+    xor $1, %ecx
+    inc %rsi
+    jmp .Lwmarg_copy
+.Lwmarg_c2:
+    test %ecx, %ecx
+    jnz .Lwmarg_put
+    cmp $32, %eax
+    je .Lwmarg_done
+    cmp $9, %eax
+    je .Lwmarg_done
+.Lwmarg_put:
+    mov %al, (%rdi)
+    inc %rdi
+    inc %rsi
+    jmp .Lwmarg_copy
+.Lwmarg_done:
+    mov %rbx, %rdx
+    mov $4, %eax
+    jmp .Lwmarg_ret
+.Lwmarg_nil:
+    mov $1, %eax
+    xor %edx, %edx
+.Lwmarg_ret:
+    add $40, %rsp
+    pop %r15
+    pop %r14
+    pop %r13
+    pop %r12
+    pop %rbx
+    pop %rbp
+    ret
+";
+
 // Harbour discards the value main returns: the process exit code comes
 // only from ErrorLevel() (measured against Harbour 3.2, tests/main-return).
 // `return <value>` in main therefore runs as a bare `return`: a literal or
@@ -11255,11 +11396,13 @@ fn discard_main_return_values(funcs:&mut [Func]) {
 }
 
 // main's parameters receive the command-line arguments in Harbour 3.2
-// (measured: strings, NIL when not supplied). The startup code passes no
-// arguments, so each parameter is a local that starts NIL, the value
-// Harbour gives a run without arguments (tests/main-params). Kept as real
+// (measured: strings, NIL when not supplied; tests/main-params and
+// tests/main-args). Each parameter becomes a local initialized by
+// hbc_main_arg(i): an owned copy of argument i, or NIL past the last one.
+// Mach-O and LLVM targets do not deliver arguments yet: there the local
+// starts NIL, the value of a run without arguments. Kept as real
 // parameters when the program itself calls main.
-fn main_params_as_nil_locals(funcs:&mut [Func]) {
+fn main_params_as_nil_locals(funcs:&mut [Func], deliver:bool) {
     let mut called=false;
     for f in funcs.iter() {
         visit_stmts_ref(&f.stmts,&mut |_|{},&mut |e| {if let Expr::Call(id,_)=e {if id.eq_ignore_ascii_case("main") {called=true;}}});
@@ -11269,7 +11412,11 @@ fn main_params_as_nil_locals(funcs:&mut [Func]) {
         let n=f.stmts.first().map_or(1,stmt_line);
         let params=std::mem::take(&mut f.params);
         for (i,p) in params.into_iter().enumerate() {
-            f.stmts.insert(i,Stmt::Local(n,p,Expr::Nil));
+            let init=if deliver {
+                MAIN_ARGS_USED.with(|v|v.set(true));
+                Expr::Call("hbc_main_arg".to_string(),vec![Expr::Int((i+1).to_string())])
+            } else { Expr::Nil };
+            f.stmts.insert(i,Stmt::Local(n,p,init));
         }
     }
 }
@@ -13518,7 +13665,7 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
             if is_builtin(id,"hb_sha1") || is_builtin(id,"hb_hmac_sha1") {for a in args {apply_moves(a,env,sigs,false);}return;}
             if id=="hrbase_wait" {return;}
             if id=="hbc_set_decimals" {return;}
-            if id=="hbc_set_datefmt" || id=="hbc_set_century" || id=="hbc_set_epoch" || id=="hbc_quit" {return;}
+            if id=="hbc_set_datefmt" || id=="hbc_set_century" || id=="hbc_set_epoch" || id=="hbc_quit" || id=="hbc_main_arg" {return;}
             if is_builtin(id,"altd") {return;}
             if is_builtin(id,"inkey") {return;}
             if is_builtin(id,"file") || id=="hrfile_setdefault" || id=="hrfile_setpath" {
@@ -17737,6 +17884,11 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
         }
         Expr::Call(id,_) if is_builtin(id,"altd") => {
             out.push_str("    xor %eax, %eax\n");
+        }
+        Expr::Call(id,args) if id=="hbc_main_arg" => {
+            // Dyn pair (rax tag, rdx payload): owned string or NIL.
+            let i=match &args[0] {Expr::Int(v)=>v.clone(),_=>"0".to_string()};
+            out.push_str(&format!("    mov ${}, %edi\n    call hbc_main_arg\n", i));
         }
         Expr::Call(id,_) if id=="hbc_quit" => {
             // Back to _start, just after `call hbc_fn_main`: the slot below
@@ -22105,6 +22257,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             if is_builtin(id,"hb_sha1") || is_builtin(id,"hb_hmac_sha1") {return Ty::StrOwn;}
             if id=="hrbase_wait" {return Ty::I64;}
             if id=="hbc_set_decimals" {return Ty::I64;}
+            if id=="hbc_main_arg" {return Ty::Dyn;}
             if id=="hbc_set_datefmt" || id=="hbc_set_century" || id=="hbc_set_epoch" || id=="hbc_quit" {return Ty::I64;}
             if is_builtin(id,"__setcentury") {return Ty::Bool;}
             if is_builtin(id,"set") {return if set_date_mask_call(args){Ty::StrOwn}else{Ty::I64};}
@@ -32197,6 +32350,7 @@ fn emit_asm(funcs: &[Func], sigs: &[Sig], externs: &[String], target: Target, in
     }
     out.push_str("# generated by hbc (PoC: Harbour syntax -> x86-64 assembly)\n");
     if QUIT_USED.with(|v|v.get()) {out.push_str("    .data\n    .align 8\nhbc_quit_rsp: .quad 0\n    .text\n");}
+    if MAIN_ARGS_USED.with(|v|v.get()) {out.push_str(match target {Target::Linux=>MAIN_ARG_LINUX,Target::Windows=>MAIN_ARG_WINDOWS});}
     let gtstd_native=CURDIR_LINUX_NATIVE.with(|v|v.get())&&!THREADS.with(|v|v.get());
     if gtstd_native {out.push_str(include_str!("gtstd_linux.s"));out.push_str(include_str!("../generated/hrgtstd.s"));}
     else {out.push_str(CONSOLE_NUL_HELPER);}
@@ -32243,6 +32397,7 @@ fn emit_asm(funcs: &[Func], sigs: &[Sig], externs: &[String], target: Target, in
     match target {
         Target::Linux => {
             out.push_str("    .text\n    .globl _start\n_start:\n");
+            if MAIN_ARGS_USED.with(|v|v.get()) {out.push_str("    mov (%rsp), %rax\n    mov %rax, hbc_main_argc(%rip)\n    lea 8(%rsp), %rax\n    mov %rax, hbc_main_argv(%rip)\n");}
             if shared_local::active(){out.push_str("    mov %rsp, hbc_sarr_stack_top(%rip)\n");}
             if MACRO_CONTEXT.with(|c|c.get()){out.push_str("    mov %rsp, %rbp\n    and $-16, %rsp\n    sub $256, %rsp\n    mov %rsp, %rdi\n    call hrmacro_start\n");}
             if funcs.iter().any(|f| f.stmts.iter().any(|st| matches!(st, Stmt::Static(_,_,Expr::Str(_))))) { out.push_str("    call hbc_module_strings_init\n"); }
@@ -39736,7 +39891,7 @@ fn main() {
         Ok(p) => p,
         Err(msg) => { eprintln!("error: {}", msg); process::exit(1); }
     };
-    main_params_as_nil_locals(&mut prog.funcs);
+    main_params_as_nil_locals(&mut prog.funcs, !macho && !macho_arm64 && !llvm);
     // Extend-System bridge (docs/EXTEND-BRIDGE.md): deduped EXTERNAL
     // symbols. A symbol also defined in this file is inert (like a
     // REQUEST of a local symbol); the definition wins every call.

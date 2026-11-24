@@ -1,0 +1,25 @@
+{
+  "windows": [
+    {"cmd": "", "want": []},
+    {"cmd": "\"x y\" z", "want": ["x y", "z"]},
+    {"cmd": "\"\"", "want": [""]},
+    {"cmd": "a\\\"b", "want": ["a\\b"]},
+    {"cmd": "a\\\\\"b c\"", "want": ["a\\\\b c"]},
+    {"cmd": "\"a\\\\\" b", "want": ["a\\\\", "b"]},
+    {"cmd": "*.prg", "want": ["*.prg"]},
+    {"cmd": "  lead   trail  ", "want": ["lead", "trail"]},
+    {"cmd": "a\"b\"c", "want": ["abc"]},
+    {"cmd": "\"a\"\"b\"", "want": ["ab"]},
+    {"cmd": "\"unterminated x", "want": ["unterminated x"]},
+    {"cmd": "a\tb", "want": ["a", "b"]},
+    {"cmd": "x \"\" y", "want": ["x", "", "y"]},
+    {"cmd": "one two three four five six seven", "want": ["one", "two", "three", "four", "five", "six"]}
+  ],
+  "linux": [
+    {"argv": [], "want": []},
+    {"argv": ["x y", "z"], "want": ["x y", "z"]},
+    {"argv": [""], "want": [""]},
+    {"argv": ["a\\\"b", "*.prg"], "want": ["a\\\"b", "*.prg"]},
+    {"argv": ["one", "two", "three", "four", "five", "six", "seven"], "want": ["one", "two", "three", "four", "five", "six"]}
+  ]
+}
