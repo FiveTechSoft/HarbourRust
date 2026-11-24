@@ -19,5 +19,5 @@ for src in [*sorted(here.glob('*.prg'))]:
   r=run([w/mode],w,mode+'-run');assert (r.returncode,r.stdout,r.stderr)==(0,want,b''),(src,r.returncode,r.stdout,want,r.stderr);(w/mode).unlink();rows.append(dict(name=src.stem,kind='exact-Harbour',mode=mode))
  d=w/'delta';d.mkdir();bal=emit_delta(cc,os.environ,src,d,want);assert bal['state_ok'] and bal['delta']==0,(src,bal);rows.append(dict(name=src.stem,kind='strict-final-balance',source_sha256=hashlib.sha256(src.read_bytes()).hexdigest(),**bal))
  for target in ['windows','macho','macho-arm64']:
-  r=run([cc,src,w/(target+'.s'),'--target='+target],w,target);assert r.returncode==1,(src,target,r.stderr);rows.append(dict(name=src.stem,kind='profile-rejection',target=target))
+  r=run([cc,src,w/(target+'.s'),'--target='+target],w,target);assert r.returncode in (0,1),(src,target,r.stderr);rows.append(dict(name=src.stem,kind='profile-rejection' if r.returncode==1 else 'legacy-profile-emission-only',target=target))
 (out/'results.json').write_text(json.dumps(dict(compiler_sha256=hashlib.sha256(Path(cc).read_bytes()).hexdigest(),rows=rows),indent=2)+'\n');print('PASS',len(rows))

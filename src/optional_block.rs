@@ -14,13 +14,20 @@ fn direct(f:&Func,user:&HashSet<String>)->bool {
 fn leaf(e:&Expr)->bool {matches!(e,Expr::Int(_)|Expr::Str(_)|Expr::Log(_)|Expr::Nil)}
 // Reject reduction if any intermediate leaves Harbour's exact i64 range.
 // Such calls remain on the pre-existing typed Eval route.
-fn integer_value(e:&Expr,p:&str,value:i64)->Option<i64> {match e {
- Expr::Int(v)=>v.parse::<i64>().ok(),Expr::Var(v) if v==p=>Some(value),
- Expr::Bin(op @ ('+'|'-'|'*'),a,b)=>{
-  let a=integer_value(a,p,value)?;let b=integer_value(b,p,value)?;
-  match op {'+'=>a.checked_add(b),'-'=>a.checked_sub(b),'*'=>a.checked_mul(b).filter(|v|v.unsigned_abs()<=9_007_199_254_740_992),_=>None}
- },_=>None,
-}}
+fn integer_value(e:&Expr,p:&str,value:i64)->Option<i64> {
+ fn eval(e:&Expr,p:&str,value:i64)->Option<(i64,bool)>{match e{
+  Expr::Int(v)=>Some((v.parse::<i64>().ok()?,false)),
+  Expr::Var(v) if v==p=>Some((value,false)),
+  Expr::Bin(op @ ('+'|'-'|'*'),a,b)=>{
+   let (a,af)=eval(a,p,value)?;let (b,bf)=eval(b,p,value)?;
+   let fp=af||bf||*op=='*';
+   let n=match op {'+'=>a.checked_add(b),'-'=>a.checked_sub(b),'*'=>a.checked_mul(b),_=>None}?;
+   if fp&&n.unsigned_abs()>9_007_199_254_740_992{return None;}
+   Some((n,fp))
+  },_=>None,
+ }}
+ eval(e,p,value).map(|v|v.0)
+}
 fn substitute(e:&mut Expr,p:&str,value:&Expr){match e{
  Expr::Var(v) if v==p=>*e=value.clone(),
  Expr::Bin(_,a,b)=>{substitute(a,p,value);substitute(b,p,value);},_=>{},
@@ -95,6 +102,17 @@ mod tests {
    crate::DECIMAL_LOCAL_PROFILE.with(|v|v.set(true));
    assert!(!lower(&mut funcs));assert_eq!(funcs.len(),2);
    if let Stmt::Ret(_,Some(after))=&funcs[1].stmts[0]{assert_eq!(format!("{:?}",after),debug);}else{panic!("return lost")}
+  }
+ }
+ #[test] fn multiplication_provenance_bounds_all_later_intermediates(){
+  let edge=9_007_199_254_740_992;
+  for sign in [-1,1]{
+   let product=op('*',x(),n(1));
+   let beyond=op('+',product.clone(),n(sign));
+   assert_eq!(integer_value(&beyond,"x",sign*edge),None);
+   assert_eq!(integer_value(&op('-',product,n(-sign)),"x",sign*edge),None);
+   assert_eq!(integer_value(&op('-',beyond,x()),"x",sign*edge),None);
+   assert_eq!(integer_value(&op('+',op('*',x(),n(1)),n(-sign)),"x",sign*edge),Some(sign*(edge-1)));
   }
  }
  #[test] fn successful_cancellation_stays_exact(){
