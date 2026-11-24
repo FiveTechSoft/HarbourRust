@@ -51,6 +51,8 @@ fn hint_of(name: &str) -> u16 {
         // interpolated in the Win10 export order.
         "GetLastError" => 613,
         "SetFilePointerEx" => 1255,
+        // D7: close-time NTX flush sizes the rewritten image.
+        "SetEndOfFile" => 1219,
         "GetSystemTime" => 775,
         // Threads on Windows (measured from mingw-w64 libkernel32.a of the
         // bundled toolchain; advisory like the rest).

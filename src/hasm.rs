@@ -1868,10 +1868,11 @@ impl Asm {
     fn scan_imports(&self) -> Result<Vec<String>, String> {
         // D1.1: GetLastError feeds exact open-rejection diagnostics on PE.
         // D2: SetFilePointerEx + GetSystemTime feed record write-back and
-        // the UTC header date on appends.
-        const WHITELIST: [&str; 35] = ["GetCommandLineA", "VirtualAlloc", "VirtualFree", "GetSystemInfo", "ExitProcess", "GetEnvironmentVariableA", "GetLocalTime", "GetProcessHeap",
+        // the UTC header date on appends. D7: SetEndOfFile sizes the
+        // close-time NTX flush.
+        const WHITELIST: [&str; 36] = ["GetCommandLineA", "VirtualAlloc", "VirtualFree", "GetSystemInfo", "ExitProcess", "GetEnvironmentVariableA", "GetLocalTime", "GetProcessHeap",
             "GetStdHandle", "HeapAlloc", "HeapFree", "WriteFile", "CreateFileW", "ReadFile", "GetFileSizeEx", "CloseHandle",
-            "GetLastError", "SetFilePointerEx", "GetSystemTime",
+            "GetLastError", "SetFilePointerEx", "SetEndOfFile", "GetSystemTime",
             // Threads on Windows (CreateThread runtime, TEB TLS slots,
             // WaitOnAddress resolved at run time from the synch API set).
             "CreateThread", "ExitThread", "GetCurrentThreadId", "TlsAlloc", "TlsFree", "LoadLibraryA", "GetProcAddress", "Sleep", "FindFirstFileW", "FindNextFileW", "FindClose", "CreateDirectoryW", "MultiByteToWideChar", "GetFileType", "PeekNamedPipe", "GetTickCount64"];

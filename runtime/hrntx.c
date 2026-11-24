@@ -78,3 +78,83 @@ uint32_t hrntx_seek(const hrntx_index*x,const unsigned char*q,size_t n,int soft,
  if(last)return first?first-1:x->count;
  return first;
 }
+
+/* D7: emit a fresh NTX image. Page shape is the reader's: n at +0, n+1
+ * uint16 offset slots at +2, entries of width+8 bytes ({child,rec,key})
+ * from 2+2*(max+1). Ground truth from oracle-written trees (single leaf
+ * fixture and a 200-record interior tree, dumped 2026-11-24): every
+ * (rec,key) entry appears EXACTLY ONCE in the tree - interior slots
+ * carry real entries between their child leaves (slot s: child = leaf
+ * s, entry = the first entry of leaf s+1), the last slot is the
+ * rightmost child with a zero-filled rec/key sentinel, and leaf pages
+ * end with a zero-filled sentinel slot too. Layout emitted here: header
+ * page (copy of in, root pointer rewritten), then the leaves, then the
+ * interior page after them (the oracle also stores the root last).
+ * Bounded subset: one interior level, so the leaf count must fit one
+ * interior page (count <= max*max); chunking is max-sized leaves with
+ * the remainder in the last leaf. */
+typedef struct {uint32_t recno;const unsigned char*key;} nxsortitem;
+static int nxentry_lt(const nxsortitem*a,const nxsortitem*b,uint16_t width){
+ int c=nxcmp(a->key,b->key,width);
+ if(c)return c<0;
+ return a->recno<b->recno;
+}
+static void nxput8(unsigned char*p,uint32_t v){p[0]=(unsigned char)v;p[1]=(unsigned char)(v>>8);p[2]=(unsigned char)(v>>16);p[3]=(unsigned char)(v>>24);}
+static void nxput16(unsigned char*p,uint16_t v){p[0]=(unsigned char)v;p[1]=(unsigned char)(v>>8);}
+static void nxputslot(unsigned char*page,size_t slot,size_t base,size_t item,
+                      uint32_t child,uint32_t rec,const unsigned char*key,uint16_t width){
+ size_t off=base+slot*item;unsigned i;
+ nxput16(page+2+2*slot,(uint16_t)off);
+ nxput8(page+off,child);
+ nxput8(page+off+4,rec);
+ for(i=0;i<width;i++)page[off+8+i]=key?key[i]:0;
+}
+size_t hrntx_build(unsigned char*img,const unsigned char*in,const hrntx_index*shape,
+                   const hrdbf_area*d,void*sort,size_t sortbytes){
+ uint16_t max,width=shape->width,field=shape->field;
+ size_t base,item=(size_t)width+8,n=d->count,m,i,j,root;
+ nxsortitem*s;
+ if(!img||!in||!d->open||!width||!sort||sortbytes<16*n)return 0;
+ max=nx16(in+18);
+ base=2+2*(size_t)(max+1);
+ if(!max||(size_t)base+(size_t)max*item>1024)return 0;
+ if(n>max&&(size_t)max*max<n)return 0; /* bounded two-level subset */
+ (void)sort;
+ s=(nxsortitem*)sort;
+ for(i=0;i<n;i++){
+  s[i].recno=(uint32_t)(i+1);
+  s[i].key=d->bytes+d->header+i*(size_t)d->record+d->fields[field].offset;
+ }
+ for(i=1;i<n;i++){nxsortitem e=s[i];j=i;
+  while(j&&nxentry_lt(&e,&s[j-1],width)){s[j]=s[j-1];j--;}
+  s[j]=e;
+ }
+ /* Partition measured from the oracle's 200-record tree: leaf i starts at
+  * i*(max+1) and holds up to max entries; the entry right after leaf i is
+  * the INTERIOR separator of slot i (it lives only in the interior page);
+  * the last interior slot is the rightmost child with a zero-filled
+  * entry. m = ceil((n+1)/(max+1)). */
+ m=n?(size_t)((n+1+max)/(max+1)):1;
+ if(m>max)return 0; /* bounded two-level subset */
+ for(i=0;i<1024;i++)img[i]=in[i];
+ for(i=0;i<m;i++){
+  unsigned char*p=img+1024*(1+i);
+  size_t a=i*(max+1),b=i==m-1?n:a+max,k=b-a;
+  if(k>max)return 0;
+  nxput16(p,(uint16_t)k);
+  for(j=0;j<k;j++)nxputslot(p,j,base,item,0,s[a+j].recno,s[a+j].key,width);
+  nxputslot(p,k,base,item,0,0,0,width); /* zero-filled sentinel */
+ }
+ if(m>1){
+  unsigned char*p=img+1024*(1+m); /* interior page after the leaves */
+  root=1024*(1+m);
+  nxput16(p,(uint16_t)(m-1));
+  for(i=0;i<m;i++){
+   if(i+1<m){size_t sep=i*(max+1)+max;if(sep>=n)return 0;
+    nxputslot(p,i,base,item,(uint32_t)(1024*(1+i)),s[sep].recno,s[sep].key,width);}
+   else nxputslot(p,i,base,item,(uint32_t)(1024*(1+i)),0,0,width);
+  }
+ }else root=1024;
+ nxput8(img+4,(uint32_t)root);
+ return 1024*(size_t)(m+(m>1?2:1));
+}
