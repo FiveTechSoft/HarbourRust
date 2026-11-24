@@ -8527,6 +8527,9 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                         return Err(format!("line {}: `hb_ATokens` with {} is not covered in this increment (no expression lowering; outside the oracle; Harbour's runtime behaviour for this shape is UNVERIFIED here)", n, gap));
                     }
                 }
+                let borrowed_iterator = args.len()==2 && matches!(&args[1],Expr::Str(_))
+                    && CURDIR_LINUX_NATIVE.with(|v|v.get()) && DECIMAL_LOCAL_PROFILE.with(|v|v.get()) && !MACRO_CONTEXT.with(|v|v.get())
+                    && matches!(&args[0],Expr::Var(id) if env.iter().rev().any(|v|v.name==*id && v.ty==Ty::Dyn && v.ro));
                 let mut borrowed: Vec<Option<String>> = vec![None; args.len()];
                 let mut owned_tmp: Vec<bool> = vec![false; args.len()];
                 for (i, a) in args.iter().enumerate() {
@@ -8535,7 +8538,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                         Expr::HashLit(kvs) => { for (k, v) in kvs { type_expr(k, env, sigs, n)?; type_expr(v, env, sigs, n)?; } }
                         _ => {
                             let t = type_expr(a, env, sigs, n)?;
-                            if matches!(t, Ty::Dyn | Ty::NumLocal) && !matches!(a, Expr::Nil) {
+                            if matches!(t, Ty::Dyn | Ty::NumLocal) && !matches!(a, Expr::Nil) && !(i==0 && borrowed_iterator) {
                                 return Err(format!("line {}: `hb_ATokens` with a dynamic argument is not covered in this increment", n));
                             }
                             if matches!(t, Ty::Str | Ty::StrOwn) {
@@ -11115,6 +11118,8 @@ fn foreach_lv_readonly(stmts: &[Stmt], name: &str) -> bool {
     }
     stmts.iter().all(|s| match s {
         Stmt::Print(_, items, _) => items.iter().all(|i| !in_call(i, name)),
+        Stmt::Assign(_,id,Expr::Call(f,aa)) if CURDIR_LINUX_NATIVE.with(|v|v.get()) && id!=name && is_builtin(f,"hb_atokens")
+            && matches!(aa.as_slice(),[Expr::Var(v),Expr::Str(_)] if v==name)=>true,
         Stmt::Assign(_, _, e) | Stmt::Ret(_, Some(e)) => !mentions(e, name),
         Stmt::CallStmt(_, e) => !mentions(e, name),
         Stmt::ArrSet(_, _, ie, e) => !mentions(ie, name) && !mentions(e, name),
@@ -17304,7 +17309,8 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                 }
             }
             let stringable = |a: &Expr| !matches!(a, Expr::ArrLit(_) | Expr::HashLit(_)) && matches!(expr_ty(a, env, sigs), Ty::Str | Ty::StrOwn);
-            if args.is_empty() || !stringable(&args[0]) {
+            let borrowed_iterator=args.len()==2 && matches!(&args[0],Expr::Var(_)) && expr_ty(&args[0],env,sigs)==Ty::Dyn;
+            if args.is_empty() || (!stringable(&args[0]) && !borrowed_iterator) {
                 for a in args.iter() {
                     cg_val_discard_arg(a, env, sigs, strs, out, target);
                 }
@@ -17313,6 +17319,11 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             }
             let temp0 = expr_ty(&args[0],env,sigs)==Ty::StrOwn && !matches!(&args[0],Expr::Var(_));
             cg_value(&args[0],env,sigs,strs,out,target);
+            if borrowed_iterator {
+                let k=fresh_lbl();
+                out.push_str(&format!("    @HBC_TAG_KIND@cmp $2, %rax@HBC_TAG_END@\n    je .Latborrow{k}\n    @HBC_TAG_KIND@cmp $4, %rax@HBC_TAG_END@\n    je .Latborrow{k}\n    call hbc_atokens_arg_error\n.Latborrow{k}:\n    mov %rdx, %rax\n    mov -8(%rax), %rdx\n"));
+            }
+
             out.push_str("    sub $64, %rsp\n    mov %rax, 16(%rsp)\n    mov %rdx, 24(%rsp)\n    movq $0, 32(%rsp)\n    movq $0, 40(%rsp)\n");
             // Separator (arg 1): mode from the static type.
             let mut mode: i32 = 0;
