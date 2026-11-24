@@ -7398,6 +7398,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 if args.len() != 1 {
                     return Err(format!("line {}: `{}` takes one argument", n, id));
                 }
+                if shared_local::active()&&matches!(&args[0],Expr::Index2(v,..)|Expr::Index3(v,..)|Expr::Index4(v,..)if shared_local::current(v)&&env.iter().any(|x|x.name==*v&&x.ty==Ty::Dyn)){type_expr(&args[0],env,sigs,n)?;return Ok(Ty::Bool);}
                 match &args[0] {
                     Expr::Int(_) | Expr::Str(_) | Expr::Nil | Expr::Log(_) | Expr::Float(..) | Expr::FloatV(..) => {}
                     Expr::Var(v) => {
@@ -16530,6 +16531,10 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
 ");
                 }
             };
+            if shared_local::active()&&matches!(&args[0],Expr::Index2(v,..)|Expr::Index3(v,..)|Expr::Index4(v,..)if shared_local::current(v)&&env.iter().any(|x|x.name==*v&&x.ty==Ty::Dyn)){
+                cg_value(&args[0],env,sigs,strs,out,target);out.push_str("    mov %rax, %r10\n");classify_tag(out,want_num);
+                if want_num{out.push_str("    cmpb $5, %r10b\n    sete %dl\n    or %dl, %al\n    movzbq %al, %rax\n");}return;
+            }
             match &args[0] {
                 Expr::Int(_) | Expr::Float(..) | Expr::FloatV(..) => konst(out, want_num),
                 Expr::Str(_) | Expr::Nil | Expr::Log(_) => konst(out, false),
