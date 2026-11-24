@@ -1,0 +1,11 @@
+function main()
+ dbUseArea(.T., "DBFNTX", "ixwrite.dbf", "IXW", .F., .F.)
+ ordListAdd("ixwrite.ntx")
+ dbGoTop()
+ FieldPut(1, "K00099")
+ dbCloseArea()
+ dbUseArea(.T., "DBFNTX", "ixwrite.dbf", "IXW", .F., .F.)
+ ordListAdd("ixwrite.ntx")
+ ? dbSeek("K00099"), RecNo()
+ ? dbSeek("K00001"), RecNo()
+ return nil
