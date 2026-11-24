@@ -400,7 +400,7 @@ void hrdbf_app_fieldput(int64_t n,uint64_t tag,uint64_t pay){
  if(e==HRDBF_TYPE)hrdbf_app_fail("hbc: DBF field write type mismatch\n");
  if(e)hrdbf_app_fail("hbc: DBF field write encoding rejected\n");
  if(hrdbf_file_write_record(f,f->area.recno))hrdbf_app_fail("hbc: DBF field write commit failed\n");
- if(hrdbf_app_order.index.bytes&&!hrdbf_app_cdx&&(uint64_t)n==hrdbf_app_order.index.field+1)hrdbf_app_rebuild_index();
+ if(hrdbf_app_order.index.bytes&&!hrdbf_app_cdx&&(uint64_t)n==(uint64_t)hrdbf_app_order.index.field+1)hrdbf_app_rebuild_index();
 }
 /* D6: delete-flag writes. Oracle-measured (Harbour 3.2 mingw64 native,
  * November 24, 2026): dbDelete marks rec[0]='*' and dbRecall marks ' '

@@ -101,7 +101,7 @@ static int nxentry_lt(const nxsortitem*a,const nxsortitem*b,uint16_t width){
 }
 static void nxput8(unsigned char*p,uint32_t v){p[0]=(unsigned char)v;p[1]=(unsigned char)(v>>8);p[2]=(unsigned char)(v>>16);p[3]=(unsigned char)(v>>24);}
 static void nxput16(unsigned char*p,uint16_t v){p[0]=(unsigned char)v;p[1]=(unsigned char)(v>>8);}
-static void nxputslot(unsigned char*page,uint16_t max,size_t slot,size_t base,size_t item,
+static void nxputslot(unsigned char*page,size_t slot,size_t base,size_t item,
                       uint32_t child,uint32_t rec,const unsigned char*key,uint16_t width){
  size_t off=base+slot*item;unsigned i;
  nxput16(page+2+2*slot,(uint16_t)off);
@@ -142,8 +142,8 @@ size_t hrntx_build(unsigned char*img,const unsigned char*in,const hrntx_index*sh
   size_t a=i*(max+1),b=i==m-1?n:a+max,k=b-a;
   if(k>max)return 0;
   nxput16(p,(uint16_t)k);
-  for(j=0;j<k;j++)nxputslot(p,max,j,base,item,0,s[a+j].recno,s[a+j].key,width);
-  nxputslot(p,max,k,base,item,0,0,0,width); /* zero-filled sentinel */
+  for(j=0;j<k;j++)nxputslot(p,j,base,item,0,s[a+j].recno,s[a+j].key,width);
+  nxputslot(p,k,base,item,0,0,0,width); /* zero-filled sentinel */
  }
  if(m>1){
   unsigned char*p=img+1024*(1+m); /* interior page after the leaves */
@@ -151,8 +151,8 @@ size_t hrntx_build(unsigned char*img,const unsigned char*in,const hrntx_index*sh
   nxput16(p,(uint16_t)(m-1));
   for(i=0;i<m;i++){
    if(i+1<m){size_t sep=i*(max+1)+max;if(sep>=n)return 0;
-    nxputslot(p,max,i,base,item,(uint32_t)(1024*(1+i)),s[sep].recno,s[sep].key,width);}
-   else nxputslot(p,max,i,base,item,(uint32_t)(1024*(1+i)),0,0,width);
+    nxputslot(p,i,base,item,(uint32_t)(1024*(1+i)),s[sep].recno,s[sep].key,width);}
+   else nxputslot(p,i,base,item,(uint32_t)(1024*(1+i)),0,0,width);
   }
  }else root=1024;
  nxput8(img+4,(uint32_t)root);
