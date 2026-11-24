@@ -1,5 +1,7 @@
-// Prints main's six parameters, one per line, each between brackets.
+// Prints PCount(), then main's six parameters, one per line, each
+// between brackets.
 procedure main(a, b, c, d, e, f)
+   ? PCount()
    ? "["
    ?? a
    ?? "]"

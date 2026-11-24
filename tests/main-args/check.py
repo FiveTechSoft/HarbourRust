@@ -4,8 +4,8 @@
 Windows: each case is a raw command line, so hbc's own splitting of
 GetCommandLineA is checked against the Harbour 3.2 results recorded in
 cases.json. Linux: each case is an argument vector (the kernel delivers
-argv verbatim). Every case prints six bracketed parameters, NIL past the
-last argument.
+argv verbatim). Every case prints PCount() and six bracketed parameters, NIL
+past the last argument.
 """
 import argparse
 import json
@@ -19,8 +19,9 @@ HERE = Path(__file__).resolve().parent
 
 
 def expected(want):
+    # PCount() counts every argument; only six parameters are declared.
     vals = (list(want) + [None] * 6)[:6]
-    return ''.join('\n[' + ('NIL' if v is None else v) + ']' for v in vals).encode('latin-1')
+    return ('\n%10d' % len(want)).encode() + ''.join('\n[' + ('NIL' if v is None else v) + ']' for v in vals).encode('latin-1')
 
 
 def main():

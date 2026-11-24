@@ -73,6 +73,12 @@ jobs:
           set -euo pipefail
           if [[ "$RUNNER_OS" == "Windows" ]]; then compiler=./hbc.exe; else compiler=./hbc; fi
           python tests/main-args/check.py --compiler "$compiler"
+      - name: PCount on direct calls and in main
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$RUNNER_OS" == "Windows" ]]; then compiler=./hbc.exe; else compiler=./hbc; fi
+          python tests/pcount/check.py --compiler "$compiler" --output work/ci-pcount
       - name: FILE native Linux fixtures (no Harbour or Wine)
         if: runner.os == 'Linux'
         shell: bash
