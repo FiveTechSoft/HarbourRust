@@ -41,6 +41,15 @@ pub fn init(ff:&[Func]) {
   let mut nested=HashSet::new();
   visit_stmts_ref(&f.stmts,&mut |s|{if let Stmt::Local(_,n,e)=s{if literal(e)&&tagged_nested(e){nested.insert(n.clone());}}},&mut |_|{});
   visit_stmts_ref(&f.stmts,&mut |s|{if let Stmt::ArrSet2(_,n,..)=s{if nested.contains(n){need=true;}}},&mut |_|{});
+  // ASort on a constant local flat literal requires an addressable array
+  // identity. Keep callback and mixed/computed literals for later stages.
+  let mut sortable=HashSet::new();
+  visit_stmts_ref(&f.stmts,&mut |s|{if let Stmt::Local(_,n,Expr::ArrLit(es))=s{
+   if es.iter().all(|e|matches!(e,Expr::Int(_))){sortable.insert(n.clone());}
+  }},&mut |_|{});
+  visit_stmts_ref(&f.stmts,&mut |_|{},&mut |e|{if let Expr::Call(id,args)=e{
+   if is_builtin(id,"asort")&&args.len()<=3&&matches!(args.first(),Some(Expr::Var(n)) if sortable.contains(n)){need=true;}
+  }});
   names.insert(f.name.clone(),arrays);
  }
  for f in ff {let own=names.get(&f.name).unwrap();visit_stmts_ref(&f.stmts,&mut |_|{},&mut |e|{if let Expr::Call(id,aa)=e {if let Some(to)=ff.iter().find(|x|x.name==*id){for(i,a)in aa.iter().enumerate().take(to.params.len()){if matches!(a,Expr::Var(n) if own.contains(n)) && to.stmts.iter().any(|s|matches!(s,Stmt::AAdd(_,p,_) if p==&to.params[i])) {need=true;}}}}});}

@@ -150,3 +150,5 @@ tests/quit-bb/expected/** -text
 tests/array-cycle-entry/** -text
 
 tests/nested-array-entry/** -text
+
+tests/asort-phase1/** -text

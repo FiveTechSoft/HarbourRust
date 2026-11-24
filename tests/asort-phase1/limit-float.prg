@@ -1,0 +1,4 @@
+FUNCTION Main()
+ LOCAL a:={3,1.5,2}
+ ASort(a)
+RETURN NIL

@@ -8095,6 +8095,11 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                     return Err(format!("line {}: `ASort` expects an array variable (the slot is passed by address)",n));
                 }
                 let ta = type_expr(&args[0],env,sigs,n)?;
+                if shared_local::active()&&ta==Ty::Dyn&&matches!(&args[0],Expr::Var(v) if is_sarr(v)){
+                    if args.len()>3{return Err(format!("line {}: shared ASort callbacks are outside this increment",n));}
+                    for e in args.iter().skip(1){if !matches!(e,Expr::Nil)&&type_expr(e,env,sigs,n)?!=Ty::I64{return Err(format!("line {}: shared ASort start/count require integer or literal NIL",n));}}
+                    return Ok(Ty::Dyn);
+                }
                 match ta {
                     Ty::DArr | Ty::DArrS => {}
                     _ => return Err(format!("line {}: `ASort` supports flat integer or string arrays in this increment",n)),
@@ -17725,7 +17730,15 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
         Expr::Call(id,args) if is_builtin(id,"asort") => {
             let av = match &args[0] { Expr::Var(v) => v.clone(), _ => unreachable!("checked") };
             let var = env.iter().rev().find(|x| x.name == *av).expect("checked");
-            if args.len()==4 {
+            if shared_local::active()&&expr_ty(&args[0],env,sigs)==Ty::Dyn {
+                out.push_str("    sub $32, %rsp\n");
+                for i in 1..=2 {
+                    if let Some(e)=args.get(i).filter(|e|!matches!(e,Expr::Nil)){cg_expr(e,env,sigs,strs,out,target);}else{out.push_str(if i==1{"    mov $1, %rax\n"}else{"    mov $-1, %rax\n"});}
+                    out.push_str(&format!("    mov %rax, {}(%rsp)\n",(i-1)*8));
+                }
+                cg_sarr_root(&av,var.off,"%r11",out);
+                out.push_str("    mov %r11, 16(%rsp)\n    mov 24(%r11), %rdi\n    mov (%r11), %rsi\n    mov (%rsp), %rdx\n    mov 8(%rsp), %rcx\n    call hbc_asort_flat_shared\n    mov 16(%rsp), %rdx\n    mov $16, %eax\n    add $32, %rsp\n");
+            } else if args.len()==4 {
                 // Block sort: the helper gets the cells, the clamped
                 // start/count and the block function pointer; blocks with
                 // captures receive the owner's %rbp in %r10 before the
@@ -28702,6 +28715,57 @@ hbc_aclone_s:
     pop %rbp
     ret
 
+# Own MIT: bounded shared flat ASort. Only integer/text families, no callback.
+# Validate before moving cells, so a rejected mixed array remains unchanged.
+hbc_asort_flat_shared:
+    test %rsi, %rsi
+    jz .Lasfsdone
+    test %rdx, %rdx
+    js .Lasfsdone
+    jnz .Lasfsstart
+    mov $1, %edx
+.Lasfsstart:
+    cmp %rsi, %rdx
+    jg .Lasfsdone
+    mov (%rdi), %r10
+    cmp $9, %r10
+    jne .Lasfsfamily
+    xor %r10d, %r10d
+.Lasfsfamily:
+    test %r10, %r10
+    jz .Lasfsscan
+    cmp $4, %r10
+    jne hbc_type_error
+.Lasfsscan:
+    xor %r8d, %r8d
+.Lasfsloop:
+    mov (%rdi,%r8), %r9
+    cmp $9, %r9
+    jne .Lasfstag
+    xor %r9d, %r9d
+.Lasfstag:
+    cmp %r10, %r9
+    jne hbc_type_error
+    add $16, %r8
+    mov %r8, %r9
+    shr $4, %r9
+    cmp %rsi, %r9
+    jb .Lasfsloop
+    # Clamp without adding an unchecked count to the starting offset.
+    mov %rsi, %r8
+    sub %rdx, %r8
+    inc %r8
+    test %rcx, %rcx
+    jle .Lasfscount
+    cmp %r8, %rcx
+    jle .Lasfscall
+.Lasfscount:
+    mov %r8, %rcx
+.Lasfscall:
+    jmp hbc_asort_shared_cells
+.Lasfsdone:
+    ret
+
 # hbc_asort_i: rdi = cells, rsi = len, rdx = start(1-based), rcx = count
 hbc_asort_i:
     test %rsi, %rsi
@@ -28833,6 +28897,120 @@ hbc_asort_s:
     pop %rbx
     pop %rbp
 29: ret
+
+hbc_asort_shared_cells:
+    test %rsi, %rsi
+    jz 29f
+    push %rbp
+    mov %rsp, %rbp
+    push %rbx
+    push %r12
+    push %r13
+    push %r14
+    push %r15
+    sub $8, %rsp
+    mov %rdi, %rbx
+    cmp $1, %rdx
+    jge 21f
+    mov $1, %rdx
+21: cmp %rsi, %rdx
+    jg 28f
+    lea -1(%rdx), %r12
+    test %rcx, %rcx
+    jle 22f
+    lea (%r12,%rcx), %r13
+    cmp %rsi, %r13
+    jle 23f
+22: mov %rsi, %r13
+23: lea 1(%r12), %r14
+24: cmp %r13, %r14
+    jge 28f
+    mov %r14, %r15
+25: cmp %r12, %r15
+    jle 27f
+    mov %r15, %rax
+    shl $4, %rax
+    lea (%rbx,%rax), %rcx
+    mov (%rcx), %r10
+    mov 8(%rcx), %r11
+    mov -16(%rcx), %rax
+    mov -8(%rcx), %rdx
+    mov %r10, %rcx
+    mov %r11, %r8
+    mov $1, %r9d
+    call hbc_asort_flat_cmp
+    test %rax, %rax
+    jle 27f
+    mov %r15, %rax
+    shl $4, %rax
+    lea (%rbx,%rax), %rcx
+    sub $16, %rsp
+    mov -16(%rcx), %rax
+    mov -8(%rcx), %rdx
+    mov %rax, (%rsp)
+    mov %rdx, 8(%rsp)
+    mov (%rcx), %rax
+    mov 8(%rcx), %rdx
+    mov %rax, -16(%rcx)
+    mov %rdx, -8(%rcx)
+    mov (%rsp), %rax
+    mov 8(%rsp), %rdx
+    mov %rax, (%rcx)
+    mov %rdx, 8(%rcx)
+    add $16, %rsp
+    dec %r15
+    jmp 25b
+27: inc %r14
+    jmp 24b
+28: add $8, %rsp
+    pop %r15
+    pop %r14
+    pop %r13
+    pop %r12
+    pop %rbx
+    pop %rbp
+29: ret
+
+# Full-length binary text order, independent of asymmetric expression '='
+# semantics. Integer payloads use signed comparison. Input families were
+# checked in the wrapper before the first cell was moved.
+hbc_asort_flat_cmp:
+    cmp $4, %rax
+    je .Lasfcstr
+    xor %eax, %eax
+    cmp %r8, %rdx
+    je .Lasfcret
+    jl .Lasfcless
+    mov $1, %eax
+    ret
+.Lasfcstr:
+    mov -8(%rdx), %r10
+    mov -8(%r8), %r11
+    xor %ecx, %ecx
+.Lasfcbyte:
+    cmp %r10, %rcx
+    jae .Lasfcleftend
+    cmp %r11, %rcx
+    jae .Lasfcgreater
+    movzbl (%rdx,%rcx), %eax
+    movzbl (%r8,%rcx), %r9d
+    cmp %r9d, %eax
+    jb .Lasfcless
+    ja .Lasfcgreater
+    inc %rcx
+    jmp .Lasfcbyte
+.Lasfcleftend:
+    cmp %r11, %rcx
+    jb .Lasfcless
+    xor %eax, %eax
+.Lasfcret:
+    ret
+.Lasfcgreater:
+    mov $1, %eax
+    ret
+.Lasfcless:
+    mov $-1, %rax
+    ret
 
 # hbc_ascan: rdi = cells pointer, rsi = count, rdx = integer target ->
 # rax = the 1-based first position whose cell is an integer (tag 0
