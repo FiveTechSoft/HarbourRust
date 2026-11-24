@@ -44,6 +44,9 @@
 #define hrdbf_app_fieldput hrdbfw_app_fieldput
 #define hrdbf_app_set_name hrdbfw_app_set_name
 #define hrdbf_app_append hrdbfw_app_append
+#define hrdbf_app_delete hrdbfw_app_delete
+#define hrdbf_app_recall hrdbfw_app_recall
+#define hrdbf_app_commit hrdbfw_app_commit
 #define hrdbf_app_field_missing hrdbfw_app_field_missing
 #define hrdbf_app_render hrdbfw_app_render
 #define hrdbf_app_integer hrdbfw_app_integer

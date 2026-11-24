@@ -7022,8 +7022,21 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                         return Err(format!("line {}: `{} := ...` assigns an undeclared name; Harbour 3.2 stores that in a memvar, not in the field (measured), and hbc does not create memvars implicitly: write FIELD->{} := ... or ALIAS->{} := ... to store the field",n,f,f,f));
                     }
                     if !matches!(type_expr(&args[2],env,sigs,n)?,Ty::I64|Ty::F64|Ty::Str|Ty::StrOwn|Ty::Bool|Ty::Date|Ty::Dyn) {return Err(format!("line {}: DBF field store expects a C/N/D/L value",n));}
-                } else if matches!(id.as_str(),"dbcommit"|"dbdelete"|"dbrecall"|"ordcreate"|"ordsetfocus") {
+                } else if id=="ordcreate" || id=="ordsetfocus" {
                     return Err(format!("line {}: {} is outside this DBF increment",n,id));
+                } else if id=="dbdelete" || id=="dbrecall" {
+                    // D6 (oracle-measured 2026-11-24): marks/unmarks the current
+                    // record's delete flag with the immediate-commit contract;
+                    // silent no-op at EOF (d6_eof), named rejection on a
+                    // readonly open (oracle 1025 at a positioned record).
+                    if !args.is_empty() {return Err(format!("line {}: {} takes no arguments",n,id));}
+                } else if id=="dbcommit" {
+                    // D6 (oracle-measured 2026-11-24): named no-op. The oracle
+                    // accepts dbCommit() and dbCommit(1) on a writable
+                    // exclusive open (d6_sem/d6_commit); the optional integer
+                    // workarea argument is admitted and ignored (one
+                    // workarea adapter).
+                    if args.len()>1 || (args.len()==1 && type_expr(&args[0],env,sigs,n)?!=Ty::I64) {return Err(format!("line {}: dbCommit takes an optional integer workarea argument",n));}
                 } else if id=="dbgoto" {
                     if args.len()!=1 || !matches!(type_expr(&args[0],env,sigs,n)?,Ty::I64) {return Err(format!("line {}: dbGoto expects one integer record number",n));}
                 } else if id=="dbsetorder" {

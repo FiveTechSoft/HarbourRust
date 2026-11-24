@@ -370,8 +370,47 @@ void hrdbf_app_fieldput(int64_t n,uint64_t tag,uint64_t pay){
  if(e)hrdbf_app_fail("hbc: DBF field write encoding rejected\n");
  if(hrdbf_file_write_record(f,f->area.recno))hrdbf_app_fail("hbc: DBF field write commit failed\n");
 }
-/* Bare field identifier write: same case-insensitive lookup as get_name. */
-void hrdbf_app_set_name(const unsigned char *p,size_t len,uint64_t tag,uint64_t pay){
+/* D6: delete-flag writes. Oracle-measured (Harbour 3.2 mingw64 native,
+ * November 24, 2026): dbDelete marks rec[0]='*' and dbRecall marks ' '
+ * on the CURRENT record with the same immediate-commit contract as the
+ * field writes (D2); Deleted() reports it through the existing reader.
+ * At EOF (recno > LastRec) the oracle dbDelete is a silent no-op
+ * (d6_eof probe: Eof()=.T., Deleted() stays .F., rc=0), so the
+ * positioned-record check of the field-write path is NOT a named
+ * failure here. A readonly open keeps the named rejection (the oracle
+ * raises DBFCDX/1025 "Write not allowed" at a positioned record;
+ * hbc names it at compile time like every write in this increment).
+ * Writes with an open index stay rejected (index propagation is D7). */
+static void hrdbf_app_require_flag_writable(void){
+ hrdbf_app_require();
+ if(!hrdbf_app_state.writable)hrdbf_app_fail("hbc: DBF delete/recall requires a readonly=.F. open\n");
+ if(hrdbf_app_order.index.bytes)hrdbf_app_fail("hbc: DBF delete/recall with an open index is outside this increment\n");
+}
+void hrdbf_app_delete(void){
+ unsigned char *rec;
+ hrdbf_app_require_flag_writable();
+ if(hrdbf_app_state.area.recno>hrdbf_app_state.area.count)return;
+ rec=hrdbf_app_state.owned+hrdbf_app_state.area.header+(size_t)(hrdbf_app_state.area.recno-1)*hrdbf_app_state.area.record;
+ hrdbf_write_deleted(rec,1);
+ if(hrdbf_file_write_record(&hrdbf_app_state,hrdbf_app_state.area.recno))hrdbf_app_fail("hbc: DBF delete commit failed\n");
+}
+void hrdbf_app_recall(void){
+ unsigned char *rec;
+ hrdbf_app_require_flag_writable();
+ if(hrdbf_app_state.area.recno>hrdbf_app_state.area.count)return;
+ rec=hrdbf_app_state.owned+hrdbf_app_state.area.header+(size_t)(hrdbf_app_state.area.recno-1)*hrdbf_app_state.area.record;
+ hrdbf_write_deleted(rec,0);
+ if(hrdbf_file_write_record(&hrdbf_app_state,hrdbf_app_state.area.recno))hrdbf_app_fail("hbc: DBF recall commit failed\n");
+}
+/* D6: dbCommit is a named no-op. Oracle-measured (d6_sem/d6_commit
+ * probes): dbCommit() and dbCommit(1) on a writable exclusive open
+ * print nothing and return 0; the adapter's writes are already
+ * synchronous (field/record writes hit the OS immediately). Reopen
+ * persistence was measured the same way: a marked record stays marked
+ * after dbCloseArea + dbUseArea (the '*' is in the file). */
+void hrdbf_app_commit(void){}
+
+/* Bare field identifier write: same case-insensitive lookup as get_name. */void hrdbf_app_set_name(const unsigned char *p,size_t len,uint64_t tag,uint64_t pay){
  const hrdbf_area *a=&hrdbf_app_state.area;unsigned i;size_t j;
  hrdbf_app_require_writable();
  for(i=0;i<a->nfields;i++){
