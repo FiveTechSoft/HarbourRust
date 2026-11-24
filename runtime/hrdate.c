@@ -14,7 +14,7 @@ typedef unsigned long long hrt_u64;
 
 extern void *hbc_alloc(hrt_u64 n);
 
-static hrt_u64 g_date_fmt = 0;     /* 0..6, the layout table row */
+static hrt_u64 g_date_fmt = 0;     /* 0..8, the measured layout table row */
 static hrt_u64 g_century = 0;      /* 0: two-digit year, 1: four digits */
 
 struct hrt_dout {          /* SysV: returned in rax/rdx */
@@ -22,25 +22,28 @@ struct hrt_dout {          /* SysV: returned in rax/rdx */
     hrt_u64 len;
 };
 
-static const unsigned char g_layouts[7][4] = {
+static const unsigned char g_layouts[9][4] = {
     { 0, '/', 1, '/' },   /* AMERICAN: M / D / Y */
     { 2, '.', 0, '.' },   /* ANSI: Y . M . D */
     { 1, '/', 0, '/' },   /* BRITISH: D / M / Y */
     { 1, '.', 0, '.' },   /* GERMAN: D . M . Y */
     { 1, '-', 0, '-' },   /* ITALIAN: D - M - Y */
     { 0, '-', 1, '-' },   /* USA: M - D - Y */
-    { 2, '/', 0, '/' }    /* JAPANESE: Y / M / D */
+    { 2, '/', 0, '/' },   /* JAPANESE: Y / M / D */
+    { 2, '/', 1, '/' },   /* measured yyyy/dd/mm: Y / D / M */
+    { 1, '/', 0, '/' }    /* measured ddd/mmm/yy: D / M / Y */
 };
 
-static char g_mask[11] = "mm/dd/yy";
+static char g_mask[13] = "mm/dd/yy";
 static hrt_u64 g_mask_len = 8;
 static void hrt_mask_standard(hrt_u64 upper)
 {
-    const unsigned char *row = g_layouts[g_date_fmt % 7];
+    const unsigned char *row = g_layouts[g_date_fmt % 9];
     hrt_u64 fields[3],i,j,n=0;
     fields[0]=row[0];fields[1]=row[2];fields[2]=3-fields[0]-fields[1];
     for(i=0;i<3;i++) {
         hrt_u64 k=fields[i],count=k==2&&g_century?4:2;
+        if(g_date_fmt==8&&k!=2)count=3;
         char c=k==0?'m':k==1?'d':'y';
         if(upper)c=(char)(c-'a'+'A');
         for(j=0;j<count;j++)g_mask[n++]=c;
@@ -60,7 +63,7 @@ struct hrt_dout hbc_date_get_mask(void)
     for(i=0;i<g_mask_len;i++)b[16+i]=g_mask[i];
     out.ptr=b+16;out.len=g_mask_len;return out;
 }
-/* Only the compiler's checked standard literal masks reach this entry. */
+/* Only compiler-checked literals or runtime-validated masks reach here. */
 void hbc_date_set_mask(const char *mask,hrt_u64 len,hrt_u64 fmt,hrt_u64 century)
 {
     hrt_u64 i;g_date_fmt=fmt;g_century=century;g_mask_len=len;
@@ -100,7 +103,15 @@ hrt_u64 hbc_date_core_c(hrt_u64 packed, char *buf)
     y = packed / 10000;
     if (!g_century)
         y %= 100;
-    row = g_layouts[g_date_fmt % 7];
+    if(g_date_fmt==8) {
+        /* Measured triple widths repeat the tens position, then the units.
+         * The year stays two digits, even in the 12-byte yyyy mask. */
+        buf[0]=(char)('0'+d/10);hrt_w2(buf+1,d);buf[3]='/';
+        buf[4]=(char)('0'+m/10);hrt_w2(buf+5,m);buf[7]='/';hrt_w2(buf+8,y%100);
+        if(!packed)for(i=0;i<10;i++)if(buf[i]>='0'&&buf[i]<='9')buf[i]=' ';
+        return 10;
+    }
+    row = g_layouts[g_date_fmt % 9];
     f1 = row[0];
     f2 = row[2];
     f3 = 3 - f1 - f2;
@@ -139,13 +150,18 @@ struct hrt_dout hbc_dtoc_c(hrt_u64 packed)
     return out;
 }
 
-/* Validate only the standard layouts supported by this increment.
- * Result encodes layout bits0..2 and century bit3; invalid is all ones. */
+/* Validate only the bounded measured layouts supported by this increment.
+ * Result encodes layout bits0..3 and century bit4; invalid is all ones. */
 hrt_u64 hbc_date_check_mask(const char *mask,hrt_u64 len)
 {
     hrt_u64 f,c,i,j,pos,count,field;char actual,expect;
+    if(len==10||len==12) {
+        const char *triple=len==10?"ddd/mmm/yy":"ddd/mmm/yyyy";
+        for(i=0;i<len;i++){actual=mask[i];if(actual>='A'&&actual<='Z')actual=(char)(actual-'A'+'a');if(actual!=triple[i])break;}
+        if(i==len)return 8|((len==12?1:0)<<4);
+    }
     if(len!=8&&len!=10)return ~(hrt_u64)0;
-    for(f=0;f<7;f++)for(c=0;c<2;c++) {
+    for(f=0;f<8;f++)for(c=0;c<2;c++) {
         const unsigned char *row=g_layouts[f];hrt_u64 fields[3];
         fields[0]=row[0];fields[1]=row[2];fields[2]=3-fields[0]-fields[1];pos=0;
         for(i=0;i<3;i++) {
@@ -158,7 +174,7 @@ hrt_u64 hbc_date_check_mask(const char *mask,hrt_u64 len)
             if(j!=count)break;
             if(i<2){if(pos>=len||mask[pos]!=(char)row[i==0?1:3])break;pos++;}
         }
-        if(i==3&&pos==len)return f|(c<<3);
+        if(i==3&&pos==len)return f|(c<<4);
     }
     return ~(hrt_u64)0;
 }

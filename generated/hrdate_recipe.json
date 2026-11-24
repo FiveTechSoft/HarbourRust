@@ -28,8 +28,8 @@
     "-Werror",
     "-Wno-misleading-indentation"
   ],
-  "source_sha256": "7d8d4342e7de5e03073f75998e58d33d6a1153ccebdb00d5bab121996db9b97a",
-  "asm_sha256": "e0f45697f1ece53e009f567c11055aec6071c4279cb3b5ec93e525284337545f",
+  "source_sha256": "c2044d6ff3783186a9e0d247527f9fe988e784b1cc861617eef8b0cc2cb5ebf3",
+  "asm_sha256": "830101d0186be7a62b5233c17d558cbfb12ae03591b83c05b19e6ded66616f97",
   "external_calls": [
     "hbc_alloc"
   ]

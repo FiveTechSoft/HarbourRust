@@ -2300,7 +2300,9 @@ const INTERNAL_VALTYPE: &str = "\0valtype";
 fn standard_date_mask(e:&Expr)->Option<(usize,bool)> {
  let Expr::Str(mask)=e else{return None};
  let mask=mask.to_ascii_lowercase();
- for (fmt,short) in ["mm/dd/yy","yy.mm.dd","dd/mm/yy","dd.mm.yy","dd-mm-yy","mm-dd-yy","yy/mm/dd"].iter().enumerate(){
+ if mask=="ddd/mmm/yy" {return Some((8,false));}
+ if mask=="ddd/mmm/yyyy" {return Some((8,true));}
+ for (fmt,short) in ["mm/dd/yy","yy.mm.dd","dd/mm/yy","dd.mm.yy","dd-mm-yy","mm-dd-yy","yy/mm/dd","yy/dd/mm"].iter().enumerate(){
   if mask==*short{return Some((fmt,false));}
   if mask==short.replace("yy","yyyy"){return Some((fmt,true));}
  }
@@ -11035,6 +11037,20 @@ fn narrow_bare_date_locals(funcs:&mut [Func]) {
         for i in 0..f.stmts.len() {
             let name=match &f.stmts[i] {Stmt::Local(_,id,Expr::Nil) if !byrefs.contains(id)=>id.clone(),_=>continue};
             let first=f.stmts[i+1..].iter().find(|s|stmt_mentions(s,&name));
+            // Date-input strings: only a dominated literal first store and
+            // a direct date consumer justify replacing the invisible NIL.
+            // Subsequent non-string assignments remain a checker error.
+            let mut date_input=false;
+            visit_stmts_ref(&f.stmts,&mut |_|{},&mut |e|{
+                if let Expr::Call(id,args)=e {
+                    let value=if is_builtin(id,"set")&&set_date_mask_call(args){args.get(1)}else if is_builtin(id,"ctod"){args.first()}else{None};
+                    if matches!(value,Some(Expr::Var(v))if v==&name){date_input=true;}
+                }
+            });
+            if date_input&&matches!(first,Some(Stmt::Assign(_,id,Expr::Str(_)))if id==&name) {
+                if let Stmt::Local(_,_,e)=&mut f.stmts[i]{*e=Expr::Str(String::new());}
+                continue;
+            }
             if first.map_or(false,|s|first_store(s,&name,&known)) {
                 if let Stmt::Local(_,_,e)=&mut f.stmts[i] {
                     *e=Expr::Call("stod".to_string(),vec![Expr::Str(String::new())]);
@@ -17308,7 +17324,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             if let Some(value @ Expr::Var(_))=args.get(1) {
                 cg_expr(value,env,sigs,strs,out,target);
                 let k=fresh_lbl();let si=strs.len();let msg="Limit: Set dateformat runtime value must be a standard mask\n";strs.push(msg.to_string());
-                out.push_str(&format!("    sub $48,%rsp\n    mov %rax,(%rsp)\n    mov %rdx,8(%rsp)\n    mov %rax,%rdi\n    mov %rdx,%rsi\n    call hbc_date_check_mask\n    cmp $-1,%rax\n    jne .Lmaskvalid{k}\n    add $48,%rsp\n    lea .Lstr{si}(%rip),%rax\n    mov ${},%edx\n    call hbc_write_bytes\n    jmp hbc_panic_exit\n.Lmaskvalid{k}:\n    mov %rax,16(%rsp)\n    call hbc_date_get_mask\n    mov %rax,32(%rsp)\n    mov %rdx,40(%rsp)\n    mov (%rsp),%rdi\n    mov 8(%rsp),%rsi\n    mov 16(%rsp),%rdx\n    mov %rdx,%rcx\n    and $7,%edx\n    shr $3,%rcx\n    call hbc_date_set_mask\n    mov 16(%rsp),%rcx\n    and $7,%ecx\n    mov %rcx,.Ldate_pfmt(%rip)\n    mov 32(%rsp),%rax\n    mov 40(%rsp),%rdx\n    add $48,%rsp\n",msg.len()));
+                out.push_str(&format!("    sub $48,%rsp\n    mov %rax,(%rsp)\n    mov %rdx,8(%rsp)\n    mov %rax,%rdi\n    mov %rdx,%rsi\n    call hbc_date_check_mask\n    cmp $-1,%rax\n    jne .Lmaskvalid{k}\n    add $48,%rsp\n    lea .Lstr{si}(%rip),%rax\n    mov ${},%edx\n    call hbc_write_bytes\n    jmp hbc_panic_exit\n.Lmaskvalid{k}:\n    mov %rax,16(%rsp)\n    call hbc_date_get_mask\n    mov %rax,32(%rsp)\n    mov %rdx,40(%rsp)\n    mov (%rsp),%rdi\n    mov 8(%rsp),%rsi\n    mov 16(%rsp),%rdx\n    mov %rdx,%rcx\n    and $15,%edx\n    shr $4,%rcx\n    call hbc_date_set_mask\n    mov 16(%rsp),%rcx\n    and $15,%ecx\n    mov %rcx,.Ldate_pfmt(%rip)\n    mov 32(%rsp),%rax\n    mov 40(%rsp),%rdx\n    add $48,%rsp\n",msg.len()));
                 return;
             }
             out.push_str("    call hbc_date_get_mask\n");
@@ -40865,6 +40881,10 @@ hbc_ctod:
     je .Ldate_order_ymd
     cmp $6, %rdi
     je .Ldate_order_ymd
+    cmp $7, %rdi
+    je .Ldate_order_ydm
+    cmp $8, %rdi
+    je .Ldate_order_dmy
     cmp $2, %rdi
     jb .Ldate_order_mdy
     cmp $4, %rdi
@@ -40878,6 +40898,11 @@ hbc_ctod:
     jmp .Ldate_order_done
 .Ldate_order_ymd:
     mov %r8d, %r10d
+    mov %eax, %r8d
+    jmp .Ldate_order_done
+.Ldate_order_ydm:
+    mov %r9d, %r10d
+    mov %r8d, %r9d
     mov %eax, %r8d
 .Ldate_order_done:
     # 2-digit year: century of SET EPOCH (default 1900); a year below the
