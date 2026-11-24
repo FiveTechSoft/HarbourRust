@@ -16,9 +16,18 @@ pub fn value_parameter(f:&str,i:usize)->bool {VALUES.with(|v|v.borrow().contains
 thread_local! {static VALUES: std::cell::RefCell<HashSet<(String,usize)>> = std::cell::RefCell::new(HashSet::new());}
 thread_local! {static TRACE_HELPERS: std::cell::RefCell<HashSet<String>>=std::cell::RefCell::new(HashSet::new());}
 thread_local! {static PURE_HELPERS: std::cell::RefCell<HashSet<String>>=std::cell::RefCell::new(HashSet::new());}
+thread_local! {static THROW_HELPERS: std::cell::RefCell<HashSet<String>>=std::cell::RefCell::new(HashSet::new());}
+pub fn throw_helper(id:&str)->bool{THROW_HELPERS.with(|v|v.borrow().contains(id))}
 pub fn pure_helper(id:&str)->bool{PURE_HELPERS.with(|v|v.borrow().contains(id))}
 pub fn trace_helper(id:&str)->bool{TRACE_HELPERS.with(|v|v.borrow().contains(id))}
 pub fn init(ff:&[Func]) {
+ THROW_HELPERS.with(|v|v.borrow_mut().clear());
+ for f in ff {
+  let body:Vec<_>=f.stmts.iter().filter(|s|!matches!(s,Stmt::Static(..))).collect();
+  if f.params.len()==3 {if let [Stmt::Assign(_,slot,Expr::Bin('+',inc,one)),Stmt::If(_,Expr::Cmp(_,a,b),yes,no),Stmt::Ret(_,Some(Expr::Cmp(_,x,y)))]=body.as_slice(){
+   if matches!(inc.as_ref(),Expr::Var(v)if v==slot)&&matches!(one.as_ref(),Expr::Int(t)if t=="1")&&module_static::kind(&f.name,slot)==Some(Ty::I64)&&matches!(a.as_ref(),Expr::Var(v)if v==slot)&&matches!(b.as_ref(),Expr::Var(v)if v==&f.params[2])&&no.is_empty()&&matches!(yes.as_slice(),[Stmt::Break(_,Expr::Str(_))])&&matches!(x.as_ref(),Expr::Var(v)if v==&f.params[0])&&matches!(y.as_ref(),Expr::Var(v)if v==&f.params[1]){THROW_HELPERS.with(|v|v.borrow_mut().insert(f.name.clone()));}
+  }}
+ }
  PURE_HELPERS.with(|v|v.borrow_mut().clear());
  for f in ff {
   fn pure(e:&Expr,ps:&[String])->bool{match e{
