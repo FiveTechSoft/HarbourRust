@@ -20,4 +20,13 @@ void hrntx_close(hrntx_index*);
 /* Prefix semantics; a query longer than key width is truncated as in oracle.
  * Result is [0,count]; count denotes no match/end. found is always set. */
 uint32_t hrntx_seek(const hrntx_index*,const unsigned char*,size_t,int,int,int*);
+/* D7: emit a fresh two-level NTX image from the table snapshot. img gets a
+ * copy of in's 1024-byte header page (root pointer rewritten) and new pages;
+ * shape supplies width/field of the admitted single-key character index.
+ * sort is scratch needing 16 bytes per record (recno + pointer items).
+ * Returns the image size in bytes, 0 on any failure or when the leaf count
+ * exceeds one interior page (bounded subset: count <= max*max). Insertion
+ * sort: bounded counts only. */
+size_t hrntx_build(unsigned char*img,const unsigned char*in,const hrntx_index*shape,
+                   const hrdbf_area*d,void*sort,size_t sortbytes);
 #endif

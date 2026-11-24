@@ -19,6 +19,10 @@ static unsigned hrdbf_app_order_active;
 static unsigned hrdbf_app_cdx;
 static unsigned char hrdbf_app_basename[HRDBF_APP_PATH_MAX];
 static size_t hrdbf_app_baselen;
+/* D7: the saved path of the one admitted NTX index, for the close-time
+ * flush of a dirty (rebuilt) index image. Empty for CDX bags, which stay
+ * write-rejected. */
+static char hrdbf_app_ntxpath[HRDBF_APP_PATH_MAX];
 /* Structural CDX (measured against real Harbour, native Windows): a DBFCDX
  * open also opens <dir>/<base>.cdx whenever that file exists, with or
  * without the production flag in header byte 28; a missing file is silent.
@@ -63,14 +67,20 @@ static void hrdbf_app_fail2(const char *prefix,const char *detail){
  hrdbf_app_write(prefix);hrdbf_app_write(detail);hrdbf_app_write("\n");hrdbf_app_exit();
 }
 static void hrdbf_app_require(void){if(!hrdbf_app_state.area.open)hrdbf_app_fail("hbc: DBF no workarea is open\n");}
-void hrdbf_app_close(void){hrdbf_error a=hrntx_file_close(&hrdbf_app_order),b=hrdbf_file_close(&hrdbf_app_state);hrdbf_app_found_flag=0;hrdbf_app_order_active=0;hrdbf_app_pos=0;hrdbf_app_struct=0;hrdbf_app_shared=0;if(a||b)hrdbf_app_fail("hbc: DBF/NTX close failed\n");}
+void hrdbf_app_close(void){
+ hrdbf_error a,b;
+ if(hrntx_file_flush(&hrdbf_app_order,hrdbf_app_ntxpath))hrdbf_app_fail("hbc: DBF index flush failed\n");
+ a=hrntx_file_close(&hrdbf_app_order);b=hrdbf_file_close(&hrdbf_app_state);
+ hrdbf_app_found_flag=0;hrdbf_app_order_active=0;hrdbf_app_pos=0;hrdbf_app_struct=0;hrdbf_app_shared=0;hrdbf_app_ntxpath[0]=0;
+ if(a||b)hrdbf_app_fail("hbc: DBF/NTX close failed\n");
+}
 void hrdbf_app_open(const unsigned char *p,size_t len,uint64_t new_area,uint64_t cdx,uint64_t writable){
  char path[HRDBF_APP_PATH_MAX];size_t i,start=0,end;hrdbf_error e;
  if(new_area&&hrdbf_app_state.area.open)hrdbf_app_fail("hbc: DBF only one workarea is supported\n");
  if(!len||len>=sizeof path)hrdbf_app_fail("hbc: DBF filename length outside supported range\n");
  for(i=0;i<len;i++){if(!p[i])hrdbf_app_fail("hbc: DBF filename contains NUL\n");path[i]=(char)p[i];}path[len]=0;
  if(hrntx_file_close(&hrdbf_app_order))hrdbf_app_fail("hbc: DBF index close failed\n");
- hrdbf_app_found_flag=0;hrdbf_app_order_active=0;hrdbf_app_pos=0;hrdbf_app_struct=0;
+ hrdbf_app_found_flag=0;hrdbf_app_order_active=0;hrdbf_app_pos=0;hrdbf_app_struct=0;hrdbf_app_ntxpath[0]=0;
  hrdbf_app_cdx=cdx!=0;
  /* writable: 0 readonly exclusive, 1 read-write exclusive, 2 readonly shared. */
  if(writable>2)hrdbf_app_fail("hbc: DBF open mode outside supported range\n");
@@ -158,9 +168,16 @@ uint64_t hrdbf_app_order_add(const unsigned char*p,size_t len){
  if(!dot){path[len++]='.';path[len++]=hrdbf_app_cdx?'c':'n';path[len++]=hrdbf_app_cdx?'d':'t';path[len++]='x';}path[len]=0;
  err=hrntx_file_open(&hrdbf_app_order,path,&hrdbf_app_state.area,hrdbf_app_cdx);
  if(err)hrdbf_app_fail(hrdbf_app_cdx&&err==HRDBF_TYPE?"hbc: CDX direct character key field width must be <=240\n":"hbc: DBF index read-only open rejected (subset, format, DBF mismatch, size or I/O)\n");
+ if(!hrdbf_app_cdx){size_t k;for(k=0;k<=len&&k<sizeof hrdbf_app_ntxpath;k++)hrdbf_app_ntxpath[k]=path[k];}
+ else hrdbf_app_ntxpath[0]=0;
  hrdbf_app_order_active=1;hrdbf_app_top();return 1;
 }
-void hrdbf_app_order_clear(void){hrdbf_app_require();if(hrntx_file_close(&hrdbf_app_order))hrdbf_app_fail("hbc: DBF index close failed\n");hrdbf_app_order_active=0;hrdbf_app_pos=0;}
+void hrdbf_app_order_clear(void){
+ hrdbf_app_require();
+ if(hrntx_file_flush(&hrdbf_app_order,hrdbf_app_ntxpath))hrdbf_app_fail("hbc: DBF index flush failed\n");
+ if(hrntx_file_close(&hrdbf_app_order))hrdbf_app_fail("hbc: DBF index close failed\n");
+ hrdbf_app_order_active=0;hrdbf_app_pos=0;hrdbf_app_ntxpath[0]=0;
+}
 uint64_t hrdbf_app_found(void){hrdbf_app_require();return hrdbf_app_found_flag;}
 uint64_t hrdbf_app_seek(const unsigned char*p,size_t n,uint64_t soft,uint64_t last){
  int found;hrntx_index*x=&hrdbf_app_order.index;hrdbf_app_require();
@@ -330,8 +347,22 @@ hrv_cell hrdbf_app_get_name(const unsigned char *p,size_t len,void *(*copy)(cons
 static void hrdbf_app_require_writable(void){
  hrdbf_app_require();
  if(!hrdbf_app_state.writable)hrdbf_app_fail("hbc: DBF field write requires a readonly=.F. open\n");
- if(hrdbf_app_order.index.bytes)hrdbf_app_fail("hbc: DBF field write with an open index is outside this increment\n");
- if(hrdbf_app_state.area.recno>hrdbf_app_state.area.count)hrdbf_app_fail("hbc: DBF field write with no record positioned\n");
+ /* D7: an open NTX index is maintained on writes (rebuild at the key
+  * write, flush at close); an open CDX bag stays write-rejected. */
+ if(hrdbf_app_order.index.bytes&&hrdbf_app_cdx)hrdbf_app_fail("hbc: DBF field write with an open CDX index is outside this increment (NTX only)\n");
+}
+/* D7: rebuild the live NTX index from the current table snapshot after a
+ * key change (oracle-measured: the new key is visible to dbSeek
+ * immediately, the old key is gone, and the change persists over
+ * close/reopen). The cursor re-parks on the current record's entry, or
+ * past the last one at EOF. */
+static void hrdbf_app_rebuild_index(void){
+ hrntx_index*x=&hrdbf_app_order.index;uint64_t r;size_t i;
+ if(!x->bytes||hrdbf_app_cdx)return;
+ if(hrntx_file_rebuild(&hrdbf_app_order,&hrdbf_app_state.area))hrdbf_app_fail("hbc: DBF NTX index rebuild failed\n");
+ r=hrdbf_app_state.area.recno;hrdbf_app_pos=x->count;
+ for(i=0;i<x->count;i++)if(x->entries[i].recno==r){hrdbf_app_pos=i;break;}
+ hrdbf_app_order_sync();
 }
 void hrdbf_app_fieldput(int64_t n,uint64_t tag,uint64_t pay){
  hrdbf_file *f=&hrdbf_app_state;const hrdbf_field *fd;unsigned char *rec;
@@ -369,6 +400,7 @@ void hrdbf_app_fieldput(int64_t n,uint64_t tag,uint64_t pay){
  if(e==HRDBF_TYPE)hrdbf_app_fail("hbc: DBF field write type mismatch\n");
  if(e)hrdbf_app_fail("hbc: DBF field write encoding rejected\n");
  if(hrdbf_file_write_record(f,f->area.recno))hrdbf_app_fail("hbc: DBF field write commit failed\n");
+ if(hrdbf_app_order.index.bytes&&!hrdbf_app_cdx&&(uint64_t)n==hrdbf_app_order.index.field+1)hrdbf_app_rebuild_index();
 }
 /* D6: delete-flag writes. Oracle-measured (Harbour 3.2 mingw64 native,
  * November 24, 2026): dbDelete marks rec[0]='*' and dbRecall marks ' '
@@ -384,7 +416,7 @@ void hrdbf_app_fieldput(int64_t n,uint64_t tag,uint64_t pay){
 static void hrdbf_app_require_flag_writable(void){
  hrdbf_app_require();
  if(!hrdbf_app_state.writable)hrdbf_app_fail("hbc: DBF delete/recall requires a readonly=.F. open\n");
- if(hrdbf_app_order.index.bytes)hrdbf_app_fail("hbc: DBF delete/recall with an open index is outside this increment\n");
+ if(hrdbf_app_order.index.bytes&&hrdbf_app_cdx)hrdbf_app_fail("hbc: DBF delete/recall with an open CDX index is outside this increment (NTX only)\n");
 }
 void hrdbf_app_delete(void){
  unsigned char *rec;
@@ -429,6 +461,7 @@ uint64_t hrdbf_app_append(void){
  hrdbf_app_require_writable();
  if(hrdbf_file_append(&hrdbf_app_state,&recno))hrdbf_app_fail("hbc: DBF append failed\n");
  hrdbf_app_found_flag=0;
+ hrdbf_app_rebuild_index();
  return recno;
 }
 size_t hrdbf_app_render(uint64_t tag,uint64_t pay,unsigned char *out){
