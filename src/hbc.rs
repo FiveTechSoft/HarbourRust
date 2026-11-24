@@ -1037,6 +1037,7 @@ fn tokenize(line: &str, n: usize) -> Result<Vec<Tok>, String> {
                 if num=="0" && matches!(it.peek(),Some(&(_, 'd'))|Some(&(_, 'D'))) {
                     it.next();let mut text=String::new();
                     while let Some(&(_,c))=it.peek(){if !c.is_ascii_digit(){break;}text.push(c);it.next();}
+                    if text=="0" {text="00000000".to_string();}
                     let valid=if text.len()==8 {
                         let y=text[..4].parse::<u32>().unwrap();let m=text[4..6].parse::<u32>().unwrap();let d=text[6..].parse::<u32>().unwrap();
                         if y==0&&m==0&&d==0{true}else if (1..=12).contains(&m){let max=match m{4|6|9|11=>30,2=>if y%4==0&&(y%100!=0||y%400==0){29}else{28},_=>31};d>=1&&d<=max}else{false}
