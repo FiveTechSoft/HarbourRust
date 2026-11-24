@@ -19,9 +19,14 @@ Therefore the merge decision sequence matters. Fresh Harbour same-day
 fixtures pin that behavior;insertion sorting is not substituted. No heap
 temporary;the internal comparison calls existing timestamp/date helpers.
 
-Gate40:4own+a04,20exact executions across4Linux modes,5strict final
-balances,15profile rejections. Fresh Harbour covers mixed temporal order,
+Gate63:6own+a04,35exact executions across5Linux modes,7strict final
+balances,21profile rejections. The fifth mode is --no-prune. Fresh Harbour covers mixed temporal order,
 same-day decisions,empty values,all scalar families and113subrange sorts.
+Predicate-only hb_isTimestamp/hb_isDateTime fixtures have no emitted
+timestamp calls before ASort. They pin dependency closure:the temporal
+helper is appended BEFORE timestamp/date dependency detection,so its
+hbc_ts_to_date dependency is defined even when pruning is disabled.
+This corrected delivery supersedes rejected HEAD307691e0.
 DELTA0 requires exact stdout,rc0,empty stderr and a measured marker.
 
 ASort1..11:88,51,32,37,40,56,50,42,33,27,24. Timestamp1..9,B1/B2,A1/A2,
