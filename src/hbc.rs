@@ -7372,7 +7372,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                     Expr::Send(..) if method_results::send(&args[0]) => {} ,
                     Expr::Send(o,_,aa) if timestamp::scalar_empty() && aa.is_empty() && matches!(o.as_ref(),Expr::Var(_)) && type_expr(&args[0],env,sigs,n)?==Ty::Dyn => {},
                     Expr::Int(_) | Expr::Str(_) | Expr::Nil | Expr::Var(_) => {}
-                    Expr::Call(id, _) if is_output_call(id) || is_builtin(id,"date") || is_builtin(id,"ctod") || dbf_result(id).is_some() || timestamp::family(id) => {}
+                    Expr::Call(id, _) if is_output_call(id) || is_builtin(id,"date") || is_builtin(id,"ctod") || dbf_result(id).is_some() || timestamp::family(id) || (DECIMAL_LOCAL_PROFILE.with(|v|v.get())&&is_builtin(id,"asort")) => {}
                     Expr::Index(v, _) => {
                         // DArr4 first level: child-array casilla -
                         // "A" (hk114, byte-measured via hk117 markers).
@@ -7535,7 +7535,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                     // ains P2 stage 1: len of a Dyn VARIABLE dispatches on
                     // the runtime tag (string or tag-8 array: length/count
                     // at payload-8; anything else is hbc_len_error).
-                    Ty::Dyn if method_arrays::active() || matches!(&args[0], Expr::Var(_)) => Ok(Ty::I64),
+                    Ty::Dyn if method_arrays::active() || matches!(&args[0], Expr::Var(_)) || (shared_local::active()&&matches!(&args[0],Expr::Call(id,_)if is_builtin(id,"asort"))) => Ok(Ty::I64),
                     _ => return Err(format!("line {}: `len` expects an array", n)),
                 };
             }
@@ -8091,13 +8091,16 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 if args.is_empty() || args.len()>4 {
                     return Err(format!("line {}: `ASort` takes one to four arguments in this increment",n));
                 }
-                if !matches!(&args[0], Expr::Var(_)) {
-                    return Err(format!("line {}: `ASort` expects an array variable (the slot is passed by address)",n));
-                }
                 let ta = type_expr(&args[0],env,sigs,n)?;
+                if DECIMAL_LOCAL_PROFILE.with(|v|v.get())&&!MACRO_CONTEXT.with(|v|v.get())&&(matches!(ta,Ty::I64|Ty::Bool|Ty::Str|Ty::StrOwn)||matches!(&args[0],Expr::Nil)) {
+                    for e in args.iter().skip(1){let t=type_expr(e,env,sigs,n)?;if !matches!(t,Ty::I64|Ty::Bool|Ty::Str|Ty::StrOwn)&&!matches!(e,Expr::Nil){return Err(format!("line {}: nonarray ASort extra arguments require scalar values in this increment",n));}}
+                    return Ok(Ty::Dyn);
+                }
+                if !matches!(&args[0], Expr::Var(_)) {return Err(format!("line {}: `ASort` expects an array variable (the slot is passed by address)",n));}
+
                 if shared_local::active()&&ta==Ty::Dyn&&matches!(&args[0],Expr::Var(v) if is_sarr(v)){
-                    if args.len()>3{return Err(format!("line {}: shared ASort callbacks are outside this increment",n));}
-                    for e in args.iter().skip(1){if !matches!(e,Expr::Nil)&&type_expr(e,env,sigs,n)?!=Ty::I64{return Err(format!("line {}: shared ASort start/count require integer or literal NIL",n));}}
+                    if let Some(e)=args.get(3){let t=type_expr(e,env,sigs,n)?;if !matches!(t,Ty::I64|Ty::Bool|Ty::Str|Ty::StrOwn)&&!matches!(e,Expr::Nil){return Err(format!("line {}: shared ASort callbacks are outside this increment",n));}}
+                    for e in args.iter().skip(1).take(2){if !matches!(e,Expr::Nil)&&type_expr(e,env,sigs,n)?!=Ty::I64{return Err(format!("line {}: shared ASort start/count require integer or literal NIL",n));}}
                     return Ok(Ty::Dyn);
                 }
                 match ta {
@@ -16517,6 +16520,10 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                     cg_expr(&args[0], env, sigs, strs, out, target);
                     vt_letter(strs, out, "U");
                 }
+                Expr::Call(id,_) if is_builtin(id,"asort") => {
+                    cg_value(&args[0],env,sigs,strs,out,target);
+                    out.push_str("    mov %rax, %r10\n");vt_classify_scalar(strs,out);
+                }
                 Expr::Call(id,_) if timestamp::family(id) => {
                     cg_value(&args[0],env,sigs,strs,out,target);
                     match timestamp::result(id).unwrap(){
@@ -17728,6 +17735,10 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             }
         }
         Expr::Call(id,args) if is_builtin(id,"asort") => {
+            if !matches!(expr_ty(&args[0],env,sigs),Ty::Dyn|Ty::DArr|Ty::DArrS|Ty::Arr(_))||matches!(&args[0],Expr::Nil){
+                for a in args {cg_val_discard_arg(a,env,sigs,strs,out,target);}
+                out.push_str("    mov $1, %eax\n    xor %edx, %edx\n");return;
+            }
             let av = match &args[0] { Expr::Var(v) => v.clone(), _ => unreachable!("checked") };
             let var = env.iter().rev().find(|x| x.name == *av).expect("checked");
             if shared_local::active()&&expr_ty(&args[0],env,sigs)==Ty::Dyn {
@@ -17736,6 +17747,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                     if let Some(e)=args.get(i).filter(|e|!matches!(e,Expr::Nil)){cg_expr(e,env,sigs,strs,out,target);}else{out.push_str(if i==1{"    mov $1, %rax\n"}else{"    mov $-1, %rax\n"});}
                     out.push_str(&format!("    mov %rax, {}(%rsp)\n",(i-1)*8));
                 }
+                if let Some(e)=args.get(3){cg_val_discard_arg(e,env,sigs,strs,out,target);}
                 cg_sarr_root(&av,var.off,"%r11",out);
                 out.push_str("    mov %r11, 16(%rsp)\n    mov 24(%r11), %rdi\n    mov (%r11), %rsi\n    mov (%rsp), %rdx\n    mov 8(%rsp), %rcx\n    call hbc_asort_flat_shared\n    mov 16(%rsp), %rdx\n    mov $16, %eax\n    add $32, %rsp\n");
             } else if args.len()==4 {
@@ -17940,7 +17952,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             out.push_str("    test %rax, %rax\n    jne hbc_type_error\n    call hbc_round\n");
         }
         Expr::Call(id, args) if is_builtin(id, "len") => {
-            if method_arrays::active() && expr_ty(&args[0],env,sigs)==Ty::Dyn && !matches!(&args[0],Expr::Var(_)|Expr::Index(..)|Expr::Index2(..)|Expr::Index3(..)){
+            if (method_arrays::active()||(shared_local::active()&&matches!(&args[0],Expr::Call(id,_)if is_builtin(id,"asort")))) && expr_ty(&args[0],env,sigs)==Ty::Dyn && !matches!(&args[0],Expr::Var(_)|Expr::Index(..)|Expr::Index2(..)|Expr::Index3(..)){
                 cg_value(&args[0],env,sigs,strs,out,target);
                 let k=fresh_lbl();out.push_str(&format!("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n    cmp $16, %rax\n    jne .Lb2lenstr{k}\n    mov (%rdx), %rax\n    jmp .Lb2lendone{k}\n.Lb2lenstr{k}:\n    cmp $2, %rax\n    je .Lb2lenok{k}\n    cmp $4, %rax\n    jne .Lb2lenbad{k}\n.Lb2lenok{k}:\n    mov -8(%rdx), %rax\n.Lb2lendone{k}:\n    mov %rax, 16(%rsp)\n"));
                 if dyn_expr_owned(&args[0]){cg_dyn_stack_release(out,0,false);}

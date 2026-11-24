@@ -48,7 +48,7 @@ pub fn init(ff:&[Func]) {
    if es.iter().all(|e|matches!(e,Expr::Int(_))){sortable.insert(n.clone());}
   }},&mut |_|{});
   visit_stmts_ref(&f.stmts,&mut |_|{},&mut |e|{if let Expr::Call(id,args)=e{
-   if is_builtin(id,"asort")&&args.len()<=3&&matches!(args.first(),Some(Expr::Var(n)) if sortable.contains(n)){need=true;}
+   if is_builtin(id,"asort")&&args.len()<=4&&!matches!(args.get(3),Some(Expr::BlockLit(..)))&&matches!(args.first(),Some(Expr::Var(n)) if sortable.contains(n)){need=true;}
   }});
   // A literal handed to a function that stores a dynamic parameter in
   // one of its cells needs shared identity at the call boundary.
