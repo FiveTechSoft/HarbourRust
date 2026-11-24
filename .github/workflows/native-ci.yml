@@ -67,6 +67,12 @@ jobs:
           # test_run_macho_arm64 execs fake /bin/sh compilers, so it is POSIX-only
           if [[ "$RUNNER_OS" == "Windows" ]]; then mods=test_generate_json_asm; else mods="test_generate_json_asm test_run_macho_arm64"; fi
           python -m unittest -v $mods
+      - name: Command-line arguments to main
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$RUNNER_OS" == "Windows" ]]; then compiler=./hbc.exe; else compiler=./hbc; fi
+          python tests/main-args/check.py --compiler "$compiler"
       - name: FILE native Linux fixtures (no Harbour or Wine)
         if: runner.os == 'Linux'
         shell: bash

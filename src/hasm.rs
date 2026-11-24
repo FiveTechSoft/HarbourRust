@@ -1869,7 +1869,7 @@ impl Asm {
         // D1.1: GetLastError feeds exact open-rejection diagnostics on PE.
         // D2: SetFilePointerEx + GetSystemTime feed record write-back and
         // the UTC header date on appends.
-        const WHITELIST: [&str; 34] = ["VirtualAlloc", "VirtualFree", "GetSystemInfo", "ExitProcess", "GetEnvironmentVariableA", "GetLocalTime", "GetProcessHeap",
+        const WHITELIST: [&str; 35] = ["GetCommandLineA", "VirtualAlloc", "VirtualFree", "GetSystemInfo", "ExitProcess", "GetEnvironmentVariableA", "GetLocalTime", "GetProcessHeap",
             "GetStdHandle", "HeapAlloc", "HeapFree", "WriteFile", "CreateFileW", "ReadFile", "GetFileSizeEx", "CloseHandle",
             "GetLastError", "SetFilePointerEx", "GetSystemTime",
             // Threads on Windows (CreateThread runtime, TEB TLS slots,

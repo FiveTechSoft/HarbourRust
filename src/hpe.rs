@@ -29,7 +29,7 @@ pub struct PeImage {
 // Hints de libkernel32.a (medidos del oráculo; estables por DLL).
 fn hint_of(name: &str) -> u16 {
     match name {
-        "FindFirstFileW" | "FindNextFileW" | "FindClose" | "CreateDirectoryW" | "MultiByteToWideChar" | "GetFileType" | "PeekNamedPipe" | "GetTickCount64" => 0, // advisory hints, resolved by export name
+        "FindFirstFileW" | "FindNextFileW" | "FindClose" | "CreateDirectoryW" | "MultiByteToWideChar" | "GetFileType" | "PeekNamedPipe" | "GetTickCount64" | "GetCommandLineA" => 0, // advisory hints, resolved by export name
         "VirtualAlloc" => 1486,
         "VirtualFree" => 1489,
         "GetSystemInfo" => 763,
