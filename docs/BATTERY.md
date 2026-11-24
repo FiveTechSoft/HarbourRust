@@ -4128,8 +4128,16 @@ share a scalar type" rejection. t1068 - mixed numeric Min/Max is now
 implemented on Linux (float fold propagates F64, result `1`), superseding
 "needs matching integer, float or logical arguments".
 
-NOT re-pinned yet: the maintainer owns changing the manifest contract; do not
-edit these rows without an audit.
+The audit is complete (2026-11-23/24: root causes + Harbour oracle evidence in
+`docs/HARBOUR-ORACLE-2026-11-23.md`). The rows stay in the manifest as-is:
+Windows still enforces them, and a shared manifest row cannot express
+"Linux accepts / Windows rejects". The maintainer's sign-off options:
+(1) keep the rows as documented Windows-side contract + reject the files at
+Linux with a skip/override mechanism; (2) re-pin the four rows as Windows-only
+neg rows with a Linux-only companion record; (3) leave as known Linux-stale
+debt until the next battery baseline. My recommendation: (3), so the Linux side
+stays red and visible until the baseline re-cut, rather than a silent re-pin.
+Whatever is chosen, re-run this battery + the PE gate afterwards.
 
 Nine `neg` rows are the known-mismatch PE CurDir debt (same source state as
 the known-mismatches file). Linux rejects with the manifest substring;
