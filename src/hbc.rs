@@ -8180,6 +8180,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 };
             }
             if is_builtin(id, "atail") {
+                if args.len()==1&&shared_local::active()&&matches!(&args[0],Expr::Index(v,_)|Expr::Index2(v,..)|Expr::Index3(v,..)|Expr::Index4(v,..)if shared_local::current(v))&&type_expr(&args[0],env,sigs,n)?==Ty::Dyn{return Ok(Ty::Dyn);}
                 if args.len()!=1 { return Err(format!("line {}: `ATail` takes one argument in this increment",n)); }
                 if !matches!(&args[0], Expr::Var(_)) {
                     return Err(format!("line {}: `ATail` expects an array variable (the slot is passed by address)",n));
@@ -18044,6 +18045,14 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             out.push_str(&format!("    mov -{}(%rbp), %rdi\n    mov -{}(%rbp), %rsi\n    call {}\n", var.off, var.off-8, helper));
         }
         Expr::Call(id,args) if is_builtin(id,"atail") => {
+            if shared_local::active(){
+                let indexed=match &args[0]{Expr::Index(v,i)=>Some((v,vec![i.as_ref()])),Expr::Index2(v,i,j)=>Some((v,vec![i.as_ref(),j.as_ref()])),Expr::Index3(v,i,j,k)=>Some((v,vec![i.as_ref(),j.as_ref(),k.as_ref()])),Expr::Index4(v,i,j,k,l)=>Some((v,vec![i.as_ref(),j.as_ref(),k.as_ref(),l.as_ref()])),_=>None};
+                if let Some((v,ix))=indexed{if shared_local::current(v){
+                    let var=env.iter().rev().find(|x|x.name==*v).expect("checked");cg_sarr_index(v,var.off,&ix,env,sigs,strs,out,target);let k=fresh_lbl();
+                    out.push_str(&format!("    cmp $16, %rax\n    jne .Ltailcellnil{k}\n    mov (%rdx), %rax\n    test %rax, %rax\n    jle .Ltailcellnil{k}\n    dec %rax\n    shl $4, %rax\n    add 24(%rdx), %rax\n    mov 8(%rax), %rdx\n    mov (%rax), %rax\n"));cg_dyn_clone_if_str(out);
+                    out.push_str(&format!("    jmp .Ltailcellend{k}\n.Ltailcellnil{k}:\n    mov $1, %eax\n    xor %edx, %edx\n.Ltailcellend{k}:\n"));return;
+                }}
+            }
             let av = match &args[0] { Expr::Var(v) => v.clone(), _ => unreachable!("checked") };
             let var = env.iter().rev().find(|x| x.name == *av).expect("checked");
             let l = fresh_lbl();
