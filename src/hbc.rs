@@ -2987,7 +2987,8 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                 // Harbour-native spelling of the TRY/CATCH machinery (same hbc_seq_*
                 // semantics): mapped onto Stmt::Try. The WITH block is accepted and
                 // discarded - with RECOVER present it is inert (oracle spec usage);
-                // BEGIN SEQUENCE without RECOVER is rejected by name here.
+                // A bare no-RECOVER sequence consumes BREAK like an empty catch.
+                // WITH without RECOVER stays closed: its error-block semantics differ.
                 *i += 1;
                 let mut body = Vec::new();
                 parse_stmts(lines, i, &mut body, depth + 1)?;
@@ -3016,7 +3017,10 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                     }
                 }
                 if catch.is_none() {
-                    return Err(format!("line {}: `begin sequence` without `recover` is outside this increment", n));
+                    if toks.len()!=2 {
+                        return Err(format!("line {}: `begin sequence` WITH without `recover` is outside this increment", n));
+                    }
+                    catch=Some((None,Vec::new()));
                 }
                 if *i >= lines.len() || !matches!(&lines[*i].1[0], Tok::Ident(eid) if eid.eq_ignore_ascii_case("end")) {
                     return Err(format!("line {}: `begin sequence` without `end`", n));
