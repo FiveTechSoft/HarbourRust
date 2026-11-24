@@ -4109,9 +4109,9 @@ Recorded while the Linux-only subset of the battery was being run (aarch64
 host; x86-64 output cannot execute natively here, so the 1308-row
 positive/execution set stays unverified; run the normal runner on an
 x86-64 host to complete it). The fresh binary (commit 6b917da3) passes the
-full Linux `neg` check on all 622 `neg` rows except the four stale ones
-below (verified 2026-11-24 with the plain substring rule, not the full
-runner: 622 checked, 4 failures, rc=0 silent accept). Windows still
+full Linux `neg` check on all 622 `neg` rows except the stale ones below
+(verified 2026-11-24 with the plain substring rule, not the full runner:
+622 checked, 7 failures, all rc=0 silent accepts). Windows still
 rejects those four with the manifest substring, so the shared manifest
 rows only fail on the Linux half. The 9 CurDir rows pass the Linux check
 (rc=1, manifest substring) and fail only the Windows/PE side, already
@@ -4165,10 +4165,28 @@ debt until the next battery baseline. My recommendation: (3), so the Linux side
 stays red and visible until the baseline re-cut, rather than a silent re-pin.
 Whatever is chosen, re-run this battery + the PE gate afterwards.
 
+Three additional stale rows appeared on 2026-11-24 after the Linux-only
+landings below; each is a manifest-sync gap in its feature commit (repo
+convention - re-pin in the same PR - was missed), not a rejection
+regression, and each passes the Linux `neg` check with ACCEPT + the
+Harbour oracle agrees (compiles and runs; oracle outputs in
+`docs/HARBOUR-ORACLE-2026-11-23.md`, third table):
+
+| Case | Feature commit | Manifest expectation (deleted) | Oracle behaviour |
+| --- | --- | --- | --- |
+| tests/t813_set_callstmt_neg.prg | 5b40695b (Set ISO date format) | unknown function `set` | compiles, runs, exits 0, no output |
+| tests/t897_inc_elem_neg.prg | 0f39467f (fixed cell increments) | requires a variable lvalue | compiles, runs, exits 0, prints `1` |
+| tests/t1043_original_longstr2_move_neg.prg | 6e640993 (bare-local string copy) | use of moved value `short` | compiles, runs, exits 0, prints the length triple |
+
+The total Linux `neg` failures are now exactly 7 (the four stale rows above,
+plus these three); no other row regressed (622 checked). The three rows
+are left in the manifest as-is for the same sign-off path as the four:
+re-pin as positive cases (oracle-confirmed values) or leave as debt.
+
 Nine `neg` rows are the known-mismatch PE CurDir debt (same source state as
 the known-mismatches file). Linux rejects with the manifest substring -
-the four-row audit above confirms all 622 `neg` rows still reject on Linux
-except the stale four, and these nine are among the rejecting ones.
+the audit above confirms all 622 `neg` rows still reject on Linux
+except the seven stale ones, and these nine are among the rejecting ones.
 Windows rejects with "CurDir is measured only on the ordinary Linux backend
 in this increment", which is the PE debt recorded for the PE gate
 (`tests/ci/pe-known-mismatches.json`, base f70407f1d3) - recorded as known
