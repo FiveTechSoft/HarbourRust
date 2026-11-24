@@ -2109,7 +2109,7 @@ const ASM_RESERVED: &[&str] = &[
     // hbc itself emits; a user function with one of these names would
     // collide with a helper symbol.
     "dtos", "stod", "year", "day", "month", "dow", "cdow", "cmonth", "dtoc", "sqrt", "exp", "log", "mod", "padc", "rat", "stuff", "isdigit", "isalpha", "isupper", "islower", "strzero", "ischar", "strzero_fix", "str_f64", "fmt_f64", "date_add", "date_diff", "date_days", "date_from_days", "seconds",
-    "hb_osdriveseparator", "hb_base64encode", "hb_stod", "hb_hextonum", "hb_asciiupper", "hb_strtohex", "hb_dirsepadd", "getenv", "hb_at", "hb_bchar", "hb_bcode", "__defaultnil", "hb_default", "hb_defaultvalue", "hb_sha1", "hb_hmac_sha1", "tr_dims", "tr_apply", "strtran", "space", "substr", "date", "ctod", "date_pack", "date_render", "date_today", "dispbox", "hrbase_wait", "setcursor", "hb_flink", "hb_flinksym", "hb_flinkread", "hb_memowrit", "hb_dircreate", "ferror", "curdir", "fread", "fcreate", "fopen", "fwrite", "fclose", "freadstr", "hb_memoread", "hb_libname", "hb_ps", "os", "dirmake", "inkey", "file", "hrfile_setdefault", "hrfile_setpath", "qout", "qqout", "outstd", "outerr", "empty", "procname", "min", "max", "str", "padr", "hb_ntos", "replicate", "aeval", "hb_isnumeric", "hb_isarray", "hb_isstring", "dfree", "upper", "lower", "left", "right", "at", "int", "abs", "padl", "val", "ascan", "aclone", "atail", "asort", "hb_bitand", "hb_bitor", "hb_bitxor", "hb_bitnot", "hb_bittest", "hb_bitset", "hb_bitreset", "eprint_str", "eprint_sep", "eprint_i64", "eprint_i64c", "eprint_dyn", "eprint_dynlit", "print_dynlit", "eprint_f64", "hb_eol", "procline", "asc", "trim", "ltrim", "rtrim", "alltrim", "chr", "trace_top", "print_trace", "panic_exit", "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_arg_error", "val_arg_error", "atokens_arg_error", "hb_memcheck", "aadd", "asize", "afill", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
+    "hb_osdriveseparator", "hb_strformat", "hb_base64encode", "hb_stod", "hb_hextonum", "hb_asciiupper", "hb_strtohex", "hb_dirsepadd", "getenv", "hb_at", "hb_bchar", "hb_bcode", "__defaultnil", "hb_default", "hb_defaultvalue", "hb_sha1", "hb_hmac_sha1", "tr_dims", "tr_apply", "strtran", "space", "substr", "date", "ctod", "date_pack", "date_render", "date_today", "dispbox", "hrbase_wait", "setcursor", "hb_flink", "hb_flinksym", "hb_flinkread", "hb_memowrit", "hb_dircreate", "ferror", "curdir", "fread", "fcreate", "fopen", "fwrite", "fclose", "freadstr", "hb_memoread", "hb_libname", "hb_ps", "os", "dirmake", "inkey", "file", "hrfile_setdefault", "hrfile_setpath", "qout", "qqout", "outstd", "outerr", "empty", "procname", "min", "max", "str", "padr", "hb_ntos", "replicate", "aeval", "hb_isnumeric", "hb_isarray", "hb_isstring", "dfree", "upper", "lower", "left", "right", "at", "int", "abs", "padl", "val", "ascan", "aclone", "atail", "asort", "hb_bitand", "hb_bitor", "hb_bitxor", "hb_bitnot", "hb_bittest", "hb_bitset", "hb_bitreset", "eprint_str", "eprint_sep", "eprint_i64", "eprint_i64c", "eprint_dyn", "eprint_dynlit", "print_dynlit", "eprint_f64", "hb_eol", "procline", "asc", "trim", "ltrim", "rtrim", "alltrim", "chr", "trace_top", "print_trace", "panic_exit", "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_arg_error", "val_arg_error", "atokens_arg_error", "hb_memcheck", "aadd", "asize", "afill", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
 ];
 
 fn dbf_result(id: &str) -> Option<Ty> {
@@ -2366,6 +2366,18 @@ fn standard_date_mask(e:&Expr)->Option<(usize,bool)> {
  None
 }
 fn set_date_mask_call(args:&[Expr])->bool {matches!(args.first(),Some(Expr::Int(v))if v=="4")}
+
+// Parse only the measured literal %s / %% subset. Each part precedes
+// one substitution; the final part is the trailing literal.
+fn strformat_parts(e:&Expr)->Option<Vec<String>> {
+    let Expr::Str(s)=e else{return None};
+    let mut parts=vec![String::new()];let mut chars=s.chars();
+    while let Some(c)=chars.next(){
+        if c!='%' {parts.last_mut()?.push(c);continue;}
+        match chars.next()? {'%'=>parts.last_mut()?.push('%'),'s'=>parts.push(String::new()),_=>return None}
+    }
+    Some(parts)
+}
 
 fn is_builtin(id: &str, name: &str) -> bool {
     if id == INTERNAL_VALTYPE { return name.eq_ignore_ascii_case("valtype"); }
@@ -5501,6 +5513,10 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
                     for a in args { pin_vars(f,a,Ty::Str,pin,n)?; walk(f,a,sigs,lit,pin,printed,n)?; }
                     return Ok(());
                 }
+                if is_builtin(id,"hb_strformat") {
+                    for a in args {walk(f,a,sigs,lit,pin,printed,n)?;}
+                    return Ok(());
+                }
                 if ["upper", "lower"].iter().any(|b| is_builtin(id,b)) {
                     for a in args { pin_vars(f,a,Ty::Str,pin,n)?; walk(f,a,sigs,lit,pin,printed,n)?; }
                     return Ok(());
@@ -7341,6 +7357,22 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 if args.len()!=1 {return Err(format!("line {}: hb_HexToNum requires exactly one typed string in this increment",n));}
                 if !matches!(type_expr(&args[0],env,sigs,n)?,Ty::Str|Ty::StrOwn) {return Err(format!("line {}: hb_HexToNum requires a typed string in this increment",n));}
                 return Ok(Ty::I64);
+            }
+            if is_builtin(id,"hb_strformat") {
+                if !CURDIR_LINUX_NATIVE.with(|v|v.get()) || !DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get()) || IN_BLOCK.with(|v|v.get()) || shared_local::active() {
+                    return Err(format!("line {}: hb_StrFormat requires ordinary Linux without threads, macros, blocks or shared arrays in this increment",n));
+                }
+                let parts=args.first().and_then(strformat_parts).ok_or_else(||format!("line {}: hb_StrFormat requires a literal format containing only %s and %% in this increment",n))?;
+                if parts.len()!=args.len() {return Err(format!("line {}: hb_StrFormat requires exactly one argument per %s in this increment",n));}
+                for a in &args[1..] {
+                    if !matches!(a,Expr::Var(_)|Expr::Str(_)|Expr::Int(_)|Expr::Log(_)|Expr::Nil) && !matches!(a,Expr::Send(recv,m,aa) if m.eq_ignore_ascii_case("__enumkey") && aa.is_empty() && matches!(recv.as_ref(),Expr::Var(_))) {
+                        return Err(format!("line {}: hb_StrFormat arguments must be scalar leaves or active hash enumKey getters in this increment",n));
+                    }
+                    let t=type_expr(a,env,sigs,n)?;
+                    if !matches!(t,Ty::Str|Ty::StrOwn|Ty::Dyn|Ty::I64|Ty::Bool) {return Err(format!("line {}: hb_StrFormat arguments must be string, Dyn, integer, logical or NIL in this increment",n));}
+                    apply_moves(a,env,sigs,false);
+                }
+                return Ok(Ty::StrOwn);
             }
             if is_builtin(id,"hb_base64encode") {
                 if !DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get()) {return Err(format!("line {}: hb_base64Encode requires ordinary Linux without threads or macros in this increment",n));}
@@ -11169,9 +11201,12 @@ fn foreach_lv_readonly(stmts: &[Stmt], name: &str) -> bool {
         }}
         CURDIR_LINUX_NATIVE.with(|v|v.get()) && matches!(e,Expr::Call(f,aa) if is_builtin(f,"hb_hextonum") && matches!(aa.as_slice(),[Expr::Call(g,bb)] if is_builtin(g,"substr") && (2..=3).contains(&bb.len()) && matches!(&bb[0],Expr::Var(v) if v==name) && bb.iter().skip(1).all(|a|bound(a,name))))
     }
+    fn format_observer(e:&Expr)->bool {
+        CURDIR_LINUX_NATIVE.with(|v|v.get()) && matches!(e,Expr::Call(f,aa) if is_builtin(f,"hb_strformat") && aa.first().and_then(strformat_parts).map_or(false,|p|p.len()==aa.len()) && aa[1..].iter().all(|a|matches!(a,Expr::Var(_)|Expr::Str(_)|Expr::Int(_)|Expr::Log(_)|Expr::Nil)||matches!(a,Expr::Send(r,m,bb)if m.eq_ignore_ascii_case("__enumkey")&&bb.is_empty()&&matches!(r.as_ref(),Expr::Var(_)))))
+    }
     fn in_call(e: &Expr, name: &str) -> bool {
         match e {
-            e if at_observer(e,name)||hex_slice_observer(e,name)=>false,
+            e if at_observer(e,name)||hex_slice_observer(e,name)||format_observer(e)=>false,
             Expr::Seq(es) => es.iter().any(|e| in_call(e, name)),
             Expr::Set(_, r) => in_call(r, name),
             Expr::Call(id,args) if CURDIR_LINUX_NATIVE.with(|v|v.get()) && is_builtin(id,"empty") && matches!(args.as_slice(),[Expr::Var(v)] if v==name)=>false,
@@ -11184,7 +11219,7 @@ fn foreach_lv_readonly(stmts: &[Stmt], name: &str) -> bool {
     stmts.iter().all(|s| match s {
         Stmt::Print(_, items, _) => items.iter().all(|i| !in_call(i, name)),
         Stmt::Assign(_,id,Expr::Send(recv,method,args)) if id!=name && method.eq_ignore_ascii_case("__enumkey") && args.is_empty() && matches!(recv.as_ref(),Expr::Var(v) if v==name)=>true,
-        Stmt::Assign(_,id,e) if id!=name && (at_observer(e,name)||hex_slice_observer(e,name))=>true,
+        Stmt::Assign(_,id,e) if id!=name && (at_observer(e,name)||hex_slice_observer(e,name)||format_observer(e))=>true,
         Stmt::Assign(_,id,Expr::Call(f,aa)) if CURDIR_LINUX_NATIVE.with(|v|v.get()) && id!=name && is_builtin(f,"hb_atokens")
             && matches!(aa.as_slice(),[Expr::Var(v),Expr::Str(_)] if v==name)=>true,
         Stmt::Assign(_, _, e) | Stmt::Ret(_, Some(e)) => !mentions(e, name),
@@ -13584,6 +13619,9 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
             if is_builtin(id,"substr") {
                 for a in args { apply_moves(a,env,sigs,false); }
                 return;
+            }
+            if is_builtin(id,"hb_strformat") {
+                for a in args {apply_moves(a,env,sigs,false);}return;
             }
             if ["upper", "lower", "left", "right"].iter().any(|b| is_builtin(id,b)) {
                 for a in args { apply_moves(a,env,sigs,false); }
@@ -18048,6 +18086,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             if expr_ty(&args[0],env,sigs)==Ty::StrOwn && !matches!(&args[0],Expr::Var(_)) {out.push_str("    mov (%rsp), %rdi\n    call hbc_freestr\n");}
             out.push_str("    mov 8(%rsp), %rax\n    mov 16(%rsp), %rdx\n    add $32, %rsp\n");
         }
+        Expr::Call(id,args) if is_builtin(id,"hb_strformat") => {cg_strformat(args,env,sigs,strs,out,target);}
         Expr::Call(id,args) if is_builtin(id,"hb_base64encode") => {
             cg_value(&args[0],env,sigs,strs,out,target);
             out.push_str("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_base64_linux\n    mov %rax, 8(%rsp)\n    mov %rdx, 16(%rsp)\n");
@@ -22271,6 +22310,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             if is_builtin(id,"fclose") {return Ty::Bool;}
             if ["fread","fcreate","fopen","fwrite"].iter().any(|b|is_builtin(id,b)) {return Ty::I64;}
             if is_builtin(id,"hb_hextonum") {return Ty::I64;}
+            if is_builtin(id,"hb_strformat") {return Ty::StrOwn;}
             if is_builtin(id,"hb_osdriveseparator") || is_builtin(id,"hb_base64encode") || is_builtin(id,"hb_asciiupper") || is_builtin(id,"hb_strtohex") || is_builtin(id,"hb_dirsepadd") || is_builtin(id,"getenv") || is_builtin(id,"hb_libname") || is_builtin(id,"hb_ps") || is_builtin(id, "os") || is_builtin(id, "curdir") || is_builtin(id, "chr") || is_builtin(id, "str") || is_builtin(id, "hb_ntos") || is_builtin(id, "hb_cstr") || is_builtin(id, "padr") || is_builtin(id, "replicate") { return Ty::StrOwn; }
             if is_builtin(id, "round") { return Ty::F64; } // hk384-hk386
             if is_builtin(id, "iif") {
@@ -43523,6 +43563,33 @@ fn cg_default_setter(id:&str,a:&Expr,b:&Expr,env:&[CgLocal],sigs:&[Sig],strs:&mu
     cg_dyn_stack_release(out,0,false);
     let msg="Limit: default setter supports scalar values only in this increment\n";let si=strs.len();strs.push(msg.to_string());
     out.push_str(&format!("    add $48, %rsp\n    lea .Lstr{si}(%rip), %rax\n    mov ${}, %edx\n    call hbc_write_bytes\n    jmp hbc_panic_exit\n.Lds_end{k}:\n",msg.len()));
+}
+
+// Literal formatter owns its accumulator and each enumKey temporary.
+// Variable inputs are read-only and borrowed only across a non-mutating copy.
+fn cg_strformat(args:&[Expr],env:&[CgLocal],sigs:&[Sig],strs:&mut Vec<String>,out:&mut String,target:Target) {
+    let parts=strformat_parts(&args[0]).expect("checked literal format");
+    let k=fresh_lbl();
+    cg_value(&Expr::Str(parts[0].clone()),env,sigs,strs,out,target);
+    out.push_str("    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_strcpy\n    sub $80, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+    out.push_str(&format!("    movq $0, 64(%rsp)\n    cmpq $0, hbc_seq_depth(%rip)\n    je .Lsf_eval{k}\n    lea .Lsf_catch{k}(%rip), %rdi\n    call hbc_seq_push\n    movq $1, 64(%rsp)\n.Lsf_eval{k}:\n"));
+    // Inputs are checked leaves: no language call, mutation or capture.
+    // An internal landing pad also covers resolver errors if present.
+    // An enumKey getter owns its independent copy.
+    for (i,a) in args[1..].iter().enumerate() {
+        let t=expr_ty(a,env,sigs);
+        if matches!(t,Ty::Str|Ty::StrOwn|Ty::Dyn) {
+            cg_value(a,env,sigs,strs,out,target);
+            if t==Ty::Dyn {out.push_str(&format!("    mov %rax, 48(%rsp)\n    mov %rdx, 56(%rsp)\n    cmp $2, %al\n    je .Lsf_string{k}_{i}\n    cmp $4, %al\n    jne .Lsf_skip{k}_{i}\n.Lsf_string{k}_{i}:\n    mov %rdx, %rax\n    mov -8(%rdx), %rdx\n"));}
+            out.push_str("    mov %rax, 16(%rsp)\n    mov %rdx, 24(%rsp)\n    mov %rax, %rdx\n    mov 24(%rsp), %rcx\n    mov (%rsp), %rdi\n    mov 8(%rsp), %rsi\n    call hbc_strcat\n    mov %rax, 32(%rsp)\n    mov %rdx, 40(%rsp)\n    mov (%rsp), %rdi\n    call hbc_freestr\n");
+            if t==Ty::StrOwn && !matches!(a,Expr::Var(_)) {out.push_str("    mov 16(%rsp), %rdi\n    call hbc_freestr\n");}
+            out.push_str("    mov 32(%rsp), %rax\n    mov 40(%rsp), %rdx\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+            if t==Ty::Dyn {out.push_str(&format!(".Lsf_skip{k}_{i}:\n"));if dyn_expr_owned(a) {cg_dyn_stack_release(out,48,false);}}
+        }
+        cg_value(&Expr::Str(parts[i+1].clone()),env,sigs,strs,out,target);
+        out.push_str("    mov %rdx, %rcx\n    mov %rax, %rdx\n    mov (%rsp), %rdi\n    mov 8(%rsp), %rsi\n    call hbc_strcat\n    mov %rax, 32(%rsp)\n    mov %rdx, 40(%rsp)\n    mov (%rsp), %rdi\n    call hbc_freestr\n    mov 32(%rsp), %rax\n    mov 40(%rsp), %rdx\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+    }
+    out.push_str(&format!("    cmpq $0, 64(%rsp)\n    je .Lsf_done{k}\n    call hbc_seq_pop\n.Lsf_done{k}:\n    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    add $80, %rsp\n    jmp .Lsf_end{k}\n.Lsf_catch{k}:\n    mov (%rsp), %rdi\n    call hbc_freestr\n    add $80, %rsp\n    jmp hbc_seq_unwind\n.Lsf_end{k}:\n"));
 }
 
 // Convert an admitted Dyn scalar string to an independent input snapshot,
