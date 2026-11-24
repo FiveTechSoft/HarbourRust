@@ -1,5 +1,5 @@
 # Own MIT hb_FNameExt/Name/Dir, measured Linux oracle path limit263.
-# rdi/rsi=counted path, edx=0 ext /1 name /2 dir -> owned copy.
+# rdi/rsi=counted path, edx=0 ext /1 name /2 dir /3 nameext -> owned copy.
 .text
 hbc_fname_linux:
     cmp $263, %rsi
@@ -30,6 +30,8 @@ hbc_fname_linux:
     inc %rax
     jmp .Lfn_scan
 .Lfn_done:
+    cmp $3, %edx
+    je .Lfn_nameext
     cmp $2, %edx
     je .Lfn_dir
     test %edx, %edx
@@ -49,4 +51,13 @@ hbc_fname_linux:
     jmp hbc_strcpy
 .Lfn_dir:
     mov %r8, %rsi
+    jmp hbc_strcpy
+.Lfn_nameext:
+    add %r8, %rdi
+    sub %r8, %rax
+    cmp $262, %rax
+    jbe .Lfn_nameext_copy
+    mov $262, %eax
+.Lfn_nameext_copy:
+    mov %rax, %rsi
     jmp hbc_strcpy
