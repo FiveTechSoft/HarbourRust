@@ -9,3 +9,5 @@ Gate30:4 fuentes intactas propias por5 modos=20 exactas Harbour;4 balances final
 Regresión118 suites previas reconciliadas por nombre/SHA donde existe, Rust106,LLVM21 exactas frescas,Linux1177 stdout/golden,PE solo emisión1912PASS/22conocidas/0FAIL,negativos622 mismos18,censo58/1041. Trece diagnósticos avanzan, sin nuevas admisiones ni cierre original. codebl2 pasa la declaración de array y se detiene en MEMVAR. Sin velocidad/RC/objetos/división numérica nuevos. Sin push/publicación/workflows/rebase.
 
 python tests/local-array-declaration/check.py --compiler target/release/hbc --hbmk2 /ruta/hbmk2 --spec-root /ruta/harbour --output /ruta/nueva
+
+C2: dos fixtures de LOCAL array redeclarado dentro de bucle, plano con nested FOR/LOOP/EXIT y array2D junto a longitud0. Criterio propio de balance cero, sin oráculo Harbour adaptado ni afirmación de compatibilidad intacta (Harbour no admite LOCAL tardío). Ambos ya pasan sin modificar compilador. Gate ampliado42:20 exactas Harbour,4 balances cero intactos,6 límites,10 salidas propias de redeclaración por5 modos y2 balances cero propios. Sumas esperadas1065 y2556 calculadas desde las iteraciones, comparadas byte a byte.

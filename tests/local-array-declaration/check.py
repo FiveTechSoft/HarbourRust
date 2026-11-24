@@ -12,6 +12,14 @@ def run(cmd,w,label):
  return r
 for src in [*sorted(here.glob('*.prg'))]:
  w=out/src.stem;w.mkdir();(w/src.name).write_bytes(src.read_bytes());(w/'input.sha256').write_text(hashlib.sha256(src.read_bytes()).hexdigest()+'  '+src.name+'\n')
+ if src.stem.startswith('redeclare'):
+  # Own balance criterion only. Harbour rejects late LOCAL in a loop.
+  want=b'\n      2556' if src.stem=='redeclare-nested' else b'\n      1065'
+  for mode,flags in [('native',[]),('external',['--external-as']),('flat',['--no-vas-arrays']),('noescape',['--no-escape-analysis']),('noprune',['--no-prune'])]:
+   r=run([cc,src,w/mode,'--instrument',*flags],w,mode+'-build');assert r.returncode==0,(src,r.stderr)
+   r=run([w/mode],w,mode+'-run');assert (r.returncode,r.stdout,r.stderr)==(0,want,b''),(src,r.returncode,r.stdout,want,r.stderr);(w/mode).unlink();rows.append(dict(name=src.stem,kind='own-redeclaration-output',mode=mode))
+  d=w/'delta';d.mkdir();bal=emit_delta(cc,os.environ,src,d,want);assert bal['state_ok'] and bal['delta']==0,(src,bal);rows.append(dict(name=src.stem,kind='own-redeclaration-zero-balance',source_sha256=hashlib.sha256(src.read_bytes()).hexdigest(),**bal))
+  continue
  if src.stem.startswith('limit-'):
   r=run([cc,src,w/'limit'],w,'build');assert r.returncode==1 and (b'error:' in r.stderr.lower()) and not (w/'limit').exists(),(src,r.stderr);rows.append(dict(name=src.stem,kind='named-rejection'));continue
  r=run([a.hbmk2,src,'-quiet','-gtstd','-w0','-o'+str(w/'oracle')],w,'oracle-build');assert r.returncode==0,(src,r.stderr)
