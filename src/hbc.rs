@@ -39240,6 +39240,27 @@ fn main() {
         }
         match e {Expr::Index(_,a)=>index(a,&source_names),Expr::Index2(_,a,b)=>{index(a,&source_names);index(b,&source_names);},Expr::Index3(_,a,b,c)=>{index(a,&source_names);index(b,&source_names);index(c,&source_names);},Expr::Index4(_,a,b,c,d)=>{index(a,&source_names);index(b,&source_names);index(c,&source_names);index(d,&source_names);},_=>{}}
     });}}
+    // Dominated bare-local string copies reuse the existing owned SubStr
+    // path. Only direct literal/known-string flow is proved here.
+    if DECIMAL_LOCAL_PROFILE.with(|v|v.get())&&!MACRO_CONTEXT.with(|v|v.get())&&!source_names.contains("substr") {
+        for f in &mut funcs {
+            let mut known=std::collections::HashSet::new();
+            let mut bare=std::collections::HashSet::new();
+            let mut refs=std::collections::HashSet::new();
+            visit_stmts_ref(&f.stmts,&mut |_|{},&mut |e|{if let Expr::ByRef(n)=e{refs.insert(n.clone());}});
+            for st in &mut f.stmts {
+                match st {
+                    Stmt::Local(_,n,Expr::Str(_)) if !refs.contains(n)=>{known.insert(n.clone());},
+                    Stmt::Local(_,n,Expr::Nil) if !refs.contains(n)=>{bare.insert(n.clone());},
+                    Stmt::Assign(_,n,e) if bare.contains(n)&&matches!(&*e,Expr::Var(v)if known.contains(v))=>{
+                        *e=Expr::Call("substr".to_string(),vec![e.clone(),Expr::Int("1".to_string())]);known.insert(n.clone());
+                    },
+                    Stmt::For(_,v,start,end,_,body) if !known.contains(v)&&!known.iter().any(|n|expr_mentions(start,n)||expr_mentions(end,n))&&body.iter().all(|st|matches!(st,Stmt::Assign(_,n,Expr::Bin('+',a,b)) if known.contains(n)&&matches!(a.as_ref(),Expr::Var(v)if v==n)&&matches!(b.as_ref(),Expr::Var(v)if v==n)))=>{},
+                    st=>{let mut touched=Vec::new();for n in &known {if stmt_mentions(st,n){touched.push(n.clone());}}for n in touched {known.remove(&n);}}
+                }
+            }
+        }
+    }
     narrow_bare_date_locals(&mut funcs);
     init_retyped_val_functions(&funcs);
     init_pcount_functions(&funcs);
