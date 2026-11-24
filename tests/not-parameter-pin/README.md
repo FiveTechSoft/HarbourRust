@@ -9,3 +9,5 @@ Gate19:3 fuentes intactas propias por5 modos =15 exactas Harbour;3 balances fina
 Regresión116 suites previas reconciliadas por nombre y SHA del compilador donde figura; Rust106; LLVM21 exactas frescas; Linux1177 stdout/golden; PE solo emisión1912PASS/22conocidas/0FAIL; negativos622 mismos18 exactos; censo58/1041. Dos diagnósticos avanzan sin nuevas admisiones: directry.prg desde Upper a unknown Directory; src/rtl/einstv52.prg desde comparación a unknown ErrorNew. No se cierran esos originales. Sin afirmación de velocidad/RC/división numérica. Sin push/publicación/workflows.
 
 python tests/not-parameter-pin/check.py --compiler target/release/hbc --hbmk2 /ruta/hbmk2 --spec-root /ruta/harbour --output /ruta/nueva
+
+C2 cobertura adicional, sin cambio de compilador: logical-pair.prg compara parámetros solo entre sí, con las cuatro parejas .T./.F., Same y NotSame bajo NOT. logical-literal.prg compara parámetros contra .T. y .F. bajo NOT. Oráculo Harbour fresco, mismos5 modos exactos y balances cero. Gate ampliado31 =25 exactas+5 balances cero+1 límite. Comportamiento actual fijado, no nueva semántica.
