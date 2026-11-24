@@ -140,7 +140,7 @@ pub fn init(ff:&[Func]) {
    visit_stmts_ref(&f.stmts,&mut |_|{},&mut |e|{
     if method_arrays::active(){if let Expr::Send(_,n,aa)=e{for(_,id)in method_results::choices(n){if let Some(to)=ff.iter().find(|f|f.name==id){for(i,a)in aa.iter().enumerate(){if i+1<to.params.len() && method_arrays::expr(a,&own,&oldret){params.insert((id.clone(),i+1));names.entry(id.clone()).or_default().insert(to.params[i+1].clone());}}}}}}
     if let Expr::Call(id,aa)=e {if let Some(to)=ff.iter().find(|x|x.name==*id){for(i,a)in aa.iter().enumerate().take(to.params.len()){
-     if matches!(a,Expr::Var(n)|Expr::Index(n,_) if own.contains(n)) || matches!(a,Expr::Call(id,_) if oldret.contains(id)) || (method_arrays::active() && method_arrays::expr(a,&own,&oldret)) {params.insert((id.clone(),i));names.entry(id.clone()).or_default().insert(to.params[i].clone());}
+     if matches!(a,Expr::Var(n)|Expr::Index(n,_) if own.contains(n)) || matches!(a,Expr::Call(id,_) if oldret.contains(id)) || matches!(a,Expr::Call(id,aa)if is_builtin(id,"aclone")&&matches!(aa.as_slice(),[x]if literal(x)||matches!(x,Expr::Var(n)if own.contains(n)))) || (method_arrays::active() && method_arrays::expr(a,&own,&oldret)) {params.insert((id.clone(),i));names.entry(id.clone()).or_default().insert(to.params[i].clone());}
     }}}
    });
   }
