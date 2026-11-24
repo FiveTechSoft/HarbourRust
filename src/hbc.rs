@@ -35060,7 +35060,12 @@ fn finalize_trace(mut out: String, target: Target) -> String {
     if out.contains("call hbc_atokens") {
         out.push_str(ATOKENS_HELPER);
     }
-    if out.contains("call hbc_asort_callback_shared") {out.push_str(include_str!("asort_callback.s"));}
+    if timestamp::active()&&out.contains("hbc_asort_flat_shared:") {
+        out=out.replace("    jmp hbc_asort_shared_cells\n","    lea hbc_asort_temporal_before(%rip), %r8\n    xor %r10d, %r10d\n    jmp hbc_asort_callback_shared\n");
+        out=out.replace("    cmp $16, %r9\n    jne hbc_type_error\n.Lasfstagok:","    cmp $17, %r9\n    je .Lasfstagok\n    cmp $16, %r9\n    jne hbc_type_error\n.Lasfstagok:");
+        out.push_str(include_str!("asort_temporal.s"));
+    }
+    if out.contains("call hbc_asort_callback_shared")||out.contains("jmp hbc_asort_callback_shared") {out.push_str(include_str!("asort_callback.s"));}
     if out.contains("call hbc_asort_b") {
         out.push_str(ASORT_BLOCK_HELPER);
     }
