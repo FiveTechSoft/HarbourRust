@@ -18,7 +18,7 @@ fn integer_value(e:&Expr,p:&str,value:i64)->Option<i64> {match e {
  Expr::Int(v)=>v.parse::<i64>().ok(),Expr::Var(v) if v==p=>Some(value),
  Expr::Bin(op @ ('+'|'-'|'*'),a,b)=>{
   let a=integer_value(a,p,value)?;let b=integer_value(b,p,value)?;
-  match op {'+'=>a.checked_add(b),'-'=>a.checked_sub(b),'*'=>a.checked_mul(b),_=>None}
+  match op {'+'=>a.checked_add(b),'-'=>a.checked_sub(b),'*'=>a.checked_mul(b).filter(|v|v.unsigned_abs()<=9_007_199_254_740_992),_=>None}
  },_=>None,
 }}
 fn substitute(e:&mut Expr,p:&str,value:&Expr){match e{
@@ -62,4 +62,42 @@ pub fn lower(funcs:&mut Vec<Func>)->bool {
  }
  if changed && !referenced{funcs.retain(|f|!templates.contains(&f.name));}
  changed
+}
+
+#[cfg(test)]
+mod tests {
+ use super::*;
+ fn n(v:i64)->Expr{Expr::Int(v.to_string())}
+ fn x()->Expr{Expr::Var("x".into())}
+ fn op(o:char,a:Expr,b:Expr)->Expr{Expr::Bin(o,Box::new(a),Box::new(b))}
+ #[test] fn exact_i64_add_sub_edges(){
+  assert_eq!(integer_value(&op('+',x(),n(1)),"x",i64::MAX-1),Some(i64::MAX));
+  assert_eq!(integer_value(&op('-',x(),n(1)),"x",i64::MIN+1),Some(i64::MIN));
+  assert_eq!(integer_value(&op('*',x(),x()),"x",3037000499),None);
+ }
+ #[test] fn overflow_at_any_intermediate_stops_reduction(){
+  assert_eq!(integer_value(&op('+',x(),n(1)),"x",i64::MAX),None);
+  assert_eq!(integer_value(&op('-',x(),n(1)),"x",i64::MIN),None);
+  assert_eq!(integer_value(&op('*',x(),x()),"x",3037000500),None);
+  // Final mathematics fits, but the first intermediate does not.
+  assert_eq!(integer_value(&op('-',op('+',x(),n(1)),n(1)),"x",i64::MAX),None);
+  assert_eq!(integer_value(&op('+',op('-',x(),n(1)),n(1)),"x",i64::MIN),None);
+ }
+ #[test] fn refused_intermediates_leave_call_unreduced(){
+  let direct=Func{init:false,name:"modify".into(),params:vec!["x".into(),"b".into()],ret:None,dyn_names:HashSet::new(),stmts:vec![
+   Stmt::If(1,Expr::Cmp(CmpOp::EqEq,Box::new(Expr::Call("valtype".into(),vec![Expr::Var("b".into())])),Box::new(Expr::Str("B".into()))),vec![Stmt::Ret(2,Some(Expr::Call("eval".into(),vec![Expr::Var("b".into()),x()])))],vec![]),Stmt::Ret(3,Some(x()))]};
+  for (value,body) in [(i64::MAX,op('-',op('+',x(),n(1)),n(1))),(3037000499,op('*',x(),x()))] {
+   let call=Expr::Call("modify".into(),vec![n(value),Expr::BlockLit(9,vec!["x".into()],vec![body])]);
+   let debug=format!("{:?}",call);
+   let mut funcs=vec![Func{init:false,name:direct.name.clone(),params:direct.params.clone(),ret:None,dyn_names:HashSet::new(),stmts:vec![]},Func{init:false,name:"main".into(),params:vec![],ret:None,dyn_names:HashSet::new(),stmts:vec![Stmt::Ret(4,Some(call))]}];
+   // Reconstruct the small template, without needing Clone for arbitrary statements.
+   funcs[0].stmts=vec![Stmt::If(1,Expr::Cmp(CmpOp::EqEq,Box::new(Expr::Call("valtype".into(),vec![Expr::Var("b".into())])),Box::new(Expr::Str("B".into()))),vec![Stmt::Ret(2,Some(Expr::Call("eval".into(),vec![Expr::Var("b".into()),x()])))],vec![]),Stmt::Ret(3,Some(x()))];
+   crate::DECIMAL_LOCAL_PROFILE.with(|v|v.set(true));
+   assert!(!lower(&mut funcs));assert_eq!(funcs.len(),2);
+   if let Stmt::Ret(_,Some(after))=&funcs[1].stmts[0]{assert_eq!(format!("{:?}",after),debug);}else{panic!("return lost")}
+  }
+ }
+ #[test] fn successful_cancellation_stays_exact(){
+  assert_eq!(integer_value(&op('*',op('-',x(),x()),n(2)),"x",i64::MAX),Some(0));
+ }
 }
