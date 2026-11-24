@@ -16573,6 +16573,10 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                 }
                 Expr::Index(v, ie) => {
                     let var = env.iter().rev().find(|x| x.name == *v).expect("checked");
+                    if shared_local::active()&&shared_local::current(v)&&var.ty==Ty::Dyn {
+                        cg_value(&args[0],env,sigs,strs,out,target);out.push_str("    mov %rax, %r10\n");classify_tag(out,want_num);
+                        if want_num{out.push_str("    cmpb $5, %r10b\n    sete %dl\n    or %dl, %al\n    movzbq %al, %rax\n");}return;
+                    }
                     if var.ty == Ty::RefDyn {
                         cg_expr(&args[0], env, sigs, strs, out, target);
                         out.push_str("    mov %rax, %r10\n");
