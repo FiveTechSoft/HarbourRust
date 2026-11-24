@@ -18063,17 +18063,20 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             let av = match &args[0] { Expr::Var(v) => v.clone(), _ => unreachable!("checked") };
             let var = env.iter().rev().find(|x| x.name == *av).expect("checked");
             if shared_local::active()&&expr_ty(&args[0],env,sigs)==Ty::Dyn {
+                let k=fresh_lbl();
                 out.push_str("    sub $32, %rsp\n");
                 for i in 1..=2 {
                     if let Some(e)=args.get(i).filter(|e|!matches!(e,Expr::Nil)){cg_expr(e,env,sigs,strs,out,target);}else{out.push_str(if i==1{"    mov $1, %rax\n"}else{"    mov $-1, %rax\n"});}
                     out.push_str(&format!("    mov %rax, {}(%rsp)\n",(i-1)*8));
                 }
                 if let Some(e)=args.get(3).filter(|e|!matches!(e,Expr::BlockLit(..))){cg_val_discard_arg(e,env,sigs,strs,out,target);}
+                let slot=if module_static::is_module_binding(&av){let owner=CUR_FN.with(|c|c.borrow().clone());format!("{}(%rip)",module_static::storage(&owner,&av))}else{format!("-{}(%rbp)",var.off)};
+                out.push_str(&format!("    cmpq $16, {slot}\n    jne .Lsortrootnil{k}\n"));
                 cg_sarr_root(&av,var.off,"%r11",out);
                 out.push_str("    mov %r11, 16(%rsp)\n    mov 24(%r11), %rdi\n    mov (%r11), %rsi\n    mov (%rsp), %rdx\n    mov 8(%rsp), %rcx\n");
                 if let Some(Expr::BlockLit(id,..))=args.get(3){out.push_str(&format!("    lea hbc_blk_{id}(%rip), %r8\n    mov %rbp, %r10\n    call hbc_asort_callback_shared\n"));}
                 else{out.push_str("    call hbc_asort_flat_shared\n");}
-                out.push_str("    mov 16(%rsp), %rdx\n    mov $16, %eax\n    add $32, %rsp\n");
+                out.push_str(&format!("    mov 16(%rsp), %rdx\n    mov $16, %eax\n    jmp .Lsortrootend{k}\n.Lsortrootnil{k}:\n    mov $1, %eax\n    xor %edx, %edx\n.Lsortrootend{k}:\n    add $32, %rsp\n"));
             } else if args.len()==4 {
                 // Block sort: the helper gets the cells, the clamped
                 // start/count and the block function pointer; blocks with
