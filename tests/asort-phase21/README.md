@@ -1,6 +1,6 @@
 # ASort phase21: explicit complete supplied-program matrix
 
-Own MIT test-only incremental onede734cfd929e1646a0f581744c5843efd9f9428.
+Own MIT test-only incremental on902ec1b2555659b6e1723657d7b58a5252c1410c.
 Julio Ponce's MIT16programs and Harbour outputs are specifications only,
 no implementation or cambio.diff used. No workflows,push or publication.
 No compiler/runtime changes. Same final compiler SHA as phase20.
@@ -32,5 +32,5 @@ semantic comparison remain distinct evidence classes.
 
 Existing phase20 final full regressions are reused with their unchanged
 compiler SHA: ASort1..19,timestamp1..9,B1/B2,A1/A2,cycle59,nested51,
-Rust103,Linux1176exact+1inherited ctod,neg622/13known,PE1912PASS22known
+Rust104,Linux1176exact+1inherited ctod,neg622/13known,PE1912PASS22known
 0FAIL,censo48/1041. Not a claim those were rerun after a test-only edit.
