@@ -8561,7 +8561,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                                 return Err(format!("line {}: `hb_ATokens` argument {} may consume or rebind the borrowed string `{}` of argument {} (conservative aliasing limit - aliasing between arguments is outside this increment, and a pure observer such as Len(`{}`) trips it too; copy the string or bind it to another variable first)", n, i + 2 + j, v, i + 1, v));
                             }
                         }
-                        if owned_tmp[i] && args[i + 1..].iter().any(|a| !val_quiet_arg(a, env)) {
+                        if owned_tmp[i] && args[i + 1..].iter().any(|a| !val_quiet_arg(a, env) && !matches!(a,Expr::Call(id,aa) if is_builtin(id,"hb_eol") && aa.is_empty())) {
                             return Err(format!("line {}: `hb_ATokens` with an owned string temporary in argument {} followed by an argument that can raise is outside this increment (no unwind cleanup); bind the string to a variable first", n, i + 1));
                         }
                     }
