@@ -22677,6 +22677,12 @@ fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<Strin
                 } else {
                     out.push_str("    mov %rcx, %r10\n    mov %r8, %r11\n");
                 }
+                if shared_local::active() && matches!(op,CmpOp::Eq|CmpOp::Ne) {
+                    let skip=fresh_lbl();
+                    out.push_str(&format!("    cmp $16, %r10\n    jne .Lsaeqstr{skip}\n"));
+                    if tmp {out.push_str("    mov %rax, %rdi\n    call hbc_freestr\n");}
+                    out.push_str(&format!("    mov ${}, %r9d\n    jmp hbc_sarr_cmp_error\n.Lsaeqstr{skip}:\n",if matches!(op,CmpOp::Ne){1}else{0}));
+                }
                 if DBF_USED.with(|v|v.get()) {out.push_str("    cmpb $11, %r10b\n    je hbc_dbf_unsupported\n    cmpb $12, %r10b\n    je hbc_dbf_unsupported\n");}
                 let lid = fresh_lbl();
                 out.push_str(&format!("    @HBC_TAG_KIND@cmp $2, %r10@HBC_TAG_END@\n    je .Ldys{}\n    @HBC_TAG_KIND@cmp $4, %r10@HBC_TAG_END@\n    je .Ldys{}\n", lid, lid));
@@ -22794,6 +22800,8 @@ fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<Strin
                         CmpOp::Eq | CmpOp::Ne | CmpOp::EqEq => {
                             match op {
                                 CmpOp::EqEq => out.push_str("    call hbc_dynxeq_dd\n"),
+                                CmpOp::Eq if shared_local::active() => out.push_str("    call hbc_sarr_equal_guard\n"),
+                                CmpOp::Ne if shared_local::active() => out.push_str("    call hbc_sarr_unequal_guard\n"),
                                 _ => out.push_str("    call hbc_dyn_eq\n"),
                             }
                             out.push_str("    test %rax, %rax\n");
@@ -22841,6 +22849,8 @@ fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<Strin
                         }
                         match op {
                             CmpOp::EqEq => out.push_str("    call hbc_dynxeq_dd\n"),
+                            CmpOp::Eq if shared_local::active() => out.push_str("    call hbc_sarr_equal_guard\n"),
+                            CmpOp::Ne if shared_local::active() => out.push_str("    call hbc_sarr_unequal_guard\n"),
                             _ => out.push_str("    call hbc_dyn_eq\n"),
                         }
                         out.push_str("    test %rax, %rax\n");
@@ -31900,6 +31910,7 @@ fn emit_asm(funcs: &[Func], sigs: &[Sig], externs: &[String], target: Target, in
         if shared_local::active() {
             out.push_str(include_str!("shared_collect.s"));
             out.push_str(include_str!("shared_clone.s"));
+            out.push_str(include_str!("shared_compare.s"));
             out.push_str("hbc_sarr_mark_globals:\n    push %rbp\n    mov %rsp, %rbp\n");
             let mut seen=std::collections::HashSet::new();
             for f in funcs {for st in &f.stmts {if let Stmt::Static(_,n,_)=st {if module_static::kind(&f.name,n)==Some(Ty::Dyn) {let l=module_static::storage(&f.name,n);if seen.insert(l.clone()){out.push_str(&format!("    cmpq $16, {l}(%rip)\n    jne 1f\n    mov {l}+8(%rip), %rax\n    movq $1, 32(%rax)\n1:\n"));}}}}}
