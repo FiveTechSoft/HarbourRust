@@ -75,6 +75,8 @@ pub fn init(ff:&[Func]) {
   let mut nested=HashSet::new();
   visit_stmts_ref(&f.stmts,&mut |s|{if let Stmt::Local(_,n,e)|Stmt::Assign(_,n,e)=s{if literal(e)&&tagged_nested(e){nested.insert(n.clone());}}},&mut |_|{});
   visit_stmts_ref(&f.stmts,&mut |s|{if let Stmt::ArrSet2(_,n,..)|Stmt::ArrSet3(_,n,..)|Stmt::ArrSet4(_,n,..)=s{if nested.contains(n){need=true;}}},&mut |_|{});
+  // Replacing a cell by a constant nested tagged array needs identity.
+  visit_stmts_ref(&f.stmts,&mut |s|{if let Stmt::ArrSet(_,n,_,e)=s{if constants.contains(n)&&literal(e)&&tagged_nested(e){need=true;}}},&mut |_|{});
   // ASort on a constant local flat literal requires an addressable array
   // identity. Direct callbacks are checked separately; computed literals stay closed.
   let mut sortable=HashSet::new();

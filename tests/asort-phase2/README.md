@@ -28,3 +28,14 @@ No Windows/Mac runtime claim. Hashes,blocks,constructors remain A2 limits.
 This closes two more supplied programs,not the remaining callbacks/mixed
 arrays or full ASort package. Bundle/patch,LEEME,attribution,manifest,
 compiler SHA and raw text evidence,no binary/object/disposable assembly.
+
+## Constant-constructor follow-up
+
+After 54422c3c, the unchanged former constant-constructor limit is a
+positive differential fixture. Current total is 58, not 42: own fixtures
+contribute 42 rows (20 exact executions, 5 balances, 15 profile rejections,
+2 limits), and Julio MIT originals c01/c04 contribute 16 rows (8 exact
+executions, 2 balances, 6 profile rejections). Both original files are
+required in --spec-root. The gate now errors if either glob has other than
+one match; an incomplete source directory must never silently report 42
+as the complete gate. Historical Gate51 above describes the earlier base.
