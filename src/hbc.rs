@@ -12741,7 +12741,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                     // and the slot's reference is replaced (the old object
                     // is registry garbage; aliases keep it - probe p8).
                     // Constants only, same shape as the STATIC initializer.
-                    let const_lit = matches!(e, Expr::DArrNew) || const_array_init(e);
+                    let const_lit = matches!(e, Expr::DArrNew) || const_array_init(e) || (shared_local::active()&&shared_local::literal(e));
                     if !const_lit {
                         return Err(format!("line {}: rebuilding the shared module array `{}` takes a literal of constants (integers, logicals, strings, NIL or nested constant literals) in this increment", n, id));
                     }
@@ -28740,8 +28740,11 @@ hbc_asort_flat_shared:
     cmp %rsi, %rdx
     jg .Lasfsdone
     mov (%rdi), %r10
+    cmp $5, %r10b
+    je .Lasfsnumeric
     cmp $9, %r10
     jne .Lasfsfamily
+.Lasfsnumeric:
     xor %r10d, %r10d
 .Lasfsfamily:
     test %r10, %r10
@@ -28752,8 +28755,11 @@ hbc_asort_flat_shared:
     xor %r8d, %r8d
 .Lasfsloop:
     mov (%rdi,%r8), %r9
+    cmp $5, %r9b
+    je .Lasfscellnumeric
     cmp $9, %r9
     jne .Lasfstag
+.Lasfscellnumeric:
     xor %r9d, %r9d
 .Lasfstag:
     cmp %r10, %r9
@@ -28987,6 +28993,10 @@ hbc_asort_shared_cells:
 # semantics. Integer payloads use signed comparison. Input families were
 # checked in the wrapper before the first cell was moved.
 hbc_asort_flat_cmp:
+    cmp $5, %al
+    je .Lasfcnumeric
+    cmp $5, %cl
+    je .Lasfcnumeric
     cmp $4, %rax
     je .Lasfcstr
     xor %eax, %eax
@@ -28995,6 +29005,9 @@ hbc_asort_flat_cmp:
     jl .Lasfcless
     mov $1, %eax
     ret
+.Lasfcnumeric:
+    mov $1, %r9d
+    jmp hbc_dynxcmp
 .Lasfcstr:
     mov -8(%rdx), %r10
     mov -8(%r8), %r11
@@ -31309,6 +31322,15 @@ fn emit_sarr_desc(out: &mut String, strs: &mut Vec<String>, expr: &Expr) -> Stri
     for e in &es {
         match e {
             Expr::Int(v) => body.push_str(&format!("    .quad 0, {}\n", v)),
+            Expr::Float(..)|Expr::FloatV(..)=>{
+                let (bits,meta)=match e{
+                    Expr::Float(t,d)=>(harbour_parse_f64(t).expect("checked float").to_bits(),(10u64<<16)|(*d as u64)),
+                    Expr::FloatV(b,d)=>{let v=f64::from_bits(*b);(*b,((if v>9999999999.0||v< -999999999.0{20u64}else{10u64})<<16)|(*d as u64))},
+                    _=>unreachable!(),
+                };
+                out.push_str(&format!("    .data\n    .align 8\n.Lsarrf{id}_{}: .quad {bits}, {meta}\n    .text\n",body.len()));
+                body.push_str(&format!("    .quad 105, .Lsarrf{id}_{}\n",body.len()));
+            }
             Expr::Log(v) => body.push_str(&format!("    .quad 3, {}\n", if *v {1} else {0})),
             Expr::Nil => body.push_str("    .quad 1, 0\n"),
             Expr::Str(text) => {
@@ -31614,6 +31636,8 @@ hbc_sarr_build:
     add %rcx, %r15
     mov (%rbx), %rax
     mov 8(%rbx), %rdx
+    cmp $105, %rax
+    je 23f
     cmp $4, %rax
     je 21f
     cmp $16, %rax
@@ -31631,6 +31655,12 @@ hbc_sarr_build:
     call hbc_sarr_build
     movq $16, (%r15)
     mov %rax, 8(%r15)
+    jmp 25f
+23: mov (%rdx), %rdi
+    mov 8(%rdx), %rsi
+    call hbc_float_new
+    mov %rax, (%r15)
+    mov %rdx, 8(%r15)
 25: add $16, %rbx
     inc %r14
     jmp 20b

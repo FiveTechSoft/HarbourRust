@@ -10,7 +10,7 @@ def run(cmd,w,label):
  return r
 for src in [*sorted(here.glob('*.prg')),*sorted(Path(a.spec_root).glob('a01*.prg')),*sorted(Path(a.spec_root).glob('a02*.prg'))]:
  w=out/src.stem;w.mkdir()
- if src.stem.startswith('limit-'):
+ if src.stem.startswith('limit-') and src.stem!='limit-float':
   r=run([cc,src,w/'limit'],w,'build');assert r.returncode==1 and not (w/'limit').exists(),(src,r.stderr);rows.append(dict(name=src.stem,kind='named-rejection'));continue
  if src.stem.startswith('runtime-'):want=b'\n       202'
  elif src.stem=='user-override':want=b'\n         8         11'
