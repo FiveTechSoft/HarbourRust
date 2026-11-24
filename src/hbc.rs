@@ -2556,8 +2556,9 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                     return Err(format!("line {}: Harbour requires EACH here: `for each <var> in <collection>` (without EACH it is its E0030 syntax error, oracle hk17)", n));
                 }
                 // for i := <start> to <end> [step <n>]
-                // The step must be a non-zero integer literal in this PoC:
-                // the counting direction is then fixed at compile time.
+                // Keep the existing compile-time non-zero i64 loop ABI.
+                // Parsing first admits expressions already reduced to Int.
+                // Do not use fold_int: its Seq rule ignores prefix effects.
                 let id = match toks.get(1) {
                     Some(Tok::Ident(id)) => { check_ident(id, n)?; id.clone() }
                     _ => return Err(format!("line {}: expected `for i := <start> to <end> [step <n>]`", n)),
@@ -2579,20 +2580,14 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                 let step = match step_pos {
                     None => 1,
                     Some(p) => {
-                        let (neg, vtok) = match &toks[p + 1..] {
-                            [Tok::Int(v)] => (false, v),
-                            [Tok::Minus, Tok::Int(v)] => (true, v),
+                        match parse_expr_tokens(toks[p + 1..].to_vec(), n)? {
+                            Expr::Int(v) => match v.parse::<i64>() {
+                                Ok(s) if s != 0 => s,
+                                Ok(_) => return Err(format!("line {}: the `for` step must be a non-zero integer literal in this PoC", n)),
+                                Err(_) => return Err(format!("line {}: integer literal out of range (i64)", n)),
+                            },
                             _ => return Err(format!("line {}: the `for` step must be a non-zero integer literal in this PoC", n)),
-                        };
-                        let mag = match vtok.parse::<u128>() {
-                            Ok(k) if k <= i64::MAX as u128 => k as i64,
-                            _ => return Err(format!("line {}: integer literal out of range (i64)", n)),
-                        };
-                        let s = if neg { -mag } else { mag };
-                        if s == 0 {
-                            return Err(format!("line {}: the `for` step must be a non-zero integer literal in this PoC", n));
                         }
-                        s
                     }
                 };
                 *i += 1;
@@ -11738,9 +11733,15 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
             }
             Stmt::For(n, var, start, end, _step, body) => {
                 let ts = type_expr(start, env, sigs, *n)?;
-                let te = type_expr(end, env, sigs, *n)?;
                 apply_moves(start, env, sigs, false);
+                // type_expr itself can mark argument moves. Snapshot BEFORE
+                // checking TO, then reject an owner consumed by any path.
+                let before_end = env.clone();
+                let te = type_expr(end, env, sigs, *n)?;
                 apply_moves(end, env, sigs, false);
+                if before_end.iter().zip(env.iter()).any(|(a,b)| !a.moved && b.moved) {
+                    return Err(format!("line {}: repeated `for` TO must not consume an owned local", n));
+                }
                 if (ts != Ty::I64 && !(method_arrays::active()&&ts==Ty::Dyn)) || (te != Ty::I64 && !(method_arrays::active()&&te==Ty::Dyn)) {
                     return Err(format!("line {}: `for` bounds must be integers", n));
                 }
@@ -24524,12 +24525,9 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 *label += 1;
                 let amem = arena_loop_members(*n);
                 let mark = env.len();
-                // Evaluate the START first, then the END into a hidden
-                // slot: Harbour's observed order (probe c11: the start's
-                // side effects print first) and Rust's `a..b` order agree.
-                // Bounds evaluate once, as in Rust ranges. The step is a
-                // non-zero literal, so the counting direction is fixed
-                // here at compile time.
+                // START runs once. TO runs at every condition, including
+                // the final failed comparison (fresh Harbour differential).
+                // STEP is already a compile-time non-zero integer.
                 // Reuse (hk323): an already-visible integer slot is the
                 // counter; otherwise a fresh slot.
                 let reuse_off = env.iter().rev().find(|v| v.name == *var && v.ty == Ty::I64).map(|v| v.off);
@@ -24537,15 +24535,15 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 if method_arrays::active() && expr_ty(start,env,sigs)==Ty::Dyn{method_arrays::integer(start,out);}
                 let i_off = if let Some(o) = reuse_off { o } else { *frame += size_of(Ty::I64); *frame };
                 out.push_str(&format!("    mov %rax, -{}(%rbp)\n    mov %rdx, -{}(%rbp)\n", i_off,i_off-8));
-                cg_value(end, env, sigs, strs, out, target);
-                if method_arrays::active() && expr_ty(end,env,sigs)==Ty::Dyn{method_arrays::integer(end,out);}
                 *frame += 8;
                 let end_off = *frame;
-                out.push_str(&format!("    mov %rax, -{}(%rbp)\n", end_off));
                 if reuse_off.is_none() {
                     env.push(CgLocal { name: var.clone(), ty: Ty::I64, off: i_off });
                 }
                 out.push_str(&format!(".Lforc_{}_{}:\n", fname, id));
+                cg_value(end, env, sigs, strs, out, target);
+                if method_arrays::active() && expr_ty(end,env,sigs)==Ty::Dyn{method_arrays::integer(end,out);}
+                out.push_str(&format!("    mov %rax, -{}(%rbp)\n", end_off));
                 out.push_str(&format!("    mov -{}(%rbp), %rax\n", i_off));
                 out.push_str(&format!("    cmp -{}(%rbp), %rax\n", end_off));
                 if *step > 0 {

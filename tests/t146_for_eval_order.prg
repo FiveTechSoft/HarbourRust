@@ -1,4 +1,4 @@
-// HB-EXACT: for evaluates START before END (Harbour probe c11, same as Rust range order)
+// HB-EXACT: START once before TO; TO repeats before every comparison.
 function f()
   ? 1
   return 1
