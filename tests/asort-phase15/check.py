@@ -10,6 +10,9 @@ def run(cmd,w,label):
  return r
 for src in [*sorted(here.glob('*.prg'))]:
  w=out/src.stem;w.mkdir()
+ if src.stem in ('limit-prior-exit','limit-prior-loop','limit-prior-if-exit'):
+  r=run([a.hbmk2,src,'-quiet','-gtstd','-w0','-o'+str(w/'oracle')],w,'oracle-build');assert r.returncode==0,(src,r.stderr)
+  r=run([w/'oracle'],w,'oracle-run');assert (r.returncode,r.stdout,r.stderr)==(0,b'\nU',b''),(src,r.stdout,r.stderr);(w/'oracle').unlink()
  if src.stem.startswith('limit-'):
   r=run([cc,src,w/'limit'],w,'build');assert r.returncode==1 and not (w/'limit').exists(),(src,r.stderr);rows.append(dict(name=src.stem,kind='named-rejection'));continue
  if src.stem.startswith('runtime-'):want=b'\n       202'

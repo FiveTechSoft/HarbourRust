@@ -8,7 +8,9 @@ e20 as a whole is NOT closed.
 The bare-local FOR-counter proof admits one nested counter under an outer
 FOR with literal bounds proven to run at least once,in active A2 only.
 The inner FOR must be the first mention of that local in the outer body;
-its bounds cannot read the uninitialized counter. Earlier reads retain
+its bounds cannot read the uninitialized counter. Before that inner FOR,
+only LOCAL/assignment of effect-free leaves may precede it. EXIT,LOOP,IF,
+calls and every other statement reject the proof. Earlier reads retain
 the named rejection. This proof types the counter I64 consistently in
 checker,layout and emission;there is no runtime Dyn counter conversion.
 
@@ -16,10 +18,12 @@ Len of double-indexed A2 cell dispatches through existing generic tagged
 LEN:shared array -> object length,string -> byte length,other -> type error.
 Indices use existing A2 guards/bounds. No unique-array path is widened.
 
-Gate20:2own,10exact executions across5Linux modes(including --no-prune),
-2strict final balances,6profile rejections,2named limits. Fresh Harbour
+Gate23:2own,10exact executions across5Linux modes(including --no-prune),
+2strict final balances,6profile rejections,5named limits. Fresh Harbour
 covers nested-counter final state,21appends,and string/nested-array cell
-lengths after row sort. The added mutator limit changes a row but RETURNS
+lengths after row sort. EXIT,LOOP and IF-EXIT fixtures are each run with
+fresh Harbour (ValType(k)=U),then explicitly rejected by the compiler.
+This corrected delivery supersedes rejected HEADe62e0587. The added mutator limit changes a row but RETURNS
 a scalar comparison of row cells,so rejection isolates the forbidden write
 rather than an invalid array comparison. DELTA0 requires exact stdout,rc0,
 empty stderr and a measured marker.
