@@ -1223,6 +1223,26 @@ fn tokenize(line: &str, n: usize) -> Result<Vec<Tok>, String> {
             o => return Err(format!("line {}: character not allowed `{}` (U+{:04X})", n, o, o as u32)),
         }
     }
+    // Mixed comma/chained groups describe one nested path. Normalize only
+    // such paths, leaving existing single-group and pure-chain contracts intact.
+    let mut at=0usize;
+    while at+1<toks.len() {
+        if !matches!(toks[at],Tok::Ident(_)) || toks[at+1]!=Tok::LBracket {at+=1;continue;}
+        let mut pos=at+1;let mut groups=0;let mut comma=false;let mut ends=Vec::new();
+        loop {
+            if toks.get(pos)!=Some(&Tok::LBracket){break;}
+            groups+=1;let mut depth=1i32;let mut k=pos+1;
+            while k<toks.len()&&depth>0 {
+                match toks[k]{Tok::LBracket|Tok::LParen|Tok::LBrace=>depth+=1,Tok::RBracket|Tok::RParen|Tok::RBrace=>depth-=1,Tok::Comma if depth==1=>comma=true,_=>{}}
+                if depth==0{break;}k+=1;
+            }
+            if depth!=0{break;}ends.push(k);pos=k+1;
+        }
+        if groups>1&&comma&&ends.len()==groups {
+            for &end in ends[..ends.len()-1].iter().rev(){toks.splice(end..end+2,[Tok::Comma]);}
+        }
+        at+=1;
+    }
     Ok(toks)
 }
 
