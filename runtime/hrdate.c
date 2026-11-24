@@ -19,6 +19,7 @@ static hrt_u64 g_century = 0;      /* 0: two-digit year, 1: four digits */
 
 void hbc_date_set_fmt(hrt_u64 f) { g_date_fmt = f; }
 void hbc_date_set_century(hrt_u64 c) { g_century = c; }
+hrt_u64 hbc_date_get_century(void) { return g_century; }
 
 struct hrt_dout {          /* SysV: returned in rax/rdx */
     char *ptr;

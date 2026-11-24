@@ -8526,6 +8526,11 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 if args.len()!=1 || !matches!(&args[0],Expr::Int(_)) {return Err(format!("line {}: internal SET DATE/CENTURY store expects one integer",n));}
                 return Ok(Ty::I64);
             }
+            if is_builtin(id,"__setcentury") {
+                if !DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get()) {return Err(format!("line {}: __SetCentury requires ordinary Linux without threads or macros",n));}
+                if args.len()>1 || !args.iter().all(|a|matches!(a,Expr::Str(_)|Expr::Log(_)|Expr::Int(_)|Expr::Nil)){return Err(format!("line {}: __SetCentury supports zero or one literal string/logical/integer/NIL argument in this increment",n));}
+                return Ok(Ty::Bool);
+            }
             if is_builtin(id,"set") {
                 if !DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get()) || !(args.len()==1||args.len()==2) || !matches!(args.first(),Some(Expr::Int(v)) if v=="5") {return Err(format!("line {}: unknown function `set` (only literal epoch selector5 on ordinary Linux is measured in this increment)",n));}
                 if let Some(value)=args.get(1) {if !matches!(value,Expr::Nil) && !matches!(value,Expr::Int(v) if v.parse::<u16>().ok().map_or(false,|n|n<=9999)) {return Err(format!("line {}: Set epoch value requires NIL or an integer literal0..9999 in this increment",n));}}
@@ -13081,6 +13086,7 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
             if is_builtin(id,"ctod") { apply_moves(&args[0],env,sigs,false); return; }
             if is_builtin(id,"dirmake") {for a in args {apply_moves(a,env,sigs,false);}return;}
             if ["hb_flink","hb_flinksym","hb_flinkread","hb_memowrit","hb_dircreate","ferror"].iter().any(|b|is_builtin(id,b)) {for a in args {apply_moves(a,env,sigs,false);}return;}
+            if is_builtin(id,"__setcentury") {return;}
             if is_builtin(id,"set") {return;}
             if is_builtin(id,"setcursor") {for a in args {apply_moves(a,env,sigs,false);}return;}
             if is_builtin(id,"transform") {for a in args {apply_moves(a,env,sigs,false);}return;}
@@ -17265,6 +17271,12 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
         Expr::Call(id,args) if id=="hbc_set_century" => {
             let v = match &args[0] { Expr::Int(v) => v.parse::<i64>().unwrap_or(0), _ => 0 };
             out.push_str(&format!("    mov ${}, %edi\n    call hbc_date_set_century\n", v));
+        }
+        Expr::Call(id,args) if is_builtin(id,"__setcentury") => {
+            out.push_str("    call hbc_date_get_century\n");
+            let change=match args.first(){Some(Expr::Log(v))=>Some(*v),Some(Expr::Str(s))if s.eq_ignore_ascii_case("on")=>Some(true),Some(Expr::Str(s))if s.eq_ignore_ascii_case("off")=>Some(false),_=>None};
+            if let Some(v)=change {out.push_str(&format!("    sub $16,%rsp\n    mov %rax,(%rsp)\n    mov ${},%edi\n    call hbc_date_set_century\n    mov (%rsp),%rax\n    add $16,%rsp\n",if v{1}else{0}));}
+            out.push_str("    mov $1,%edx\n");
         }
         Expr::Call(id,args) if is_builtin(id,"set") => {
             // Source checker admits only selector5 and literal/NIL values.
@@ -21518,6 +21530,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             if id=="hrbase_wait" {return Ty::I64;}
             if id=="hbc_set_decimals" {return Ty::I64;}
             if id=="hbc_set_datefmt" || id=="hbc_set_century" || id=="hbc_set_epoch" || id=="hbc_quit" {return Ty::I64;}
+            if is_builtin(id,"__setcentury") {return Ty::Bool;}
             if is_builtin(id,"set") {return Ty::I64;}
             if is_builtin(id,"altd") {return Ty::I64;}
             if is_builtin(id,"setcursor") || is_builtin(id,"dirmake") || is_builtin(id,"inkey") {return Ty::I64;}
@@ -35149,7 +35162,7 @@ fn finalize_trace(mut out: String, target: Target) -> String {
     // and the layout core): hbc_dtoc / hbc_date_render reference it.
     if out.contains("hbc_date_core_c")
         || out.contains("call hbc_date_set_fmt")
-        || out.contains("call hbc_date_set_century") {
+        || out.contains("call hbc_date_set_century") || out.contains("call hbc_date_get_century") {
         let date_rodata = if target == Target::Windows { ".section .rdata,\"r\"" } else { ".section .rodata" };
         out.push_str(&include_str!("../generated/hrdate.s").replace("@HRDATE_RODATA@", date_rodata));
     }
