@@ -18026,7 +18026,12 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             if shared_local::active(){let indexed=match &args[0]{Expr::Index(v,i)=>Some((v,vec![i.as_ref()])),Expr::Index2(v,i,j)=>Some((v,vec![i.as_ref(),j.as_ref()])),Expr::Index3(v,i,j,k)=>Some((v,vec![i.as_ref(),j.as_ref(),k.as_ref()])),Expr::Index4(v,i,j,k,l)=>Some((v,vec![i.as_ref(),j.as_ref(),k.as_ref(),l.as_ref()])),_=>None};if let Some((v,ix))=indexed{if shared_local::current(v){let var=env.iter().rev().find(|x|x.name==*v).expect("checked");cg_sarr_index(v,var.off,&ix,env,sigs,strs,out,target);let k=fresh_lbl();out.push_str(&format!("    cmp $16, %rax\n    jne .Lclonecellnil{k}\n    mov %rdx, %rdi\n    call hbc_sarr_clone\n    jmp .Lclonecellend{k}\n.Lclonecellnil{k}:\n    mov $1, %eax\n    xor %edx, %edx\n.Lclonecellend{k}:\n"));return;}}}
             let av = match &args[0] { Expr::Var(v) => v.clone(), _ => unreachable!("checked") };
             let var = env.iter().rev().find(|x| x.name == *av).expect("checked");
-            if shared_local::active()&&shared_local::current(&av)&&var.ty==Ty::Dyn{cg_sarr_root(&av,var.off,"%rdi",out);out.push_str("    call hbc_sarr_clone\n");return;}
+            if shared_local::active()&&shared_local::current(&av)&&var.ty==Ty::Dyn{
+                let k=fresh_lbl();
+                let slot=if module_static::is_module_binding(&av){let owner=CUR_FN.with(|c|c.borrow().clone());format!("{}(%rip)",module_static::storage(&owner,&av))}else{format!("-{}(%rbp)",var.off)};
+                out.push_str(&format!("    cmpq $16, {slot}\n    jne .Lclonerootnil{k}\n"));
+                cg_sarr_root(&av,var.off,"%rdi",out);out.push_str(&format!("    call hbc_sarr_clone\n    jmp .Lclonerootend{k}\n.Lclonerootnil{k}:\n    mov $1, %eax\n    xor %edx, %edx\n.Lclonerootend{k}:\n"));return;
+            }
             let helper = if expr_ty(&args[0],env,sigs) == Ty::DArrS { "hbc_aclone_s" } else { "hbc_aclone_i" };
             out.push_str(&format!("    mov -{}(%rbp), %rdi\n    mov -{}(%rbp), %rsi\n    call {}\n", var.off, var.off-8, helper));
         }
