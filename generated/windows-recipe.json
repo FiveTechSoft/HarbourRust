@@ -22,7 +22,7 @@
     "runtime/hrcdx.h": "8d568fe0fdf18f5b650027f6fb6a5316d0a2a2c2522de90cc985cae79342bf03",
     "runtime/hrdbf.c": "d4b03ac36e82e502c00ec46ecd120edafda33534fa99895d2ad75c9bd6a919d0",
     "runtime/hrdbf.h": "88937be93d42a877b4c1f4a50df622d7482b42bd2bbdb3f56185d14cc00cd2e5",
-    "runtime/hrdbf_app.c": "3e0afcd6845c6c6a9df9760d3f6535edaf73183270c05dc59dfe9c1db9446a3b",
+    "runtime/hrdbf_app.c": "520b5de1802f989d7aa0d076ebf734d680ee24f9de045c9e1cb2f51914325d78",
     "runtime/hrdbf_embedded_windows.c": "f517552471bad33b076f8df6d49576f643dd8ae73972027b0276d4fe23e178aa",
     "runtime/hrdbf_file.h": "e4551de20408ebd794bce24ab2a560299c5f9957413acee67eda776213d6a3b9",
     "runtime/hrdbf_file_windows.c": "cd57737e31b042dc437a7309665bc5429949cb7e8775c506faddc54e79236f9c",
@@ -35,6 +35,6 @@
     "runtime/hrvalue.c": "bc4970cd86c7a2ac71ad8bd974908c4302aaa1b870fbaa3cba6ebaa5d83999d1",
     "runtime/hrvalue.h": "962dee2ca2d6f75dc45d4d6597a1e84e62568b869a897911c496501fdc8a4dfe"
   },
-  "asm_sha256": "39e52dd00cdbb6e62607a5869fd58587640e9c205f0b6dd5c2267fd85edd6121",
+  "asm_sha256": "7c9a49dfbc45b3dc8b8e34744ff77e1793b94aa005a39e0b8953fef876a06bc2",
   "notes": "Win64 C bodies; explicit internal ABI and copy callback bridges; DLL import pointer references normalised to named thunks"
 }

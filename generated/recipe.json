@@ -25,7 +25,7 @@
     "runtime/hrcdx.h": "8d568fe0fdf18f5b650027f6fb6a5316d0a2a2c2522de90cc985cae79342bf03",
     "runtime/hrdbf.c": "d4b03ac36e82e502c00ec46ecd120edafda33534fa99895d2ad75c9bd6a919d0",
     "runtime/hrdbf.h": "88937be93d42a877b4c1f4a50df622d7482b42bd2bbdb3f56185d14cc00cd2e5",
-    "runtime/hrdbf_app.c": "3e0afcd6845c6c6a9df9760d3f6535edaf73183270c05dc59dfe9c1db9446a3b",
+    "runtime/hrdbf_app.c": "520b5de1802f989d7aa0d076ebf734d680ee24f9de045c9e1cb2f51914325d78",
     "runtime/hrdbf_embedded_linux.c": "0eca1b515a4ee8092781eae36de64e2c8174642c85c07ebe876a3a1b5743e812",
     "runtime/hrdbf_file.h": "e4551de20408ebd794bce24ab2a560299c5f9957413acee67eda776213d6a3b9",
     "runtime/hrdbf_file_linux.c": "aa3e6d26281c4831beb1e91aeb28d9b9362ebbdb6ae63f7719113403a3e87dc2",
@@ -38,8 +38,8 @@
     "runtime/hrvalue.c": "bc4970cd86c7a2ac71ad8bd974908c4302aaa1b870fbaa3cba6ebaa5d83999d1",
     "runtime/hrvalue.h": "962dee2ca2d6f75dc45d4d6597a1e84e62568b869a897911c496501fdc8a4dfe"
   },
-  "asm_sha256": "0cf90488dfc002420b30e40a90ef9fead26fadc4269d7f8bc759a824e5436db1",
-  "labels": 1304,
+  "asm_sha256": "c0276f8d8e77bb91e03cf3c32dc3d8646ffd17600968293d68fa4eaaf38e79f7",
+  "labels": 1303,
   "undefined_symbols": [],
   "local_label_namespace": ".Lhrdbf_",
   "notes": "Experimental compiler integration; separate non-DBF byte-identity evidence required. CWD-independent output: .file stripped."
