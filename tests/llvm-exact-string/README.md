@@ -36,3 +36,10 @@ lowering;selected conditions once/lazy. No string ABI,loose equality,SETEXACT,
 RC or mutable expansion. Two own MIT cases fresh Harbour/native/LLVM traced/
 untraced cover empty,prefix,spaces,case,NUL,UTF8,effects,lazy bounds/overflow,
 logical/IF/Empty contexts.Two named limits added.
+
+## Selected-right ASCII matrix
+
+Own MIT test-only sweep of128ASCII bytes,including NUL,compares each byte
+against alternating equal/suffixed selected strings. Checked increment
+conditions and printed counters measure single evaluation on both branches.
+No compiler change or original edits.
