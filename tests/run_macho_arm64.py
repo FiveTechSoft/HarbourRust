@@ -30,7 +30,8 @@ KINDS = ('pos', 'posx', 'pos2', 'posx2', 'streams', 'streams2')
 # named REJ that stops rejecting with its diagnostic fails the battery
 # (stale name). An empty map makes ANY rejection unexpected (fail).
 DYN_INC_REJ = {'tests/t896_inc_dyn_neg.prg': 'Dyn expression ++/-- requires ordinary Linux non-macro local storage'}
-EXPECTED_REJ = dict(DYN_INC_REJ)
+DYNAMIC_STEP_REJ = {'tests/t44_for_step_expr.prg': 'dynamic FOR STEP requires ordinary Linux without threads/macros/shared captures'}
+EXPECTED_REJ = dict(DYN_INC_REJ, **DYNAMIC_STEP_REJ)
 # The idlesleep rows print identical bytes whether nanosleep really
 # slept or the lowering silently no-ops (wrong number, ENOSYS), so each
 # positive-sleep row also carries a wall-clock floor on the native run
@@ -49,7 +50,7 @@ IDLESLEEP_WINDOWS = {
 
 def configure_target(target):
     global TARGET, EXPECTED_REJ
-    EXPECTED_REJ = {} if target == 'linux' else dict(DYN_INC_REJ)
+    EXPECTED_REJ = {} if target == 'linux' else dict(DYN_INC_REJ, **DYNAMIC_STEP_REJ)
     TARGET = '--target=' + target
 
 FILE_POSITIVES = 6
@@ -85,8 +86,9 @@ TARGET = '--target=macho-arm64'  # --target=macho runs the same battery on Intel
 # QUIT / CLS: two Harbour-measured fixtures (+2).
 # main return value discarded: two Harbour-measured fixtures (+2).
 # main parameters NIL without arguments: two Harbour-measured fixtures (+2).
-# Full total:1315+6+4+38+9 =1372,1 named REJ on both Mac targets.
-EXPECTED_MANIFEST_ROWS = 1315
+# Dynamic integer STEP promotes t44 from negative to executable (+1).
+# Full total:1316+6+4+38+9 =1373,2 named REJ on both Mac targets.
+EXPECTED_MANIFEST_ROWS = 1316
 # Post-run m_clie.dbf SHA-256 per DBF acceptance test (generated on Linux,
 # stdout checked against the committed expectations). t4 appends records:
 # dbAppend rewrites the header last-update date (bytes 1-3, YY MM DD of the

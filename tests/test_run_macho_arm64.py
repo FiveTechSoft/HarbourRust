@@ -109,7 +109,7 @@ class TimingTests(unittest.TestCase):
         try:
             for target in ('macho', 'macho-arm64'):
                 m.configure_target(target)
-                self.assertEqual(m.EXPECTED_REJ, m.DYN_INC_REJ)
+                self.assertEqual(m.EXPECTED_REJ, dict(m.DYN_INC_REJ, **m.DYNAMIC_STEP_REJ))
                 self.assertEqual(m.TARGET, '--target=' + target)
         finally:
             m.configure_target('macho-arm64')
@@ -143,7 +143,20 @@ class ManifestInventoryTests(unittest.TestCase):
         rows=self.manifest_rows()
         self.assertEqual(len(rows),m.EXPECTED_MANIFEST_ROWS)
         self.assertEqual(len({tuple(l.split(' ')[:2]) for l in rows}),len(rows))
-        self.assertEqual(len(rows)+m.FILE_POSITIVES+m.DBF_TESTS+m.THREAD_PROGRAMS+m.EXT_DEMOS,1372)
+        self.assertEqual(len(rows)+m.FILE_POSITIVES+m.DBF_TESTS+m.THREAD_PROGRAMS+m.EXT_DEMOS,1373)
+
+    def test_dynamic_step_named_rejection_is_target_scoped(self):
+        try:
+            m.configure_target('linux')
+            self.assertNotIn('tests/t44_for_step_expr.prg',m.EXPECTED_REJ)
+            for target in ('macho','macho-arm64'):
+                m.configure_target(target)
+                diagnostic=m.DYNAMIC_STEP_REJ['tests/t44_for_step_expr.prg']
+                self.assertEqual(m.classify_compile_failure('tests/t44_for_step_expr.prg',1,diagnostic)[0],'REJ')
+                self.assertEqual(m.classify_compile_failure('tests/t44_for_step_expr.prg',1,'other diagnostic')[0],'FAIL')
+                self.assertEqual(m.classify_compile_failure('tests/t44_for_step_expr.prg',101,diagnostic)[0],'FAIL')
+        finally:
+            m.configure_target('macho-arm64')
 
     def test_dyn_increment_named_rejection_is_target_scoped(self):
         try:
@@ -151,7 +164,7 @@ class ManifestInventoryTests(unittest.TestCase):
             self.assertNotIn('tests/t896_inc_dyn_neg.prg',m.EXPECTED_REJ)
             for target in ('macho','macho-arm64'):
                 m.configure_target(target)
-                self.assertEqual(m.EXPECTED_REJ,m.DYN_INC_REJ)
+                self.assertEqual(m.EXPECTED_REJ,dict(m.DYN_INC_REJ, **m.DYNAMIC_STEP_REJ))
         finally:
             m.configure_target('macho-arm64')
 
