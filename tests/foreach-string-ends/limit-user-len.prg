@@ -1,0 +1,9 @@
+FUNCTION Len(x)
+ ? "MUST-NOT-RUN"
+RETURN 77
+PROCEDURE Main()
+ LOCAL s:="abc",v:=NIL
+ FOR EACH v IN s
+ ? Len(v)
+ NEXT
+RETURN

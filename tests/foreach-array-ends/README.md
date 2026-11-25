@@ -40,3 +40,7 @@ existing diagnostic containing 'the loop borrows it'. Dedicated fresh
 negative evidence uses a separate direct-release build of exact source
 edab2a3395aff5639456f5fed2a92d6991642902,not the working string-enum compiler.
 No implementation change in this follow-up.
+
+String-enum follow-up moves limit-string intact to its positive basic.
+The array gate after both conditional-review mutator additions and that
+move is87checks;prior86count refers to original edab2a33.
