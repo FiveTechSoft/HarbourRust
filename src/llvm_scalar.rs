@@ -163,6 +163,9 @@ impl Ir {
     let haystack=self.borrowed_constant_tree(b).ok_or("LLVM scalar: contains requires two immutable borrowed constant strings")?;
     if !needle.is_empty() && haystack.as_bytes().windows(needle.len()).any(|w|w==needle.as_bytes()){"1".into()}else{"0".into()}
    },
+   Expr::Cmp(op,a,b) if matches!(op,CmpOp::Eq|CmpOp::Ne|CmpOp::EqEq) && matches!(&**a,Expr::Nil) && matches!(&**b,Expr::Nil)=>{
+    if matches!(op,CmpOp::Ne){"0".into()}else{"1".into()}
+   },
    Expr::Cmp(op,a,b) if matches!(op,CmpOp::Eq|CmpOp::Ne|CmpOp::EqEq) && (
     (matches!(&**a,Expr::Nil) && self.borrowed_constant_tree(b).is_some()) ||
     (matches!(&**b,Expr::Nil) && self.borrowed_constant_tree(a).is_some())

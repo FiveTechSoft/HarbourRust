@@ -13,3 +13,12 @@ IIf/Empty/loop contexts covered. Broad evidence in package summary.
 No push/publication/workflow/rebase. Oracle commit
 694428e1c12f726675b19324d62167fa77d68185. MIT upstream examples are
 specifications only; Julio Ponce examples credited, no cambio.diff copy.
+
+## Literal NIL pair
+
+Two literal NIL operands compare equal for = and ==, unequal for !=.
+This adds only constant logical results, not NIL local storage, return,
+parameter or general value ABI. A LOCAL initialized to NIL remains rejected.
+Gate total9fresh Harbour/native/LLVM exact rows and8named LLVM rejections.
+Local logical bindings, NOT/AND/IF/IIf/Empty contexts covered. No compiler
+policy, ownership or RC change beyond the narrow comparison lowering.

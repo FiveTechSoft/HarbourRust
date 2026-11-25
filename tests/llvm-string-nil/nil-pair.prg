@@ -1,0 +1,8 @@
+FUNCTION Main()
+LOCAL a:=(NIL==NIL),b:=(NIL!=NIL),n:=0
+? NIL=NIL,NIL==NIL,NIL!=NIL,a,b
+IF a.AND.!b
+ n++
+ENDIF
+? n,IIf(NIL==NIL,17,99),Empty(NIL!=NIL)
+RETURN NIL
