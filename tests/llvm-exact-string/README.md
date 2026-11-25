@@ -50,3 +50,9 @@ Own MIT follow-up projects the left IIf tree to exact logical leaves when
 the right operand is immutable constant. Conditions remain single/lazy.
 UTF8,NUL,space,prefix,case,nested effects and dead bounds/overflow covered.
 Owned dead leaves and both-selected operands still rejected. No string ABI.
+
+## Selected-left ASCII matrix
+
+Own MIT test-only sweep128ASCII bytes against constant right operands,
+including NUL and alternating equal/suffixed leaves. Increment conditions
+and printed counters observe single evaluation. No compiler change.
