@@ -42,3 +42,9 @@ These11are execution coverage,not new compiler admissions.
 original-encoding-date-control adds4already-admitted intact originals,
 20exact+4strictzero. Cumulative49originals,245exact+47strictzero=292clean,
 2knownDELTA2 separately. No new compiler admissions in this coverage gate.
+
+## Current-date original coverage
+
+original-current-date-control adds dates.prg and dates3.prg,compared against
+fresh live-day oracle bytes with no date normalization. Cumulative51originals,
+255exact+49strictzero=304clean,2knownDELTA2separate. No2new admissions.
