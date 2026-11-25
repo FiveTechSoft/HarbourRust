@@ -319,12 +319,12 @@ pub fn eval_if(expr: &str, defs: &HashMap<String, Def>, line: usize) -> Result<b
         Ok(l)
     }
     fn parse_cmp(t: &[T], p: &mut usize, line: usize) -> Result<i64, String> {
-        let l = parse_bitwise(t, p, line)?;
-        if *p < t.len() {
+        let mut l = parse_bitwise(t, p, line)?;
+        while *p < t.len() {
             if let T::Op(op) = &t[*p] {
                 *p += 1;
                 let r = parse_bitwise(t, p, line)?;
-                return Ok(match op.as_str() {
+                l = match op.as_str() {
                     "==" => (l == r) as i64,
                     "!=" | "<>" => (l != r) as i64,
                     ">" => (l > r) as i64,
@@ -332,8 +332,8 @@ pub fn eval_if(expr: &str, defs: &HashMap<String, Def>, line: usize) -> Result<b
                     ">=" => (l >= r) as i64,
                     "<=" => (l <= r) as i64,
                     _ => return Err(format!("line {}: error in #if expression", line)),
-                });
-            }
+                };
+            } else { break; }
         }
         Ok(l)
     }
@@ -2349,5 +2349,17 @@ mod if_ne_alias_tests {
             assert!(!eval_if(e,&p.defs,1).unwrap(),"{}",e);
         }
         for e in ["1=1","~1","1.XOR.0"] {assert!(eval_if(e,&p.defs,1).is_err());}
+    }
+}
+
+#[cfg(test)]
+mod if_chain_tests {
+    use super::*;
+    #[test]
+    fn comparisons_share_left_associative_level_below_bitwise_above_not() {
+        let p=Pp::new(Vec::new(),false);
+        for e in ["3<2<1","2==2>0","0<1<2<3","1<2|4<3","2>=2<=1"] {assert!(eval_if(e,&p.defs,1).unwrap(),"{}",e);}
+        for e in ["3<(2<1)","2==(2>0)","4>3>2","3!=2!=1","3<>2#1","!3<2<1"] {assert!(!eval_if(e,&p.defs,1).unwrap(),"{}",e);}
+        for e in ["1<2=1","1 < < 2","1<2<","1<2<(1/0)"] {assert!(eval_if(e,&p.defs,1).is_err());}
     }
 }

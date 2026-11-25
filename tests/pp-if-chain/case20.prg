@@ -1,0 +1,7 @@
+FUNCTION Main()
+#if 0x8000000000000000<0<2
+? "YES"
+#else
+? "NO"
+#endif
+RETURN NIL
