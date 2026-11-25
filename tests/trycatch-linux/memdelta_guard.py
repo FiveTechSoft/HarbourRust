@@ -63,7 +63,7 @@ def classify_memdelta(rc, stderr, stdout, expected):
             'stdout_match': out_ok, 'delta': delta, 'state_ok': state_ok}
 
 
-def emit_delta(compiler, env, exe_src, work, expected):
+def emit_delta(compiler, env, exe_src, work, expected, include_dirs=()):
     """Instrumented emit + DELTA guard; returns the classify_memdelta
     record of the run. Raw stdout/stderr/rc of every step land in work."""
     work = P(work)
@@ -74,7 +74,7 @@ def emit_delta(compiler, env, exe_src, work, expected):
             (work / (label + '.' + k)).write_bytes(v)
         return r
     s = work / 'checked.s'
-    r = run([compiler, str(P(exe_src).resolve()), s, '--target=linux', '--instrument', '--no-prune'], 'emit')
+    r = run([compiler, str(P(exe_src).resolve()), s, '--target=linux', '--instrument', '--no-prune', *[arg for directory in include_dirs for arg in ('-I', str(directory))]], 'emit')
     assert r.returncode == 0, (exe_src, r.stderr)
     text = s.read_text()
     anchor = '    call hbc_persistent_cleanup\n    call hbc_str_cache_flush\n'
