@@ -170,3 +170,12 @@ Test-only on728a216a.1185scan/374admitted/811reject,1122exact triples
 native/traced/untraced against repo expectations,not fresh Harbour.No new
 manifest admission.Compiler154a776ede264ee76add3c18dbab7e33e207cc1933c3ae13822b0dec996b43f9.
 LLVM15constant,no environment/gate changes.No Windows/Mac runtime claim.
+
+## Exact equality selected right refresh,25Nov2026
+
+Test-only on070b2afb.1185scan/374admitted/811reject,1122exact triples
+native/traced/untraced against repo expectations,not fresh Harbour.No new
+manifest admission.Compiler9601c238942a97b4c4daaf92b4526de375120edf3ade9ca143c9b6cdd8494018.
+LLVM15constant,no environment/gate changes.Shards0..2 delivered provisionally
+before removing only their reconstructible .o/.s/.ll to preserve disk margin.
+No resumed measurements or Windows/Mac runtime claim.
