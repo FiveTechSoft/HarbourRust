@@ -274,9 +274,9 @@ impl Ir {
    // Print-only selection between static literals: no string value ABI,
    // local storage, owned result or general expression support is introduced.
    if let Expr::Call(n,args)=e {if is_builtin(n,"iif") && args.len()==3 {
-    if let (Expr::Str(a),Expr::Str(b))=(&args[1],&args[2]) {
+    if let (Some(a),Some(b))=(self.borrowed_constant_tree(&args[1]),self.borrowed_constant_tree(&args[2])) {
      let c=self.cond(&args[0])?;let k=self.globals.len();let mut lens=Vec::new();
-     for text in [a,b] {
+     for text in [&a,&b] {
       let text=text.as_str();
       let bytes=text.as_bytes();lens.push(bytes.len());
       self.globals.push(format!("@str{} = private constant [{} x i8] c\"{}\"",self.globals.len(),bytes.len(),bytes.iter().map(|b|format!("\\{:02X}",b)).collect::<String>()));

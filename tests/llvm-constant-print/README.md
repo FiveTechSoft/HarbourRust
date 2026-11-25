@@ -15,3 +15,12 @@ and Darwin runtime not asserted. No RC/numeric-division policy change.
 No push/publication/workflow/rebase. Oracle commit
 694428e1c12f726675b19324d62167fa77d68185. MIT upstream examples are
 specifications only; Julio Ponce examples credited, no cambio.diff copy.
+
+## Print-only IIf selection
+
+The existing print-only IIf pointer/length selection now accepts immutable
+borrowed constant concat trees, not only literal branch strings. Both arms
+must resolve at compile time; an owned arm stays rejected even when the
+condition is literal true. Condition effects execute once; no branch string
+expression or general string ABI is introduced. New gate total: 9 exact
+fresh Harbour/native/LLVM rows and 6 named LLVM rejections.
