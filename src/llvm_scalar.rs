@@ -225,6 +225,8 @@ impl Ir {
     let scalar=self.empty_selection(&args[0]).unwrap();self.expr(&scalar)?
    },
    Expr::Call(n,args) if is_builtin(n,"empty") && args.len()==1=>{
+    // Observing a literal NIL needs no scalar sentinel or NIL value ABI.
+    if matches!(&args[0],Expr::Nil){return Ok("1".into())}
     if let Expr::Var(v)=&args[0]{if let Some(k)=self.asz.get(v){return Ok(if *k==0{"1".into()}else{"0".into()})}}
     let text=self.borrowed_constant_tree(&args[0]);
     if let Some(text)=text {return Ok(if text.bytes().all(|b|matches!(b,9|10|13|32)){"1".into()}else{"0".into()})}

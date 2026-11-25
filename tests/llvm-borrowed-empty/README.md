@@ -41,3 +41,12 @@ new direct alias policy. Empty keeps measured tab/LF/CR/space semantics,
 with NUL and UTF8 nonempty. Gate total:12exact fresh Harbour/native/LLVM
 rows and8named LLVM rejections. Bounds-failing unselected conditions,
 increments, loop/logical/IF/IIf contexts covered.
+
+## Empty of literal NIL
+
+A direct Empty(NIL) is the constant logical true. This observes a literal
+without a NIL scalar sentinel,local storage,return/parameter ABI or selection
+value support. Two own MIT sources cover local logical bindings,nesting,
+comparisons,short-circuit effects,IIf and loops against fresh Harbour in
+native/traced/untraced modes. Two named negatives keep NIL local storage
+and NIL-valued IIf rejected. Existing fixed-array and string paths unchanged.

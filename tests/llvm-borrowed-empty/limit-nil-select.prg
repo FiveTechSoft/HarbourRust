@@ -1,0 +1,3 @@
+FUNCTION Main()
+? Empty(IIf(.T.,NIL,NIL))
+RETURN NIL
