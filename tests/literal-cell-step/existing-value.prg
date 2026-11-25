@@ -1,0 +1,4 @@
+FUNCTION Main()
+LOCAL a:={1,2}
+? a[1]++
+RETURN NIL

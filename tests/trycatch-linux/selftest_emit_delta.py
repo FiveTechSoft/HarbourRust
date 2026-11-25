@@ -52,6 +52,9 @@ if '--e2e' in sys.argv:
                   'rc=%s' % rec['rc'], 'stderr=%r' % rec['stderr'][:50], 'state_ok=%s' % rec['state_ok'])
             fails += 0 if ok else 1
         except AssertionError as e:
-            # the harness refusing to emit/assemble is fail-closed too
-            print('PASS e2e early-failure rejected at harness assert ->', str(e)[:70])
+            # Infrastructure refusal is not evidence of executing the early
+            # runtime error. The safety behavior may be fail-closed, but the
+            # end-to-end control itself failed and must not print PASS.
+            print('FAIL e2e harness did not reach runtime control ->', str(e)[:70])
+            fails += 1
 sys.exit(1 if fails else 0)

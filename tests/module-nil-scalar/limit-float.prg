@@ -1,0 +1,4 @@
+STATIC n
+FUNCTION Main()
+n := 1.5
+RETURN NIL

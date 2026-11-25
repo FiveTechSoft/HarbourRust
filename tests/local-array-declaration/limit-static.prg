@@ -1,0 +1,3 @@
+PROCEDURE Main()
+ STATIC a[3]
+RETURN

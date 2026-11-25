@@ -54,6 +54,17 @@ pub struct Cmd {
 }
 
 impl Pp {
+    // CLI object-like definitions precede the source, which may redefine or
+    // undefine them. No synthetic source lines: diagnostic origins stay intact.
+    pub fn define_cli(&mut self, arg: &str) -> Result<(),String> {
+        let (name,body)=arg.split_once('=').unwrap_or((arg,""));
+        let mut chars=name.bytes();
+        if !matches!(chars.next(),Some(b'a'..=b'z'|b'A'..=b'Z'|b'_')) || !chars.all(|b|b.is_ascii_alphanumeric()||b==b'_') || body.contains(['\n','\r','\0']) {
+            return Err("-D expects an object-like ASCII identifier optionally followed by =value (one line)".into());
+        }
+        self.defs.insert(name.into(),Def{params:Vec::new(),funclike:false,body:body.into(),dup:1});
+        Ok(())
+    }
     pub fn new(incdirs: Vec<String>, windows: bool) -> Self {
         let mut defs = HashMap::new();
         // Predefined macros, measured on the pinned Harbour (oracle hk248):
@@ -99,7 +110,39 @@ struct Cond {
     taken: bool,
 }
 
+// #if hexadecimal tokens are 64-bit bit patterns, not decimal signed parses.
+// Accumulate with wrapping arithmetic, measured at bit63/64 and above.
+fn if_hex_number(token:&str)->Option<i64> {
+    let digits=token.strip_prefix("0x").or_else(||token.strip_prefix("0X"))?;
+    if digits.is_empty()||!digits.bytes().all(|b|b.is_ascii_hexdigit()){return None;}
+    let mut n=0u64;
+    for b in digits.bytes(){n=n.wrapping_mul(16).wrapping_add((b as char).to_digit(16)? as u64);}
+    Some(n as i64)
+}
+
 pub fn eval_if(expr: &str, defs: &HashMap<String, Def>, line: usize) -> Result<bool, String> {
+    // defined's operand is a macro NAME, not a macro expansion. Resolve it
+    // before ordinary replacement; then retain textual expression precedence.
+    let bytes=expr.as_bytes();let mut at=0;let mut protected=String::new();
+    while at<bytes.len() {
+        if bytes[at].is_ascii_alphabetic()||bytes[at]==b'_' {
+            let start=at;at+=1;while at<bytes.len()&&(bytes[at].is_ascii_alphanumeric()||bytes[at]==b'_'){at+=1;}
+            let word=&expr[start..at];
+            if matches!(word,"d"|"de"|"def"|"defi"|"defin"|"define"|"defined") {
+                while at<bytes.len()&&bytes[at].is_ascii_whitespace(){at+=1;}
+                if bytes.get(at)!=Some(&b'('){return Err(format!("line {}: expected ( after defined",line));}at+=1;
+                while at<bytes.len()&&bytes[at].is_ascii_whitespace(){at+=1;}
+                let start=at;while at<bytes.len()&&(bytes[at].is_ascii_alphanumeric()||bytes[at]==b'_'){at+=1;}
+                let name=&expr[start..at];
+                while at<bytes.len()&&bytes[at].is_ascii_whitespace(){at+=1;}
+                if name.is_empty()||bytes.get(at)!=Some(&b')'){return Err(format!("line {}: expected ) after defined name",line));}at+=1;
+                protected.push_str(if defs.contains_key(name){" 1 "}else{" 0 "});
+            }else{protected.push_str(word);}
+        }else{let ch=expr[at..].chars().next().unwrap();protected.push(ch);at+=ch.len_utf8();}
+    }
+    let expanded=expand_depth(&protected,defs,line,0,false)?;
+    let expr=expanded.as_str();
+
     // Tokens: identifiers, integer literals, operators, defined(...).
     #[derive(Debug, Clone, PartialEq)]
     enum T {
@@ -121,6 +164,12 @@ pub fn eval_if(expr: &str, defs: &HashMap<String, Def>, line: usize) -> Result<b
         if c == '(' { toks.push(T::LP); i += 1; continue; }
         if c == ')' { toks.push(T::RP); i += 1; continue; }
         if c.is_ascii_digit() {
+            if c=='0' && i+1<b.len() && matches!(b[i+1],b'x'|b'X') {
+                let mut j=i+2;
+                while j<b.len() && (b[j].is_ascii_alphanumeric()||b[j]==b'_'){j+=1;}
+                let v=if_hex_number(&expr[i..j]).ok_or_else(||format!("line {}: bad hexadecimal number in #if",line))?;
+                toks.push(T::Num(v));i=j;continue;
+            }
             let mut j = i;
             while j < b.len() && (b[j] as char).is_ascii_digit() { j += 1; }
             let v: i64 = expr[i..j].parse().map_err(|_| format!("line {}: bad number in #if", line))?;
@@ -129,6 +178,20 @@ pub fn eval_if(expr: &str, defs: &HashMap<String, Def>, line: usize) -> Result<b
             continue;
         }
         if c.is_ascii_alphabetic() || c == '_' || c == '.' {
+            if c=='.' {
+                let mut j=i+1;
+                while j<b.len() && b[j].is_ascii_alphabetic(){j+=1;}
+                if b.get(j)==Some(&b'.') {
+                    match expr[i..=j].to_ascii_uppercase().as_str() {
+                        ".T."=>{toks.push(T::Num(1));i=j+1;continue;},
+                        ".F."=>{toks.push(T::Num(0));i=j+1;continue;},
+                        ".AND."=>{toks.push(T::And);i=j+1;continue;},
+                        ".OR."=>{toks.push(T::Or);i=j+1;continue;},
+                        ".NOT."=>{toks.push(T::Not);i=j+1;continue;},
+                        _=>{}
+                    }
+                }
+            }
             let mut j = i;
             while j < b.len() && ((b[j] as char).is_ascii_alphanumeric() || b[j] == b'_' || b[j] == b'.') { j += 1; }
             let w = &expr[i..j];
@@ -137,20 +200,6 @@ pub fn eval_if(expr: &str, defs: &HashMap<String, Def>, line: usize) -> Result<b
                 ".AND." => toks.push(T::And),
                 ".OR." => toks.push(T::Or),
                 ".NOT." => toks.push(T::Not),
-                "DEFINED" => {
-                    // defined(NAME)
-                    while i < b.len() && (b[i] as char).is_whitespace() { i += 1; }
-                    if i >= b.len() || b[i] != b'(' { return Err(format!("line {}: expected ( after defined", line)); }
-                    i += 1;
-                    while i < b.len() && (b[i] as char).is_whitespace() { i += 1; }
-                    let k = i;
-                    while i < b.len() && ((b[i] as char).is_ascii_alphanumeric() || b[i] == b'_') { i += 1; }
-                    let name = &expr[k..i];
-                    while i < b.len() && (b[i] as char).is_whitespace() { i += 1; }
-                    if i >= b.len() || b[i] != b')' { return Err(format!("line {}: expected ) after defined name", line)); }
-                    i += 1;
-                    toks.push(T::Num(if defs.contains_key(name) { 1 } else { 0 }));
-                }
                 "__PRAGMA" => {
                     // Harbour pp built-in (oracle hk320: hbmk2 with no -w
                     // flag defaults WARNINGLEVEL to 0). WARNINGLEVEL is the
@@ -172,10 +221,8 @@ pub fn eval_if(expr: &str, defs: &HashMap<String, Def>, line: usize) -> Result<b
                     toks.push(T::Num(0));
                 }
                 _ => {
-                    // A defined macro expands to its body if numeric, else 0
-                    // (macro names are case-sensitive).
-                    let v = defs.get(w).and_then(|d| d.body.trim().parse::<i64>().ok()).unwrap_or(0);
-                    toks.push(T::Num(v));
+                    // After ordinary expansion, an unresolved word is not zero.
+                    return Err(format!("line {}: unresolved identifier `{}` in #if expression",line,w));
                 }
             }
             continue;
@@ -199,6 +246,7 @@ pub fn eval_if(expr: &str, defs: &HashMap<String, Def>, line: usize) -> Result<b
             i += 1;
             continue;
         }
+        if matches!(c,'&'|'|'|'^') { toks.push(T::Arith(c.to_string()));i+=1;continue; }
         if c == '!' { toks.push(T::Not); i += 1; continue; }
         return Err(format!("line {}: error in #if expression (use ==, not =)", line));
     }
@@ -249,7 +297,7 @@ pub fn eval_if(expr: &str, defs: &HashMap<String, Def>, line: usize) -> Result<b
                 if op != "*" && op != "/" && op != "%" { break; }
                 let op = op.clone();
                 *p += 1;
-                let r = parse_term(t, p, line)?;
+                let r = parse_atom(t, p, line)?;
                 l = match op.as_str() {
                     "*" => l.wrapping_mul(r),
                     "/" => if r == 0 { return Err(format!("line {}: division by zero in #if", line)); } else { l.wrapping_div(r) },
@@ -259,12 +307,21 @@ pub fn eval_if(expr: &str, defs: &HashMap<String, Def>, line: usize) -> Result<b
         }
         Ok(l)
     }
+    fn parse_bitwise(t:&[T],p:&mut usize,line:usize)->Result<i64,String> {
+        let mut l=parse_expr(t,p,line)?;
+        while let Some(T::Arith(op))=t.get(*p) {
+            if !matches!(op.as_str(),"&"|"|"|"^"){break;}
+            let op=op.clone();*p+=1;let rhs=parse_expr(t,p,line)?;
+            l=match op.as_str(){"&"=>l&rhs,"|"=>l|rhs,_=>l^rhs};
+        }
+        Ok(l)
+    }
     fn parse_cmp(t: &[T], p: &mut usize, line: usize) -> Result<i64, String> {
-        let l = parse_expr(t, p, line)?;
+        let l = parse_bitwise(t, p, line)?;
         if *p < t.len() {
             if let T::Op(op) = &t[*p] {
                 *p += 1;
-                let r = parse_expr(t, p, line)?;
+                let r = parse_bitwise(t, p, line)?;
                 return Ok(match op.as_str() {
                     "==" => (l == r) as i64,
                     "!=" => (l != r) as i64,
@@ -281,6 +338,10 @@ pub fn eval_if(expr: &str, defs: &HashMap<String, Def>, line: usize) -> Result<b
     fn parse_atom(t: &[T], p: &mut usize, line: usize) -> Result<i64, String> {
         if *p >= t.len() { return Err(format!("line {}: error in #if expression", line)); }
         match &t[*p] {
+            T::Arith(op) if op=="+" || op=="-" => {
+                let neg=op=="-";*p+=1;let v=parse_atom(t,p,line)?;
+                Ok(if neg{v.wrapping_neg()}else{v})
+            }
             T::Num(v) => { *p += 1; Ok(*v) }
             T::LP => {
                 *p += 1;
@@ -329,6 +390,20 @@ fn identifier_aliases(defs: &HashMap<String, Def>) -> HashMap<String, Def> {
     }).map(|(name, def)| (name.clone(), def.clone())).collect()
 }
 
+// A macro replacement is a token boundary, not textual token pasting.
+// Preserve only the measured ++/-- distinction here; other joins are unchanged.
+fn append_sign_boundary(out:&mut Vec<u8>, value:&str, next:Option<u8>) {
+    let sign_pair=|a:Option<u8>,b:Option<u8>|matches!((a,b),(Some(b'+'),Some(b'+'))|(Some(b'-'),Some(b'-')));
+    let bytes=value.as_bytes();
+    if bytes.is_empty() {
+        if sign_pair(out.last().copied(),next){out.push(b' ');}
+    } else {
+        if sign_pair(out.last().copied(),bytes.first().copied()){out.push(b' ');}
+        out.extend_from_slice(bytes);
+        if sign_pair(bytes.last().copied(),next){out.push(b' ');}
+    }
+}
+
 fn expand_depth(line: &str, defs: &HashMap<String, Def>, line_no: usize, depth: usize, source_brackets: bool) -> Result<String, String> {
     if depth > 16 { return Err(format!("line {}: macro expansion too deep (recursive define?)", line_no)); }
     let b = line.as_bytes();
@@ -362,7 +437,8 @@ fn expand_depth(line: &str, defs: &HashMap<String, Def>, line_no: usize, depth: 
             match defs.get(word) {
                 Some(d) if !d.funclike => {
                     // object-like: the body itself may contain macro calls
-                    outb.extend_from_slice(expand_depth(&d.body.clone(), defs, line_no, depth + 1, false)?.as_bytes());
+                    let expanded=expand_depth(&d.body.clone(), defs, line_no, depth + 1, false)?;
+                    append_sign_boundary(&mut outb,&expanded,b.get(j).copied());
                 }
                 Some(d) => {
                     // function-like: only expands in call form
@@ -418,7 +494,8 @@ fn expand_depth(line: &str, defs: &HashMap<String, Def>, line_no: usize, depth: 
                     }
                     // substitute params (word-boundary, outside strings) in the body
                     let body = subst_params(&d.body, &d.params, &args);
-                    outb.extend_from_slice(expand_depth(&body, defs, line_no, depth + 1, false)?.as_bytes());
+                    let expanded=expand_depth(&body, defs, line_no, depth + 1, false)?;
+                    append_sign_boundary(&mut outb,&expanded,b.get(m+1).copied());
                     i = m + 1;
                     continue;
                 }
@@ -445,7 +522,11 @@ fn subst_params(text: &str, names: &[String], values: &[String]) -> String {
             let start=i; i+=1;
             while i<b.len() && (b[i].is_ascii_alphanumeric() || b[i]==b'_') {i+=1;}
             let word=&text[start..i];
-            if let Some(k)=names.iter().position(|n|n==word) {out.extend_from_slice(values[k].as_bytes());}
+            if let Some(k)=names.iter().position(|n|n==word) {
+                // Nonempty argument tokens do not paste with surrounding
+                // replacement-list signs. Empty argument semantics unchanged.
+                if values[k].is_empty() {} else {append_sign_boundary(&mut out,&values[k],b.get(i).copied());}
+            }
             else {out.extend_from_slice(&b[start..i]);}
         } else {out.push(b[i]);i+=1;}
     }
@@ -2125,3 +2206,120 @@ pub fn process(path: &str, pp: &mut Pp, out: &mut String, depth: usize) -> Resul
     Ok(())
 }
 
+
+#[cfg(test)]
+mod cli_define_tests {
+    use super::*;
+    #[test]
+    fn object_cli_order_empty_case_and_rejection() {
+        let mut p=Pp::new(Vec::new(),false);
+        p.define_cli("Foo=7").unwrap();
+        p.define_cli("Foo=9").unwrap();
+        assert_eq!(expand("Foo foo",&p.defs,1).unwrap(),"9 foo");
+        p.define_cli("EMPTY").unwrap();
+        assert!(p.defs.contains_key("EMPTY"));
+        assert_eq!(expand("EMPTY",&p.defs,1).unwrap(),"");
+        for bad in ["","9BAD=1","BAD-NAME=1","F(x)=x","BAD=1\n#error x","BAD=1\r#error x","BAD=\0"] {
+            assert!(p.define_cli(bad).is_err(),"{:?}",bad);
+        }
+        assert!(p.origins.is_empty() && p.end_lines.is_empty());
+    }
+}
+
+#[cfg(test)]
+mod macro_sign_tests {
+    use super::*;
+    #[test]
+    fn replacements_do_not_create_increment_tokens() {
+        let mut p=Pp::new(Vec::new(),false);
+        p.define_cli("E").unwrap();p.define_cli("P=+").unwrap();p.define_cli("M=-").unwrap();
+        for (input,want) in [("2+E+3","2+ +3"),("7-E-2","7- -2"),("n P+1","n + +1"),("7-M 2","7- - 2"),("n++ +1","n++ +1"),("--n","--n"),("2++3","2++3")] {
+            assert_eq!(expand(input,&p.defs,1).unwrap(),want);
+        }
+    }
+}
+
+#[cfg(test)]
+mod parameter_sign_tests {
+    use super::*;
+    #[test]
+    fn nonempty_argument_signs_do_not_create_mutation() {
+        let names=vec!["x".into()];
+        for (body,arg,want) in [("2+x 3","+","2+ + 3"),("n+x","+1","n+ +1"),("7-x 2","-","7- - 2"),("x++","n","n++"),("++x","n","++n"),("x","n++","n++"),("x","","")] {
+            assert_eq!(subst_params(body,&names,&[arg.into()]),want);
+        }
+    }
+}
+
+#[cfg(test)]
+mod if_hex_tests {
+    use super::*;
+    #[test]
+    fn hex_if_literals_and_macro_bits() {
+        let mut p=Pp::new(Vec::new(),false);p.define_cli("HEX=0xAB").unwrap();
+        for text in ["0xff == 255","0XAB == 171","-0x10 == -16","HEX == 171","0x8000000000000000 < 0","0xffffffffffffffff == -1","0x10000000000000000 == 0"] {
+            assert!(eval_if(text,&p.defs,1).unwrap(),"{}",text);
+        }
+        for text in ["0x == 0","0xGG == 0","0x1G == 1"]{assert!(eval_if(text,&p.defs,1).is_err());}
+    }
+}
+
+#[cfg(test)]
+mod if_expand_tests {
+    use super::*;
+    #[test]
+    fn macro_expression_precedence_and_defined_names() {
+        let mut p=Pp::new(Vec::new(),false);
+        for d in ["A=B","B=7","E=2+3","P=(2+3)"]{p.define_cli(d).unwrap();}
+        for e in ["A == 7","E*2 == 8","P*2 == 10","defined(A) .AND. !defined(NOPE)"]{assert!(eval_if(e,&p.defs,1).unwrap());}
+        assert!(eval_if("NOPE == 0",&p.defs,1).is_err());
+        p.define_cli("EMPTY").unwrap();assert!(eval_if("EMPTY == 0",&p.defs,1).is_err());
+        p.define_cli("B=A").unwrap();assert!(eval_if("A == 0",&p.defs,1).is_err());
+    }
+}
+
+#[cfg(test)]
+mod defined_form_tests {
+    use super::*;
+    #[test]
+    fn written_lowercase_prefix_only_and_no_generated_operator() {
+        let mut p=Pp::new(Vec::new(),false);p.define_cli("X=7").unwrap();
+        for prefix in ["d","de","def","defi","defin","define","defined"]{assert!(eval_if(&format!("{}(X)",prefix),&p.defs,1).unwrap());}
+        assert!(eval_if(".not.defined(MISSING)",&p.defs,1).unwrap());
+        for e in ["Defined(X)","DEFINED(X)","definedx(X)"]{assert!(eval_if(e,&p.defs,1).is_err());}
+        p.define_cli("A=defined(X)").unwrap();assert!(eval_if("A",&p.defs,1).is_err());
+    }
+}
+
+#[cfg(test)]
+mod if_logical_tests {
+    use super::*;
+    #[test]
+    fn literal_values_adjacent_operators_and_eager_errors() {
+        let p=Pp::new(Vec::new(),false);
+        for e in [".T.",".t.",".NOT..F.",".T..AND..T.",".F..OR..T.",".T.==1"]{assert!(eval_if(e,&p.defs,1).unwrap(),"{}",e);}
+        assert!(!eval_if(".f.",&p.defs,1).unwrap());
+        for e in [".F..AND.(1/0)",".T..OR.(1/0)"]{assert!(eval_if(e,&p.defs,1).is_err());}
+    }
+}
+
+#[cfg(test)]
+mod if_associativity_tests {
+    use super::*;
+    #[test]
+    fn multiply_divide_remainder_are_left_associative() {
+        let p=Pp::new(Vec::new(),false);
+        for e in ["24/4/2==3","2*3/4==1","20%6*3==6","20/6*3==9","20%6%3==2","-24/4/2==-3","24/(4/2)==12","2*(3/4)==0"]{assert!(eval_if(e,&p.defs,1).unwrap(),"{}",e);}
+        for e in ["1/0","1%0","1/(2-2)"]{assert!(eval_if(e,&p.defs,1).is_err());}
+    }
+}
+
+#[cfg(test)]
+mod if_bitwise_tests {
+    use super::*;
+    #[test]
+    fn same_precedence_left_associative_between_arithmetic_and_comparison() {
+        let p=Pp::new(Vec::new(),false);
+        for e in ["(4|1&2)==0","(6^3&1)==1","(1|2^3)==0","(6&3+1)==4","(1+2|4)==7","6&3==2","(4|1==1)==0","(-1&255)==255","(0xffffffffffffffff^1)==-2"]{assert!(eval_if(e,&p.defs,1).unwrap(),"{}",e);}
+    }
+}

@@ -144,6 +144,44 @@ four stale rows, and the same sign-off path:
 2. Leave as documented debt until the next baseline, and re-run the
    full 622-row check + the PE gate afterwards.
 
+## shared-shift-scalar-root probe (newest landing, 2026-11-24)
+
+`tests/shared-shift-scalar-root/scalars.prg` (AIns/ADel statement gate,
+commit f575742a) compiled with the native oracle (hbmk2 -gtstd -w0, Linux
+aarch64, Harbour 3.2.1dev r2607071005) and run byte-for-byte:
+
+- exits 0, zero stderr, deterministic output across runs
+- 117 iterations: 5 scalar roots (int 17, word, float 19.25, .T., NIL)
+  printed unchanged by AIns/ADel (index evaluated once, no mutation)
+- NIL root prints `U` - scalar roots preserved, never forcibly cloned
+- mixed array case (AClone({3,"word",19.25}), AIns(a,2), ADel(a,1))
+  prints the post-shift root `U word U` (ValType(a[1]),a[2],ValType(a[3]))
+- `? n` prints 1170 (10 index effects per iteration: 5 roots x
+  AIns/ADel)
+- output 703 lines / 5276 bytes (measured 2026-11-24)
+
+The hbc side of this same gate (native/external/flat/noescape/noprune
+modes, strict final balance, PE/macho/macho-arm64 rejection asserts) is
+**not verifiable on this host**: hbc's Linux output is x86-64 ELF and
+cannot be executed on aarch64 (verified: `exec` gives
+`Exec format error`). The modes are CI/Linux-x86-64 gates per the
+suite's own README; the oracle side captured above complements them but
+is not a substitute for the hbc gates.
+
+## t793 / t795 - two more Linux-stale neg rows (2026-11-24)
+
+The main-args landing (14e81327 - `Reuse existing Dyn local for bounded
+integer FOR` in d0cd3a4b) changed the bare-FOR slot reuse semantics on
+Linux only. Both rows now pass on Linux while PE still rejects:
+
+| Case | Source (shape) | Oracle behaviour (compiled Harbour) |
+| --- | --- | --- |
+| tests/t793_barefor_mention_neg.prg | `i := 7` before a bare FOR loop | compiles, runs, exits 0, output `1 2 3` |
+| tests/t795_barefor_nested_neg.prg | `if .t. i := 2 endif` before bare FOR | compiles, runs, exits 0, output `1 2 3` |
+
+Manifest expectation (deleted): `reuses a non-integer or read-only slot`;
+both rows still reject on the PE target (rc=1, substring matches).
+
 ## t1634 / t1635 / t1636 / t1637 / t1638 / t1639 / t1640 / t1641 / t1642 - nine CurDir neg rows
 
 All nine COMPILE cleanly under compiled Harbour. `CurDir` is a Harbour

@@ -1,0 +1,10 @@
+FUNCTION Main()
+LOCAL i:=0
+FOR i:=1 TO 3 STEP Eval({||Value()})
+? i
+NEXT
+RETURN NIL
+FUNCTION Value()
+LOCAL n
+n:=1
+RETURN n

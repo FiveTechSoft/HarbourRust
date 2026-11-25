@@ -55,7 +55,7 @@ fn check_effect_uses(ss:&[Stmt],voids:&std::collections::BTreeSet<String>)->Resu
   Stmt::Print(_,es,_)=>for e in es{effect_uses(e,false,voids)?;},
   Stmt::If(_,e,a,b)=>{effect_uses(e,false,voids)?;check_effect_uses(a,voids)?;check_effect_uses(b,voids)?;},
   Stmt::While(_,e,b)=>{effect_uses(e,false,voids)?;check_effect_uses(b,voids)?;},
-  Stmt::For(_,_,a,b,_,body)=>{effect_uses(a,false,voids)?;effect_uses(b,false,voids)?;check_effect_uses(body,voids)?;},
+  Stmt::For(_,_,a,b,c,body)=>{effect_uses(a,false,voids)?;effect_uses(b,false,voids)?;effect_uses(c,false,voids)?;check_effect_uses(body,voids)?;},
   Stmt::ArrSet(_,_,a,b)=>{effect_uses(a,false,voids)?;effect_uses(b,false,voids)?;},
   Stmt::Ret(_,None)|Stmt::Exit(_)|Stmt::Loop(_)=>{},
   _=>return Err("LLVM scalar: statement outside effect-use proof".into())
@@ -132,8 +132,34 @@ impl Ir {
     if matches!(op,CmpOp::Ne){"1".into()}else{"0".into()}
    },
    Expr::Cmp(op,a,b)=>{let a=self.expr(a)?;let b=self.expr(b)?;let v=self.tmp();self.line(format!("{} = icmp {} i64 {}, {}",v,match op{CmpOp::Eq|CmpOp::EqEq=>"eq",CmpOp::Ne=>"ne",CmpOp::Lt=>"slt",CmpOp::Le=>"sle",CmpOp::Gt=>"sgt",CmpOp::Ge=>"sge",_=>return Err("LLVM scalar: comparison unsupported".into())},a,b));let r=self.tmp();self.line(format!("{} = zext i1 {} to i64",r,v));r},
+   Expr::Call(n,args) if is_builtin(n,"rat") && args.len()==2=>{
+    let text=|e:&Expr|match e {Expr::Var(v)=>self.strings.get(v).cloned(),e=>borrowed_constant(e)};
+    let needle=text(&args[0]).ok_or("LLVM scalar: Rat only on immutable borrowed constant strings")?;
+    let haystack=text(&args[1]).ok_or("LLVM scalar: Rat only on immutable borrowed constant strings")?;
+    // Count byte offsets and allow overlapping matches. Empty is absent.
+    if needle.is_empty(){"0".into()}else{haystack.as_bytes().windows(needle.len()).rposition(|w|w==needle.as_bytes()).map(|i|i+1).unwrap_or(0).to_string()}
+   },
+   Expr::Call(n,args) if is_builtin(n,"at") && args.len()==2=>{
+    let text=|e:&Expr|match e {Expr::Var(v)=>self.strings.get(v).cloned(),e=>borrowed_constant(e)};
+    let needle=text(&args[0]).ok_or("LLVM scalar: At only on immutable borrowed constant strings")?;
+    let haystack=text(&args[1]).ok_or("LLVM scalar: At only on immutable borrowed constant strings")?;
+    // Harbour positions count bytes, including embedded NUL. An empty
+    // needle is absent, unlike the usual empty-substring convention.
+    if needle.is_empty(){"0".into()}else{haystack.as_bytes().windows(needle.len()).position(|w|w==needle.as_bytes()).map(|i|i+1).unwrap_or(0).to_string()}
+   },
+   Expr::Call(n,args) if is_builtin(n,"int") && args.len()==1=>{
+    // Existing LLVM scalar expressions are I64. Do not erase evaluation:
+    // calls, sequence effects and checked increments execute exactly once.
+    self.expr(&args[0])?
+   },
+   Expr::Call(n,args) if is_builtin(n,"asc") && args.len()==1=>{
+    let text=match &args[0] {Expr::Var(v)=>self.strings.get(v).cloned(),e=>borrowed_constant(e)};
+    match text {Some(text)=>text.as_bytes().first().copied().unwrap_or(0).to_string(),None=>return Err("LLVM scalar: Asc only on immutable borrowed constant strings".into())}
+   },
    Expr::Call(n,args) if is_builtin(n,"empty") && args.len()==1=>{
     if let Expr::Var(v)=&args[0]{if let Some(k)=self.asz.get(v){return Ok(if *k==0{"1".into()}else{"0".into()})}}
+    let text=match &args[0] {Expr::Var(v)=>self.strings.get(v).cloned(),e=>borrowed_constant(e)};
+    if let Some(text)=text {return Ok(if text.bytes().all(|b|matches!(b,9|10|13|32)){"1".into()}else{"0".into()})}
     let v=self.expr(&args[0])?;let c=self.tmp();self.line(format!("{} = icmp eq i64 {}, 0",c,v));let r=self.tmp();self.line(format!("{} = zext i1 {} to i64",r,c));r
    },
    Expr::Call(n,args) if is_bitop(n)=>{
@@ -158,14 +184,23 @@ impl Ir {
     let c=self.tmp();self.line(format!("{} = icmp {} i64 {}, {}",c,if is_builtin(n,"min"){"sle"}else{"sge"},a,b));
     let r=self.tmp();self.line(format!("{} = select i1 {}, i64 {}, i64 {}",r,c,a,b));r
    },
-   Expr::Call(n,args) if is_builtin(n,"len") && args.len()==1=>{match &args[0] {Expr::Var(v) if self.asz.contains_key(v)=>self.asz[v].to_string(),_=>return Err("LLVM scalar: len() only on fixed I64 arrays".into())}},
+   Expr::Call(n,args) if is_builtin(n,"len") && args.len()==1=>{match &args[0] {
+    Expr::Var(v) if self.asz.contains_key(v)=>self.asz[v].to_string(),
+    Expr::Var(v) if self.strings.contains_key(v)=>self.strings[v].as_bytes().len().to_string(),
+    e if borrowed_constant(e).is_some()=>borrowed_constant(e).unwrap().as_bytes().len().to_string(),
+    _=>return Err("LLVM scalar: len() only on fixed I64 arrays or borrowed constant strings".into())
+   }},
    Expr::Call(n,args) if is_builtin(n,"procline") && (args.is_empty() || matches!(&args[..], [Expr::Int(v)] if v=="0"))=>PROC_LINES.with(|m|m.borrow().get(self.current_line.saturating_sub(1)).copied()).unwrap_or(self.current_line).to_string(),
    Expr::Inc(n,delta,prefix)=>{let ptr=self.ptr(n)?;let old=self.tmp();self.line(format!("{} = load i64, ptr {}",old,ptr));let pair=self.tmp();self.line(format!("{} = call {{i64,i1}} @llvm.sadd.with.overflow.i64(i64 {}, i64 {})",pair,old,delta));let next=self.tmp();let ov=self.tmp();self.line(format!("{} = extractvalue {{i64,i1}} {}, 0",next,pair));self.line(format!("{} = extractvalue {{i64,i1}} {}, 1",ov,pair));let bad=self.lab();let good=self.lab();self.line(format!("br i1 {}, label %{}, label %{}",ov,bad,good));self.block(&bad);self.line("call void @rt_inc_error()".into());self.line("unreachable".into());self.block(&good);self.line(format!("store i64 {}, ptr {}",next,ptr));if *prefix {next}else{old}},
    Expr::Call(n,args) if is_builtin(n,"iif") && args.len()==3=>{let c=self.cond(&args[0])?;let t=self.lab();let f=self.lab();let end=self.lab();let slot=self.tmp();self.allocas.push(format!("  {} = alloca i64\n",slot));self.line(format!("br i1 {}, label %{}, label %{}",c,t,f));self.block(&t);let a=self.expr(&args[1])?;self.line(format!("store i64 {}, ptr {}",a,slot));self.line(format!("br label %{}",end));self.block(&f);let b=self.expr(&args[2])?;self.line(format!("store i64 {}, ptr {}",b,slot));self.line(format!("br label %{}",end));self.block(&end);let r=self.tmp();self.line(format!("{} = load i64, ptr {}",r,slot));r},
    Expr::Call(n,_) if self.voids.contains(n)=>return Err(format!("LLVM scalar: NIL-only effect call `{}` cannot be used as a value",n)),
    Expr::Call(n,args) if self.sig_names.contains(n)=>{let mut aa=Vec::new();for a in args {aa.push(format!("i64 {}",self.expr(a)?));}let r=self.tmp();self.line(format!("{} = call i64 @ll_{}({})",r,n,aa.join(", ")));r},
    Expr::IdxCompound(..)=>return Err("LLVM scalar: indexed compound assignment `a[i] op= e` is not in this subset (default-backend feature added with the arrayidx piece; the LLVM subset never accepted this form, so nothing previously supported is lost)".into()),
-   Expr::Set(..)=>return Err("LLVM scalar: inline `:=` assignment expressions are not in this subset (default-backend feature added with the parexpr piece; the LLVM subset never accepted this form, so nothing previously supported is lost)".into()),
+   Expr::Set(n,rhs)=>{
+    let logical=self.isbool(rhs);let v=self.expr(rhs)?;let p=self.ptr(n)?;
+    self.line(format!("store i64 {}, ptr {}",v,p));
+    if logical{self.bools.insert(n.clone());}else{self.bools.remove(n);}v
+   },
    _=>return Err(format!("LLVM scalar: expression unsupported: {:?}",e))
   })
  }
@@ -178,7 +213,7 @@ impl Ir {
     self.line(format!("call void @ll_{}({})",n,aa.join(", ")));Ok(())
    },
    Expr::Seq(es)=>{for e in es{self.effect(e)?;}Ok(())},
-   Expr::Set(..)=>return Err("LLVM scalar: inline `:=` assignment expressions are not in this subset (default-backend feature added with the parexpr piece; the LLVM subset never accepted this form, so nothing previously supported is lost)".into()),
+   Expr::Set(..)=>{self.expr(e)?;Ok(())},
    Expr::Call(n,args) if (is_builtin(n,"qout") || is_builtin(n,"qqout") || is_builtin(n,"outstd"))=>self.print_items(args,!is_builtin(n,"qout"),is_builtin(n,"outstd")),
    Expr::Call(n,args) if is_builtin(n,"iif") && args.len()==3=>{
     let c=self.cond(&args[0])?;let t=self.lab();let f=self.lab();let end=self.lab();
@@ -189,7 +224,7 @@ impl Ir {
    _=>{self.expr(e)?;Ok(())}
   }
  }
- fn isbool(&self,e:&Expr)->bool {match e {Expr::Seq(es)=>es.last().map(|e|self.isbool(e)).unwrap_or(false),Expr::Log(_)|Expr::Cmp(..)|Expr::LNot(_)|Expr::LAnd(..)|Expr::LOr(..)=>true,Expr::Var(n)=>self.bools.contains(n),Expr::Call(n,_) if self.bool_returns.contains(n)=>true,Expr::Call(n,_) if is_builtin(n,"hb_bittest")||is_builtin(n,"empty")=>true,Expr::Call(n,a) if is_builtin(n,"iif") && a.len()==3=>self.isbool(&a[1]),Expr::Call(n,a) if (is_builtin(n,"min")||is_builtin(n,"max")) && a.len()==2=>self.isbool(&a[0]),_=>false}}
+ fn isbool(&self,e:&Expr)->bool {match e {Expr::Set(_,rhs)=>self.isbool(rhs),Expr::Seq(es)=>es.last().map(|e|self.isbool(e)).unwrap_or(false),Expr::Log(_)|Expr::Cmp(..)|Expr::LNot(_)|Expr::LAnd(..)|Expr::LOr(..)=>true,Expr::Var(n)=>self.bools.contains(n),Expr::Call(n,_) if self.bool_returns.contains(n)=>true,Expr::Call(n,_) if is_builtin(n,"hb_bittest")||is_builtin(n,"empty")=>true,Expr::Call(n,a) if is_builtin(n,"iif") && a.len()==3=>self.isbool(&a[1]),Expr::Call(n,a) if (is_builtin(n,"min")||is_builtin(n,"max")) && a.len()==2=>self.isbool(&a[0]),_=>false}}
  fn cond(&mut self,e:&Expr)->Result<String,String>{let v=self.expr(e)?;let c=self.tmp();self.line(format!("{} = icmp ne i64 {}, 0",c,v));Ok(c)}
  fn print_items(&mut self,es:&[Expr],inline:bool,raw:bool)->Result<(),String>{
   // Evaluate every item before emitting the outer newline or separator.
@@ -338,7 +373,7 @@ impl Ir {
   Stmt::Print(_,es,inline)=>{self.print_items(es,*inline,false)?;},
   Stmt::If(_,c,a,b)=>{let c=self.cond(c)?;let t=self.lab();let f=self.lab();let end=self.lab();self.line(format!("br i1 {}, label %{}, label %{}",c,t,f));self.block(&t);let ta=self.stmts(a)?;if !ta{self.line(format!("br label %{}",end));}self.block(&f);let tb=self.stmts(b)?;if !tb{self.line(format!("br label %{}",end));}if ta&&tb{self.check_dead(&ss[si+1..])?;return Ok(true)}self.block(&end);},
   Stmt::While(_,c,b)=>{let h=self.lab();let body=self.lab();let end=self.lab();self.line(format!("br label %{}",h));self.block(&h);self.trace_at(stmt_line(s));let c=self.cond(c)?;self.line(format!("br i1 {}, label %{}, label %{}",c,body,end));self.block(&body);self.loops.push((h.clone(),end.clone()));let done=self.stmts(b)?;self.loops.pop();if !done{self.line(format!("br label %{}",h));}self.block(&end);},
-  Stmt::For(_,n,a,b,step,ss)=>{let outer_vars=self.vars.clone();let a=self.expr(a)?;let p=if let Some(p)=self.vars.get(n){p.clone()}else{let p=self.tmp();self.allocas.push(format!("  {} = alloca i64\n",p));self.vars.insert(n.clone(),p.clone());p};self.line(format!("store i64 {}, ptr {}",a,p));let h=self.lab();let body=self.lab();let inc=self.lab();let store=self.lab();let end=self.lab();self.line(format!("br label %{}",h));self.block(&h);let b=self.expr(b)?;let v=self.tmp();self.line(format!("{} = load i64, ptr {}",v,p));let c=self.tmp();self.line(format!("{} = icmp {} i64 {}, {}",c,if *step>0{"sle"}else{"sge"},v,b));self.line(format!("br i1 {}, label %{}, label %{}",c,body,end));self.block(&body);self.loops.push((inc.clone(),end.clone()));let done=self.stmts(ss)?;self.loops.pop();if !done{self.line(format!("br label %{}",inc));}self.block(&inc);let v=self.tmp();self.line(format!("{} = load i64, ptr {}",v,p));let pair=self.tmp();self.line(format!("{} = call {{i64,i1}} @llvm.sadd.with.overflow.i64(i64 {}, i64 {})",pair,v,step));let next=self.tmp();let ov=self.tmp();self.line(format!("{} = extractvalue {{i64,i1}} {}, 0",next,pair));self.line(format!("{} = extractvalue {{i64,i1}} {}, 1",ov,pair));self.line(format!("br i1 {}, label %{}, label %{}",ov,end,store));self.block(&store);self.line(format!("store i64 {}, ptr {}",next,p));self.line(format!("br label %{}",h));self.block(&end);self.vars=outer_vars;},
+  Stmt::For(_,n,a,b,step,ss)=>{let step=if let Expr::Int(v)=step{v.parse::<i64>().map_err(|_|"LLVM STEP range")?}else{return Err("LLVM scalar: dynamic FOR STEP not supported".into())};let outer_vars=self.vars.clone();let a=self.expr(a)?;let p=if let Some(p)=self.vars.get(n){p.clone()}else{let p=self.tmp();self.allocas.push(format!("  {} = alloca i64\n",p));self.vars.insert(n.clone(),p.clone());p};self.line(format!("store i64 {}, ptr {}",a,p));let h=self.lab();let body=self.lab();let inc=self.lab();let store=self.lab();let end=self.lab();self.line(format!("br label %{}",h));self.block(&h);let b=self.expr(b)?;let v=self.tmp();self.line(format!("{} = load i64, ptr {}",v,p));let c=self.tmp();self.line(format!("{} = icmp {} i64 {}, {}",c,if step>0{"sle"}else{"sge"},v,b));self.line(format!("br i1 {}, label %{}, label %{}",c,body,end));self.block(&body);self.loops.push((inc.clone(),end.clone()));let done=self.stmts(ss)?;self.loops.pop();if !done{self.line(format!("br label %{}",inc));}self.block(&inc);let v=self.tmp();self.line(format!("{} = load i64, ptr {}",v,p));let pair=self.tmp();self.line(format!("{} = call {{i64,i1}} @llvm.sadd.with.overflow.i64(i64 {}, i64 {})",pair,v,step));let next=self.tmp();let ov=self.tmp();self.line(format!("{} = extractvalue {{i64,i1}} {}, 0",next,pair));self.line(format!("{} = extractvalue {{i64,i1}} {}, 1",ov,pair));self.line(format!("br i1 {}, label %{}, label %{}",ov,end,store));self.block(&store);self.line(format!("store i64 {}, ptr {}",next,p));self.line(format!("br label %{}",h));self.block(&end);self.vars=outer_vars;},
   Stmt::ArrSet(_,n,ie,e)=>{
    if !self.arrays.contains_key(n){return Err(format!("LLVM scalar: array write `{}` outside fixed I64 arrays unsupported",n))}
    let v=self.expr(e)?;

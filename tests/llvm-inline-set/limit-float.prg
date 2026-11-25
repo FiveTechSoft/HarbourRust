@@ -1,0 +1,4 @@
+FUNCTION Main()
+LOCAL n:=0.5
+? (n:=1.5)
+RETURN NIL

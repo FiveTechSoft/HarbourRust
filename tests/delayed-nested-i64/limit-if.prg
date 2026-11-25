@@ -1,0 +1,6 @@
+PROCEDURE Main()
+ LOCAL a
+ IF .T.
+ a:={{1}}
+ ENDIF
+RETURN

@@ -1,0 +1,6 @@
+FUNCTION Main()
+? Empty(Value())
+RETURN NIL
+FUNCTION Value()
+LOCAL x
+RETURN x

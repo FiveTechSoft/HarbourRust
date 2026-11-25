@@ -1,0 +1,7 @@
+STATIC n
+FUNCTION Main()
+SetN(@n)
+RETURN NIL
+FUNCTION SetN(x)
+x := 2
+RETURN NIL

@@ -1,0 +1,3 @@
+PROCEDURE Main()
+ ? hb_ASCIILower(1)
+RETURN

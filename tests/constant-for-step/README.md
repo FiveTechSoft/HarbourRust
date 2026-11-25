@@ -49,3 +49,8 @@ newly closes and no speed claim is made. Original calls retains40 exact,
 Run:
 
     python tests/constant-for-step/check.py --compiler target/release/hbc --hbmk2 /path/to/hbmk2 --spec-root /path/to/harbour --output /tmp/for-step-gate
+
+Follow-up dynamic-for-step promotes historical limit-call/limit-dynamic to
+fresh differential controls on ordinary Linux. Other targets still reject
+these two sources. Current gate54 comprises25exact,5zero,9other-target
+emissions,6dynamic-profile rejections and9remaining named limits.

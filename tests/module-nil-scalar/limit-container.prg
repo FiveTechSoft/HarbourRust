@@ -1,0 +1,5 @@
+STATIC n
+FUNCTION Main()
+LOCAL a := {n}
+? a[1]
+RETURN NIL

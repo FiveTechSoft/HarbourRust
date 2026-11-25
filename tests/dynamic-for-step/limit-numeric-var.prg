@@ -1,0 +1,6 @@
+PROCEDURE Main()
+ LOCAL i:=0,s:=1.5
+ FOR i:=1 TO 3 STEP s
+ ? i
+ NEXT
+RETURN

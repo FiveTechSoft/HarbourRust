@@ -8,7 +8,7 @@ hbc_mem_allocs-hbc_mem_frees balance is written to stderr as
 'DELTA=<dec>\n' before exit(99); zero balance prints nothing and the
 program exits normally.
 """
-import pathlib, re, subprocess
+import pathlib, re, subprocess, json
 P = pathlib.Path
 
 DELTA_GUARD = ('    mov hbc_mem_allocs(%rip), %rax\n'
@@ -43,7 +43,7 @@ DELTA_GUARD = ('    mov hbc_mem_allocs(%rip), %rax\n'
                '.Lprobe_zero:\n')
 
 
-def classify_memdelta(rc, stderr, stdout, expected):
+def classify_memdelta(rc, stderr, stdout, expected, expected_stderr=b''):
     """The ONLY two valid instrumented-run states (reviewer CATCH v3):
     (rc 0, stderr EMPTY, stdout == expected)   -> delta 0
     (rc 99, stderr fullmatch 'DELTA=<n>\\n',
@@ -51,9 +51,14 @@ def classify_memdelta(rc, stderr, stdout, expected):
     Anything else (early failure before the guard, segfault, unexpected
     rc, missing DELTA, extra stderr garbage, wrong stdout) is rejected:
     a missing DELTA never reads as delta 0."""
-    m = re.fullmatch(rb'DELTA=(\d+)\n', stderr)
+    # The program may intentionally write stderr. Its exact prefix must
+    # match before interpreting the appended balance marker. Default empty
+    # keeps the original strict two-state contract unchanged.
+    stderr_match = stderr.startswith(expected_stderr)
+    tail = stderr[len(expected_stderr):] if stderr_match else None
+    m = re.fullmatch(rb'DELTA=(\d+)\n', tail) if tail is not None else None
     out_ok = stdout == expected
-    if rc == 0 and stderr == b'' and out_ok:
+    if rc == 0 and stderr == expected_stderr and out_ok:
         delta, state_ok = 0, True
     elif rc == 99 and m is not None and out_ok:
         delta, state_ok = int(m.group(1)), True
@@ -63,18 +68,21 @@ def classify_memdelta(rc, stderr, stdout, expected):
             'stdout_match': out_ok, 'delta': delta, 'state_ok': state_ok}
 
 
-def emit_delta(compiler, env, exe_src, work, expected):
+def emit_delta(compiler, env, exe_src, work, expected, include_dirs=(), expected_stderr=b''):
     """Instrumented emit + DELTA guard; returns the classify_memdelta
     record of the run. Raw stdout/stderr/rc of every step land in work."""
     work = P(work)
     def run(cmd, label):
-        r = subprocess.run(list(map(str, cmd)), cwd=work, env=env,
+        cmd = list(map(str, cmd))
+        (work / (label + '.command.json')).write_text(json.dumps(
+            dict(argv=cmd, cwd=str(work.resolve()), stdin='DEVNULL'), indent=2) + '\n')
+        r = subprocess.run(cmd, cwd=work, env=env,
                            capture_output=True, stdin=subprocess.DEVNULL, timeout=60)
         for k, v in [('stdout', r.stdout), ('stderr', r.stderr), ('rc', str(r.returncode).encode())]:
             (work / (label + '.' + k)).write_bytes(v)
         return r
     s = work / 'checked.s'
-    r = run([compiler, str(P(exe_src).resolve()), s, '--target=linux', '--instrument', '--no-prune'], 'emit')
+    r = run([compiler, str(P(exe_src).resolve()), s, '--target=linux', '--instrument', '--no-prune', *[arg for directory in include_dirs for arg in ('-I', str(directory))]], 'emit')
     assert r.returncode == 0, (exe_src, r.stderr)
     text = s.read_text()
     anchor = '    call hbc_persistent_cleanup\n    call hbc_str_cache_flush\n'
@@ -85,4 +93,4 @@ def emit_delta(compiler, env, exe_src, work, expected):
     r = run(['as', '--64', '-o', work / 'checked.o', s], 'as'); assert r.returncode == 0, r.stderr
     r = run(['ld', '-s', '-o', work / 'checked', work / 'checked.o'], 'ld'); assert r.returncode == 0, r.stderr
     r = run([work / 'checked'], 'memdelta')
-    return classify_memdelta(r.returncode, r.stderr, r.stdout, expected)
+    return classify_memdelta(r.returncode, r.stderr, r.stdout, expected, expected_stderr=expected_stderr)

@@ -1,0 +1,6 @@
+STATIC n
+FUNCTION Main()
+FOR n := 1 TO 2
+? n
+NEXT
+RETURN NIL

@@ -1,0 +1,4 @@
+FUNCTION Main()
+STATIC x
+? Empty(x)
+RETURN NIL

@@ -1,0 +1,3 @@
+PROCEDURE Main()
+ LOCAL a[2][3]
+RETURN

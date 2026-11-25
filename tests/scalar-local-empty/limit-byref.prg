@@ -1,0 +1,8 @@
+FUNCTION Main()
+LOCAL x
+ReadX(@x)
+RETURN NIL
+FUNCTION ReadX(x)
+? x
+? Empty(x)
+RETURN NIL

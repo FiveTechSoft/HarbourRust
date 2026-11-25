@@ -10,7 +10,7 @@ def run(cmd,w,label):
  return r
 for src in [*sorted(here.glob('*.prg'))]:
  w=out/src.stem;w.mkdir()
- if src.stem.startswith('limit-'):
+ if src.stem.startswith('limit-') and src.stem not in ['limit-call','limit-dynamic']:
   r=run([cc,src,w/'limit'],w,'build');assert r.returncode==1 and not (w/'limit').exists(),(src,r.stderr);
   if src.stem=='limit-owned-to':assert b'repeated `for` TO must not consume an owned local' in r.stderr,r.stderr
   rows.append(dict(name=src.stem,kind='named-rejection'));continue
@@ -21,5 +21,5 @@ for src in [*sorted(here.glob('*.prg'))]:
   r=run([w/mode],w,mode+'-run');assert (r.returncode,r.stdout,r.stderr)==(0,want,b''),(src,r.returncode,r.stdout,want,r.stderr);(w/mode).unlink();rows.append(dict(name=src.stem,kind='exact-Harbour',mode=mode))
  d=w/'delta';d.mkdir();bal=emit_delta(cc,os.environ,src,d,want);assert bal['state_ok'] and bal['delta']==0,(src,bal);rows.append(dict(name=src.stem,kind='strict-final-balance',source_sha256=hashlib.sha256(src.read_bytes()).hexdigest(),**bal))
  for target in ['windows','macho','macho-arm64']:
-  r=run([cc,src,w/(target+'.s'),'--target='+target],w,target);assert r.returncode==0,(src,target,r.stderr);rows.append(dict(name=src.stem,kind='other-target-emission-only',target=target))
+  r=run([cc,src,w/(target+'.s'),'--target='+target],w,target);dynamic=src.stem in ['limit-call','limit-dynamic'];assert r.returncode==(1 if dynamic else 0),(src,target,r.stderr);rows.append(dict(name=src.stem,kind='profile-rejection' if dynamic else 'other-target-emission-only',target=target))
 (out/'results.json').write_text(json.dumps(dict(compiler_sha256=hashlib.sha256(Path(cc).read_bytes()).hexdigest(),rows=rows),indent=2)+'\n');print('PASS',len(rows))

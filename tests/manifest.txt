@@ -44,7 +44,7 @@ neg tests/t40_for_assign_var.prg cannot assign to the `for` loop variable
 neg tests/t41_for_move.prg not reassigned before `next`
 pos2 tests/t42_for_exit_loop.prg tests/expectations/qout/t42_for_exit_loop.linux.out tests/expectations/qout/t42_for_exit_loop.windows.out
 neg tests/t43_for_step_zero.prg non-zero integer literal
-neg tests/t44_for_step_expr.prg non-zero integer literal
+pos2 tests/t44_for_step_expr.prg tests/t44_for_step_expr.out
 pos2 tests/t45_for_overflow_up.prg tests/expectations/qout/t45_for_overflow_up.linux.out tests/expectations/qout/t45_for_overflow_up.windows.out
 pos2 tests/t46_for_overflow_down.prg tests/expectations/qout/t46_for_overflow_down.linux.out tests/expectations/qout/t46_for_overflow_down.windows.out
 pos2 tests/t47_for_zero_down.prg tests/expectations/qout/t47_for_zero_down.linux.out tests/expectations/qout/t47_for_zero_down.windows.out
@@ -676,7 +676,7 @@ pos2 tests/t678_static_func_proc_note.prg tests/expectations/qout/t678_static_fu
 pos2 tests/t679_func_alias.prg tests/expectations/qout/t679_func_alias.linux.out tests/expectations/qout/t679_func_alias.windows.out
 pos2 tests/t680_predef_harbour.prg tests/expectations/qout/t680_predef_harbour.linux.out tests/expectations/qout/t680_predef_harbour.windows.out
 pos tests/t681_init_proc_neg.prg
-neg tests/t682_static_var_neg.prg module STATIC requires a folded i64, logical or string scalar or a constant array initializer (i64/logical/string/NIL cells, nested and empty arrays admitted); NIL, Date, float and hash initializers are not in this increment
+pos2 tests/t682_static_var_neg.prg tests/module-nil-scalar/unused.out tests/module-nil-scalar/unused.out
 neg tests/t683_second_group_neg.prg code outside a function
 neg tests/t684_dup_main_neg.prg duplicate function
 neg tests/t685_memvar_ref_neg.prg assignment to undeclared variable `m_y`
@@ -1039,7 +1039,7 @@ neg tests/t1043_original_longstr2_move_neg.prg use of moved value `short`
 neg tests/t1044_outerr_move_neg.prg use of moved value
 pos2 tests/t1045_empty_values.prg tests/expectations/qout/t1045_empty_values.linux.out tests/expectations/qout/t1045_empty_values.windows.out
 pos2 tests/t1046_empty_effects.prg tests/expectations/qout/t1046_empty_effects.linux.out tests/expectations/qout/t1046_empty_effects.windows.out
-neg tests/t1047_empty_dyn_neg.prg `Empty` on generic Dyn values
+pos2 tests/t1047_empty_dyn_neg.prg tests/scalar-local-empty/nil.out tests/scalar-local-empty/nil.out
 neg tests/t1048_empty_temp_array_neg.prg `Empty` on an array/hash needs a variable
 neg tests/t1049_empty_arity_neg.prg `Empty` takes one argument
 neg tests/t1050_empty_moved_neg.prg use of moved value
@@ -1797,7 +1797,7 @@ neg tests/module-static/negative/hash.prg module STATIC requires a folded i64, l
 neg tests/module-static/negative/late.prg module STATIC declarations must precede
 neg tests/module-static/negative/loop.prg STATIC loop counters require
 neg tests/module-static/negative/memvar.prg module STATIC and explicit MEMVAR
-neg tests/module-static/negative/nil.prg module STATIC requires a folded i64, logical or string scalar or a constant array initializer (i64/logical/string/NIL cells, nested and empty arrays admitted); NIL, Date, float and hash initializers are not in this increment
+pos2 tests/module-static/programs/nil.prg tests/module-nil-scalar/nil.out tests/module-nil-scalar/nil.out
 neg tests/module-static/negative/widen.prg keeps the scalar type of its folded initializer in this increment
 pos2 tests/module-static/programs/byref_variants.prg tests/module-static/expected/byref_variants.linux.out tests/module-static/expected/byref_variants.windows.out
 pos2 tests/module-static/programs/separate_local_statics.prg tests/module-static/expected/separate_local_statics.linux.out tests/module-static/expected/separate_local_statics.windows.out

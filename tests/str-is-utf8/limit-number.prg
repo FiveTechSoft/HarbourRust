@@ -1,0 +1,3 @@
+PROCEDURE Main()
+ ? hb_StrIsUTF8(1)
+RETURN

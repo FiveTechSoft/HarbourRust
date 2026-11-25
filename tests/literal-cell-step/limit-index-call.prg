@@ -1,0 +1,6 @@
+FUNCTION Main()
+LOCAL a:={1,2}
+a[Idx()]++
+RETURN NIL
+FUNCTION Idx()
+RETURN 1

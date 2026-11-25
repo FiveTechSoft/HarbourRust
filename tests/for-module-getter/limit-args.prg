@@ -1,0 +1,10 @@
+STATIC a
+FUNCTION Main()
+LOCAL i:=0
+a:=1
+FOR i:=1 TO 3 STEP Eval({||Value(1)})
+? i
+NEXT
+RETURN NIL
+FUNCTION Value(x)
+RETURN a

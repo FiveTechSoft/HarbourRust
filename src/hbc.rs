@@ -156,6 +156,13 @@ fn bret_name(k: BRet) -> &'static str {
     match k { BRet::Int => "integer", BRet::Nil => "NIL", BRet::Bool => "logical" }
 }
 
+thread_local! {
+    static FOR_INLINE_BLOCKS: std::cell::RefCell<std::collections::HashSet<usize>> = std::cell::RefCell::new(std::collections::HashSet::new());
+    static MODULE_SCALAR_GETTERS: std::cell::RefCell<std::collections::HashSet<String>> = std::cell::RefCell::new(std::collections::HashSet::new());
+}
+fn module_scalar_getter(e:&Expr)->bool {
+    matches!(e,Expr::Call(id,aa)if aa.is_empty()&&MODULE_SCALAR_GETTERS.with(|m|m.borrow().contains(id)))
+}
 fn block_body_kind(body: &[Expr], sigs: &[Sig]) -> BRet {
     match body.last() {
         Some(Expr::Call(id, _)) if is_output_call(id) || sigs.iter().any(|s| s.name == *id && s.nil_ret_only) => BRet::Nil,
@@ -899,7 +906,7 @@ fn proc_metadata_needed(funcs: &[Func], externs: bool) -> bool {
             Stmt::Ret(_,e) => e.as_ref().map_or(false,|e|expr(e,funcs)),
             Stmt::If(_,e,a,b) => expr(e,funcs)||stmts(a,funcs)||stmts(b,funcs),
             Stmt::While(_,e,b) => expr(e,funcs)||stmts(b,funcs),
-            Stmt::For(_,_,a,b,_,ss) => expr(a,funcs)||expr(b,funcs)||stmts(ss,funcs),
+            Stmt::For(_,_,a,b,c,ss) => expr(a,funcs)||expr(b,funcs)||expr(c,funcs)||stmts(ss,funcs),
             Stmt::Try(_,b,c,f) => stmts(b,funcs)||c.as_ref().map_or(false,|(_,cb)|stmts(cb,funcs))||f.as_ref().map_or(false,|fb|stmts(fb,funcs)),
             Stmt::CatchBind(..) => false,
             Stmt::Break(_,e) => expr(e,funcs),
@@ -1334,7 +1341,7 @@ enum Stmt {
     ASize(usize, String, Expr), // ASize(a, n): resize in place (probe d3)
     Exit(usize),                 // exit: leave the innermost loop
     Loop(usize),                 // loop: jump to the next iteration of the innermost loop
-    For(usize, String, Expr, Expr, i64, Vec<Stmt>), // line, var, start, end, step (non-zero literal), body
+    For(usize, String, Expr, Expr, Expr, Vec<Stmt>), // line, var, start, end, step expression, body
     ForEach(usize, String, Expr, Vec<Stmt>), // line, var, collection (borrowed), body
     Switch(usize, Expr, Vec<(usize, CaseLit, Vec<Stmt>)>, Option<(usize, Vec<Stmt>)>), // line, selector, case arms, otherwise
     Try(usize, Vec<Stmt>, Option<(Option<String>, Vec<Stmt>)>, Option<Vec<Stmt>>), // TRY body, CATCH (var, body), FINALLY body (Harbour BEGIN SEQUENCE semantics)
@@ -2114,7 +2121,7 @@ const ASM_RESERVED: &[&str] = &[
     // hbc itself emits; a user function with one of these names would
     // collide with a helper symbol.
     "dtos", "stod", "year", "day", "month", "dow", "cdow", "cmonth", "dtoc", "sqrt", "exp", "log", "mod", "padc", "rat", "stuff", "isdigit", "isalpha", "isupper", "islower", "strzero", "ischar", "strzero_fix", "str_f64", "fmt_f64", "date_add", "date_diff", "date_days", "date_from_days", "seconds",
-    "hb_osdriveseparator", "hb_base64encode", "hb_stod", "hb_hextonum", "hb_asciiupper", "hb_strtohex", "hb_dirsepadd", "getenv", "hb_at", "hb_bchar", "hb_bcode", "__defaultnil", "hb_default", "hb_defaultvalue", "hb_sha1", "hb_hmac_sha1", "tr_dims", "tr_apply", "strtran", "space", "substr", "date", "ctod", "date_pack", "date_render", "date_today", "dispbox", "hrbase_wait", "setcursor", "hb_flink", "hb_flinksym", "hb_flinkread", "hb_memowrit", "hb_dircreate", "ferror", "curdir", "fread", "fcreate", "fopen", "fwrite", "fclose", "freadstr", "hb_memoread", "hb_libname", "hb_ps", "os", "dirmake", "inkey", "file", "hrfile_setdefault", "hrfile_setpath", "qout", "qqout", "outstd", "outerr", "empty", "procname", "min", "max", "str", "padr", "hb_ntos", "replicate", "aeval", "hb_isnumeric", "hb_isarray", "hb_isstring", "dfree", "upper", "lower", "left", "right", "at", "int", "abs", "padl", "val", "ascan", "aclone", "atail", "asort", "hb_bitand", "hb_bitor", "hb_bitxor", "hb_bitnot", "hb_bittest", "hb_bitset", "hb_bitreset", "eprint_str", "eprint_sep", "eprint_i64", "eprint_i64c", "eprint_dyn", "eprint_dynlit", "print_dynlit", "eprint_f64", "hb_eol", "procline", "asc", "trim", "ltrim", "rtrim", "alltrim", "chr", "trace_top", "print_trace", "panic_exit", "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_arg_error", "val_arg_error", "atokens_arg_error", "hb_memcheck", "aadd", "asize", "afill", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
+    "hb_osdriveseparator", "hb_osfilemask", "hb_fnameext", "hb_fnameextset", "hb_fnameextsetdef", "hb_fnamenameext", "hb_fnamename", "hb_fnamedir", "hb_dirsepdel", "hb_dirseptoos", "hb_hextostr", "hb_fileexists", "hb_direxists", "hb_strisutf8", "hb_blen", "hb_bleft", "hb_bright", "hb_bsubstr", "hb_bat", "hb_brat", "hb_strformat", "hb_base64decode", "hb_base64encode", "hb_stod", "hb_hextonum", "hb_asciiupper", "hb_asciilower", "hb_strtohex", "hb_dirsepadd", "getenv", "hb_at", "hb_bchar", "hb_bcode", "__defaultnil", "hb_default", "hb_defaultvalue", "hb_sha1", "hb_hmac_sha1", "tr_dims", "tr_apply", "strtran", "space", "substr", "date", "ctod", "date_pack", "date_render", "date_today", "dispbox", "hrbase_wait", "setcursor", "hb_flink", "hb_flinksym", "hb_flinkread", "hb_memowrit", "hb_dircreate", "ferror", "curdir", "fread", "fcreate", "fopen", "fwrite", "fclose", "freadstr", "hb_memoread", "hb_libname", "hb_ps", "os", "dirmake", "inkey", "file", "hrfile_setdefault", "hrfile_setpath", "qout", "qqout", "outstd", "outerr", "empty", "procname", "min", "max", "str", "padr", "hb_ntos", "replicate", "aeval", "hb_isnumeric", "hb_isarray", "hb_isstring", "dfree", "upper", "lower", "left", "right", "at", "int", "abs", "padl", "val", "ascan", "aclone", "atail", "asort", "hb_bitand", "hb_bitor", "hb_bitxor", "hb_bitnot", "hb_bittest", "hb_bitset", "hb_bitreset", "eprint_str", "eprint_sep", "eprint_i64", "eprint_i64c", "eprint_dyn", "eprint_dynlit", "print_dynlit", "eprint_f64", "hb_eol", "procline", "asc", "trim", "ltrim", "rtrim", "alltrim", "chr", "trace_top", "print_trace", "panic_exit", "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_arg_error", "val_arg_error", "atokens_arg_error", "hb_memcheck", "aadd", "asize", "afill", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
 ];
 
 fn dbf_result(id: &str) -> Option<Ty> {
@@ -2164,7 +2171,7 @@ fn visit_stmts_mut(ss: &mut [Stmt], f: &mut dyn FnMut(&mut Expr, usize)) {
             Stmt::ArrSet3(_, _, a, b, c, d) | Stmt::AAddSub3(_, _, a, b, c, d) | Stmt::ASizeSub3(_, _, a, b, c, d) => { visit_expr_mut(a, ln, f); visit_expr_mut(b, ln, f); visit_expr_mut(c, ln, f); visit_expr_mut(d, ln, f); }
             Stmt::ArrSet4(_, _, a, b, c, d, g) => { visit_expr_mut(a, ln, f); visit_expr_mut(b, ln, f); visit_expr_mut(c, ln, f); visit_expr_mut(d, ln, f); visit_expr_mut(g, ln, f); }
             Stmt::AFill(_, _, v, a, b) => { visit_expr_mut(v, ln, f); if let Some(a) = a { visit_expr_mut(a, ln, f); } if let Some(b) = b { visit_expr_mut(b, ln, f); } }
-            Stmt::For(_, _, a, b, _, body) => { visit_expr_mut(a, ln, f); visit_expr_mut(b, ln, f); visit_stmts_mut(body, f); }
+            Stmt::For(_, _, a, b, step, body) => { visit_expr_mut(a, ln, f); visit_expr_mut(b, ln, f); visit_expr_mut(step, ln, f); visit_stmts_mut(body, f); }
             Stmt::ForEach(_, _, c, body) => { visit_expr_mut(c, ln, f); visit_stmts_mut(body, f); }
             Stmt::Switch(_, sel, arms, other) => { visit_expr_mut(sel, ln, f); for (_, _, b) in arms.iter_mut() { visit_stmts_mut(b, f); } if let Some((_, b)) = other { visit_stmts_mut(b, f); } }
             Stmt::Try(_, b, c, fin) => { visit_stmts_mut(b, f); if let Some((_, cb)) = c { visit_stmts_mut(cb, f); } if let Some(fb) = fin { visit_stmts_mut(fb, f); } }
@@ -2208,7 +2215,7 @@ fn visit_stmts_ref(ss: &[Stmt], fs: &mut dyn FnMut(&Stmt), f: &mut dyn FnMut(&Ex
             Stmt::ArrSet3(_, _, a, b, c, d) | Stmt::AAddSub3(_, _, a, b, c, d) | Stmt::ASizeSub3(_, _, a, b, c, d) => { visit_expr_ref(a, f); visit_expr_ref(b, f); visit_expr_ref(c, f); visit_expr_ref(d, f); }
             Stmt::ArrSet4(_, _, a, b, c, d, g) => { visit_expr_ref(a, f); visit_expr_ref(b, f); visit_expr_ref(c, f); visit_expr_ref(d, f); visit_expr_ref(g, f); }
             Stmt::AFill(_, _, v, a, b) => { visit_expr_ref(v, f); if let Some(a) = a { visit_expr_ref(a, f); } if let Some(b) = b { visit_expr_ref(b, f); } }
-            Stmt::For(_, _, a, b, _, body) => { visit_expr_ref(a, f); visit_expr_ref(b, f); visit_stmts_ref(body, fs, f); }
+            Stmt::For(_, _, a, b, step, body) => { visit_expr_ref(a, f); visit_expr_ref(b, f); visit_expr_ref(step, f); visit_stmts_ref(body, fs, f); }
             Stmt::ForEach(_, _, c, body) => { visit_expr_ref(c, f); visit_stmts_ref(body, fs, f); }
             Stmt::Switch(_, sel, arms, other) => { visit_expr_ref(sel, f); for (_, _, b) in arms.iter() { visit_stmts_ref(b, fs, f); } if let Some((_, b)) = other { visit_stmts_ref(b, fs, f); } }
             Stmt::Try(_, b, c, fin) => { visit_stmts_ref(b, fs, f); if let Some((_, cb)) = c { visit_stmts_ref(cb, fs, f); } if let Some(fb) = fin { visit_stmts_ref(fb, fs, f); } }
@@ -2351,6 +2358,7 @@ thread_local! {
 // ValType calls implement predicate semantics, not source-level RTL lookup.
 const INTERNAL_VALTYPE: &str = "\0valtype";
 const INTERNAL_STOD: &str = "\0date_literal";
+const INTERNAL_DECL_ARRAY: &str = "\0decl_array";
 const INTERNAL_MEMVAR_READ: &str = "\0memvar_read";
 const INTERNAL_CELL_INC: &str = "\0cell_increment";
 fn cell_path(e:&Expr)->Option<(&str,Vec<&Expr>)>{match e{Expr::Index(v,a)=>Some((v,vec![a])),Expr::Index2(v,a,b)=>Some((v,vec![a,b])),Expr::Index3(v,a,b,c)=>Some((v,vec![a,b,c])),Expr::Index4(v,a,b,c,d)=>Some((v,vec![a,b,c,d])),_=>None}}
@@ -2372,7 +2380,20 @@ fn standard_date_mask(e:&Expr)->Option<(usize,bool)> {
 }
 fn set_date_mask_call(args:&[Expr])->bool {matches!(args.first(),Some(Expr::Int(v))if v=="4")}
 
+// Parse only the measured literal %s / %% subset. Each part precedes
+// one substitution; the final part is the trailing literal.
+fn strformat_parts(e:&Expr)->Option<Vec<String>> {
+    let Expr::Str(s)=e else{return None};
+    let mut parts=vec![String::new()];let mut chars=s.chars();
+    while let Some(c)=chars.next(){
+        if c!='%' {parts.last_mut()?.push(c);continue;}
+        match chars.next()? {'%'=>parts.last_mut()?.push('%'),'s'=>parts.push(String::new()),_=>return None}
+    }
+    Some(parts)
+}
+
 fn is_builtin(id: &str, name: &str) -> bool {
+    if id==INTERNAL_DECL_ARRAY {return name.eq_ignore_ascii_case("array");}
     if id == INTERNAL_VALTYPE { return name.eq_ignore_ascii_case("valtype"); }
     if id == INTERNAL_STOD {return name.eq_ignore_ascii_case("stod");}
     if USER_FUNC_NAMES.with(|u| { let u = u.borrow(); !u.is_empty() && u.contains(&id.to_ascii_lowercase()) }) { return false; }
@@ -2575,7 +2596,7 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                     return Err(format!("line {}: Harbour requires EACH here: `for each <var> in <collection>` (without EACH it is its E0030 syntax error, oracle hk17)", n));
                 }
                 // for i := <start> to <end> [step <n>]
-                // Keep the existing compile-time non-zero i64 loop ABI.
+                // Constant and measured dynamic i64 STEP paths share the loop AST.
                 // Parsing first admits expressions already reduced to Int.
                 // Do not use fold_int: its Seq rule ignores prefix effects.
                 let id = match toks.get(1) {
@@ -2597,16 +2618,21 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                 let start = parse_expr_tokens(toks[3..to_pos].to_vec(), n)?;
                 let end = parse_expr_tokens(toks[to_pos + 1..end_slice_end].to_vec(), n)?;
                 let step = match step_pos {
-                    None => 1,
+                    None => Expr::Int("1".into()),
                     Some(p) => {
-                        match parse_expr_tokens(toks[p + 1..].to_vec(), n)? {
+                        let e=parse_expr_tokens(toks[p+1..].to_vec(),n)?;
+                        match &e {
                             Expr::Int(v) => match v.parse::<i64>() {
-                                Ok(s) if s != 0 => s,
-                                Ok(_) => return Err(format!("line {}: the `for` step must be a non-zero integer literal in this PoC", n)),
-                                Err(_) => return Err(format!("line {}: integer literal out of range (i64)", n)),
+                                Ok(s) if s!=0=>{},
+                                Ok(_)=>return Err(format!("line {}: the `for` step must be a non-zero integer literal in this PoC",n)),
+                                Err(_)=>return Err(format!("line {}: integer literal out of range (i64)",n)),
                             },
-                            _ => return Err(format!("line {}: the `for` step must be a non-zero integer literal in this PoC", n)),
+                            Expr::Var(_)=>{},
+                            Expr::Call(_,aa) if aa.is_empty()=>{},
+                            Expr::Call(id,aa) if is_builtin(id,"eval") && matches!(aa.as_slice(),[Expr::BlockLit(_,pp,bb)]if pp.is_empty() && bb.len()==1 && matches!(&bb[0],Expr::Call(_,args)if args.is_empty()))=>{},
+                            _=>return Err(format!("line {}: dynamic FOR STEP supports only an integer variable or zero-argument function call",n)),
                         }
+                        e
                     }
                 };
                 *i += 1;
@@ -2619,6 +2645,9 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                     return Err(format!("line {}: `next` takes no expression", n));
                 }
                 *i += 1;
+                for e in [&start,&end,&step] {
+                    if let Expr::Call(name,args)=e {if is_builtin(name,"eval") {if let [Expr::BlockLit(bid,pp,bb)]=args.as_slice(){if pp.is_empty()&&matches!(bb.as_slice(),[Expr::Call(_,aa)]if aa.is_empty()){FOR_INLINE_BLOCKS.with(|v|v.borrow_mut().insert(*bid));}}}}
+                }
                 out.push(Stmt::For(n, id, start, end, step, body));
             }
             Tok::KwWhile => {
@@ -2810,6 +2839,19 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                     };
                     if it.len() == 1 {
                         out.push(Stmt::Local(n, id, Expr::Nil));
+                    } else if it.get(1)==Some(&Tok::LBracket) {
+                        if it.last()!=Some(&Tok::RBracket) || it[2..it.len()-1].iter().any(|t|matches!(t,Tok::LBracket|Tok::RBracket|Tok::Assign)) {
+                            return Err(format!("line {}: LOCAL array declaration supports one dimension group without initializer in this increment",n));
+                        }
+                        let mut dims=Vec::new();let mut start=2;let mut depth=0i32;
+                        for k in 2..it.len()-1 {
+                            match it[k] {
+                                Tok::LParen|Tok::LBrace=>depth+=1,Tok::RParen|Tok::RBrace=>depth-=1,
+                                Tok::Comma if depth==0=>{dims.push(parse_expr_tokens(it[start..k].to_vec(),n)?);start=k+1;},_=>{}
+                            }
+                        }
+                        dims.push(parse_expr_tokens(it[start..it.len()-1].to_vec(),n)?);
+                        out.push(Stmt::Local(n,id,Expr::Call(INTERNAL_DECL_ARRAY.into(),dims)));
                     } else if it.len() >= 3 && it[1] == Tok::Assign {
                         let e = parse_expr_tokens(it[2..].to_vec(), n)?;
                         out.push(Stmt::Local(n, id, e));
@@ -3353,6 +3395,14 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                     }
                     if rb == 0 {
                         return Err(format!("line {}: expected `name[idx] := expr`", n));
+                    }
+                    // Statement-only literal index update: no duplicated
+                    // index effects and no expression-result semantics.
+                    if rb==3 && toks.len()==rb+2 && matches!(toks.get(2),Some(Tok::Int(_))) && matches!(toks.get(rb+1),Some(Tok::IncTok|Tok::DecTok)) {
+                        let ie=parse_expr_tokens(toks[2..rb].to_vec(),n)?;
+                        let op=if toks[rb+1]==Tok::IncTok {'+'}else{'-'};
+                        let rhs=Expr::Bin(op,Box::new(Expr::Index(id.clone(),Box::new(ie.clone()))),Box::new(Expr::Int("1".into())));
+                        out.push(Stmt::ArrSet(n,id,ie,rhs));*i+=1;continue;
                     }
                     if commas.is_empty()
                         && matches!(toks.get(rb + 1), Some(Tok::Plus | Tok::Minus | Tok::Star | Tok::Slash | Tok::Caret | Tok::Pct))
@@ -3921,7 +3971,7 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                         out.push(Stmt::Local(n, crname.clone(), args[3].clone()));
                     }
                     out.push(Stmt::If(n, Expr::Cmp(CmpOp::Ge, Box::new(Expr::Var(sname.clone())), Box::new(Expr::Int("1".to_string()))),
-                        vec![Stmt::For(n, iname.clone(), Expr::Var(sname.clone()), end_e, 1, loop_body)], vec![]));
+                        vec![Stmt::For(n, iname.clone(), Expr::Var(sname.clone()), end_e, Expr::Int("1".into()), loop_body)], vec![]));
                     *i += 1;
                     continue;
                 }
@@ -4074,6 +4124,8 @@ struct Prog {
 
 fn parse(src: &str) -> Result<Prog, String> {
     module_static::reset();
+    FOR_INLINE_BLOCKS.with(|v|v.borrow_mut().clear());
+    MODULE_SCALAR_GETTERS.with(|v|v.borrow_mut().clear());
     MACRO_CONTEXT.with(|c|c.set(false));
     DIRMAKE_USED.with(|v|v.set(false));
     INKEY_USED.with(|v|v.set(false));
@@ -4449,6 +4501,19 @@ fn parse(src: &str) -> Result<Prog, String> {
     module_static::discover_objects(&funcs,&methods,&classes,&module_slots)?;
     for f in &mut funcs { module_static::bind(f, &module_slots)?; }
     for m in &mut methods { module_static::bind(&mut m.f, &module_slots)?; }
+    // Closed scalar-accessor shape: one module NIL scalar return, optional
+    // literal-only output, and the synthetic STATIC binding. No owned Dyn.
+    for f in &funcs {
+        if !f.params.is_empty(){continue;}
+        let mut returns=0;
+        let safe=f.stmts.iter().all(|st|match st {
+            Stmt::Static(_,id,Expr::Nil)=>module_static::kind(&f.name,id)==Some(Ty::RefDyn),
+            Stmt::Print(_,es,_)=>es.iter().all(|e|matches!(e,Expr::Int(_)|Expr::Str(_)|Expr::Log(_))),
+            Stmt::Ret(_,Some(Expr::Var(v)))=>{returns+=1;module_static::kind(&f.name,v)==Some(Ty::RefDyn)},
+            _=>false,
+        });
+        if safe&&returns==1{MODULE_SCALAR_GETTERS.with(|v|v.borrow_mut().insert(f.name.clone()));}
+    }
     Ok(Prog { funcs, classes, methods, externs })
 }
 
@@ -4729,7 +4794,22 @@ fn cg_sarr_index(id: &str, var_off: usize, ies: &[&Expr], env: &[CgLocal], sigs:
     out.push_str("81:\n    call hbc_bound_error\n82:\n");
 }
 thread_local! {static FOR_LOCAL_NAMES: std::cell::RefCell<std::collections::HashSet<String>> = std::cell::RefCell::new(std::collections::HashSet::new());}
+thread_local! {static SCALAR_DYN_EMPTY_LOCALS: std::cell::RefCell<std::collections::HashSet<String>> = std::cell::RefCell::new(std::collections::HashSet::new());}
 fn set_numeric(f: &Func) {
+    let mut scalar=std::collections::HashSet::new();
+    visit_stmts_ref(&f.stmts,&mut |st|if let Stmt::Local(_,v,Expr::Nil)=st {scalar.insert(v.clone());},&mut |_|{});
+    let scalar_literal=|e:&Expr|matches!(e,Expr::Nil|Expr::Int(_)|Expr::Float(..)|Expr::FloatV(..)|Expr::Str(_)|Expr::Log(_));
+    visit_stmts_ref(&f.stmts,&mut |st|match st {
+        Stmt::Assign(_,v,e)|Stmt::Local(_,v,e) if !scalar_literal(e)=>{scalar.remove(v);},
+        Stmt::For(_,v,..)|Stmt::ForEach(_,v,..)=>{scalar.remove(v);},
+        _=>{}
+    },&mut |_|{});
+    visit_stmts_ref(&f.stmts,&mut |_|{},&mut |e|match e {
+        Expr::ByRef(v)|Expr::Inc(v,..)|Expr::Set(v,_)=>{scalar.remove(v);},
+        Expr::BlockLit(..)=>scalar.retain(|v|!expr_mentions(e,v)),
+        _=>{}
+    });
+    SCALAR_DYN_EMPTY_LOCALS.with(|v|*v.borrow_mut()=scalar);
     let mut locals=std::collections::HashSet::new();
     visit_stmts_ref(&f.stmts,&mut |s|if let Stmt::Local(_,v,_)=s{locals.insert(v.clone());},&mut |_|{});
     // Captures anywhere in the function are excluded, including a block
@@ -5291,6 +5371,9 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
                 pin_vars(f, a, t, pin, n)?;
                 pin_vars(f, b, t, pin, n)
             }
+            // A comparison has a logical result, not logical operands.
+            // Its own walk supplies operand evidence (including NIL Dyn).
+            Expr::Cmp(..) if ty==Ty::Bool => Ok(()),
             Expr::Cmp(_, a, b) => { pin_vars(f, a, ty, pin, n)?; pin_vars(f, b, ty, pin, n) }
             Expr::Log(_) => Ok(()),
             Expr::LNot(a) => pin_vars(f, a, Ty::Bool, pin, n),
@@ -5511,16 +5594,29 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
                     for a in args { pin_vars(f,a,Ty::Str,pin,n)?; walk(f,a,sigs,lit,pin,printed,n)?; }
                     return Ok(());
                 }
+                if is_builtin(id,"hb_base64decode") {
+                    for a in args {walk(f,a,sigs,lit,pin,printed,n)?;}return Ok(());
+                }
+                if is_builtin(id,"hb_strformat") {
+                    for a in args {walk(f,a,sigs,lit,pin,printed,n)?;}
+                    return Ok(());
+                }
                 if ["upper", "lower"].iter().any(|b| is_builtin(id,b)) {
                     for a in args { pin_vars(f,a,Ty::Str,pin,n)?; walk(f,a,sigs,lit,pin,printed,n)?; }
                     return Ok(());
                 }
-                if ["left", "right"].iter().any(|b| is_builtin(id,b)) {
+                if is_builtin(id,"hb_bat")||is_builtin(id,"hb_brat") {for a in args {pin_vars(f,a,Ty::Str,pin,n)?;walk(f,a,sigs,lit,pin,printed,n)?;}return Ok(());}
+                if is_builtin(id,"hb_bsubstr") {
+                    for (k,a) in args.iter().enumerate() {pin_vars(f,a,if k==0 {Ty::Str} else {Ty::I64},pin,n)?;walk(f,a,sigs,lit,pin,printed,n)?;}
+                    return Ok(());
+                }
+                if ["left", "right", "hb_bleft", "hb_bright"].iter().any(|b| is_builtin(id,b)) {
                     if !args.is_empty() { pin_vars(f,&args[0],Ty::Str,pin,n)?; walk(f,&args[0],sigs,lit,pin,printed,n)?; }
                     if args.len() > 1 { pin_vars(f,&args[1],Ty::I64,pin,n)?; walk(f,&args[1],sigs,lit,pin,printed,n)?; }
                     return Ok(());
                 }
-                if is_builtin(id,"hb_memoread") || is_builtin(id,"getenv") || is_builtin(id,"hb_dirsepadd") || is_builtin(id,"hb_strtohex") || is_builtin(id,"hb_asciiupper") || is_builtin(id,"hb_hextonum") || is_builtin(id,"hb_base64encode") {
+                if is_builtin(id,"hb_fileexists")||is_builtin(id,"hb_direxists")||is_builtin(id,"hb_strisutf8")||is_builtin(id,"hb_blen") {for a in args {pin_vars(f,a,Ty::Str,pin,n)?;walk(f,a,sigs,lit,pin,printed,n)?;}return Ok(());}
+                if is_builtin(id,"hb_memoread") || is_builtin(id,"getenv") || is_builtin(id,"hb_dirsepadd") || is_builtin(id,"hb_dirsepdel") || is_builtin(id,"hb_dirseptoos") || is_builtin(id,"hb_hextostr") || is_builtin(id,"hb_fnameext") || is_builtin(id,"hb_fnameextset") || is_builtin(id,"hb_fnameextsetdef") || is_builtin(id,"hb_fnamenameext") || is_builtin(id,"hb_fnamename") || is_builtin(id,"hb_fnamedir") || is_builtin(id,"hb_strtohex") || is_builtin(id,"hb_asciiupper") || is_builtin(id,"hb_asciilower") || is_builtin(id,"hb_hextonum") || is_builtin(id,"hb_base64encode") {
                     for a in args {pin_vars(f,a,Ty::Str,pin,n)?;walk(f,a,sigs,lit,pin,printed,n)?;}
                     return Ok(());
                 }
@@ -5865,11 +5961,12 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
                     walk(f, c, sigs, lit, pin, printed, *n)?;
                     walk_stmts(f, body, sigs, lit, pin, printed, nil_ret)?;
                 }
-                Stmt::For(n, _, a, b, _, body) => {
+                Stmt::For(n, _, a, b, step, body) => {
                     // for bounds are i64 by construction (integer counters
                     // only): they pin a parameter used as a bound (t61).
                     pin_vars(f, a, Ty::I64, pin, *n)?;
                     pin_vars(f, b, Ty::I64, pin, *n)?;
+                    pin_vars(f, step, Ty::I64, pin, *n)?; walk(f,step,sigs,lit,pin,printed,*n)?;
                     walk(f, a, sigs, lit, pin, printed, *n)?; walk(f, b, sigs, lit, pin, printed, *n)?;
                     walk_stmts(f, body, sigs, lit, pin, printed, nil_ret)?;
                 }
@@ -6462,7 +6559,7 @@ fn stmts_use_dbf(stmts: &[Stmt]) -> bool {
         Stmt::ArrSet4(_, _, a, b, c, d, e) => expr_uses_dbf(a) || expr_uses_dbf(b) || expr_uses_dbf(c) || expr_uses_dbf(d) || expr_uses_dbf(e),
         Stmt::If(_, c, t, el) => expr_uses_dbf(c) || stmts_use_dbf(t) || stmts_use_dbf(el),
         Stmt::While(_, c, b) => expr_uses_dbf(c) || stmts_use_dbf(b),
-        Stmt::For(_, _, a, b, _, body) => expr_uses_dbf(a) || expr_uses_dbf(b) || stmts_use_dbf(body),
+        Stmt::For(_, _, a, b, c, body) => expr_uses_dbf(a) || expr_uses_dbf(b) || expr_uses_dbf(c) || stmts_use_dbf(body),
         Stmt::ForEach(_, _, c, body) => expr_uses_dbf(c) || stmts_use_dbf(body),
         Stmt::Switch(_, sel, arms, otherwise) => expr_uses_dbf(sel) || arms.iter().any(|(_, _, b)| stmts_use_dbf(b)) || otherwise.as_ref().is_some_and(|(_, b)| stmts_use_dbf(b)),
         Stmt::Try(_, body, catch, finally) => stmts_use_dbf(body) || catch.as_ref().is_some_and(|(_, b)| stmts_use_dbf(b)) || finally.as_ref().is_some_and(|b| stmts_use_dbf(b)),
@@ -6550,7 +6647,7 @@ fn rewrite_field_stmts(stmts: &mut [Stmt], declared: &std::collections::HashSet<
             Stmt::ArrSet4(_, _, a, b, c, d, e) => { rewrite_field_expr(a, declared, shadows); rewrite_field_expr(b, declared, shadows); rewrite_field_expr(c, declared, shadows); rewrite_field_expr(d, declared, shadows); rewrite_field_expr(e, declared, shadows); }
             Stmt::If(_, c, t, el) => { rewrite_field_expr(c, declared, shadows); rewrite_field_stmts(t, declared, shadows); rewrite_field_stmts(el, declared, shadows); }
             Stmt::While(_, c, b) => { rewrite_field_expr(c, declared, shadows); rewrite_field_stmts(b, declared, shadows); }
-            Stmt::For(_, _, a, b, _, body) => { rewrite_field_expr(a, declared, shadows); rewrite_field_expr(b, declared, shadows); rewrite_field_stmts(body, declared, shadows); }
+            Stmt::For(_, _, a, b, c, body) => { rewrite_field_expr(a, declared, shadows); rewrite_field_expr(b, declared, shadows); rewrite_field_expr(c, declared, shadows); rewrite_field_stmts(body, declared, shadows); }
             Stmt::ForEach(_, _, c, body) => { rewrite_field_expr(c, declared, shadows); rewrite_field_stmts(body, declared, shadows); }
             Stmt::Switch(_, sel, arms, otherwise) => { rewrite_field_expr(sel, declared, shadows); for (_, _, b) in arms { rewrite_field_stmts(b, declared, shadows); } if let Some((_, b)) = otherwise { rewrite_field_stmts(b, declared, shadows); } }
             Stmt::Try(_, body, catch, finally) => { rewrite_field_stmts(body, declared, shadows); if let Some((_, b)) = catch { rewrite_field_stmts(b, declared, shadows); } if let Some(b) = finally { rewrite_field_stmts(b, declared, shadows); } }
@@ -6655,8 +6752,8 @@ fn borrow_stmts_ok(stmts: &[Stmt], pname: &str) -> Option<usize> {
             Stmt::While(n, c, b) => {
                 if !borrow_expr_ok(c, pname) { Some(*n) } else { borrow_stmts_ok(b, pname) }
             }
-            Stmt::For(n, lv, a, b, _, body) => {
-                if lv == pname || !borrow_expr_ok(a, pname) || !borrow_expr_ok(b, pname) { Some(*n) }
+            Stmt::For(n, lv, a, b, c, body) => {
+                if lv == pname || !borrow_expr_ok(a, pname) || !borrow_expr_ok(b, pname) || !borrow_expr_ok(c,pname) { Some(*n) }
                 else { borrow_stmts_ok(body, pname) }
             }
             Stmt::ForEach(n, lv, coll, body) => {
@@ -6761,7 +6858,7 @@ fn aview_stmts_safe(ss: &[Stmt], p: &str, sigs: &[Sig], strict: bool) -> bool {
         Stmt::CallStmt(_,e) => aview_expr_safe(e,p,sigs,strict,false,false),
         Stmt::If(_,c,a,b) => aview_expr_safe(c,p,sigs,strict,false,false) && aview_stmts_safe(a,p,sigs,strict) && aview_stmts_safe(b,p,sigs,strict),
         Stmt::While(_,c,b) => aview_expr_safe(c,p,sigs,strict,false,false) && aview_stmts_safe(b,p,sigs,strict),
-        Stmt::For(_,v,a,b,_,ss) => v != p && aview_expr_safe(a,p,sigs,strict,false,false) && aview_expr_safe(b,p,sigs,strict,false,false) && aview_stmts_safe(ss,p,sigs,strict),
+        Stmt::For(_,v,a,b,c,ss) => v != p && aview_expr_safe(c,p,sigs,strict,false,false) && aview_expr_safe(a,p,sigs,strict,false,false) && aview_expr_safe(b,p,sigs,strict,false,false) && aview_stmts_safe(ss,p,sigs,strict),
         // Unhandled operations reject the candidate conservatively. This
         // whitelist does not modify the existing mutable-borrow contract.
         _ => false,
@@ -6781,7 +6878,7 @@ fn aview_array_evidence(ss: &[Stmt], p: &str) -> bool {
         Stmt::Print(_,es,_) => es.iter().any(|a|ex(a,p)),
         Stmt::If(_,c,a,b) => ex(c,p)||aview_array_evidence(a,p)||aview_array_evidence(b,p),
         Stmt::While(_,c,b) => ex(c,p)||aview_array_evidence(b,p),
-        Stmt::For(_,_,a,b,_,ss) => ex(a,p)||ex(b,p)||aview_array_evidence(ss,p),
+        Stmt::For(_,_,a,b,c,ss) => ex(a,p)||ex(b,p)||ex(c,p)||aview_array_evidence(ss,p),
         _ => false,
     })
 }
@@ -7286,7 +7383,9 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 }
                 let readonly_dyn = CURDIR_LINUX_NATIVE.with(|v|v.get()) && DECIMAL_LOCAL_PROFILE.with(|v|v.get()) && !MACRO_CONTEXT.with(|v|v.get())
                     && matches!(&args[0],Expr::Var(id) if env.iter().rev().any(|v|v.name==*id && v.ty==Ty::Dyn && v.ro));
-                if t == Ty::Dyn && !readonly_dyn && !matches!(&args[0], Expr::Nil) && !DBF_USED.with(|v|v.get()) && !timestamp::known(&args[0]) && !timestamp::scalar_empty() {
+                let ordinary_dyn=CURDIR_LINUX_NATIVE.with(|v|v.get())&&DECIMAL_LOCAL_PROFILE.with(|v|v.get())&&!MACRO_CONTEXT.with(|v|v.get())
+                    && matches!(&args[0],Expr::Var(id)if SCALAR_DYN_EMPTY_LOCALS.with(|v|v.borrow().contains(id))&&!static_dyn(id)&&!is_sarr(id)&&!module_static::is_module_binding(id)&&env.iter().any(|v|v.name==*id&&v.ty==Ty::Dyn&&!v.byref));
+                if t == Ty::Dyn && !readonly_dyn && !ordinary_dyn && !matches!(&args[0], Expr::Nil) && !DBF_USED.with(|v|v.get()) && !timestamp::known(&args[0]) && !timestamp::scalar_empty() {
                     return Err(format!("line {}: `Empty` on generic Dyn values is not in this increment", n));
                 }
                 if matches!(t, Ty::DArrRef | Ty::DArrRef2) {
@@ -7352,6 +7451,29 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 if !matches!(type_expr(&args[0],env,sigs,n)?,Ty::Str|Ty::StrOwn) {return Err(format!("line {}: hb_HexToNum requires a typed string in this increment",n));}
                 return Ok(Ty::I64);
             }
+            if is_builtin(id,"hb_base64decode") {
+                if !CURDIR_LINUX_NATIVE.with(|v|v.get()) || !DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get()) || IN_BLOCK.with(|v|v.get()) || shared_local::active() {return Err(format!("line {}: hb_base64Decode requires ordinary Linux without threads, macros, blocks or shared arrays in this increment",n));}
+                if args.len()!=1 {return Err(format!("line {}: hb_base64Decode requires exactly one string in this increment",n));}
+                let t=type_expr(&args[0],env,sigs,n)?;
+                if !matches!(t,Ty::Str|Ty::StrOwn) && !(t==Ty::Dyn && matches!(&args[0],Expr::Var(_))) {return Err(format!("line {}: hb_base64Decode requires a typed string or Dyn variable in this increment",n));}
+                apply_moves(&args[0],env,sigs,false);return Ok(Ty::StrOwn);
+            }
+            if is_builtin(id,"hb_strformat") {
+                if !CURDIR_LINUX_NATIVE.with(|v|v.get()) || !DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get()) || IN_BLOCK.with(|v|v.get()) || shared_local::active() {
+                    return Err(format!("line {}: hb_StrFormat requires ordinary Linux without threads, macros, blocks or shared arrays in this increment",n));
+                }
+                let parts=args.first().and_then(strformat_parts).ok_or_else(||format!("line {}: hb_StrFormat requires a literal format containing only %s and %% in this increment",n))?;
+                if parts.len()!=args.len() {return Err(format!("line {}: hb_StrFormat requires exactly one argument per %s in this increment",n));}
+                for a in &args[1..] {
+                    if !matches!(a,Expr::Var(_)|Expr::Str(_)|Expr::Int(_)|Expr::Log(_)|Expr::Nil) && !matches!(a,Expr::Send(recv,m,aa) if m.eq_ignore_ascii_case("__enumkey") && aa.is_empty() && matches!(recv.as_ref(),Expr::Var(_))) {
+                        return Err(format!("line {}: hb_StrFormat arguments must be scalar leaves or active hash enumKey getters in this increment",n));
+                    }
+                    let t=type_expr(a,env,sigs,n)?;
+                    if !matches!(t,Ty::Str|Ty::StrOwn|Ty::Dyn|Ty::I64|Ty::Bool) {return Err(format!("line {}: hb_StrFormat arguments must be string, Dyn, integer, logical or NIL in this increment",n));}
+                    apply_moves(a,env,sigs,false);
+                }
+                return Ok(Ty::StrOwn);
+            }
             if is_builtin(id,"hb_base64encode") {
                 if !DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get()) {return Err(format!("line {}: hb_base64Encode requires ordinary Linux without threads or macros in this increment",n));}
                 if args.len()!=1 {return Err(format!("line {}: hb_base64Encode requires exactly one typed string in this increment",n));}
@@ -7362,6 +7484,12 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 if !DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get()) {return Err(format!("line {}: hb_ASCIIUpper requires ordinary Linux without threads or macros in this increment",n));}
                 if args.len()!=1 {return Err(format!("line {}: hb_ASCIIUpper requires exactly one typed string in this increment",n));}
                 if !matches!(type_expr(&args[0],env,sigs,n)?,Ty::Str|Ty::StrOwn) {return Err(format!("line {}: hb_ASCIIUpper requires a typed string in this increment",n));}
+                return Ok(Ty::StrOwn);
+            }
+            if is_builtin(id,"hb_asciilower") {
+                if !DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get()) {return Err(format!("line {}: hb_ASCIILower requires ordinary Linux without threads or macros in this increment",n));}
+                if args.len()!=1 {return Err(format!("line {}: hb_ASCIILower requires exactly one typed string in this increment",n));}
+                if !matches!(type_expr(&args[0],env,sigs,n)?,Ty::Str|Ty::StrOwn) {return Err(format!("line {}: hb_ASCIILower requires a typed string in this increment",n));}
                 return Ok(Ty::StrOwn);
             }
             if is_builtin(id,"hb_strtohex") {
@@ -7376,10 +7504,116 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 if !matches!(type_expr(&args[0],env,sigs,n)?,Ty::Str|Ty::StrOwn) {return Err(format!("line {}: hb_DirSepAdd requires a typed string in this increment",n));}
                 return Ok(Ty::StrOwn);
             }
+            if is_builtin(id,"hb_dirsepdel") {
+                if !DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get()) {return Err(format!("line {}: hb_DirSepDel requires ordinary Linux without threads or macros in this increment",n));}
+                if args.len()!=1 {return Err(format!("line {}: hb_DirSepDel requires exactly one typed string in this increment",n));}
+                if !matches!(type_expr(&args[0],env,sigs,n)?,Ty::Str|Ty::StrOwn) {return Err(format!("line {}: hb_DirSepDel requires a typed string in this increment",n));}
+                return Ok(Ty::StrOwn);
+            }
+            if is_builtin(id,"hb_dirseptoos") {
+                if !DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get()) {return Err(format!("line {}: hb_DirSepToOS requires ordinary Linux without threads or macros in this increment",n));}
+                if args.len()!=1 {return Err(format!("line {}: hb_DirSepToOS requires exactly one typed string in this increment",n));}
+                if !matches!(type_expr(&args[0],env,sigs,n)?,Ty::Str|Ty::StrOwn) {return Err(format!("line {}: hb_DirSepToOS requires a typed string in this increment",n));}
+                return Ok(Ty::StrOwn);
+            }
+            if is_builtin(id,"hb_hextostr") {
+                if !DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get()) {return Err(format!("line {}: hb_HexToStr requires ordinary Linux without threads or macros in this increment",n));}
+                if args.len()!=1 {return Err(format!("line {}: hb_HexToStr requires exactly one typed string in this increment",n));}
+                if !matches!(type_expr(&args[0],env,sigs,n)?,Ty::Str|Ty::StrOwn) {return Err(format!("line {}: hb_HexToStr requires a typed string in this increment",n));}
+                return Ok(Ty::StrOwn);
+            }
+            if is_builtin(id,"hb_fnameextset") {
+                if !DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get()) {return Err(format!("line {}: hb_FNameExtSet requires ordinary Linux without threads or macros in this increment",n));}
+                if args.len()!=2 {return Err(format!("line {}: hb_FNameExtSet requires exactly two typed string leaves in this increment",n));}
+                for a in args {
+                    if !matches!(a,Expr::Str(_)|Expr::Var(_)) {return Err(format!("line {}: hb_FNameExtSet requires literal or variable string leaves; effectful/computed arguments are not measured",n));}
+                    if !matches!(type_expr(a,env,sigs,n)?,Ty::Str|Ty::StrOwn) {return Err(format!("line {}: hb_FNameExtSet requires typed strings in this increment",n));}
+                }
+                return Ok(Ty::StrOwn);
+            }
+            if is_builtin(id,"hb_fnameextsetdef") {
+                if !DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get()) {return Err(format!("line {}: hb_FNameExtSetDef requires ordinary Linux without threads or macros in this increment",n));}
+                if args.len()!=2 {return Err(format!("line {}: hb_FNameExtSetDef requires exactly two typed string leaves in this increment",n));}
+                for a in args {
+                    if !matches!(a,Expr::Str(_)|Expr::Var(_)) {return Err(format!("line {}: hb_FNameExtSetDef requires literal or variable string leaves; effectful/computed arguments are not measured",n));}
+                    if !matches!(type_expr(a,env,sigs,n)?,Ty::Str|Ty::StrOwn) {return Err(format!("line {}: hb_FNameExtSetDef requires typed strings in this increment",n));}
+                }
+                return Ok(Ty::StrOwn);
+            }
+            if is_builtin(id,"hb_fnameext") {
+                if !DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get()) {return Err(format!("line {}: hb_fnameext requires ordinary Linux without threads or macros in this increment",n));}
+                if args.len()!=1 {return Err(format!("line {}: hb_fnameext requires exactly one typed string in this increment",n));}
+                if !matches!(type_expr(&args[0],env,sigs,n)?,Ty::Str|Ty::StrOwn) {return Err(format!("line {}: hb_fnameext requires a typed string in this increment",n));}
+                return Ok(Ty::StrOwn);
+            }
+            if is_builtin(id,"hb_fnamenameext") {
+                if !DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get()) {return Err(format!("line {}: hb_fnamenameext requires ordinary Linux without threads or macros in this increment",n));}
+                if args.len()!=1 {return Err(format!("line {}: hb_fnamenameext requires exactly one typed string in this increment",n));}
+                if !matches!(type_expr(&args[0],env,sigs,n)?,Ty::Str|Ty::StrOwn) {return Err(format!("line {}: hb_fnamenameext requires a typed string in this increment",n));}
+                return Ok(Ty::StrOwn);
+            }
+            if is_builtin(id,"hb_fnamename") {
+                if !DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get()) {return Err(format!("line {}: hb_fnamename requires ordinary Linux without threads or macros in this increment",n));}
+                if args.len()!=1 {return Err(format!("line {}: hb_fnamename requires exactly one typed string in this increment",n));}
+                if !matches!(type_expr(&args[0],env,sigs,n)?,Ty::Str|Ty::StrOwn) {return Err(format!("line {}: hb_fnamename requires a typed string in this increment",n));}
+                return Ok(Ty::StrOwn);
+            }
+            if is_builtin(id,"hb_fnamedir") {
+                if !DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get()) {return Err(format!("line {}: hb_fnamedir requires ordinary Linux without threads or macros in this increment",n));}
+                if args.len()!=1 {return Err(format!("line {}: hb_fnamedir requires exactly one typed string in this increment",n));}
+                if !matches!(type_expr(&args[0],env,sigs,n)?,Ty::Str|Ty::StrOwn) {return Err(format!("line {}: hb_fnamedir requires a typed string in this increment",n));}
+                return Ok(Ty::StrOwn);
+            }
             if is_builtin(id,"getenv") {
                 if !DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get()) || EXTERNS.with(|v|!v.borrow().is_empty()) {return Err(format!("line {}: GetEnv requires ordinary Linux without threads, macros or C extensions in this increment",n));}
                 if args.len()!=1 {return Err(format!("line {}: GetEnv requires exactly one typed string in this increment",n));}
                 if !matches!(type_expr(&args[0],env,sigs,n)?,Ty::Str|Ty::StrOwn) {return Err(format!("line {}: GetEnv requires a typed string key in this increment",n));}
+                return Ok(Ty::StrOwn);
+            }
+            if is_builtin(id,"hb_fileexists")||is_builtin(id,"hb_direxists") {
+                if !DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get()) {return Err(format!("line {}: hb_FileExists/hb_DirExists require ordinary Linux without threads or macros in this increment",n));}
+                if args.len()!=1 {return Err(format!("line {}: hb_FileExists/hb_DirExists require exactly one typed string in this increment",n));}
+                if !matches!(type_expr(&args[0],env,sigs,n)?,Ty::Str|Ty::StrOwn) {return Err(format!("line {}: hb_FileExists/hb_DirExists require a typed string in this increment",n));}
+                apply_moves(&args[0],env,sigs,false);return Ok(Ty::Bool);
+            }
+            if is_builtin(id,"hb_strisutf8") {
+                if !DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get()) {return Err(format!("line {}: hb_StrIsUTF8 require ordinary Linux without threads or macros in this increment",n));}
+                if args.len()!=1 {return Err(format!("line {}: hb_StrIsUTF8 require exactly one typed string in this increment",n));}
+                if !matches!(type_expr(&args[0],env,sigs,n)?,Ty::Str|Ty::StrOwn) {return Err(format!("line {}: hb_StrIsUTF8 require a typed string in this increment",n));}
+                apply_moves(&args[0],env,sigs,false);return Ok(Ty::Bool);
+            }
+            if is_builtin(id,"hb_bat")||is_builtin(id,"hb_brat") {
+                let byte_name=if is_builtin(id,"hb_brat"){"hb_BRAt"}else{"hb_BAt"};
+                if !DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get()) {return Err(format!("line {}: {byte_name} requires ordinary Linux without threads or macros",n));}
+                if args.len()!=2 {return Err(format!("line {}: {byte_name} requires exactly two string leaves; optional bounds not measured",n));}
+                if args.iter().any(|a|!matches!(a,Expr::Str(_)|Expr::Var(_))) {return Err(format!("line {}: {byte_name} requires literal or variable leaves; computed/effectful arguments not measured",n));}
+                for a in args {if !matches!(type_expr(a,env,sigs,n)?,Ty::Str|Ty::StrOwn) {return Err(format!("line {}: {byte_name} requires typed strings",n));}}
+                return Ok(Ty::I64);
+            }
+            if is_builtin(id,"hb_bsubstr") {
+                if !DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get()) {return Err(format!("line {}: hb_BSubStr requires ordinary Linux without threads or macros",n));}
+                if args.len()!=2 && args.len()!=3 {return Err(format!("line {}: hb_BSubStr requires string,start and optional count leaves",n));}
+                if !matches!(&args[0],Expr::Str(_)|Expr::Var(_)) || args[1..].iter().any(|a|!matches!(a,Expr::Int(_)|Expr::Var(_))) {return Err(format!("line {}: hb_BSubStr requires literal or variable leaves; computed/effectful arguments not measured",n));}
+                if !matches!(type_expr(&args[0],env,sigs,n)?,Ty::Str|Ty::StrOwn) {return Err(format!("line {}: hb_BSubStr requires typed string",n));}
+                for a in &args[1..] {if type_expr(a,env,sigs,n)?!=Ty::I64 {return Err(format!("line {}: hb_BSubStr requires typed integer positions",n));}}
+                return Ok(Ty::StrOwn);
+            }
+            if is_builtin(id,"hb_bleft")||is_builtin(id,"hb_bright") {
+                if !DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get()) {return Err(format!("line {}: hb_BLeft/hb_BRight require ordinary Linux without threads or macros",n));}
+                if args.len()!=2 {return Err(format!("line {}: hb_BLeft/hb_BRight require string and integer leaves",n));}
+                if !matches!(&args[0],Expr::Str(_)|Expr::Var(_)) || !matches!(&args[1],Expr::Int(_)|Expr::Var(_)) {return Err(format!("line {}: hb_BLeft/hb_BRight require literal or variable leaves; computed/effectful args not measured",n));}
+                if !matches!(type_expr(&args[0],env,sigs,n)?,Ty::Str|Ty::StrOwn)||type_expr(&args[1],env,sigs,n)?!=Ty::I64 {return Err(format!("line {}: hb_BLeft/hb_BRight require typed string and integer",n));}
+                return Ok(Ty::StrOwn);
+            }
+            if is_builtin(id,"hb_blen") {
+                if !DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get()) {return Err(format!("line {}: hb_BLen require ordinary Linux without threads or macros in this increment",n));}
+                if args.len()!=1 {return Err(format!("line {}: hb_BLen require exactly one typed string in this increment",n));}
+                if !matches!(type_expr(&args[0],env,sigs,n)?,Ty::Str|Ty::StrOwn) {return Err(format!("line {}: hb_BLen require a typed string in this increment",n));}
+                apply_moves(&args[0],env,sigs,false);return Ok(Ty::I64);
+            }
+            if is_builtin(id,"hb_osfilemask") {
+                if !DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get()) {return Err(format!("line {}: hb_osFileMask requires ordinary Linux without threads or macros in this increment",n));}
+                if !args.is_empty() {return Err(format!("line {}: hb_osFileMask takes no arguments in this increment",n));}
                 return Ok(Ty::StrOwn);
             }
             if is_builtin(id,"hb_osdriveseparator") {
@@ -10522,6 +10756,12 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
             _ => Err(format!("line {}: `Self` outside a method", n)),
         },
         Expr::Send(recv, name, args) => {
+            if (name.eq_ignore_ascii_case("__enumisfirst")||name.eq_ignore_ascii_case("__enumislast")) && CURDIR_LINUX_NATIVE.with(|v|v.get()) && DECIMAL_LOCAL_PROFILE.with(|v|v.get()) && !MACRO_CONTEXT.with(|v|v.get())
+                && !IN_BLOCK.with(|v|v.get()) && !shared_local::active()
+                && matches!(recv.as_ref(),Expr::Var(id) if ENUM_INDEX_CHECK.with(|v|v.borrow().contains(id)) && env.iter().rev().find(|v|v.name==*id).map_or(false,|v|matches!(v.ty,Ty::Dyn|Ty::Str) && v.ro)) {
+                if !args.is_empty(){return Err(format!("line {}: __enumIsFirst/__enumIsLast only support active scalar iterator getters without arguments",n));}
+                return Ok(Ty::Bool);
+            }
             if name.eq_ignore_ascii_case("__enumkey") && CURDIR_LINUX_NATIVE.with(|v|v.get()) && DECIMAL_LOCAL_PROFILE.with(|v|v.get()) && !MACRO_CONTEXT.with(|v|v.get())
                 && !IN_BLOCK.with(|v|v.get()) && !shared_local::active()
                 && matches!(recv.as_ref(),Expr::Var(id) if ENUM_KEY_CHECK.with(|v|v.borrow().iter().rev().find(|(n,_)|n==id).map_or(false,|(_,hash)|*hash)) && env.iter().rev().find(|v|v.name==*id).map_or(false,|v|v.ty==Ty::Dyn && v.ro)) {
@@ -10530,7 +10770,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
             }
             if name.eq_ignore_ascii_case("__enumindex") && CURDIR_LINUX_NATIVE.with(|v|v.get()) && DECIMAL_LOCAL_PROFILE.with(|v|v.get()) && !MACRO_CONTEXT.with(|v|v.get())
                 && !IN_BLOCK.with(|v|v.get()) && !shared_local::active()
-                && matches!(recv.as_ref(),Expr::Var(id) if ENUM_INDEX_CHECK.with(|v|v.borrow().contains(id)) && env.iter().rev().find(|v|v.name==*id).map_or(false,|v|v.ty==Ty::Dyn && v.ro)) {
+                && matches!(recv.as_ref(),Expr::Var(id) if ENUM_INDEX_CHECK.with(|v|v.borrow().contains(id)) && env.iter().rev().find(|v|v.name==*id).map_or(false,|v|matches!(v.ty,Ty::Dyn|Ty::Str) && v.ro)) {
                 if !args.is_empty(){return Err(format!("line {}: __enumIndex only supports the active iterator getter without arguments",n));}
                 return Ok(Ty::I64);
             }
@@ -10709,7 +10949,9 @@ fn check_block_body(id: usize, params: &[String], body: &[Expr], env: &[Local], 
         let final_nil = i + 1 == body.len() && t == Ty::Dyn && matches!(e, Expr::Call(id, _) if is_output_call(id) || sigs.iter().any(|s| s.name == *id && s.nil_ret_only));
         let final_bool = i + 1 == body.len() && t == Ty::Bool && (block_bool_tail(e)||(CAPTURE_MODE.get()==Some(2)&&matches!(e,Expr::Call(id,_)if shared_local::trace_helper(id)||shared_local::throw_helper(id))));
         let asort_literal=CAPTURE_MODE.get()==Some(2)&&i+1==body.len()&&matches!(e,Expr::Nil|Expr::Str(_));
-        if t != Ty::I64 && !discarded_nil && !final_nil && !final_bool && !asort_literal {
+        let scalar_for=FOR_INLINE_BLOCKS.with(|v|v.borrow().contains(&id)) && params.is_empty()&&body.len()==1&&t==Ty::Dyn&&module_scalar_getter(e);
+        if scalar_for && (!DECIMAL_LOCAL_PROFILE.with(|v|v.get())||MACRO_CONTEXT.with(|v|v.get())||shared_local::active()){return Err(format!("line {}: scalar module getter FOR blocks require ordinary Linux without threads/macros/shared captures",n));}
+        if t != Ty::I64 && !discarded_nil && !final_nil && !final_bool && !asort_literal && !scalar_for {
             return Err(format!("line {}: codeblock bodies are integer expressions, NIL-only calls or a final logical comparison in this increment", n));
         }
     }
@@ -10974,7 +11216,7 @@ fn foreach_coll_untouched(stmts: &[Stmt], name: &str) -> bool {
         Stmt::SendStmt(_, e) => expr_ok(e, name),
         Stmt::If(_, c, a, b) => expr_ok(c, name) && foreach_coll_untouched(a, name) && foreach_coll_untouched(b, name),
         Stmt::While(_, c, b) => expr_ok(c, name) && foreach_coll_untouched(b, name),
-        Stmt::For(_, _, a, b, _, body) => expr_ok(a, name) && expr_ok(b, name) && foreach_coll_untouched(body, name),
+        Stmt::For(_, _, a, b, c, body) => expr_ok(a, name) && expr_ok(b, name) && expr_ok(c,name) && foreach_coll_untouched(body, name),
         Stmt::ForEach(_, _, c, body) => expr_ok(c, name) && foreach_coll_untouched(body, name),
         Stmt::Print(_, items, _) => items.iter().all(|i| expr_ok(i, name)),
         Stmt::Ret(_, Some(e)) => expr_ok(e, name),
@@ -11062,7 +11304,7 @@ fn string_iterator_observer(f: &Func, p: &str) -> bool {
         Stmt::Local(_, id, Expr::Nil) => id != p,
         Stmt::ForEach(_, lv, Expr::Var(c), body) if c == p && lv != p => {
             seen = true;
-            foreach_string_asc_evidence(body, lv) && foreach_string_body_safe(body)
+            foreach_string_asc_evidence(body, lv) && foreach_string_body_safe(body, lv)
         },
         Stmt::Ret(_, None) | Stmt::Ret(_, Some(Expr::Nil)) => true,
         _ => false,
@@ -11089,24 +11331,28 @@ fn foreach_string_asc_evidence(stmts: &[Stmt], lv: &str) -> bool {
     })
 }
 
-fn foreach_string_body_safe(stmts: &[Stmt]) -> bool {
-    fn read(e: &Expr) -> bool {
+fn foreach_string_body_safe(stmts: &[Stmt], lv: &str) -> bool {
+    fn read(e: &Expr, lv: &str) -> bool {
         match e {
             Expr::Int(_) | Expr::Float(..) | Expr::FloatV(..) | Expr::Str(_)
                 | Expr::Var(_) | Expr::Nil | Expr::Log(_) => true,
             Expr::Bin(_, a, b) | Expr::Cmp(_, a, b)
-                | Expr::LAnd(a, b) | Expr::LOr(a, b) => read(a) && read(b),
-            Expr::LNot(e) => read(e),
+                | Expr::LAnd(a, b) | Expr::LOr(a, b) => read(a, lv) && read(b, lv),
+            Expr::LNot(e) => read(e, lv),
+            // Getter spelling alone never proves a user method is pure.
+            Expr::Send(recv,name,args) if args.is_empty()
+                && matches!(recv.as_ref(),Expr::Var(id) if id==lv || ENUM_INDEX_CHECK.with(|v|v.borrow().contains(id)))
+                && ["__enumindex","__enumisfirst","__enumislast"].iter().any(|n|name.eq_ignore_ascii_case(n)) => true,
             Expr::Call(id, args) if ["asc", "len", "valtype", "empty", "chr",
                 "hb_ntos", "str", "trim", "ltrim", "rtrim", "alltrim", "iif"]
-                .iter().any(|n| is_builtin(id, n)) => args.iter().all(read),
+                .iter().any(|n| is_builtin(id, n)) => args.iter().all(|e|read(e, lv)),
             _ => false,
         }
     }
     stmts.iter().all(|s| match s {
-        Stmt::Print(_, es, _) => es.iter().all(read),
-        Stmt::If(_, c, a, b) => read(c) && foreach_string_body_safe(a)
-            && foreach_string_body_safe(b),
+        Stmt::Print(_, es, _) => es.iter().all(|e|read(e, lv)),
+        Stmt::If(_, c, a, b) => read(c, lv) && foreach_string_body_safe(a, lv)
+            && foreach_string_body_safe(b, lv),
         Stmt::Exit(_) | Stmt::Loop(_) | Stmt::Ret(_, None) => true,
         _ => false,
     })
@@ -11135,7 +11381,7 @@ fn foreach_lv_int_ok(stmts: &[Stmt], name: &str) -> bool {
         Stmt::AAddSub3(_, id, _, _, _, _) | Stmt::ASizeSub3(_, id, _, _, _, _) => id != name,
         Stmt::If(_, c, a, b) => !targets(c, name) && foreach_lv_int_ok(a, name) && foreach_lv_int_ok(b, name),
         Stmt::While(_, c, b) => !targets(c, name) && foreach_lv_int_ok(b, name),
-        Stmt::For(_, lv, a, bnd, _, b) => lv != name && !targets(a, name) && !targets(bnd, name) && foreach_lv_int_ok(b, name),
+        Stmt::For(_, lv, a, bnd, c, b) => lv != name && !targets(a, name) && !targets(bnd, name) && !targets(c,name) && foreach_lv_int_ok(b, name),
         Stmt::ForEach(_, lv, _, b) => lv != name && foreach_lv_int_ok(b, name),
         Stmt::Print(_, es, _) => es.iter().all(|e| !targets(e, name)),
         Stmt::Ret(_, Some(e)) => !targets(e, name),
@@ -11150,17 +11396,20 @@ thread_local! {
     static ENUM_KEY_CHECK: std::cell::RefCell<Vec<(String,bool)>> = const { std::cell::RefCell::new(Vec::new()) };
     static ENUM_KEY_EMIT: std::cell::RefCell<Vec<(String,usize,usize,bool)>> = const { std::cell::RefCell::new(Vec::new()) };
     static ENUM_INDEX_CHECK: std::cell::RefCell<Vec<String>> = const { std::cell::RefCell::new(Vec::new()) };
+    // Iterator index plus static length or dynamic saved-length slot.
+    static ENUM_END_EMIT: std::cell::RefCell<Vec<(String,usize,bool,usize)>> = const { std::cell::RefCell::new(Vec::new()) };
     static ENUM_INDEX_EMIT: std::cell::RefCell<Vec<(String,usize)>> = const { std::cell::RefCell::new(Vec::new()) };
 }
 fn foreach_lv_readonly(stmts: &[Stmt], name: &str) -> bool {
     fn mentions(e: &Expr, name: &str) -> bool {
         match e {
+            e if format_observer(e)||decode_observer(e,name)=>false,
             Expr::Seq(es) => es.iter().any(|e| mentions(e, name)),
             Expr::Set(v, r) => *v == name || mentions(r, name),
             Expr::Var(v) => v == name,
             Expr::Bin(_, a, b) | Expr::Cmp(_, a, b) => mentions(a, name) || mentions(b, name),
             Expr::Call(_, args) => args.iter().any(|a| mentions(a, name)),
-            Expr::Send(recv,method,args) if (method.eq_ignore_ascii_case("__enumindex")||method.eq_ignore_ascii_case("__enumkey")) && args.is_empty() && matches!(recv.as_ref(),Expr::Var(v) if v==name)=>false,
+            Expr::Send(recv,method,args) if (method.eq_ignore_ascii_case("__enumindex")||method.eq_ignore_ascii_case("__enumkey")||method.eq_ignore_ascii_case("__enumisfirst")||method.eq_ignore_ascii_case("__enumislast")) && args.is_empty() && matches!(recv.as_ref(),Expr::Var(v) if v==name)=>false,
             Expr::Send(recv,_,args)=>mentions(recv,name)||args.iter().any(|a|mentions(a,name)),
             Expr::Index(id, i) | Expr::Index2(id, i, _) | Expr::Index3(id, i, _, _) | Expr::Index4(id, i, ..) => id == name || mentions(i, name),
             Expr::IdxCompound(id, i, _, r) => id == name || mentions(i, name) || mentions(r, name),
@@ -11179,9 +11428,15 @@ fn foreach_lv_readonly(stmts: &[Stmt], name: &str) -> bool {
         }}
         CURDIR_LINUX_NATIVE.with(|v|v.get()) && matches!(e,Expr::Call(f,aa) if is_builtin(f,"hb_hextonum") && matches!(aa.as_slice(),[Expr::Call(g,bb)] if is_builtin(g,"substr") && (2..=3).contains(&bb.len()) && matches!(&bb[0],Expr::Var(v) if v==name) && bb.iter().skip(1).all(|a|bound(a,name))))
     }
+    fn decode_observer(e:&Expr,name:&str)->bool {
+        CURDIR_LINUX_NATIVE.with(|v|v.get()) && matches!(e,Expr::Call(f,aa) if is_builtin(f,"hb_base64decode") && matches!(aa.as_slice(),[Expr::Var(v)]if v==name))
+    }
+    fn format_observer(e:&Expr)->bool {
+        CURDIR_LINUX_NATIVE.with(|v|v.get()) && matches!(e,Expr::Call(f,aa) if is_builtin(f,"hb_strformat") && aa.first().and_then(strformat_parts).map_or(false,|p|p.len()==aa.len()) && aa[1..].iter().all(|a|matches!(a,Expr::Var(_)|Expr::Str(_)|Expr::Int(_)|Expr::Log(_)|Expr::Nil)||matches!(a,Expr::Send(r,m,bb)if m.eq_ignore_ascii_case("__enumkey")&&bb.is_empty()&&matches!(r.as_ref(),Expr::Var(_)))))
+    }
     fn in_call(e: &Expr, name: &str) -> bool {
         match e {
-            e if at_observer(e,name)||hex_slice_observer(e,name)=>false,
+            e if at_observer(e,name)||hex_slice_observer(e,name)||format_observer(e)||decode_observer(e,name)=>false,
             Expr::Seq(es) => es.iter().any(|e| in_call(e, name)),
             Expr::Set(_, r) => in_call(r, name),
             Expr::Call(id,args) if CURDIR_LINUX_NATIVE.with(|v|v.get()) && is_builtin(id,"empty") && matches!(args.as_slice(),[Expr::Var(v)] if v==name)=>false,
@@ -11194,7 +11449,7 @@ fn foreach_lv_readonly(stmts: &[Stmt], name: &str) -> bool {
     stmts.iter().all(|s| match s {
         Stmt::Print(_, items, _) => items.iter().all(|i| !in_call(i, name)),
         Stmt::Assign(_,id,Expr::Send(recv,method,args)) if id!=name && method.eq_ignore_ascii_case("__enumkey") && args.is_empty() && matches!(recv.as_ref(),Expr::Var(v) if v==name)=>true,
-        Stmt::Assign(_,id,e) if id!=name && (at_observer(e,name)||hex_slice_observer(e,name))=>true,
+        Stmt::Assign(_,id,e) if id!=name && (at_observer(e,name)||hex_slice_observer(e,name)||format_observer(e)||decode_observer(e,name))=>true,
         Stmt::Assign(_,id,Expr::Call(f,aa)) if CURDIR_LINUX_NATIVE.with(|v|v.get()) && id!=name && is_builtin(f,"hb_atokens")
             && matches!(aa.as_slice(),[Expr::Var(v),Expr::Str(_)] if v==name)=>true,
         Stmt::Assign(_, _, e) | Stmt::Ret(_, Some(e)) => !mentions(e, name),
@@ -11532,6 +11787,17 @@ fn scalar_cell_store_index(e:&Expr,env:&[Local])->bool {
 fn constant_afill(e:&Expr)->bool {
     matches!(e,Expr::Call(id,aa) if is_builtin(id,"afill") && matches!(aa.as_slice(),[Expr::Call(ar,dims),Expr::Int(_)|Expr::Log(_)|Expr::Nil] if is_builtin(ar,"array") && matches!(dims.as_slice(),[Expr::Int(n)] if n.parse::<i64>().map_or(false,|n|n>=0))))
 }
+// Initial NIL is unobservable only when a top-level constant nested store
+// dominates every mention. No calls/control flow before that store.
+fn bare_local_is_nested_i64_array(stmts:&[Stmt],idx:usize,name:&str)->bool {
+    if !CURDIR_LINUX_NATIVE.with(|v|v.get())||!DECIMAL_LOCAL_PROFILE.with(|v|v.get())||MACRO_CONTEXT.with(|v|v.get())||shared_local::active(){return false;}
+    for st in &stmts[idx+1..] {match st {
+        Stmt::Assign(_,id,Expr::ArrLit(rows)) if id==name=>return !rows.is_empty()&&rows.iter().all(|r|matches!(r,Expr::ArrLit(es)if !es.is_empty()&&es.iter().all(|e|matches!(e,Expr::Int(v)if v.parse::<i64>().is_ok())))),
+        Stmt::Local(_,id,e)|Stmt::Assign(_,id,e) if id!=name&&!expr_mentions(e,name)&&counter_prefix_pure(e)=>{},
+        Stmt::Print(_,es,_) if es.iter().all(|e|!expr_mentions(e,name)&&counter_prefix_pure(e))=>{},
+        _=>return false,
+    }}false
+}
 fn bare_local_is_fresh_array(stmts:&[Stmt],idx:usize,name:&str)->bool {
     if !CURDIR_LINUX_NATIVE.with(|v|v.get()) || !DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get()) || shared_local::active(){return false;}
     for s in &stmts[idx+1..] {
@@ -11568,8 +11834,8 @@ fn bare_local_is_tokens(stmts:&[Stmt],idx:usize,name:&str)->bool {
                 let ra=walk(a,name,ready,saw)?;let rb=walk(b,name,ready,saw)?;ready=ra&&rb;
             },
             Stmt::While(_,c,b)=> {if !ready&&expr_mentions(c,name){return None;}walk(b,name,ready,saw)?;},
-            Stmt::For(_,id,a,b,_,body)=> {
-                if id==name || (!ready&&(expr_mentions(a,name)||expr_mentions(b,name))){return None;}
+            Stmt::For(_,id,a,b,c,body)=> {
+                if id==name || (!ready&&(expr_mentions(a,name)||expr_mentions(b,name)||expr_mentions(c,name))){return None;}
                 walk(body,name,ready,saw)?;
             },
             Stmt::ForEach(_,id,c,body)=> {
@@ -11613,7 +11879,7 @@ fn bare_local_is_for_counter(stmts: &[Stmt], idx: usize, name: &str) -> bool {
                 return !expr_mentions(start, name) && !expr_mentions(end, name);
             }
             Stmt::For(_,outer,Expr::Int(start),Expr::Int(end),step,body)
-                if shared_local::active()&&outer!=name&&start.parse::<i64>().ok().zip(end.parse::<i64>().ok()).map_or(false,|(a,b)|if *step>0{a<=b}else{a>=b}) => {
+                if matches!(step,Expr::Int(_))&&shared_local::active()&&outer!=name&&start.parse::<i64>().ok().zip(end.parse::<i64>().ok()).map_or(false,|(a,b)|if matches!(step,Expr::Int(v)if v.parse::<i64>().map_or(false,|s|s>0)){a<=b}else{a>=b}) => {
                 if stmts_mention(body,name){return first_nested_counter(body,name);}
             }
             _ => {
@@ -11626,7 +11892,7 @@ fn bare_local_is_for_counter(stmts: &[Stmt], idx: usize, name: &str) -> bool {
     false
 }
 fn first_nested_counter(ss:&[Stmt],name:&str)->bool{
- for s in ss {if let Stmt::For(_,v,a,b,_,_)=s{if v==name{return !expr_mentions(a,name)&&!expr_mentions(b,name);}}
+ for s in ss {if let Stmt::For(_,v,a,b,c,_)=s{if v==name{return !expr_mentions(a,name)&&!expr_mentions(b,name)&&!expr_mentions(c,name);}}
  // Before the nested FOR, admit only initialized LOCAL/assignment
  // statements with leaf expressions or a fresh empty-array constructor.
  // The constructor cannot transfer control or invoke user code.
@@ -11736,8 +12002,9 @@ fn stmt_mentions(s: &Stmt, name: &str) -> bool {
                 || expr_mentions(k, name)
                 || expr_mentions(e, name)
         }
-        Stmt::For(_, lv, a, b, _, body) => {
+        Stmt::For(_, lv, a, b, c, body) => {
             lv == name
+                || expr_mentions(c,name)
                 || expr_mentions(a, name)
                 || expr_mentions(b, name)
                 || stmts_mention(body, name)
@@ -11915,6 +12182,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 let t = if t==Ty::Dyn && matches!(e,Expr::Nil) && !byref_names.contains(id)
                     && bare_local_is_fresh_array(stmts,si,id) {Ty::DArr} else {t};
                 let t=if t==Ty::Dyn && matches!(e,Expr::Nil) && !byref_names.contains(id) && bare_local_is_tokens(stmts,si,id){Ty::DArrS}else{t};
+                let t=if t==Ty::Dyn&&matches!(e,Expr::Nil)&&!byref_names.contains(id)&&bare_local_is_nested_i64_array(stmts,si,id){Ty::DArr2}else{t};
                 env.push(Local { name: id.clone(), ty: t, moved: false, ro: false, byref: false });
                 // Object narrowing handoff, recorded AT the narrowing
                 // (a declaration inside a loop body leaves the final env
@@ -12124,7 +12392,16 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                     }
                 }
             }
-            Stmt::For(n, var, start, end, _step, body) => {
+            Stmt::For(n, var, start, end, step, body) => {
+                if !matches!(step,Expr::Int(_)) {
+                    if !CURDIR_LINUX_NATIVE.with(|v|v.get())||!DECIMAL_LOCAL_PROFILE.with(|v|v.get())||MACRO_CONTEXT.with(|v|v.get())||shared_local::active() {
+                        return Err(format!("line {}: dynamic FOR STEP requires ordinary Linux without threads/macros/shared captures",n));
+                    }
+                    let before=env.clone();
+                    if type_expr(step,env,sigs,*n)?!=Ty::I64 {return Err(format!("line {}: dynamic FOR STEP must be a typed integer",n));}
+                    apply_moves(step,env,sigs,false);
+                    if before.iter().zip(env.iter()).any(|(a,b)|!a.moved&&b.moved){return Err(format!("line {}: repeated FOR STEP cannot consume an owner",n));}
+                }
                 let ts = type_expr(start, env, sigs, *n)?;
                 apply_moves(start, env, sigs, false);
                 // type_expr itself can mark argument moves. Snapshot BEFORE
@@ -12306,7 +12583,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                     return Err(format!("line {}: `for each` over a fixed-size stack array needs a variable collection in this increment (assign the expression to a variable first)", n));
                 }
                 let string_iter = matches!(ct, Ty::Str | Ty::StrOwn);
-                if string_iter && (!matches!(coll, Expr::Var(_)) || !foreach_string_body_safe(body)) {
+                if string_iter && (!matches!(coll, Expr::Var(_)) || !foreach_string_body_safe(body, var)) {
                     return Err(format!("line {}: string `for each` requires a variable collection and an observation-only body (print, pure string/scalar observations, if, exit, loop or bare return); storage, mutation, user calls and nested iteration are not in this increment", n));
                 }
                 if !matches!(ct, Ty::DArr | Ty::DArrU | Ty::DArrS | Ty::Hash | Ty::Str | Ty::StrOwn | Ty::Arr(_)) {
@@ -13422,6 +13699,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                     }
                 }
                 if static_dyn(id) {
+                    if module_static::current(id)==Some(Ty::RefDyn) && matches!(e,Expr::ArrLit(_)|Expr::DArrNew){return Err(format!("line {}: module STATIC NIL scalar cannot store an array in this increment",n));}
                     let vals:Vec<&Expr>=if let Expr::ArrLit(es)=e {es.iter().collect()}else{vec![e]};
                     for v in vals {
                         let t=type_expr(v,env,sigs,*n)?;
@@ -13619,6 +13897,10 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
                 for a in args { apply_moves(a,env,sigs,false); }
                 return;
             }
+            if is_builtin(id,"hb_base64decode") {for a in args {apply_moves(a,env,sigs,false);}return;}
+            if is_builtin(id,"hb_strformat") {
+                for a in args {apply_moves(a,env,sigs,false);}return;
+            }
             if ["upper", "lower", "left", "right"].iter().any(|b| is_builtin(id,b)) {
                 for a in args { apply_moves(a,env,sigs,false); }
                 return;
@@ -13710,14 +13992,16 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
                 for a in args { apply_moves(a,env,sigs,false); }
                 return;
             }
-            if is_builtin(id,"getenv") || is_builtin(id,"hb_dirsepadd") || is_builtin(id,"hb_strtohex") || is_builtin(id,"hb_asciiupper") || is_builtin(id,"hb_hextonum") || is_builtin(id,"hb_base64encode") {for a in args {apply_moves(a,env,sigs,false);}return;}
+            if is_builtin(id,"hb_bat")||is_builtin(id,"hb_brat")||is_builtin(id,"hb_bsubstr")||is_builtin(id,"hb_bleft")||is_builtin(id,"hb_bright") {for a in args {apply_moves(a,env,sigs,false);}return;}
+            if is_builtin(id,"hb_fileexists")||is_builtin(id,"hb_direxists")||is_builtin(id,"hb_strisutf8")||is_builtin(id,"hb_blen") {for a in args {apply_moves(a,env,sigs,false);}return;}
+            if is_builtin(id,"getenv") || is_builtin(id,"hb_dirsepadd") || is_builtin(id,"hb_dirsepdel") || is_builtin(id,"hb_dirseptoos") || is_builtin(id,"hb_hextostr") || is_builtin(id,"hb_fnameext") || is_builtin(id,"hb_fnameextset") || is_builtin(id,"hb_fnameextsetdef") || is_builtin(id,"hb_fnamenameext") || is_builtin(id,"hb_fnamename") || is_builtin(id,"hb_fnamedir") || is_builtin(id,"hb_strtohex") || is_builtin(id,"hb_asciiupper") || is_builtin(id,"hb_asciilower") || is_builtin(id,"hb_hextonum") || is_builtin(id,"hb_base64encode") {for a in args {apply_moves(a,env,sigs,false);}return;}
             if is_builtin(id,"hb_libname") {
                 // The builtin borrows its results, but nested calls still
                 // consume their own arguments under the usual contract.
                 for a in args { apply_moves(a,env,sigs,false); }
                 return;
             }
-            if is_builtin(id,"hb_osdriveseparator") || is_builtin(id,"hb_ps") || is_builtin(id,"os") || is_builtin(id,"curdir") { return; } // admitted args are inert literals only
+            if is_builtin(id,"hb_osfilemask") || is_builtin(id,"hb_osdriveseparator") || is_builtin(id,"hb_ps") || is_builtin(id,"os") || is_builtin(id,"curdir") { return; } // admitted args are inert literals only
             if is_builtin(id,"replicate") {
                 for a in args { apply_moves(a,env,sigs,false); }
                 return;
@@ -14215,7 +14499,8 @@ impl<'a> EscPass<'a> {
                     self.process_expr(c, &EscCtx::Observe, false, depth);
                     self.walk(b, depth + 1, true);
                 }
-                Stmt::For(_, v, a, b, _, body) => {
+                Stmt::For(_, v, a, b, c, body) => {
+                    self.process_expr(c, &EscCtx::Observe, false, depth);
                     self.process_expr(a, &EscCtx::Observe, false, depth);
                     self.process_expr(b, &EscCtx::Observe, false, depth);
                     self.note(v);
@@ -14639,7 +14924,8 @@ impl<'a> EligW<'a> {
                     self.walk(b, loop_stack);
                     loop_stack.pop();
                 }
-                Stmt::For(_, v, a, b, _, body) => {
+                Stmt::For(_, v, a, b, c, body) => {
+                    self.note_expr(c,line);
                     self.note_expr(a, line);
                     self.note_expr(b, line);
                     let end = max_line(body);
@@ -16605,12 +16891,19 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             out.push_str(&format!("    mov -{}(%rbp), %rax\n    mov {}(%rax), %rdx\n    mov {}(%rax), %rax\n    call hbc_float_clone\n\n    cmp $4, %rax\n    jne 83f\n    mov %rdx, %rdi\n    mov -8(%rdx), %rsi\n    call hbc_strcpy\n    mov %rax, %rdx\n    mov $4, %eax\n83:\n", sv.off, 16 + off * 16 + 8, 16 + off * 16));
         }
         Expr::Send(recv, name, args) => {
+            if (name.eq_ignore_ascii_case("__enumisfirst")||name.eq_ignore_ascii_case("__enumislast")) && matches!(recv.as_ref(),Expr::Var(id) if ENUM_END_EMIT.with(|v|v.borrow().iter().any(|(n,_,_,_)|n==id))) && matches!(expr_ty(recv,env,sigs),Ty::Dyn|Ty::Str) {
+                let id=if let Expr::Var(id)=recv.as_ref(){id}else{unreachable!("checked iterator")};
+                let (index,fixed,bound)=ENUM_END_EMIT.with(|v|v.borrow().iter().rev().find(|(n,_,_,_)|n==id).map(|(_,i,f,b)|(*i,*f,*b))).expect("checked scalar iterator");
+                out.push_str(&format!("    mov -{}(%rbp), %rax\n",index));
+                if name.eq_ignore_ascii_case("__enumisfirst") {out.push_str("    cmp $1, %rax\n");}else if fixed {out.push_str(&format!("    cmp ${}, %rax\n",bound));}else{out.push_str(&format!("    cmp -{}(%rbp), %rax\n",bound));}
+                out.push_str("    sete %al\n    movzbq %al, %rax\n    xor %edx, %edx\n");return;
+            }
             if name.eq_ignore_ascii_case("__enumkey") && matches!(recv.as_ref(),Expr::Var(id) if ENUM_KEY_EMIT.with(|v|v.borrow().iter().rev().find(|(n,_,_,_)|n==id).map_or(false,|(_,_,_,hash)|*hash))) && expr_ty(recv,env,sigs)==Ty::Dyn {
                 let id=if let Expr::Var(id)=recv.as_ref(){id}else{unreachable!("checked iterator")};
                 let (coll,index)=ENUM_KEY_EMIT.with(|v|v.borrow().iter().rev().find(|(n,_,_,_)|n==id).map(|(_,c,i,_)|(*c,*i))).expect("checked hash iterator");
                 out.push_str(&format!("    mov -{}(%rbp), %rax\n    dec %rax\n    shl $5, %rax\n    add -{}(%rbp), %rax\n    mov (%rax), %rdi\n    mov 8(%rax), %rsi\n    call hbc_strcpy\n    mov -8(%rax), %rdx\n",index,coll));return;
             }
-            if name.eq_ignore_ascii_case("__enumindex") && matches!(recv.as_ref(),Expr::Var(id) if ENUM_INDEX_EMIT.with(|v|v.borrow().iter().any(|(n,_)|n==id))) && expr_ty(recv,env,sigs)==Ty::Dyn {
+            if name.eq_ignore_ascii_case("__enumindex") && matches!(recv.as_ref(),Expr::Var(id) if ENUM_INDEX_EMIT.with(|v|v.borrow().iter().any(|(n,_)|n==id))) && matches!(expr_ty(recv,env,sigs),Ty::Dyn|Ty::Str) {
                 let id=if let Expr::Var(id)=recv.as_ref(){id}else{unreachable!("checked iterator")};
                 let off=ENUM_INDEX_EMIT.with(|v|v.borrow().iter().rev().find(|(n,_)|n==id).map(|(_,o)|*o)).expect("checked active iterator");
                 out.push_str(&format!("    mov -{}(%rbp), %rax\n    xor %edx, %edx\n",off));return;
@@ -18082,6 +18375,17 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             if expr_ty(&args[0],env,sigs)==Ty::StrOwn && !matches!(&args[0],Expr::Var(_)) {out.push_str("    mov (%rsp), %rdi\n    call hbc_freestr\n");}
             out.push_str("    mov 8(%rsp), %rax\n    mov 16(%rsp), %rdx\n    add $32, %rsp\n");
         }
+        Expr::Call(id,args) if is_builtin(id,"hb_base64decode") => {
+            cg_data_value(&args[0],env,sigs,strs,out,target);
+            let k=fresh_lbl();
+            out.push_str(&format!("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n    cmp $4, %al\n    jne .Lbdi_limit{k}\n    mov %rdx, %rdi\n    mov -8(%rdx), %rsi\n    call hbc_base64decode_linux\n    mov %rax, 16(%rsp)\n    mov %rdx, 24(%rsp)\n"));
+            cg_dyn_stack_release(out,0,false);
+            out.push_str(&format!("    mov 16(%rsp), %rax\n    mov 24(%rsp), %rdx\n    add $32, %rsp\n    jmp .Lbdi_done{k}\n.Lbdi_limit{k}:\n"));
+            cg_dyn_stack_release(out,0,false);
+            let msg="Limit: hb_base64Decode Dyn input must contain a string in this increment\n";let ix=strs.len();strs.push(msg.to_string());
+            out.push_str(&format!("    add $32, %rsp\n    lea .Lstr{ix}(%rip), %rax\n    mov ${}, %edx\n    call hbc_write_bytes\n    jmp hbc_panic_exit\n.Lbdi_done{k}:\n",msg.len()));
+        }
+        Expr::Call(id,args) if is_builtin(id,"hb_strformat") => {cg_strformat(args,env,sigs,strs,out,target);}
         Expr::Call(id,args) if is_builtin(id,"hb_base64encode") => {
             cg_value(&args[0],env,sigs,strs,out,target);
             out.push_str("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_base64_linux\n    mov %rax, 8(%rsp)\n    mov %rdx, 16(%rsp)\n");
@@ -18091,6 +18395,12 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
         Expr::Call(id,args) if is_builtin(id,"hb_asciiupper") => {
             cg_value(&args[0],env,sigs,strs,out,target);
             out.push_str("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_asciiupper_linux\n    mov %rax, 8(%rsp)\n    mov %rdx, 16(%rsp)\n");
+            if expr_ty(&args[0],env,sigs)==Ty::StrOwn && !matches!(&args[0],Expr::Var(_)) {out.push_str("    mov (%rsp), %rdi\n    call hbc_freestr\n");}
+            out.push_str("    mov 8(%rsp), %rax\n    mov 16(%rsp), %rdx\n    add $32, %rsp\n");
+        }
+        Expr::Call(id,args) if is_builtin(id,"hb_asciilower") => {
+            cg_value(&args[0],env,sigs,strs,out,target);
+            out.push_str("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_asciilower_linux\n    mov %rax, 8(%rsp)\n    mov %rdx, 16(%rsp)\n");
             if expr_ty(&args[0],env,sigs)==Ty::StrOwn && !matches!(&args[0],Expr::Var(_)) {out.push_str("    mov (%rsp), %rdi\n    call hbc_freestr\n");}
             out.push_str("    mov 8(%rsp), %rax\n    mov 16(%rsp), %rdx\n    add $32, %rsp\n");
         }
@@ -18106,11 +18416,110 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             if expr_ty(&args[0],env,sigs)==Ty::StrOwn && !matches!(&args[0],Expr::Var(_)) {out.push_str("    mov (%rsp), %rdi\n    call hbc_freestr\n");}
             out.push_str("    mov 8(%rsp), %rax\n    mov 16(%rsp), %rdx\n    add $32, %rsp\n");
         }
+        Expr::Call(id,args) if is_builtin(id,"hb_dirsepdel") => {
+            cg_value(&args[0],env,sigs,strs,out,target);
+            out.push_str("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_dirsepdel_linux\n    mov %rax, 8(%rsp)\n    mov %rdx, 16(%rsp)\n");
+            if expr_ty(&args[0],env,sigs)==Ty::StrOwn && !matches!(&args[0],Expr::Var(_)) {out.push_str("    mov (%rsp), %rdi\n    call hbc_freestr\n");}
+            out.push_str("    mov 8(%rsp), %rax\n    mov 16(%rsp), %rdx\n    add $32, %rsp\n");
+        }
+        Expr::Call(id,args) if is_builtin(id,"hb_dirseptoos") => {
+            cg_value(&args[0],env,sigs,strs,out,target);
+            out.push_str("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_dirseptoos_linux\n    mov %rax, 8(%rsp)\n    mov %rdx, 16(%rsp)\n");
+            if expr_ty(&args[0],env,sigs)==Ty::StrOwn && !matches!(&args[0],Expr::Var(_)) {out.push_str("    mov (%rsp), %rdi\n    call hbc_freestr\n");}
+            out.push_str("    mov 8(%rsp), %rax\n    mov 16(%rsp), %rdx\n    add $32, %rsp\n");
+        }
+        Expr::Call(id,args) if is_builtin(id,"hb_hextostr") => {
+            cg_value(&args[0],env,sigs,strs,out,target);
+            out.push_str("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_hextostr_linux\n    mov %rax, 8(%rsp)\n    mov %rdx, 16(%rsp)\n");
+            if expr_ty(&args[0],env,sigs)==Ty::StrOwn && !matches!(&args[0],Expr::Var(_)) {out.push_str("    mov (%rsp), %rdi\n    call hbc_freestr\n");}
+            out.push_str("    mov 8(%rsp), %rax\n    mov 16(%rsp), %rdx\n    add $32, %rsp\n");
+        }
+        Expr::Call(id,args) if is_builtin(id,"hb_fnameextset") => {
+            cg_value(&args[0],env,sigs,strs,out,target);
+            out.push_str("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+            cg_value(&args[1],env,sigs,strs,out,target);
+            out.push_str("    mov %rdx, %rcx\n    mov %rax, %rdx\n    mov (%rsp), %rdi\n    mov 8(%rsp), %rsi\n    call hbc_fnameextset_linux\n    add $32, %rsp\n");
+        }
+        Expr::Call(id,args) if is_builtin(id,"hb_fnameextsetdef") => {
+            cg_value(&args[0],env,sigs,strs,out,target);
+            out.push_str("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+            cg_value(&args[1],env,sigs,strs,out,target);
+            out.push_str("    mov %rdx, %rcx\n    mov %rax, %rdx\n    mov (%rsp), %rdi\n    mov 8(%rsp), %rsi\n    call hbc_fnameextsetdef_linux\n    add $32, %rsp\n");
+        }
+        Expr::Call(id,args) if is_builtin(id,"hb_fnameext") => {
+            cg_value(&args[0],env,sigs,strs,out,target);
+            out.push_str("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rax, %rdi\n    mov %rdx, %rsi\n    mov $0, %edx\n    call hbc_fname_linux\n    mov %rax, 8(%rsp)\n    mov %rdx, 16(%rsp)\n");
+            if expr_ty(&args[0],env,sigs)==Ty::StrOwn && !matches!(&args[0],Expr::Var(_)) {out.push_str("    mov (%rsp), %rdi\n    call hbc_freestr\n");}
+            out.push_str("    mov 8(%rsp), %rax\n    mov 16(%rsp), %rdx\n    add $32, %rsp\n");
+        }
+        Expr::Call(id,args) if is_builtin(id,"hb_fnamenameext") => {
+            cg_value(&args[0],env,sigs,strs,out,target);
+            out.push_str("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rax, %rdi\n    mov %rdx, %rsi\n    mov $3, %edx\n    call hbc_fname_linux\n    mov %rax, 8(%rsp)\n    mov %rdx, 16(%rsp)\n");
+            if expr_ty(&args[0],env,sigs)==Ty::StrOwn && !matches!(&args[0],Expr::Var(_)) {out.push_str("    mov (%rsp), %rdi\n    call hbc_freestr\n");}
+            out.push_str("    mov 8(%rsp), %rax\n    mov 16(%rsp), %rdx\n    add $32, %rsp\n");
+        }
+        Expr::Call(id,args) if is_builtin(id,"hb_fnamename") => {
+            cg_value(&args[0],env,sigs,strs,out,target);
+            out.push_str("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rax, %rdi\n    mov %rdx, %rsi\n    mov $1, %edx\n    call hbc_fname_linux\n    mov %rax, 8(%rsp)\n    mov %rdx, 16(%rsp)\n");
+            if expr_ty(&args[0],env,sigs)==Ty::StrOwn && !matches!(&args[0],Expr::Var(_)) {out.push_str("    mov (%rsp), %rdi\n    call hbc_freestr\n");}
+            out.push_str("    mov 8(%rsp), %rax\n    mov 16(%rsp), %rdx\n    add $32, %rsp\n");
+        }
+        Expr::Call(id,args) if is_builtin(id,"hb_fnamedir") => {
+            cg_value(&args[0],env,sigs,strs,out,target);
+            out.push_str("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rax, %rdi\n    mov %rdx, %rsi\n    mov $2, %edx\n    call hbc_fname_linux\n    mov %rax, 8(%rsp)\n    mov %rdx, 16(%rsp)\n");
+            if expr_ty(&args[0],env,sigs)==Ty::StrOwn && !matches!(&args[0],Expr::Var(_)) {out.push_str("    mov (%rsp), %rdi\n    call hbc_freestr\n");}
+            out.push_str("    mov 8(%rsp), %rax\n    mov 16(%rsp), %rdx\n    add $32, %rsp\n");
+        }
         Expr::Call(id,args) if is_builtin(id,"getenv") => {
             cg_value(&args[0],env,sigs,strs,out,target);
             out.push_str("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_getenv_linux\n    mov %rax, 8(%rsp)\n    mov %rdx, 16(%rsp)\n");
             if expr_ty(&args[0],env,sigs)==Ty::StrOwn && !matches!(&args[0],Expr::Var(_)) {out.push_str("    mov (%rsp), %rdi\n    call hbc_freestr\n");}
             out.push_str("    mov 8(%rsp), %rax\n    mov 16(%rsp), %rdx\n    add $32, %rsp\n");
+        }
+        Expr::Call(id,args) if is_builtin(id,"hb_fileexists")||is_builtin(id,"hb_direxists") => {
+            cg_value(&args[0],env,sigs,strs,out,target);
+            out.push_str(&format!("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rax, %rdi\n    mov %rdx, %rsi\n    mov ${}, %edx\n    call hbc_pathexists_linux\n    mov %rax, 8(%rsp)\n",if is_builtin(id,"hb_direxists"){1}else{0}));
+            if expr_ty(&args[0],env,sigs)==Ty::StrOwn && !matches!(&args[0],Expr::Var(_)) {out.push_str("    mov (%rsp), %rdi\n    call hbc_freestr\n");}
+            out.push_str("    mov 8(%rsp), %rax\n    xor %edx, %edx\n    add $32, %rsp\n");
+        }
+        Expr::Call(id,args) if is_builtin(id,"hb_strisutf8") => {
+            cg_value(&args[0],env,sigs,strs,out,target);
+            out.push_str("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_strisutf8_linux\n    mov %rax, 8(%rsp)\n");
+            if expr_ty(&args[0],env,sigs)==Ty::StrOwn && !matches!(&args[0],Expr::Var(_)) {out.push_str("    mov (%rsp), %rdi\n    call hbc_freestr\n");}
+            out.push_str("    mov 8(%rsp), %rax\n    xor %edx, %edx\n    add $32, %rsp\n");
+        }
+        Expr::Call(id,args) if is_builtin(id,"hb_bat")||is_builtin(id,"hb_brat") => {
+            cg_value(&args[0],env,sigs,strs,out,target);
+            out.push_str("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+            cg_value(&args[1],env,sigs,strs,out,target);
+            out.push_str("    mov %rdx, %rcx\n    mov %rax, %rdx\n    mov (%rsp), %rdi\n    mov 8(%rsp), %rsi\n");
+            out.push_str(if is_builtin(id,"hb_brat"){"    call hbc_brat_linux\n"}else{"    call hbc_bat_linux\n"});
+            out.push_str("    add $32, %rsp\n    xor %edx, %edx\n");
+        }
+        Expr::Call(id,args) if is_builtin(id,"hb_bsubstr") => {
+            cg_value(&args[0],env,sigs,strs,out,target);
+            out.push_str("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+            cg_value(&args[1],env,sigs,strs,out,target);
+            out.push_str("    mov %rax, 16(%rsp)\n");
+            if args.len()==3 {cg_value(&args[2],env,sigs,strs,out,target);out.push_str("    mov %rax, %rcx\n");}else{out.push_str("    mov $0x7fffffffffffffff, %rcx\n");}
+            out.push_str("    mov (%rsp), %rdi\n    mov 8(%rsp), %rsi\n    mov 16(%rsp), %rdx\n    call hbc_bsubstr_linux\n    add $32, %rsp\n");
+        }
+        Expr::Call(id,args) if is_builtin(id,"hb_bleft")||is_builtin(id,"hb_bright") => {
+            cg_value(&args[0],env,sigs,strs,out,target);
+            out.push_str("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+            cg_value(&args[1],env,sigs,strs,out,target);
+            out.push_str(&format!("    mov %rax, %rdx\n    mov (%rsp), %rdi\n    mov 8(%rsp), %rsi\n    mov ${}, %ecx\n    call hbc_bslice_linux\n    add $32, %rsp\n",if is_builtin(id,"hb_bright"){1}else{0}));
+        }
+        Expr::Call(id,args) if is_builtin(id,"hb_blen") => {
+            cg_value(&args[0],env,sigs,strs,out,target);
+            out.push_str("    sub $32, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+            if expr_ty(&args[0],env,sigs)==Ty::StrOwn && !matches!(&args[0],Expr::Var(_)) {out.push_str("    mov (%rsp), %rdi\n    call hbc_freestr\n");}
+            out.push_str("    mov 8(%rsp), %rax\n    xor %edx, %edx\n    add $32, %rsp\n");
+        }
+        Expr::Call(id,args) if is_builtin(id,"hb_osfilemask") => {
+            let _=args;
+            let i=strs.len();strs.push("*".to_string());
+            out.push_str(&format!("    lea .Lstr{}(%rip), %rdi\n    mov $1, %esi\n    call hbc_strcpy\n",i));
         }
         Expr::Call(id,args) if is_builtin(id,"hb_osdriveseparator") => {
             let _=args;
@@ -22166,8 +22575,9 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
         },
         Expr::SelfGet(_) => Ty::Dyn, // DATA casilla
         Expr::Send(recv, name, _) => {
+            if (name.eq_ignore_ascii_case("__enumisfirst")||name.eq_ignore_ascii_case("__enumislast")) && matches!(recv.as_ref(),Expr::Var(id) if ENUM_END_EMIT.with(|v|v.borrow().iter().any(|(n,_,_,_)|n==id))) && matches!(expr_ty(recv,env,sigs),Ty::Dyn|Ty::Str) {return Ty::Bool;}
             if name.eq_ignore_ascii_case("__enumkey") && matches!(recv.as_ref(),Expr::Var(id) if ENUM_KEY_EMIT.with(|v|v.borrow().iter().rev().find(|(n,_,_,_)|n==id).map_or(false,|(_,_,_,hash)|*hash))) && expr_ty(recv,env,sigs)==Ty::Dyn {return Ty::StrOwn;}
-            if name.eq_ignore_ascii_case("__enumindex") && matches!(recv.as_ref(),Expr::Var(id) if ENUM_INDEX_EMIT.with(|v|v.borrow().iter().any(|(n,_)|n==id))) && expr_ty(recv,env,sigs)==Ty::Dyn {return Ty::I64;}
+            if name.eq_ignore_ascii_case("__enumindex") && matches!(recv.as_ref(),Expr::Var(id) if ENUM_INDEX_EMIT.with(|v|v.borrow().iter().any(|(n,_)|n==id))) && matches!(expr_ty(recv,env,sigs),Ty::Dyn|Ty::Str) {return Ty::I64;}
 
             if method_results::send(e){return Ty::Dyn;}
             if let Ty::Obj(ci) = expr_ty(recv, env, sigs) {
@@ -22297,6 +22707,9 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             if is_builtin(id,"set") {return if set_date_mask_call(args){Ty::StrOwn}else{Ty::I64};}
             if is_builtin(id,"altd") {return Ty::I64;}
             if is_builtin(id,"setcursor") || is_builtin(id,"dirmake") || is_builtin(id,"inkey") {return Ty::I64;}
+            if is_builtin(id,"hb_bsubstr")||is_builtin(id,"hb_bleft")||is_builtin(id,"hb_bright") {return Ty::StrOwn;}
+            if is_builtin(id,"hb_bat")||is_builtin(id,"hb_brat")||is_builtin(id,"hb_blen") {return Ty::I64;}
+            if is_builtin(id,"hb_fileexists")||is_builtin(id,"hb_direxists")||is_builtin(id,"hb_strisutf8") {return Ty::Bool;}
             if is_builtin(id,"file") {return Ty::Bool;}
             if id=="hrfile_setdefault"||id=="hrfile_setpath" {return Ty::Dyn;}
             if is_builtin(id,"dispbox") {return Ty::Dyn;}
@@ -22305,7 +22718,8 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             if is_builtin(id,"fclose") {return Ty::Bool;}
             if ["fread","fcreate","fopen","fwrite"].iter().any(|b|is_builtin(id,b)) {return Ty::I64;}
             if is_builtin(id,"hb_hextonum") {return Ty::I64;}
-            if is_builtin(id,"hb_osdriveseparator") || is_builtin(id,"hb_base64encode") || is_builtin(id,"hb_asciiupper") || is_builtin(id,"hb_strtohex") || is_builtin(id,"hb_dirsepadd") || is_builtin(id,"getenv") || is_builtin(id,"hb_libname") || is_builtin(id,"hb_ps") || is_builtin(id, "os") || is_builtin(id, "curdir") || is_builtin(id, "chr") || is_builtin(id, "str") || is_builtin(id, "hb_ntos") || is_builtin(id, "hb_cstr") || is_builtin(id, "padr") || is_builtin(id, "replicate") { return Ty::StrOwn; }
+            if is_builtin(id,"hb_strformat") || is_builtin(id,"hb_base64decode") {return Ty::StrOwn;}
+            if is_builtin(id,"hb_osfilemask") || is_builtin(id,"hb_osdriveseparator") || is_builtin(id,"hb_base64encode") || is_builtin(id,"hb_asciiupper") || is_builtin(id,"hb_asciilower") || is_builtin(id,"hb_strtohex") || is_builtin(id,"hb_dirsepadd") || is_builtin(id,"hb_dirsepdel") || is_builtin(id,"hb_dirseptoos") || is_builtin(id,"hb_hextostr") || is_builtin(id,"hb_fnameext") || is_builtin(id,"hb_fnameextset") || is_builtin(id,"hb_fnameextsetdef") || is_builtin(id,"hb_fnamenameext") || is_builtin(id,"hb_fnamename") || is_builtin(id,"hb_fnamedir") || is_builtin(id,"getenv") || is_builtin(id,"hb_libname") || is_builtin(id,"hb_ps") || is_builtin(id, "os") || is_builtin(id, "curdir") || is_builtin(id, "chr") || is_builtin(id, "str") || is_builtin(id, "hb_ntos") || is_builtin(id, "hb_cstr") || is_builtin(id, "padr") || is_builtin(id, "replicate") { return Ty::StrOwn; }
             if is_builtin(id, "round") { return Ty::F64; } // hk384-hk386
             if is_builtin(id, "iif") {
                 if optional_empty::active(e,env).is_some(){return Ty::AView;}
@@ -22395,7 +22809,7 @@ fn byref_names_in(stmts: &[Stmt]) -> std::collections::HashSet<String> {
                 Stmt::Print(_, es, _) => { for e in es { ex(e, out); } }
                 Stmt::If(_, c, t, el) => { ex(c, out); st(t, out); st(el, out); }
                 Stmt::While(_, c, b) => { ex(c, out); st(b, out); }
-                Stmt::For(_, _, a, b, _, body) => { ex(a, out); ex(b, out); st(body, out); }
+                Stmt::For(_, _, a, b, c, body) => { ex(a, out); ex(b, out); ex(c,out); st(body, out); }
                 Stmt::ForEach(_, _, c, body) => { ex(c, out); st(body, out); }
                 Stmt::Switch(_, sel, arms, otherwise) => { ex(sel, out); for (_, _, b) in arms { st(b, out); } if let Some((_, ob)) = otherwise { st(ob, out); } }
                 _ => {}
@@ -22478,7 +22892,7 @@ fn collect_byref_variants(funcs: &[Func]) -> std::collections::BTreeSet<(String,
                 Stmt::Print(_, es, _) => { for e in es { ex(e, out); } }
                 Stmt::If(_, c, t, el) => { ex(c, out); st(t, out); st(el, out); }
                 Stmt::While(_, c, b) => { ex(c, out); st(b, out); }
-                Stmt::For(_, _, a, b, _, body) => { ex(a, out); ex(b, out); st(body, out); }
+                Stmt::For(_, _, a, b, c, body) => { ex(a, out); ex(b, out); ex(c,out); st(body, out); }
                 Stmt::ForEach(_, _, c, body) => { ex(c, out); st(body, out); }
                 Stmt::Switch(_, sel, arms, otherwise) => { ex(sel, out); for (_, _, b) in arms { st(b, out); } if let Some((_, ob)) = otherwise { st(ob, out); } }
                 _ => {}
@@ -22882,6 +23296,7 @@ fn layout_locals(stmts: &[Stmt], env: &mut Vec<CgLocal>, sigs: &[Sig], frame: &m
                 if t == Ty::Dyn && matches!(e, Expr::Nil) && !byref_names.contains(id) && bare_local_is_for_counter(stmts, si, id) { t = Ty::I64; }
                 if t==Ty::Dyn && matches!(e,Expr::Nil) && !byref_names.contains(id) && bare_local_is_fresh_array(stmts,si,id) {t=Ty::DArr;}
                 if t==Ty::Dyn && matches!(e,Expr::Nil) && !byref_names.contains(id) && bare_local_is_tokens(stmts,si,id){t=Ty::DArrS;}
+                if t==Ty::Dyn&&matches!(e,Expr::Nil)&&!byref_names.contains(id)&&bare_local_is_nested_i64_array(stmts,si,id){t=Ty::DArr2;}
                 // Object narrowing handoff (see OBJ_NARROW): the slot is
                 // the 8-byte object casilla the checker settled on.
                 if let Some(ci) = OBJ_NARROW.with(|m| m.borrow().get(&(CUR_FN.with(|c| c.borrow().clone()), id.clone())).copied()) { t = Ty::Obj(ci); }
@@ -24254,7 +24669,7 @@ fn cg_persistent_store(v:&CgLocal,e:&Expr,env:&[CgLocal],sigs:&[Sig],strs:&mut V
         out.push_str(&format!("    mov ${}, %rdi\n    call hbc_alloc\n    movq ${}, (%rax)\n    movq $1, 8(%rax)\n    movq ${}, 16(%rax)\n    add $24, %rax\n",24+16*es.len(),16+16*es.len(),es.len()));
         for(i,_)in es.iter().enumerate(){out.push_str(&format!("    mov -{}(%rbp), %r10\n    mov %r10, {}(%rax)\n    mov -{}(%rbp), %r10\n    mov %r10, {}(%rax)\n",end-i*16,i*16,end-i*16-8,i*16+8));}
         out.push_str("    mov %rax, %rdx\n    mov $8, %eax\n");
-    }else if matches!(e, Expr::Var(id) if static_dyn(id)) {
+    }else if module_static::current(&v.name)!=Some(Ty::RefDyn) && matches!(e, Expr::Var(id) if static_dyn(id)) {
         cg_value(e,env,sigs,strs,out,target);
         let k=fresh_lbl();
         out.push_str(&format!("    @HBC_TAG_KIND@cmp $8, %rax@HBC_TAG_END@\n    jne .Lpretain{}\n    addq $1, -16(%rdx)\n    jc hbc_oom\n.Lpretain{}:\n",k,k));
@@ -24368,8 +24783,8 @@ fn stmt_may_raise_or_call(s: &Stmt, env: &[CgLocal], sigs: &[Sig]) -> bool {
         }
         // Numeric context: For bounds are checked I64, but guard on the
         // type as well so no coercion helper can ever run untraced.
-        Stmt::For(_, _, a, b, _, _) => {
-            !(pure(a) && pure(b)
+        Stmt::For(_, _, a, b, c, _) => {
+            !(pure(a) && pure(b) && pure(c)
                 && expr_ty(a, env, sigs) == Ty::I64 && expr_ty(b, env, sigs) == Ty::I64)
         }
         Stmt::Exit(_) | Stmt::Loop(_) => false,
@@ -24553,11 +24968,14 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 if bare_arr {t=Ty::DArr;}
                 let bare_tokens=t==Ty::Dyn && matches!(e,Expr::Nil) && !byref_names.contains(id) && bare_local_is_tokens(stmts,si,id);
                 if bare_tokens {t=Ty::DArrS;}
+                let bare_nested=t==Ty::Dyn&&matches!(e,Expr::Nil)&&!byref_names.contains(id)&&bare_local_is_nested_i64_array(stmts,si,id);
+                if bare_nested{t=Ty::DArr2;}
                 // Same object-narrowing handoff as layout_locals.
                 if let Some(ci) = OBJ_NARROW.with(|m| m.borrow().get(&(CUR_FN.with(|c| c.borrow().clone()), id.clone())).copied()) { t = Ty::Obj(ci); }
                 *frame += size_of(t);
                 let off = *frame;
-                if bare_cnt || bare_arr || bare_tokens {
+                if bare_cnt || bare_arr || bare_tokens || bare_nested {
+                    if bare_nested{out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 84f\n    mov -{}(%rbp), %rsi\n    call hbc_free2\n84:\n",off,off-8));}
                     if bare_arr {
                         // AFill's delayed LOCAL has the same repeated-entry
                         // lifetime as the token-array slot below.
@@ -25031,7 +25449,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 let mark = env.len();
                 // START runs once. TO runs at every condition, including
                 // the final failed comparison (fresh Harbour differential).
-                // STEP is already a compile-time non-zero integer.
+                // Dynamic STEP is observed after TO and again at NEXT.
                 // Reuse (hk323): an already-visible integer slot is the
                 // counter; otherwise a fresh slot.
                 let dyn_counter=env.iter().rev().any(|v|v.name==*var&&v.ty==Ty::Dyn);
@@ -25057,10 +25475,11 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 out.push_str(&format!("    mov %rax, -{}(%rbp)\n", end_off));
                 out.push_str(&format!("    mov -{}(%rbp), %rax\n", if dyn_counter{i_off-8}else{i_off}));
                 out.push_str(&format!("    cmp -{}(%rbp), %rax\n", end_off));
-                if *step > 0 {
-                    out.push_str(&format!("    jg .Lfore_{}_{}\n", fname, id));
+                if let Expr::Int(v)=step {
+                    out.push_str(&format!("    {} .Lfore_{}_{}\n",if v.parse::<i64>().expect("checked")>0{"jg"}else{"jl"},fname,id));
                 } else {
-                    out.push_str(&format!("    jl .Lfore_{}_{}\n", fname, id));
+                    cg_value(step,env,sigs,strs,out,target);
+                    out.push_str(&format!("    test %rax, %rax\n    js .Lforneg_{fname}_{id}\n    mov -{counter}(%rbp), %rax\n    cmp -{end_off}(%rbp), %rax\n    jg .Lfore_{fname}_{id}\n    jmp .Lforbody_{fname}_{id}\n.Lforneg_{fname}_{id}:\n    mov -{counter}(%rbp), %rax\n    cmp -{end_off}(%rbp), %rax\n    jl .Lfore_{fname}_{id}\n.Lforbody_{fname}_{id}:\n",counter=if dyn_counter{i_off-8}else{i_off}));
                 }
                 if amem.is_some() { out.push_str("    call hbc_arena_mark\n"); }
                 let mut inner = flow.to_vec();
@@ -25077,7 +25496,11 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 }
                 env.truncate(mark);
                 out.push_str(&format!("    mov -{}(%rbp), %rax\n", if dyn_counter{i_off-8}else{i_off}));
-                out.push_str(&format!("    add ${}, %rax\n", step));
+                if let Expr::Int(v)=step {out.push_str(&format!("    add ${}, %rax\n",v));}
+                else {
+                    cg_value(step,env,sigs,strs,out,target);
+                    out.push_str(&format!("    add -{}(%rbp), %rax\n",if dyn_counter{i_off-8}else{i_off}));
+                }
                 // Advancing past the i64 range would wrap the counter and
                 // the loop would not terminate: overflow ends the loop.
                 out.push_str(&format!("    jo .Lfore_{}_{}\n", fname, id));
@@ -25404,10 +25827,12 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 let mut inner = flow.to_vec();
                 inner.push(CgFrame::Loop(format!(".Lfen_{}_{}", fname, id), format!(".Lfee_{}_{}", fname, id), amem.as_ref().map(|_| (*n, true))));
                 ENUM_KEY_EMIT.with(|v|v.borrow_mut().push((var.clone(),coll_off,idx_off,ct==Ty::Hash)));
+                ENUM_END_EMIT.with(|v|v.borrow_mut().push((var.clone(),idx_off,static_arr,if static_arr {static_len} else {coll_off-8})));
                 ENUM_INDEX_EMIT.with(|v|v.borrow_mut().push((var.clone(),idx_off)));
                 cg_stmts(body, env, frame, sigs, strs, out, target, fname, label, &inner, slots, dyn_names, byref_names);
                 ENUM_INDEX_EMIT.with(|v|{v.borrow_mut().pop();});
                 ENUM_KEY_EMIT.with(|v|{v.borrow_mut().pop();});
+                ENUM_END_EMIT.with(|v|{v.borrow_mut().pop();});
                 env[kl].ty = saved_lv.0;
                 env[kl].off = saved_lv.1;
                 out.push_str(&format!(".Lfen_{}_{}:\n", fname, id));
@@ -27519,7 +27944,7 @@ fn collect_blocks_stmts(stmts: &[Stmt], out: &mut Vec<(usize, Vec<String>, Vec<E
             Stmt::AAddSub3(_, _, ie, ie2, ie3, e) | Stmt::ASizeSub3(_, _, ie, ie2, ie3, e) => { collect_blocks_expr(ie, out); collect_blocks_expr(ie2, out); collect_blocks_expr(ie3, out); collect_blocks_expr(e, out); }
             Stmt::If(_, c, a, b) => { collect_blocks_expr(c, out); collect_blocks_stmts(a, out); collect_blocks_stmts(b, out); }
             Stmt::While(_, c, body) => { collect_blocks_expr(c, out); collect_blocks_stmts(body, out); }
-            Stmt::For(_, _, a, b, _, body) => { collect_blocks_expr(a, out); collect_blocks_expr(b, out); collect_blocks_stmts(body, out); }
+            Stmt::For(_, _, a, b, c, body) => { collect_blocks_expr(a, out); collect_blocks_expr(b, out); collect_blocks_expr(c,out); collect_blocks_stmts(body, out); }
             Stmt::ForEach(_, _, c, body) => { collect_blocks_expr(c, out); collect_blocks_stmts(body, out); }
             Stmt::Switch(_, sel, arms, otherwise) => { collect_blocks_expr(sel, out); for (_, _, b) in arms { collect_blocks_stmts(b, out); } if let Some((_, ob)) = otherwise { collect_blocks_stmts(ob, out); } }
         }
@@ -27597,6 +28022,7 @@ fn emit_block(owner: &str, id: usize, params: &[String], body: &[Expr], sigs: &[
             let truth=!matches!(e,Expr::Int(t)if t.parse::<i64>()==Ok(0));
             out.push_str(if truth{"    mov $1, %eax\n"}else{"    xor %eax, %eax\n"});
         }else{cg_expr(e, &lenv, sigs, strs, out, target);}
+        if FOR_INLINE_BLOCKS.with(|v|v.borrow().contains(&id)) && body.len()==1 && module_scalar_getter(e) && expr_ty(e,&lenv,sigs)==Ty::Dyn {out.push_str("    call hbc_dyn_to_i64\n");}
         if i + 1 < body.len() {
             out.push_str("    # intermediate block expression: value discarded (probe c4)\n");
         }
@@ -31037,22 +31463,16 @@ hbc_strcat:
     add %rbx, %r10
     mov %r10, (%rax)
     mov %r10, 8(%rax)
-    xor %ecx, %ecx
-70: cmp %r13, %rcx
-    jae 71f
-    movzbl (%r12,%rcx), %r9d
-    mov %r9b, 16(%rax,%rcx)
-    inc %rcx
-    jmp 70b
-71: lea 16(%rax,%r13), %r11
-    xor %ecx, %ecx
-72: cmp %rbx, %rcx
-    jae 73f
-    movzbl (%r14,%rcx), %r9d
-    mov %r9b, (%r11,%rcx)
-    inc %rcx
-    jmp 72b
-73: mov %r13, %rdx
+    # Counted byte copies; operands may alias each other, but fresh output
+    # does not alias either. Like other counted copies, ABI direction is clear.
+    lea 16(%rax), %rdi
+    mov %r12, %rsi
+    mov %r13, %rcx
+    rep movsb
+    mov %r14, %rsi
+    mov %rbx, %rcx
+    rep movsb
+    mov %r13, %rdx
     add %rbx, %rdx
     lea 16(%rax), %rax
     pop %r14
@@ -32963,7 +33383,8 @@ hbc_persistent_payload_release:
             if object_cleaned.insert(label.clone()){out.push_str(&format!("    mov {}(%rip), %rdi\n    movq $0, {}(%rip)\n    call hrobj_release\n",label,label));}
             continue;
         }
-        out.push_str(&format!("    lea hbc_static_{}_{}_{}(%rip), %rdi\n    call hbc_persistent_release\n",f.name.len(),f.name,id));
+        let label=module_static::storage(&f.name,id);
+        if object_cleaned.insert(label.clone()){out.push_str(&format!("    lea {}(%rip), %rdi\n    call hbc_persistent_release\n",label));}
     }}}
     let mut module_strings = std::collections::HashSet::new();
     for f in funcs { for st in &f.stmts { if let Stmt::Static(_,id,Expr::Str(_)) = st {
@@ -35684,15 +36105,28 @@ hbc_free_lists: .skip 10240
     if out.contains("call hbc_sha1_digest") || out.contains("call hbc_hmac_sha1_digest") {out.push_str(include_str!("../generated/hrsha1.s"));}
     if out.contains("call hbc_tr_dims") || out.contains("call hbc_tr_apply") {out.push_str(include_str!("../generated/hrtransform.s"));}
     if out.contains("call hbc_base_wait") || out.contains("call hbc_inkey_block_linux") || out.contains("hbc_cursor_") {out.push_str(include_str!("cursor_linux.s"));}
+    if out.contains("call hbc_brat_linux") {out.push_str(include_str!("brat_linux.s"));}
+    if out.contains("call hbc_bat_linux") {out.push_str(include_str!("bat_linux.s"));}
+    if out.contains("call hbc_bsubstr_linux") {out.push_str(include_str!("bsubstr_linux.s"));}
+    if out.contains("call hbc_bslice_linux") {out.push_str(include_str!("bslice_linux.s"));}
+    if out.contains("call hbc_strisutf8_linux") {out.push_str(include_str!("strisutf8_linux.s"));}
+    if out.contains("call hbc_pathexists_linux") {out.push_str(include_str!("pathexists_linux.s"));}
     if out.contains("call hbc_fileio_memoread") {out.push_str(include_str!("memoread_linux.s"));}
     if out.contains("call hbc_fileio_") { out.push_str(include_str!("fileio_linux.s")); }
     if out.contains("hbc_flink_") || out.contains("hbc_ferror_") {out.push_str(include_str!("flink_linux.s"));}
     if out.contains("call hbc_libname_linux") { out.push_str(include_str!("libname_linux.s")); }
     if out.contains("call hbc_hextonum_linux") {out.push_str(include_str!("hextonum_linux.s"));}
+    if out.contains("call hbc_base64decode_linux") {out.push_str(include_str!("base64decode_linux.s"));}
     if out.contains("call hbc_base64_linux") {out.push_str(include_str!("base64_linux.s"));}
+    if out.contains("call hbc_asciilower_linux") {out.push_str(include_str!("asciilower_linux.s"));}
     if out.contains("call hbc_asciiupper_linux") {out.push_str(include_str!("asciiupper_linux.s"));}
     if out.contains("call hbc_strtohex_linux") {out.push_str(include_str!("strtohex_linux.s"));}
     if out.contains("call hbc_dirsepadd_linux") {out.push_str(include_str!("dirsepadd_linux.s"));}
+    if out.contains("call hbc_fnameextset_linux") || out.contains("call hbc_fnameextsetdef_linux") {out.push_str(include_str!("fnameextset_linux.s"));}
+    if out.contains("call hbc_fname_linux") {out.push_str(include_str!("fname_linux.s"));}
+    if out.contains("call hbc_hextostr_linux") {out.push_str(include_str!("hextostr_linux.s"));}
+    if out.contains("call hbc_dirseptoos_linux") {out.push_str(include_str!("dirseptoos_linux.s"));}
+    if out.contains("call hbc_dirsepdel_linux") {out.push_str(include_str!("dirsepdel_linux.s"));}
     if out.contains("call hbc_getenv_linux") {
         out=out.replacen("_start:\n","_start:\n    mov (%rsp), %rax\n    lea 16(%rsp,%rax,8), %rax\n    mov %rax, hbc_getenv_envp(%rip)\n",1);
         out.push_str(include_str!("getenv_linux.s"));
@@ -39735,7 +40169,7 @@ fn discover_root_params(fs:&[Func]) {
         Stmt::AFill(_,_,a,b,c)=>{ex(a,out);for e in [b,c].into_iter().flatten(){ex(e,out);}},
         Stmt::If(_,c,a,b)=>{ex(c,out);st(a,out);st(b,out);},
         Stmt::While(_,c,b)|Stmt::ForEach(_,_,c,b)=>{ex(c,out);st(b,out);},
-        Stmt::For(_,_,a,b,_,ss)=>{ex(a,out);ex(b,out);st(ss,out);},
+        Stmt::For(_,_,a,b,c,ss)=>{ex(a,out);ex(b,out);ex(c,out);st(ss,out);},
         Stmt::Switch(_,c,arms,other)=>{ex(c,out);for(_,_,b)in arms{st(b,out);}if let Some((_,b))=other{st(b,out);}},
         _=>{},
     }}}
@@ -39769,7 +40203,7 @@ fn discover_root_params(fs:&[Func]) {
 
 fn validate_persistent(f:&Func)->Result<(),String> {
     use std::collections::HashSet;
-    let mut roots:HashSet<String>=f.stmts.iter().filter_map(|s|if let Stmt::Static(_,id,Expr::Nil)=s {if matches!(module_static::kind(&f.name,id),Some(Ty::Obj(_))){None}else{Some(id.clone())}}else{None}).collect();
+    let mut roots:HashSet<String>=f.stmts.iter().filter_map(|s|if let Stmt::Static(_,id,Expr::Nil)=s {if matches!(module_static::kind(&f.name,id),Some(Ty::Obj(_)|Ty::RefDyn)){None}else{Some(id.clone())}}else{None}).collect();
     for p in &f.params {if root_param(&f.name,p){roots.insert(p.clone());}}
     fn ex(e:&Expr,roots:&HashSet<String>,whole:bool)->bool {match e {
         Expr::Var(v)=>!roots.contains(v)||whole,
@@ -39795,7 +40229,7 @@ fn validate_persistent(f:&Func)->Result<(),String> {
             Stmt::ArrSet(_,id,i,e) if roots.contains(id)=>ex(e,roots,false)&&ex(i,roots,false),
             Stmt::If(_,c,a,b)=>{walk(a,roots)?;walk(b,roots)?;ex(c,roots,false)},
             Stmt::While(_,c,b)=>{walk(b,roots)?;ex(c,roots,false)},
-            Stmt::For(_,_,a,b,_,body)=>{walk(body,roots)?;ex(a,roots,false)&&ex(b,roots,false)},
+            Stmt::For(_,_,a,b,c,body)=>{walk(body,roots)?;ex(a,roots,false)&&ex(b,roots,false)&&ex(c,roots,false)},
             Stmt::Switch(_,c,arms,other)=>{for(_,_,b)in arms{walk(b,roots)?;}if let Some((_,b))=other{walk(b,roots)?;}ex(c,roots,false)},
             _=>roots.iter().all(|r|!stmt_mentions(st,r)),
         };if !ok {return Err(format!("line {}: persistent tagged STATIC cannot escape, alias, borrow, or use an effectful index in this increment",stmt_line(st)));}}
@@ -39813,6 +40247,7 @@ fn main() {
     // Mach-O ARM64 EXTERNAL: install name of the extension dylib (C extension + hbhbr.c)
     let mut ext_dylib: Option<String> = None;
     let mut incdirs: Vec<String> = Vec::new();
+    let mut cli_defines: Vec<String> = Vec::new();
     let mut instrument = false;
     let mut llvm = false;
     let mut no_escape = false;
@@ -39849,6 +40284,8 @@ fn main() {
             "--no-vas-arrays" => no_vas = true,
             "--experimental-llvm" => llvm = true,
             "--experimental-llvm-no-trace" => {llvm = true; llvm_trace = false;},
+            "-D" | "-d" => { ai += 1; match args.get(ai) {Some(v)=>cli_defines.push(v.clone()),None=>{eprintln!("error: -D needs a definition");process::exit(2);}} }
+            _ if a.starts_with("-D") || a.starts_with("-d") => cli_defines.push(a[2..].to_string()),
             "-I" => { ai += 1; incdirs.push(args.get(ai).expect("-I needs a directory").clone()); }
             _ if a.starts_with("-I") => incdirs.push(a[2..].to_string()),
             "--version" => { println!("hbc {}", HBC_VERSION); process::exit(0); }
@@ -39857,6 +40294,7 @@ fn main() {
   --target overrides it; macho-arm64 emits a native Apple Silicon executable
   omitted output uses the input stem in the current directory (.exe on Windows target), preserving case
   output ending in .s writes assembly; any other name writes the selected target executable directly
+  -Dname[=value] or -D name[=value] defines an object-like macro before preprocessing; repeated names use the last value
   --hash-logical-case opts into logical hash flags and clear-preserve (ordinary Linux only)
   flag --external-as keeps the external as/ld path; --instrument, --no-arena, --no-prune, --no-peephole, --no-loopreg, --no-escape-analysis, --experimental-llvm[-no-trace]
   --harbour-rdd links Harbour 3.2's own VM + RDD for DBF access (Windows; needs MinGW gcc and --harbour-dir=<install> or HB_DIR; --harbour-dll links harbour-32-x64.dll)"); process::exit(2); }
@@ -39870,6 +40308,7 @@ fn main() {
   --target overrides it; macho-arm64 emits a native Apple Silicon executable
   omitted output uses the input stem in the current directory (.exe on Windows target), preserving case
   output ending in .s writes assembly; any other name writes the selected target executable directly
+  -Dname[=value] or -D name[=value] defines an object-like macro before preprocessing; repeated names use the last value
   --hash-logical-case opts into logical hash flags and clear-preserve (ordinary Linux only)
   flag --external-as keeps the external as/ld path; --instrument, --no-arena, --no-prune, --no-peephole, --no-loopreg, --no-escape-analysis, --experimental-llvm[-no-trace]
   --harbour-rdd links Harbour 3.2's own VM + RDD for DBF access (Windows; needs MinGW gcc and --harbour-dir=<install> or HB_DIR; --harbour-dll links harbour-32-x64.dll)");
@@ -39911,6 +40350,9 @@ fn main() {
     // line in the ORIGINAL file for the main input; lines injected by an
     // #include report against that include file.
     let mut pre = pp::Pp::new(incdirs, matches!(target, Target::Windows));
+    for definition in &cli_defines {
+        if let Err(m)=pre.define_cli(definition){eprintln!("error: {}",m);process::exit(2);}
+    }
     let mut src = String::new();
     if let Err(m) = pp::process(pos[0], &mut pre, &mut src, 0) {
         eprintln!("error: {}", m);
@@ -40031,6 +40473,7 @@ fn main() {
     }
     DECIMAL_LOCAL_PROFILE.with(|v|v.set(CURDIR_LINUX_NATIVE.with(|v|v.get()) && !decimal_thread_profile));
     PCOUNT_PROFILE.with(|v|v.set((CURDIR_LINUX_NATIVE.with(|v|v.get()) || DIRMAKE_WIN.with(|v|v.get())) && !decimal_thread_profile));
+    if (!DECIMAL_LOCAL_PROFILE.with(|v|v.get())||MACRO_CONTEXT.with(|v|v.get())) && funcs.iter().any(|f|f.stmts.iter().any(|s|matches!(s,Stmt::Static(_,id,_)if module_static::kind(&f.name,id)==Some(Ty::RefDyn)))){eprintln!("error: module STATIC NIL scalars require ordinary Linux without threads/macros");process::exit(1);}
     if hash_case_mode && (!DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get())) {eprintln!("error: hb_HCaseMatch logical mode requires ordinary Linux without threads or macros");process::exit(1);}
     HASH_CASE_LOGICAL_MODE.with(|v|v.set(hash_case_mode));
     if optional_block::lower(&mut funcs) && (!DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get())) {eprintln!("error: static optional-block wrappers require ordinary Linux without threads or macros");process::exit(1);}
@@ -40061,7 +40504,7 @@ fn main() {
                     Stmt::Assign(_,n,e) if bare.contains(n)&&matches!(&*e,Expr::Var(v)if known.contains(v))=>{
                         *e=Expr::Call("substr".to_string(),vec![e.clone(),Expr::Int("1".to_string())]);known.insert(n.clone());
                     },
-                    Stmt::For(_,v,start,end,_,body) if !known.contains(v)&&!known.iter().any(|n|expr_mentions(start,n)||expr_mentions(end,n))&&body.iter().all(|st|matches!(st,Stmt::Assign(_,n,Expr::Bin('+',a,b)) if known.contains(n)&&matches!(a.as_ref(),Expr::Var(v)if v==n)&&matches!(b.as_ref(),Expr::Var(v)if v==n)))=>{},
+                    Stmt::For(_,v,start,end,step,body) if !known.contains(v)&&!known.iter().any(|n|expr_mentions(start,n)||expr_mentions(end,n)||expr_mentions(step,n))&&body.iter().all(|st|matches!(st,Stmt::Assign(_,n,Expr::Bin('+',a,b)) if known.contains(n)&&matches!(a.as_ref(),Expr::Var(v)if v==n)&&matches!(b.as_ref(),Expr::Var(v)if v==n)))=>{},
                     st=>{let mut touched=Vec::new();for n in &known {if stmt_mentions(st,n){touched.push(n.clone());}}for n in touched {known.remove(&n);}}
                 }
             }
@@ -40157,7 +40600,7 @@ fn main() {
                 Stmt::Print(_, es, _) => { for e in es { scan_byref_expr(e, cur, params, names, variants); } }
                 Stmt::If(_, c, t, el) => { scan_byref_expr(c, cur, params, names, variants); scan_byref_stmts(t, cur, params, names, variants); scan_byref_stmts(el, cur, params, names, variants); }
                 Stmt::While(_, c, b) => { scan_byref_expr(c, cur, params, names, variants); scan_byref_stmts(b, cur, params, names, variants); }
-                Stmt::For(_, _, a, b, _, body) => { scan_byref_expr(a, cur, params, names, variants); scan_byref_expr(b, cur, params, names, variants); scan_byref_stmts(body, cur, params, names, variants); }
+                Stmt::For(_, _, a, b, c, body) => { scan_byref_expr(c,cur,params,names,variants); scan_byref_expr(a, cur, params, names, variants); scan_byref_expr(b, cur, params, names, variants); scan_byref_stmts(body, cur, params, names, variants); }
                 Stmt::ForEach(_, _, c, body) => { scan_byref_expr(c, cur, params, names, variants); scan_byref_stmts(body, cur, params, names, variants); }
                 Stmt::Switch(_, sel, arms, otherwise) => { scan_byref_expr(sel, cur, params, names, variants); for (_, _, b) in arms { scan_byref_stmts(b, cur, params, names, variants); } if let Some((_, ob)) = otherwise { scan_byref_stmts(ob, cur, params, names, variants); } }
                 _ => {}
@@ -43567,6 +44010,33 @@ fn cg_default_setter(id:&str,a:&Expr,b:&Expr,env:&[CgLocal],sigs:&[Sig],strs:&mu
     cg_dyn_stack_release(out,0,false);
     let msg="Limit: default setter supports scalar values only in this increment\n";let si=strs.len();strs.push(msg.to_string());
     out.push_str(&format!("    add $48, %rsp\n    lea .Lstr{si}(%rip), %rax\n    mov ${}, %edx\n    call hbc_write_bytes\n    jmp hbc_panic_exit\n.Lds_end{k}:\n",msg.len()));
+}
+
+// Literal formatter owns its accumulator and each enumKey temporary.
+// Variable inputs are read-only and borrowed only across a non-mutating copy.
+fn cg_strformat(args:&[Expr],env:&[CgLocal],sigs:&[Sig],strs:&mut Vec<String>,out:&mut String,target:Target) {
+    let parts=strformat_parts(&args[0]).expect("checked literal format");
+    let k=fresh_lbl();
+    cg_value(&Expr::Str(parts[0].clone()),env,sigs,strs,out,target);
+    out.push_str("    mov %rax, %rdi\n    mov %rdx, %rsi\n    call hbc_strcpy\n    sub $80, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+    out.push_str(&format!("    movq $0, 64(%rsp)\n    cmpq $0, hbc_seq_depth(%rip)\n    je .Lsf_eval{k}\n    lea .Lsf_catch{k}(%rip), %rdi\n    call hbc_seq_push\n    movq $1, 64(%rsp)\n.Lsf_eval{k}:\n"));
+    // Inputs are checked leaves: no language call, mutation or capture.
+    // An internal landing pad also covers resolver errors if present.
+    // An enumKey getter owns its independent copy.
+    for (i,a) in args[1..].iter().enumerate() {
+        let t=expr_ty(a,env,sigs);
+        if matches!(t,Ty::Str|Ty::StrOwn|Ty::Dyn) {
+            cg_value(a,env,sigs,strs,out,target);
+            if t==Ty::Dyn {out.push_str(&format!("    mov %rax, 48(%rsp)\n    mov %rdx, 56(%rsp)\n    cmp $2, %al\n    je .Lsf_string{k}_{i}\n    cmp $4, %al\n    jne .Lsf_skip{k}_{i}\n.Lsf_string{k}_{i}:\n    mov %rdx, %rax\n    mov -8(%rdx), %rdx\n"));}
+            out.push_str("    mov %rax, 16(%rsp)\n    mov %rdx, 24(%rsp)\n    mov %rax, %rdx\n    mov 24(%rsp), %rcx\n    mov (%rsp), %rdi\n    mov 8(%rsp), %rsi\n    call hbc_strcat\n    mov %rax, 32(%rsp)\n    mov %rdx, 40(%rsp)\n    mov (%rsp), %rdi\n    call hbc_freestr\n");
+            if t==Ty::StrOwn && !matches!(a,Expr::Var(_)) {out.push_str("    mov 16(%rsp), %rdi\n    call hbc_freestr\n");}
+            out.push_str("    mov 32(%rsp), %rax\n    mov 40(%rsp), %rdx\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+            if t==Ty::Dyn {out.push_str(&format!(".Lsf_skip{k}_{i}:\n"));if dyn_expr_owned(a) {cg_dyn_stack_release(out,48,false);}}
+        }
+        cg_value(&Expr::Str(parts[i+1].clone()),env,sigs,strs,out,target);
+        out.push_str("    mov %rdx, %rcx\n    mov %rax, %rdx\n    mov (%rsp), %rdi\n    mov 8(%rsp), %rsi\n    call hbc_strcat\n    mov %rax, 32(%rsp)\n    mov %rdx, 40(%rsp)\n    mov (%rsp), %rdi\n    call hbc_freestr\n    mov 32(%rsp), %rax\n    mov 40(%rsp), %rdx\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
+    }
+    out.push_str(&format!("    cmpq $0, 64(%rsp)\n    je .Lsf_done{k}\n    call hbc_seq_pop\n.Lsf_done{k}:\n    mov (%rsp), %rax\n    mov 8(%rsp), %rdx\n    add $80, %rsp\n    jmp .Lsf_end{k}\n.Lsf_catch{k}:\n    mov (%rsp), %rdi\n    call hbc_freestr\n    add $80, %rsp\n    jmp hbc_seq_unwind\n.Lsf_end{k}:\n"));
 }
 
 // Convert an admitted Dyn scalar string to an independent input snapshot,

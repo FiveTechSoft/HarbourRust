@@ -1,0 +1,4 @@
+STATIC n
+FUNCTION Main()
+? (n := 3)
+RETURN NIL

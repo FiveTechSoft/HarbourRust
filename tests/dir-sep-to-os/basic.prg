@@ -1,0 +1,11 @@
+PROCEDURE Main()
+ ? Len(hb_DirSepToOS("")),hb_StrToHex(hb_DirSepToOS(""))
+ ? Len(hb_DirSepToOS("/")),hb_StrToHex(hb_DirSepToOS("/"))
+ ? Len(hb_DirSepToOS("\")),hb_StrToHex(hb_DirSepToOS("\"))
+ ? Len(hb_DirSepToOS("\\")),hb_StrToHex(hb_DirSepToOS("\\"))
+ ? Len(hb_DirSepToOS("a\b/c")),hb_StrToHex(hb_DirSepToOS("a\b/c"))
+ ? Len(hb_DirSepToOS("C:\x/")),hb_StrToHex(hb_DirSepToOS("C:\x/"))
+ ? Len(hb_DirSepToOS("a"+Chr(0)+"\b")),hb_StrToHex(hb_DirSepToOS("a"+Chr(0)+"\b"))
+ ? Len(hb_DirSepToOS(Replicate("a",300)+"\z")),hb_StrToHex(hb_DirSepToOS(Replicate("a",300)+"\z"))
+ ? Len(hb_DirSepToOS("路径\档案.ext")),hb_StrToHex(hb_DirSepToOS("路径\档案.ext"))
+RETURN

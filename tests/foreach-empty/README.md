@@ -11,3 +11,19 @@ Gate19: dos fuentes x cinco modos=10 comparaciones exactas frescas, dos balances
 Árbol Harbour sin git, commit no verificado; ORACLE.txt conserva versión/hash hbmk2. Sin publicación/push/workflows. Paquete sin ejecutables/objetos/assembly desechable.
 
 python tests/foreach-empty/check.py --compiler target/release/hbc --hbmk2 /ruta/hbmk2 --spec-root /ruta/harbour --output /ruta/nueva
+
+## C2 follow-up for754426b5 scalar-literal LOCAL admission
+
+754426b5intentionally admits Empty on LOCALDyn whose stores are all literal
+scalars. Existing unchangedlimit-local.prg(LOCALx:=NIL,x:="a",Empty(x))is
+a real newly admitted fixture under that exact rule,not genericDyn. Its
+old filename is preserved for traceability,but gate now explicitly routes
+that one fixture to5freshHarbourcomparisons+strictzero+3profile rejections.
+All otherlimit-prefixfixtures remain negative. Newlimit-computed-local
+usesUpper("a")and must still rejectgenericDyn,retaining an adjacent frontier.
+No source rewriting of oldfixture,no compiler change or relaxed assertion.
+Currentgate28=15exact+3zero+9profileREJ+1computedDynREJ.
+This is fixtureadmission,not new upstreamoriginal closure. Historicalgate19
+above described the earliercompiler and is superseded here. JulioPonceMIT
+specifications credited,no implementation/cambio.diff copied. NoASort,
+numericdivision,RC/objectpolicy,workflow,push,publication,rebase.
