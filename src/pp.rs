@@ -227,16 +227,17 @@ pub fn eval_if(expr: &str, defs: &HashMap<String, Def>, line: usize) -> Result<b
             }
             continue;
         }
-        // operators: ==, !=, >=, <=, >, <
+        // Comparison aliases <> and # share the existing != semantics.
         if i + 1 < b.len() {
             let two = &expr[i..i + 2];
             if matches!(two,"<<"|">>") {toks.push(T::Arith(two.into()));i+=2;continue;}
-            if ["==", "!=", ">=", "<="].contains(&two) {
+            if ["==", "!=", "<>", ">=", "<="].contains(&two) {
                 toks.push(T::Op(two.to_string()));
                 i += 2;
                 continue;
             }
         }
+        if c == '#' { toks.push(T::Op("!=".into())); i += 1; continue; }
         if c == '>' || c == '<' {
             toks.push(T::Op(c.to_string()));
             i += 1;
@@ -325,7 +326,7 @@ pub fn eval_if(expr: &str, defs: &HashMap<String, Def>, line: usize) -> Result<b
                 let r = parse_bitwise(t, p, line)?;
                 return Ok(match op.as_str() {
                     "==" => (l == r) as i64,
-                    "!=" => (l != r) as i64,
+                    "!=" | "<>" => (l != r) as i64,
                     ">" => (l > r) as i64,
                     "<" => (l < r) as i64,
                     ">=" => (l >= r) as i64,
@@ -2332,5 +2333,21 @@ mod if_shift_tests {
     fn masked_counts_signed_right_and_shared_left_precedence() {
         let p=Pp::new(Vec::new(),false);
         for e in ["(1<<4)==16","(-8>>2)==-2","(1<<63)==0x8000000000000000","(1<<64)==1","(1<<65)==2","(8<<-1)==0","(8>>-1)==0","(1<<-64)==1","(1|2<<1)==6","(8>>1&3)==0","(1<<2+1)==8"]{assert!(eval_if(e,&p.defs,1).unwrap(),"{}",e);}
+    }
+}
+
+#[cfg(test)]
+mod if_ne_alias_tests {
+    use super::*;
+    #[test]
+    fn comparison_aliases_preserve_precedence_and_values() {
+        let p=Pp::new(Vec::new(),false);
+        for e in ["1<>2","1#2","-1<>1","1+2#4","1<<2#5","!1<>2","1<>2.AND.3#4","(1#2)==(1!=2)"] {
+            assert!(eval_if(e,&p.defs,1).unwrap(),"{}",e);
+        }
+        for e in ["1<>1","1#1","-1#-1","1|2<>3","0xffffffffffffffff<>-1"] {
+            assert!(!eval_if(e,&p.defs,1).unwrap(),"{}",e);
+        }
+        for e in ["1=1","~1","1.XOR.0"] {assert!(eval_if(e,&p.defs,1).is_err());}
     }
 }
