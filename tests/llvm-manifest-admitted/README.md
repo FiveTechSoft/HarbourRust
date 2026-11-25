@@ -116,3 +116,10 @@ Compiler6c6df6c14b2aea47c3a673d6209dc22f64c32d1c12fa681fcafaf78a66146c99.
 Fresh four-shard scan1185,371admitted,814rejected;all371native/traced/
 untracedtriples exact against repository manifest,1113triples total.
 No resumedrecords or freshHarbour/fulloracleclaim.No compiler change.
+
+## Fresh ASCII predicate selection execution
+
+Compiler7490ef2bf81487fa3259b510eb5e6a3be00d47044dee69fb374992a926b860b9.
+Fresh four-shard scan1185,371admitted,814rejected;all371native/traced/
+untracedtriples exact against repository manifest,1113triples total.
+No resumedrecords or freshHarbour/fulloracleclaim.No compiler change.
