@@ -4799,8 +4799,8 @@ thread_local! {static FOR_LOCAL_NAMES: std::cell::RefCell<std::collections::Hash
 thread_local! {static SCALAR_DYN_EMPTY_LOCALS: std::cell::RefCell<std::collections::HashSet<String>> = std::cell::RefCell::new(std::collections::HashSet::new());}
 fn set_numeric(f: &Func) {
     let mut scalar=std::collections::HashSet::new();
-    visit_stmts_ref(&f.stmts,&mut |st|if let Stmt::Local(_,v,Expr::Nil)=st {scalar.insert(v.clone());},&mut |_|{});
-    let scalar_literal=|e:&Expr|matches!(e,Expr::Nil|Expr::Int(_)|Expr::Float(..)|Expr::FloatV(..)|Expr::Str(_)|Expr::Log(_));
+    visit_stmts_ref(&f.stmts,&mut |st|if let Stmt::Local(_,v,e)=st {if matches!(e,Expr::Nil)||matches!(e,Expr::Call(id,_)if id=="hbc_main_arg"){scalar.insert(v.clone());}},&mut |_|{});
+    let scalar_literal=|e:&Expr|matches!(e,Expr::Nil|Expr::Int(_)|Expr::Float(..)|Expr::FloatV(..)|Expr::Str(_)|Expr::Log(_))||matches!(e,Expr::Call(id,_)if id=="hbc_main_arg");
     visit_stmts_ref(&f.stmts,&mut |st|match st {
         Stmt::Assign(_,v,e)|Stmt::Local(_,v,e) if !scalar_literal(e)=>{scalar.remove(v);},
         Stmt::For(_,v,..)|Stmt::ForEach(_,v,..)=>{scalar.remove(v);},
