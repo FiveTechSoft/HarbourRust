@@ -4787,7 +4787,22 @@ fn cg_sarr_index(id: &str, var_off: usize, ies: &[&Expr], env: &[CgLocal], sigs:
     out.push_str("81:\n    call hbc_bound_error\n82:\n");
 }
 thread_local! {static FOR_LOCAL_NAMES: std::cell::RefCell<std::collections::HashSet<String>> = std::cell::RefCell::new(std::collections::HashSet::new());}
+thread_local! {static SCALAR_DYN_EMPTY_LOCALS: std::cell::RefCell<std::collections::HashSet<String>> = std::cell::RefCell::new(std::collections::HashSet::new());}
 fn set_numeric(f: &Func) {
+    let mut scalar=std::collections::HashSet::new();
+    visit_stmts_ref(&f.stmts,&mut |st|if let Stmt::Local(_,v,Expr::Nil)=st {scalar.insert(v.clone());},&mut |_|{});
+    let scalar_literal=|e:&Expr|matches!(e,Expr::Nil|Expr::Int(_)|Expr::Float(..)|Expr::FloatV(..)|Expr::Str(_)|Expr::Log(_));
+    visit_stmts_ref(&f.stmts,&mut |st|match st {
+        Stmt::Assign(_,v,e)|Stmt::Local(_,v,e) if !scalar_literal(e)=>{scalar.remove(v);},
+        Stmt::For(_,v,..)|Stmt::ForEach(_,v,..)=>{scalar.remove(v);},
+        _=>{}
+    },&mut |_|{});
+    visit_stmts_ref(&f.stmts,&mut |_|{},&mut |e|match e {
+        Expr::ByRef(v)|Expr::Inc(v,..)|Expr::Set(v,_)=>{scalar.remove(v);},
+        Expr::BlockLit(..)=>scalar.retain(|v|!expr_mentions(e,v)),
+        _=>{}
+    });
+    SCALAR_DYN_EMPTY_LOCALS.with(|v|*v.borrow_mut()=scalar);
     let mut locals=std::collections::HashSet::new();
     visit_stmts_ref(&f.stmts,&mut |s|if let Stmt::Local(_,v,_)=s{locals.insert(v.clone());},&mut |_|{});
     // Captures anywhere in the function are excluded, including a block
@@ -7358,7 +7373,9 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 }
                 let readonly_dyn = CURDIR_LINUX_NATIVE.with(|v|v.get()) && DECIMAL_LOCAL_PROFILE.with(|v|v.get()) && !MACRO_CONTEXT.with(|v|v.get())
                     && matches!(&args[0],Expr::Var(id) if env.iter().rev().any(|v|v.name==*id && v.ty==Ty::Dyn && v.ro));
-                if t == Ty::Dyn && !readonly_dyn && !matches!(&args[0], Expr::Nil) && !DBF_USED.with(|v|v.get()) && !timestamp::known(&args[0]) && !timestamp::scalar_empty() {
+                let ordinary_dyn=CURDIR_LINUX_NATIVE.with(|v|v.get())&&DECIMAL_LOCAL_PROFILE.with(|v|v.get())&&!MACRO_CONTEXT.with(|v|v.get())
+                    && matches!(&args[0],Expr::Var(id)if SCALAR_DYN_EMPTY_LOCALS.with(|v|v.borrow().contains(id))&&!static_dyn(id)&&!is_sarr(id)&&!module_static::is_module_binding(id)&&env.iter().any(|v|v.name==*id&&v.ty==Ty::Dyn&&!v.byref));
+                if t == Ty::Dyn && !readonly_dyn && !ordinary_dyn && !matches!(&args[0], Expr::Nil) && !DBF_USED.with(|v|v.get()) && !timestamp::known(&args[0]) && !timestamp::scalar_empty() {
                     return Err(format!("line {}: `Empty` on generic Dyn values is not in this increment", n));
                 }
                 if matches!(t, Ty::DArrRef | Ty::DArrRef2) {

@@ -200,6 +200,14 @@
       "stderr": "error: line 1: module STATIC NIL scalars require ordinary Linux in this increment\n",
       "source_sha256": "02aa0a2b46a6712d6f383b8e032bb3fd512f199eccb7d6d28c31280de38e191d",
       "reason": "Module NIL scalar storage measured only on ordinary Linux; not a PE runtime pass."
+    },
+    {
+      "kind": "pos2",
+      "source": "tests/t1047_empty_dyn_neg.prg",
+      "rc": 1,
+      "stderr": "error: line 3: `Empty` on generic Dyn values is not in this increment\n",
+      "source_sha256": "168fdb0711021244e3c8e4383090e5f9fe86ece74b591af1c5e62afe84e2dc36",
+      "reason": "Scalar literal Dyn local Empty proof is ordinary Linux only; not a PE runtime pass."
     }
   ]
 }

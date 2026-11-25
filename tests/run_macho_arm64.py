@@ -32,7 +32,8 @@ KINDS = ('pos', 'posx', 'pos2', 'posx2', 'streams', 'streams2')
 DYN_INC_REJ = {'tests/t896_inc_dyn_neg.prg': 'Dyn expression ++/-- requires ordinary Linux non-macro local storage'}
 DYNAMIC_STEP_REJ = {'tests/t44_for_step_expr.prg': 'dynamic FOR STEP requires ordinary Linux without threads/macros/shared captures'}
 MODULE_NIL_REJ = {p:'module STATIC NIL scalars require ordinary Linux' for p in ['tests/t682_static_var_neg.prg','tests/module-static/programs/nil.prg']}
-EXPECTED_REJ = dict(DYN_INC_REJ, **DYNAMIC_STEP_REJ, **MODULE_NIL_REJ)
+SCALAR_EMPTY_REJ = {'tests/t1047_empty_dyn_neg.prg':'`Empty` on generic Dyn values'}
+EXPECTED_REJ = dict(DYN_INC_REJ, **DYNAMIC_STEP_REJ, **MODULE_NIL_REJ, **SCALAR_EMPTY_REJ)
 # The idlesleep rows print identical bytes whether nanosleep really
 # slept or the lowering silently no-ops (wrong number, ENOSYS), so each
 # positive-sleep row also carries a wall-clock floor on the native run
@@ -51,7 +52,7 @@ IDLESLEEP_WINDOWS = {
 
 def configure_target(target):
     global TARGET, EXPECTED_REJ
-    EXPECTED_REJ = {} if target == 'linux' else dict(DYN_INC_REJ, **DYNAMIC_STEP_REJ, **MODULE_NIL_REJ)
+    EXPECTED_REJ = {} if target == 'linux' else dict(DYN_INC_REJ, **DYNAMIC_STEP_REJ, **MODULE_NIL_REJ, **SCALAR_EMPTY_REJ)
     TARGET = '--target=' + target
 
 FILE_POSITIVES = 6
@@ -89,8 +90,9 @@ TARGET = '--target=macho-arm64'  # --target=macho runs the same battery on Intel
 # main parameters NIL without arguments: two Harbour-measured fixtures (+2).
 # Dynamic integer STEP promotes t44 from negative to executable (+1).
 # NIL module scalars promote two negatives (+2).
-# Full total:1318+6+4+38+9 =1375,4 named REJ on both Mac targets.
-EXPECTED_MANIFEST_ROWS = 1318
+# Scalar literal Dyn local Empty promotes t1047 (+1).
+# Full total:1319+6+4+38+9 =1376,5 named REJ on both Mac targets.
+EXPECTED_MANIFEST_ROWS = 1319
 # Post-run m_clie.dbf SHA-256 per DBF acceptance test (generated on Linux,
 # stdout checked against the committed expectations). t4 appends records:
 # dbAppend rewrites the header last-update date (bytes 1-3, YY MM DD of the

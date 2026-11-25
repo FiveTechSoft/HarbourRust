@@ -1039,7 +1039,7 @@ neg tests/t1043_original_longstr2_move_neg.prg use of moved value `short`
 neg tests/t1044_outerr_move_neg.prg use of moved value
 pos2 tests/t1045_empty_values.prg tests/expectations/qout/t1045_empty_values.linux.out tests/expectations/qout/t1045_empty_values.windows.out
 pos2 tests/t1046_empty_effects.prg tests/expectations/qout/t1046_empty_effects.linux.out tests/expectations/qout/t1046_empty_effects.windows.out
-neg tests/t1047_empty_dyn_neg.prg `Empty` on generic Dyn values
+pos2 tests/t1047_empty_dyn_neg.prg tests/scalar-local-empty/nil.out tests/scalar-local-empty/nil.out
 neg tests/t1048_empty_temp_array_neg.prg `Empty` on an array/hash needs a variable
 neg tests/t1049_empty_arity_neg.prg `Empty` takes one argument
 neg tests/t1050_empty_moved_neg.prg use of moved value
