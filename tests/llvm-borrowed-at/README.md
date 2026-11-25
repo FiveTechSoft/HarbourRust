@@ -41,3 +41,10 @@ conditions. No string value ABI,owned/mutable or selected needle admission.
 Two own MIT sources cover effects,nested laziness,bounds/overflow skipped
 arms,NUL,UTF8,empty/absent/longer needles and logical contexts. Two new
 named negatives reject owned dead leaves and selected needles.
+
+## Selected haystack ASCII matrix
+
+Own MIT test-only coverage sweeps all128ASCII bytes,including NUL,in selected
+haystacks with repeated needle occurrences. Alternating true/false conditions
+use a checked increment and print its current count to detect dropped or
+duplicated evaluation. Original sources remain unchanged. No compiler change.

@@ -38,3 +38,10 @@ needle/owned dead leaves rejected.No string value ABI or RC changes.
 Two own MIT cases check effects,lazy nested bounds/overflow,NUL,UTF8,
 empty/absent/longer needles,logical and IF contexts fresh against Harbour
 in native/traced/untraced modes.Two named rejection cases added.
+
+## Selected haystack ASCII matrix
+
+Own MIT test-only coverage sweeps all128ASCII bytes,including NUL,in selected
+haystacks with repeated needle occurrences. Alternating true/false conditions
+use a checked increment and print its current count to detect dropped or
+duplicated evaluation. Original sources remain unchanged. No compiler change.

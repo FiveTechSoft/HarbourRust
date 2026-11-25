@@ -40,3 +40,10 @@ Selected needle and owned dead leaves remain rejected.No string value ABI,
 RC or mutable support.Two own MIT sources cover lazy bounds/overflow,
 effects,NUL,UTF8,absent/empty/longer needles and overlapping matches against
 fresh Harbour in native/traced/untraced modes.Two named limits added.
+
+## Selected haystack ASCII matrix
+
+Own MIT test-only coverage sweeps all128ASCII bytes,including NUL,in selected
+haystacks with repeated needle occurrences. Alternating true/false conditions
+use a checked increment and print its current count to detect dropped or
+duplicated evaluation. Original sources remain unchanged. No compiler change.
