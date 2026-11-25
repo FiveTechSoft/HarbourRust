@@ -43,3 +43,10 @@ Own MIT test-only sweep of128ASCII bytes,including NUL,compares each byte
 against alternating equal/suffixed selected strings. Checked increment
 conditions and printed counters measure single evaluation on both branches.
 No compiler change or original edits.
+
+## Selected left operand against a constant
+
+Own MIT follow-up projects the left IIf tree to exact logical leaves when
+the right operand is immutable constant. Conditions remain single/lazy.
+UTF8,NUL,space,prefix,case,nested effects and dead bounds/overflow covered.
+Owned dead leaves and both-selected operands still rejected. No string ABI.

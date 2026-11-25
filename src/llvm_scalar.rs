@@ -205,6 +205,13 @@ impl Ir {
     (matches!(&**a,Expr::Nil) && self.borrowed_constant_tree(b).is_some()) ||
     (matches!(&**b,Expr::Nil) && self.borrowed_constant_tree(a).is_some())
    )=>{if matches!(op,CmpOp::Ne){"1".into()}else{"0".into()}},
+   Expr::Cmp(CmpOp::EqEq,a,b) if self.borrowed_constant_tree(b).is_some() && matches!(&**a,Expr::Call(n,args) if is_builtin(n,"iif") && args.len()==3)=>{
+    // The right constant is pure. Project the left selection without moving
+    // any effects across arguments or adding a runtime string value.
+    let text=self.borrowed_constant_tree(b).unwrap();
+    let scalar=self.exact_selection(&text,a).ok_or("LLVM scalar: exact string comparison requires immutable borrowed constants on both sides")?;
+    self.expr(&scalar)?
+   },
    Expr::Cmp(CmpOp::EqEq,a,b) if self.borrowed_constant_tree(a).is_some() && matches!(&**b,Expr::Call(n,args) if is_builtin(n,"iif") && args.len()==3)=>{
     let text=self.borrowed_constant_tree(a).unwrap();
     let scalar=self.exact_selection(&text,b).ok_or("LLVM scalar: exact string comparison requires immutable borrowed constants on both sides")?;
