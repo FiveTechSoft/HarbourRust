@@ -4621,6 +4621,7 @@ thread_local! {
     // (HB_FUNC) through hbc_ext_dispatch instead of the internal
     // calling convention.
     static EXTERNS: std::cell::RefCell<std::collections::HashSet<String>> = std::cell::RefCell::new(std::collections::HashSet::new());
+    static LLVM_DYNAMIC_STEP_PROFILE: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
     static CHECKED_I64: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
     // One entry per statement being generated, innermost last: Some((name,
     // line, stub label)) when the statement skipped its trace write. An
@@ -12394,7 +12395,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
             }
             Stmt::For(n, var, start, end, step, body) => {
                 if !matches!(step,Expr::Int(_)) {
-                    if !CURDIR_LINUX_NATIVE.with(|v|v.get())||!DECIMAL_LOCAL_PROFILE.with(|v|v.get())||MACRO_CONTEXT.with(|v|v.get())||shared_local::active() {
+                    if (!(CURDIR_LINUX_NATIVE.with(|v|v.get())&&DECIMAL_LOCAL_PROFILE.with(|v|v.get()))&&!LLVM_DYNAMIC_STEP_PROFILE.with(|v|v.get()))||MACRO_CONTEXT.with(|v|v.get())||shared_local::active() {
                         return Err(format!("line {}: dynamic FOR STEP requires ordinary Linux without threads/macros/shared captures",n));
                     }
                     let before=env.clone();
@@ -40471,6 +40472,7 @@ fn main() {
             }
         });
     }
+    LLVM_DYNAMIC_STEP_PROFILE.with(|v|v.set(llvm && !macho && matches!(target,Target::Linux) && !decimal_thread_profile));
     DECIMAL_LOCAL_PROFILE.with(|v|v.set(CURDIR_LINUX_NATIVE.with(|v|v.get()) && !decimal_thread_profile));
     PCOUNT_PROFILE.with(|v|v.set((CURDIR_LINUX_NATIVE.with(|v|v.get()) || DIRMAKE_WIN.with(|v|v.get())) && !decimal_thread_profile));
     if (!DECIMAL_LOCAL_PROFILE.with(|v|v.get())||MACRO_CONTEXT.with(|v|v.get())) && funcs.iter().any(|f|f.stmts.iter().any(|s|matches!(s,Stmt::Static(_,id,_)if module_static::kind(&f.name,id)==Some(Ty::RefDyn)))){eprintln!("error: module STATIC NIL scalars require ordinary Linux without threads/macros");process::exit(1);}
