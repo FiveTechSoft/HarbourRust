@@ -347,9 +347,8 @@ hrv_cell hrdbf_app_get_name(const unsigned char *p,size_t len,void *(*copy)(cons
 static void hrdbf_app_require_writable(void){
  hrdbf_app_require();
  if(!hrdbf_app_state.writable)hrdbf_app_fail("hbc: DBF field write requires a readonly=.F. open\n");
- /* D7: an open NTX index is maintained on writes (rebuild at the key
-  * write, flush at close); an open CDX bag stays write-rejected. */
- if(hrdbf_app_order.index.bytes&&hrdbf_app_cdx)hrdbf_app_fail("hbc: DBF field write with an open CDX index is outside this increment (NTX only)\n");
+ /* D7: an open NTX or CDX index is maintained on writes (rebuild at the
+  * key write, flush at close; D7b extends the rebuild to the CDX codec). */
 }
 /* D7: rebuild the live NTX index from the current table snapshot after a
  * key change (oracle-measured: the new key is visible to dbSeek
@@ -358,7 +357,7 @@ static void hrdbf_app_require_writable(void){
  * past the last one at EOF. */
 static void hrdbf_app_rebuild_index(void){
  hrntx_index*x=&hrdbf_app_order.index;uint64_t r;size_t i;
- if(!x->bytes||hrdbf_app_cdx)return;
+ if(!x->bytes)return;
  if(hrntx_file_rebuild(&hrdbf_app_order,&hrdbf_app_state.area))hrdbf_app_fail("hbc: DBF NTX index rebuild failed\n");
  r=hrdbf_app_state.area.recno;hrdbf_app_pos=x->count;
  for(i=0;i<x->count;i++)if(x->entries[i].recno==r){hrdbf_app_pos=i;break;}
@@ -400,7 +399,7 @@ void hrdbf_app_fieldput(int64_t n,uint64_t tag,uint64_t pay){
  if(e==HRDBF_TYPE)hrdbf_app_fail("hbc: DBF field write type mismatch\n");
  if(e)hrdbf_app_fail("hbc: DBF field write encoding rejected\n");
  if(hrdbf_file_write_record(f,f->area.recno))hrdbf_app_fail("hbc: DBF field write commit failed\n");
- if(hrdbf_app_order.index.bytes&&!hrdbf_app_cdx&&(uint64_t)n==(uint64_t)hrdbf_app_order.index.field+1)hrdbf_app_rebuild_index();
+ if(hrdbf_app_order.index.bytes&&(uint64_t)n==(uint64_t)hrdbf_app_order.index.field+1)hrdbf_app_rebuild_index();
 }
 /* D6: delete-flag writes. Oracle-measured (Harbour 3.2 mingw64 native,
  * November 24, 2026): dbDelete marks rec[0]='*' and dbRecall marks ' '
@@ -416,7 +415,7 @@ void hrdbf_app_fieldput(int64_t n,uint64_t tag,uint64_t pay){
 static void hrdbf_app_require_flag_writable(void){
  hrdbf_app_require();
  if(!hrdbf_app_state.writable)hrdbf_app_fail("hbc: DBF delete/recall requires a readonly=.F. open\n");
- if(hrdbf_app_order.index.bytes&&hrdbf_app_cdx)hrdbf_app_fail("hbc: DBF delete/recall with an open CDX index is outside this increment (NTX only)\n");
+ /* D7b: CDX index maintenance covers delete/recall neutrality the same way. */
 }
 void hrdbf_app_delete(void){
  unsigned char *rec;

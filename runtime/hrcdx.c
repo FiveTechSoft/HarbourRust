@@ -101,3 +101,106 @@ hrntx_error hrcdx_open(hrntx_index*x,const unsigned char*b,size_t size,const hrd
  for(i=0;!e&&i<64;i++)if(w.prev[i]&&w.right[i]!=UINT32_MAX)e=HRNTX_FORMAT;
  if(e){hrntx_close(x);return e;}x->count=w.used;return HRNTX_OK;
 }
+/* D7b: emit a fresh CDX image from the table snapshot, mirroring the
+ * landed NTX builder. Ground truth from oracle-written trees (single-leaf
+ * 3-record t.cdx and a 200-record two-leaf bigc.cdx, dumped 2026-11-24):
+ * page flags are 3=depth-0 leaf, 2=deep leaf, 1=depth-0 interior,
+ * 0=deep interior; leaves carry bitfield-packed entries (rec low bits,
+ * dup, trail - all LITTLE-endian) with key bytes stored backward from the
+ * page end and free == (512 - key bytes) - (24 + n*bytes) exactly; the
+ * interior holds ONE entry per leaf ({key, rec, child} big-endian at
+ * 12+i*(width+8)) whose (key,rec) DUPLICATE the last entry of that child
+ * leaf; the root sits after the leaves. Uncompressed entries (dup=0,
+ * trail=0) are legal, so the rebuild stores every key whole; the
+ * bit-field allocation mirrors the oracle's exact-sum rule
+ * (rb+db+tb == 8*bytes, rb padded). The directory page, tag header page
+ * and key-expression page are copied verbatim; only the root pointer in
+ * the header page is rewritten. Bounded subset: one interior level
+ * (leaves <= (512-12)/(width+8)) and no page-reuse (the original tree
+ * pages are simply dropped). sort needs 16 bytes per record. */
+typedef struct {uint32_t recno;const unsigned char*key;} cxsortitem;
+static int cxentry_lt(const cxsortitem*a,const cxsortitem*b,uint16_t width){
+ int c=cxcmp(a->key,b->key,width);
+ if(c)return c<0;
+ return a->recno<b->recno;
+}
+static void cxput16(unsigned char*p,uint16_t v){p[0]=(unsigned char)v;p[1]=(unsigned char)(v>>8);}
+static void cxput32(unsigned char*p,uint32_t v){p[0]=(unsigned char)v;p[1]=(unsigned char)(v>>8);p[2]=(unsigned char)(v>>16);p[3]=(unsigned char)(v>>24);}
+static void cxputbe(unsigned char*p,uint32_t v){p[0]=(unsigned char)(v>>24);p[1]=(unsigned char)(v>>16);p[2]=(unsigned char)(v>>8);p[3]=(unsigned char)v;}
+static unsigned cxbits(unsigned x){unsigned b=1;while(b<32&&((1u<<b)-1)<x)b++;return b;}
+size_t hrcdx_build(unsigned char*img,const unsigned char*in,const hrntx_index*shape,
+                   const hrdbf_area*d,void*sort,size_t sortbytes){
+ uint16_t width=shape->width,field=shape->field;
+ size_t n=d->count,m,i,j,dir,header,leafbase,root,ncap,icap;
+ unsigned db,tb,rb,bytes,rbits;cxsortitem*s;
+ if(!img||!in||!d->open||!width||!sort||sortbytes<16*n)return 0;
+ dir=cx32(in);
+ if(!cxpage(dir,d->size)||cx16(in+dir)!=3||cx16(in+dir+2)!=1)return 0;
+ {cxleaf l;unsigned char key[255];size_t end=512;uint32_t rec;hrntx_error e;
+  e=cxleaf_header(in+dir,10,&l);if(e)return 0;
+  e=cxkey(in+dir,&l,0,10,key,&end,&rec);if(e)return 0;
+  header=rec;
+  if(!cxpage(header,d->size))return 0;
+ }
+ rbits=cxbits((unsigned)(n?n:1));
+ if(rbits<16)rbits=16;
+ for(bytes=3;bytes<=6;bytes++){
+  db=tb=cxbits(width);rb=8*bytes-2*db;
+  if(rb<=32&&rb>=rbits&&((1u<<rb)-1u)>=d->count)break;
+  if(bytes==6){db=tb=8;rb=32;} /* wide tables: 32+8+8=48=6*8 */
+ }
+ if(rb+db+tb!=8*bytes||rb>32)return 0;
+ ncap=488/((size_t)width+bytes);
+ icap=(512-12)/((size_t)width+8);
+ if(!ncap||!icap)return 0;
+ m=n?(n+ncap-1)/ncap:1;
+ if(m>icap)return 0; /* bounded one-interior-level subset */
+ s=(cxsortitem*)sort;
+ for(i=0;i<n;i++){
+  s[i].recno=(uint32_t)(i+1);
+  s[i].key=d->bytes+d->header+i*(size_t)d->record+d->fields[field].offset;
+ }
+ for(i=1;i<n;i++){cxsortitem e2=s[i];j=i;
+  while(j&&cxentry_lt(&e2,&s[j-1],width)){s[j]=s[j-1];j--;}
+  s[j]=e2;
+ }
+ for(i=0;i<(size_t)header+1024;i++)img[i]=in[i]; /* directory, tag header and expression pages */
+ leafbase=header+1024;
+ for(i=0;i<m;i++){
+  unsigned char*p=img+leafbase+512*i;
+  size_t a=i*ncap,b=i==m-1?n:a+ncap,k=b-a,end=512;
+  for(j=0;j<512;j++)p[j]=0;
+  cxput16(p,(uint16_t)(i==0&&m==1?3:2)); /* depth-0 leaf vs deep leaf */
+  cxput16(p+2,(uint16_t)k);
+  cxput32(p+4,i==0?UINT32_MAX:(uint32_t)(leafbase+512*(i-1)));
+  cxput32(p+8,i==m-1?UINT32_MAX:(uint32_t)(leafbase+512*(i+1)));
+  cxput16(p+12,(uint16_t)(end-(24+k*bytes)-k*width));
+  cxput32(p+14,(uint32_t)((1ULL<<rb)-1));
+  p[18]=(unsigned char)((1u<<db)-1);p[19]=(unsigned char)((1u<<tb)-1);
+  p[20]=(unsigned char)rb;p[21]=(unsigned char)db;p[22]=(unsigned char)tb;p[23]=(unsigned char)bytes;
+  for(j=0;j<k;j++){
+   uint64_t v=(uint64_t)s[a+j].recno;unsigned q;
+   for(q=0;q<bytes;q++)p[24+j*bytes+q]=(unsigned char)(v>>(8*q));
+   end-=width;
+   for(q=0;q<width;q++)p[end+q]=s[a+j].key[q];
+  }
+ }
+ root=leafbase;
+ if(m>1){
+  unsigned char*p=img+leafbase+512*m; /* interior after the leaves */
+  root=leafbase+512*m;
+  for(j=0;j<512;j++)p[j]=0;
+  cxput16(p,1); /* depth-0 interior */
+  cxput16(p+2,(uint16_t)m);
+  cxput32(p+4,UINT32_MAX);cxput32(p+8,UINT32_MAX);
+  for(i=0;i<m;i++){
+   size_t pos=12+i*((size_t)width+8),last=i==m-1?n:(i+1)*ncap;
+   unsigned q;
+   for(q=0;q<width;q++)p[pos+q]=s[last-1].key[q];
+   cxputbe(p+pos+width,s[last-1].recno);
+   cxputbe(p+pos+width+4,(uint32_t)(leafbase+512*i));
+  }
+ }
+ cxput32(img+header,(uint32_t)root);
+ return leafbase+512*(size_t)(m+(m>1?1:0));
+}
