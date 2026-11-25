@@ -118,6 +118,18 @@ impl Ir {
    return Some(Expr::Call(n.clone(),vec![a[0].clone(),self.asc_selection(&a[1])?,self.asc_selection(&a[2])?]))
   }}None
  }
+ // Reject any non-ASCII first-byte leaf before lowering, even dead arms.
+ fn char_selection(&self,n:&str,e:&Expr)->Option<Expr>{
+  if let Some(text)=self.borrowed_constant_tree(e){
+   let first=text.as_bytes().first().copied();
+   if first.map_or(false,|b|!b.is_ascii()){return None}
+   let yes=first.map_or(false,|b|if is_builtin(n,"isdigit"){b.is_ascii_digit()}else if is_builtin(n,"isalpha"){b.is_ascii_alphabetic()}else if is_builtin(n,"isupper"){b.is_ascii_uppercase()}else{b.is_ascii_lowercase()});
+   return Some(Expr::Log(yes))
+  }
+  if let Expr::Call(id,a)=e {if is_builtin(id,"iif") && a.len()==3 {
+   return Some(Expr::Call(id.clone(),vec![a[0].clone(),self.char_selection(n,&a[1])?,self.char_selection(n,&a[2])?]))
+  }}None
+ }
  fn expr(&mut self,e:&Expr)->Result<String,String>{
   Ok(match e {
    Expr::Seq(es)=>{
@@ -187,6 +199,9 @@ impl Ir {
     // Existing LLVM scalar expressions are I64. Do not erase evaluation:
     // calls, sequence effects and checked increments execute exactly once.
     self.expr(&args[0])?
+   },
+   Expr::Call(n,args) if ["isdigit","isalpha","isupper","islower"].iter().any(|b|is_builtin(n,b)) && args.len()==1 && matches!(&args[0],Expr::Call(id,a) if is_builtin(id,"iif") && a.len()==3) && self.char_selection(n,&args[0]).is_some()=>{
+    let scalar=self.char_selection(n,&args[0]).unwrap();self.expr(&scalar)?
    },
    Expr::Call(n,args) if ["isdigit","isalpha","isupper","islower"].iter().any(|b|is_builtin(n,b)) && args.len()==1=>{
     let text=self.borrowed_constant_tree(&args[0]);

@@ -30,3 +30,14 @@ change. ASCII predicates still reject a non-ASCII first byte. Asc continues
 to return the first counted byte, including NUL/UTF8. Added empty/NUL/ASCII,
 UTF8 and logical/numeric/control-context fixtures and owned-subtree limits.
 Current evidence and exact counts are listed in the package summary.
+
+## Lazy immutable selection
+
+IsDigit/IsAlpha/IsUpper/IsLower project constant leaves of nested IIf to
+logical scalars. Reached conditions execute once and remain lazy; both arms
+must structurally prove immutable ASCII-first-byte leaves. Non-ASCII first
+bytes and owned leaves are rejected even in dead arms, not silently erased.
+No locale, runtime string ABI, move or RC policy change. Gate total12fresh
+Harbour/native/LLVM exact rows plus16named LLVM rejections. Empty/NUL,
+all four predicates, nested choices, increments, skipped bounds errors,
+loop/logical/IF/IIf contexts covered. Broad evidence in package summary.
