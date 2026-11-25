@@ -103,3 +103,22 @@ Medians ms(Harbour/HarbourRust),ratio:
 Loss retained,longstr2 slower.This includes launch,capturedoutput,shutdown,
 not isolatedalgorithm or universalspeed.Same1CPUaffinity,no host/frequency
 isolation.No implementation/globalrepeat/originalclosure.Non-Linux untested.
+
+## Fresh paired refresh on scalar-local compiler,2026-11-25
+
+Compiler SHA256 12a0e8d44e94a6d0ef2a8b759e447a9e173968bc2659152de64372732f7fe9f5.
+Oracle commit 694428e1c12f726675b19324d62167fa77d68185. Runner now requires and records oracle git identity and its own SHA256.
+No compiler change. Two independent101-pair runs,5warmups per engine/source.
+Same single CPU affinity for both engines, alternating first engine. Every
+rc/stdout/stderr triple exact,including intentional longstr2 stderr.
+
+- fib.prg: Harbour 8.242731ms,HarbourRust 2.793637ms,ratio 2.951x; repeat 8.495667/2.844165ms,2.987x.
+- recursiv.prg: Harbour 2.653945ms,HarbourRust 1.417371ms,ratio 1.872x; repeat 2.652143/1.411984ms,1.878x.
+- longstr2.prg: Harbour 4.480830ms,HarbourRust 6.050303ms,ratio 0.741x; repeat 4.545909/6.104780ms,0.745x.
+
+The longstr2 loss remains:HarbourRust takes about35%more process time here.
+No comparison to earlier host timings as a regression claim. These include
+startup,captured output,shutdown and shared-host noise,not algorithm-only
+throughput or general superiority.606pairs/1212timed executions+60warmups
+all exact. No new admission,global rerun,RC/lifetime or policy change.
+Source/raw outputs/commands/cwd/checksums and every paired timing retained.

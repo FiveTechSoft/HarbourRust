@@ -12,6 +12,8 @@ sources=[Path(a.spec_root).resolve()/'tests'/n for n in ['fib.prg','recursiv.prg
 for s in sources:
  if not s.is_file():p.error('required upstream original missing: '+str(s))
 parent_affinity=sorted(os.sched_getaffinity(0));cpu=parent_affinity[0];os.sched_setaffinity(0,{cpu})
+oracle_commit=subprocess.check_output(['git','rev-parse','HEAD'],cwd=a.spec_root,text=True).strip()
+(out/'oracle-source-commit.txt').write_text(oracle_commit+'\n')
 rows=[]
 def build(cmd,w,label):
  (w/(label+'.command.json')).write_text(json.dumps(dict(argv=cmd,cwd=str(root)),indent=2)+'\n')
@@ -48,5 +50,5 @@ for src in sources:
  (w/'measurements.json').write_text(json.dumps(result,indent=2)+'\n');rows.append(result)
  for kind in ['harbour','harbourrust']:(w/kind).unlink()
  print(src.name,med,'Harbour/HarbourRust',round(result['ratio_of_medians'],3),flush=True)
-summary=dict(compiler_sha256=hashlib.sha256(Path(cc).read_bytes()).hexdigest(),hbmk2_sha256=hashlib.sha256(Path(hb).read_bytes()).hexdigest(),platform=platform.platform(),python=sys.version,clock=time.get_clock_info('perf_counter')._asdict() if hasattr(time.get_clock_info('perf_counter'),'_asdict')else str(time.get_clock_info('perf_counter')),original_affinity=parent_affinity,measurement_cpu=cpu,warmups_per_engine=5,pairs_per_source=a.pairs,scope='Unedited original end-to-end process times including startup, captured stdout/stderr, shutdown. No algorithm-only or cross-platform claim. All warm and measured output triples checked.',rows=rows)
+summary=dict(oracle_commit=oracle_commit,runner_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),compiler_sha256=hashlib.sha256(Path(cc).read_bytes()).hexdigest(),hbmk2_sha256=hashlib.sha256(Path(hb).read_bytes()).hexdigest(),platform=platform.platform(),python=sys.version,clock=time.get_clock_info('perf_counter')._asdict() if hasattr(time.get_clock_info('perf_counter'),'_asdict')else str(time.get_clock_info('perf_counter')),original_affinity=parent_affinity,measurement_cpu=cpu,warmups_per_engine=5,pairs_per_source=a.pairs,scope='Unedited original end-to-end process times including startup, captured stdout/stderr, shutdown. No algorithm-only or cross-platform claim. All warm and measured output triples checked.',rows=rows)
 (out/'results.json').write_text(json.dumps(summary,indent=2)+'\n')
