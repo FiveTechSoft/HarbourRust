@@ -30,3 +30,13 @@ Own gate: 9 fresh Harbour/native/LLVM exact rows and 6 named LLVM rejections.
 New cases cover overlapping repeated text, empty needle/haystack, NUL,
 UTF8 byte positions, false/true matches and numeric/control contexts.
 Broad current results are listed in the package summary.
+
+## Selected constant haystack
+
+Rat with constant needle and nested IIf constant haystack projects immutable
+leaves to last byte offsets,including overlaps. Structural proof includes
+dead leaves. Selected conditions run once,lazily,also with empty needle.
+Selected needle and owned dead leaves remain rejected.No string value ABI,
+RC or mutable support.Two own MIT sources cover lazy bounds/overflow,
+effects,NUL,UTF8,absent/empty/longer needles and overlapping matches against
+fresh Harbour in native/traced/untraced modes.Two named limits added.
