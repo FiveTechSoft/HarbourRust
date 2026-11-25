@@ -196,7 +196,11 @@ impl Ir {
    Expr::Call(n,_) if self.voids.contains(n)=>return Err(format!("LLVM scalar: NIL-only effect call `{}` cannot be used as a value",n)),
    Expr::Call(n,args) if self.sig_names.contains(n)=>{let mut aa=Vec::new();for a in args {aa.push(format!("i64 {}",self.expr(a)?));}let r=self.tmp();self.line(format!("{} = call i64 @ll_{}({})",r,n,aa.join(", ")));r},
    Expr::IdxCompound(..)=>return Err("LLVM scalar: indexed compound assignment `a[i] op= e` is not in this subset (default-backend feature added with the arrayidx piece; the LLVM subset never accepted this form, so nothing previously supported is lost)".into()),
-   Expr::Set(..)=>return Err("LLVM scalar: inline `:=` assignment expressions are not in this subset (default-backend feature added with the parexpr piece; the LLVM subset never accepted this form, so nothing previously supported is lost)".into()),
+   Expr::Set(n,rhs)=>{
+    let logical=self.isbool(rhs);let v=self.expr(rhs)?;let p=self.ptr(n)?;
+    self.line(format!("store i64 {}, ptr {}",v,p));
+    if logical{self.bools.insert(n.clone());}v
+   },
    _=>return Err(format!("LLVM scalar: expression unsupported: {:?}",e))
   })
  }
@@ -209,7 +213,7 @@ impl Ir {
     self.line(format!("call void @ll_{}({})",n,aa.join(", ")));Ok(())
    },
    Expr::Seq(es)=>{for e in es{self.effect(e)?;}Ok(())},
-   Expr::Set(..)=>return Err("LLVM scalar: inline `:=` assignment expressions are not in this subset (default-backend feature added with the parexpr piece; the LLVM subset never accepted this form, so nothing previously supported is lost)".into()),
+   Expr::Set(..)=>{self.expr(e)?;Ok(())},
    Expr::Call(n,args) if (is_builtin(n,"qout") || is_builtin(n,"qqout") || is_builtin(n,"outstd"))=>self.print_items(args,!is_builtin(n,"qout"),is_builtin(n,"outstd")),
    Expr::Call(n,args) if is_builtin(n,"iif") && args.len()==3=>{
     let c=self.cond(&args[0])?;let t=self.lab();let f=self.lab();let end=self.lab();
@@ -220,7 +224,7 @@ impl Ir {
    _=>{self.expr(e)?;Ok(())}
   }
  }
- fn isbool(&self,e:&Expr)->bool {match e {Expr::Seq(es)=>es.last().map(|e|self.isbool(e)).unwrap_or(false),Expr::Log(_)|Expr::Cmp(..)|Expr::LNot(_)|Expr::LAnd(..)|Expr::LOr(..)=>true,Expr::Var(n)=>self.bools.contains(n),Expr::Call(n,_) if self.bool_returns.contains(n)=>true,Expr::Call(n,_) if is_builtin(n,"hb_bittest")||is_builtin(n,"empty")=>true,Expr::Call(n,a) if is_builtin(n,"iif") && a.len()==3=>self.isbool(&a[1]),Expr::Call(n,a) if (is_builtin(n,"min")||is_builtin(n,"max")) && a.len()==2=>self.isbool(&a[0]),_=>false}}
+ fn isbool(&self,e:&Expr)->bool {match e {Expr::Set(_,rhs)=>self.isbool(rhs),Expr::Seq(es)=>es.last().map(|e|self.isbool(e)).unwrap_or(false),Expr::Log(_)|Expr::Cmp(..)|Expr::LNot(_)|Expr::LAnd(..)|Expr::LOr(..)=>true,Expr::Var(n)=>self.bools.contains(n),Expr::Call(n,_) if self.bool_returns.contains(n)=>true,Expr::Call(n,_) if is_builtin(n,"hb_bittest")||is_builtin(n,"empty")=>true,Expr::Call(n,a) if is_builtin(n,"iif") && a.len()==3=>self.isbool(&a[1]),Expr::Call(n,a) if (is_builtin(n,"min")||is_builtin(n,"max")) && a.len()==2=>self.isbool(&a[0]),_=>false}}
  fn cond(&mut self,e:&Expr)->Result<String,String>{let v=self.expr(e)?;let c=self.tmp();self.line(format!("{} = icmp ne i64 {}, 0",c,v));Ok(c)}
  fn print_items(&mut self,es:&[Expr],inline:bool,raw:bool)->Result<(),String>{
   // Evaluate every item before emitting the outer newline or separator.
