@@ -60,3 +60,10 @@ Compiler2338925db21cbe386aa2aa10c0160ffa8f992023b4e79de18770660f3063bb7d.
 Four fresh uninterrupted shards:1185scan,359admitted,826rejected; all359
 native/traced/untraced triples exact against repository manifest,1077total.
 No resumed records or fresh Harbour/fulloracle claim. No compiler change.
+
+## Fresh immutable-print execution
+
+Compiler8d6760e356385d8acda58d87326f5f781796448383161d13d4e2d916f57135ae.
+Fresh four-shard scan1185,371admitted,814rejected; all371native/traced/
+untraced triples exact against repository manifest,1113triples total.
+No resumed records or freshHarbour/fulloracle claim. No compiler change.
