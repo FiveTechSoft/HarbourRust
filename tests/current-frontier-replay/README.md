@@ -18,3 +18,11 @@ Compiler711ec8a6a928302e813498c3688b0cfd216dc13f47ead8053245a26e938c22ed.
 Raw source/hash/command/cwd/oracle/native/LLVM rc/stdout/stderr retained.
 NoABI/ownership/RC/ASort/numericdivision/workflow/push/publication/rebase.
 JulioPonceMITexamples specifications only,no implementation/cambio.diff copied.
+
+Latest tests-only refresh:23gates425mixedrows on compiler
+66e785f52a9c6a583eaed79bb184a715db5fbcf2d118f9abb45ba7e56943e623.
+Adds dynamicSTEP46(24exact+6namedlimits+16Windowsreject) and constantSTEP/
+liveTO21exact. Includes zeroSTEP LOOP/EXIT and thread-family exclusion.
+Prior counts above describe the preceding21-gate state,not this run.
+No compiler/global/performance repeat. Fresh native dynamicSTEP gate111
+also passes separately;8LLVMroutechecks there are emission-only.

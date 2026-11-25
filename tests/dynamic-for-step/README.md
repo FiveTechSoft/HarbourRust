@@ -50,3 +50,9 @@ credited specifications only. New commit, no push/publication/workflows or
 rebase. Package excludes binaries/objects/disposable assembly.
 
 python tests/dynamic-for-step/check.py --compiler target/release/hbc --hbmk2 /path/hbmk2 --spec-root /path/harbour --output /new/path
+
+LLVM follow-up:checker now admits scalar dynamic STEP on Linux. Updated this
+legacy gate's route expectations:8cases emitLLVM,2(STATIC/exception)still
+reject. These8are EMISSIONONLY in this script;the separate LLVM dynamic-step
+gate executes supported scalar fixtures against fresh Harbour. Other target
+rejections and the native exact/balance requirements remain unchanged.

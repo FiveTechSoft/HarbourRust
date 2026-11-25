@@ -5,7 +5,7 @@ import argparse,json,subprocess,hashlib,sys
 p=argparse.ArgumentParser()
 for n in ['compiler','hbmk2','llvm-lib','output']:p.add_argument('--'+n,required=True)
 a=p.parse_args();r=Path(__file__).resolve().parents[2];out=Path(a.output).resolve();out.mkdir();rows=[];cc=Path(a.compiler).resolve();sha=hashlib.sha256(cc.read_bytes()).hexdigest()
-names=['cli-defines','pp-sign-boundary','pp-param-sign','pp-if-hex','pp-if-expand','pp-defined-form','pp-if-logical','pp-if-assoc','pp-if-bitwise','pp-if-shift','pp-if-ne','pp-if-chain','llvm-borrowed-len','llvm-borrowed-empty','llvm-borrowed-asc','llvm-borrowed-at','llvm-borrowed-rat','llvm-int','llvm-inline-set','llvm-set-followup','llvm-idxcompound']
+names=['cli-defines','pp-sign-boundary','pp-param-sign','pp-if-hex','pp-if-expand','pp-defined-form','pp-if-logical','pp-if-assoc','pp-if-bitwise','pp-if-shift','pp-if-ne','pp-if-chain','llvm-borrowed-len','llvm-borrowed-empty','llvm-borrowed-asc','llvm-borrowed-at','llvm-borrowed-rat','llvm-int','llvm-inline-set','llvm-set-followup','llvm-idxcompound','llvm-dynamic-step','llvm-for-live-bound']
 for name in names:
  d=out/name;cmd=[sys.executable,str(r/'tests'/name/'check.py'),'--compiler',str(cc),'--hbmk2',str(Path(a.hbmk2).resolve()),'--output',str(d)]
  if name.startswith('llvm-'):cmd+=['--llvm-lib',str(Path(a.llvm_lib).resolve())]

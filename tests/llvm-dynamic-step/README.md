@@ -19,3 +19,11 @@ FullLLVMmanifest1185scan357admittedx3=1071exactmanifest,828reject,notfresh
 Harbour. No fullPE/Mac/performance/allhistorical claim. No publication/push/
 workflows/rebase. JulioPonceMITexamples specifications only,no implementation
 or cambio.diff copied. Oracle694428e1c12f726675b19324d62167fa77d68185.
+
+Follow-up tests only:zero-valued STEP with repeated LOOP then EXIT now exact;
+unused thread-family call keeps STEP exception closed. Own gate46rows=
+24exact+6namedlimits+16Windowsrejections. Existing native dynamic-step gate
+updated:8supportedLLVMcases are emission-only,2STATIC/exception still reject.
+Full native gate111 passes including50exact+10strictzero+40routechecks+11limits.
+Cumulative wrapper now23gates425mixedrowsfreshPASS on unchanged compiler.
+GlobalRust/manifest/originals/performance not repeated for this test-only.
