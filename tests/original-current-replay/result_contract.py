@@ -7,8 +7,12 @@ MODES = {'native','external','flat','noescape','noprune'}
 EXACT = {'exact-Harbour','original-exact-Harbour','original-exact-output-and-effects'}
 ZERO = {'strict-final-balance','strict-final-balance-and-effects'}
 DEBTS = {'inhprob':2,'classch':2}
+LEGACY = {
+    'original-input-control': ({'base2','for2','longstr'},'strict-final-balance',99),
+    'original-filesystem-control': ({'fileio','fileio2','flink','libname','curdirt','cursor'},'strict-final-balance-and-effects',0),
+}
 
-def validate(rows,spec_root):
+def validate(rows,spec_root,gate=None):
     names={}
     for row in rows:
         name=Path(row['name']).stem
@@ -35,7 +39,10 @@ def validate(rows,spec_root):
                 else:
                     # Existing input/effects gates have their own exact-stdout
                     # control and explicit DELTA=0 marker, not shared guard.
-                    assert row['marker']=='DELTA=0' and row['rc'] in [0,99],(name,'legacy zero marker')
+                    assert gate in LEGACY,(name,'legacy gate not authorized')
+                    allowed,required_kind,required_rc=LEGACY[gate]
+                    assert name in allowed and kind==required_kind,(name,'legacy source/kind')
+                    assert row['marker']=='DELTA=0' and row['rc']==required_rc,(name,'legacy zero marker/rc')
             record['balance'].append(expected)
     for name,record in names.items():
         assert Counter(record['modes'])==Counter(MODES),(name,'missing/duplicate mode')

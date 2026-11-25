@@ -74,3 +74,15 @@ hash fail closed. Duplicate sources across gates are rejected. Aggregate
 must be55unique sources,275exact,53zero,2known debts,not assumed from length.
 Ten unit controls,including nine malformed records;Python41=39pass2skip.
 Complete wrapper freshly re-executed328clean+2known debts,compiler unchanged.
+
+## C2 legacy and debt scope follow-up
+
+Legacy DELTA0 shape is now bound to the actual producing gate,source names,
+kind and exact rc:input base2/for2/longstr require strict-final-balance rc99;
+filesystem fileio/fileio2/flink/libname/curdirt/cursor require
+strict-final-balance-and-effects rc0. No other gate/source can use legacy
+fallback. Shared strict state remains the default. Six additional unit
+methods cover both valid debts,zero misclassification,seven malformed debt
+fields,unknown debt source,all nine legacy sources and wrong gate/rc/kind/
+marker/source variants. Python47=45pass2skip. Full fresh wrapper unchanged
+328clean+2knownDELTA2,55sources. No compiler or semantic change.

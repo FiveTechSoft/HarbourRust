@@ -31,3 +31,38 @@ class ResultContract(unittest.TestCase):
         rows=copy.deepcopy(self.rows);rows[-1]['source_sha256']='wrong';self.check_bad(rows)
     def test_missing_state(self):
         rows=copy.deepcopy(self.rows);rows[-1]['state_ok']=False;self.check_bad(rows)
+    def source_rows(self,name):
+        (self.root/'tests'/(name+'.prg')).write_text('return nil\n')
+        rows=copy.deepcopy(self.rows)
+        for row in rows:row['name']=name
+        return rows
+    def test_both_known_debts_are_valid(self):
+        for name in ['inhprob','classch']:
+            with self.subTest(name=name):
+                rows=self.source_rows(name);rows[-1].update(kind='known-nonzero-balance',delta=2,expected_delta=2,rc=99,stderr='DELTA=2\n')
+                self.assertEqual(m.validate(rows,self.root)['known_debt'],1)
+    def test_known_debt_cannot_be_reported_as_zero(self):
+        for name in ['inhprob','classch']:
+            with self.subTest(name=name):self.check_bad(self.source_rows(name))
+    def test_debt_record_requires_exact_state(self):
+        for field,value in [('delta',0),('expected_delta',3),('rc',0),('stderr','DELTA=2'),('state_ok',False),('stdout_match',False),('kind','strict-final-balance')]:
+            with self.subTest(field=field):
+                rows=self.source_rows('inhprob');rows[-1].update(kind='known-nonzero-balance',delta=2,expected_delta=2,rc=99,stderr='DELTA=2\n');rows[-1][field]=value;self.check_bad(rows)
+    def test_unknown_source_cannot_be_known_debt(self):
+        rows=copy.deepcopy(self.rows);rows[-1].update(kind='known-nonzero-balance',delta=2,expected_delta=2,rc=99,stderr='DELTA=2\n');self.check_bad(rows)
+    def legacy_rows(self,name,kind,rc):
+        rows=self.source_rows(name);rows[-1]=dict(name=name,kind=kind,source_sha256=self.digest,delta=0,rc=rc,marker='DELTA=0');return rows
+    def test_all_legacy_sources_require_their_exact_gate_shape(self):
+        for gate,(names,kind,rc)in m.LEGACY.items():
+            for name in names:
+                with self.subTest(gate=gate,name=name):
+                    rows=self.legacy_rows(name,kind,rc)
+                    self.assertEqual(m.validate(rows,self.root,gate=gate)['strict_zero'],1)
+                    for bad_gate in [None,'other']:
+                        with self.assertRaises(AssertionError):m.validate(rows,self.root,gate=bad_gate)
+                    for field,value in [('rc',99 if rc==0 else 0),('marker','DELTA=1'),('kind','strict-final-balance' if kind.endswith('effects')else 'strict-final-balance-and-effects')]:
+                        bad=copy.deepcopy(rows);bad[-1][field]=value
+                        with self.assertRaises(AssertionError):m.validate(bad,self.root,gate=gate)
+    def test_legacy_gate_cannot_accept_other_source(self):
+        rows=self.legacy_rows('example','strict-final-balance',99)
+        with self.assertRaises(AssertionError):m.validate(rows,self.root,gate='original-input-control')
