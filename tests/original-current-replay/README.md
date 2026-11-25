@@ -29,3 +29,10 @@ The wrapper now also invokes original-loop-byref-control for two newly
 admitted intact originals. Current cumulative scope34originals,
 170exact executions+32strict zero balances=202clean,2knownDELTA2debt
 records separately. This extends the32original historical scope above.
+
+## Additional deterministic console coverage
+
+original-console-extra adds11already-admitted intact originals with fresh
+55exact executions+11strictzero checks. Cumulative45originals,
+225exact+43strictzero=268clean,2knownDELTA2debt records separate.
+These11are execution coverage,not new compiler admissions.

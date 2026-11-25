@@ -5,7 +5,7 @@ import argparse,subprocess,json,hashlib,sys
 p=argparse.ArgumentParser()
 for n in ['compiler','hbmk2','spec-root','output']:p.add_argument('--'+n,required=True)
 a=p.parse_args();root=Path(__file__).resolve().parents[2];out=Path(a.output).resolve();out.mkdir(parents=True,exist_ok=False);rows=[];cc=str(Path(a.compiler).resolve())
-for name in ['original-array-control','original-scalar-control','original-calls-control','original-input-control','original-filesystem-control','original-loop-byref-control']:
+for name in ['original-array-control','original-scalar-control','original-calls-control','original-input-control','original-filesystem-control','original-loop-byref-control','original-console-extra']:
  d=out/name;cmd=[sys.executable,str(root/'tests'/name/'check.py'),'--compiler',cc,'--hbmk2',str(Path(a.hbmk2).resolve()),'--spec-root',str(Path(a.spec_root).resolve()),'--output',str(d)];z=subprocess.run(cmd,cwd=root,capture_output=True,timeout=120,stdin=subprocess.DEVNULL)
  for k,b in [('stdout',z.stdout),('stderr',z.stderr),('rc',str(z.returncode).encode())]:(out/(name+'.'+k)).write_bytes(b)
  (out/(name+'.command.json')).write_text(json.dumps(dict(argv=cmd,cwd=str(root)),indent=2)+'\n');assert z.returncode==0,(name,z.stdout,z.stderr);j=json.loads((d/'results.json').read_text());assert j['compiler_sha256']==hashlib.sha256(Path(cc).read_bytes()).hexdigest();debt=[x for x in j['rows'] if x.get('kind')=='known-nonzero-balance'];clean=len(j['rows'])-len(debt);rows.append(dict(name=name,exact_or_zero=clean,known_debts=debt,compiler_sha256=j['compiler_sha256']));print(name,'exact/balance',clean,'known debts',len(debt),flush=True)
