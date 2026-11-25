@@ -152,6 +152,14 @@ impl Ir {
     // calls, sequence effects and checked increments execute exactly once.
     self.expr(&args[0])?
    },
+   Expr::Call(n,args) if ["isdigit","isalpha","isupper","islower"].iter().any(|b|is_builtin(n,b)) && args.len()==1=>{
+    let text=match &args[0]{Expr::Var(v)=>self.strings.get(v).cloned(),e=>borrowed_constant(e)};
+    let text=text.ok_or("LLVM scalar: character predicate requires immutable borrowed constant string")?;
+    let first=text.as_bytes().first().copied();
+    if first.map_or(false,|b|!b.is_ascii()){return Err("LLVM scalar: non-ASCII character predicate unsupported".into())}
+    let yes=first.map_or(false,|b|if is_builtin(n,"isdigit"){b.is_ascii_digit()}else if is_builtin(n,"isalpha"){b.is_ascii_alphabetic()}else if is_builtin(n,"isupper"){b.is_ascii_uppercase()}else{b.is_ascii_lowercase()});
+    if yes{"1".into()}else{"0".into()}
+   },
    Expr::Call(n,args) if is_builtin(n,"asc") && args.len()==1=>{
     let text=match &args[0] {Expr::Var(v)=>self.strings.get(v).cloned(),e=>borrowed_constant(e)};
     match text {Some(text)=>text.as_bytes().first().copied().unwrap_or(0).to_string(),None=>return Err("LLVM scalar: Asc only on immutable borrowed constant strings".into())}
@@ -235,7 +243,7 @@ impl Ir {
    _=>{self.expr(e)?;Ok(())}
   }
  }
- fn isbool(&self,e:&Expr)->bool {match e {Expr::Set(_,rhs)=>self.isbool(rhs),Expr::Seq(es)=>es.last().map(|e|self.isbool(e)).unwrap_or(false),Expr::Log(_)|Expr::Cmp(..)|Expr::LNot(_)|Expr::LAnd(..)|Expr::LOr(..)=>true,Expr::Var(n)=>self.bools.contains(n),Expr::Call(n,_) if self.bool_returns.contains(n)=>true,Expr::Call(n,_) if is_builtin(n,"hb_bittest")||is_builtin(n,"empty")=>true,Expr::Call(n,a) if is_builtin(n,"iif") && a.len()==3=>self.isbool(&a[1]),Expr::Call(n,a) if (is_builtin(n,"min")||is_builtin(n,"max")) && a.len()==2=>self.isbool(&a[0]),_=>false}}
+ fn isbool(&self,e:&Expr)->bool {match e {Expr::Set(_,rhs)=>self.isbool(rhs),Expr::Seq(es)=>es.last().map(|e|self.isbool(e)).unwrap_or(false),Expr::Log(_)|Expr::Cmp(..)|Expr::LNot(_)|Expr::LAnd(..)|Expr::LOr(..)=>true,Expr::Var(n)=>self.bools.contains(n),Expr::Call(n,_) if self.bool_returns.contains(n)=>true,Expr::Call(n,_) if is_builtin(n,"hb_bittest")||is_builtin(n,"empty")||["isdigit","isalpha","isupper","islower"].iter().any(|b|is_builtin(n,b))=>true,Expr::Call(n,a) if is_builtin(n,"iif") && a.len()==3=>self.isbool(&a[1]),Expr::Call(n,a) if (is_builtin(n,"min")||is_builtin(n,"max")) && a.len()==2=>self.isbool(&a[0]),_=>false}}
  fn cond(&mut self,e:&Expr)->Result<String,String>{let v=self.expr(e)?;let c=self.tmp();self.line(format!("{} = icmp ne i64 {}, 0",c,v));Ok(c)}
  fn print_items(&mut self,es:&[Expr],inline:bool,raw:bool)->Result<(),String>{
   // Evaluate every item before emitting the outer newline or separator.
