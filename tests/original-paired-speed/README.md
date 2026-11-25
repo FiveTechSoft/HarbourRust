@@ -416,3 +416,19 @@ Run b:
 - longstr2.prg: Harbour 4.586371ms; HarbourRust 4.933932ms;ratio 0.930x.
 
 longstr2 loss retained.Tests-only,no compiler change.
+
+## Direct NIL print compiler refresh,25Nov2026
+
+Fresh paired process runs on86a2dab8compiler
+ed089cce82587b6b9b993b1223fb47fc987ddf07f54b041b622e9ef38a68458e.
+Pinned fresh Harbour694428e1,101alternating pairs/source,tworuns,oneCPU,
+1212timed+60warm executions all byte-exact. Medians nanoseconds
+(Harbour/HarbourRust ratio):fib8446224/2820308,2.995;repeat8589948/2848296,
+3.016. recursiv2841517/1451917,1.957;repeat2708572/1429539,1.895.
+longstr24777332/5235107,0.913;repeat4766679/5276963,0.903.
+The longstr2 loss remains. Startup,captured output and shutdown included,
+not isolated algorithm speed or universal comparison. Shared-host noise,
+no frequency isolation. No Windows/Mac runtime claim. No compiler change
+in this evidence commit,original sources unchanged. Julio Ponce MIT
+specifications credited,no implementation/cambio.diff copy. No push,
+publication,workflow or rebase.

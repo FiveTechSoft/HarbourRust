@@ -130,3 +130,12 @@ Compilera2101f9451e9d13b1de0f8d4768d8efae127e4cea0f7821d567a9485d29cb0aa.
 Fresh four-shard scan1185,372admitted,813rejected;all372native/traced/
 untracedtriples exact against repository manifest,1116triples total.
 No resumedrecords or freshHarbour/fulloracleclaim.No compiler change.
+
+## Direct literal NIL print refresh,25Nov2026
+
+Test-only refresh on86a2dab8. Same LLVM15 environment throughout this
+manifest/performance refresh.1185inputs scanned:374admitted,811rejected;
+1122native/traced/untraced exact triples against repository manifest
+expectations,not fresh Harbour. No normalized output. Compiler unchanged
+ed089cce82587b6b9b993b1223fb47fc987ddf07f54b041b622e9ef38a68458e.
+No Windows/Mac runtime claim. Direct literal NIL print only,no value ABI.
