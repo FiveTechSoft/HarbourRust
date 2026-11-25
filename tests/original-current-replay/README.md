@@ -94,3 +94,9 @@ original-longstr2-control adds already-admitted longstr2.prg,including its
 =334clean across56unique originals,2knownDELTA2separate. Sharedguard takes
 optional exact programstderr,not arbitrary stderr suppression. Wrapper scope
 is restricted to this gate/source. No new admission/performance claim.
+
+## Isolated GTSTD box coverage
+
+original-box-control adds already-admitted intact box.prg under existing
+isolated-literal GTSTD semantics only.57unique sources,285exact+55zero
+=340clean,2knownDELTA2separate. No general terminal or new admissionclaim.
