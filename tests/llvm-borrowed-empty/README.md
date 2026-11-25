@@ -50,3 +50,9 @@ value support. Two own MIT sources cover local logical bindings,nesting,
 comparisons,short-circuit effects,IIf and loops against fresh Harbour in
 native/traced/untraced modes. Two named negatives keep NIL local storage
 and NIL-valued IIf rejected. Existing fixed-array and string paths unchanged.
+
+## Selected ASCII matrix
+
+Own MIT test-only128ASCII byte sweep,including NUL. Selected leaves and
+checked increment conditions with printed counters test single evaluation.
+No compiler change or original source edits.

@@ -41,3 +41,9 @@ No locale, runtime string ABI, move or RC policy change. Gate total12fresh
 Harbour/native/LLVM exact rows plus16named LLVM rejections. Empty/NUL,
 all four predicates, nested choices, increments, skipped bounds errors,
 loop/logical/IF/IIf contexts covered. Broad evidence in package summary.
+
+## Selected ASCII matrix
+
+Own MIT test-only128ASCII byte sweep,including NUL. Selected leaves and
+checked increment conditions with printed counters test single evaluation.
+No compiler change or original source edits.

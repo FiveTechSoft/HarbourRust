@@ -35,3 +35,9 @@ string ABI, direct alias or ownership change. Empty gives0; NUL/ASCII/UTF8
 first-byte semantics stay unchanged. Gate total12fresh exact Harbour/native/
 LLVM rows plus8named LLVM rejections. Repeated loops, increments and skipped
 bounds-error condition covered. Broad current evidence in package summary.
+
+## Selected ASCII matrix
+
+Own MIT test-only128ASCII byte sweep,including NUL. Selected leaves and
+checked increment conditions with printed counters test single evaluation.
+No compiler change or original source edits.
