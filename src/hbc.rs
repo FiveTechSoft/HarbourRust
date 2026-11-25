@@ -8652,6 +8652,14 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 }
                 return Ok(Ty::F64);
             }
+            if is_builtin(id,"tone") {
+                if !DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get()) {return Err(format!("line {}: Tone requires ordinary Linux GTSTD without threads/macros",n));}
+                if args.len()!=2 || args.iter().any(|e|!matches!(e,Expr::Int(_)|Expr::Float(..))) {return Err(format!("line {}: Tone requires two numeric literals in this increment",n));}
+                for a in args {let t=type_expr(a,env,sigs,n)?;if !matches!(t,Ty::I64|Ty::F64){return Err(format!("line {}: Tone requires numeric literals",n));}}
+                let ticks=match &args[1]{Expr::Int(v)=>v.parse::<f64>().unwrap_or(f64::NAN),Expr::Float(v,_)=>v.parse::<f64>().unwrap_or(f64::NAN),_=>unreachable!()};
+                if !ticks.is_finite() || !(0.0..=182.0).contains(&ticks) {return Err(format!("line {}: Tone duration literal requires finite0..182ticks in this increment",n));}
+                return Ok(Ty::Dyn);
+            }
             if is_builtin(id, "hb_idlesleep") {
                 // hb_idleSleep([nSeconds]) (rtl/idle.c:133): negative is a
                 // no-op, zero serves the idle queue once (no idle tasks in
@@ -14201,6 +14209,7 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
                 for a in args { apply_moves(a, env, sigs, false); }
                 return;
             }
+            if is_builtin(id,"tone") {return;}
             if is_builtin(id, "hb_idlesleep") {
                 // The numeric seconds argument is READ only; nothing moves.
                 for a in args { apply_moves(a, env, sigs, false); }
@@ -19095,6 +19104,10 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             out.push_str(&format!("    call hbc_math_{}
 ", id.to_lowercase()));
         }
+        Expr::Call(id,args) if is_builtin(id,"tone") => {
+            cg_f64_operand(&args[1],env,sigs,strs,out,target);
+            out.push_str("    call hbc_tone_linux\n    mov $1, %eax\n    xor %edx, %edx\n");
+        }
         Expr::Call(id,args) if is_builtin(id,"hb_idlesleep") => {
             // Both dispatch sides: a typed numeric feeds xmm0 directly; a
             // Dyn unpacks by kind (float pair through hbc_float_unpack,
@@ -22801,6 +22814,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             if is_builtin(id, "hb_mutexcreate") || is_builtin(id, "hb_mutexnotify") || is_builtin(id, "hb_mutexnotifyall") { return Ty::Dyn; }
             if is_builtin(id, "hb_mutexlock") || is_builtin(id, "hb_mutexunlock") || is_builtin(id, "hb_mutexsubscribe") || is_builtin(id, "hb_mutexsubscribenow") || is_builtin(id, "hb_mutexqueueinfo") || is_builtin(id, "hb_threadonce") { return Ty::Bool; }
             if is_builtin(id, "hb_mutexeval") { return Ty::I64; }
+            if is_builtin(id,"tone") {return Ty::Dyn;}
                         if is_builtin(id, "hb_idlesleep") { return Ty::Dyn; }
             match sigs.iter().find(|v| v.name == *id) {
                 Some(s) => s.ret.expect("checked"),
@@ -36492,6 +36506,7 @@ fn finalize_trace(mut out: String, target: Target) -> String {
         out.push_str(include_str!("dirbase_linux.s"));
     }
     if out.contains("call hbc_diskspace_linux") {out.push_str(include_str!("diskspace_linux.s"));}
+    if out.contains("call hbc_tone_linux") {out.push_str(include_str!("tone_linux.s"));}
     if out.contains("call hbc_milliseconds") {out.push_str(MILLISECONDS_LINUX);}
     if out.contains("call hbc_seconds") {
         out.push_str(if MACHO_MODE.with(|v| v.get()) { SECONDS_DARWIN } else { match target {Target::Windows=>SECONDS_WINDOWS,_=>SECONDS_LINUX} });
