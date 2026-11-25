@@ -13,6 +13,7 @@ s=re.sub(r'\.L([A-Za-z0-9_.$]+)',r'.Lhrdbfw_\1',s)
 # native PE writer and development binutils understand.
 s=re.sub(r'call\s+\*__imp_(\w+)\(%rip\)',r'call \1',s)
 s=re.sub(r'movq\s+__imp_(\w+)\(%rip\),\s*(%\w+)',r'leaq \1(%rip), \2',s)
+s=re.sub(r'jmp\s+\*__imp_(\w+)\(%rip\)',r'jmp \1',s)
 s=re.sub(r'(?<![A-Za-z0-9_.$])(\d+)\+([A-Za-z_.$][A-Za-z0-9_.$]*)',r'\2+\1',s)
 s=re.sub(r'^(\s*(?:sal|sar|shl|shr|rol|ror)[bwlq]?)\s+(%\w+)\s*$',r'\1 $1, \2',s,flags=re.M)
 
