@@ -178,6 +178,20 @@ pub fn eval_if(expr: &str, defs: &HashMap<String, Def>, line: usize) -> Result<b
             continue;
         }
         if c.is_ascii_alphabetic() || c == '_' || c == '.' {
+            if c=='.' {
+                let mut j=i+1;
+                while j<b.len() && b[j].is_ascii_alphabetic(){j+=1;}
+                if b.get(j)==Some(&b'.') {
+                    match expr[i..=j].to_ascii_uppercase().as_str() {
+                        ".T."=>{toks.push(T::Num(1));i=j+1;continue;},
+                        ".F."=>{toks.push(T::Num(0));i=j+1;continue;},
+                        ".AND."=>{toks.push(T::And);i=j+1;continue;},
+                        ".OR."=>{toks.push(T::Or);i=j+1;continue;},
+                        ".NOT."=>{toks.push(T::Not);i=j+1;continue;},
+                        _=>{}
+                    }
+                }
+            }
             let mut j = i;
             while j < b.len() && ((b[j] as char).is_ascii_alphanumeric() || b[j] == b'_' || b[j] == b'.') { j += 1; }
             let w = &expr[i..j];
@@ -2264,5 +2278,17 @@ mod defined_form_tests {
         assert!(eval_if(".not.defined(MISSING)",&p.defs,1).unwrap());
         for e in ["Defined(X)","DEFINED(X)","definedx(X)"]{assert!(eval_if(e,&p.defs,1).is_err());}
         p.define_cli("A=defined(X)").unwrap();assert!(eval_if("A",&p.defs,1).is_err());
+    }
+}
+
+#[cfg(test)]
+mod if_logical_tests {
+    use super::*;
+    #[test]
+    fn literal_values_adjacent_operators_and_eager_errors() {
+        let p=Pp::new(Vec::new(),false);
+        for e in [".T.",".t.",".NOT..F.",".T..AND..T.",".F..OR..T.",".T.==1"]{assert!(eval_if(e,&p.defs,1).unwrap(),"{}",e);}
+        assert!(!eval_if(".f.",&p.defs,1).unwrap());
+        for e in [".F..AND.(1/0)",".T..OR.(1/0)"]{assert!(eval_if(e,&p.defs,1).is_err());}
     }
 }
