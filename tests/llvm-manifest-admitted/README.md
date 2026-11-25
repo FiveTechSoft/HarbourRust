@@ -163,3 +163,10 @@ Test-only on45350ac6.1185scan/374admitted/811reject,1122exact triples
 native/traced/untraced against repo expectations,not fresh Harbour.No new
 manifest admission.Compilerce8afbbfddccff598eee416907a1fecf4bc2989fd00497cc32b99252d5654803.
 LLVM15constant,no environment/gate changes.No Windows/Mac runtime claim.
+
+## Contains selected constant haystack refresh,25Nov2026
+
+Test-only on728a216a.1185scan/374admitted/811reject,1122exact triples
+native/traced/untraced against repo expectations,not fresh Harbour.No new
+manifest admission.Compiler154a776ede264ee76add3c18dbab7e33e207cc1933c3ae13822b0dec996b43f9.
+LLVM15constant,no environment/gate changes.No Windows/Mac runtime claim.
