@@ -296,7 +296,7 @@ pub fn eval_if(expr: &str, defs: &HashMap<String, Def>, line: usize) -> Result<b
                 if op != "*" && op != "/" && op != "%" { break; }
                 let op = op.clone();
                 *p += 1;
-                let r = parse_term(t, p, line)?;
+                let r = parse_atom(t, p, line)?;
                 l = match op.as_str() {
                     "*" => l.wrapping_mul(r),
                     "/" => if r == 0 { return Err(format!("line {}: division by zero in #if", line)); } else { l.wrapping_div(r) },
@@ -2290,5 +2290,16 @@ mod if_logical_tests {
         for e in [".T.",".t.",".NOT..F.",".T..AND..T.",".F..OR..T.",".T.==1"]{assert!(eval_if(e,&p.defs,1).unwrap(),"{}",e);}
         assert!(!eval_if(".f.",&p.defs,1).unwrap());
         for e in [".F..AND.(1/0)",".T..OR.(1/0)"]{assert!(eval_if(e,&p.defs,1).is_err());}
+    }
+}
+
+#[cfg(test)]
+mod if_associativity_tests {
+    use super::*;
+    #[test]
+    fn multiply_divide_remainder_are_left_associative() {
+        let p=Pp::new(Vec::new(),false);
+        for e in ["24/4/2==3","2*3/4==1","20%6*3==6","20/6*3==9","20%6%3==2","-24/4/2==-3","24/(4/2)==12","2*(3/4)==0"]{assert!(eval_if(e,&p.defs,1).unwrap(),"{}",e);}
+        for e in ["1/0","1%0","1/(2-2)"]{assert!(eval_if(e,&p.defs,1).is_err());}
     }
 }
