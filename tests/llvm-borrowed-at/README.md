@@ -31,3 +31,13 @@ Own gate: 9 fresh Harbour/native/LLVM exact rows and 6 named LLVM rejections.
 New cases cover overlapping repeated text, empty needle/haystack, NUL,
 UTF8 byte positions, false/true matches and numeric/control contexts.
 Broad current results are listed in the package summary.
+
+## Selected constant haystack
+
+At of an immutable constant needle and nested IIf constant haystack projects
+leaves to scalar positions. Every leaf must be immutable,even dead arms.
+Conditions execute lazily,once;empty needle still evaluates selected
+conditions. No string value ABI,owned/mutable or selected needle admission.
+Two own MIT sources cover effects,nested laziness,bounds/overflow skipped
+arms,NUL,UTF8,empty/absent/longer needles and logical contexts. Two new
+named negatives reject owned dead leaves and selected needles.

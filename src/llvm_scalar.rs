@@ -111,6 +111,17 @@ impl Ir {
    return Some(Expr::Call(n.clone(),vec![a[0].clone(),self.empty_selection(&a[1])?,self.empty_selection(&a[2])?]))
   }}None
  }
+ // At projects a selected haystack to an I64 offset. The needle is pure
+ // constant bytes, so no condition is duplicated or reordered across args.
+ fn at_haystack_selection(&self,needle:&str,e:&Expr)->Option<Expr>{
+  if let Some(text)=self.borrowed_constant_tree(e){
+   let pos=if needle.is_empty(){0}else{text.as_bytes().windows(needle.len()).position(|w|w==needle.as_bytes()).map(|i|i+1).unwrap_or(0)};
+   return Some(Expr::Int(pos.to_string()))
+  }
+  if let Expr::Call(n,a)=e {if is_builtin(n,"iif") && a.len()==3 {
+   return Some(Expr::Call(n.clone(),vec![a[0].clone(),self.at_haystack_selection(needle,&a[1])?,self.at_haystack_selection(needle,&a[2])?]))
+  }}None
+ }
  // Asc observes a selected constant leaf as an I64 byte, not a string ABI.
  fn asc_selection(&self,e:&Expr)->Option<Expr>{
   if let Some(text)=self.borrowed_constant_tree(e){return Some(Expr::Int(text.as_bytes().first().copied().unwrap_or(0).to_string()))}
@@ -190,6 +201,11 @@ impl Ir {
     let haystack=self.borrowed_constant_tree(&args[1]).ok_or("LLVM scalar: Rat only on immutable borrowed constant strings")?;
     // Count byte offsets and allow overlapping matches. Empty is absent.
     if needle.is_empty(){"0".into()}else{haystack.as_bytes().windows(needle.len()).rposition(|w|w==needle.as_bytes()).map(|i|i+1).unwrap_or(0).to_string()}
+   },
+   Expr::Call(n,args) if is_builtin(n,"at") && args.len()==2 && matches!(&args[1],Expr::Call(id,a) if is_builtin(id,"iif") && a.len()==3)=>{
+    let needle=self.borrowed_constant_tree(&args[0]).ok_or("LLVM scalar: At only on immutable borrowed constant strings")?;
+    let scalar=self.at_haystack_selection(&needle,&args[1]).ok_or("LLVM scalar: At only on immutable borrowed constant strings")?;
+    self.expr(&scalar)?
    },
    Expr::Call(n,args) if is_builtin(n,"at") && args.len()==2=>{
     let needle=self.borrowed_constant_tree(&args[0]).ok_or("LLVM scalar: At only on immutable borrowed constant strings")?;
