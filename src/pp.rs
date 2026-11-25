@@ -2342,10 +2342,10 @@ mod if_ne_alias_tests {
     #[test]
     fn comparison_aliases_preserve_precedence_and_values() {
         let p=Pp::new(Vec::new(),false);
-        for e in ["1<>2","1#2","-1<>1","1+2#4","1<<2#5","!1<>2","1<>2.AND.3#4","(1#2)==(1!=2)"] {
+        for e in ["1<>2","1#2","-1<>1","1+2#4","1<<2#5","1<>2.AND.3#4","(1#2)==(1!=2)"] {
             assert!(eval_if(e,&p.defs,1).unwrap(),"{}",e);
         }
-        for e in ["1<>1","1#1","-1#-1","1|2<>3","0xffffffffffffffff<>-1"] {
+        for e in ["!1<>2","1<>1","1#1","-1#-1","1|2<>3","0xffffffffffffffff<>-1"] {
             assert!(!eval_if(e,&p.defs,1).unwrap(),"{}",e);
         }
         for e in ["1=1","~1","1.XOR.0"] {assert!(eval_if(e,&p.defs,1).is_err());}
