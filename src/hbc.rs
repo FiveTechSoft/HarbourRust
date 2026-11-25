@@ -4479,7 +4479,7 @@ fn parse(src: &str) -> Result<Prog, String> {
             // Keep retained values/global storage outside this first route.
             fn check_init(ss: &[Stmt]) -> bool {
                 ss.iter().all(|st| match st {
-                    Stmt::Static(..) => false,
+                    Stmt::Static(_,_,e) => CURDIR_LINUX_NATIVE.with(|v|v.get()) && !MACRO_CONTEXT.with(|v|v.get()) && matches!(e,Expr::Int(_)|Expr::Str(_)|Expr::ArrLit(_)|Expr::DArrNew),
                     Stmt::Ret(_, None | Some(Expr::Nil)) => true,
                     Stmt::Ret(..) => false,
                     Stmt::If(_, _, a, b) => check_init(a) && check_init(b),
@@ -4489,7 +4489,7 @@ fn parse(src: &str) -> Result<Prog, String> {
                 })
             }
             if !check_init(&f.stmts) {
-                return Err(format!("line {}: INIT procedures require bare/NIL returns and no STATIC declarations in this increment", n));
+                return Err(format!("line {}: INIT procedures require bare/NIL returns; STATIC declarations require ordinary Linux integer/string/constant-array storage in this increment", n));
             }
         }
         funcs.push(f);

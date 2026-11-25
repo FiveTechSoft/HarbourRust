@@ -1,5 +1,5 @@
 INIT PROCEDURE Boot()
-STATIC x := 0
+STATIC x := .T.
 ? x
 RETURN
 PROCEDURE Main()
