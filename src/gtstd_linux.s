@@ -100,6 +100,8 @@ hbc_gtstd_before_dbf_system:
 # A formatted item separator is an observable refresh boundary; numeric
 # writers may emit padding/digits in chunks and must not flush per chunk.
 hbc_gtstd_separator:
+    cmpq $0, hbc_console_mode(%rip)
+    je hbc_print_str
     call hbc_print_str
     push %rax
     push %rcx
