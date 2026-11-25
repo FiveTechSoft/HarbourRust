@@ -151,6 +151,13 @@ fn bret_name(k: BRet) -> &'static str {
     match k { BRet::Int => "integer", BRet::Nil => "NIL", BRet::Bool => "logical" }
 }
 
+thread_local! {
+    static FOR_INLINE_BLOCKS: std::cell::RefCell<std::collections::HashSet<usize>> = std::cell::RefCell::new(std::collections::HashSet::new());
+    static MODULE_SCALAR_GETTERS: std::cell::RefCell<std::collections::HashSet<String>> = std::cell::RefCell::new(std::collections::HashSet::new());
+}
+fn module_scalar_getter(e:&Expr)->bool {
+    matches!(e,Expr::Call(id,aa)if aa.is_empty()&&MODULE_SCALAR_GETTERS.with(|m|m.borrow().contains(id)))
+}
 fn block_body_kind(body: &[Expr], sigs: &[Sig]) -> BRet {
     match body.last() {
         Some(Expr::Call(id, _)) if is_output_call(id) || sigs.iter().any(|s| s.name == *id && s.nil_ret_only) => BRet::Nil,
@@ -2633,6 +2640,9 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                     return Err(format!("line {}: `next` takes no expression", n));
                 }
                 *i += 1;
+                for e in [&start,&end,&step] {
+                    if let Expr::Call(name,args)=e {if is_builtin(name,"eval") {if let [Expr::BlockLit(bid,pp,bb)]=args.as_slice(){if pp.is_empty()&&matches!(bb.as_slice(),[Expr::Call(_,aa)]if aa.is_empty()){FOR_INLINE_BLOCKS.with(|v|v.borrow_mut().insert(*bid));}}}}
+                }
                 out.push(Stmt::For(n, id, start, end, step, body));
             }
             Tok::KwWhile => {
@@ -4101,6 +4111,8 @@ struct Prog {
 
 fn parse(src: &str) -> Result<Prog, String> {
     module_static::reset();
+    FOR_INLINE_BLOCKS.with(|v|v.borrow_mut().clear());
+    MODULE_SCALAR_GETTERS.with(|v|v.borrow_mut().clear());
     MACRO_CONTEXT.with(|c|c.set(false));
     DIRMAKE_USED.with(|v|v.set(false));
     INKEY_USED.with(|v|v.set(false));
@@ -4474,6 +4486,19 @@ fn parse(src: &str) -> Result<Prog, String> {
     module_static::discover_objects(&funcs,&methods,&classes,&module_slots)?;
     for f in &mut funcs { module_static::bind(f, &module_slots)?; }
     for m in &mut methods { module_static::bind(&mut m.f, &module_slots)?; }
+    // Closed scalar-accessor shape: one module NIL scalar return, optional
+    // literal-only output, and the synthetic STATIC binding. No owned Dyn.
+    for f in &funcs {
+        if !f.params.is_empty(){continue;}
+        let mut returns=0;
+        let safe=f.stmts.iter().all(|st|match st {
+            Stmt::Static(_,id,Expr::Nil)=>module_static::kind(&f.name,id)==Some(Ty::RefDyn),
+            Stmt::Print(_,es,_)=>es.iter().all(|e|matches!(e,Expr::Int(_)|Expr::Str(_)|Expr::Log(_))),
+            Stmt::Ret(_,Some(Expr::Var(v)))=>{returns+=1;module_static::kind(&f.name,v)==Some(Ty::RefDyn)},
+            _=>false,
+        });
+        if safe&&returns==1{MODULE_SCALAR_GETTERS.with(|v|v.borrow_mut().insert(f.name.clone()));}
+    }
     Ok(Prog { funcs, classes, methods, externs })
 }
 
@@ -10889,7 +10914,9 @@ fn check_block_body(id: usize, params: &[String], body: &[Expr], env: &[Local], 
         let final_nil = i + 1 == body.len() && t == Ty::Dyn && matches!(e, Expr::Call(id, _) if is_output_call(id) || sigs.iter().any(|s| s.name == *id && s.nil_ret_only));
         let final_bool = i + 1 == body.len() && t == Ty::Bool && (block_bool_tail(e)||(CAPTURE_MODE.get()==Some(2)&&matches!(e,Expr::Call(id,_)if shared_local::trace_helper(id)||shared_local::throw_helper(id))));
         let asort_literal=CAPTURE_MODE.get()==Some(2)&&i+1==body.len()&&matches!(e,Expr::Nil|Expr::Str(_));
-        if t != Ty::I64 && !discarded_nil && !final_nil && !final_bool && !asort_literal {
+        let scalar_for=FOR_INLINE_BLOCKS.with(|v|v.borrow().contains(&id)) && params.is_empty()&&body.len()==1&&t==Ty::Dyn&&module_scalar_getter(e);
+        if scalar_for && (!DECIMAL_LOCAL_PROFILE.with(|v|v.get())||MACRO_CONTEXT.with(|v|v.get())||shared_local::active()){return Err(format!("line {}: scalar module getter FOR blocks require ordinary Linux without threads/macros/shared captures",n));}
+        if t != Ty::I64 && !discarded_nil && !final_nil && !final_bool && !asort_literal && !scalar_for {
             return Err(format!("line {}: codeblock bodies are integer expressions, NIL-only calls or a final logical comparison in this increment", n));
         }
     }
@@ -27936,6 +27963,7 @@ fn emit_block(owner: &str, id: usize, params: &[String], body: &[Expr], sigs: &[
             let truth=!matches!(e,Expr::Int(t)if t.parse::<i64>()==Ok(0));
             out.push_str(if truth{"    mov $1, %eax\n"}else{"    xor %eax, %eax\n"});
         }else{cg_expr(e, &lenv, sigs, strs, out, target);}
+        if FOR_INLINE_BLOCKS.with(|v|v.borrow().contains(&id)) && body.len()==1 && module_scalar_getter(e) && expr_ty(e,&lenv,sigs)==Ty::Dyn {out.push_str("    call hbc_dyn_to_i64\n");}
         if i + 1 < body.len() {
             out.push_str("    # intermediate block expression: value discarded (probe c4)\n");
         }
