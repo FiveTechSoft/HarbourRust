@@ -123,3 +123,10 @@ Compiler7490ef2bf81487fa3259b510eb5e6a3be00d47044dee69fb374992a926b860b9.
 Fresh four-shard scan1185,371admitted,814rejected;all371native/traced/
 untracedtriples exact against repository manifest,1113triples total.
 No resumedrecords or freshHarbour/fulloracleclaim.No compiler change.
+
+## Fresh literal NIL-pair execution
+
+Compilera2101f9451e9d13b1de0f8d4768d8efae127e4cea0f7821d567a9485d29cb0aa.
+Fresh four-shard scan1185,372admitted,813rejected;all372native/traced/
+untracedtriples exact against repository manifest,1116triples total.
+No resumedrecords or freshHarbour/fulloracleclaim.No compiler change.
