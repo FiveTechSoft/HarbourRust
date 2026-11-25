@@ -13,7 +13,10 @@ def run(cmd,w,label):
 for src in [*sorted(here.glob('*.prg'))]:
  w=out/src.stem;w.mkdir();(w/src.name).write_bytes(src.read_bytes());(w/'input.sha256').write_text(hashlib.sha256(src.read_bytes()).hexdigest()+'  '+src.name+'\n')
  if src.stem.startswith('limit-'):
-  diagnostic=b'array elements must be integers or logicals' if src.stem.startswith('limit-outer-object-') else b'`len` is reserved by the code generator' if src.stem=='limit-user-len' else b'__enum' if src.stem=='limit-after' else b'string `for each` requires'
+  if src.stem.startswith('limit-outer-object-'): diagnostic=b'array elements must be integers or logicals'
+  elif src.stem.startswith('limit-user-') and src.stem not in ['limit-user-valtype','limit-user-iif']: diagnostic=('`'+src.stem.removeprefix('limit-user-')+'` is reserved by the code generator').encode()
+  elif src.stem=='limit-after': diagnostic=b'__enum'
+  else: diagnostic=b'string `for each` requires'
   r=run([cc,src,w/'limit'],w,'build');assert r.returncode==1 and diagnostic in r.stderr.lower() and not (w/'limit').exists(),(src,r.stderr);rows.append(dict(name=src.stem,kind='named-rejection',diagnostic=diagnostic.decode()));continue
  r=run([a.hbmk2,src,'-quiet','-gtstd','-w0','-o'+str(w/'oracle')],w,'oracle-build');assert r.returncode==0,(src,r.stderr)
  r=run([w/'oracle'],w,'oracle-run');assert r.returncode==0 and r.stderr==b'',(src,r.stderr);want=r.stdout;(w/'oracle').unlink()

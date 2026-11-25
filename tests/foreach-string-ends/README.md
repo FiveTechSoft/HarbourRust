@@ -47,3 +47,13 @@ copied.No push/publication/workflows/rebase.No generated binaries/objects/
 disposable assembly in package.Requires fresh C2.
 
 python tests/foreach-string-ends/check.py --compiler target/release/hbc --hbmk2 /path/hbmk2 --spec-root /path/harbour --output /new/path
+
+Conditional review follow-up:all whitelist function names now have a user
+FUNCTION collision fixture. ValType and IIf are not reserved;their user
+functions are excluded by existing is_builtin and the string observation
+guard rejects the calls. Asc,Len,Empty,Chr,hb_NToS,Str,Trim,LTrim,RTrim,
+AllTrim reject earlier as reserved names. This proves existing behavior,
+not a new is_builtin change. Each user body has MUST-NOT-RUN marker,each
+fixture asserts rc1,exact diagnostic class,and no executable. Fresh full
+gate106=40exact+8zero+32profile+26named limits. Compiler unchanged from
+baba9aed,no broad regression repeated for this tests-only increment.
