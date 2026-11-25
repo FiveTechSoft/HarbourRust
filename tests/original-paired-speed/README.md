@@ -256,3 +256,23 @@ Run b:
 - longstr2.prg: Harbour 4.689506ms; HarbourRust 5.165280ms;ratio 0.908x.
 
 longstr2 loss retained.Tests-only,no compiler change.
+
+## Fresh immutable concat-initializer compiler process measurements
+
+Compiler9b50d99477f2ce40b86360f7b4cc926d889f3fd7be585bf321fe8af77f0edbbe.
+Two independent101pair runs per source,fivewarmups per engine/source,
+alternatingorder,sameoneCPUaffinity;1212timed+60warm exacttriples
+againstfreshHarbour.Startup/capture/shutdown included,sharedhostnoise.
+No algorithm-only/universalclaim.
+
+Run a:
+- fib.prg: Harbour 8.313446ms; HarbourRust 2.791562ms;ratio 2.978x.
+- recursiv.prg: Harbour 2.633826ms; HarbourRust 1.404916ms;ratio 1.875x.
+- longstr2.prg: Harbour 4.791922ms; HarbourRust 5.238826ms;ratio 0.915x.
+
+Run b:
+- fib.prg: Harbour 8.271272ms; HarbourRust 2.772563ms;ratio 2.983x.
+- recursiv.prg: Harbour 2.639407ms; HarbourRust 1.404525ms;ratio 1.879x.
+- longstr2.prg: Harbour 5.113305ms; HarbourRust 5.540854ms;ratio 0.923x.
+
+longstr2 loss retained.Tests-only,no compiler change.

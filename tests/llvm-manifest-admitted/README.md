@@ -74,3 +74,10 @@ Compilerefbbdc50e71c4a4162f2170821c831b3ecf7a51d711369198f53d096e04597ff.
 Fresh four-shard scan1185,371admitted,814rejected; all371native/traced/
 untraced triples exact against repository manifest,1113triples total.
 No resumed records or freshHarbour/fulloracle claim.No compiler change.
+
+## Fresh immutable concat-initializer execution
+
+Compiler9b50d99477f2ce40b86360f7b4cc926d889f3fd7be585bf321fe8af77f0edbbe.
+Fresh four-shard scan1185,371admitted,814rejected; all371native/traced/
+untraced triples exact against repository manifest,1113triples total.
+No resumed records or freshHarbour/fulloracle claim.No compiler change.
