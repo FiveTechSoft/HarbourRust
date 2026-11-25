@@ -356,3 +356,23 @@ Run b:
 - longstr2.prg: Harbour 5.036012ms; HarbourRust 5.576632ms;ratio 0.903x.
 
 longstr2 loss retained.Tests-only,no compiler change.
+
+## Fresh Asc-only selection process measurements
+
+Compiler6c6df6c14b2aea47c3a673d6209dc22f64c32d1c12fa681fcafaf78a66146c99.
+Two independent101pairruns per source,fivewarmups per engine/source,
+alternatingorder,sameoneCPUaffinity;1212timed+60warm exacttriples
+againstfreshHarbour.Startup/capture/shutdown included,sharedhostnoise.
+No algorithm-only/universalclaim.
+
+Run a:
+- fib.prg: Harbour 8.595772ms; HarbourRust 2.842648ms;ratio 3.024x.
+- recursiv.prg: Harbour 2.717388ms; HarbourRust 1.432062ms;ratio 1.898x.
+- longstr2.prg: Harbour 4.775847ms; HarbourRust 5.217941ms;ratio 0.915x.
+
+Run b:
+- fib.prg: Harbour 8.451559ms; HarbourRust 2.831042ms;ratio 2.985x.
+- recursiv.prg: Harbour 2.712496ms; HarbourRust 1.437235ms;ratio 1.887x.
+- longstr2.prg: Harbour 4.928011ms; HarbourRust 5.289950ms;ratio 0.932x.
+
+longstr2 loss retained.Tests-only,no compiler change.
