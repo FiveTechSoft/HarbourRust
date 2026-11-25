@@ -22,3 +22,10 @@ suppliedimplementation/cambio.diff copied.No push/workflows/publication/
 rebase.Package excludes generated executables,objects,disposableassembly.
 
 python tests/original-current-replay/check.py --compiler target/release/hbc --hbmk2 /path/hbmk2 --spec-root /path/harbour --output /new/path
+
+## FOR/byref mandatory follow-up
+
+The wrapper now also invokes original-loop-byref-control for two newly
+admitted intact originals. Current cumulative scope34originals,
+170exact executions+32strict zero balances=202clean,2knownDELTA2debt
+records separately. This extends the32original historical scope above.
