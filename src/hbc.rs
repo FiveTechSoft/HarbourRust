@@ -23979,8 +23979,10 @@ fn cg_cond_jump(cond: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<Strin
                 CmpOp::Contains => {
                     if !a_tmp && !b_tmp {
                         cg_str_contains(out, fresh_lbl());
-                        out.push_str("    test %rax, %rax\n");
                     }
+                    // Temporary cleanup changes flags. Branch on the saved
+                    // boolean result, not ADD-rsp flags left by cleanup.
+                    out.push_str("    test %rax, %rax\n");
                     "jnz"
                 }
                 _ => {

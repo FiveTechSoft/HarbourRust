@@ -13,3 +13,18 @@ Further broad validation recorded separately in package summary. No claim of
 all historical tests,ASort,RC/numericdivision policy or nonLinux runtime.
 JulioPonceMITexamples specifications only,no implementation/cambio.diff copy.
 No push/publication/workflow/rebase. Oracle694428e1c12f726675b19324d62167fa77d68185.
+
+## Recursive immutable trees and native temporary branches
+
+The next increment resolves immutable locals inside pure concat trees for $.
+`t800_dollar_if.prg` is copied intact as `intact-t800.prg` (MIT upstream).
+Owned subtrees remain rejected. Native $ now tests its saved boolean after
+cleanup: ADD-rsp flags previously made false results with temporaries true.
+No allocation, free, ownership or RC policy changes.
+
+Current own gate: 5 positive sources x 3 fresh Harbour/native/LLVM routes =
+15 exact rows, plus 4 named limits x 2 LLVM modes = 8 rejections. Cumulative
+frontier: 26 gates, 476 mixed rows. Linux manifest 1185 exact; 618 negative
+sources x 2 targets unchanged; Harbour census 1041 sources, 60 admitted,
+no admission/diagnostic changes versus the previous compiler. These are
+native checks, not a fresh oracle replay for the full census/manifest.

@@ -96,6 +96,13 @@ impl Ir {
   let p=self.tmp();self.line(format!("{} = getelementptr [{} x i64], ptr {}, i64 0, i64 {}",p,k,base,m));
   Ok(p)
  }
+ // Resolve only lexical immutable borrowed bindings and pure concat trees.
+ // This is compile-time data,not allocation or a runtime string expression.
+ fn contains_constant(&self,e:&Expr)->Option<String>{match e {
+  Expr::Var(v)=>self.strings.get(v).cloned(),
+  Expr::Bin('+',a,b)=>Some(self.contains_constant(a)?+&self.contains_constant(b)?),
+  e=>borrowed_constant(e)
+ }}
  fn expr(&mut self,e:&Expr)->Result<String,String>{
   Ok(match e {
    Expr::Seq(es)=>{
@@ -125,9 +132,8 @@ impl Ir {
     self.block(&end);let r=self.tmp();self.line(format!("{} = load i64, ptr {}",r,slot));r
    },
    Expr::Cmp(CmpOp::Contains,a,b)=>{
-    let constant=|e:&Expr|match e{Expr::Var(v)=>self.strings.get(v).cloned(),e=>borrowed_constant(e)};
-    let needle=constant(a).ok_or("LLVM scalar: contains requires two immutable borrowed constant strings")?;
-    let haystack=constant(b).ok_or("LLVM scalar: contains requires two immutable borrowed constant strings")?;
+    let needle=self.contains_constant(a).ok_or("LLVM scalar: contains requires two immutable borrowed constant strings")?;
+    let haystack=self.contains_constant(b).ok_or("LLVM scalar: contains requires two immutable borrowed constant strings")?;
     if !needle.is_empty() && haystack.as_bytes().windows(needle.len()).any(|w|w==needle.as_bytes()){"1".into()}else{"0".into()}
    },
    Expr::Cmp(CmpOp::EqEq,a,b) if {
