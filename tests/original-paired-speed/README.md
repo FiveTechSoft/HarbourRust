@@ -86,3 +86,20 @@ isolation.No cross-reset timing-regression claim:environment was rebuilt.
 No global regression repeat tests-only,no new original closure,no Windows/
 Mac runtime claim.CorpusASort still missing.No push/workflows/publication/
 rebase. Raw pairs,commands,cwd,source hashes,warm outputs included.
+
+## Current enum-compiler refresh25Nov2026
+
+Fresh tests-only refresh on97679d03.Current compiler
+ aa8cb65c93c5ca8999274fb28dd25e85dff8fcee6aedad394f09751dc52d6986.
+Same pinned fresh oracle694428e1;two full101-pair runs,606pairs/
+1212timed processes+60warmups all exact.Different ordinary shared-host
+load means these are not paired regression measurements versus c287fe72.
+
+Medians ms(Harbour/HarbourRust),ratio:
+- fib8.490242/2.858912,2.970x;repeat8.492412/2.879795,2.949x.
+- recursiv2.682303/1.417717,1.892x;repeat2.660061/1.410235,1.886x.
+- longstr2 5.277672/7.011657,0.753x;repeat5.014764/6.765106,0.741x.
+
+Loss retained,longstr2 slower.This includes launch,capturedoutput,shutdown,
+not isolatedalgorithm or universalspeed.Same1CPUaffinity,no host/frequency
+isolation.No implementation/globalrepeat/originalclosure.Non-Linux untested.
