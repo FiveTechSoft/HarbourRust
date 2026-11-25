@@ -33,3 +33,10 @@ No push/publication/workflows/rebase.No generated binaries/objects/assembly
 in compact package.Requires new C2.
 
 python tests/foreach-array-ends/check.py --compiler target/release/hbc --hbmk2 /path/hbmk2 --spec-root /path/harbour --output /new/path
+
+Conditional review follow-up:two mandatory limits AAdd/ASize on the borrowed
+array with __enumIsLast inside FOR EACH require rc1,no executable and the
+existing diagnostic containing 'the loop borrows it'. Dedicated fresh
+negative evidence records the current working compiler hash;that compiler
+also has uncommitted string-enum changes,so it is not claimed to be the
+array-only binary above. No implementation change in this follow-up.
