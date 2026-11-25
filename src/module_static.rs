@@ -415,14 +415,16 @@ fn check_shared_array_uses(f: &Func, name: &str) -> Result<(), String> {
 }
 
 pub fn bind(f: &mut Func, slots: &[(usize, String, Expr)]) -> Result<(), String> {
-    // Function-local string slots own the same process-lifetime payload as
-    // module strings, but keep their function-qualified storage label.
-    for st in &f.stmts {if let Stmt::Static(line,name,Expr::Str(_))=st {
-        if !crate::CURDIR_LINUX_NATIVE.with(|v|v.get()) || crate::MACRO_CONTEXT.with(|v|v.get()) {
-            return Err(format!("line {}: local STATIC strings require ordinary Linux without threads/macros",line));
+    // Local string/array slots retain function-qualified process storage.
+    for st in &f.stmts {if let Stmt::Static(line,name,init)=st {
+        let ty=match init {Expr::Str(_)=>Some(Ty::StrOwn),Expr::ArrLit(_)|Expr::DArrNew=>Some(Ty::Dyn),_=>None};
+        if let Some(ty)=ty {
+            if !crate::CURDIR_LINUX_NATIVE.with(|v|v.get()) || crate::MACRO_CONTEXT.with(|v|v.get()) {
+                return Err(format!("line {}: local STATIC strings/arrays require ordinary Linux without threads/macros",line));
+            }
+            if ty==Ty::StrOwn {check_payload_uses(f,name,ty)?;}else{check_shared_array_uses(f,name)?;}
+            KINDS.with(|v|v.borrow_mut().insert((f.name.clone(),name.clone()),ty));
         }
-        check_payload_uses(f,name,Ty::StrOwn)?;
-        KINDS.with(|v|v.borrow_mut().insert((f.name.clone(),name.clone()),Ty::StrOwn));
     }}
     let mut prefix = Vec::new();
     for (index, (line, name, init)) in slots.iter().enumerate() {
