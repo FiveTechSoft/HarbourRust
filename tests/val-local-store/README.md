@@ -16,7 +16,8 @@ safety.py: three instrumented lifetime modes, 1000 stores plus 1000 RHS catches
 per Work, warmup then net allocation delta zero; five excluded profiles and two
 shape rejections. This allocation/error gate is not Harbour error parity.
 
-The intact seconds.prg advances from the limit assignment rejection to the
-existing integer-only FOR bound rejection. No new original closure claimed.
+The Val-only increment advanced intact seconds.prg to the FOR bound limit.
+The later for-dyn-bound increment now admits it, without clock byte-parity
+closure.
 Val's separately documented existing parser deviations remain; these probes
 do not establish parity for every numeric string or extend Val's parser.
