@@ -179,3 +179,14 @@ manifest admission.Compiler9601c238942a97b4c4daaf92b4526de375120edf3ade9ca143c9b
 LLVM15constant,no environment/gate changes.Shards0..2 delivered provisionally
 before removing only their reconstructible .o/.s/.ll to preserve disk margin.
 No resumed measurements or Windows/Mac runtime claim.
+
+## Selected-left exact equality follow-up
+
+Compiler4ed17cec: full Linux exact-output manifest1185 scanned,374 admitted
+across native/traced/untraced1122exact triples,811 rejected. Repository
+expectations,not fresh Harbour. Four shards complete without resume.
+Two new paired original process benchmarks,101pairs/source/run,1212timed
+executions plus60warmups,all triples exact against fresh Harbour. Ratios
+Harbour/HarbourRust fib3.001/3.016,recursiv1.859/1.863,longstr2 .896/.894.
+One CPU,alternating order,host noise/process startup included. Loss retained;
+no speed attribution to LLVM selected-left support or algorithm-only claim.
