@@ -110,6 +110,16 @@ struct Cond {
     taken: bool,
 }
 
+// #if hexadecimal tokens are 64-bit bit patterns, not decimal signed parses.
+// Accumulate with wrapping arithmetic, measured at bit63/64 and above.
+fn if_hex_number(token:&str)->Option<i64> {
+    let digits=token.strip_prefix("0x").or_else(||token.strip_prefix("0X"))?;
+    if digits.is_empty()||!digits.bytes().all(|b|b.is_ascii_hexdigit()){return None;}
+    let mut n=0u64;
+    for b in digits.bytes(){n=n.wrapping_mul(16).wrapping_add((b as char).to_digit(16)? as u64);}
+    Some(n as i64)
+}
+
 pub fn eval_if(expr: &str, defs: &HashMap<String, Def>, line: usize) -> Result<bool, String> {
     // Tokens: identifiers, integer literals, operators, defined(...).
     #[derive(Debug, Clone, PartialEq)]
@@ -132,6 +142,12 @@ pub fn eval_if(expr: &str, defs: &HashMap<String, Def>, line: usize) -> Result<b
         if c == '(' { toks.push(T::LP); i += 1; continue; }
         if c == ')' { toks.push(T::RP); i += 1; continue; }
         if c.is_ascii_digit() {
+            if c=='0' && i+1<b.len() && matches!(b[i+1],b'x'|b'X') {
+                let mut j=i+2;
+                while j<b.len() && (b[j].is_ascii_alphanumeric()||b[j]==b'_'){j+=1;}
+                let v=if_hex_number(&expr[i..j]).ok_or_else(||format!("line {}: bad hexadecimal number in #if",line))?;
+                toks.push(T::Num(v));i=j;continue;
+            }
             let mut j = i;
             while j < b.len() && (b[j] as char).is_ascii_digit() { j += 1; }
             let v: i64 = expr[i..j].parse().map_err(|_| format!("line {}: bad number in #if", line))?;
@@ -185,7 +201,7 @@ pub fn eval_if(expr: &str, defs: &HashMap<String, Def>, line: usize) -> Result<b
                 _ => {
                     // A defined macro expands to its body if numeric, else 0
                     // (macro names are case-sensitive).
-                    let v = defs.get(w).and_then(|d| d.body.trim().parse::<i64>().ok()).unwrap_or(0);
+                    let v = defs.get(w).and_then(|d| d.body.trim().parse::<i64>().ok().or_else(||if_hex_number(d.body.trim()))).unwrap_or(0);
                     toks.push(T::Num(v));
                 }
             }
@@ -292,6 +308,10 @@ pub fn eval_if(expr: &str, defs: &HashMap<String, Def>, line: usize) -> Result<b
     fn parse_atom(t: &[T], p: &mut usize, line: usize) -> Result<i64, String> {
         if *p >= t.len() { return Err(format!("line {}: error in #if expression", line)); }
         match &t[*p] {
+            T::Arith(op) if op=="+" || op=="-" => {
+                let neg=op=="-";*p+=1;let v=parse_atom(t,p,line)?;
+                Ok(if neg{v.wrapping_neg()}else{v})
+            }
             T::Num(v) => { *p += 1; Ok(*v) }
             T::LP => {
                 *p += 1;
@@ -2198,5 +2218,18 @@ mod parameter_sign_tests {
         for (body,arg,want) in [("2+x 3","+","2+ + 3"),("n+x","+1","n+ +1"),("7-x 2","-","7- - 2"),("x++","n","n++"),("++x","n","++n"),("x","n++","n++"),("x","","")] {
             assert_eq!(subst_params(body,&names,&[arg.into()]),want);
         }
+    }
+}
+
+#[cfg(test)]
+mod if_hex_tests {
+    use super::*;
+    #[test]
+    fn hex_if_literals_and_macro_bits() {
+        let mut p=Pp::new(Vec::new(),false);p.define_cli("HEX=0xAB").unwrap();
+        for text in ["0xff == 255","0XAB == 171","-0x10 == -16","HEX == 171","0x8000000000000000 < 0","0xffffffffffffffff == -1","0x10000000000000000 == 0"] {
+            assert!(eval_if(text,&p.defs,1).unwrap(),"{}",text);
+        }
+        for text in ["0x == 0","0xGG == 0","0x1G == 1"]{assert!(eval_if(text,&p.defs,1).is_err());}
     }
 }
