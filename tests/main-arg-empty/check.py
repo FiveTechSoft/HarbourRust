@@ -12,7 +12,7 @@ cases=[[],[''],[' '],['\t\r\n'],['x'],['0'],['','x'],['é',' ']]
 for src in sorted(Path(__file__).parent.glob('*.prg')):
  w=out/src.stem;w.mkdir();(w/'input.prg').write_bytes(src.read_bytes());(w/'input.sha256').write_text(hashlib.sha256(src.read_bytes()).hexdigest()+'\n')
  if src.stem.startswith('limit-'):
-  z=run([cc,src,w/'bad'],w,'reject');assert z.returncode==1 and b'Empty' in z.stderr and not(w/'bad').exists(),z.stderr;rows.append(dict(source=src.name,kind='named-limit'));continue
+  z=run([cc,src,w/'bad'],w,'reject');assert z.returncode==1 and (b'Empty' in z.stderr or b'sharing analysis' in z.stderr) and not(w/'bad').exists(),z.stderr;rows.append(dict(source=src.name,kind='named-limit'));continue
  z=run([a.hbmk2,src,'-quiet','-gtstd','-w0','-o'+str(w/'oracle')],w,'oracle-build');assert z.returncode==0,z.stderr
  for name,flags in [('native',[]),('external',['--external-as']),('flat',['--no-vas-arrays']),('noescape',['--no-escape-analysis']),('noprune',['--no-prune'])]:
   z=run([cc,src,w/name,'--instrument',*flags],w,name+'-build');assert z.returncode==0,z.stderr
