@@ -1,6 +1,6 @@
 # Lower/Upper/AllTrim sobre cadenas Dyn locales
 
-Incremento MIT propio. Solo se admiten variables Dyn y resultados Dyn de hb_defaultValue como argumento unico, en Linux ordinario sin threads/macros. El valor de ejecucion debe ser una cadena. No se añade una ABI de cadenas generica ni inferencia especulativa. Los caminos tipados anteriores y sus helpers ASCII permanecen intactos. No se promete conversion Unicode. La entrada se toma como snapshot independiente y se libera tras guardar el resultado propio.
+Incremento MIT propio. Solo se admiten variables Dyn y resultados Dyn de hb_defaultValue como argumento unico, en Linux o Windows ordinario sin threads/macros (Windows: tests/dyn-consumers-win; hb_defaultValue sigue solo en Linux). El valor de ejecucion debe ser una cadena. No se añade una ABI de cadenas generica ni inferencia especulativa. Los caminos tipados anteriores y sus helpers ASCII permanecen intactos. No se promete conversion Unicode. La entrada se toma como snapshot independiente y se libera tras guardar el resultado propio.
 
 El tipo incorrecto es un limite fatal explicito, NO un error Harbour recuperable. diagnostic.py lo demuestra: 30 compilaciones positivas con nil/int/float/bool/array, dos ensambladores; Harbour recupera y continua, este incremento termina con rc1. Solo el oracle lleva la traduccion declarada TRY a BEGIN SEQUENCE/RECOVER. Los casos funcionales positivos no tienen adaptadores.
 

@@ -5091,8 +5091,9 @@ thread_local! {
     // THREADS is discovered during typing and can otherwise arrive too late.
     static DECIMAL_LOCAL_PROFILE: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
     // Ordinary Linux or Windows native code without threads: the targets
-    // whose direct calls load the argument count for PCount.
-    static PCOUNT_PROFILE: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+    // that admit PCount and the Dyn string consumers (Val, CToD, Upper,
+    // Lower, AllTrim of an untyped LOCAL).
+    static NATIVE_PLAIN_PROFILE: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
 }
 // Same pre-fixpoint ordinary-Linux/no-thread proof as the decimal LOCAL
 // increment. Only mixed static numeric Min/Max admission uses this predicate.
@@ -8269,7 +8270,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 return Err(format!("line {}: `iif` branches must share a scalar type (float absorbs an int side), got {:?} and {:?}", n, ta, tb));
             }
             if ["lower","upper","alltrim"].iter().any(|b|is_builtin(id,b)) && args.len()==1 && (matches!(&args[0],Expr::Var(v) if env.iter().rev().any(|l|l.name==*v&&l.ty==Ty::Dyn)) || matches!(&args[0],Expr::Call(id,_) if is_builtin(id,"hb_defaultvalue"))) {
-                if !DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get()) {return Err(format!("line {}: Dyn string consumers require ordinary Linux without threads or macros in this increment",n));}
+                if !NATIVE_PLAIN_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get()) {return Err(format!("line {}: Dyn string consumers require ordinary Linux or Windows without threads or macros in this increment",n));}
                 if type_expr(&args[0],env,sigs,n)?!=Ty::Dyn {return Err(format!("line {}: Dyn string consumer argument changed type during checking",n));}
                 apply_moves(&args[0],env,sigs,false);return Ok(Ty::StrOwn);
             }
@@ -8386,8 +8387,8 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 // VAL of a dynamic (untyped LOCAL) variable: a string is parsed
                 // like the static case; any other runtime value is the same
                 // catchable Argument error as a statically non-string argument.
-                // Same gate as the other Dyn string consumers.
-                if !DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get()) {return Err(format!("line {}: Dyn string consumers require ordinary Linux without threads or macros in this increment",n));}
+                // Ordinary Linux or Windows (tests/val-dyn, tests/dyn-consumers-win).
+                if !NATIVE_PLAIN_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get()) {return Err(format!("line {}: Dyn string consumers require ordinary Linux or Windows without threads or macros in this increment",n));}
                 apply_moves(&args[0],env,sigs,false);
                 return Ok(Ty::F64);
             }
@@ -8891,7 +8892,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
             if is_builtin(id,"ctod") && args.len()==1 && matches!(&args[0],Expr::Var(v) if env.iter().rev().any(|l|l.name==*v&&l.ty==Ty::Dyn)) {
                 // CTOD of a dynamic (untyped LOCAL) variable holding a string:
                 // same Dyn string consumer gate as UPPER/LOWER/ALLTRIM.
-                if !DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get()) {return Err(format!("line {}: Dyn string consumers require ordinary Linux without threads or macros in this increment",n));}
+                if !NATIVE_PLAIN_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get()) {return Err(format!("line {}: Dyn string consumers require ordinary Linux or Windows without threads or macros in this increment",n));}
                 apply_moves(&args[0],env,sigs,false);
                 return Ok(Ty::Date);
             }
@@ -11711,7 +11712,7 @@ fn main_params_as_nil_locals(funcs:&mut [Func], deliver:bool) {
 // Unknown/control-flow forms fail closed; the existing Date checker still
 // rejects all later non-Date stores. No inference invokes type_expr here.
 fn narrow_bare_date_locals(funcs:&mut [Func]) {
-    if !DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get()) { return; }
+    if !NATIVE_PLAIN_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get()) { return; }
     fn date_producer(e:&Expr,name:&str,known:&std::collections::HashSet<String>)->bool {
         if expr_mentions(e,name){return false;}
         match e {
@@ -40472,7 +40473,7 @@ fn main() {
         });
     }
     DECIMAL_LOCAL_PROFILE.with(|v|v.set(CURDIR_LINUX_NATIVE.with(|v|v.get()) && !decimal_thread_profile));
-    PCOUNT_PROFILE.with(|v|v.set((CURDIR_LINUX_NATIVE.with(|v|v.get()) || DIRMAKE_WIN.with(|v|v.get())) && !decimal_thread_profile));
+    NATIVE_PLAIN_PROFILE.with(|v|v.set((CURDIR_LINUX_NATIVE.with(|v|v.get()) || DIRMAKE_WIN.with(|v|v.get())) && !decimal_thread_profile));
     if (!DECIMAL_LOCAL_PROFILE.with(|v|v.get())||MACRO_CONTEXT.with(|v|v.get())) && funcs.iter().any(|f|f.stmts.iter().any(|s|matches!(s,Stmt::Static(_,id,_)if module_static::kind(&f.name,id)==Some(Ty::RefDyn)))){eprintln!("error: module STATIC NIL scalars require ordinary Linux without threads/macros");process::exit(1);}
     if hash_case_mode && (!DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get())) {eprintln!("error: hb_HCaseMatch logical mode requires ordinary Linux without threads or macros");process::exit(1);}
     HASH_CASE_LOGICAL_MODE.with(|v|v.set(hash_case_mode));
@@ -40531,7 +40532,7 @@ fn main() {
     for f in &funcs {visit_stmts_ref(&f.stmts,&mut |_|{},&mut |e|{if matches!(e,Expr::Call(id,args) if is_builtin(id,"pcount") && !args.is_empty()){bad_pcount_arity=true;}});}
     if bad_pcount_arity {eprintln!("error: PCount takes no arguments in this increment");process::exit(1);}
 
-    if PCOUNT_FUNCTIONS.with(|v|!v.borrow().is_empty()) && (!PCOUNT_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get())) {eprintln!("error: PCount requires ordinary Linux or Windows without threads or macros in this increment");process::exit(1);}
+    if PCOUNT_FUNCTIONS.with(|v|!v.borrow().is_empty()) && (!NATIVE_PLAIN_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get())) {eprintln!("error: PCount requires ordinary Linux or Windows without threads or macros in this increment");process::exit(1);}
     for f in &funcs {if PCOUNT_FUNCTIONS.with(|v|v.borrow().contains(&f.name)) && METHOD_CLASS.with(|v|v.borrow().contains_key(&f.name)) {eprintln!("error: PCount in a method is not in this increment");process::exit(1);}}
     // PCount() in main counts the command-line arguments, uncapped by the
     // declared parameters (measured against Harbour 3.2, tests/main-args).

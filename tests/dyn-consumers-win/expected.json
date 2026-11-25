@@ -1,0 +1,19 @@
+{
+ "ctod-dyn/ctod_dyn.prg": "\n19.05.91\n01.12.24",
+ "dyn-string-unary/cases.json#AllTrim-empty": "\n[]          0",
+ "dyn-string-unary/cases.json#AllTrim-literal": "\n[aBc]   aBc   C",
+ "dyn-string-unary/cases.json#AllTrim-owned": "\n[ABC]   ABC   C",
+ "dyn-string-unary/cases.json#AllTrim-snapshot": "\n[OLD-VALUE] NEW-VALUE BAD-VALUE",
+ "dyn-string-unary/cases.json#AllTrim-spaces": "\n[]          3",
+ "dyn-string-unary/cases.json#Lower-empty": "\n[]          0",
+ "dyn-string-unary/cases.json#Lower-literal": "\n[  abc  ]   aBc   C",
+ "dyn-string-unary/cases.json#Lower-owned": "\n[  abc  ]   ABC   C",
+ "dyn-string-unary/cases.json#Lower-snapshot": "\n[old-value] NEW-VALUE BAD-VALUE",
+ "dyn-string-unary/cases.json#Lower-spaces": "\n[   ]          3",
+ "dyn-string-unary/cases.json#Upper-empty": "\n[]          0",
+ "dyn-string-unary/cases.json#Upper-literal": "\n[  ABC  ]   aBc   C",
+ "dyn-string-unary/cases.json#Upper-owned": "\n[  ABC  ]   ABC   C",
+ "dyn-string-unary/cases.json#Upper-snapshot": "\n[OLD-VALUE] NEW-VALUE BAD-VALUE",
+ "dyn-string-unary/cases.json#Upper-spaces": "\n[   ]          3",
+ "val-dyn/val_dyn.prg": "\n12.5\n        43\n         0\n        -7.50"
+}
