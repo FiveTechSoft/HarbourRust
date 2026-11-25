@@ -87,6 +87,14 @@ jobs:
           command -v as
           command -v ld
           python tests/file-compat/check.py --compiler ./hbc --output work/ci-file
+      - name: Hash ownership and native encoder (Linux only)
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python tools/check_hash_ownership.py --compiler ./hbc --output work/ci-hash-ownership.json
+          # the encoder check builds its own driver with $RUSTC; pin it to the CI toolchain
+          RUSTC="$(rustup which --toolchain 1.100.0 rustc)" python tools/check_native_encoder.py --output work/ci-native-encoder
       - name: Object separators on native Windows (versioned GTSTD fixtures)
         if: runner.os == 'Windows'
         shell: bash
