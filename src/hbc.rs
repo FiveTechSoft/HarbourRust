@@ -4479,7 +4479,7 @@ fn parse(src: &str) -> Result<Prog, String> {
             // Keep retained values/global storage outside this first route.
             fn check_init(ss: &[Stmt]) -> bool {
                 ss.iter().all(|st| match st {
-                    Stmt::Static(_,_,e) => CURDIR_LINUX_NATIVE.with(|v|v.get()) && !MACRO_CONTEXT.with(|v|v.get()) && matches!(e,Expr::Int(_)|Expr::Str(_)|Expr::ArrLit(_)|Expr::DArrNew),
+                    Stmt::Static(..) => true,
                     Stmt::Ret(_, None | Some(Expr::Nil)) => true,
                     Stmt::Ret(..) => false,
                     Stmt::If(_, _, a, b) => check_init(a) && check_init(b),
@@ -4489,8 +4489,12 @@ fn parse(src: &str) -> Result<Prog, String> {
                 })
             }
             if !check_init(&f.stmts) {
-                return Err(format!("line {}: INIT procedures require bare/NIL returns; STATIC declarations require ordinary Linux integer/string/constant-array storage in this increment", n));
+                return Err(format!("line {}: INIT procedures require bare/NIL returns in this increment", n));
             }
+        }
+        if init && f.stmts.iter().any(|st|matches!(st,Stmt::Static(..)))
+            && (!CURDIR_LINUX_NATIVE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get())) {
+            return Err(format!("line {}: INIT STATIC platform guard requires ordinary Linux without macros",n));
         }
         funcs.push(f);
         if explicit_return { i += 1; }
@@ -41133,6 +41137,13 @@ fn main() {
             v.ret = c.ret;
             v.inferred = c.inferred;
         }
+    }
+    // Thread use is discovered during inference, after parser guards.
+    // Reject before code generation: INIT persistent storage has no measured
+    // thread/TLS lifetime contract in this increment.
+    if THREADS.with(|v|v.get()) && funcs.iter().any(|f|f.init && f.stmts.iter().any(|st|matches!(st,Stmt::Static(..)))) {
+        eprintln!("error: INIT STATIC thread guard: persistent hook storage is measured only without threads");
+        process::exit(1);
     }
     // Borrowed-parameter escape post-pass (see borrow_stmts_ok).
     for f in &funcs {

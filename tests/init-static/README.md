@@ -19,3 +19,11 @@ which remains explicitly outside this parser increment. Other negative tests
 retain their behavior, with the INIT diagnostic text made more specific.
 Black-box oracle https://github.com/harbour/core.git at
 694428e1c12f726675b19324d62167fa77d68185.
+
+Safety follow-up: thread use is discovered after parsing. A post-inference
+check now rejects every INIT static binding in a threaded program before
+emission. The earlier compiler admitted the measured thread probe, so its
+ordinary-only claim was too broad. Platform/macro and value-return errors
+now have separate diagnostics. Six limits cover these boundaries. CLI accepts
+only one source unit: a second unit is a measured usage rejection, not a
+claim of multi-unit INIT/linking support.
