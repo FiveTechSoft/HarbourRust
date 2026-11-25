@@ -139,3 +139,12 @@ manifest/performance refresh.1185inputs scanned:374admitted,811rejected;
 expectations,not fresh Harbour. No normalized output. Compiler unchanged
 ed089cce82587b6b9b993b1223fb47fc987ddf07f54b041b622e9ef38a68458e.
 No Windows/Mac runtime claim. Direct literal NIL print only,no value ABI.
+
+## Empty literal NIL refresh,25Nov2026
+
+Test-only refresh onc1b681f5.1185scanned,374admitted,811rejected,
+1122exact native/traced/untraced triples against repository expectations,
+not fresh Harbour. No new manifest admission relative to literal NIL print.
+Compiler9b46aace70cd275dbed3852dd2022110ccddf25ee25bb9ce53903d625ea98b8b.
+LLVM15constant,no environment/gate changes during these attempts.
+No NIL value ABI,no Windows/Mac runtime claim.

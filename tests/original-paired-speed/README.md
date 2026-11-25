@@ -432,3 +432,18 @@ no frequency isolation. No Windows/Mac runtime claim. No compiler change
 in this evidence commit,original sources unchanged. Julio Ponce MIT
 specifications credited,no implementation/cambio.diff copy. No push,
 publication,workflow or rebase.
+
+## Empty literal NIL compiler refresh,25Nov2026
+
+Fresh Harbour694428e1 against c1b681f5compiler
+9b46aace70cd275dbed3852dd2022110ccddf25ee25bb9ce53903d625ea98b8b.
+Two101alternating-pair runs per3intact originals,same1CPU,1212timed+60warm
+executions exact. Medians nanoseconds(Harbour/HarbourRust),ratio:
+fib8397747/2802900,2.996;repeat8830172/2939838,3.004.
+recursiv2603819/1392381,1.870;repeat2770709/1445123,1.917.
+longstr2:4871790/5356610,0.909;repeat5504509/6118252,0.900.
+longstr2loss retained.Process startup,capture,shutdown included;shared-host
+noise,no frequency isolation,not algorithm-only/universal/paired-regression
+speed claims. Original sources unchanged,no Windows/Mac runtime claim.
+No compiler change in this evidence commit.No push/workflow/publication/
+rebase.Julio Ponce MIT examples are specifications,no implementation copy.
