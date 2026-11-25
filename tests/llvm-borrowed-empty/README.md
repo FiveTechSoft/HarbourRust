@@ -30,3 +30,14 @@ owned/mutable/runtime string admission. New empty/space/NUL/ASCII/UTF8
 and numeric/logical/control-context fixtures plus owned-subtree negative.
 Own gate: 9 fresh Harbour/native/LLVM exact rows, 6 named LLVM rejections.
 Broad current evidence is listed separately in the package summary.
+
+## Empty-only lazy immutable selection
+
+Empty observes constant string leaves of nested IIf through logical scalar
+projection, retaining all reached conditions exactly once and lazy. Both
+arms must prove immutable constant leaves before lowering, including dead
+owned leaves (rejected). No runtime string value ABI, ownership change or
+new direct alias policy. Empty keeps measured tab/LF/CR/space semantics,
+with NUL and UTF8 nonempty. Gate total:12exact fresh Harbour/native/LLVM
+rows and8named LLVM rejections. Bounds-failing unselected conditions,
+increments, loop/logical/IF/IIf contexts covered.

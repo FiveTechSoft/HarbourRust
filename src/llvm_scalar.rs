@@ -103,6 +103,14 @@ impl Ir {
   Expr::Bin('+',a,b)=>Some(self.borrowed_constant_tree(a)?+&self.borrowed_constant_tree(b)?),
   e=>borrowed_constant(e)
  }}
+ // Project constant leaves to logical scalars while retaining lazy IIf
+ // conditions. Unknown leaves are not inspected or evaluated as strings.
+ fn empty_selection(&self,e:&Expr)->Option<Expr>{
+  if let Some(text)=self.borrowed_constant_tree(e){return Some(Expr::Log(text.bytes().all(|b|matches!(b,9|10|13|32))))}
+  if let Expr::Call(n,a)=e {if is_builtin(n,"iif") && a.len()==3 {
+   return Some(Expr::Call(n.clone(),vec![a[0].clone(),self.empty_selection(&a[1])?,self.empty_selection(&a[2])?]))
+  }}None
+ }
  fn expr(&mut self,e:&Expr)->Result<String,String>{
   Ok(match e {
    Expr::Seq(es)=>{
@@ -184,6 +192,9 @@ impl Ir {
    Expr::Call(n,args) if is_builtin(n,"asc") && args.len()==1=>{
     let text=self.borrowed_constant_tree(&args[0]);
     match text {Some(text)=>text.as_bytes().first().copied().unwrap_or(0).to_string(),None=>return Err("LLVM scalar: Asc only on immutable borrowed constant strings".into())}
+   },
+   Expr::Call(n,args) if is_builtin(n,"empty") && args.len()==1 && matches!(&args[0],Expr::Call(id,a) if is_builtin(id,"iif") && a.len()==3) && self.empty_selection(&args[0]).is_some()=>{
+    let scalar=self.empty_selection(&args[0]).unwrap();self.expr(&scalar)?
    },
    Expr::Call(n,args) if is_builtin(n,"empty") && args.len()==1=>{
     if let Expr::Var(v)=&args[0]{if let Some(k)=self.asz.get(v){return Ok(if *k==0{"1".into()}else{"0".into()})}}
