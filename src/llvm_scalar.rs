@@ -98,9 +98,9 @@ impl Ir {
  }
  // Resolve only lexical immutable borrowed bindings and pure concat trees.
  // This is compile-time data,not allocation or a runtime string expression.
- fn contains_constant(&self,e:&Expr)->Option<String>{match e {
+ fn borrowed_constant_tree(&self,e:&Expr)->Option<String>{match e {
   Expr::Var(v)=>self.strings.get(v).cloned(),
-  Expr::Bin('+',a,b)=>Some(self.contains_constant(a)?+&self.contains_constant(b)?),
+  Expr::Bin('+',a,b)=>Some(self.borrowed_constant_tree(a)?+&self.borrowed_constant_tree(b)?),
   e=>borrowed_constant(e)
  }}
  fn expr(&mut self,e:&Expr)->Result<String,String>{
@@ -132,17 +132,15 @@ impl Ir {
     self.block(&end);let r=self.tmp();self.line(format!("{} = load i64, ptr {}",r,slot));r
    },
    Expr::Cmp(CmpOp::Contains,a,b)=>{
-    let needle=self.contains_constant(a).ok_or("LLVM scalar: contains requires two immutable borrowed constant strings")?;
-    let haystack=self.contains_constant(b).ok_or("LLVM scalar: contains requires two immutable borrowed constant strings")?;
+    let needle=self.borrowed_constant_tree(a).ok_or("LLVM scalar: contains requires two immutable borrowed constant strings")?;
+    let haystack=self.borrowed_constant_tree(b).ok_or("LLVM scalar: contains requires two immutable borrowed constant strings")?;
     if !needle.is_empty() && haystack.as_bytes().windows(needle.len()).any(|w|w==needle.as_bytes()){"1".into()}else{"0".into()}
    },
    Expr::Cmp(CmpOp::EqEq,a,b) if {
-    let constant=|e:&Expr|match e{Expr::Var(v)=>self.strings.get(v).cloned(),e=>borrowed_constant(e)};
-    constant(a).is_some() || constant(b).is_some()
+    self.borrowed_constant_tree(a).is_some() || self.borrowed_constant_tree(b).is_some()
    }=>{
-    let constant=|e:&Expr|match e{Expr::Var(v)=>self.strings.get(v).cloned(),e=>borrowed_constant(e)};
-    let a=constant(a).ok_or("LLVM scalar: exact string comparison requires immutable borrowed constants on both sides")?;
-    let b=constant(b).ok_or("LLVM scalar: exact string comparison requires immutable borrowed constants on both sides")?;
+    let a=self.borrowed_constant_tree(a).ok_or("LLVM scalar: exact string comparison requires immutable borrowed constants on both sides")?;
+    let b=self.borrowed_constant_tree(b).ok_or("LLVM scalar: exact string comparison requires immutable borrowed constants on both sides")?;
     if a.as_bytes()==b.as_bytes(){"1".into()}else{"0".into()}
    },
    Expr::Cmp(op,a,b) if matches!(op,CmpOp::Eq|CmpOp::Ne|CmpOp::EqEq) && (matches!(&**a,Expr::Nil)^matches!(&**b,Expr::Nil))=>{

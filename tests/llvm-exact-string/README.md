@@ -17,3 +17,12 @@ Errors69native/traced/repeat and12canaryemission pass. No censusrerun,
 PEruntime/Mac/performance/allhistorical claim. No ABI/RC/numericdivision/
 workflow/push/publication/rebase. JulioPonceMITexamples specifications only,
 no implementation/cambio.diff copy. Oracle694428e1c12f726675b19324d62167fa77d68185.
+
+## Immutable local concat trees
+
+Follow-up: resolve immutable local bindings recursively within pure concat
+operands of ==, using the same constant-only resolver as $. No runtime
+string/owned/mutable expansion. Added NUL, UTF8, empty, trailing-space,
+logical/IF/IIf/Empty and false/true concat-tree checks, plus an owned-subtree
+negative. Own gate now 9 fresh Harbour/native/LLVM exact rows and 10 named
+LLVM rejections. Broader current results are listed in the package summary.
