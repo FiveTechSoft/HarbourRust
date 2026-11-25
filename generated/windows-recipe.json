@@ -18,11 +18,11 @@
     "-Wno-misleading-indentation"
   ],
   "source_dependencies_sha256": {
-    "runtime/hrcdx.c": "9cae0f403f97877d111c8fb9c01741adba321e7578933a8ddde451e67e88802c",
-    "runtime/hrcdx.h": "a6b48dce0cf0211715698cc16b5173ecc7bb1ff88b5e7ba8f03d1565a20db4ad",
+    "runtime/hrcdx.c": "d08dc2649a263b05a039174e7f6132875800663ba025e7fc7be2316558761fb2",
+    "runtime/hrcdx.h": "8d568fe0fdf18f5b650027f6fb6a5316d0a2a2c2522de90cc985cae79342bf03",
     "runtime/hrdbf.c": "d4b03ac36e82e502c00ec46ecd120edafda33534fa99895d2ad75c9bd6a919d0",
     "runtime/hrdbf.h": "88937be93d42a877b4c1f4a50df622d7482b42bd2bbdb3f56185d14cc00cd2e5",
-    "runtime/hrdbf_app.c": "c4e899d3eaa424fd8acaa02037b0407dd4b8e6f4f7dac70a5b472a4d7757fee3",
+    "runtime/hrdbf_app.c": "3e0afcd6845c6c6a9df9760d3f6535edaf73183270c05dc59dfe9c1db9446a3b",
     "runtime/hrdbf_embedded_windows.c": "f517552471bad33b076f8df6d49576f643dd8ae73972027b0276d4fe23e178aa",
     "runtime/hrdbf_file.h": "e4551de20408ebd794bce24ab2a560299c5f9957413acee67eda776213d6a3b9",
     "runtime/hrdbf_file_windows.c": "cd57737e31b042dc437a7309665bc5429949cb7e8775c506faddc54e79236f9c",
@@ -31,10 +31,10 @@
     "runtime/hrdyn.h": "d09ac5d22d93f07f9e67435b7cb9ef60e57ce9a41ba872be6e62cdd34593ac9d",
     "runtime/hrntx.c": "5ac145ae4da7303564e1e3c3b45938a85e09f299e5632d9a9b4faeeae7b79742",
     "runtime/hrntx.h": "ad62617518498dc2641be903704897aff7d6d1b665fae195a2d50dea8b7ba97f",
-    "runtime/hrntx_file_windows.c": "77d3cf8cc7a283819cc4fa5d49dbf918ecccb184774c8ea7e7a702d8f316c992",
+    "runtime/hrntx_file_windows.c": "e565a2f17253a49e91e3f7f9709278031ac367281e60aa1eaf6c6106fa7a7634",
     "runtime/hrvalue.c": "bc4970cd86c7a2ac71ad8bd974908c4302aaa1b870fbaa3cba6ebaa5d83999d1",
     "runtime/hrvalue.h": "962dee2ca2d6f75dc45d4d6597a1e84e62568b869a897911c496501fdc8a4dfe"
   },
-  "asm_sha256": "fbb5df9497e0a06e0afd17d405b4d3b57e0b5f2ed379e78aba334647edbd0edb",
+  "asm_sha256": "39e52dd00cdbb6e62607a5869fd58587640e9c205f0b6dd5c2267fd85edd6121",
   "notes": "Win64 C bodies; explicit internal ABI and copy callback bridges; DLL import pointer references normalised to named thunks"
 }
