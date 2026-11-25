@@ -196,3 +196,23 @@ Run b:
 - longstr2.prg: Harbour 5.531769ms; HarbourRust 6.211415ms; ratio 0.891x.
 
 longstr2 loss remains visible. Tests-only,no compiler change.
+
+## Fresh Linux LLVM console-fix compiler process measurements
+
+Compiler2338925db21cbe386aa2aa10c0160ffa8f992023b4e79de18770660f3063bb7d.
+Two independent101pair runs per source,fivewarmups per engine/source,
+alternatingorder,sameoneCPUaffinity;1212timed+60warm exact triples
+againstfreshHarbour.Startup/capture/shutdown included,sharedhost noise.
+No algorithm-only/universalclaim.
+
+Run a:
+- fib.prg: Harbour 8.276556ms; HarbourRust 2.795772ms;ratio 2.960x.
+- recursiv.prg: Harbour 2.681826ms; HarbourRust 1.423050ms;ratio 1.885x.
+- longstr2.prg: Harbour 4.580187ms; HarbourRust 4.927865ms;ratio 0.929x.
+
+Run b:
+- fib.prg: Harbour 8.315886ms; HarbourRust 2.791246ms;ratio 2.979x.
+- recursiv.prg: Harbour 2.740434ms; HarbourRust 1.456448ms;ratio 1.882x.
+- longstr2.prg: Harbour 4.510707ms; HarbourRust 4.933591ms;ratio 0.914x.
+
+longstr2 loss retained.Tests-only,no compiler change.

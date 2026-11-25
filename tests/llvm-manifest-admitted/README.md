@@ -53,3 +53,10 @@ Compiler 737836bc4fe50e40d4105e5bd62aaf5d2982165d66352dc3a31069e6e1078ce7.
 Fresh four-shard uninterrupted scan1185,359admitted,826rejected; all359
 native/traced/untraced triples byte-exact against repository manifest,
 1077triples total. No fresh Harbour/fulloracle claim or resumed records.
+
+## Fresh Linux LLVM console-fix execution
+
+Compiler2338925db21cbe386aa2aa10c0160ffa8f992023b4e79de18770660f3063bb7d.
+Four fresh uninterrupted shards:1185scan,359admitted,826rejected; all359
+native/traced/untraced triples exact against repository manifest,1077total.
+No resumed records or fresh Harbour/fulloracle claim. No compiler change.
