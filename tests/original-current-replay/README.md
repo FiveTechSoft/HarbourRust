@@ -4,7 +4,9 @@ Own MIT tests-only wrapper on8a911754. Runs five existing mandatory gates
 with the supplied current compiler:array6originals,scalar9,calls8,input3,
 filesystem6.32intact external originals,160exact executions in5Linuxmodes,
 30strict final zero balances,and2known nonzero balances (inhprob/classch
-DELTA=2 each),total192checks. Those2are known debt,NOT lifetime passes.
+DELTA=2 each). Reports190exact/balance passes and2known debts separately.
+Those2are NOT passes. Each interior subgate results.json is included with
+its measured DELTA records.
 All normal originals require rc0/exactstdout/emptystderr. Input/filesystem
 gates preserve explicit stdin and exact isolated filesystem effects.
 Missing sources/failed subprocesses never optional skip. Fresh oracle runs,
