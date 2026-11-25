@@ -38,3 +38,11 @@ no algorithmthroughput/universal/crossplatform claim. Full rawpairs retained.
 Sources remain intact specifications. JulioPonceMIT examples elsewhere
 credited,no suppliedimplementation/cambio.diff copied. NoASortcorpus,
 numericarraydivision,RC/object policy,workflow,push,publication,rebase.
+
+## Deterministic byte corpus follow-up
+
+One frozen own fixture(seed20261125,64pairs of0..47bytes from0..127)adds
+arbitrary counted control/NUL bytes,concatenation and selfdoubling. Fixture
+is checked in,not regenerated during the gate. Fresh full own gate24:
+20exact5modes+4strictzero. Separately Harbour/predecessor/candidate triples
+on that exact fixture also match. No compiler or admission change.
