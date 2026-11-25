@@ -3391,6 +3391,14 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                     if rb == 0 {
                         return Err(format!("line {}: expected `name[idx] := expr`", n));
                     }
+                    // Statement-only literal index update: no duplicated
+                    // index effects and no expression-result semantics.
+                    if rb==3 && toks.len()==rb+2 && matches!(toks.get(2),Some(Tok::Int(_))) && matches!(toks.get(rb+1),Some(Tok::IncTok|Tok::DecTok)) {
+                        let ie=parse_expr_tokens(toks[2..rb].to_vec(),n)?;
+                        let op=if toks[rb+1]==Tok::IncTok {'+'}else{'-'};
+                        let rhs=Expr::Bin(op,Box::new(Expr::Index(id.clone(),Box::new(ie.clone()))),Box::new(Expr::Int("1".into())));
+                        out.push(Stmt::ArrSet(n,id,ie,rhs));*i+=1;continue;
+                    }
                     if commas.is_empty()
                         && matches!(toks.get(rb + 1), Some(Tok::Plus | Tok::Minus | Tok::Star | Tok::Slash | Tok::Caret | Tok::Pct))
                         && toks.get(rb + 2) == Some(&Tok::Eq)
