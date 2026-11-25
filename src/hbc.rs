@@ -12376,7 +12376,11 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 } else
                 {
                 if let Ty::Block(..) = t {
-                    return Err(format!("line {}: codeblocks cannot be returned in this increment", n));
+                    // A direct integer-STATIC block is a process-lifetime
+                    // code pointer. Its prologue reconstructs canonical
+                    // storage addresses; no callee-frame environment escapes.
+                    let persistent=matches!(e,Expr::BlockLit(id,_,_)if PERSISTENT_INTEGER_BLOCKS.with(|v|v.borrow().contains(id)));
+                    if !persistent {return Err(format!("line {}: codeblocks cannot be returned in this increment (only direct canonical integer STATIC blocks have a frame-independent return)",n));}
                 }
 
                 if t == Ty::DArrU && (!CURDIR_LINUX_NATIVE.with(|v|v.get()) || THREADS.with(|v|v.get())) {

@@ -4,7 +4,7 @@ p=argparse.ArgumentParser();p.add_argument('--compiler',required=True);p.add_arg
 sources={
 'local':('PROCEDURE Main()\nLOCAL n:=1,b:={|x|++n,x+n}\n? Eval(b,1)\nRETURN\n','persistent integer Eval capture guard'),
 'mixed':('PROCEDURE Main()\nSTATIC n:=1\nLOCAL k:=2,b:={|x|++n,x+n+k}\n? Eval(b,1)\nRETURN\n','persistent integer Eval capture guard'),
-'returned':('PROCEDURE Main()\nLOCAL b:=Make()\n? Eval(b,1)\nRETURN\nFUNCTION Make()\nSTATIC n:=1\nRETURN {|x|++n,x+n}\n','codeblocks cannot be returned'),
+'returned':('PROCEDURE Main()\nLOCAL b:=Make()\n? Eval(b,1)\nRETURN\nFUNCTION Make()\nLOCAL n:=1\nRETURN {|x|++n,x+n}\n','persistent integer Eval capture guard'),
 'windows':('PROCEDURE Main()\nSTATIC n:=1\nLOCAL b:={|x|++n,x+n}\n? Eval(b,1)\nRETURN\n','codeblock captures'),
 'nested':('STATIC n:=10\nPROCEDURE Main()\nLOCAL b:={|x|Eval({|y|++n,n+y},x)}\n? Eval(b,1)\nRETURN\n','persistent integer Eval capture guard'),
 'float':('PROCEDURE Main()\nSTATIC n:=1.5\nLOCAL b:={|x|n+x}\n? Eval(b,1)\nRETURN\n',None)}
