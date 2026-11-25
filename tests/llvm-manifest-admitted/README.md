@@ -23,3 +23,14 @@ retained for identity,not substituted as the compiled input. Companion .ch and
 expected byte files remain in the same reviewed source tree.
 No ownership/RC/ASort/numericdivision/workflow/push/publication/rebase changes.
 JulioPonceMITspecifications only,no suppliedimplementation/cambio.diff copied.
+
+## Clean current-frontier25 refresh
+
+Tests-only evidence on compiler4b7ddd4212ad976e97cb74b3367ef5b80877d1cafeef089dc985309ffdf856c8.
+Original check.py run uninterrupted from beginning to end in a new output
+directory,no resume,no cached command-result reuse.1185scanned,357admitted
+x3routes=1071exactmanifest,828cleanrejections. Not freshHarbour:expectations
+are repository manifest files. This supersedes the earlier resumed run only
+for a clean-completion claim,not for history. No compiler change,new admission
+or global/performance/PE/Mac repeat. Raw commands/cwd/source/hash/rc/stdout/
+stderr retained. Existing ownership/RC/ASort/numericdivision debts unchanged.
