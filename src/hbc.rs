@@ -3287,6 +3287,8 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                     if matches!(toks.get(1), Some(Tok::Ident(name)) if name.eq_ignore_ascii_case("fixed")) {
                         if toks.len() == 3
                             && matches!(toks.get(2), Some(Tok::Ident(v)) if v.eq_ignore_ascii_case("on") || v.eq_ignore_ascii_case("off")) {
+                            let on=matches!(toks.get(2),Some(Tok::Ident(v))if v.eq_ignore_ascii_case("on"));
+                            out.push(Stmt::CallStmt(n,Expr::Call("hbc_set_fixed".into(),vec![Expr::Log(on)])));
                             *i += 1;
                             continue;
                         }
@@ -9001,6 +9003,12 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 if args.len()>1 || !args.iter().all(|a|matches!(a,Expr::Str(_)|Expr::Log(_)|Expr::Int(_)|Expr::Nil)){return Err(format!("line {}: __SetCentury supports zero or one literal string/logical/integer/NIL argument in this increment",n));}
                 return Ok(Ty::Bool);
             }
+            if id=="hbc_set_fixed" || is_builtin(id,"set") && matches!(args.first(),Some(Expr::Int(v))if v=="2") {
+                if !CURDIR_LINUX_NATIVE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get()) || args.len()>2 || args.is_empty() {return Err(format!("line {}: SET FIXED supports ordinary Linux without macros only",n));}
+                let value=if id=="hbc_set_fixed" {args.first()}else{args.get(1)};
+                if value.map_or(false,|a|!matches!(a,Expr::Log(_)|Expr::Nil)){return Err(format!("line {}: Set FIXED accepts literal logical or NIL only",n));}
+                return Ok(Ty::Bool);
+            }
             if is_builtin(id,"set") {
                 if DECIMAL_LOCAL_PROFILE.with(|v|v.get()) && !MACRO_CONTEXT.with(|v|v.get()) && set_date_mask_call(args) && (args.len()==1 || args.len()==2&&(standard_date_mask(&args[1]).is_some() || matches!(&args[1],Expr::Var(_))&&matches!(type_expr(&args[1],env,sigs,n)?,Ty::Str|Ty::StrOwn))) {return Ok(Ty::StrOwn);}
                 if !DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get()) || !(args.len()==1||args.len()==2) || !matches!(args.first(),Some(Expr::Int(v)) if v=="5") {return Err(format!("line {}: unknown function `set` (only literal epoch5 or checked standard dateformat4 on ordinary Linux is measured in this increment)",n));}
@@ -14033,7 +14041,7 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
             if is_builtin(id,"setcursor") {for a in args {apply_moves(a,env,sigs,false);}return;}
             if is_builtin(id,"transform") {for a in args {apply_moves(a,env,sigs,false);}return;}
             if is_builtin(id,"hb_sha1") || is_builtin(id,"hb_hmac_sha1") {for a in args {apply_moves(a,env,sigs,false);}return;}
-            if id=="hrbase_wait" {return;}
+            if id=="hrbase_wait" || id=="hbc_set_fixed" {return;}
             if id=="hbc_set_decimals" {return;}
             if id=="hbc_set_datefmt" || id=="hbc_set_century" || id=="hbc_set_epoch" || id=="hbc_quit" || id=="hbc_main_arg" {return;}
             if is_builtin(id,"altd") {return;}
@@ -18310,6 +18318,11 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                 let Expr::Str(mask)=&args[1]else{unreachable!()};let si=strs.len();strs.push(mask.clone());
                 out.push_str(&format!("    sub $16,%rsp\n    mov %rax,(%rsp)\n    mov %rdx,8(%rsp)\n    lea .Lstr{si}(%rip),%rdi\n    mov ${},%esi\n    mov ${fmt},%edx\n    mov ${},%ecx\n    call hbc_date_set_mask\n    movq ${fmt},.Ldate_pfmt(%rip)\n    mov (%rsp),%rax\n    mov 8(%rsp),%rdx\n    add $16,%rsp\n",mask.len(),if century{1}else{0}));
             }
+        }
+        Expr::Call(id,args) if id=="hbc_set_fixed" || is_builtin(id,"set") && matches!(args.first(),Some(Expr::Int(v))if v=="2") => {
+            out.push_str("    mov .Lset_fixed(%rip), %rax\n    xor %edx, %edx\n");
+            let value=if id=="hbc_set_fixed"{args.first()}else{args.get(1)};
+            if let Some(Expr::Log(v))=value{out.push_str(&format!("    movq ${}, .Lset_fixed(%rip)\n",if *v{1}else{0}));}
         }
         Expr::Call(id,args) if is_builtin(id,"set") => {
             // Source checker admits only selector5 and literal/NIL values.
@@ -22784,7 +22797,8 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             if id=="hbc_main_arg" {return Ty::Dyn;}
             if id=="hbc_set_datefmt" || id=="hbc_set_century" || id=="hbc_set_epoch" || id=="hbc_quit" {return Ty::I64;}
             if is_builtin(id,"__setcentury") {return Ty::Bool;}
-            if is_builtin(id,"set") {return if set_date_mask_call(args){Ty::StrOwn}else{Ty::I64};}
+            if id=="hbc_set_fixed" {return Ty::Bool;}
+            if is_builtin(id,"set") {return if set_date_mask_call(args){Ty::StrOwn}else if matches!(args.first(),Some(Expr::Int(v))if v=="2"){Ty::Bool}else{Ty::I64};}
             if is_builtin(id,"altd") {return Ty::I64;}
             if is_builtin(id,"setcursor") || is_builtin(id,"dirmake") || is_builtin(id,"inkey") {return Ty::I64;}
             if is_builtin(id,"hb_bsubstr")||is_builtin(id,"hb_bleft")||is_builtin(id,"hb_bright") {return Ty::StrOwn;}
@@ -36457,7 +36471,21 @@ fn finalize_trace(mut out: String, target: Target) -> String {
         out=out.replace("    dec %eax\n    mov %eax, hbc_seq_depth(%rip)\n    imul $96, %rax\n    lea hbc_seq_pads(%rip), %r11\n    add %rax, %r11\n    push %r11\n    push %r11\n    call hbc_aux_drain\n    pop %r11\n    pop %r11\n    mov 0(%r11), %rbx", "    dec %eax\n    imul $96, %rax\n    lea hbc_seq_pads(%rip), %r11\n    add %rax, %r11\n    mov hbc_frame_top(%rip), %rax\n    cmp 80(%r11), %rax\n    jne .Lfupropagate\n    decq hbc_seq_depth(%rip)\n    push %r11\n    push %r11\n    call hbc_aux_drain\n    pop %r11\n    pop %r11\n    mov 0(%r11), %rbx");
         out.push_str("\n.text\n.Lfupropagate:\n    mov 0(%rax), %r11\n    mov %r11, hbc_frame_top(%rip)\n    mov 8(%rax), %rbp\n    mov 16(%rax), %rsp\n    jmp *24(%rax)\n.bss\n.align 8\nhbc_frame_top: .quad 0\n.text\n");
     }
+    // Numeric output fields overflow to stars. Keep the owned Str() image
+    // generator unchanged: it already enforces its caller-selected width.
+    if CURDIR_LINUX_NATIVE.with(|v|v.get()) {out=out.replace(".Lf64_8b:\n    sub %r14, %r15", ".Lf64_8b:\n    cmp %r15, %r14\n    ja .Lf64_st\n    sub %r14, %r15");}
     out.push_str(dyn_float::HELPERS);
+    if out.contains(".Lset_fixed(%rip)") {
+        // Print-only entries. The owned formatter for Str() is generated
+        // separately from the unchanged F64_HELPER, so item metadata survives.
+        for name in ["hbc_print_f64","hbc_print_num_f64"] {
+            out=out.replace(&format!("\n{name}:\n"),&format!("\n{name}:\n    cmpq $0, .Lset_fixed(%rip)\n    je .Lfixed_{name}\n    mov .Lset_decimals(%rip), %rcx\n    cmp $435, %rcx\n    ja hbc_f64range_error\n    shr $16, %rdi\n    shl $16, %rdi\n    or %rcx, %rdi\n    jmp .Lfixed_hbc_print_f64\n.Lfixed_{name}:\n"));
+        }
+        for name in ["hbc_print_i64","hbc_print_i64c","hbc_print_i64w"] {
+            out=out.replace(&format!("\n{name}:\n"),&format!("\n{name}:\n    cmpq $0, .Lset_fixed(%rip)\n    je .Lfixed_{name}\n    push %rbp\n    mov %rsp, %rbp\n    call .Lfixed_{name}\n    mov .Lset_decimals(%rip), %rdx\n    test %rdx, %rdx\n    jz 991f\n    cmp $435, %rdx\n    ja hbc_f64range_error\n    inc %rdx\n    lea .Lnum_decimal_zeros(%rip), %rax\n    call hbc_print_str\n991:\n    leave\n    ret\n.Lfixed_{name}:\n"));
+        }
+        out.push_str(".data\n.align 8\n.Lset_fixed: .quad 0\n.text\n");
+    }
     if out.contains(".Lset_decimals(%rip)") {
         // Runtime SET DECIMALS state (Harbour default 2): division
         // result dec reads it, SET DECIMALS TO <n> writes it.
@@ -36575,7 +36603,7 @@ fn finalize_trace(mut out: String, target: Target) -> String {
             let end = rest[..end].find("\n    .section").unwrap_or(end);
             let mut helper = rest[..end].replace("hbc_write_bytes", "hbc_eprint_str")
                 .replace("hbc_print_", "hbc_eprint_")
-                .replace(".Lf64_", ".Lef64_").replace(".Lnum_", ".Lenum_").replace(".Ldynfloat_", ".Ledynfloat_");
+                .replace(".Lfixed_", ".Lefixed_").replace(".Lf64_", ".Lef64_").replace(".Lnum_", ".Lenum_").replace(".Ldynfloat_", ".Ledynfloat_");
             helper = match target {
                 Target::Linux => helper.replace("mov $1, %edi", "mov $2, %edi"),
                 Target::Windows => helper.replace("mov $-11, %ecx", "mov $-12, %ecx"),
