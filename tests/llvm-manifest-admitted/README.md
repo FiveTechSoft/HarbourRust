@@ -190,3 +190,14 @@ executions plus60warmups,all triples exact against fresh Harbour. Ratios
 Harbour/HarbourRust fib3.001/3.016,recursiv1.859/1.863,longstr2 .896/.894.
 One CPU,alternating order,host noise/process startup included. Loss retained;
 no speed attribution to LLVM selected-left support or algorithm-only claim.
+
+## GTSTD separator refresh follow-up
+
+Compilere6726ba4:1185Linux exact-output inputs scanned,374admitted and
+811rejected. All1122native/traced/untraced triples exact against repository
+expectations,not fresh Harbour. Four complete shards on one compiler SHA.
+Two new paired original process runs,101pairs/source/run,1212timed plus
+60warm executions,all triples exact against fresh Harbour. Harbour/HR
+fib3.003/2.992,recursiv1.903/1.877,longstr2 .902/.912. Loss retained.
+One CPU,alternating order,process startup and host noise included;no causal
+speed attribution to this console fix or algorithm-only claim.
