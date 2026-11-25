@@ -106,13 +106,18 @@ void hrdbf_app_open(const unsigned char *p,size_t len,uint64_t new_area,uint64_t
             e==HRDBF_DATA?"record content invalid":"table format not supported";
   hrdbf_app_fail2("hbc: DBF open rejected: ",d);
  }
- if(hrdbf_app_cdx&&end+4<sizeof path){
-  path[end]='.';path[end+1]='c';path[end+2]='d';path[end+3]='x';path[end+4]=0;
-  if(!hrntx_file_missing(path)){
-   if(writable==1)hrdbf_app_struct=2;
-   else if(hrdbf_app_shared)hrdbf_app_struct=4;
-   else hrdbf_app_struct=hrntx_file_open(&hrdbf_app_order,path,&hrdbf_app_state.area,1)?3:1;
-  }
+  if(hrdbf_app_cdx&&end+4<sizeof path){
+   path[end]='.';path[end+1]='c';path[end+2]='d';path[end+3]='x';path[end+4]=0;
+   if(!hrntx_file_missing(path)){
+    /* D7b: a structural CDX on a writable open opens like the readonly
+     * case - index maintenance now covers it. The shared-open lock
+     * protocol stays outside (struct 4). */
+    if(hrdbf_app_shared)hrdbf_app_struct=4;
+    else{
+     hrdbf_app_struct=hrntx_file_open(&hrdbf_app_order,path,&hrdbf_app_state.area,1)?3:1;
+     if(hrdbf_app_struct==1){size_t k;for(k=0;k<=end+4&&k<sizeof hrdbf_app_ntxpath;k++)hrdbf_app_ntxpath[k]=path[k];}
+    }
+   }
  }
 }
 static void hrdbf_app_struct_check(void){
