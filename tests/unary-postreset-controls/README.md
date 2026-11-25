@@ -9,8 +9,8 @@ Current compilerSHA256
 c287fe722804acd9c09d0fc69c0326e0279fa16e01834172bd2745a2f910a0ab unchanged.
 
 Includes NUL/all256bytes/UTF8/70KiB,boundary lengths,retained values,cache
-reuse,parameters,effects/throws as present in prior source sets. Six throw
-fixtures adapt TRY/CATCH to Harbour SEQUENCE/RECOVER;both inputs retained.
+reuse,parameters,effects/throws as present in prior source sets. Five throw
+fixtures (ASCIIUpper,base64Encode,DirSepAdd,HexToNum,StrToHex) adapt TRY/CATCH to Harbour SEQUENCE/RECOVER;both inputs retained.
 No default-handler equivalence claimed. Strict guard checks rc/stdout/stderr,
 not absentDELTA alone. All source/fixture/runner/guard hashes,commands/cwd,
 separate build/run status/streams and oracle commit/hash retained.
