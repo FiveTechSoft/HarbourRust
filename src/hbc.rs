@@ -31426,22 +31426,16 @@ hbc_strcat:
     add %rbx, %r10
     mov %r10, (%rax)
     mov %r10, 8(%rax)
-    xor %ecx, %ecx
-70: cmp %r13, %rcx
-    jae 71f
-    movzbl (%r12,%rcx), %r9d
-    mov %r9b, 16(%rax,%rcx)
-    inc %rcx
-    jmp 70b
-71: lea 16(%rax,%r13), %r11
-    xor %ecx, %ecx
-72: cmp %rbx, %rcx
-    jae 73f
-    movzbl (%r14,%rcx), %r9d
-    mov %r9b, (%r11,%rcx)
-    inc %rcx
-    jmp 72b
-73: mov %r13, %rdx
+    # Counted byte copies; operands may alias each other, but fresh output
+    # does not alias either. Like other counted copies, ABI direction is clear.
+    lea 16(%rax), %rdi
+    mov %r12, %rsi
+    mov %r13, %rcx
+    rep movsb
+    mov %r14, %rsi
+    mov %rbx, %rcx
+    rep movsb
+    mov %r13, %rdx
     add %rbx, %rdx
     lea 16(%rax), %rax
     pop %r14
