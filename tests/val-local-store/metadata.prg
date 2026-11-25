@@ -1,0 +1,8 @@
+PROCEDURE Main()
+LOCAL n := 9007199254740993
+? n
+n := Val("1.25")
+? n
+n := 9007199254740993
+? n
+RETURN

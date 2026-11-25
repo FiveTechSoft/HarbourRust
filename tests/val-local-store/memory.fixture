@@ -1,0 +1,26 @@
+function Half()
+return 1.25
+function Boom()
+local a:={1},i:=2
+return a[i]
+function HalfBoom()
+Boom()
+return 1.25
+function W()
+local i,n:=0,c:=0
+for i:=1 to 1000
+ n:=Val("1.25")
+ n:=0
+ TRY
+  n:=Val(Boom())
+ CATCH e
+  c++
+ END
+next
+return c
+function Main()
+local b
+W()
+b:=hb_memcheck()
+OutStd(W(),hb_memcheck()-b,Chr(10))
+return nil
