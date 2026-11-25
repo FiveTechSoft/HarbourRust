@@ -46,3 +46,10 @@ No implementation change or universal compatibility claim. Four concurrent
 shards partitioned the manifest by original line index modulo four; runner
 and all command/rc/stdout/stderr evidence are packaged. No resumed records.
 No push/publication/workflow/rebase. Performance measured separately.
+
+## Fresh firstbyte/size-tree frontier execution
+
+Compiler 737836bc4fe50e40d4105e5bd62aaf5d2982165d66352dc3a31069e6e1078ce7.
+Fresh four-shard uninterrupted scan1185,359admitted,826rejected; all359
+native/traced/untraced triples byte-exact against repository manifest,
+1077triples total. No fresh Harbour/fulloracle claim or resumed records.

@@ -176,3 +176,23 @@ Run 2:
 
 The longstr2 loss remains reported. Test-only evidence refresh; no compiler
 change. Broad regressions belong to the preceding implementation increment.
+
+## Fresh firstbyte/size-tree frontier process measurements
+
+Compiler737836bc4fe50e40d4105e5bd62aaf5d2982165d66352dc3a31069e6e1078ce7.
+Two independent101pair runs per source,fivewarmups per engine/source,
+alternating order,sameoneCPUaffinity.1212timed+60warm exact triples
+against freshHarbour;startup/capture/shutdown included,sharedhost noise
+not isolated. No algorithm-only/universal claim.
+
+Run a:
+- fib.prg: Harbour 8.367690ms; HarbourRust 2.832266ms; ratio 2.954x.
+- recursiv.prg: Harbour 2.783731ms; HarbourRust 1.467830ms; ratio 1.896x.
+- longstr2.prg: Harbour 5.872925ms; HarbourRust 6.620072ms; ratio 0.887x.
+
+Run b:
+- fib.prg: Harbour 8.706697ms; HarbourRust 2.936369ms; ratio 2.965x.
+- recursiv.prg: Harbour 2.760138ms; HarbourRust 1.433277ms; ratio 1.926x.
+- longstr2.prg: Harbour 5.531769ms; HarbourRust 6.211415ms; ratio 0.891x.
+
+longstr2 loss remains visible. Tests-only,no compiler change.
