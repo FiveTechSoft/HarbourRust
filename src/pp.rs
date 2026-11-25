@@ -121,6 +121,28 @@ fn if_hex_number(token:&str)->Option<i64> {
 }
 
 pub fn eval_if(expr: &str, defs: &HashMap<String, Def>, line: usize) -> Result<bool, String> {
+    // defined's operand is a macro NAME, not a macro expansion. Resolve it
+    // before ordinary replacement; then retain textual expression precedence.
+    let bytes=expr.as_bytes();let mut at=0;let mut protected=String::new();
+    while at<bytes.len() {
+        if bytes[at].is_ascii_alphabetic()||bytes[at]==b'_' {
+            let start=at;at+=1;while at<bytes.len()&&(bytes[at].is_ascii_alphanumeric()||bytes[at]==b'_'){at+=1;}
+            let word=&expr[start..at];
+            if word.eq_ignore_ascii_case("defined") {
+                while at<bytes.len()&&bytes[at].is_ascii_whitespace(){at+=1;}
+                if bytes.get(at)!=Some(&b'('){return Err(format!("line {}: expected ( after defined",line));}at+=1;
+                while at<bytes.len()&&bytes[at].is_ascii_whitespace(){at+=1;}
+                let start=at;while at<bytes.len()&&(bytes[at].is_ascii_alphanumeric()||bytes[at]==b'_'){at+=1;}
+                let name=&expr[start..at];
+                while at<bytes.len()&&bytes[at].is_ascii_whitespace(){at+=1;}
+                if name.is_empty()||bytes.get(at)!=Some(&b')'){return Err(format!("line {}: expected ) after defined name",line));}at+=1;
+                protected.push_str(if defs.contains_key(name){"1"}else{"0"});
+            }else{protected.push_str(word);}
+        }else{let ch=expr[at..].chars().next().unwrap();protected.push(ch);at+=ch.len_utf8();}
+    }
+    let expanded=expand_depth(&protected,defs,line,0,false)?;
+    let expr=expanded.as_str();
+
     // Tokens: identifiers, integer literals, operators, defined(...).
     #[derive(Debug, Clone, PartialEq)]
     enum T {
@@ -199,10 +221,8 @@ pub fn eval_if(expr: &str, defs: &HashMap<String, Def>, line: usize) -> Result<b
                     toks.push(T::Num(0));
                 }
                 _ => {
-                    // A defined macro expands to its body if numeric, else 0
-                    // (macro names are case-sensitive).
-                    let v = defs.get(w).and_then(|d| d.body.trim().parse::<i64>().ok().or_else(||if_hex_number(d.body.trim()))).unwrap_or(0);
-                    toks.push(T::Num(v));
+                    // After ordinary expansion, an unresolved word is not zero.
+                    return Err(format!("line {}: unresolved identifier `{}` in #if expression",line,w));
                 }
             }
             continue;
@@ -2231,5 +2251,19 @@ mod if_hex_tests {
             assert!(eval_if(text,&p.defs,1).unwrap(),"{}",text);
         }
         for text in ["0x == 0","0xGG == 0","0x1G == 1"]{assert!(eval_if(text,&p.defs,1).is_err());}
+    }
+}
+
+#[cfg(test)]
+mod if_expand_tests {
+    use super::*;
+    #[test]
+    fn macro_expression_precedence_and_defined_names() {
+        let mut p=Pp::new(Vec::new(),false);
+        for d in ["A=B","B=7","E=2+3","P=(2+3)"]{p.define_cli(d).unwrap();}
+        for e in ["A == 7","E*2 == 8","P*2 == 10","defined(A) .AND. !defined(NOPE)"]{assert!(eval_if(e,&p.defs,1).unwrap());}
+        assert!(eval_if("NOPE == 0",&p.defs,1).is_err());
+        p.define_cli("EMPTY").unwrap();assert!(eval_if("EMPTY == 0",&p.defs,1).is_err());
+        p.define_cli("B=A").unwrap();assert!(eval_if("A == 0",&p.defs,1).is_err());
     }
 }
