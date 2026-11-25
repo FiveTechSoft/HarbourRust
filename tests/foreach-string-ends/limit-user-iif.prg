@@ -1,9 +1,9 @@
-FUNCTION iif(x)
+FUNCTION IIf(cond,a,b)
  ? "MUST-NOT-RUN"
-RETURN 17
+RETURN a
 PROCEDURE Main()
  LOCAL s:="abc",v:=NIL
  FOR EACH v IN s
- ? iif(v)
+ ? IIf(v:__enumIsFirst,"first","other")
  NEXT
 RETURN

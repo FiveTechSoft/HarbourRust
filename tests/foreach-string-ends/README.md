@@ -57,3 +57,12 @@ not a new is_builtin change. Each user body has MUST-NOT-RUN marker,each
 fixture asserts rc1,exact diagnostic class,and no executable. Fresh full
 gate106=40exact+8zero+32profile+26named limits. Compiler unchanged from
 baba9aed,no broad regression repeated for this tests-only increment.
+
+Further conditional review controls onca83eb2e:positive builtin-observers
+uses ValType(v) and valid three-argument IIf inside string iteration,with
+empty-byte/NUL/UTF8 relevant branches. Exact fresh Harbour in5modes and
+strict-zero balance required. The user FUNCTION IIf collision now declares
+three parameters and is called with three valid arguments,so its rejection
+is not an invalid one-argument builtin case. Existing guard still rejects
+it as user call. Full fresh gate116=45exact+9zero+36profile+26limits.
+Compiler unchanged;no broad repeat tests-only.
