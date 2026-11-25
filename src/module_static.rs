@@ -50,7 +50,8 @@ pub fn discover_objects(funcs: &[Func], methods: &[crate::MethodDef], classes: &
             scan(&f.stmts,name,classes,&mut found)?;
         }
         if let Some(ci)=found{OBJECTS.with(|v|v.borrow_mut().insert(index,ci));}
-        else{return Err(format!("line {}: module STATIC requires a folded i64, logical or string scalar or a constant array initializer (i64/logical/string/NIL cells, nested and empty arrays admitted); NIL, Date, float and hash initializers are not in this increment",slots[index].0));}
+        else if !crate::CURDIR_LINUX_NATIVE.with(|v|v.get()){return Err(format!("line {}: module STATIC NIL scalars require ordinary Linux in this increment",slots[index].0));}
+        // Non-object NIL slots use the existing persistent scalar pair.
     }
     Ok(())
 }
@@ -220,7 +221,7 @@ fn check_payload_uses(f: &Func, name: &str, ty: Ty) -> Result<(), String> {
     // fall through to a permissive default.
     fn expr(e: &Expr, name: &str, ty: Ty) -> bool {
         match e {
-            Expr::ByRef(v) if v == name => ty != Ty::Bool && !matches!(ty,Ty::Obj(_)),
+            Expr::ByRef(v) if v == name => ty != Ty::Bool && !matches!(ty,Ty::Obj(_)|Ty::RefDyn),
             Expr::Set(v, _) | Expr::Inc(v, ..) if v == name => false,
             Expr::ArrLit(es) => !es.iter().any(|e| crate::expr_mentions(e,name)),
             Expr::HashLit(es) => !es.iter().any(|(k,v)| crate::expr_mentions(k,name)||crate::expr_mentions(v,name)),
@@ -234,8 +235,9 @@ fn check_payload_uses(f: &Func, name: &str, ty: Ty) -> Result<(), String> {
                 if matches!(ty,Ty::StrOwn|Ty::Obj(_)) && es.iter().any(|e|crate::expr_mentions(e,name)) && es.iter().any(may_mutate) {return false;}
                 es.iter().all(|e|expr(e,name,ty))
             }
-            Expr::BlockLit(_,_,es) => !(matches!(ty,Ty::Obj(_)) && es.iter().any(|e|crate::expr_mentions(e,name))) && es.iter().all(|e|expr(e,name,ty)),
-            Expr::Set(_,e) | Expr::LNot(e) | Expr::Index(_,e) => expr(e,name,ty),
+            Expr::BlockLit(_,_,es) => !(matches!(ty,Ty::Obj(_)|Ty::RefDyn) && es.iter().any(|e|crate::expr_mentions(e,name))) && es.iter().all(|e|expr(e,name,ty)),
+            Expr::Index(v,e) => !(ty==Ty::RefDyn && v==name) && expr(e,name,ty),
+            Expr::Set(_,e) | Expr::LNot(e) => expr(e,name,ty),
             Expr::Inc(..) => true, // ++/-- on another variable holds no borrow of this slot
             Expr::Send(o,_,es) => !(matches!(ty,Ty::Obj(_)) && crate::expr_mentions(o,name) && es.iter().any(may_mutate)) && !(ty == Ty::StrOwn && crate::expr_mentions(e,name)) && expr(o,name,ty)&&es.iter().all(|e|expr(e,name,ty)),
             Expr::Var(_) | Expr::ByRef(_) => true,
@@ -420,6 +422,7 @@ pub fn bind(f: &mut Func, slots: &[(usize, String, Expr)]) -> Result<(), String>
         check_counters(&f.stmts, name)?;
         ALIASES.with(|v| v.borrow_mut().insert((f.name.clone(), name.clone()), index));
         let ty = if let Some(ci)=OBJECTS.with(|v|v.borrow().get(&index).copied()) {Ty::Obj(ci)} else {match init {
+            Expr::Nil => Ty::RefDyn,
             Expr::Log(_) => Ty::Bool,
             Expr::Str(_) => Ty::StrOwn,
             // S4 unify (doc: "every module STATIC array literal becomes a
@@ -429,8 +432,8 @@ pub fn bind(f: &mut Func, slots: &[(usize, String, Expr)]) -> Result<(), String>
             Expr::ArrLit(_) | Expr::DArrNew => Ty::Dyn,
             _ => Ty::I64,
         }};
-        if matches!(init,Expr::Nil) && !matches!(ty,Ty::Obj(_)) {return Err(format!("line {}: module STATIC requires a folded i64, logical or string scalar or a constant array initializer (i64/logical/string/NIL cells, nested and empty arrays admitted); NIL, Date, float and hash initializers are not in this increment",line));}
-        if matches!(ty,Ty::Bool|Ty::StrOwn|Ty::Obj(_)) {check_payload_uses(f,name,ty)?;}
+        if ty==Ty::RefDyn && !crate::CURDIR_LINUX_NATIVE.with(|v|v.get()){return Err(format!("line {}: module STATIC NIL scalars require ordinary Linux in this increment",line));}
+        if matches!(ty,Ty::Bool|Ty::StrOwn|Ty::Obj(_)|Ty::RefDyn) {check_payload_uses(f,name,ty)?;}
         if matches!(ty,Ty::Arr(_)) {check_array_uses(f,name)?;}
         if ty == Ty::Dyn && matches!(init, Expr::ArrLit(_) | Expr::DArrNew) {check_shared_array_uses(f,name)?;}
         KINDS.with(|v| v.borrow_mut().insert((f.name.clone(), name.clone()), ty));

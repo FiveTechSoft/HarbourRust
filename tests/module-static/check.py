@@ -8,7 +8,7 @@ def run(cmd,work,label,e=env):
  r=subprocess.run(list(map(str,cmd)),cwd=work,env=e,capture_output=True,stdin=subprocess.DEVNULL,timeout=60)
  for k,v in [('stdout',r.stdout),('stderr',r.stderr),('rc',str(r.returncode).encode())]:(work/(label+'.'+k)).write_bytes(v)
  return r
-expect={**{n:'module STATIC requires a folded i64, logical or string scalar or a constant array initializer (i64/logical/string/NIL cells, nested and empty arrays admitted); NIL, Date, float and hash initializers are not in this increment'for n in ['nil','hash','date','float','effectful']},'duplicate':'duplicate module STATIC','late':'module STATIC declarations must precede','branch_shadow':'module STATIC shadow inside control flow','memvar':'module STATIC and explicit MEMVAR','method_loop':'STATIC loop counters require','loop':'STATIC loop counters require','widen':'keeps the scalar type of its folded initializer in this increment'}
+expect={**{n:'module STATIC requires a folded i64, logical or string scalar or a constant array initializer (i64/logical/string/NIL cells, nested and empty arrays admitted); NIL, Date, float and hash initializers are not in this increment'for n in ['hash','date','float','effectful']},'duplicate':'duplicate module STATIC','late':'module STATIC declarations must precede','branch_shadow':'module STATIC shadow inside control flow','memvar':'module STATIC and explicit MEMVAR','method_loop':'STATIC loop counters require','loop':'STATIC loop counters require','widen':'keeps the scalar type of its folded initializer in this increment'}
 for group in ['programs','negative']:
  for src in sorted((root/group).glob('*.prg')):
   for target in ['linux']+(['windows']if a.wine else[]):
@@ -23,7 +23,8 @@ for group in ['programs','negative']:
     r=run(cmd,work,kind+'-build',local);builds[kind]=r
     if group=='programs'and r.returncode==0:
      r=run(([a.wine]if target=='windows'else[])+[exe],work,kind+'-run');results[kind]=(r.returncode,r.stdout,r.stderr)
-   if group=='programs':okay=len(results)==2 and results['harbour']==results['hbc']
+   if group=='programs' and src.stem=='nil' and target=='windows':okay=builds['harbour'].returncode==0 and builds['hbc'].returncode==1 and b'module STATIC NIL scalars require ordinary Linux' in builds['hbc'].stderr
+   elif group=='programs':okay=len(results)==2 and results['harbour']==results['hbc']
    else:
     r=builds['hbc'];okay=r.returncode==1 and expect[src.stem].encode()in r.stderr and b'panicked'not in r.stderr
     # A duplicate is invalid Harbour; other declared limits must remain valid.

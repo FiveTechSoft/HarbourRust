@@ -184,6 +184,22 @@
       "rc": 1,
       "stderr": "error: line 4: dynamic FOR STEP requires ordinary Linux without threads/macros/shared captures\n",
       "source_sha256": "f7dbac84fd1f7cd7bfb4537ea8c4cd40ba94f00de67368c1c6d9eabcc6e414ae"
+    },
+    {
+      "kind": "pos2",
+      "source": "tests/t682_static_var_neg.prg",
+      "rc": 1,
+      "stderr": "error: line 2: module STATIC NIL scalars require ordinary Linux in this increment\n",
+      "source_sha256": "bb14e6bb20454afc0d4c338dfb22a10b6f181c2bd43bfa5a9f3c93c1b46504dc",
+      "reason": "Module NIL scalar storage measured only on ordinary Linux; not a PE runtime pass."
+    },
+    {
+      "kind": "pos2",
+      "source": "tests/module-static/programs/nil.prg",
+      "rc": 1,
+      "stderr": "error: line 1: module STATIC NIL scalars require ordinary Linux in this increment\n",
+      "source_sha256": "02aa0a2b46a6712d6f383b8e032bb3fd512f199eccb7d6d28c31280de38e191d",
+      "reason": "Module NIL scalar storage measured only on ordinary Linux; not a PE runtime pass."
     }
   ]
 }

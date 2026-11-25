@@ -13612,6 +13612,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                     }
                 }
                 if static_dyn(id) {
+                    if module_static::current(id)==Some(Ty::RefDyn) && matches!(e,Expr::ArrLit(_)|Expr::DArrNew){return Err(format!("line {}: module STATIC NIL scalar cannot store an array in this increment",n));}
                     let vals:Vec<&Expr>=if let Expr::ArrLit(es)=e {es.iter().collect()}else{vec![e]};
                     for v in vals {
                         let t=type_expr(v,env,sigs,*n)?;
@@ -24581,7 +24582,7 @@ fn cg_persistent_store(v:&CgLocal,e:&Expr,env:&[CgLocal],sigs:&[Sig],strs:&mut V
         out.push_str(&format!("    mov ${}, %rdi\n    call hbc_alloc\n    movq ${}, (%rax)\n    movq $1, 8(%rax)\n    movq ${}, 16(%rax)\n    add $24, %rax\n",24+16*es.len(),16+16*es.len(),es.len()));
         for(i,_)in es.iter().enumerate(){out.push_str(&format!("    mov -{}(%rbp), %r10\n    mov %r10, {}(%rax)\n    mov -{}(%rbp), %r10\n    mov %r10, {}(%rax)\n",end-i*16,i*16,end-i*16-8,i*16+8));}
         out.push_str("    mov %rax, %rdx\n    mov $8, %eax\n");
-    }else if matches!(e, Expr::Var(id) if static_dyn(id)) {
+    }else if module_static::current(&v.name)!=Some(Ty::RefDyn) && matches!(e, Expr::Var(id) if static_dyn(id)) {
         cg_value(e,env,sigs,strs,out,target);
         let k=fresh_lbl();
         out.push_str(&format!("    @HBC_TAG_KIND@cmp $8, %rax@HBC_TAG_END@\n    jne .Lpretain{}\n    addq $1, -16(%rdx)\n    jc hbc_oom\n.Lpretain{}:\n",k,k));
@@ -33297,7 +33298,8 @@ hbc_persistent_payload_release:
             if object_cleaned.insert(label.clone()){out.push_str(&format!("    mov {}(%rip), %rdi\n    movq $0, {}(%rip)\n    call hrobj_release\n",label,label));}
             continue;
         }
-        out.push_str(&format!("    lea hbc_static_{}_{}_{}(%rip), %rdi\n    call hbc_persistent_release\n",f.name.len(),f.name,id));
+        let label=module_static::storage(&f.name,id);
+        if object_cleaned.insert(label.clone()){out.push_str(&format!("    lea {}(%rip), %rdi\n    call hbc_persistent_release\n",label));}
     }}}
     let mut module_strings = std::collections::HashSet::new();
     for f in funcs { for st in &f.stmts { if let Stmt::Static(_,id,Expr::Str(_)) = st {
@@ -40116,7 +40118,7 @@ fn discover_root_params(fs:&[Func]) {
 
 fn validate_persistent(f:&Func)->Result<(),String> {
     use std::collections::HashSet;
-    let mut roots:HashSet<String>=f.stmts.iter().filter_map(|s|if let Stmt::Static(_,id,Expr::Nil)=s {if matches!(module_static::kind(&f.name,id),Some(Ty::Obj(_))){None}else{Some(id.clone())}}else{None}).collect();
+    let mut roots:HashSet<String>=f.stmts.iter().filter_map(|s|if let Stmt::Static(_,id,Expr::Nil)=s {if matches!(module_static::kind(&f.name,id),Some(Ty::Obj(_)|Ty::RefDyn)){None}else{Some(id.clone())}}else{None}).collect();
     for p in &f.params {if root_param(&f.name,p){roots.insert(p.clone());}}
     fn ex(e:&Expr,roots:&HashSet<String>,whole:bool)->bool {match e {
         Expr::Var(v)=>!roots.contains(v)||whole,
@@ -40377,6 +40379,7 @@ fn main() {
         });
     }
     DECIMAL_LOCAL_PROFILE.with(|v|v.set(CURDIR_LINUX_NATIVE.with(|v|v.get()) && !decimal_thread_profile));
+    if (!DECIMAL_LOCAL_PROFILE.with(|v|v.get())||MACRO_CONTEXT.with(|v|v.get())) && funcs.iter().any(|f|f.stmts.iter().any(|s|matches!(s,Stmt::Static(_,id,_)if module_static::kind(&f.name,id)==Some(Ty::RefDyn)))){eprintln!("error: module STATIC NIL scalars require ordinary Linux without threads/macros");process::exit(1);}
     if hash_case_mode && (!DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get())) {eprintln!("error: hb_HCaseMatch logical mode requires ordinary Linux without threads or macros");process::exit(1);}
     HASH_CASE_LOGICAL_MODE.with(|v|v.set(hash_case_mode));
     if optional_block::lower(&mut funcs) && (!DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get())) {eprintln!("error: static optional-block wrappers require ordinary Linux without threads or macros");process::exit(1);}
