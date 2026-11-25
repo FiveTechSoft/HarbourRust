@@ -11708,6 +11708,7 @@ fn bare_local_is_nested_i64_array(stmts:&[Stmt],idx:usize,name:&str)->bool {
     for st in &stmts[idx+1..] {match st {
         Stmt::Assign(_,id,Expr::ArrLit(rows)) if id==name=>return !rows.is_empty()&&rows.iter().all(|r|matches!(r,Expr::ArrLit(es)if !es.is_empty()&&es.iter().all(|e|matches!(e,Expr::Int(v)if v.parse::<i64>().is_ok())))),
         Stmt::Local(_,id,e)|Stmt::Assign(_,id,e) if id!=name&&!expr_mentions(e,name)&&counter_prefix_pure(e)=>{},
+        Stmt::Print(_,es,_) if es.iter().all(|e|!expr_mentions(e,name)&&counter_prefix_pure(e))=>{},
         _=>return false,
     }}false
 }

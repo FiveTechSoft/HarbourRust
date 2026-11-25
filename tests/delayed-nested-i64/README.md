@@ -3,7 +3,8 @@
 Own MIT follow-up above8885430a. LOCAL a initially NIL can use existing
 DArr2 storage when its first mention is an unconditional top-level store of
 a nonempty literal of nonempty i64 literal rows. Before that store, only
-pure leaf declarations/assignments with no mention of a are allowed. No
+pure leaf declarations/assignments and Print of pure scalar leaves with no
+mention of a are allowed. No
 initial NIL observation, effect, branch, byref or computed/empty row. Checker,
 layout and emission share one predicate. Existing nested array operations,
 ownership and cleanup stay in force; no Dyn retag/RC model expansion.
@@ -31,3 +32,15 @@ Oracle git694428e1c12f726675b19324d62167fa77d68185, hbmk2 SHA256
 Julio Ponce MIT programs remain credited specifications, no implementation
 or cambio.diff copied. New commit only,no push/publication/workflows/rebase.
 Package excludes generated binaries/objects/disposable assembly.
+
+## Pure-output prefix follow-up
+
+New bounded predicate admits top-level Print whose expressions are pure
+leaves unrelated to the still-NIL array. No call, mutation, byref, read of
+the array or control flow is admitted before its first store. Gate38 fresh:
+15exact Harbour stdout/stderr/status,3strict final-zero balances,12profile
+rejections,8named form rejections. Prior23suites plus module-NIL59 fresh;
+Rust106,Python27=25pass2skip,LLVM15=21exact,Linux1184exact,619remaining
+negatives identical vs15607b62. PE1913PASS/25known/0FAIL emission only.
+Census1041still58admitted; for.prg intact now reaches line29 codeblock
+Dyn-return boundary, not closed/admitted. No speed or lifetime claim.
