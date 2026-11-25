@@ -66,3 +66,9 @@ class ResultContract(unittest.TestCase):
     def test_legacy_gate_cannot_accept_other_source(self):
         rows=self.legacy_rows('example','strict-final-balance',99)
         with self.assertRaises(AssertionError):m.validate(rows,self.root,gate='original-input-control')
+    def test_intentional_stderr_exact_and_scoped(self):
+        rows=self.source_rows('longstr2');rows[-1].update(expected_stderr='program err',stderr='program err')
+        self.assertEqual(m.validate(rows,self.root,gate='original-longstr2-control')['strict_zero'],1)
+        with self.assertRaises(AssertionError):m.validate(rows,self.root,gate='other')
+        rows[-1]['stderr']='wrong'
+        with self.assertRaises(AssertionError):m.validate(rows,self.root,gate='original-longstr2-control')

@@ -86,3 +86,11 @@ methods cover both valid debts,zero misclassification,seven malformed debt
 fields,unknown debt source,all nine legacy sources and wrong gate/rc/kind/
 marker/source variants. Python47=45pass2skip. Full fresh wrapper unchanged
 328clean+2knownDELTA2,55sources. No compiler or semantic change.
+
+## Intentional stderr original
+
+original-longstr2-control adds already-admitted longstr2.prg,including its
+32byte intentional stderr prefix and~1.35MBstdout.280exact+54strictzero
+=334clean across56unique originals,2knownDELTA2separate. Sharedguard takes
+optional exact programstderr,not arbitrary stderr suppression. Wrapper scope
+is restricted to this gate/source. No new admission/performance claim.

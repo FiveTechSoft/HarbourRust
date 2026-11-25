@@ -34,8 +34,11 @@ def validate(rows,spec_root,gate=None):
                 assert row['stderr']==f'DELTA={expected}\n',(name,'debt marker')
             else:
                 assert kind in ZERO,(name,'zero class')
+                if 'expected_stderr' in row:
+                    assert gate=='original-longstr2-control' and name=='longstr2',(name,'intentional stderr scope')
+                    assert row['expected_stderr'],(name,'expected nonempty stderr')
                 if 'state_ok' in row:
-                    assert row['state_ok'] and row['stdout_match'] and row['rc']==0 and row['stderr']=='',(name,'strict zero state')
+                    assert row['state_ok'] and row['stdout_match'] and row['rc']==0 and row['stderr']==row.get('expected_stderr',''),(name,'strict zero state')
                 else:
                     # Existing input/effects gates have their own exact-stdout
                     # control and explicit DELTA=0 marker, not shared guard.
