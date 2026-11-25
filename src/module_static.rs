@@ -212,7 +212,7 @@ fn check_payload_uses(f: &Func, name: &str, ty: Ty) -> Result<(), String> {
         match e {
             Expr::Var(_)|Expr::Str(_)|Expr::Int(_)=>true,
             Expr::Bin(op,a,b) if *op=='+' => format_concat(a,name)&&format_concat(b,name),
-            Expr::Call(id,aa) if crate::is_builtin(id,"hb_ntos") => matches!(aa.as_slice(),[Expr::Var(v)]if v!=name)||matches!(aa.as_slice(),[Expr::Int(_)]),
+            Expr::Call(id,aa) if crate::is_builtin(id,"hb_ntos") || crate::is_builtin(id,"str") => matches!(aa.as_slice(),[Expr::Var(v)]if v!=name)||matches!(aa.as_slice(),[Expr::Int(_)]),
             _=>false,
         }
     }
