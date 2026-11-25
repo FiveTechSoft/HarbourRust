@@ -25,3 +25,13 @@ change. ASCII predicates still reject a non-ASCII first byte. Asc continues
 to return the first counted byte, including NUL/UTF8. Added empty/NUL/ASCII,
 UTF8 and logical/numeric/control-context fixtures and owned-subtree limits.
 Current evidence and exact counts are listed in the package summary.
+
+## Asc-only lazy immutable selection
+
+Asc observes constant leaves of nested IIf through I64 first-byte projection.
+Reached conditions remain lazy and execute once. Both arms must prove pure
+immutable leaves, including unreachable owned leaves (rejected). No runtime
+string ABI, direct alias or ownership change. Empty gives0; NUL/ASCII/UTF8
+first-byte semantics stay unchanged. Gate total12fresh exact Harbour/native/
+LLVM rows plus8named LLVM rejections. Repeated loops, increments and skipped
+bounds-error condition covered. Broad current evidence in package summary.

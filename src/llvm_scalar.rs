@@ -111,6 +111,13 @@ impl Ir {
    return Some(Expr::Call(n.clone(),vec![a[0].clone(),self.empty_selection(&a[1])?,self.empty_selection(&a[2])?]))
   }}None
  }
+ // Asc observes a selected constant leaf as an I64 byte, not a string ABI.
+ fn asc_selection(&self,e:&Expr)->Option<Expr>{
+  if let Some(text)=self.borrowed_constant_tree(e){return Some(Expr::Int(text.as_bytes().first().copied().unwrap_or(0).to_string()))}
+  if let Expr::Call(n,a)=e {if is_builtin(n,"iif") && a.len()==3 {
+   return Some(Expr::Call(n.clone(),vec![a[0].clone(),self.asc_selection(&a[1])?,self.asc_selection(&a[2])?]))
+  }}None
+ }
  fn expr(&mut self,e:&Expr)->Result<String,String>{
   Ok(match e {
    Expr::Seq(es)=>{
@@ -188,6 +195,9 @@ impl Ir {
     if first.map_or(false,|b|!b.is_ascii()){return Err("LLVM scalar: non-ASCII character predicate unsupported".into())}
     let yes=first.map_or(false,|b|if is_builtin(n,"isdigit"){b.is_ascii_digit()}else if is_builtin(n,"isalpha"){b.is_ascii_alphabetic()}else if is_builtin(n,"isupper"){b.is_ascii_uppercase()}else{b.is_ascii_lowercase()});
     if yes{"1".into()}else{"0".into()}
+   },
+   Expr::Call(n,args) if is_builtin(n,"asc") && args.len()==1 && matches!(&args[0],Expr::Call(id,a) if is_builtin(id,"iif") && a.len()==3) && self.asc_selection(&args[0]).is_some()=>{
+    let scalar=self.asc_selection(&args[0]).unwrap();self.expr(&scalar)?
    },
    Expr::Call(n,args) if is_builtin(n,"asc") && args.len()==1=>{
     let text=self.borrowed_constant_tree(&args[0]);
