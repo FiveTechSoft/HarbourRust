@@ -34,3 +34,15 @@ are repository manifest files. This supersedes the earlier resumed run only
 for a clean-completion claim,not for history. No compiler change,new admission
 or global/performance/PE/Mac repeat. Raw commands/cwd/source/hash/rc/stdout/
 stderr retained. Existing ownership/RC/ASort/numericdivision debts unchanged.
+
+## Fresh immutable string-tree frontier execution
+
+Compiler 51e8ddf1eb012114ec5c1f0dab6af9b0d45cc996cbbda1c0c065ccc094760bfe.
+Fresh uninterrupted full Linux exact-output manifest scan: 1185 sources,
+359 LLVM admitted, 826 named LLVM rejections. All 359 admitted inputs ran
+native, traced LLVM and untraced LLVM, 1077 byte-exact rc/stdout/stderr
+triples against repository manifest expectations, not a fresh Harbour oracle.
+No implementation change or universal compatibility claim. Four concurrent
+shards partitioned the manifest by original line index modulo four; runner
+and all command/rc/stdout/stderr evidence are packaged. No resumed records.
+No push/publication/workflow/rebase. Performance measured separately.
