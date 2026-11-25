@@ -36083,6 +36083,7 @@ hbc_free_lists: .skip 10240
     out = out.replace("@REG_BAD_W@", if instrument { REG_BAD_W } else { "" });
     out = out.replace("@REG_DATA@", if instrument { REG_DATA } else { "" });
     if gtstd_native {
+        out=out.replace("hbc_print_sep:\n    lea .Lpad20(%rip), %rax\n    mov $1, %edx\n    jmp hbc_print_str\n","hbc_print_sep:\n    lea .Lpad20(%rip), %rax\n    mov $1, %edx\n    jmp hbc_gtstd_separator\n");
         // Keep the former helpers under private legacy names, for a narrow
         // diff and to preserve every non-console caller's raw mode.
         out=out.replace("hbc_pstrt:\n", "hbc_pstrt:\n    jmp hbc_print_str\nhbc_pstrt_legacy:\n");

@@ -1,0 +1,11 @@
+FUNCTION Main()
+?? "X"+Chr(13),14
+? "abc",13
+?? Chr(13),14
+? "abc"
+?? "X"+Chr(13),14
+? "abc"
+?? "X"
+?? Chr(13)
+?? 14
+RETURN NIL

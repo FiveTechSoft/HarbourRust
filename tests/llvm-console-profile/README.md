@@ -18,3 +18,10 @@ recorded in the package summary. No policy/RC/numeric-division change.
 No push/publication/workflow/rebase. Harbour oracle commit
 694428e1c12f726675b19324d62167fa77d68185. MIT upstream examples are
 specifications only; Julio Ponce examples credited, no cambio.diff copy.
+
+## Separator refresh boundary
+
+Own measured CR regression refreshes the existing renderer immediately
+after each formatted item separator. Not after low-level numeric chunks
+or whole statements. Native and Linux LLVM share the helper;raw writes
+retain existing path. No generated renderer/toolchain change.

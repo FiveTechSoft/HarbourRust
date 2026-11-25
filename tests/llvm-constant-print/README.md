@@ -49,3 +49,9 @@ existing string renderer. No scalar NIL, local/parameter/return ABI or mixed
 IIf selection is admitted. Two own MIT cases compare native and both LLVM
 modes byte-exactly against fresh Harbour, including nested print evaluation,
 separators, empty/trailing-space strings, logical/numeric neighbours and effects.
+
+## Selected ASCII output regression
+
+Own128ASCII matrix cycles formatted/inline/raw modes with counted effects,
+including NUL and controls. Initially exposed GTSTD CR separator refresh
+divergence;fresh byte-exact comparison without whitespace normalization.
