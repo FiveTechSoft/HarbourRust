@@ -415,6 +415,15 @@ fn check_shared_array_uses(f: &Func, name: &str) -> Result<(), String> {
 }
 
 pub fn bind(f: &mut Func, slots: &[(usize, String, Expr)]) -> Result<(), String> {
+    // Function-local string slots own the same process-lifetime payload as
+    // module strings, but keep their function-qualified storage label.
+    for st in &f.stmts {if let Stmt::Static(line,name,Expr::Str(_))=st {
+        if !crate::CURDIR_LINUX_NATIVE.with(|v|v.get()) || crate::MACRO_CONTEXT.with(|v|v.get()) {
+            return Err(format!("line {}: local STATIC strings require ordinary Linux without threads/macros",line));
+        }
+        check_payload_uses(f,name,Ty::StrOwn)?;
+        KINDS.with(|v|v.borrow_mut().insert((f.name.clone(),name.clone()),Ty::StrOwn));
+    }}
     let mut prefix = Vec::new();
     for (index, (line, name, init)) in slots.iter().enumerate() {
         if f.params.contains(name) || declaration(&f.stmts, name, false)? { continue; }

@@ -2508,8 +2508,8 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
             parse_stmts(&[(n, declaration)], &mut 0, &mut local, depth)?;
             for st in local {
                 if let Stmt::Local(ln, name, value) = st {
-                    if !matches!(&value, Expr::Nil) && !matches!(&value, Expr::Int(v) if v.parse::<i64>().is_ok()) {
-                        return Err(format!("line {}: local STATIC currently requires a folded i64 constant initializer; NIL, floats and owned payloads need persistent tagged storage", n));
+                    if !matches!(&value, Expr::Nil | Expr::Str(_)) && !matches!(&value, Expr::Int(v) if v.parse::<i64>().is_ok()) {
+                        return Err(format!("line {}: local STATIC requires NIL, folded i64 or literal string; float/container initializers remain outside this increment", n));
                     }
                     out.push(Stmt::Static(ln, name, value));
                 }
