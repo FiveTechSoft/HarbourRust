@@ -267,9 +267,8 @@ impl Ir {
   let mut vals=Vec::new();
   for (ei,e) in es.iter().enumerate() {
    let borrowed=match e {
-    Expr::Var(n)=>self.strings.get(n).cloned().map(Expr::Str),
     Expr::Call(n,args) if is_builtin(n,"hb_eol")&&args.is_empty()=>Some(Expr::Str(if self.windows{"\r\n"}else{"\n"}.into())),
-    _=>None
+    _=>self.borrowed_constant_tree(e).map(Expr::Str)
    };
    let e=borrowed.as_ref().unwrap_or(e);
    // Print-only selection between static literals: no string value ABI,
