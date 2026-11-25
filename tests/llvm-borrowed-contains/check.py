@@ -12,7 +12,7 @@ for src in sources:
  w=d/src.stem;w.mkdir();copy=w/'input.prg';copy.write_bytes(src.read_bytes());(w/'input.sha256').write_text(hashlib.sha256(copy.read_bytes()).hexdigest()+'  input.prg\n')
  if src.stem.startswith('limit-'):
   for mode in ['--experimental-llvm','--experimental-llvm-no-trace']:
-   ll=w/(mode+'.ll');z=run([cc,copy,ll,mode],w,mode);assert z.returncode==1 and not ll.exists() and (b'borrowed constant string reassignment unsupported' if src.stem=='limit-mutable' else b'contains requires two immutable borrowed constant strings' if src.stem in ['limit-owned','limit-tree-owned'] else b'inline `:=` in an expression supports integer/logical values only') in z.stderr,(src,z.stderr)
+   ll=w/(mode+'.ll');z=run([cc,copy,ll,mode],w,mode);assert z.returncode==1 and not ll.exists() and (b'borrowed constant string reassignment unsupported' if src.stem=='limit-mutable' else b'contains requires two immutable borrowed constant strings' if src.stem in ['limit-owned','limit-tree-owned','limit-select-owned','limit-select-needle'] else b'inline `:=` in an expression supports integer/logical values only') in z.stderr,(src,z.stderr)
    rows.append(dict(source=src.name,mode=mode,kind='named-limit',exact=False))
   continue
  z=run([a.hbmk2,copy,'-quiet','-gtstd','-w0','-o'+str(w/'oracle')],w,'oracle-build');assert z.returncode==0,z.stderr

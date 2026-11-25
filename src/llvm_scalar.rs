@@ -180,6 +180,11 @@ impl Ir {
     self.block(&rhs);let c=self.cond(b)?;let v=self.tmp();self.line(format!("{} = zext i1 {} to i64",v,c));self.line(format!("store i64 {}, ptr {}",v,slot));self.line(format!("br label %{}",end));
     self.block(&end);let r=self.tmp();self.line(format!("{} = load i64, ptr {}",r,slot));r
    },
+   Expr::Cmp(CmpOp::Contains,a,b) if matches!(&**b,Expr::Call(id,args) if is_builtin(id,"iif") && args.len()==3)=>{
+    let needle=self.borrowed_constant_tree(a).ok_or("LLVM scalar: contains requires two immutable borrowed constant strings")?;
+    let pos=self.at_haystack_selection(&needle,b).ok_or("LLVM scalar: contains requires two immutable borrowed constant strings")?;
+    self.expr(&Expr::Cmp(CmpOp::Gt,Box::new(pos),Box::new(Expr::Int("0".into()))))?
+   },
    Expr::Cmp(CmpOp::Contains,a,b)=>{
     let needle=self.borrowed_constant_tree(a).ok_or("LLVM scalar: contains requires two immutable borrowed constant strings")?;
     let haystack=self.borrowed_constant_tree(b).ok_or("LLVM scalar: contains requires two immutable borrowed constant strings")?;

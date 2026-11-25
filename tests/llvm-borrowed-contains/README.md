@@ -28,3 +28,13 @@ frontier: 26 gates, 476 mixed rows. Linux manifest 1185 exact; 618 negative
 sources x 2 targets unchanged; Harbour census 1041 sources, 60 admitted,
 no admission/diagnostic changes versus the previous compiler. These are
 native checks, not a fresh oracle replay for the full census/manifest.
+
+## Selected constant haystack
+
+A constant needle $ nested IIf constant haystack uses existing At scalar
+projection and tests position>0. Empty needle false still evaluates selected
+conditions. Every leaf is proved immutable,including dead arms. Selected
+needle/owned dead leaves rejected.No string value ABI or RC changes.
+Two own MIT cases check effects,lazy nested bounds/overflow,NUL,UTF8,
+empty/absent/longer needles,logical and IF contexts fresh against Harbour
+in native/traced/untraced modes.Two named rejection cases added.
