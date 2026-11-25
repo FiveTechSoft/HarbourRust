@@ -26,3 +26,9 @@ liveTO21exact. Includes zeroSTEP LOOP/EXIT and thread-family exclusion.
 Prior counts above describe the preceding21-gate state,not this run.
 No compiler/global/performance repeat. Fresh native dynamicSTEP gate111
 also passes separately;8LLVMroutechecks there are emission-only.
+
+Latest tests-only refresh:25gates453mixedrows,adds borrowedASCIIpredicates14
+and exactborrowedstringequality14. Compiler unchanged:
+4b7ddd4212ad976e97cb74b3367ef5b80877d1cafeef089dc985309ffdf856c8.
+Fresh25/453PASS. Priorcounts above are dated states,not the current run.
+No broadmanifest/original/Rust/Python repeat in this test-only increment.

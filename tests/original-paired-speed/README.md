@@ -142,3 +142,16 @@ or universal speed claim,no host/frequency isolation. No paired regression
 claim versus past timings from different shared-host load. Current compiler
 unchanged;global tests not rerun for this evidence-only commit. No new source
 admission,policy,ownership,RC,Windows/Mac/runtime change or publication.
+
+## Fresh current-frontier25 measurement,2026-11-25
+
+Unchanged compiler4b7ddd4212ad976e97cb74b3367ef5b80877d1cafeef089dc985309ffdf856c8.
+Same pinned oracle,2independent101-pair runs,606pairs/1212timed processes,
+60warmups,all triples exact. Same singleCPUaffinity,alternating engine order.
+Medians ms Harbour/HarbourRust,ratio:
+- fib8.456224/2.852181,2.965x;repeat8.591945/2.872657,2.991x.
+- recursiv2.747300/1.436924,1.912x;repeat2.737293/1.412641,1.938x.
+- longstr2 5.198107/5.825539,0.892x;repeat5.358508/6.077800,0.882x.
+longstr2 loss retained,HarbourRust about12-13%more process time. Startup,
+capturedoutput,shutdown included,no algorithm-only/universal or historical
+regression claim. No host/frequency isolation. No implementation/globalrepeat.
