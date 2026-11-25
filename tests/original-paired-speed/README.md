@@ -63,3 +63,26 @@ No global regression repeated for this tests-only change. Latest compiler
 regression remains9e422bd1,including122prior suites,Rust106,Linux1177,
 LLVM21,PE1912/22known/0fail emission-only,negative622same18,census58/1041.
 Harbour extracted source has no git metadata,commit not verified;hash recorded.
+
+## Fresh post-reset measurement25Nov2026
+
+New evidence on db9294d4compiler,tests-only increment afterd889e489.
+Not recovery of lost482cdecc/d21db7f2 or old evidence.No old timing reused.
+Compiler c287fe722804acd9c09d0fc69c0326e0279fa16e01834172bd2745a2f910a0ab;
+oracle git694428e1c12f726675b19324d62167fa77d68185 freshly built,
+hbmk2SHA2562fb1503a38760b9e94617fd6243ec0a8f65c6a84e079fed0efc47d66633c40ae.
+101alternating pairs per source,two independent full runs,five warmups per
+engine/source/run,same oneCPUaffinity.606pairs/1212timed executions plus
+60warmups,all exact triples including longstr2's intentional stderr.
+
+Medians ms,Harbour/HarbourRust ratio (>1favorsHarbourRust):
+- fib:8.294663/2.827309,2.934x;repeat8.214885/2.792853,2.941x.
+- recursiv:2.596308/1.392527,1.864x;repeat2.645638/1.424493,1.857x.
+- longstr2:4.646497/6.161200,0.754x;repeat4.674195/6.210168,0.753x.
+
+longstr2 loss retained.Process launch,output capture and shutdown included,
+not isolated algorithm speed or universal comparison.No host/frequency
+isolation.No cross-reset timing-regression claim:environment was rebuilt.
+No global regression repeat tests-only,no new original closure,no Windows/
+Mac runtime claim.CorpusASort still missing.No push/workflows/publication/
+rebase. Raw pairs,commands,cwd,source hashes,warm outputs included.
