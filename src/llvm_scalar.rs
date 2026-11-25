@@ -132,6 +132,14 @@ impl Ir {
     if matches!(op,CmpOp::Ne){"1".into()}else{"0".into()}
    },
    Expr::Cmp(op,a,b)=>{let a=self.expr(a)?;let b=self.expr(b)?;let v=self.tmp();self.line(format!("{} = icmp {} i64 {}, {}",v,match op{CmpOp::Eq|CmpOp::EqEq=>"eq",CmpOp::Ne=>"ne",CmpOp::Lt=>"slt",CmpOp::Le=>"sle",CmpOp::Gt=>"sgt",CmpOp::Ge=>"sge",_=>return Err("LLVM scalar: comparison unsupported".into())},a,b));let r=self.tmp();self.line(format!("{} = zext i1 {} to i64",r,v));r},
+   Expr::Call(n,args) if is_builtin(n,"at") && args.len()==2=>{
+    let text=|e:&Expr|match e {Expr::Var(v)=>self.strings.get(v).cloned(),e=>borrowed_constant(e)};
+    let needle=text(&args[0]).ok_or("LLVM scalar: At only on immutable borrowed constant strings")?;
+    let haystack=text(&args[1]).ok_or("LLVM scalar: At only on immutable borrowed constant strings")?;
+    // Harbour positions count bytes, including embedded NUL. An empty
+    // needle is absent, unlike the usual empty-substring convention.
+    if needle.is_empty(){"0".into()}else{haystack.as_bytes().windows(needle.len()).position(|w|w==needle.as_bytes()).map(|i|i+1).unwrap_or(0).to_string()}
+   },
    Expr::Call(n,args) if is_builtin(n,"asc") && args.len()==1=>{
     let text=match &args[0] {Expr::Var(v)=>self.strings.get(v).cloned(),e=>borrowed_constant(e)};
     match text {Some(text)=>text.as_bytes().first().copied().unwrap_or(0).to_string(),None=>return Err("LLVM scalar: Asc only on immutable borrowed constant strings".into())}
