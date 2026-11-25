@@ -128,7 +128,7 @@ pub fn eval_if(expr: &str, defs: &HashMap<String, Def>, line: usize) -> Result<b
         if bytes[at].is_ascii_alphabetic()||bytes[at]==b'_' {
             let start=at;at+=1;while at<bytes.len()&&(bytes[at].is_ascii_alphanumeric()||bytes[at]==b'_'){at+=1;}
             let word=&expr[start..at];
-            if word.eq_ignore_ascii_case("defined") {
+            if matches!(word,"d"|"de"|"def"|"defi"|"defin"|"define"|"defined") {
                 while at<bytes.len()&&bytes[at].is_ascii_whitespace(){at+=1;}
                 if bytes.get(at)!=Some(&b'('){return Err(format!("line {}: expected ( after defined",line));}at+=1;
                 while at<bytes.len()&&bytes[at].is_ascii_whitespace(){at+=1;}
@@ -136,7 +136,7 @@ pub fn eval_if(expr: &str, defs: &HashMap<String, Def>, line: usize) -> Result<b
                 let name=&expr[start..at];
                 while at<bytes.len()&&bytes[at].is_ascii_whitespace(){at+=1;}
                 if name.is_empty()||bytes.get(at)!=Some(&b')'){return Err(format!("line {}: expected ) after defined name",line));}at+=1;
-                protected.push_str(if defs.contains_key(name){"1"}else{"0"});
+                protected.push_str(if defs.contains_key(name){" 1 "}else{" 0 "});
             }else{protected.push_str(word);}
         }else{let ch=expr[at..].chars().next().unwrap();protected.push(ch);at+=ch.len_utf8();}
     }
@@ -186,20 +186,6 @@ pub fn eval_if(expr: &str, defs: &HashMap<String, Def>, line: usize) -> Result<b
                 ".AND." => toks.push(T::And),
                 ".OR." => toks.push(T::Or),
                 ".NOT." => toks.push(T::Not),
-                "DEFINED" => {
-                    // defined(NAME)
-                    while i < b.len() && (b[i] as char).is_whitespace() { i += 1; }
-                    if i >= b.len() || b[i] != b'(' { return Err(format!("line {}: expected ( after defined", line)); }
-                    i += 1;
-                    while i < b.len() && (b[i] as char).is_whitespace() { i += 1; }
-                    let k = i;
-                    while i < b.len() && ((b[i] as char).is_ascii_alphanumeric() || b[i] == b'_') { i += 1; }
-                    let name = &expr[k..i];
-                    while i < b.len() && (b[i] as char).is_whitespace() { i += 1; }
-                    if i >= b.len() || b[i] != b')' { return Err(format!("line {}: expected ) after defined name", line)); }
-                    i += 1;
-                    toks.push(T::Num(if defs.contains_key(name) { 1 } else { 0 }));
-                }
                 "__PRAGMA" => {
                     // Harbour pp built-in (oracle hk320: hbmk2 with no -w
                     // flag defaults WARNINGLEVEL to 0). WARNINGLEVEL is the
@@ -2265,5 +2251,18 @@ mod if_expand_tests {
         assert!(eval_if("NOPE == 0",&p.defs,1).is_err());
         p.define_cli("EMPTY").unwrap();assert!(eval_if("EMPTY == 0",&p.defs,1).is_err());
         p.define_cli("B=A").unwrap();assert!(eval_if("A == 0",&p.defs,1).is_err());
+    }
+}
+
+#[cfg(test)]
+mod defined_form_tests {
+    use super::*;
+    #[test]
+    fn written_lowercase_prefix_only_and_no_generated_operator() {
+        let mut p=Pp::new(Vec::new(),false);p.define_cli("X=7").unwrap();
+        for prefix in ["d","de","def","defi","defin","define","defined"]{assert!(eval_if(&format!("{}(X)",prefix),&p.defs,1).unwrap());}
+        assert!(eval_if(".not.defined(MISSING)",&p.defs,1).unwrap());
+        for e in ["Defined(X)","DEFINED(X)","definedx(X)"]{assert!(eval_if(e,&p.defs,1).is_err());}
+        p.define_cli("A=defined(X)").unwrap();assert!(eval_if("A",&p.defs,1).is_err());
     }
 }
