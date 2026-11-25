@@ -342,6 +342,9 @@ impl Ir {
   let mut vals=Vec::new();
   for (ei,e) in es.iter().enumerate() {
    let borrowed=match e {
+    // A literal NIL is rendered as fixed bytes only in direct print position.
+    // It gains no scalar value, local storage or selection/argument ABI.
+    Expr::Nil=>Some(Expr::Str("NIL".into())),
     Expr::Call(n,args) if is_builtin(n,"hb_eol")&&args.is_empty()=>Some(Expr::Str(if self.windows{"\r\n"}else{"\n"}.into())),
     _=>self.borrowed_constant_tree(e).map(Expr::Str)
    };

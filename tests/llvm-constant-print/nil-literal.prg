@@ -1,0 +1,9 @@
+FUNCTION Main()
+? NIL,"x",NIL
+?? NIL
+OutStd(NIL,"x",NIL)
+? .T.,NIL,17
+QOut(NIL)
+QQOut(NIL)
+? NIL==NIL,NIL!=NIL
+RETURN NIL

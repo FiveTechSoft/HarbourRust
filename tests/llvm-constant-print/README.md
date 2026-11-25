@@ -41,3 +41,11 @@ Test-only: unselected nested conditions contain runtime lower/upper bound
 errors and minimum-overflow-sensitive increment of maxI64. No such condition
 runs; reached branches remain exact against fresh Harbour. Gate total now
 15 exact rows plus 8 named LLVM rejections. No compiler change.
+
+## Direct literal NIL print items
+
+Direct NIL in ?, ??, QOut, QQOut and OutStd is fixed text NIL, using the
+existing string renderer. No scalar NIL, local/parameter/return ABI or mixed
+IIf selection is admitted. Two own MIT cases compare native and both LLVM
+modes byte-exactly against fresh Harbour, including nested print evaluation,
+separators, empty/trailing-space strings, logical/numeric neighbours and effects.
