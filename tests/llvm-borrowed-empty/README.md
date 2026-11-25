@@ -21,3 +21,12 @@ Compilerf0c010fcf279c12f7e199cb4a450a7706bc9411a402608432b3cecb11ba356a0.
 Source/command/cwd/raw/oracleLLVMhashes retained. JulioPonceMIT specifications
 credited elsewhere,no suppliedimplementation/cambio.diff copied. NoASort,
 numericdivision,RC/objectlifetime,workflow,push,publication,rebase changes.
+
+## Immutable local concat trees
+
+Follow-up: resolve immutable local bindings recursively in pure concat
+operands. Fixed-array and numeric/logical behavior remains unchanged. No
+owned/mutable/runtime string admission. New empty/space/NUL/ASCII/UTF8
+and numeric/logical/control-context fixtures plus owned-subtree negative.
+Own gate: 9 fresh Harbour/native/LLVM exact rows, 6 named LLVM rejections.
+Broad current evidence is listed separately in the package summary.

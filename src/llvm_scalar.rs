@@ -183,7 +183,7 @@ impl Ir {
    },
    Expr::Call(n,args) if is_builtin(n,"empty") && args.len()==1=>{
     if let Expr::Var(v)=&args[0]{if let Some(k)=self.asz.get(v){return Ok(if *k==0{"1".into()}else{"0".into()})}}
-    let text=match &args[0] {Expr::Var(v)=>self.strings.get(v).cloned(),e=>borrowed_constant(e)};
+    let text=self.borrowed_constant_tree(&args[0]);
     if let Some(text)=text {return Ok(if text.bytes().all(|b|matches!(b,9|10|13|32)){"1".into()}else{"0".into()})}
     let v=self.expr(&args[0])?;let c=self.tmp();self.line(format!("{} = icmp eq i64 {}, 0",c,v));let r=self.tmp();self.line(format!("{} = zext i1 {} to i64",r,c));r
    },
@@ -211,8 +211,7 @@ impl Ir {
    },
    Expr::Call(n,args) if is_builtin(n,"len") && args.len()==1=>{match &args[0] {
     Expr::Var(v) if self.asz.contains_key(v)=>self.asz[v].to_string(),
-    Expr::Var(v) if self.strings.contains_key(v)=>self.strings[v].as_bytes().len().to_string(),
-    e if borrowed_constant(e).is_some()=>borrowed_constant(e).unwrap().as_bytes().len().to_string(),
+    e if self.borrowed_constant_tree(e).is_some()=>self.borrowed_constant_tree(e).unwrap().as_bytes().len().to_string(),
     _=>return Err("LLVM scalar: len() only on fixed I64 arrays or borrowed constant strings".into())
    }},
    Expr::Call(n,args) if is_builtin(n,"procline") && (args.is_empty() || matches!(&args[..], [Expr::Int(v)] if v=="0"))=>PROC_LINES.with(|m|m.borrow().get(self.current_line.saturating_sub(1)).copied()).unwrap_or(self.current_line).to_string(),
