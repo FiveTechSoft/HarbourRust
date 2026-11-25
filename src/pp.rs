@@ -472,7 +472,11 @@ fn subst_params(text: &str, names: &[String], values: &[String]) -> String {
             let start=i; i+=1;
             while i<b.len() && (b[i].is_ascii_alphanumeric() || b[i]==b'_') {i+=1;}
             let word=&text[start..i];
-            if let Some(k)=names.iter().position(|n|n==word) {out.extend_from_slice(values[k].as_bytes());}
+            if let Some(k)=names.iter().position(|n|n==word) {
+                // Nonempty argument tokens do not paste with surrounding
+                // replacement-list signs. Empty argument semantics unchanged.
+                if values[k].is_empty() {} else {append_sign_boundary(&mut out,&values[k],b.get(i).copied());}
+            }
             else {out.extend_from_slice(&b[start..i]);}
         } else {out.push(b[i]);i+=1;}
     }
@@ -2181,6 +2185,18 @@ mod macro_sign_tests {
         p.define_cli("E").unwrap();p.define_cli("P=+").unwrap();p.define_cli("M=-").unwrap();
         for (input,want) in [("2+E+3","2+ +3"),("7-E-2","7- -2"),("n P+1","n + +1"),("7-M 2","7- - 2"),("n++ +1","n++ +1"),("--n","--n"),("2++3","2++3")] {
             assert_eq!(expand(input,&p.defs,1).unwrap(),want);
+        }
+    }
+}
+
+#[cfg(test)]
+mod parameter_sign_tests {
+    use super::*;
+    #[test]
+    fn nonempty_argument_signs_do_not_create_mutation() {
+        let names=vec!["x".into()];
+        for (body,arg,want) in [("2+x 3","+","2+ + 3"),("n+x","+1","n+ +1"),("7-x 2","-","7- - 2"),("x++","n","n++"),("++x","n","++n"),("x","n++","n++"),("x","","")] {
+            assert_eq!(subst_params(body,&names,&[arg.into()]),want);
         }
     }
 }
