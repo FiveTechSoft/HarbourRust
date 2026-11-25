@@ -340,6 +340,20 @@ fn identifier_aliases(defs: &HashMap<String, Def>) -> HashMap<String, Def> {
     }).map(|(name, def)| (name.clone(), def.clone())).collect()
 }
 
+// A macro replacement is a token boundary, not textual token pasting.
+// Preserve only the measured ++/-- distinction here; other joins are unchanged.
+fn append_sign_boundary(out:&mut Vec<u8>, value:&str, next:Option<u8>) {
+    let sign_pair=|a:Option<u8>,b:Option<u8>|matches!((a,b),(Some(b'+'),Some(b'+'))|(Some(b'-'),Some(b'-')));
+    let bytes=value.as_bytes();
+    if bytes.is_empty() {
+        if sign_pair(out.last().copied(),next){out.push(b' ');}
+    } else {
+        if sign_pair(out.last().copied(),bytes.first().copied()){out.push(b' ');}
+        out.extend_from_slice(bytes);
+        if sign_pair(bytes.last().copied(),next){out.push(b' ');}
+    }
+}
+
 fn expand_depth(line: &str, defs: &HashMap<String, Def>, line_no: usize, depth: usize, source_brackets: bool) -> Result<String, String> {
     if depth > 16 { return Err(format!("line {}: macro expansion too deep (recursive define?)", line_no)); }
     let b = line.as_bytes();
@@ -373,7 +387,8 @@ fn expand_depth(line: &str, defs: &HashMap<String, Def>, line_no: usize, depth: 
             match defs.get(word) {
                 Some(d) if !d.funclike => {
                     // object-like: the body itself may contain macro calls
-                    outb.extend_from_slice(expand_depth(&d.body.clone(), defs, line_no, depth + 1, false)?.as_bytes());
+                    let expanded=expand_depth(&d.body.clone(), defs, line_no, depth + 1, false)?;
+                    append_sign_boundary(&mut outb,&expanded,b.get(j).copied());
                 }
                 Some(d) => {
                     // function-like: only expands in call form
@@ -429,7 +444,8 @@ fn expand_depth(line: &str, defs: &HashMap<String, Def>, line_no: usize, depth: 
                     }
                     // substitute params (word-boundary, outside strings) in the body
                     let body = subst_params(&d.body, &d.params, &args);
-                    outb.extend_from_slice(expand_depth(&body, defs, line_no, depth + 1, false)?.as_bytes());
+                    let expanded=expand_depth(&body, defs, line_no, depth + 1, false)?;
+                    append_sign_boundary(&mut outb,&expanded,b.get(m+1).copied());
                     i = m + 1;
                     continue;
                 }
@@ -2153,5 +2169,18 @@ mod cli_define_tests {
             assert!(p.define_cli(bad).is_err(),"{:?}",bad);
         }
         assert!(p.origins.is_empty() && p.end_lines.is_empty());
+    }
+}
+
+#[cfg(test)]
+mod macro_sign_tests {
+    use super::*;
+    #[test]
+    fn replacements_do_not_create_increment_tokens() {
+        let mut p=Pp::new(Vec::new(),false);
+        p.define_cli("E").unwrap();p.define_cli("P=+").unwrap();p.define_cli("M=-").unwrap();
+        for (input,want) in [("2+E+3","2+ +3"),("7-E-2","7- -2"),("n P+1","n + +1"),("7-M 2","7- - 2"),("n++ +1","n++ +1"),("--n","--n"),("2++3","2++3")] {
+            assert_eq!(expand(input,&p.defs,1).unwrap(),want);
+        }
     }
 }

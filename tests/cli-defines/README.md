@@ -20,7 +20,8 @@ No Macruntime/PEfull-emission/performance/allhistorical-suite claim.
 
 An initial empty-replacement probe used adjacent plus operators after macro
 removal. Harbour accepted it, hbc's existing expression parser rejected it.
-This remains a named syntax gap, NOT fixed or counted as exact. Final empty
+It was a named syntax gap at this increment, not counted as exact. The later
+pp-sign-boundary increment fixes measured replacement-edge sign fusion. Final empty
 probe prints the empty expansion on its own line; raw failed attempt included.
 A second gate attempt reached40exact but stopped at the rejection-test message
 expectation for bare -D;corrected to its actual missing-argument error.

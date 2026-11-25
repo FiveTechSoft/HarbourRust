@@ -1,0 +1,4 @@
+FUNCTION Main()
+LOCAL n:=2
+? n++ +1,n
+RETURN NIL
