@@ -447,3 +447,18 @@ noise,no frequency isolation,not algorithm-only/universal/paired-regression
 speed claims. Original sources unchanged,no Windows/Mac runtime claim.
 No compiler change in this evidence commit.No push/workflow/publication/
 rebase.Julio Ponce MIT examples are specifications,no implementation copy.
+
+## At selected haystack compiler refresh,25Nov2026
+
+Fresh Harbour694428e1 against658469adcompiler
+3fe8397c7b1162c59ffb280ee38e295a35c2e47b9808efe51f6e88af1c304738.
+Two101alternating-pair runs/source,three intact originals,1CPU,
+1212timed+60warm executions all exact.Medians ns(Harbour/HarbourRust),ratio:
+fib8435060/2818134,2.993;repeat8181671/2771741,2.952.
+recursiv2716163/1436575,1.891;repeat2650153/1415591,1.872.
+longstr2:4668194/5056527,0.923;repeat4704486/5103077,0.922.
+longstr2loss retained.Process startup,captured output,shutdown included,
+not algorithm-only/universal/regression speed claims.Shared-host noise,
+no frequency isolation.No Windows/Mac runtime claim.No compiler change
+in evidence commit.Julio Ponce MIT examples specifications only,no supplied
+implementation/cambio.diff copy.No push/workflow/publication/rebase.

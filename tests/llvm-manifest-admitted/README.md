@@ -148,3 +148,11 @@ not fresh Harbour. No new manifest admission relative to literal NIL print.
 Compiler9b46aace70cd275dbed3852dd2022110ccddf25ee25bb9ce53903d625ea98b8b.
 LLVM15constant,no environment/gate changes during these attempts.
 No NIL value ABI,no Windows/Mac runtime claim.
+
+## At selected constant haystack refresh,25Nov2026
+
+Test-only on658469ad.1185scan,374admitted,811reject,1122exact triples
+native/traced/untraced against repository expectations,not fresh Harbour.
+No new manifest admissions.Compiler
+3fe8397c7b1162c59ffb280ee38e295a35c2e47b9808efe51f6e88af1c304738.
+LLVM15constant,no environment/gate changes.No Windows/Mac runtime claim.
