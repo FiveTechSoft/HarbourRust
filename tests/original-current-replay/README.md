@@ -55,3 +55,9 @@ original-fib-calendar-control adds already-admitted fib.prg and cdow.prg.
 Fresh oracle,10exact+2strictzero. Cumulative53originals,
 265exact+51strictzero=316clean,2knownDELTA2separate. Calendar date rollover
 fails comparison rather than normalizing bytes. No new admissions/speedclaim.
+
+## OS and datetime coverage
+
+original-os-datetime-control adds already-admitted os.prg and datetime.prg.
+Same-host/live-day oracle bytes unnormalized.55originals,275exact+53zero
+=328clean,2knownDELTA2separate. No new compiler admissions.
