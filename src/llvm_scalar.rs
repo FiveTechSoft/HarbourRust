@@ -195,7 +195,18 @@ impl Ir {
    Expr::Call(n,args) if is_builtin(n,"iif") && args.len()==3=>{let c=self.cond(&args[0])?;let t=self.lab();let f=self.lab();let end=self.lab();let slot=self.tmp();self.allocas.push(format!("  {} = alloca i64\n",slot));self.line(format!("br i1 {}, label %{}, label %{}",c,t,f));self.block(&t);let a=self.expr(&args[1])?;self.line(format!("store i64 {}, ptr {}",a,slot));self.line(format!("br label %{}",end));self.block(&f);let b=self.expr(&args[2])?;self.line(format!("store i64 {}, ptr {}",b,slot));self.line(format!("br label %{}",end));self.block(&end);let r=self.tmp();self.line(format!("{} = load i64, ptr {}",r,slot));r},
    Expr::Call(n,_) if self.voids.contains(n)=>return Err(format!("LLVM scalar: NIL-only effect call `{}` cannot be used as a value",n)),
    Expr::Call(n,args) if self.sig_names.contains(n)=>{let mut aa=Vec::new();for a in args {aa.push(format!("i64 {}",self.expr(a)?));}let r=self.tmp();self.line(format!("{} = call i64 @ll_{}({})",r,n,aa.join(", ")));r},
-   Expr::IdxCompound(..)=>return Err("LLVM scalar: indexed compound assignment `a[i] op= e` is not in this subset (default-backend feature added with the arrayidx piece; the LLVM subset never accepted this form, so nothing previously supported is lost)".into()),
+   Expr::IdxCompound(n,ie,op,rhs)=>{
+    if !matches!(op,'+'|'-'|'*'){return Err("LLVM scalar: indexed compound operator unsupported".into())}
+    if !self.arrays.contains_key(n){return Err("LLVM scalar: indexed compound assignment requires fixed I64 array".into())}
+    // Index once and bounds before RHS. Load the cell AFTER RHS, as
+    // Harbour does: nested writes participate in the outer operation.
+    let idx=self.expr(ie)?;let p=self.slot(n,&idx)?;
+    let rhs=self.expr(rhs)?;
+    let old=self.tmp();self.line(format!("{} = load i64, ptr {}",old,p));
+    let value=self.tmp();
+    self.line(format!("{} = {} i64 {}, {}",value,match op {'+'=>"add",'-'=>"sub",_=>"mul"},old,rhs));
+    self.line(format!("store i64 {}, ptr {}",value,p));value
+   },
    Expr::Set(n,rhs)=>{
     let logical=self.isbool(rhs);let v=self.expr(rhs)?;let p=self.ptr(n)?;
     self.line(format!("store i64 {}, ptr {}",v,p));
