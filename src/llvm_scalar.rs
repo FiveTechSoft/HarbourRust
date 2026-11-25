@@ -199,7 +199,7 @@ impl Ir {
    Expr::Set(n,rhs)=>{
     let logical=self.isbool(rhs);let v=self.expr(rhs)?;let p=self.ptr(n)?;
     self.line(format!("store i64 {}, ptr {}",v,p));
-    if logical{self.bools.insert(n.clone());}v
+    if logical{self.bools.insert(n.clone());}else{self.bools.remove(n);}v
    },
    _=>return Err(format!("LLVM scalar: expression unsupported: {:?}",e))
   })
