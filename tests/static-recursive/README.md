@@ -18,3 +18,9 @@ xLocal lifetime, indirect block returns, arrays of blocks and intact
 statics.prg remain unsupported. No ASort/globalRC/numeric-array division.
 Black-box oracle https://github.com/harbour/core.git at
 694428e1c12f726675b19324d62167fa77d68185.
+
+Diagnostic follow-up retains the checked tail's failure reason on a failed
+retry instead of masking it with the caller's never-returns symptom.
+Local and parameter captures name their offending binding; incompatible
+body returns show the actual return mismatch; unsupported platform names
+the ordinary-Linux boundary. Admission and generated runtime are unchanged.

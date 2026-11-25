@@ -40997,15 +40997,21 @@ fn main() {
                     // recursive factory without pretending its ABI is Dyn.
                     // Check it in the already checked prefix environment;
                     // no tail free name may refer to a detached local.
+                    let mut block_seed_error=None;
+                    let block_tail=matches!(f.stmts.last(),Some(Stmt::Ret(_,Some(Expr::BlockLit(..)))));
                     let block_seed=if CURDIR_LINUX_NATIVE.with(|v|v.get()) && !MACRO_CONTEXT.with(|v|v.get()) {
                         if let Some(Stmt::Ret(line,Some(e @ Expr::BlockLit(id,_,_))))=f.stmts.last() {
                             let mut probe_env=env.clone();
                             match type_expr(e,&mut probe_env,&mut view,*line) {
                                 Ok(t @ Ty::Block(..)) if PERSISTENT_INTEGER_BLOCKS.with(|v|v.borrow().contains(id))=>Some(t),
-                                _=>None,
+                                Err(e)=>{block_seed_error=Some(format!("recursive STATIC block factory tail validation: {}",e));None},
+                                _=>{block_seed_error=Some("recursive STATIC block factory tail has no canonical integer STATIC capture".to_owned());None},
                             }
                         }else{None}
-                    }else{None};
+                    }else{
+                        if block_tail {block_seed_error=Some("recursive STATIC block factory requires ordinary Linux without threads or macros".to_owned());}
+                        None
+                    };
                     if block_seed.is_some(){PERSISTENT_BLOCK_RETURNS.with(|v|{v.borrow_mut().insert(f.name.clone());});}
                     view[fi].ret = ret.or(block_seed).or(Some(Ty::Dyn));
                     let mut env2: Vec<Local> = Vec::new();
@@ -41022,7 +41028,9 @@ fn main() {
                         env = env2;
                     } else {
                         view[fi].ret = saved;
-                        res = Err(first.0);
+                        res = Err(if let Some(reason)=block_seed_error {reason}
+                            else if block_seed.is_some() {format!("recursive STATIC block factory body is incompatible with its validated tail: {}",res2.unwrap_err())}
+                            else {first.0});
                         ret = first.1;
                     }
                 }
