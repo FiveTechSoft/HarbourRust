@@ -21,3 +21,12 @@ Census not rerun,frontend unchanged. No fullPE/Mac/performance/allhistorical
 claim. No numericdivision/ABI/RC/workflow/push/publication/rebase changes.
 JulioPonceMITexamples specifications only,no implementation/cambio.diff copied.
 Oracle694428e1c12f726675b19324d62167fa77d68185.
+
+## Immutable local concat trees
+
+Follow-up: recursively resolve immutable locals within pure concat operands.
+No owned/mutable/runtime string support, evaluation erasure or locale policy
+change. ASCII predicates still reject a non-ASCII first byte. Asc continues
+to return the first counted byte, including NUL/UTF8. Added empty/NUL/ASCII,
+UTF8 and logical/numeric/control-context fixtures and owned-subtree limits.
+Current evidence and exact counts are listed in the package summary.

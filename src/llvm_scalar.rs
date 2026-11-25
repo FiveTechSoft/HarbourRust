@@ -170,7 +170,7 @@ impl Ir {
     self.expr(&args[0])?
    },
    Expr::Call(n,args) if ["isdigit","isalpha","isupper","islower"].iter().any(|b|is_builtin(n,b)) && args.len()==1=>{
-    let text=match &args[0]{Expr::Var(v)=>self.strings.get(v).cloned(),e=>borrowed_constant(e)};
+    let text=self.borrowed_constant_tree(&args[0]);
     let text=text.ok_or("LLVM scalar: character predicate requires immutable borrowed constant string")?;
     let first=text.as_bytes().first().copied();
     if first.map_or(false,|b|!b.is_ascii()){return Err("LLVM scalar: non-ASCII character predicate unsupported".into())}
@@ -178,7 +178,7 @@ impl Ir {
     if yes{"1".into()}else{"0".into()}
    },
    Expr::Call(n,args) if is_builtin(n,"asc") && args.len()==1=>{
-    let text=match &args[0] {Expr::Var(v)=>self.strings.get(v).cloned(),e=>borrowed_constant(e)};
+    let text=self.borrowed_constant_tree(&args[0]);
     match text {Some(text)=>text.as_bytes().first().copied().unwrap_or(0).to_string(),None=>return Err("LLVM scalar: Asc only on immutable borrowed constant strings".into())}
    },
    Expr::Call(n,args) if is_builtin(n,"empty") && args.len()==1=>{

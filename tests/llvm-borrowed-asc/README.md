@@ -16,3 +16,12 @@ suite or performance claim. Compiler56c6147750c0a35f9d224cfbe8530e08140fd5dc2577
 Source/command/cwd/raw/oracleLLVMhashes retained. JulioPonceMITspecifications
 credited elsewhere,no suppliedimplementation/cambio.diff copied. NoASort,
 numericdivision,RC/objectlifetime,workflow,push,publication,rebase changes.
+
+## Immutable local concat trees
+
+Follow-up: recursively resolve immutable locals within pure concat operands.
+No owned/mutable/runtime string support, evaluation erasure or locale policy
+change. ASCII predicates still reject a non-ASCII first byte. Asc continues
+to return the first counted byte, including NUL/UTF8. Added empty/NUL/ASCII,
+UTF8 and logical/numeric/control-context fixtures and owned-subtree limits.
+Current evidence and exact counts are listed in the package summary.
