@@ -1,4 +1,6 @@
 PROCEDURE Main(c)
-c := Upper("x")
+c := MakeText()
 ? Empty(c)
 RETURN
+FUNCTION MakeText()
+RETURN Upper("x")

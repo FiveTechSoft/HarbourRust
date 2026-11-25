@@ -35,3 +35,7 @@ positive while preserving source/path and adding computedDyn rejection.
 Prior26-suite replay did not include foreach-empty;it was insufficient to
 catch this stale expectation. Do not treat that replay as fullhistorical
 coverage. The independent bridge correctly blocked publication.
+
+Later computed-scalar-empty increment promotes the literal string-tree negative
+to a fresh oracle positive there. This directory retains a user-call rejection
+at limit-computed.prg so the boundary remains tested.

@@ -1,5 +1,7 @@
 FUNCTION Main()
 LOCAL x
-x:=" " + Chr(9)
+x:=MakeString()
 ? Empty(x)
 RETURN NIL
+FUNCTION MakeString()
+RETURN " " + Chr(9)

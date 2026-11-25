@@ -4800,7 +4800,19 @@ thread_local! {static SCALAR_DYN_EMPTY_LOCALS: std::cell::RefCell<std::collectio
 fn set_numeric(f: &Func) {
     let mut scalar=std::collections::HashSet::new();
     visit_stmts_ref(&f.stmts,&mut |st|if let Stmt::Local(_,v,e)=st {if matches!(e,Expr::Nil)||matches!(e,Expr::Call(id,_)if id=="hbc_main_arg"){scalar.insert(v.clone());}},&mut |_|{});
-    let scalar_literal=|e:&Expr|matches!(e,Expr::Nil|Expr::Int(_)|Expr::Float(..)|Expr::FloatV(..)|Expr::Str(_)|Expr::Log(_))||matches!(e,Expr::Call(id,_)if id=="hbc_main_arg");
+    // Syntactic scalar producer proof only, never a speculative type check.
+    // String concatenation of measured string leaves/producers cannot install
+    // an array/object into an ordinary Dyn local. Variables/user calls remain
+    // excluded; arity and argument typing still run in the normal checker.
+    fn scalar_string(e:&Expr)->bool {match e {
+        Expr::Str(_)=>true,
+        Expr::Bin('+',a,b)=>scalar_string(a)&&scalar_string(b),
+        Expr::Call(id,args) if ["hb_ps","hb_dirbase"].iter().any(|n|is_builtin(id,n))=>args.is_empty(),
+        Expr::Call(id,args) if ["upper","lower"].iter().any(|n|is_builtin(id,n))=>args.len()==1&&scalar_string(&args[0]),
+        Expr::Call(id,args) if ["chr","space"].iter().any(|n|is_builtin(id,n))=>matches!(args.as_slice(),[Expr::Int(_)]),
+        _=>false
+    }}
+    let scalar_literal=|e:&Expr|matches!(e,Expr::Nil|Expr::Int(_)|Expr::Float(..)|Expr::FloatV(..)|Expr::Str(_)|Expr::Log(_))||matches!(e,Expr::Call(id,_)if id=="hbc_main_arg")||scalar_string(e);
     visit_stmts_ref(&f.stmts,&mut |st|match st {
         Stmt::Assign(_,v,e)|Stmt::Local(_,v,e) if !scalar_literal(e)=>{scalar.remove(v);},
         Stmt::For(_,v,..)|Stmt::ForEach(_,v,..)=>{scalar.remove(v);},
