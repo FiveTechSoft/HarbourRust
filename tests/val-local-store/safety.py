@@ -7,7 +7,7 @@ def h(p):return hashlib.sha256(p.read_bytes()).hexdigest()
 def run(cmd,w,label):
  r=subprocess.run(list(map(str,cmd)),env=env,capture_output=True,timeout=30)
  for ext,v in [('stdout',r.stdout),('stderr',r.stderr),('rc',str(r.returncode).encode())]:(w/(label+'.'+ext)).write_bytes(v)
- return r
+ (w/(label+'.command.json')).write_text(json.dumps(dict(argv=list(map(str,cmd)),cwd=str(Path.cwd())))+'\n');return r
 for mode,flags in [('int',[]),('ext',['--external-as']),('no-escape',['--no-escape-analysis'])]:
  w=out/mode;w.mkdir();src=w/'p.prg';src.write_bytes(Path(__file__).with_name('memory.fixture').read_bytes());b=run([cc,src,w/'p','--target=linux','--instrument',*flags],w,'build');r=run([w/'p'],w,'run') if not b.returncode else None
  row=dict(name=mode,kind='lifetime',source_sha256=h(src),build_rc=b.returncode,ok=bool(r and r.returncode==0 and r.stdout==b'      1000          0 \n' and not r.stderr))
