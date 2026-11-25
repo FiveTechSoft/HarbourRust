@@ -133,6 +133,14 @@ impl Ir {
    return Some(Expr::Call(n.clone(),vec![a[0].clone(),self.rat_haystack_selection(needle,&a[1])?,self.rat_haystack_selection(needle,&a[2])?]))
   }}None
  }
+ // Exact equality against a constant can observe selected constant bytes
+ // as logical leaves, without constructing a runtime string value.
+ fn exact_selection(&self,text:&str,e:&Expr)->Option<Expr>{
+  if let Some(other)=self.borrowed_constant_tree(e){return Some(Expr::Log(text.as_bytes()==other.as_bytes()))}
+  if let Expr::Call(n,a)=e {if is_builtin(n,"iif") && a.len()==3 {
+   return Some(Expr::Call(n.clone(),vec![a[0].clone(),self.exact_selection(text,&a[1])?,self.exact_selection(text,&a[2])?]))
+  }}None
+ }
  // Asc observes a selected constant leaf as an I64 byte, not a string ABI.
  fn asc_selection(&self,e:&Expr)->Option<Expr>{
   if let Some(text)=self.borrowed_constant_tree(e){return Some(Expr::Int(text.as_bytes().first().copied().unwrap_or(0).to_string()))}
@@ -197,6 +205,11 @@ impl Ir {
     (matches!(&**a,Expr::Nil) && self.borrowed_constant_tree(b).is_some()) ||
     (matches!(&**b,Expr::Nil) && self.borrowed_constant_tree(a).is_some())
    )=>{if matches!(op,CmpOp::Ne){"1".into()}else{"0".into()}},
+   Expr::Cmp(CmpOp::EqEq,a,b) if self.borrowed_constant_tree(a).is_some() && matches!(&**b,Expr::Call(n,args) if is_builtin(n,"iif") && args.len()==3)=>{
+    let text=self.borrowed_constant_tree(a).unwrap();
+    let scalar=self.exact_selection(&text,b).ok_or("LLVM scalar: exact string comparison requires immutable borrowed constants on both sides")?;
+    self.expr(&scalar)?
+   },
    Expr::Cmp(CmpOp::EqEq,a,b) if {
     self.borrowed_constant_tree(a).is_some() || self.borrowed_constant_tree(b).is_some()
    }=>{

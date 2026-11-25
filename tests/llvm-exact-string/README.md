@@ -26,3 +26,13 @@ string/owned/mutable expansion. Added NUL, UTF8, empty, trailing-space,
 logical/IF/IIf/Empty and false/true concat-tree checks, plus an owned-subtree
 negative. Own gate now 9 fresh Harbour/native/LLVM exact rows and 10 named
 LLVM rejections. Broader current results are listed in the package summary.
+
+## Constant against selected right operand
+
+Exact == against a nested IIf constant right operand projects leaves to
+logical results. Left operand must remain immutable constant. Both selected
+operands and owned dead leaves remain rejected. Every leaf proved before
+lowering;selected conditions once/lazy. No string ABI,loose equality,SETEXACT,
+RC or mutable expansion. Two own MIT cases fresh Harbour/native/LLVM traced/
+untraced cover empty,prefix,spaces,case,NUL,UTF8,effects,lazy bounds/overflow,
+logical/IF/Empty contexts.Two named limits added.
