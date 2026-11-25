@@ -13,13 +13,15 @@
     {"cmd": "\"unterminated x", "want": ["unterminated x"]},
     {"cmd": "a\tb", "want": ["a", "b"]},
     {"cmd": "x \"\" y", "want": ["x", "", "y"]},
-    {"cmd": "one two three four five six seven", "want": ["one", "two", "three", "four", "five", "six"]}
+    {"cmd": " ", "want": []},
+    {"cmd": "\"\" \"\"", "want": ["", ""]},
+    {"cmd": "one two three four five six seven", "want": ["one", "two", "three", "four", "five", "six", "seven"]}
   ],
   "linux": [
     {"argv": [], "want": []},
     {"argv": ["x y", "z"], "want": ["x y", "z"]},
     {"argv": [""], "want": [""]},
     {"argv": ["a\\\"b", "*.prg"], "want": ["a\\\"b", "*.prg"]},
-    {"argv": ["one", "two", "three", "four", "five", "six", "seven"], "want": ["one", "two", "three", "four", "five", "six"]}
+    {"argv": ["one", "two", "three", "four", "five", "six", "seven"], "want": ["one", "two", "three", "four", "five", "six", "seven"]}
   ]
 }

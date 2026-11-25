@@ -62,6 +62,11 @@ thread_local! {
     static QUIT_USED: std::cell::Cell<bool> = const {std::cell::Cell::new(false)};
     // main's parameters read the command-line arguments (hbc_main_arg).
     static MAIN_ARGS_USED: std::cell::Cell<bool> = const {std::cell::Cell::new(false)};
+    // main is entered only from _start and this target delivers the
+    // command line (main_params_as_nil_locals).
+    static MAIN_DELIVERS: std::cell::Cell<bool> = const {std::cell::Cell::new(false)};
+    // PCount() in main reads the argument count (hbc_main_argcount).
+    static MAIN_PCOUNT_ARGS: std::cell::Cell<bool> = const {std::cell::Cell::new(false)};
     static FILE_USED: std::cell::Cell<bool> = const {std::cell::Cell::new(false)};
     static FILE_PATH_LINE: std::cell::Cell<Option<usize>> = const {std::cell::Cell::new(None)};
 }
@@ -4126,6 +4131,8 @@ fn parse(src: &str) -> Result<Prog, String> {
     INKEY_USED.with(|v|v.set(false));
     QUIT_USED.with(|v|v.set(false));
     MAIN_ARGS_USED.with(|v|v.set(false));
+    MAIN_DELIVERS.with(|v|v.set(false));
+    MAIN_PCOUNT_ARGS.with(|v|v.set(false));
     DYNPLUS_NODES.with(|v|v.borrow_mut().clear());
     FILE_USED.with(|v|v.set(false));
     FILE_PATH_LINE.with(|v|v.set(None));
@@ -5083,6 +5090,9 @@ thread_local! {
     // New decimal-copy LOCAL admission is proven before semantic fixpoints:
     // THREADS is discovered during typing and can otherwise arrive too late.
     static DECIMAL_LOCAL_PROFILE: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+    // Ordinary Linux or Windows native code without threads: the targets
+    // whose direct calls load the argument count for PCount.
+    static PCOUNT_PROFILE: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
 }
 // Same pre-fixpoint ordinary-Linux/no-thread proof as the decimal LOCAL
 // increment. Only mixed static numeric Min/Max admission uses this predicate.
@@ -11461,12 +11471,9 @@ fn foreach_lv_readonly(stmts: &[Stmt], name: &str) -> bool {
     })
 }
 
-// A bare LOCAL whose first mention is an unconditional Date store never
-// exposes its initial NIL. Narrow only this dominated, non-byref shape.
-// Unknown/control-flow forms fail closed; the existing Date checker still
-// rejects all later non-Date stores. No inference invokes type_expr here.
 // hbc_main_arg: rdi = argument index (1-based) -> rax tag, rdx payload: an
 // owned copy of the argument (tag 4) or NIL (tag 1) past the last one.
+// hbc_main_argcount: rax = number of arguments after the program name.
 // Linux reads the argc/argv block _start recorded.
 const MAIN_ARG_LINUX: &str = "    .data
     .align 8
@@ -11497,13 +11504,34 @@ hbc_main_arg:
     mov $1, %eax
     xor %edx, %edx
     ret
+hbc_main_argcount:
+    mov hbc_main_argc(%rip), %rax
+    dec %rax
+    jns .Lmargc_ok
+    xor %eax, %eax
+.Lmargc_ok:
+    ret
 ";
 
 // Windows splits GetCommandLineA as Harbour 3.2 does (measured,
 // tests/main-args): blanks and tabs separate arguments outside quotes; a
 // double quote toggles quoting and is dropped (a quoted pair is an empty
 // argument); backslashes are ordinary characters. Token 0 is the program.
+// Past the last token rcx holds the token count; hbc_main_argcount asks for
+// an index no token reaches and returns that count less the program.
 const MAIN_ARG_WINDOWS: &str = "    .text
+hbc_main_argcount:
+    push %rbp
+    mov %rsp, %rbp
+    mov $-1, %rdi
+    call hbc_main_arg
+    lea -1(%rcx), %rax
+    test %rax, %rax
+    jns .Lwmargc_ok
+    xor %eax, %eax
+.Lwmargc_ok:
+    pop %rbp
+    ret
 hbc_main_arg:
     push %rbp
     mov %rsp, %rbp
@@ -11589,6 +11617,7 @@ hbc_main_arg:
     mov $4, %eax
     jmp .Lwmarg_ret
 .Lwmarg_nil:
+    mov %r13, %rcx
     mov $1, %eax
     xor %edx, %edx
 .Lwmarg_ret:
@@ -11663,6 +11692,7 @@ fn main_params_as_nil_locals(funcs:&mut [Func], deliver:bool) {
         visit_stmts_ref(&f.stmts,&mut |_|{},&mut |e| {if let Expr::Call(id,_)=e {if id.eq_ignore_ascii_case("main") {called=true;}}});
     }
     if called { return; }
+    MAIN_DELIVERS.with(|v|v.set(deliver));
     for f in funcs.iter_mut().filter(|f|f.name=="main" && !f.params.is_empty()) {
         let n=f.stmts.first().map_or(1,stmt_line);
         let params=std::mem::take(&mut f.params);
@@ -11676,6 +11706,10 @@ fn main_params_as_nil_locals(funcs:&mut [Func], deliver:bool) {
     }
 }
 
+// A bare LOCAL whose first mention is an unconditional Date store never
+// exposes its initial NIL. Narrow only this dominated, non-byref shape.
+// Unknown/control-flow forms fail closed; the existing Date checker still
+// rejects all later non-Date stores. No inference invokes type_expr here.
 fn narrow_bare_date_locals(funcs:&mut [Func]) {
     if !DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get()) { return; }
     fn date_producer(e:&Expr,name:&str,known:&std::collections::HashSet<String>)->bool {
@@ -28134,7 +28168,10 @@ fn cg_func(f: &Func, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, tar
     out.push_str("    push %rbp\n    mov %rsp, %rbp\n");
     // Forward absolute expression finalized after scratch allocation.
     out.push_str(&format!("    sub $.Lavframe{}, %rsp\n",avframe));
-    if pcount_off>0 {if f.name=="main" || f.init {out.push_str(&format!("    movq $0, -{}(%rbp)\n",pcount_off));}else{out.push_str(&format!("    mov %r11, -{}(%rbp)\n",pcount_off));}}
+    if pcount_off>0 && f.name=="main" && MAIN_PCOUNT_ARGS.with(|v|v.get()) {out.push_str(&format!("    call hbc_main_argcount
+    mov %rax, -{}(%rbp)
+",pcount_off));}
+    else if pcount_off>0 {if f.name=="main" || f.init {out.push_str(&format!("    movq $0, -{}(%rbp)\n",pcount_off));}else{out.push_str(&format!("    mov %r11, -{}(%rbp)\n",pcount_off));}}
 
     PROC_NAME.with(|v| *v.borrow_mut() = f.name.split("__br").next().unwrap_or(&f.name).to_ascii_uppercase());
     CUR_FN.with(|c| *c.borrow_mut() = f.name.clone());
@@ -40435,6 +40472,7 @@ fn main() {
         });
     }
     DECIMAL_LOCAL_PROFILE.with(|v|v.set(CURDIR_LINUX_NATIVE.with(|v|v.get()) && !decimal_thread_profile));
+    PCOUNT_PROFILE.with(|v|v.set((CURDIR_LINUX_NATIVE.with(|v|v.get()) || DIRMAKE_WIN.with(|v|v.get())) && !decimal_thread_profile));
     if (!DECIMAL_LOCAL_PROFILE.with(|v|v.get())||MACRO_CONTEXT.with(|v|v.get())) && funcs.iter().any(|f|f.stmts.iter().any(|s|matches!(s,Stmt::Static(_,id,_)if module_static::kind(&f.name,id)==Some(Ty::RefDyn)))){eprintln!("error: module STATIC NIL scalars require ordinary Linux without threads/macros");process::exit(1);}
     if hash_case_mode && (!DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get())) {eprintln!("error: hb_HCaseMatch logical mode requires ordinary Linux without threads or macros");process::exit(1);}
     HASH_CASE_LOGICAL_MODE.with(|v|v.set(hash_case_mode));
@@ -40493,8 +40531,14 @@ fn main() {
     for f in &funcs {visit_stmts_ref(&f.stmts,&mut |_|{},&mut |e|{if matches!(e,Expr::Call(id,args) if is_builtin(id,"pcount") && !args.is_empty()){bad_pcount_arity=true;}});}
     if bad_pcount_arity {eprintln!("error: PCount takes no arguments in this increment");process::exit(1);}
 
-    if PCOUNT_FUNCTIONS.with(|v|!v.borrow().is_empty()) && (!DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get())) {eprintln!("error: PCount requires ordinary Linux without threads or macros in this increment");process::exit(1);}
+    if PCOUNT_FUNCTIONS.with(|v|!v.borrow().is_empty()) && (!PCOUNT_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get())) {eprintln!("error: PCount requires ordinary Linux or Windows without threads or macros in this increment");process::exit(1);}
     for f in &funcs {if PCOUNT_FUNCTIONS.with(|v|v.borrow().contains(&f.name)) && METHOD_CLASS.with(|v|v.borrow().contains_key(&f.name)) {eprintln!("error: PCount in a method is not in this increment");process::exit(1);}}
+    // PCount() in main counts the command-line arguments, uncapped by the
+    // declared parameters (measured against Harbour 3.2, tests/main-args).
+    if MAIN_DELIVERS.with(|v|v.get()) && PCOUNT_FUNCTIONS.with(|v|v.borrow().contains("main")) {
+        MAIN_PCOUNT_ARGS.with(|v|v.set(true));
+        MAIN_ARGS_USED.with(|v|v.set(true));
+    }
 
     if RETYPED_VAL_FUNCTIONS.with(|v|!v.borrow().is_empty()) && (!DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get())) {
         eprintln!("error: retyped VAL parameters require ordinary Linux without threads or macros in this increment");process::exit(1);

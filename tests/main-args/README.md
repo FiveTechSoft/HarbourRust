@@ -24,10 +24,17 @@ hbc reads `GetCommandLineA` and splits it by these rules; on Linux it
 copies `argv` as the kernel delivers it. `check.py` runs `main_args.prg`
 with every case (the native CI runs it on Linux and Windows).
 
+`PCount()` in main is the number of arguments, including empty ones and
+those past the declared parameters (`main_args.prg` prints it first; the
+seven-argument case gives 7). Measured on Windows; on Linux hbc gives
+`argc - 1`, inferred from the Windows result, not measured against a
+Linux Harbour.
+
 Registered differences:
 
 - non-ASCII bytes: Harbour delivers them in the OEM code page (`ñ` arrives
   as byte 0xA4); hbc passes the ANSI bytes of `GetCommandLineA`;
 - Mach-O and LLVM targets do not deliver arguments yet: main's parameters
   stay NIL there;
-- `PCount()` in main does not count the arguments yet.
+- Mach-O and LLVM: `PCount()` in main is rejected with the rest of
+  PCount there.
