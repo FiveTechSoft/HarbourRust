@@ -1,0 +1,7 @@
+PROCEDURE Main()
+? hb_threadIsMain()
+RETURN
+INIT PROCEDURE Hook()
+STATIC n:=1
+? n
+RETURN

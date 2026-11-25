@@ -1,0 +1,4 @@
+PROCEDURE Main()
+STATIC x
+? ValType(x)
+RETURN

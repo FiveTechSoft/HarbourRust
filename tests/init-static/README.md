@@ -27,3 +27,9 @@ ordinary-only claim was too broad. Platform/macro and value-return errors
 now have separate diagnostics. Six limits cover these boundaries. CLI accepts
 only one source unit: a second unit is a measured usage rejection, not a
 claim of multi-unit INIT/linking support.
+
+C2 admission follow-up: INIT STATIC NIL and a missing initializer now have
+an explicit rejection. The general local STATIC parser also supports NIL,
+but that route is not part of this INIT increment. Separate fixtures cover
+both forms against Harbour, and hb_threadIsMain() activates the thread exclusion
+without starting a worker. No NIL persistence claim is made for INIT.

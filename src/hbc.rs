@@ -4492,6 +4492,9 @@ fn parse(src: &str) -> Result<Prog, String> {
                 return Err(format!("line {}: INIT procedures require bare/NIL returns in this increment", n));
             }
         }
+        if init && f.stmts.iter().any(|st|matches!(st,Stmt::Static(_,_,Expr::Nil))) {
+            return Err(format!("line {}: INIT STATIC NIL or missing initializer is outside this increment",n));
+        }
         if init && f.stmts.iter().any(|st|matches!(st,Stmt::Static(..)))
             && (!CURDIR_LINUX_NATIVE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get())) {
             return Err(format!("line {}: INIT STATIC platform guard requires ordinary Linux without macros",n));

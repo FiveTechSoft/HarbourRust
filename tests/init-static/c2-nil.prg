@@ -1,0 +1,7 @@
+PROCEDURE Main()
+? "main"
+RETURN
+INIT PROCEDURE Hook()
+STATIC x:=NIL
+? ValType(x)
+RETURN
