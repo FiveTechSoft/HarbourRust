@@ -48,3 +48,10 @@ original-encoding-date-control adds4already-admitted intact originals,
 original-current-date-control adds dates.prg and dates3.prg,compared against
 fresh live-day oracle bytes with no date normalization. Cumulative51originals,
 255exact+49strictzero=304clean,2knownDELTA2separate. No2new admissions.
+
+## Fibonacci and calendar coverage
+
+original-fib-calendar-control adds already-admitted fib.prg and cdow.prg.
+Fresh oracle,10exact+2strictzero. Cumulative53originals,
+265exact+51strictzero=316clean,2knownDELTA2separate. Calendar date rollover
+fails comparison rather than normalizing bytes. No new admissions/speedclaim.
