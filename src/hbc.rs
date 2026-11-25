@@ -1187,6 +1187,8 @@ fn tokenize(line: &str, n: usize) -> Result<Vec<Tok>, String> {
                     _ => toks.push(Tok::Gt),
                 }
             }
+            // Harbour alternate not-equal spelling, measured against !=/<>.
+            '#' => { toks.push(Tok::Ne); it.next(); }
             '@' => { toks.push(Tok::At); it.next(); }
             '{' => { toks.push(Tok::LBrace); it.next(); }
             '}' => { toks.push(Tok::RBrace); it.next(); }
