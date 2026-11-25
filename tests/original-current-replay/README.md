@@ -36,3 +36,9 @@ original-console-extra adds11already-admitted intact originals with fresh
 55exact executions+11strictzero checks. Cumulative45originals,
 225exact+43strictzero=268clean,2knownDELTA2debt records separate.
 These11are execution coverage,not new compiler admissions.
+
+## Encoding/date/init coverage
+
+original-encoding-date-control adds4already-admitted intact originals,
+20exact+4strictzero. Cumulative49originals,245exact+47strictzero=292clean,
+2knownDELTA2 separately. No new compiler admissions in this coverage gate.
