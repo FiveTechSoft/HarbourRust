@@ -2122,7 +2122,7 @@ const ASM_RESERVED: &[&str] = &[
     // hbc itself emits; a user function with one of these names would
     // collide with a helper symbol.
     "dtos", "stod", "year", "day", "month", "dow", "cdow", "cmonth", "dtoc", "sqrt", "exp", "log", "mod", "padc", "rat", "stuff", "isdigit", "isalpha", "isupper", "islower", "strzero", "ischar", "strzero_fix", "str_f64", "fmt_f64", "date_add", "date_diff", "date_days", "date_from_days", "seconds", "hb_milliseconds",
-    "hb_diskspace", "hb_osdriveseparator", "hb_osfilemask", "hb_fnameext", "hb_fnameextset", "hb_fnameextsetdef", "hb_fnamenameext", "hb_fnamename", "hb_fnamedir", "hb_dirsepdel", "hb_dirseptoos", "hb_hextostr", "hb_fileexists", "hb_direxists", "hb_strisutf8", "hb_blen", "hb_bleft", "hb_bright", "hb_bsubstr", "hb_bat", "hb_brat", "hb_strformat", "hb_base64decode", "hb_base64encode", "hb_stod", "hb_hextonum", "hb_asciiupper", "hb_asciilower", "hb_strtohex", "hb_dirsepadd", "getenv", "hb_at", "hb_bchar", "hb_bcode", "__defaultnil", "hb_default", "hb_defaultvalue", "hb_sha1", "hb_hmac_sha1", "tr_dims", "tr_apply", "strtran", "space", "substr", "date", "ctod", "date_pack", "date_render", "date_today", "dispbox", "hrbase_wait", "setcursor", "hb_flink", "hb_flinksym", "hb_flinkread", "hb_memowrit", "hb_dircreate", "ferror", "curdir", "fread", "fcreate", "fopen", "fwrite", "fclose", "freadstr", "hb_memoread", "hb_libname", "hb_ps", "os", "dirmake", "inkey", "file", "hrfile_setdefault", "hrfile_setpath", "qout", "qqout", "outstd", "outerr", "empty", "procname", "min", "max", "str", "padr", "hb_ntos", "replicate", "aeval", "hb_isnumeric", "hb_isarray", "hb_isstring", "dfree", "upper", "lower", "left", "right", "at", "int", "abs", "padl", "val", "ascan", "aclone", "atail", "asort", "hb_bitand", "hb_bitor", "hb_bitxor", "hb_bitnot", "hb_bittest", "hb_bitset", "hb_bitreset", "eprint_str", "eprint_sep", "eprint_i64", "eprint_i64c", "eprint_dyn", "eprint_dynlit", "print_dynlit", "eprint_f64", "hb_eol", "procline", "asc", "trim", "ltrim", "rtrim", "alltrim", "chr", "trace_top", "print_trace", "panic_exit", "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_arg_error", "val_arg_error", "atokens_arg_error", "hb_memcheck", "aadd", "asize", "afill", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
+    "hb_dirbase", "hb_diskspace", "hb_osdriveseparator", "hb_osfilemask", "hb_fnameext", "hb_fnameextset", "hb_fnameextsetdef", "hb_fnamenameext", "hb_fnamename", "hb_fnamedir", "hb_dirsepdel", "hb_dirseptoos", "hb_hextostr", "hb_fileexists", "hb_direxists", "hb_strisutf8", "hb_blen", "hb_bleft", "hb_bright", "hb_bsubstr", "hb_bat", "hb_brat", "hb_strformat", "hb_base64decode", "hb_base64encode", "hb_stod", "hb_hextonum", "hb_asciiupper", "hb_asciilower", "hb_strtohex", "hb_dirsepadd", "getenv", "hb_at", "hb_bchar", "hb_bcode", "__defaultnil", "hb_default", "hb_defaultvalue", "hb_sha1", "hb_hmac_sha1", "tr_dims", "tr_apply", "strtran", "space", "substr", "date", "ctod", "date_pack", "date_render", "date_today", "dispbox", "hrbase_wait", "setcursor", "hb_flink", "hb_flinksym", "hb_flinkread", "hb_memowrit", "hb_dircreate", "ferror", "curdir", "fread", "fcreate", "fopen", "fwrite", "fclose", "freadstr", "hb_memoread", "hb_libname", "hb_ps", "os", "dirmake", "inkey", "file", "hrfile_setdefault", "hrfile_setpath", "qout", "qqout", "outstd", "outerr", "empty", "procname", "min", "max", "str", "padr", "hb_ntos", "replicate", "aeval", "hb_isnumeric", "hb_isarray", "hb_isstring", "dfree", "upper", "lower", "left", "right", "at", "int", "abs", "padl", "val", "ascan", "aclone", "atail", "asort", "hb_bitand", "hb_bitor", "hb_bitxor", "hb_bitnot", "hb_bittest", "hb_bitset", "hb_bitreset", "eprint_str", "eprint_sep", "eprint_i64", "eprint_i64c", "eprint_dyn", "eprint_dynlit", "print_dynlit", "eprint_f64", "hb_eol", "procline", "asc", "trim", "ltrim", "rtrim", "alltrim", "chr", "trace_top", "print_trace", "panic_exit", "print_i64", "print_str", "bound_error", "eval", "len", "round", "round_arg_error", "val_arg_error", "atokens_arg_error", "hb_memcheck", "aadd", "asize", "afill", "alloc", "free", "oom", "asize_neg", "mem_allocs", "mem_frees", "hb_hdel", "hb_hhaskey", "hb_hget", "hb_hgetdef", "hb_hsetdef", "hb_hset", "hb_hpos", "hb_hmerge", "hb_hcopy", "hb_hclone", "hb_hcasematch", "hb_hsetcasematch", "hb_hscan", "hb_hkeyat", "hb_hvalueat", "hb_hdelat", "hb_hclear", "hb_hfill",
 ];
 
 fn dbf_result(id: &str) -> Option<Ty> {
@@ -7624,6 +7624,10 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 if args.len()!=1 {return Err(format!("line {}: hb_BLen require exactly one typed string in this increment",n));}
                 if !matches!(type_expr(&args[0],env,sigs,n)?,Ty::Str|Ty::StrOwn) {return Err(format!("line {}: hb_BLen require a typed string in this increment",n));}
                 apply_moves(&args[0],env,sigs,false);return Ok(Ty::I64);
+            }
+            if is_builtin(id,"hb_dirbase") {
+                if !DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get()) || !args.is_empty() {return Err(format!("line {}: hb_DirBase requires no arguments on ordinary Linux without threads/macros",n));}
+                return Ok(Ty::StrOwn);
             }
             if is_builtin(id,"hb_diskspace") {
                 if !DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get()) {return Err(format!("line {}: hb_DiskSpace requires ordinary Linux without threads or macros",n));}
@@ -13987,6 +13991,7 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
             }
             if is_builtin(id,"date") { return; }
             if is_builtin(id,"hb_milliseconds") { return; }
+            if is_builtin(id,"hb_dirbase") {return;}
             if is_builtin(id,"hb_diskspace") {apply_moves(&args[0],env,sigs,false);return;}
             if is_builtin(id,"seconds") { return; }
             if is_builtin(id,"time") { return; }
@@ -18554,6 +18559,9 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             if expr_ty(&args[0],env,sigs)==Ty::StrOwn && !matches!(&args[0],Expr::Var(_)) {out.push_str("    mov (%rsp), %rdi\n    call hbc_freestr\n");}
             out.push_str("    mov 8(%rsp), %rax\n    xor %edx, %edx\n    add $32, %rsp\n");
         }
+        Expr::Call(id,_) if is_builtin(id,"hb_dirbase") => {
+            out.push_str("    call hbc_dirbase_linux\n");
+        }
         Expr::Call(id,args) if is_builtin(id,"hb_diskspace") => {
             cg_value(&args[0],env,sigs,strs,out,target);
             let selector=match &args[1]{Expr::Int(v)=>v,_=>unreachable!("checked disk selector")};
@@ -22694,6 +22702,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             if is_builtin(id, "asc") || is_builtin(id, "len") || is_builtin(id, "hb_memcheck") || is_builtin(id, "procline") { return Ty::I64; }
             if is_builtin(id,"date") || is_builtin(id,"ctod") { return Ty::Date; }
             if is_builtin(id,"hb_milliseconds") {return Ty::I64;}
+            if is_builtin(id,"hb_dirbase") {return Ty::StrOwn;}
             if is_builtin(id,"hb_diskspace") {return Ty::F64;}
             if is_builtin(id, "seconds") { return Ty::F64; }
             if is_builtin(id, "time") { return Ty::StrOwn; }
@@ -36469,6 +36478,10 @@ fn finalize_trace(mut out: String, target: Target) -> String {
         } else {
             match target {Target::Linux=>DATE_TODAY_LINUX,Target::Windows=>DATE_TODAY_WINDOWS}
         });
+    }
+    if out.contains("call hbc_dirbase_linux") {
+        out=out.replacen("_start:\n","_start:\n    mov 8(%rsp), %rdi\n    mov (%rsp), %rax\n    lea 16(%rsp,%rax,8), %rsi\n    call hbc_dirbase_init\n",1);
+        out.push_str(include_str!("dirbase_linux.s"));
     }
     if out.contains("call hbc_diskspace_linux") {out.push_str(include_str!("diskspace_linux.s"));}
     if out.contains("call hbc_milliseconds") {out.push_str(MILLISECONDS_LINUX);}
