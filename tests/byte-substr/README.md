@@ -50,3 +50,13 @@ Julio Ponce MIT programs remain credited independent specifications;
 no supplied implementation/cambio.diff used. No old oracle evidence claimed.
 
 python tests/byte-substr/check.py --compiler target/release/hbc --hbmk2 /path/hbmk2 --spec-root /path/harbour --output /new/path
+
+Tests-only current-compiler follow-up onb2620b12 adds variable-length/count
+matrix:12source lengths(0,4,..44bytes),97starts(-48..48),51counts(-2..48)
+plus omitted count,60528slice observations per execution. Repeated bytes
+include ASCII/NUL/UTF8. Separate fixture derives signed minimum i64 at
+runtime and tests minimum start/count. Fresh full gate67=30exact runs,
+6strict-zero balances,24profile rejections,7named limits. No production
+change or global repeat. Current compileraa8cb65c93c5ca8999274fb28dd25e85dff8fcee6aedad394f09751dc52d6986.
+Initial matrix used modulo in Chr and hit unrelated numeric type restriction;
+replaced with deterministic binary string pattern,failed log retained.
