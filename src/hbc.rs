@@ -2617,6 +2617,7 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                             },
                             Expr::Var(_)=>{},
                             Expr::Call(_,aa) if aa.is_empty()=>{},
+                            Expr::Call(id,aa) if is_builtin(id,"eval") && matches!(aa.as_slice(),[Expr::BlockLit(_,pp,bb)]if pp.is_empty() && bb.len()==1 && matches!(&bb[0],Expr::Call(_,args)if args.is_empty()))=>{},
                             _=>return Err(format!("line {}: dynamic FOR STEP supports only an integer variable or zero-argument function call",n)),
                         }
                         e
