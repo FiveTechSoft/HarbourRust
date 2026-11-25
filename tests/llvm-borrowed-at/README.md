@@ -22,3 +22,12 @@ Compiler SHA256: 9e071556cc1fa7ea3eca7f9d2ee5c9fcb8f4d4c662e40500093ca9e58f6f503
 Julio Ponce MIT examples remain specifications only. No supplied implementation
 or cambio.diff copied. ASort, numeric division, RC/object policy unchanged.
 No workflow, push, publication or rebase. New commits only.
+
+## Immutable local concat trees
+
+Follow-up: the recursive immutable borrowed resolver now applies to both
+position arguments. No owned/mutable/runtime strings or extra arguments.
+Own gate: 9 fresh Harbour/native/LLVM exact rows and 6 named LLVM rejections.
+New cases cover overlapping repeated text, empty needle/haystack, NUL,
+UTF8 byte positions, false/true matches and numeric/control contexts.
+Broad current results are listed in the package summary.
