@@ -122,3 +122,23 @@ startup,captured output,shutdown and shared-host noise,not algorithm-only
 throughput or general superiority.606pairs/1212timed executions+60warmups
 all exact. No new admission,global rerun,RC/lifetime or policy change.
 Source/raw outputs/commands/cwd/checksums and every paired timing retained.
+
+## Fresh current-frontier21 measurement,2026-11-25
+
+Test-only evidence on compiler711ec8a6a928302e813498c3688b0cfd216dc13f47ead8053245a26e938c22ed.
+Oracle694428e1c12f726675b19324d62167fa77d68185,hbmk2 hash recorded.
+Two independent101-pair runs,same oneCPUaffinity,alternating engine order,
+5warmups per engine/source/run.606pairs/1212timed executions+60warmups,
+all rc/stdout/stderr exact,including longstr2 stderr. Source unchanged.
+
+Medians ms,Harbour/HarbourRust ratio (>1 favors HarbourRust):
+- fib:8.578523/2.813442,3.049x;repeat8.216443/2.763850,2.973x.
+- recursiv:2.623360/1.398771,1.875x;repeat2.658645/1.424465,1.866x.
+- longstr2:4.713725/5.178381,0.910x;repeat4.677566/5.187321,0.902x.
+
+longstr2 still loses:HarbourRust takes about10-11%more process time here.
+These include process startup,captured output and shutdown. No algorithm-only
+or universal speed claim,no host/frequency isolation. No paired regression
+claim versus past timings from different shared-host load. Current compiler
+unchanged;global tests not rerun for this evidence-only commit. No new source
+admission,policy,ownership,RC,Windows/Mac/runtime change or publication.
