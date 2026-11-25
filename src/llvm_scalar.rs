@@ -134,6 +134,8 @@ impl Ir {
    Expr::Cmp(op,a,b)=>{let a=self.expr(a)?;let b=self.expr(b)?;let v=self.tmp();self.line(format!("{} = icmp {} i64 {}, {}",v,match op{CmpOp::Eq|CmpOp::EqEq=>"eq",CmpOp::Ne=>"ne",CmpOp::Lt=>"slt",CmpOp::Le=>"sle",CmpOp::Gt=>"sgt",CmpOp::Ge=>"sge",_=>return Err("LLVM scalar: comparison unsupported".into())},a,b));let r=self.tmp();self.line(format!("{} = zext i1 {} to i64",r,v));r},
    Expr::Call(n,args) if is_builtin(n,"empty") && args.len()==1=>{
     if let Expr::Var(v)=&args[0]{if let Some(k)=self.asz.get(v){return Ok(if *k==0{"1".into()}else{"0".into()})}}
+    let text=match &args[0] {Expr::Var(v)=>self.strings.get(v).cloned(),e=>borrowed_constant(e)};
+    if let Some(text)=text {return Ok(if text.bytes().all(|b|matches!(b,9|10|13|32)){"1".into()}else{"0".into()})}
     let v=self.expr(&args[0])?;let c=self.tmp();self.line(format!("{} = icmp eq i64 {}, 0",c,v));let r=self.tmp();self.line(format!("{} = zext i1 {} to i64",r,c));r
    },
    Expr::Call(n,args) if is_bitop(n)=>{
