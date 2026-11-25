@@ -37,6 +37,6 @@ python tests/foreach-array-ends/check.py --compiler target/release/hbc --hbmk2 /
 Conditional review follow-up:two mandatory limits AAdd/ASize on the borrowed
 array with __enumIsLast inside FOR EACH require rc1,no executable and the
 existing diagnostic containing 'the loop borrows it'. Dedicated fresh
-negative evidence records the current working compiler hash;that compiler
-also has uncommitted string-enum changes,so it is not claimed to be the
-array-only binary above. No implementation change in this follow-up.
+negative evidence uses a separate direct-release build of exact source
+edab2a3395aff5639456f5fed2a92d6991642902,not the working string-enum compiler.
+No implementation change in this follow-up.
