@@ -246,6 +246,7 @@ pub fn eval_if(expr: &str, defs: &HashMap<String, Def>, line: usize) -> Result<b
             i += 1;
             continue;
         }
+        if matches!(c,'&'|'|'|'^') { toks.push(T::Arith(c.to_string()));i+=1;continue; }
         if c == '!' { toks.push(T::Not); i += 1; continue; }
         return Err(format!("line {}: error in #if expression (use ==, not =)", line));
     }
@@ -306,12 +307,21 @@ pub fn eval_if(expr: &str, defs: &HashMap<String, Def>, line: usize) -> Result<b
         }
         Ok(l)
     }
+    fn parse_bitwise(t:&[T],p:&mut usize,line:usize)->Result<i64,String> {
+        let mut l=parse_expr(t,p,line)?;
+        while let Some(T::Arith(op))=t.get(*p) {
+            if !matches!(op.as_str(),"&"|"|"|"^"){break;}
+            let op=op.clone();*p+=1;let rhs=parse_expr(t,p,line)?;
+            l=match op.as_str(){"&"=>l&rhs,"|"=>l|rhs,_=>l^rhs};
+        }
+        Ok(l)
+    }
     fn parse_cmp(t: &[T], p: &mut usize, line: usize) -> Result<i64, String> {
-        let l = parse_expr(t, p, line)?;
+        let l = parse_bitwise(t, p, line)?;
         if *p < t.len() {
             if let T::Op(op) = &t[*p] {
                 *p += 1;
-                let r = parse_expr(t, p, line)?;
+                let r = parse_bitwise(t, p, line)?;
                 return Ok(match op.as_str() {
                     "==" => (l == r) as i64,
                     "!=" => (l != r) as i64,
@@ -2301,5 +2311,15 @@ mod if_associativity_tests {
         let p=Pp::new(Vec::new(),false);
         for e in ["24/4/2==3","2*3/4==1","20%6*3==6","20/6*3==9","20%6%3==2","-24/4/2==-3","24/(4/2)==12","2*(3/4)==0"]{assert!(eval_if(e,&p.defs,1).unwrap(),"{}",e);}
         for e in ["1/0","1%0","1/(2-2)"]{assert!(eval_if(e,&p.defs,1).is_err());}
+    }
+}
+
+#[cfg(test)]
+mod if_bitwise_tests {
+    use super::*;
+    #[test]
+    fn same_precedence_left_associative_between_arithmetic_and_comparison() {
+        let p=Pp::new(Vec::new(),false);
+        for e in ["(4|1&2)==0","(6^3&1)==1","(1|2^3)==0","(6&3+1)==4","(1+2|4)==7","6&3==2","(4|1==1)==0","(-1&255)==255","(0xffffffffffffffff^1)==-2"]{assert!(eval_if(e,&p.defs,1).unwrap(),"{}",e);}
     }
 }
