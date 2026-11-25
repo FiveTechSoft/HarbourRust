@@ -349,6 +349,11 @@ impl Ir {
   result
  }
  fn stmts_inner(&mut self,ss:&[Stmt])->Result<bool,String>{for (si,s) in ss.iter().enumerate(){self.trace_at(stmt_line(s));match s {
+  Stmt::Local(_,n,e) if matches!(e,Expr::Bin('+',_,_)) && self.borrowed_constant_tree(e).is_some()=>{
+   // A pure concat reads its leaves without moving them. Direct aliases
+   // remain outside this route: frontend heap move policy is unchanged.
+   let text=self.borrowed_constant_tree(e).unwrap();self.strings.insert(n.clone(),text);
+  },
   Stmt::Local(_,n,e) if borrowed_constant(e).is_some()=>{
    // Pure constant tree only, borrowed from immutable global bytes.
    // No address, alias, reassignment, return or argument use is admitted.
