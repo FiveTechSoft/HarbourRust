@@ -7632,7 +7632,9 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
             if is_builtin(id,"hb_diskspace") {
                 if !DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get()) {return Err(format!("line {}: hb_DiskSpace requires ordinary Linux without threads or macros",n));}
                 if args.len()!=2 || !matches!(&args[0],Expr::Var(_)|Expr::Str(_)) || !matches!(&args[1],Expr::Int(v)if matches!(v.as_str(),"0"|"1"|"2"|"3")) {return Err(format!("line {}: hb_DiskSpace requires a typed string leaf and literal selector0..3 in this increment",n));}
-                if !matches!(type_expr(&args[0],env,sigs,n)?,Ty::Str|Ty::StrOwn) {return Err(format!("line {}: hb_DiskSpace requires a typed string path, not Dyn",n));}
+                let path_ty=type_expr(&args[0],env,sigs,n)?;
+                let scalar_dyn=path_ty==Ty::Dyn && matches!(&args[0],Expr::Var(v)if SCALAR_DYN_EMPTY_LOCALS.with(|m|m.borrow().contains(v))&&!static_dyn(v)&&!is_sarr(v)&&!module_static::is_module_binding(v)&&env.iter().rev().any(|x|x.name==*v&&!x.byref));
+                if !matches!(path_ty,Ty::Str|Ty::StrOwn) && !scalar_dyn {return Err(format!("line {}: hb_DiskSpace requires a typed string or proven ordinary scalar Dyn local path",n));}
                 apply_moves(&args[0],env,sigs,false);return Ok(Ty::F64);
             }
             if is_builtin(id,"hb_osfilemask") {
@@ -18564,6 +18566,10 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
         }
         Expr::Call(id,args) if is_builtin(id,"hb_diskspace") => {
             cg_value(&args[0],env,sigs,strs,out,target);
+            if expr_ty(&args[0],env,sigs)==Ty::Dyn {
+                let k=fresh_lbl();let msg="Limit: hb_DiskSpace scalar Dyn path requires a string value\n";let si=strs.len();strs.push(msg.to_string());
+                out.push_str(&format!("    cmp $4, %al\n    je .Ldiskpath{k}\n    lea .Lstr{si}(%rip), %rax\n    mov ${}, %edx\n    call hbc_write_bytes\n    jmp hbc_panic_exit\n.Ldiskpath{k}:\n    mov %rdx, %rax\n    mov -8(%rax), %rdx\n",msg.len()));
+            }
             let selector=match &args[1]{Expr::Int(v)=>v,_=>unreachable!("checked disk selector")};
             out.push_str(&format!("    mov %rax, %rdi\n    mov %rdx, %rsi\n    mov ${selector}, %edx\n    call hbc_diskspace_linux\n"));
         }
