@@ -43,3 +43,9 @@ leaf must pass structural constant proof. Frontend heap moves are unchanged,
 so fixtures that reuse local leaves concatenate an empty string explicitly.
 Owned arms stay rejected even when unreachable. Gate total:12exact fresh
 Harbour/native/LLVM rows,8named LLVM rejections. No ownership/RC change.
+
+## Selected length ASCII matrix
+
+Own MIT test-only sweep of all128ASCII bytes,including NUL. Alternating
+selected one-byte/two-byte leaves and checked increments observe length and
+single condition evaluation. No compiler change or original source edit.
