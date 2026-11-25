@@ -124,6 +124,12 @@ impl Ir {
     self.block(&rhs);let c=self.cond(b)?;let v=self.tmp();self.line(format!("{} = zext i1 {} to i64",v,c));self.line(format!("store i64 {}, ptr {}",v,slot));self.line(format!("br label %{}",end));
     self.block(&end);let r=self.tmp();self.line(format!("{} = load i64, ptr {}",r,slot));r
    },
+   Expr::Cmp(CmpOp::Contains,a,b)=>{
+    let constant=|e:&Expr|match e{Expr::Var(v)=>self.strings.get(v).cloned(),e=>borrowed_constant(e)};
+    let needle=constant(a).ok_or("LLVM scalar: contains requires two immutable borrowed constant strings")?;
+    let haystack=constant(b).ok_or("LLVM scalar: contains requires two immutable borrowed constant strings")?;
+    if !needle.is_empty() && haystack.as_bytes().windows(needle.len()).any(|w|w==needle.as_bytes()){"1".into()}else{"0".into()}
+   },
    Expr::Cmp(CmpOp::EqEq,a,b) if {
     let constant=|e:&Expr|match e{Expr::Var(v)=>self.strings.get(v).cloned(),e=>borrowed_constant(e)};
     constant(a).is_some() || constant(b).is_some()
