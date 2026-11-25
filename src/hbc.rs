@@ -844,6 +844,7 @@ thread_local! {
     // per block id; codegen reads both when emitting the block function
     // and its call sites. CAPTURE_MODE is None outside AScan's block
     // argument (captures stay a named rejection everywhere else).
+    static PERSISTENT_BLOCK_RETURNS: std::cell::RefCell<std::collections::HashSet<String>> = std::cell::RefCell::new(std::collections::HashSet::new());
     static PERSISTENT_INTEGER_BLOCKS: std::cell::RefCell<std::collections::HashSet<usize>> = std::cell::RefCell::new(std::collections::HashSet::new());
     static BLOCK_CAPTURES: std::cell::RefCell<std::collections::HashMap<usize, Vec<(String, Ty)>>> = std::cell::RefCell::new(std::collections::HashMap::new());
     static BLOCK_PARAM_TYS: std::cell::RefCell<std::collections::HashMap<usize, Vec<Ty>>> = std::cell::RefCell::new(std::collections::HashMap::new());
@@ -12379,7 +12380,8 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                     // A direct integer-STATIC block is a process-lifetime
                     // code pointer. Its prologue reconstructs canonical
                     // storage addresses; no callee-frame environment escapes.
-                    let persistent=matches!(e,Expr::BlockLit(id,_,_)if PERSISTENT_INTEGER_BLOCKS.with(|v|v.borrow().contains(id)));
+                    let persistent=matches!(e,Expr::BlockLit(id,_,_)if PERSISTENT_INTEGER_BLOCKS.with(|v|v.borrow().contains(id)))
+                        || matches!(e,Expr::Call(id,_)if CUR_FN.with(|v|*v.borrow()==*id) && PERSISTENT_BLOCK_RETURNS.with(|v|v.borrow().contains(id)));
                     if !persistent {return Err(format!("line {}: codeblocks cannot be returned in this increment (only direct canonical integer STATIC blocks have a frame-independent return)",n));}
                 }
 
@@ -40991,7 +40993,21 @@ fn main() {
                 if self_deadlock {
                     let first = (m.clone(), ret);
                     let saved = view[fi].ret;
-                    view[fi].ret = ret.or(Some(Ty::Dyn));
+                    // A validated final direct STATIC block can seed its
+                    // recursive factory without pretending its ABI is Dyn.
+                    // Check it in the already checked prefix environment;
+                    // no tail free name may refer to a detached local.
+                    let block_seed=if CURDIR_LINUX_NATIVE.with(|v|v.get()) && !MACRO_CONTEXT.with(|v|v.get()) {
+                        if let Some(Stmt::Ret(line,Some(e @ Expr::BlockLit(id,_,_))))=f.stmts.last() {
+                            let mut probe_env=env.clone();
+                            match type_expr(e,&mut probe_env,&mut view,*line) {
+                                Ok(t @ Ty::Block(..)) if PERSISTENT_INTEGER_BLOCKS.with(|v|v.borrow().contains(id))=>Some(t),
+                                _=>None,
+                            }
+                        }else{None}
+                    }else{None};
+                    if block_seed.is_some(){PERSISTENT_BLOCK_RETURNS.with(|v|{v.borrow_mut().insert(f.name.clone());});}
+                    view[fi].ret = ret.or(block_seed).or(Some(Ty::Dyn));
                     let mut env2: Vec<Local> = Vec::new();
                     for (i, p) in f.params.iter().enumerate() {
                         env2.push(Local { name: p.clone(), ty: ptys[i], moved: false, ro: false, byref: brp.contains(&i) });

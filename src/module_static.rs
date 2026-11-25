@@ -15,6 +15,7 @@ thread_local! {
 pub fn reset() {
     INTEGER_SLOTS.with(|v|v.borrow_mut().clear());
     crate::PERSISTENT_INTEGER_BLOCKS.with(|v|v.borrow_mut().clear());
+    crate::PERSISTENT_BLOCK_RETURNS.with(|v|v.borrow_mut().clear());
     OBJECTS.with(|v| v.borrow_mut().clear());
     ALIASES.with(|v| v.borrow_mut().clear());
     KINDS.with(|v| v.borrow_mut().clear());
