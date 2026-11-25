@@ -11114,7 +11114,7 @@ fn prescan_dyn(f: &Func, sigs: &[Sig], ptys: &[Ty]) -> std::collections::HashSet
             // proven F64 call. Use existing Dyn ownership/storage, without
             // speculatively invoking type_expr or widening all F64 locals.
             let float_call = DECIMAL_LOCAL_PROFILE.with(|v|v.get()) && int_origins.contains(*name) &&
-                matches!(e,Expr::Call(id,_) if is_builtin(id,"seconds") || sigs.iter().any(|s|s.name==*id && s.ret==Some(Ty::F64)));
+                matches!(e,Expr::Call(id,_) if is_builtin(id,"seconds") || is_builtin(id,"val") || sigs.iter().any(|s|s.name==*id && s.ret==Some(Ty::F64)));
             if float_call || may_be_dyn(e, &dyn_names, &darr_names) {
                 dyn_names.insert((*name).clone());
             }
