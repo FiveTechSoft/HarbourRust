@@ -61,3 +61,16 @@ fails comparison rather than normalizing bytes. No new admissions/speedclaim.
 original-os-datetime-control adds already-admitted os.prg and datetime.prg.
 Same-host/live-day oracle bytes unnormalized.55originals,275exact+53zero
 =328clean,2knownDELTA2separate. No new compiler admissions.
+
+## Strict result accounting
+
+The wrapper now validates returned result rows instead of merely counting
+non-debt rows as clean. Exactly five distinct modes and one balance row per
+source are required. Balance source hash must match the original; shared
+strict state and two specific DELTA2 debts are checked. Legacy input/effect
+balance records retain their explicit DELTA0 marker conventions. Unknown
+row kinds,missing/duplicate modes/balances,misclassified debt or bad source
+hash fail closed. Duplicate sources across gates are rejected. Aggregate
+must be55unique sources,275exact,53zero,2known debts,not assumed from length.
+Ten unit controls,including nine malformed records;Python41=39pass2skip.
+Complete wrapper freshly re-executed328clean+2known debts,compiler unchanged.
