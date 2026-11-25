@@ -14,3 +14,11 @@ Broad current evidence is listed in the package summary. No RC or numeric
 array division policy change. No push/publication/workflow/rebase.
 Harbour oracle694428e1c12f726675b19324d62167fa77d68185. MIT examples are
 specifications only; Julio Ponce examples credited, no cambio.diff copy.
+
+## Function-local classifications and dead mutation
+
+Test-only follow-up verifies identical local names as immutable concat trees
+in one function and I64/fixed-array values in another, repeated calls and
+main/function isolation. Dead source/derived mutation after LOOP is still
+rejected, not silently erased. Gate total: 9 fresh Harbour/native/LLVM exact
+rows and 8 named LLVM rejections. No compiler change in this follow-up.
