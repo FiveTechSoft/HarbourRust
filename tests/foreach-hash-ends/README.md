@@ -9,3 +9,7 @@ Gate46:4 fuentes intactas propias por5 modos=20 exactas Harbour;4 balances final
 Regresión119 suites previas reconciliadas por nombre y SHA del compilador donde existe, incluida local-array-declaration C2 gate42; Rust106,LLVM21 exactas frescas,Linux1177 stdout/golden,PE solo emisión1912PASS/22conocidas/0FAIL,negativos622 mismos18 exactos,censo58/1041 sin cambios. Sin cierre original nuevo ni afirmación de velocidad. RC/objetos y división numérica siguen aparcados. Sin push/publicación/workflows/rebase.
 
 python tests/foreach-hash-ends/check.py --compiler target/release/hbc --hbmk2 /ruta/hbmk2 --spec-root /ruta/harbour --output /ruta/nueva
+
+Post-reset array endpoint increment intentionally moves limit-array and
+limit-shadow intact into positive array fixtures;this hash gate now44,
+not the historical46.EnumKey stays hash-only.

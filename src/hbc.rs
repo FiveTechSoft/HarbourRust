@@ -10691,8 +10691,8 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
         Expr::Send(recv, name, args) => {
             if (name.eq_ignore_ascii_case("__enumisfirst")||name.eq_ignore_ascii_case("__enumislast")) && CURDIR_LINUX_NATIVE.with(|v|v.get()) && DECIMAL_LOCAL_PROFILE.with(|v|v.get()) && !MACRO_CONTEXT.with(|v|v.get())
                 && !IN_BLOCK.with(|v|v.get()) && !shared_local::active()
-                && matches!(recv.as_ref(),Expr::Var(id) if ENUM_KEY_CHECK.with(|v|v.borrow().iter().rev().find(|(n,_)|n==id).map_or(false,|(_,hash)|*hash)) && env.iter().rev().find(|v|v.name==*id).map_or(false,|v|v.ty==Ty::Dyn && v.ro)) {
-                if !args.is_empty(){return Err(format!("line {}: __enumIsFirst/__enumIsLast only support active hash iterator getters without arguments",n));}
+                && matches!(recv.as_ref(),Expr::Var(id) if ENUM_INDEX_CHECK.with(|v|v.borrow().contains(id)) && env.iter().rev().find(|v|v.name==*id).map_or(false,|v|v.ty==Ty::Dyn && v.ro)) {
+                if !args.is_empty(){return Err(format!("line {}: __enumIsFirst/__enumIsLast only support active scalar iterator getters without arguments",n));}
                 return Ok(Ty::Bool);
             }
             if name.eq_ignore_ascii_case("__enumkey") && CURDIR_LINUX_NATIVE.with(|v|v.get()) && DECIMAL_LOCAL_PROFILE.with(|v|v.get()) && !MACRO_CONTEXT.with(|v|v.get())
@@ -11323,6 +11323,8 @@ thread_local! {
     static ENUM_KEY_CHECK: std::cell::RefCell<Vec<(String,bool)>> = const { std::cell::RefCell::new(Vec::new()) };
     static ENUM_KEY_EMIT: std::cell::RefCell<Vec<(String,usize,usize,bool)>> = const { std::cell::RefCell::new(Vec::new()) };
     static ENUM_INDEX_CHECK: std::cell::RefCell<Vec<String>> = const { std::cell::RefCell::new(Vec::new()) };
+    // Iterator index plus static length or dynamic saved-length slot.
+    static ENUM_END_EMIT: std::cell::RefCell<Vec<(String,usize,bool,usize)>> = const { std::cell::RefCell::new(Vec::new()) };
     static ENUM_INDEX_EMIT: std::cell::RefCell<Vec<(String,usize)>> = const { std::cell::RefCell::new(Vec::new()) };
 }
 fn foreach_lv_readonly(stmts: &[Stmt], name: &str) -> bool {
@@ -16767,11 +16769,11 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             out.push_str(&format!("    mov -{}(%rbp), %rax\n    mov {}(%rax), %rdx\n    mov {}(%rax), %rax\n    call hbc_float_clone\n\n    cmp $4, %rax\n    jne 83f\n    mov %rdx, %rdi\n    mov -8(%rdx), %rsi\n    call hbc_strcpy\n    mov %rax, %rdx\n    mov $4, %eax\n83:\n", sv.off, 16 + off * 16 + 8, 16 + off * 16));
         }
         Expr::Send(recv, name, args) => {
-            if (name.eq_ignore_ascii_case("__enumisfirst")||name.eq_ignore_ascii_case("__enumislast")) && matches!(recv.as_ref(),Expr::Var(id) if ENUM_KEY_EMIT.with(|v|v.borrow().iter().rev().find(|(n,_,_,_)|n==id).map_or(false,|(_,_,_,hash)|*hash))) && expr_ty(recv,env,sigs)==Ty::Dyn {
+            if (name.eq_ignore_ascii_case("__enumisfirst")||name.eq_ignore_ascii_case("__enumislast")) && matches!(recv.as_ref(),Expr::Var(id) if ENUM_END_EMIT.with(|v|v.borrow().iter().any(|(n,_,_,_)|n==id))) && expr_ty(recv,env,sigs)==Ty::Dyn {
                 let id=if let Expr::Var(id)=recv.as_ref(){id}else{unreachable!("checked iterator")};
-                let (coll,index)=ENUM_KEY_EMIT.with(|v|v.borrow().iter().rev().find(|(n,_,_,_)|n==id).map(|(_,c,i,_)|(*c,*i))).expect("checked hash iterator");
+                let (index,fixed,bound)=ENUM_END_EMIT.with(|v|v.borrow().iter().rev().find(|(n,_,_,_)|n==id).map(|(_,i,f,b)|(*i,*f,*b))).expect("checked scalar iterator");
                 out.push_str(&format!("    mov -{}(%rbp), %rax\n",index));
-                if name.eq_ignore_ascii_case("__enumisfirst") {out.push_str("    cmp $1, %rax\n");}else{out.push_str(&format!("    cmp -{}(%rbp), %rax\n",coll-8));}
+                if name.eq_ignore_ascii_case("__enumisfirst") {out.push_str("    cmp $1, %rax\n");}else if fixed {out.push_str(&format!("    cmp ${}, %rax\n",bound));}else{out.push_str(&format!("    cmp -{}(%rbp), %rax\n",bound));}
                 out.push_str("    sete %al\n    movzbq %al, %rax\n    xor %edx, %edx\n");return;
             }
             if name.eq_ignore_ascii_case("__enumkey") && matches!(recv.as_ref(),Expr::Var(id) if ENUM_KEY_EMIT.with(|v|v.borrow().iter().rev().find(|(n,_,_,_)|n==id).map_or(false,|(_,_,_,hash)|*hash))) && expr_ty(recv,env,sigs)==Ty::Dyn {
@@ -22449,7 +22451,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
         },
         Expr::SelfGet(_) => Ty::Dyn, // DATA casilla
         Expr::Send(recv, name, _) => {
-            if (name.eq_ignore_ascii_case("__enumisfirst")||name.eq_ignore_ascii_case("__enumislast")) && matches!(recv.as_ref(),Expr::Var(id) if ENUM_KEY_EMIT.with(|v|v.borrow().iter().rev().find(|(n,_,_,_)|n==id).map_or(false,|(_,_,_,hash)|*hash))) && expr_ty(recv,env,sigs)==Ty::Dyn {return Ty::Bool;}
+            if (name.eq_ignore_ascii_case("__enumisfirst")||name.eq_ignore_ascii_case("__enumislast")) && matches!(recv.as_ref(),Expr::Var(id) if ENUM_END_EMIT.with(|v|v.borrow().iter().any(|(n,_,_,_)|n==id))) && expr_ty(recv,env,sigs)==Ty::Dyn {return Ty::Bool;}
             if name.eq_ignore_ascii_case("__enumkey") && matches!(recv.as_ref(),Expr::Var(id) if ENUM_KEY_EMIT.with(|v|v.borrow().iter().rev().find(|(n,_,_,_)|n==id).map_or(false,|(_,_,_,hash)|*hash))) && expr_ty(recv,env,sigs)==Ty::Dyn {return Ty::StrOwn;}
             if name.eq_ignore_ascii_case("__enumindex") && matches!(recv.as_ref(),Expr::Var(id) if ENUM_INDEX_EMIT.with(|v|v.borrow().iter().any(|(n,_)|n==id))) && expr_ty(recv,env,sigs)==Ty::Dyn {return Ty::I64;}
 
@@ -25692,10 +25694,12 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 let mut inner = flow.to_vec();
                 inner.push(CgFrame::Loop(format!(".Lfen_{}_{}", fname, id), format!(".Lfee_{}_{}", fname, id), amem.as_ref().map(|_| (*n, true))));
                 ENUM_KEY_EMIT.with(|v|v.borrow_mut().push((var.clone(),coll_off,idx_off,ct==Ty::Hash)));
+                ENUM_END_EMIT.with(|v|v.borrow_mut().push((var.clone(),idx_off,static_arr,if static_arr {static_len} else {coll_off-8})));
                 ENUM_INDEX_EMIT.with(|v|v.borrow_mut().push((var.clone(),idx_off)));
                 cg_stmts(body, env, frame, sigs, strs, out, target, fname, label, &inner, slots, dyn_names, byref_names);
                 ENUM_INDEX_EMIT.with(|v|{v.borrow_mut().pop();});
                 ENUM_KEY_EMIT.with(|v|{v.borrow_mut().pop();});
+                ENUM_END_EMIT.with(|v|{v.borrow_mut().pop();});
                 env[kl].ty = saved_lv.0;
                 env[kl].off = saved_lv.1;
                 out.push_str(&format!(".Lfen_{}_{}:\n", fname, id));
