@@ -111,3 +111,24 @@ See the [official hbmk2 manual](https://github.com/harbour/core/blob/master/util
 for the external tool's own interface. Its generated manual is older than the
 pinned executable's help; the tested command traces are the acceptance evidence
 for this bounded flow.
+
+## Structural native-output validation follow-up
+
+The bounded adapter now validates the complete ELF64 little-endian v1 header,
+ET_EXEC/x86-64 identity,program-header table bounds,load file/memory bounds,
+alignment and a file-backed executable entry before atomic installation.
+Dynamic/interpreter segments are rejected. This is structural validation,
+not proof of provenance,behavior or safety of arbitrary linkers/programs.
+Normal builds still do not execute the result. Stage rc/cwd/argv are retained.
+
+Fresh official694428e1 toolchain acceptance31/31,including three false
+linkers producing executable shortELF,zeroheader and a dynamic image. All
+must fail and preserve the previous output. Unit discovery66=64pass2skip;
+header/segment mutations and entry-in-BSS rejected. Six intact originals
+(for,byref,fib,dates3,array16,longstr2) freshly built via adapter and run
+byte-exact against Harbour,including intentional longstr2stderr. This is
+current bounded Linuxadapter evidence,not new language admission or all
+1041originals,multimodule,Windowsadapter or fullhbmk2CLIcompatibility.
+No compiler/runtime,ownership/RC,lifetime,ASort,numericdivision,workflow,
+push,publication,rebase change. JulioPonceMIT specifications remain credited
+elsewhere;no supplied implementation/cambio.diff copied.

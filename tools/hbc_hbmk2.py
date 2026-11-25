@@ -10,6 +10,7 @@ import platform
 from pathlib import Path
 import shutil
 import subprocess
+import struct
 import sys
 import tempfile
 
@@ -21,6 +22,35 @@ def tool(value):
     if found is None:
         raise ValueError(f"tool not found or not executable: {value}")
     return str(Path(found).resolve())
+
+
+def validate_native_elf(path):
+    """Validate the bounded static ELF64/x86-64 output without executing it."""
+    data = Path(path).read_bytes()
+    def require(ok, detail):
+        if not ok:
+            raise ValueError('invalid native ELF output: ' + detail)
+    require(len(data) >= 64, 'truncated header')
+    require(data[:7] == b'\x7fELF\x02\x01\x01', 'expected ELF64 little-endian version1')
+    fields = struct.unpack_from('<HHIQQQIHHHHHH', data, 16)
+    kind, machine, version, entry, phoff, _, _, ehsize, phsize, phnum, _, _, _ = fields
+    require((kind, machine, version, ehsize) == (2, 62, 1, 64), 'expected ET_EXEC x86-64 header')
+    require(phsize == 56 and phnum > 0, 'missing program headers')
+    require(phoff >= 64 and phoff + phsize * phnum <= len(data), 'truncated program headers')
+    entry_ok = False
+    loads = 0
+    for i in range(phnum):
+        typ, flags, offset, address, _, filesz, memsz, align = struct.unpack_from('<IIQQQQQQ', data, phoff + i * phsize)
+        require(typ not in (2, 3), 'dynamic/interpreter segments are outside static adapter scope')
+        if typ != 1:
+            continue
+        loads += 1
+        require(filesz <= memsz and offset + filesz <= len(data), 'invalid load segment bounds')
+        require(address + memsz <= 1 << 64, 'load segment address overflow')
+        require(align in (0, 1) or (align & (align - 1) == 0 and address % align == offset % align), 'invalid load alignment')
+        if flags & 1 and address <= entry < address + filesz:
+            entry_ok = True
+    require(loads > 0 and entry_ok, 'entry is not in a file-backed executable load segment')
 
 
 def main(argv=None):
@@ -69,9 +99,10 @@ def main(argv=None):
         commands = []
 
         def run(cmd, stage):
-            commands.append({"stage": stage, "argv": [str(x) for x in cmd]})
+            commands.append({"stage": stage, "argv": [str(x) for x in cmd], "cwd": str(work)})
             (work / "commands.json").write_text(json.dumps(commands, indent=2) + "\n")
             r = subprocess.run(cmd, cwd=work, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            (work / (stage + ".rc")).write_text(str(r.returncode))
             (work / (stage + ".stdout")).write_bytes(r.stdout)
             (work / (stage + ".stderr")).write_bytes(r.stderr)
             if r.returncode:
@@ -110,8 +141,9 @@ def main(argv=None):
         (work / "native.hbp").write_text("\n".join(project) + "\n")
         run([hbmk2, "native.hbp", "-trace"], "hbmk2")
         result = work / "result"
-        if not result.is_file() or result.read_bytes()[:5] != b"\x7fELF\x02":
-            raise ValueError("hbmk2 did not produce a 64-bit ELF executable")
+        if not result.is_file():
+            raise ValueError("hbmk2 did not produce a native executable")
+        validate_native_elf(result)
         if not os.access(result, os.X_OK):
             raise ValueError("hbmk2 output is not executable")
         # Same filesystem: mkdtemp defaults beside output. Explicit work-dir may

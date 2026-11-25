@@ -23,7 +23,10 @@ def main():
               "--hbmk2", str(Path(a.hbmk2).resolve())]
 
     def command(cmd, stem):
-        r = subprocess.run([str(x) for x in cmd], stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=30)
+        cmd = [str(x) for x in cmd]
+        (out / (stem + '.command.json')).write_text(json.dumps(dict(argv=cmd,cwd=str(Path.cwd())),indent=2)+'\n')
+        r = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=30)
+        (out / (stem + '.rc')).write_text(str(r.returncode))
         (out / (stem + ".stdout")).write_bytes(r.stdout)
         (out / (stem + ".stderr")).write_bytes(r.stderr)
         return r
@@ -118,6 +121,21 @@ def main():
         target.write_bytes(b"OLD OUTPUT MUST SURVIVE")
         r = command(common + [str(s) for s in sources] + extra + ["-o", target], name)
         check(name + " fails closed", r.returncode != 0 and target.read_bytes() == b"OLD OUTPUT MUST SURVIVE")
+    # An executable bit and ELF magic alone do not establish a linked native
+    # image. Deliberately false linkers must not overwrite an old output.
+    for name, content in [('short-elf', b'\x7fELF\x02'),
+                          ('zero-header', b'\x7fELF\x02' + b'\0' * 123),
+                          ('dynamic-elf', Path('/bin/true').read_bytes())]:
+        linker = out / ('fake-' + name + '.py')
+        linker.write_text('#!' + sys.executable + '\nfrom pathlib import Path\np=Path("result")\np.write_bytes(' + repr(content) + ')\np.chmod(0o755)\n')
+        linker.chmod(0o755)
+        target = out / (name + '.bin');target.write_bytes(b'OLD OUTPUT MUST SURVIVE')
+        r = command(common + [str(ROOT / 'tests/samples/hello.prg'), '--hbmk2', str(linker),
+                             '--work-dir', str(out / (name + '-work')), '-o', str(target)],name)
+        check(name + ' structural ELF rejection preserves output',
+              r.returncode == 1 and target.read_bytes() == b'OLD OUTPUT MUST SURVIVE'
+              and b'invalid native ELF output' in r.stderr)
+
     r = command(common + [str(copied), "-o", str(copied)], "overwrite-input")
     check("input overwrite rejected", r.returncode != 0 and copied.read_text().startswith("#include"))
     r = command(common + [str(copied), "--work-dir", str(special), "-o", str(out / "not-built")], "existing-work")
