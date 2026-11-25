@@ -844,6 +844,7 @@ thread_local! {
     // per block id; codegen reads both when emitting the block function
     // and its call sites. CAPTURE_MODE is None outside AScan's block
     // argument (captures stay a named rejection everywhere else).
+    static PERSISTENT_INTEGER_BLOCKS: std::cell::RefCell<std::collections::HashSet<usize>> = std::cell::RefCell::new(std::collections::HashSet::new());
     static BLOCK_CAPTURES: std::cell::RefCell<std::collections::HashMap<usize, Vec<(String, Ty)>>> = std::cell::RefCell::new(std::collections::HashMap::new());
     static BLOCK_PARAM_TYS: std::cell::RefCell<std::collections::HashMap<usize, Vec<Ty>>> = std::cell::RefCell::new(std::collections::HashMap::new());
     static CAPTURE_MODE: std::cell::Cell<Option<u8>> = std::cell::Cell::new(None); // 0: integer elements, 1: string elements
@@ -10948,7 +10949,15 @@ fn check_block_body(id: usize, params: &[String], body: &[Expr], env: &[Local], 
     // casillas only (string borrows, integers, Dyn); anything else (or a
     // moved local) is a named rejection.
     let mut caps: Vec<(String, Ty)> = Vec::new();
-    if CAPTURE_MODE.get().is_some() {
+    // A process-static integer needs no detached environment: capture its
+    // canonical address, not an owner-frame value. Keep AScan/ASort on
+    // their existing read-only capture path and reject mixed local captures.
+    let mut static_names=Vec::new();
+    for e in body {let mut found=Vec::new();free_vars(e,&mut found);for v in found {if !params.contains(&v) && !static_names.contains(&v) {static_names.push(v);}}}
+    let static_only = CAPTURE_MODE.get().is_none() && !static_names.is_empty() && static_names.iter().all(|v|module_static::current_integer_slot(v))
+        && CURDIR_LINUX_NATIVE.with(|v|v.get()) && !MACRO_CONTEXT.with(|v|v.get());
+    if static_only {PERSISTENT_INTEGER_BLOCKS.with(|v|{v.borrow_mut().insert(id);});}
+    if CAPTURE_MODE.get().is_some() || static_only {
         for e in body {
             let mut found = Vec::new();
             free_vars(e, &mut found);
@@ -10990,7 +10999,7 @@ fn check_block_body(id: usize, params: &[String], body: &[Expr], env: &[Local], 
     BLOCK_PARAM_TYS.with(|m| m.borrow_mut().insert(id, (0..params.len()).map(|i| pty(i)).collect()));
     let mut benv: Vec<Local> = params.iter().enumerate().map(|(i, p)| Local { name: p.clone(), ty: pty(i), moved: false, ro: false, byref: false }).collect();
     for (cname, cty) in &caps {
-        benv.push(Local { name: cname.clone(), ty: *cty, moved: false, ro: true, byref: false });
+        benv.push(Local { name: cname.clone(), ty: *cty, moved: false, ro: !static_only, byref: false });
     }
     for (i, e) in body.iter().enumerate() {
         let t = type_expr(e, &mut benv, sigs, n)?;
@@ -28101,7 +28110,11 @@ fn emit_block(owner: &str, id: usize, params: &[String], body: &[Expr], sigs: &[
         out.push_str(&format!("    mov %r10, -{}(%rbp)\n", ctx_off));
         for (cname, ooff, cty) in caps {
             let off = cap_offs.iter().find(|(n, _)| n == cname).map(|(_, o)| *o).expect("checked capture");
-            let _ = cty;
+            if *ooff==0 && *cty==Ty::RefI64 && module_static::integer_slot(owner,cname) {
+                let label=module_static::storage(owner,cname);
+                out.push_str(&format!("    lea {}(%rip), %rax\n    mov %rax, -{}(%rbp)\n",label,off));
+                continue;
+            }
             out.push_str(&format!("    mov -{}(%rbp), %r10\n", ctx_off));
             out.push_str(&format!("    mov -{}(%r10), %rax\n    mov -{}(%r10), %rdx\n", ooff, ooff - 8));
             out.push_str(&format!("    mov %rax, -{}(%rbp)\n    mov %rdx, -{}(%rbp)\n", off, off - 8));
@@ -28468,7 +28481,8 @@ fn cg_func(f: &Func, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, tar
         for (cname, _) in BLOCK_CAPTURES.with(|m| m.borrow().get(&id).cloned()).unwrap_or_default() {
             let loc = lenv.iter().find(|l| l.name == cname)
                 .unwrap_or_else(|| panic!("block #{} capture `{}` has no slot in `{}`", id, cname, f.name));
-            caps.push((cname, loc.off, loc.ty));
+            let persistent=PERSISTENT_INTEGER_BLOCKS.with(|v|v.borrow().contains(&id)) && module_static::integer_slot(&f.name,&cname);
+            caps.push((cname, if persistent {0}else{loc.off}, if persistent {Ty::RefI64}else{loc.ty}));
         }
         emit_block(&f.name, id, &ps, &body, sigs, strs, out, target, &caps);
     }

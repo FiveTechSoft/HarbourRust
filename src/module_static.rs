@@ -8,10 +8,13 @@ thread_local! {
     static ALIASES: RefCell<HashMap<(String, String), usize>> = RefCell::new(HashMap::new());
     static KINDS: RefCell<HashMap<(String, String), Ty>> = RefCell::new(HashMap::new());
     static OBJECTS: RefCell<HashMap<usize, u32>> = RefCell::new(HashMap::new());
+    static INTEGER_SLOTS: RefCell<HashSet<(String,String)>> = RefCell::new(HashSet::new());
     static EMITTED: RefCell<HashSet<String>> = RefCell::new(HashSet::new());
 }
 
 pub fn reset() {
+    INTEGER_SLOTS.with(|v|v.borrow_mut().clear());
+    crate::PERSISTENT_INTEGER_BLOCKS.with(|v|v.borrow_mut().clear());
     OBJECTS.with(|v| v.borrow_mut().clear());
     ALIASES.with(|v| v.borrow_mut().clear());
     KINDS.with(|v| v.borrow_mut().clear());
@@ -63,6 +66,14 @@ pub fn storage(owner: &str, name: &str) -> String {
         Some(index) => format!("hbc_module_i64_{}", index),
         None => format!("hbc_static_{}_{}_{}", owner.len(), owner, name),
     })
+}
+
+// Only literal-integer process storage, never an ordinary local or parameter.
+pub fn integer_slot(owner:&str,name:&str)->bool {
+    INTEGER_SLOTS.with(|v|v.borrow().contains(&(owner.to_owned(),name.to_owned())))
+}
+pub fn current_integer_slot(name:&str)->bool {
+    crate::CUR_FN.with(|v|integer_slot(&v.borrow(),name))
 }
 
 pub fn kind(owner: &str, name: &str) -> Option<Ty> {
@@ -415,6 +426,7 @@ fn check_shared_array_uses(f: &Func, name: &str) -> Result<(), String> {
 }
 
 pub fn bind(f: &mut Func, slots: &[(usize, String, Expr)]) -> Result<(), String> {
+    for st in &f.stmts {if let Stmt::Static(_,name,Expr::Int(_))=st {INTEGER_SLOTS.with(|v|v.borrow_mut().insert((f.name.clone(),name.clone())));}}
     // Local string/array slots retain function-qualified process storage.
     for st in &f.stmts {if let Stmt::Static(line,name,init)=st {
         let ty=match init {Expr::Str(_)=>Some(Ty::StrOwn),Expr::ArrLit(_)|Expr::DArrNew=>Some(Ty::Dyn),_=>None};
@@ -447,6 +459,7 @@ pub fn bind(f: &mut Func, slots: &[(usize, String, Expr)]) -> Result<(), String>
         if matches!(ty,Ty::Bool|Ty::StrOwn|Ty::Obj(_)|Ty::RefDyn) {check_payload_uses(f,name,ty)?;}
         if matches!(ty,Ty::Arr(_)) {check_array_uses(f,name)?;}
         if ty == Ty::Dyn && matches!(init, Expr::ArrLit(_) | Expr::DArrNew) {check_shared_array_uses(f,name)?;}
+        if ty==Ty::I64 && matches!(init,Expr::Int(_)) {INTEGER_SLOTS.with(|v|v.borrow_mut().insert((f.name.clone(),name.clone())));}
         KINDS.with(|v| v.borrow_mut().insert((f.name.clone(), name.clone()), ty));
         prefix.push(Stmt::Static(*line, name.clone(), init.clone()));
     }
