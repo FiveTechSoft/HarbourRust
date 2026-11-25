@@ -24,3 +24,13 @@ must resolve at compile time; an owned arm stays rejected even when the
 condition is literal true. Condition effects execute once; no branch string
 expression or general string ABI is introduced. New gate total: 9 exact
 fresh Harbour/native/LLVM rows and 6 named LLVM rejections.
+
+## Nested print-only IIf
+
+Pure immutable leaves may be selected by nested print-only IIf trees.
+Conditions are lowered as branches, only reached conditions execute, once.
+Pointer/length slots are entry allocas, not string objects or an ABI change.
+Every leaf is checked structurally before lowering, including unreachable
+owned leaves (still rejected). Gate now 12 fresh exact rows and 8 named
+LLVM rejections. Nested both-side choices, increments, empty/NUL, raw and
+formatted output, and repeated loop execution are checked.

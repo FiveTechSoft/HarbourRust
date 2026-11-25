@@ -266,6 +266,33 @@ impl Ir {
  fn isbool(&self,e:&Expr)->bool {match e {Expr::Set(_,rhs)=>self.isbool(rhs),Expr::Seq(es)=>es.last().map(|e|self.isbool(e)).unwrap_or(false),Expr::Log(_)|Expr::Cmp(..)|Expr::LNot(_)|Expr::LAnd(..)|Expr::LOr(..)=>true,Expr::Var(n)=>self.bools.contains(n),Expr::Call(n,_) if self.bool_returns.contains(n)=>true,Expr::Call(n,_) if is_builtin(n,"hb_bittest")||is_builtin(n,"empty")||["isdigit","isalpha","isupper","islower"].iter().any(|b|is_builtin(n,b))=>true,Expr::Call(n,a) if is_builtin(n,"iif") && a.len()==3=>self.isbool(&a[1]),Expr::Call(n,a) if (is_builtin(n,"min")||is_builtin(n,"max")) && a.len()==2=>self.isbool(&a[0]),_=>false}}
  fn cond(&mut self,e:&Expr)->Result<String,String>{let v=self.expr(e)?;let c=self.tmp();self.line(format!("{} = icmp ne i64 {}, 0",c,v));Ok(c)}
  fn linux_console(&self)->bool {cfg!(target_os="linux") && !self.windows && !THREADS.with(|v|v.get())}
+ // Print-only tree proof checks both arms before any selection lowering.
+ fn printable_constant_tree(&self,e:&Expr)->bool {
+  self.borrowed_constant_tree(e).is_some() || matches!(e,Expr::Call(n,a) if is_builtin(n,"iif") && a.len()==3 && self.printable_constant_tree(&a[1]) && self.printable_constant_tree(&a[2]))
+ }
+ fn print_constant_selection(&mut self,e:&Expr)->Result<(String,String),String>{
+  if let Some(text)=self.borrowed_constant_tree(e){
+   let k=self.globals.len();let bytes=text.as_bytes();
+   self.globals.push(format!("@str{} = private constant [{} x i8] c\"{}\"",k,bytes.len(),bytes.iter().map(|b|format!("\\{:02X}",b)).collect::<String>()));
+   return Ok((format!("@str{}",k),bytes.len().to_string()))
+  }
+  if let Expr::Call(n,a)=e {if is_builtin(n,"iif") && a.len()==3 {
+   let pslot=self.tmp();let lslot=self.tmp();
+   self.allocas.push(format!("  {} = alloca ptr\n  {} = alloca i64\n",pslot,lslot));
+   let c=self.cond(&a[0])?;let t=self.lab();let f=self.lab();let end=self.lab();
+   self.line(format!("br i1 {}, label %{}, label %{}",c,t,f));self.block(&t);
+   let (tp,tl)=self.print_constant_selection(&a[1])?;
+   self.line(format!("store ptr {}, ptr {}",tp,pslot));self.line(format!("store i64 {}, ptr {}",tl,lslot));
+   self.line(format!("br label %{}",end));self.block(&f);
+   let (fp,fl)=self.print_constant_selection(&a[2])?;
+   self.line(format!("store ptr {}, ptr {}",fp,pslot));self.line(format!("store i64 {}, ptr {}",fl,lslot));
+   self.line(format!("br label %{}",end));self.block(&end);
+   let p=self.tmp();self.line(format!("{} = load ptr, ptr {}",p,pslot));
+   let len=self.tmp();self.line(format!("{} = load i64, ptr {}",len,lslot));
+   return Ok((p,len))
+  }}
+  Err("LLVM scalar: print-only selection requires immutable constant leaves".into())
+ }
  fn print_items(&mut self,es:&[Expr],inline:bool,raw:bool)->Result<(),String>{
   // Evaluate every item before emitting the outer newline or separator.
   let mut vals=Vec::new();
@@ -275,21 +302,11 @@ impl Ir {
     _=>self.borrowed_constant_tree(e).map(Expr::Str)
    };
    let e=borrowed.as_ref().unwrap_or(e);
-   // Print-only selection between static literals: no string value ABI,
-   // local storage, owned result or general expression support is introduced.
-   if let Expr::Call(n,args)=e {if is_builtin(n,"iif") && args.len()==3 {
-    if let (Some(a),Some(b))=(self.borrowed_constant_tree(&args[1]),self.borrowed_constant_tree(&args[2])) {
-     let c=self.cond(&args[0])?;let k=self.globals.len();let mut lens=Vec::new();
-     for text in [&a,&b] {
-      let text=text.as_str();
-      let bytes=text.as_bytes();lens.push(bytes.len());
-      self.globals.push(format!("@str{} = private constant [{} x i8] c\"{}\"",self.globals.len(),bytes.len(),bytes.iter().map(|b|format!("\\{:02X}",b)).collect::<String>()));
-     }
-     let p=self.tmp();self.line(format!("{} = select i1 {}, ptr @str{}, ptr @str{}",p,c,k,k+1));
-     let len=self.tmp();self.line(format!("{} = select i1 {}, i64 {}, i64 {}",len,c,lens[0],lens[1]));
-     vals.push((p,Some(len),false));continue
-    }
-   }}
+   // Nested print-only selection evaluates only the selected conditions.
+   // Every leaf is statically borrowed, so no string value ABI is needed.
+   if matches!(e,Expr::Call(n,a) if is_builtin(n,"iif") && a.len()==3) && self.printable_constant_tree(e){
+    let (p,len)=self.print_constant_selection(e)?;vals.push((p,Some(len),false));continue
+   }
    if self.isbool(e){
     let c=self.cond(e)?;let k=self.globals.len();
     self.globals.push(format!("@str{} = private constant [3 x i8] c\".T.\"",k));
