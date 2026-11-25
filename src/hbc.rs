@@ -12414,7 +12414,15 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 if before_end.iter().zip(env.iter()).any(|(a,b)| !a.moved && b.moved) {
                     return Err(format!("line {}: repeated `for` TO must not consume an owned local", n));
                 }
-                if (ts != Ty::I64 && !(method_arrays::active()&&ts==Ty::Dyn)) || (te != Ty::I64 && !(method_arrays::active()&&te==Ty::Dyn)) {
+                // Ordinary local Dyn TO is reloaded at every condition and
+                // compared numerically without truncating decimal bounds.
+                // START/STEP/counter remain integer, with no captured/byref
+                // bound or dynamic STEP in this bounded increment.
+                let dyn_to = te==Ty::Dyn && ts==Ty::I64 && matches!(step,Expr::Int(_))
+                    && CURDIR_LINUX_NATIVE.with(|v|v.get()) && DECIMAL_LOCAL_PROFILE.with(|v|v.get())
+                    && !MACRO_CONTEXT.with(|v|v.get()) && !shared_local::active()
+                    && matches!(end,Expr::Var(id) if FOR_LOCAL_NAMES.with(|m|m.borrow().contains(id)) && !byref_names.contains(id));
+                if (ts != Ty::I64 && !(method_arrays::active()&&ts==Ty::Dyn)) || (te != Ty::I64 && !dyn_to && !(method_arrays::active()&&te==Ty::Dyn)) {
                     return Err(format!("line {}: `for` bounds must be integers", n));
                 }
                 // Harbour REUSES a visible integer variable as the loop
@@ -12427,7 +12435,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                         && !byref_names.contains(var) && !module_static::is_module_binding(var)
                         && CURDIR_LINUX_NATIVE.with(|v|v.get()) && DECIMAL_LOCAL_PROFILE.with(|v|v.get())
                         && !MACRO_CONTEXT.with(|v|v.get()) && !shared_local::active()
-                        && ts==Ty::I64 && te==Ty::I64 && !expr_mentions(start,var) && dyn_for_reads_only(body,end,var);
+                        && ts==Ty::I64 && (te==Ty::I64 || dyn_to) && !expr_mentions(start,var) && dyn_for_reads_only(body,end,var);
                     if (env[pos].ty != Ty::I64 && !dyn_counter) || env[pos].ro {
                         return Err(format!("line {}: `for` loop variable `{}` reuses a non-integer or read-only slot in this PoC", n, var));
                     }
@@ -25475,6 +25483,11 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 }
                 out.push_str(&format!(".Lforc_{}_{}:\n", fname, id));
                 cg_value(end, env, sigs, strs, out, target);
+                let numeric_dyn_to = expr_ty(end,env,sigs)==Ty::Dyn && !method_arrays::active();
+                if numeric_dyn_to {
+                    let positive=matches!(step,Expr::Int(v) if v.parse::<i64>().expect("checked")>0);
+                    out.push_str(&format!("    mov %rax, %rcx\n    mov %rdx, %r8\n    xor %eax, %eax\n    mov -{}(%rbp), %rdx\n    mov ${}, %r9d\n    call hbc_dynxcmp_n\n    test %rax, %rax\n    {} .Lfore_{}_{}\n",if dyn_counter{i_off-8}else{i_off},if positive{2}else{1},if positive{"jg"}else{"js"},fname,id));
+                } else {
                 if method_arrays::active() && expr_ty(end,env,sigs)==Ty::Dyn{method_arrays::integer(end,out);}
                 out.push_str(&format!("    mov %rax, -{}(%rbp)\n", end_off));
                 out.push_str(&format!("    mov -{}(%rbp), %rax\n", if dyn_counter{i_off-8}else{i_off}));
@@ -25484,6 +25497,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 } else {
                     cg_value(step,env,sigs,strs,out,target);
                     out.push_str(&format!("    test %rax, %rax\n    js .Lforneg_{fname}_{id}\n    mov -{counter}(%rbp), %rax\n    cmp -{end_off}(%rbp), %rax\n    jg .Lfore_{fname}_{id}\n    jmp .Lforbody_{fname}_{id}\n.Lforneg_{fname}_{id}:\n    mov -{counter}(%rbp), %rax\n    cmp -{end_off}(%rbp), %rax\n    jl .Lfore_{fname}_{id}\n.Lforbody_{fname}_{id}:\n",counter=if dyn_counter{i_off-8}else{i_off}));
+                }
                 }
                 if amem.is_some() { out.push_str("    call hbc_arena_mark\n"); }
                 let mut inner = flow.to_vec();

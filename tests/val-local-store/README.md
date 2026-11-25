@@ -7,7 +7,8 @@ and runtime parser are unchanged. No general numeric promotion or FOR widening.
 
 check.py: five own programs, twelve argv cases, five Linux modes. 300 fresh
 Harbour-exact rc/stdout/stderr triples, 60 strict final allocation-delta-zero
-runs, two named rejections (FOR bound and non-integer origin). Includes RHS
+runs, one named rejection (non-integer origin); the former FOR rejection is
+now a positive under tests/for-dyn-bound. Includes RHS
 catch with Harbour's explicit Break handler, retag/string replacement,
 integer metadata before/after, branch not taken and one evaluation.
 
