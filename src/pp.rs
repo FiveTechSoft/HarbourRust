@@ -230,6 +230,7 @@ pub fn eval_if(expr: &str, defs: &HashMap<String, Def>, line: usize) -> Result<b
         // operators: ==, !=, >=, <=, >, <
         if i + 1 < b.len() {
             let two = &expr[i..i + 2];
+            if matches!(two,"<<"|">>") {toks.push(T::Arith(two.into()));i+=2;continue;}
             if ["==", "!=", ">=", "<="].contains(&two) {
                 toks.push(T::Op(two.to_string()));
                 i += 2;
@@ -310,9 +311,9 @@ pub fn eval_if(expr: &str, defs: &HashMap<String, Def>, line: usize) -> Result<b
     fn parse_bitwise(t:&[T],p:&mut usize,line:usize)->Result<i64,String> {
         let mut l=parse_expr(t,p,line)?;
         while let Some(T::Arith(op))=t.get(*p) {
-            if !matches!(op.as_str(),"&"|"|"|"^"){break;}
+            if !matches!(op.as_str(),"&"|"|"|"^"|"<<"|">>"){break;}
             let op=op.clone();*p+=1;let rhs=parse_expr(t,p,line)?;
-            l=match op.as_str(){"&"=>l&rhs,"|"=>l|rhs,_=>l^rhs};
+            l=match op.as_str(){"&"=>l&rhs,"|"=>l|rhs,"^"=>l^rhs,"<<"=>l.wrapping_shl((rhs as u32)&63),_=>l.wrapping_shr((rhs as u32)&63)};
         }
         Ok(l)
     }
@@ -2321,5 +2322,15 @@ mod if_bitwise_tests {
     fn same_precedence_left_associative_between_arithmetic_and_comparison() {
         let p=Pp::new(Vec::new(),false);
         for e in ["(4|1&2)==0","(6^3&1)==1","(1|2^3)==0","(6&3+1)==4","(1+2|4)==7","6&3==2","(4|1==1)==0","(-1&255)==255","(0xffffffffffffffff^1)==-2"]{assert!(eval_if(e,&p.defs,1).unwrap(),"{}",e);}
+    }
+}
+
+#[cfg(test)]
+mod if_shift_tests {
+    use super::*;
+    #[test]
+    fn masked_counts_signed_right_and_shared_left_precedence() {
+        let p=Pp::new(Vec::new(),false);
+        for e in ["(1<<4)==16","(-8>>2)==-2","(1<<63)==0x8000000000000000","(1<<64)==1","(1<<65)==2","(8<<-1)==0","(8>>-1)==0","(1<<-64)==1","(1|2<<1)==6","(8>>1&3)==0","(1<<2+1)==8"]{assert!(eval_if(e,&p.defs,1).unwrap(),"{}",e);}
     }
 }
