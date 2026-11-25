@@ -2517,8 +2517,10 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
             *i += 1;
             continue;
         }
-        if matches!(&toks[0],Tok::Ident(k) if k.eq_ignore_ascii_case("wait")) && toks.len()==1 {
-            out.push(Stmt::CallStmt(n,Expr::Call("hrbase_wait".to_string(),vec![])));*i+=1;continue;
+        if matches!(&toks[0],Tok::Ident(k) if k.eq_ignore_ascii_case("wait")) && toks.get(1)!=Some(&Tok::LParen) {
+            if toks.len()==1 {out.push(Stmt::CallStmt(n,Expr::Call("hrbase_wait".to_string(),vec![])));*i+=1;continue;}
+            if let [_,Tok::Str(prompt)]=toks.as_slice() {out.push(Stmt::CallStmt(n,Expr::Call("hrbase_wait".to_string(),vec![Expr::Str(prompt.clone())])));*i+=1;continue;}
+            return Err(format!("line {}: WAIT supports no argument or one literal string prompt in this increment",n));
         }
         match toks[0].clone() {
             Tok::KwInit | Tok::KwExit if toks.get(1) == Some(&Tok::KwFunction) => return Ok(()),
@@ -8976,7 +8978,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 return Ok(Ty::StrOwn);
             }
             if id=="hrbase_wait" {
-                if !args.is_empty()||!CURDIR_LINUX_NATIVE.with(|v|v.get())||THREADS.with(|v|v.get()) {return Err(format!("line {}: bare WAIT is measured only on ordinary Linux GTSTD",n));}return Ok(Ty::I64);
+                if args.len()>1||!args.iter().all(|a|matches!(a,Expr::Str(_)))||!CURDIR_LINUX_NATIVE.with(|v|v.get())||THREADS.with(|v|v.get()) {return Err(format!("line {}: WAIT literal prompt is measured only on ordinary Linux GTSTD",n));}return Ok(Ty::I64);
             }
             if id=="hbc_set_decimals" {
                 if args.len()!=1 || !matches!(&args[0],Expr::Int(_)) {return Err(format!("line {}: internal SET DECIMALS store expects one integer",n));}
@@ -18253,9 +18255,12 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             for i in 0..nstr{out.push_str(&format!("    mov {}(%rsp), %rdi\n    test %rdi, %rdi\n    je .Lsha_skip{guard}_{i}\n    call hbc_freestr\n.Lsha_skip{guard}_{i}:\n",i*16));}
             out.push_str(&format!("    add $128, %rsp\n    jmp hbc_seq_unwind\n.Lsha_done{guard}:\n"));
         }
-        Expr::Call(id,_) if id=="hrbase_wait" => {
+        Expr::Call(id,args) if id=="hrbase_wait" => {
             if THREADS.with(|v|v.get()){eprintln!("error: bare WAIT does not support threads in this increment");process::exit(1);}
-            out.push_str("    call hbc_base_wait\n");
+            if let Some(Expr::Str(prompt))=args.first() {
+                let i=strs.len();strs.push(format!("\n{}",prompt));
+                out.push_str(&format!("    lea .Lstr{i}(%rip), %rsi\n    mov ${}, %edx\n    call hbc_base_wait_prompt\n",prompt.len()+1));
+            } else {out.push_str("    call hbc_base_wait\n");}
         }
         Expr::Call(id,args) if id=="hbc_set_decimals" => {
             let v = match &args[0] { Expr::Int(v) => v.parse::<i64>().unwrap_or(2), _ => 2 };

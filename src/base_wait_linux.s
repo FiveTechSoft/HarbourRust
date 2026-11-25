@@ -4,13 +4,14 @@
     .ascii "Press any key to continue..."
 .text
 hbc_base_wait:
+    lea .Lbase_wait_prompt(%rip), %rsi
+    mov $29, %edx
+hbc_base_wait_prompt:
     push %rbp
     mov %rsp, %rbp
     sub $16, %rsp
     mov $1, %eax
     mov $1, %edi
-    lea .Lbase_wait_prompt(%rip), %rsi
-    mov $29, %edx
     syscall
     call hbc_inkey_block_linux
     mov %al, (%rsp)
