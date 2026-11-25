@@ -54,6 +54,17 @@ pub struct Cmd {
 }
 
 impl Pp {
+    // CLI object-like definitions precede the source, which may redefine or
+    // undefine them. No synthetic source lines: diagnostic origins stay intact.
+    pub fn define_cli(&mut self, arg: &str) -> Result<(),String> {
+        let (name,body)=arg.split_once('=').unwrap_or((arg,""));
+        let mut chars=name.bytes();
+        if !matches!(chars.next(),Some(b'a'..=b'z'|b'A'..=b'Z'|b'_')) || !chars.all(|b|b.is_ascii_alphanumeric()||b==b'_') || body.contains(['\n','\r','\0']) {
+            return Err("-D expects an object-like ASCII identifier optionally followed by =value (one line)".into());
+        }
+        self.defs.insert(name.into(),Def{params:Vec::new(),funclike:false,body:body.into(),dup:1});
+        Ok(())
+    }
     pub fn new(incdirs: Vec<String>, windows: bool) -> Self {
         let mut defs = HashMap::new();
         // Predefined macros, measured on the pinned Harbour (oracle hk248):
@@ -2125,3 +2136,22 @@ pub fn process(path: &str, pp: &mut Pp, out: &mut String, depth: usize) -> Resul
     Ok(())
 }
 
+
+#[cfg(test)]
+mod cli_define_tests {
+    use super::*;
+    #[test]
+    fn object_cli_order_empty_case_and_rejection() {
+        let mut p=Pp::new(Vec::new(),false);
+        p.define_cli("Foo=7").unwrap();
+        p.define_cli("Foo=9").unwrap();
+        assert_eq!(expand("Foo foo",&p.defs,1).unwrap(),"9 foo");
+        p.define_cli("EMPTY").unwrap();
+        assert!(p.defs.contains_key("EMPTY"));
+        assert_eq!(expand("EMPTY",&p.defs,1).unwrap(),"");
+        for bad in ["","9BAD=1","BAD-NAME=1","F(x)=x","BAD=1\n#error x","BAD=1\r#error x","BAD=\0"] {
+            assert!(p.define_cli(bad).is_err(),"{:?}",bad);
+        }
+        assert!(p.origins.is_empty() && p.end_lines.is_empty());
+    }
+}

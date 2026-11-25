@@ -35,6 +35,13 @@ python3 tools/hbc_hbmk2.py extend/demo/extdemo.prg extend/demo/myext.c \
 `-I path` adds an include directory. The Harbour source directory is also searched
 for sibling includes. `--instrument` enables hbc's instrumented output.
 
+`-DNAME[=value]` (or `--define NAME[=value]`) passes an object-like macro
+explicitly to hbc, not to the external hbmk2 link project. Repeat for several
+macros. Bare names have an empty replacement, not `1`; macro names are
+case-sensitive. Source `#define`/`#undef` may replace/remove them. Only an ASCII
+identifier is accepted, not function-like definitions or multiline bodies.
+This is the adapter's own CLI, not full hbmk2 option compatibility.
+
 C inputs automatically include the milestone-1 bridge. For a precompiled C
 extension object, add `--bridge` explicitly:
 

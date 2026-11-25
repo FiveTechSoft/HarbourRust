@@ -40210,6 +40210,7 @@ fn main() {
     // Mach-O ARM64 EXTERNAL: install name of the extension dylib (C extension + hbhbr.c)
     let mut ext_dylib: Option<String> = None;
     let mut incdirs: Vec<String> = Vec::new();
+    let mut cli_defines: Vec<String> = Vec::new();
     let mut instrument = false;
     let mut llvm = false;
     let mut no_escape = false;
@@ -40246,6 +40247,8 @@ fn main() {
             "--no-vas-arrays" => no_vas = true,
             "--experimental-llvm" => llvm = true,
             "--experimental-llvm-no-trace" => {llvm = true; llvm_trace = false;},
+            "-D" | "-d" => { ai += 1; match args.get(ai) {Some(v)=>cli_defines.push(v.clone()),None=>{eprintln!("error: -D needs a definition");process::exit(2);}} }
+            _ if a.starts_with("-D") || a.starts_with("-d") => cli_defines.push(a[2..].to_string()),
             "-I" => { ai += 1; incdirs.push(args.get(ai).expect("-I needs a directory").clone()); }
             _ if a.starts_with("-I") => incdirs.push(a[2..].to_string()),
             "--version" => { println!("hbc {}", HBC_VERSION); process::exit(0); }
@@ -40254,6 +40257,7 @@ fn main() {
   --target overrides it; macho-arm64 emits a native Apple Silicon executable
   omitted output uses the input stem in the current directory (.exe on Windows target), preserving case
   output ending in .s writes assembly; any other name writes the selected target executable directly
+  -Dname[=value] or -D name[=value] defines an object-like macro before preprocessing; repeated names use the last value
   --hash-logical-case opts into logical hash flags and clear-preserve (ordinary Linux only)
   flag --external-as keeps the external as/ld path; --instrument, --no-arena, --no-prune, --no-peephole, --no-loopreg, --no-escape-analysis, --experimental-llvm[-no-trace]
   --harbour-rdd links Harbour 3.2's own VM + RDD for DBF access (Windows; needs MinGW gcc and --harbour-dir=<install> or HB_DIR; --harbour-dll links harbour-32-x64.dll)"); process::exit(2); }
@@ -40267,6 +40271,7 @@ fn main() {
   --target overrides it; macho-arm64 emits a native Apple Silicon executable
   omitted output uses the input stem in the current directory (.exe on Windows target), preserving case
   output ending in .s writes assembly; any other name writes the selected target executable directly
+  -Dname[=value] or -D name[=value] defines an object-like macro before preprocessing; repeated names use the last value
   --hash-logical-case opts into logical hash flags and clear-preserve (ordinary Linux only)
   flag --external-as keeps the external as/ld path; --instrument, --no-arena, --no-prune, --no-peephole, --no-loopreg, --no-escape-analysis, --experimental-llvm[-no-trace]
   --harbour-rdd links Harbour 3.2's own VM + RDD for DBF access (Windows; needs MinGW gcc and --harbour-dir=<install> or HB_DIR; --harbour-dll links harbour-32-x64.dll)");
@@ -40308,6 +40313,9 @@ fn main() {
     // line in the ORIGINAL file for the main input; lines injected by an
     // #include report against that include file.
     let mut pre = pp::Pp::new(incdirs, matches!(target, Target::Windows));
+    for definition in &cli_defines {
+        if let Err(m)=pre.define_cli(definition){eprintln!("error: {}",m);process::exit(2);}
+    }
     let mut src = String::new();
     if let Err(m) = pp::process(pos[0], &mut pre, &mut src, 0) {
         eprintln!("error: {}", m);

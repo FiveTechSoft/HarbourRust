@@ -58,6 +58,7 @@ def main(argv=None):
     p.add_argument("sources", nargs="+", help="one .prg/.prg, plus optional .c/.o files")
     p.add_argument("-o", "--output", required=True, help="native output executable")
     p.add_argument("-I", "--include", action="append", default=[])
+    p.add_argument("-D", "--define", action="append", default=[], help="object-like NAME[=value] passed to hbc only")
     p.add_argument("--hbc", default=str(ROOT / "hbc"))
     p.add_argument("--hbmk2", default="hbmk2", help="external official hbmk2 executable")
     p.add_argument("--assembler", default="as")
@@ -115,6 +116,8 @@ def main(argv=None):
             cmd.append("--instrument")
         for inc in [str(harbour[0].parent)] + include:
             cmd.extend(["-I", inc])
+        for definition in a.define:
+            cmd.append("-D" + definition)
         run(cmd, "hbc")
         run([assembler, "program.s", "-o", "program.o"], "assemble")
         objects = ["program.o"]
