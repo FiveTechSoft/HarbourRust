@@ -34,3 +34,10 @@ Every leaf is checked structurally before lowering, including unreachable
 owned leaves (still rejected). Gate now 12 fresh exact rows and 8 named
 LLVM rejections. Nested both-side choices, increments, empty/NUL, raw and
 formatted output, and repeated loop execution are checked.
+
+## Lazy error canaries
+
+Test-only: unselected nested conditions contain runtime lower/upper bound
+errors and minimum-overflow-sensitive increment of maxI64. No such condition
+runs; reached branches remain exact against fresh Harbour. Gate total now
+15 exact rows plus 8 named LLVM rejections. No compiler change.
