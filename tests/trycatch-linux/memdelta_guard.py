@@ -8,7 +8,7 @@ hbc_mem_allocs-hbc_mem_frees balance is written to stderr as
 'DELTA=<dec>\n' before exit(99); zero balance prints nothing and the
 program exits normally.
 """
-import pathlib, re, subprocess
+import pathlib, re, subprocess, json
 P = pathlib.Path
 
 DELTA_GUARD = ('    mov hbc_mem_allocs(%rip), %rax\n'
@@ -68,7 +68,10 @@ def emit_delta(compiler, env, exe_src, work, expected, include_dirs=()):
     record of the run. Raw stdout/stderr/rc of every step land in work."""
     work = P(work)
     def run(cmd, label):
-        r = subprocess.run(list(map(str, cmd)), cwd=work, env=env,
+        cmd = list(map(str, cmd))
+        (work / (label + '.command.json')).write_text(json.dumps(
+            dict(argv=cmd, cwd=str(work.resolve()), stdin='DEVNULL'), indent=2) + '\n')
+        r = subprocess.run(cmd, cwd=work, env=env,
                            capture_output=True, stdin=subprocess.DEVNULL, timeout=60)
         for k, v in [('stdout', r.stdout), ('stderr', r.stderr), ('rc', str(r.returncode).encode())]:
             (work / (label + '.' + k)).write_bytes(v)
