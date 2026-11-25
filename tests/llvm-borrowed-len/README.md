@@ -33,3 +33,13 @@ owned/mutable/runtime string admission. New empty/space/NUL/ASCII/UTF8
 and numeric/logical/control-context fixtures plus owned-subtree negative.
 Own gate: 9 fresh Harbour/native/LLVM exact rows, 6 named LLVM rejections.
 Broad current evidence is listed separately in the package summary.
+
+## Length-only lazy immutable selection
+
+Len can observe the byte length of a nested IIf whose leaves are pure
+immutable borrowed constant trees. Uses the existing pointer/length selector,
+not a general string value ABI. Only reached conditions execute once; every
+leaf must pass structural constant proof. Frontend heap moves are unchanged,
+so fixtures that reuse local leaves concatenate an empty string explicitly.
+Owned arms stay rejected even when unreachable. Gate total:12exact fresh
+Harbour/native/LLVM rows,8named LLVM rejections. No ownership/RC change.

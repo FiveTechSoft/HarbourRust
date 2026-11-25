@@ -213,6 +213,11 @@ impl Ir {
     let c=self.tmp();self.line(format!("{} = icmp {} i64 {}, {}",c,if is_builtin(n,"min"){"sle"}else{"sge"},a,b));
     let r=self.tmp();self.line(format!("{} = select i1 {}, i64 {}, i64 {}",r,c,a,b));r
    },
+   Expr::Call(n,args) if is_builtin(n,"len") && args.len()==1 && matches!(&args[0],Expr::Call(id,a) if is_builtin(id,"iif") && a.len()==3) && self.printable_constant_tree(&args[0])=>{
+    // Reuse lazy constant-only selection, observing its byte length only.
+    // The pointer is not exposed as a general string value or stored object.
+    self.print_constant_selection(&args[0])?.1
+   },
    Expr::Call(n,args) if is_builtin(n,"len") && args.len()==1=>{match &args[0] {
     Expr::Var(v) if self.asz.contains_key(v)=>self.asz[v].to_string(),
     e if self.borrowed_constant_tree(e).is_some()=>self.borrowed_constant_tree(e).unwrap().as_bytes().len().to_string(),
