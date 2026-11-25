@@ -44,7 +44,7 @@ neg tests/t40_for_assign_var.prg cannot assign to the `for` loop variable
 neg tests/t41_for_move.prg not reassigned before `next`
 pos2 tests/t42_for_exit_loop.prg tests/expectations/qout/t42_for_exit_loop.linux.out tests/expectations/qout/t42_for_exit_loop.windows.out
 neg tests/t43_for_step_zero.prg non-zero integer literal
-neg tests/t44_for_step_expr.prg non-zero integer literal
+pos2 tests/t44_for_step_expr.prg tests/t44_for_step_expr.out
 pos2 tests/t45_for_overflow_up.prg tests/expectations/qout/t45_for_overflow_up.linux.out tests/expectations/qout/t45_for_overflow_up.windows.out
 pos2 tests/t46_for_overflow_down.prg tests/expectations/qout/t46_for_overflow_down.linux.out tests/expectations/qout/t46_for_overflow_down.windows.out
 pos2 tests/t47_for_zero_down.prg tests/expectations/qout/t47_for_zero_down.linux.out tests/expectations/qout/t47_for_zero_down.windows.out

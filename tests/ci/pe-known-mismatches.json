@@ -177,6 +177,13 @@
       "stderr": "error: line 3: Dyn expression ++/-- requires ordinary Linux non-macro local storage; PRIVATE/PUBLIC, static, shared and byref storage are outside this increment\n",
       "source_sha256": "9214a921a519c97e5952d6f69f2a7efda0f398a4f65a326f04daeed9fafa86c4",
       "reason": "New Linux-only Dyn integer expression increment: NIL is a catchable/runtime kind error on Linux; PE remains an explicit compile-time profile limit. Not PE runtime support."
+    },
+    {
+      "kind": "pos2",
+      "source": "tests/t44_for_step_expr.prg",
+      "rc": 1,
+      "stderr": "error: line 4: dynamic FOR STEP requires ordinary Linux without threads/macros/shared captures\n",
+      "source_sha256": "f7dbac84fd1f7cd7bfb4537ea8c4cd40ba94f00de67368c1c6d9eabcc6e414ae"
     }
   ]
 }

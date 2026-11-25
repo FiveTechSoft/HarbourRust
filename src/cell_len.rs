@@ -28,7 +28,7 @@ pub fn analyze(ff:&[Func]) {
         Stmt::Print(_,aa,_)=>aa.iter().all(|e|ex(e,p)),
         Stmt::If(_,c,a,b)=>ex(c,p)&&safe(a,p)&&safe(b,p),
         Stmt::While(_,c,b)=>ex(c,p)&&safe(b,p),
-        Stmt::For(_,v,a,b,_,ss)=>v!=p&&ex(a,p)&&ex(b,p)&&safe(ss,p),
+        Stmt::For(_,v,a,b,c,ss)=>v!=p&&ex(a,p)&&ex(b,p)&&ex(c,p)&&safe(ss,p),
         Stmt::Try(_,b,c,f)=>safe(b,p)&&c.as_ref().map_or(true,|(id,b)|id.as_deref()!=Some(p)&&safe(b,p))&&f.as_ref().map_or(true,|b|safe(b,p)),
         Stmt::Ret(_,None)|Stmt::Exit(_)|Stmt::Loop(_)=>true,_=>false,
     })}

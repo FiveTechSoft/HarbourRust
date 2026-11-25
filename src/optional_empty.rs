@@ -36,7 +36,7 @@ fn safe_stmts(ss:&[Stmt],p:&str,locals:&[String],top:bool)->bool {
         Stmt::Ret(_,None)|Stmt::Exit(_)|Stmt::Loop(_)=>true,
         Stmt::If(_,e,a,b)=>safe_expr(e,p,locals)&&safe_stmts(a,p,locals,false)&&safe_stmts(b,p,locals,false),
         Stmt::While(_,e,ss)=>safe_expr(e,p,locals)&&safe_stmts(ss,p,locals,false),
-        Stmt::For(_,q,a,b,_,ss)=>q!=p&&!locals.contains(q)&&safe_expr(a,p,locals)&&safe_expr(b,p,locals)&&safe_stmts(ss,p,locals,false),
+        Stmt::For(_,q,a,b,c,ss)=>q!=p&&!locals.contains(q)&&safe_expr(a,p,locals)&&safe_expr(b,p,locals)&&safe_expr(c,p,locals)&&safe_stmts(ss,p,locals,false),
         _=>false,
     })
 }

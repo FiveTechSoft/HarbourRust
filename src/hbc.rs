@@ -894,7 +894,7 @@ fn proc_metadata_needed(funcs: &[Func], externs: bool) -> bool {
             Stmt::Ret(_,e) => e.as_ref().map_or(false,|e|expr(e,funcs)),
             Stmt::If(_,e,a,b) => expr(e,funcs)||stmts(a,funcs)||stmts(b,funcs),
             Stmt::While(_,e,b) => expr(e,funcs)||stmts(b,funcs),
-            Stmt::For(_,_,a,b,_,ss) => expr(a,funcs)||expr(b,funcs)||stmts(ss,funcs),
+            Stmt::For(_,_,a,b,c,ss) => expr(a,funcs)||expr(b,funcs)||expr(c,funcs)||stmts(ss,funcs),
             Stmt::Try(_,b,c,f) => stmts(b,funcs)||c.as_ref().map_or(false,|(_,cb)|stmts(cb,funcs))||f.as_ref().map_or(false,|fb|stmts(fb,funcs)),
             Stmt::CatchBind(..) => false,
             Stmt::Break(_,e) => expr(e,funcs),
@@ -1329,7 +1329,7 @@ enum Stmt {
     ASize(usize, String, Expr), // ASize(a, n): resize in place (probe d3)
     Exit(usize),                 // exit: leave the innermost loop
     Loop(usize),                 // loop: jump to the next iteration of the innermost loop
-    For(usize, String, Expr, Expr, i64, Vec<Stmt>), // line, var, start, end, step (non-zero literal), body
+    For(usize, String, Expr, Expr, Expr, Vec<Stmt>), // line, var, start, end, step expression, body
     ForEach(usize, String, Expr, Vec<Stmt>), // line, var, collection (borrowed), body
     Switch(usize, Expr, Vec<(usize, CaseLit, Vec<Stmt>)>, Option<(usize, Vec<Stmt>)>), // line, selector, case arms, otherwise
     Try(usize, Vec<Stmt>, Option<(Option<String>, Vec<Stmt>)>, Option<Vec<Stmt>>), // TRY body, CATCH (var, body), FINALLY body (Harbour BEGIN SEQUENCE semantics)
@@ -2159,7 +2159,7 @@ fn visit_stmts_mut(ss: &mut [Stmt], f: &mut dyn FnMut(&mut Expr, usize)) {
             Stmt::ArrSet3(_, _, a, b, c, d) | Stmt::AAddSub3(_, _, a, b, c, d) | Stmt::ASizeSub3(_, _, a, b, c, d) => { visit_expr_mut(a, ln, f); visit_expr_mut(b, ln, f); visit_expr_mut(c, ln, f); visit_expr_mut(d, ln, f); }
             Stmt::ArrSet4(_, _, a, b, c, d, g) => { visit_expr_mut(a, ln, f); visit_expr_mut(b, ln, f); visit_expr_mut(c, ln, f); visit_expr_mut(d, ln, f); visit_expr_mut(g, ln, f); }
             Stmt::AFill(_, _, v, a, b) => { visit_expr_mut(v, ln, f); if let Some(a) = a { visit_expr_mut(a, ln, f); } if let Some(b) = b { visit_expr_mut(b, ln, f); } }
-            Stmt::For(_, _, a, b, _, body) => { visit_expr_mut(a, ln, f); visit_expr_mut(b, ln, f); visit_stmts_mut(body, f); }
+            Stmt::For(_, _, a, b, step, body) => { visit_expr_mut(a, ln, f); visit_expr_mut(b, ln, f); visit_expr_mut(step, ln, f); visit_stmts_mut(body, f); }
             Stmt::ForEach(_, _, c, body) => { visit_expr_mut(c, ln, f); visit_stmts_mut(body, f); }
             Stmt::Switch(_, sel, arms, other) => { visit_expr_mut(sel, ln, f); for (_, _, b) in arms.iter_mut() { visit_stmts_mut(b, f); } if let Some((_, b)) = other { visit_stmts_mut(b, f); } }
             Stmt::Try(_, b, c, fin) => { visit_stmts_mut(b, f); if let Some((_, cb)) = c { visit_stmts_mut(cb, f); } if let Some(fb) = fin { visit_stmts_mut(fb, f); } }
@@ -2203,7 +2203,7 @@ fn visit_stmts_ref(ss: &[Stmt], fs: &mut dyn FnMut(&Stmt), f: &mut dyn FnMut(&Ex
             Stmt::ArrSet3(_, _, a, b, c, d) | Stmt::AAddSub3(_, _, a, b, c, d) | Stmt::ASizeSub3(_, _, a, b, c, d) => { visit_expr_ref(a, f); visit_expr_ref(b, f); visit_expr_ref(c, f); visit_expr_ref(d, f); }
             Stmt::ArrSet4(_, _, a, b, c, d, g) => { visit_expr_ref(a, f); visit_expr_ref(b, f); visit_expr_ref(c, f); visit_expr_ref(d, f); visit_expr_ref(g, f); }
             Stmt::AFill(_, _, v, a, b) => { visit_expr_ref(v, f); if let Some(a) = a { visit_expr_ref(a, f); } if let Some(b) = b { visit_expr_ref(b, f); } }
-            Stmt::For(_, _, a, b, _, body) => { visit_expr_ref(a, f); visit_expr_ref(b, f); visit_stmts_ref(body, fs, f); }
+            Stmt::For(_, _, a, b, step, body) => { visit_expr_ref(a, f); visit_expr_ref(b, f); visit_expr_ref(step, f); visit_stmts_ref(body, fs, f); }
             Stmt::ForEach(_, _, c, body) => { visit_expr_ref(c, f); visit_stmts_ref(body, fs, f); }
             Stmt::Switch(_, sel, arms, other) => { visit_expr_ref(sel, f); for (_, _, b) in arms.iter() { visit_stmts_ref(b, fs, f); } if let Some((_, b)) = other { visit_stmts_ref(b, fs, f); } }
             Stmt::Try(_, b, c, fin) => { visit_stmts_ref(b, fs, f); if let Some((_, cb)) = c { visit_stmts_ref(cb, fs, f); } if let Some(fb) = fin { visit_stmts_ref(fb, fs, f); } }
@@ -2584,7 +2584,7 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                     return Err(format!("line {}: Harbour requires EACH here: `for each <var> in <collection>` (without EACH it is its E0030 syntax error, oracle hk17)", n));
                 }
                 // for i := <start> to <end> [step <n>]
-                // Keep the existing compile-time non-zero i64 loop ABI.
+                // Constant and measured dynamic i64 STEP paths share the loop AST.
                 // Parsing first admits expressions already reduced to Int.
                 // Do not use fold_int: its Seq rule ignores prefix effects.
                 let id = match toks.get(1) {
@@ -2606,16 +2606,20 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                 let start = parse_expr_tokens(toks[3..to_pos].to_vec(), n)?;
                 let end = parse_expr_tokens(toks[to_pos + 1..end_slice_end].to_vec(), n)?;
                 let step = match step_pos {
-                    None => 1,
+                    None => Expr::Int("1".into()),
                     Some(p) => {
-                        match parse_expr_tokens(toks[p + 1..].to_vec(), n)? {
+                        let e=parse_expr_tokens(toks[p+1..].to_vec(),n)?;
+                        match &e {
                             Expr::Int(v) => match v.parse::<i64>() {
-                                Ok(s) if s != 0 => s,
-                                Ok(_) => return Err(format!("line {}: the `for` step must be a non-zero integer literal in this PoC", n)),
-                                Err(_) => return Err(format!("line {}: integer literal out of range (i64)", n)),
+                                Ok(s) if s!=0=>{},
+                                Ok(_)=>return Err(format!("line {}: the `for` step must be a non-zero integer literal in this PoC",n)),
+                                Err(_)=>return Err(format!("line {}: integer literal out of range (i64)",n)),
                             },
-                            _ => return Err(format!("line {}: the `for` step must be a non-zero integer literal in this PoC", n)),
+                            Expr::Var(_)=>{},
+                            Expr::Call(_,aa) if aa.is_empty()=>{},
+                            _=>return Err(format!("line {}: dynamic FOR STEP supports only an integer variable or zero-argument function call",n)),
                         }
+                        e
                     }
                 };
                 *i += 1;
@@ -3943,7 +3947,7 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
                         out.push(Stmt::Local(n, crname.clone(), args[3].clone()));
                     }
                     out.push(Stmt::If(n, Expr::Cmp(CmpOp::Ge, Box::new(Expr::Var(sname.clone())), Box::new(Expr::Int("1".to_string()))),
-                        vec![Stmt::For(n, iname.clone(), Expr::Var(sname.clone()), end_e, 1, loop_body)], vec![]));
+                        vec![Stmt::For(n, iname.clone(), Expr::Var(sname.clone()), end_e, Expr::Int("1".into()), loop_body)], vec![]));
                     *i += 1;
                     continue;
                 }
@@ -5898,11 +5902,12 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
                     walk(f, c, sigs, lit, pin, printed, *n)?;
                     walk_stmts(f, body, sigs, lit, pin, printed, nil_ret)?;
                 }
-                Stmt::For(n, _, a, b, _, body) => {
+                Stmt::For(n, _, a, b, step, body) => {
                     // for bounds are i64 by construction (integer counters
                     // only): they pin a parameter used as a bound (t61).
                     pin_vars(f, a, Ty::I64, pin, *n)?;
                     pin_vars(f, b, Ty::I64, pin, *n)?;
+                    pin_vars(f, step, Ty::I64, pin, *n)?; walk(f,step,sigs,lit,pin,printed,*n)?;
                     walk(f, a, sigs, lit, pin, printed, *n)?; walk(f, b, sigs, lit, pin, printed, *n)?;
                     walk_stmts(f, body, sigs, lit, pin, printed, nil_ret)?;
                 }
@@ -6495,7 +6500,7 @@ fn stmts_use_dbf(stmts: &[Stmt]) -> bool {
         Stmt::ArrSet4(_, _, a, b, c, d, e) => expr_uses_dbf(a) || expr_uses_dbf(b) || expr_uses_dbf(c) || expr_uses_dbf(d) || expr_uses_dbf(e),
         Stmt::If(_, c, t, el) => expr_uses_dbf(c) || stmts_use_dbf(t) || stmts_use_dbf(el),
         Stmt::While(_, c, b) => expr_uses_dbf(c) || stmts_use_dbf(b),
-        Stmt::For(_, _, a, b, _, body) => expr_uses_dbf(a) || expr_uses_dbf(b) || stmts_use_dbf(body),
+        Stmt::For(_, _, a, b, c, body) => expr_uses_dbf(a) || expr_uses_dbf(b) || expr_uses_dbf(c) || stmts_use_dbf(body),
         Stmt::ForEach(_, _, c, body) => expr_uses_dbf(c) || stmts_use_dbf(body),
         Stmt::Switch(_, sel, arms, otherwise) => expr_uses_dbf(sel) || arms.iter().any(|(_, _, b)| stmts_use_dbf(b)) || otherwise.as_ref().is_some_and(|(_, b)| stmts_use_dbf(b)),
         Stmt::Try(_, body, catch, finally) => stmts_use_dbf(body) || catch.as_ref().is_some_and(|(_, b)| stmts_use_dbf(b)) || finally.as_ref().is_some_and(|b| stmts_use_dbf(b)),
@@ -6583,7 +6588,7 @@ fn rewrite_field_stmts(stmts: &mut [Stmt], declared: &std::collections::HashSet<
             Stmt::ArrSet4(_, _, a, b, c, d, e) => { rewrite_field_expr(a, declared, shadows); rewrite_field_expr(b, declared, shadows); rewrite_field_expr(c, declared, shadows); rewrite_field_expr(d, declared, shadows); rewrite_field_expr(e, declared, shadows); }
             Stmt::If(_, c, t, el) => { rewrite_field_expr(c, declared, shadows); rewrite_field_stmts(t, declared, shadows); rewrite_field_stmts(el, declared, shadows); }
             Stmt::While(_, c, b) => { rewrite_field_expr(c, declared, shadows); rewrite_field_stmts(b, declared, shadows); }
-            Stmt::For(_, _, a, b, _, body) => { rewrite_field_expr(a, declared, shadows); rewrite_field_expr(b, declared, shadows); rewrite_field_stmts(body, declared, shadows); }
+            Stmt::For(_, _, a, b, c, body) => { rewrite_field_expr(a, declared, shadows); rewrite_field_expr(b, declared, shadows); rewrite_field_expr(c, declared, shadows); rewrite_field_stmts(body, declared, shadows); }
             Stmt::ForEach(_, _, c, body) => { rewrite_field_expr(c, declared, shadows); rewrite_field_stmts(body, declared, shadows); }
             Stmt::Switch(_, sel, arms, otherwise) => { rewrite_field_expr(sel, declared, shadows); for (_, _, b) in arms { rewrite_field_stmts(b, declared, shadows); } if let Some((_, b)) = otherwise { rewrite_field_stmts(b, declared, shadows); } }
             Stmt::Try(_, body, catch, finally) => { rewrite_field_stmts(body, declared, shadows); if let Some((_, b)) = catch { rewrite_field_stmts(b, declared, shadows); } if let Some(b) = finally { rewrite_field_stmts(b, declared, shadows); } }
@@ -6688,8 +6693,8 @@ fn borrow_stmts_ok(stmts: &[Stmt], pname: &str) -> Option<usize> {
             Stmt::While(n, c, b) => {
                 if !borrow_expr_ok(c, pname) { Some(*n) } else { borrow_stmts_ok(b, pname) }
             }
-            Stmt::For(n, lv, a, b, _, body) => {
-                if lv == pname || !borrow_expr_ok(a, pname) || !borrow_expr_ok(b, pname) { Some(*n) }
+            Stmt::For(n, lv, a, b, c, body) => {
+                if lv == pname || !borrow_expr_ok(a, pname) || !borrow_expr_ok(b, pname) || !borrow_expr_ok(c,pname) { Some(*n) }
                 else { borrow_stmts_ok(body, pname) }
             }
             Stmt::ForEach(n, lv, coll, body) => {
@@ -6794,7 +6799,7 @@ fn aview_stmts_safe(ss: &[Stmt], p: &str, sigs: &[Sig], strict: bool) -> bool {
         Stmt::CallStmt(_,e) => aview_expr_safe(e,p,sigs,strict,false,false),
         Stmt::If(_,c,a,b) => aview_expr_safe(c,p,sigs,strict,false,false) && aview_stmts_safe(a,p,sigs,strict) && aview_stmts_safe(b,p,sigs,strict),
         Stmt::While(_,c,b) => aview_expr_safe(c,p,sigs,strict,false,false) && aview_stmts_safe(b,p,sigs,strict),
-        Stmt::For(_,v,a,b,_,ss) => v != p && aview_expr_safe(a,p,sigs,strict,false,false) && aview_expr_safe(b,p,sigs,strict,false,false) && aview_stmts_safe(ss,p,sigs,strict),
+        Stmt::For(_,v,a,b,c,ss) => v != p && aview_expr_safe(c,p,sigs,strict,false,false) && aview_expr_safe(a,p,sigs,strict,false,false) && aview_expr_safe(b,p,sigs,strict,false,false) && aview_stmts_safe(ss,p,sigs,strict),
         // Unhandled operations reject the candidate conservatively. This
         // whitelist does not modify the existing mutable-borrow contract.
         _ => false,
@@ -6814,7 +6819,7 @@ fn aview_array_evidence(ss: &[Stmt], p: &str) -> bool {
         Stmt::Print(_,es,_) => es.iter().any(|a|ex(a,p)),
         Stmt::If(_,c,a,b) => ex(c,p)||aview_array_evidence(a,p)||aview_array_evidence(b,p),
         Stmt::While(_,c,b) => ex(c,p)||aview_array_evidence(b,p),
-        Stmt::For(_,_,a,b,_,ss) => ex(a,p)||ex(b,p)||aview_array_evidence(ss,p),
+        Stmt::For(_,_,a,b,c,ss) => ex(a,p)||ex(b,p)||ex(c,p)||aview_array_evidence(ss,p),
         _ => false,
     })
 }
@@ -11148,7 +11153,7 @@ fn foreach_coll_untouched(stmts: &[Stmt], name: &str) -> bool {
         Stmt::SendStmt(_, e) => expr_ok(e, name),
         Stmt::If(_, c, a, b) => expr_ok(c, name) && foreach_coll_untouched(a, name) && foreach_coll_untouched(b, name),
         Stmt::While(_, c, b) => expr_ok(c, name) && foreach_coll_untouched(b, name),
-        Stmt::For(_, _, a, b, _, body) => expr_ok(a, name) && expr_ok(b, name) && foreach_coll_untouched(body, name),
+        Stmt::For(_, _, a, b, c, body) => expr_ok(a, name) && expr_ok(b, name) && expr_ok(c,name) && foreach_coll_untouched(body, name),
         Stmt::ForEach(_, _, c, body) => expr_ok(c, name) && foreach_coll_untouched(body, name),
         Stmt::Print(_, items, _) => items.iter().all(|i| expr_ok(i, name)),
         Stmt::Ret(_, Some(e)) => expr_ok(e, name),
@@ -11313,7 +11318,7 @@ fn foreach_lv_int_ok(stmts: &[Stmt], name: &str) -> bool {
         Stmt::AAddSub3(_, id, _, _, _, _) | Stmt::ASizeSub3(_, id, _, _, _, _) => id != name,
         Stmt::If(_, c, a, b) => !targets(c, name) && foreach_lv_int_ok(a, name) && foreach_lv_int_ok(b, name),
         Stmt::While(_, c, b) => !targets(c, name) && foreach_lv_int_ok(b, name),
-        Stmt::For(_, lv, a, bnd, _, b) => lv != name && !targets(a, name) && !targets(bnd, name) && foreach_lv_int_ok(b, name),
+        Stmt::For(_, lv, a, bnd, c, b) => lv != name && !targets(a, name) && !targets(bnd, name) && !targets(c,name) && foreach_lv_int_ok(b, name),
         Stmt::ForEach(_, lv, _, b) => lv != name && foreach_lv_int_ok(b, name),
         Stmt::Print(_, es, _) => es.iter().all(|e| !targets(e, name)),
         Stmt::Ret(_, Some(e)) => !targets(e, name),
@@ -11731,8 +11736,8 @@ fn bare_local_is_tokens(stmts:&[Stmt],idx:usize,name:&str)->bool {
                 let ra=walk(a,name,ready,saw)?;let rb=walk(b,name,ready,saw)?;ready=ra&&rb;
             },
             Stmt::While(_,c,b)=> {if !ready&&expr_mentions(c,name){return None;}walk(b,name,ready,saw)?;},
-            Stmt::For(_,id,a,b,_,body)=> {
-                if id==name || (!ready&&(expr_mentions(a,name)||expr_mentions(b,name))){return None;}
+            Stmt::For(_,id,a,b,c,body)=> {
+                if id==name || (!ready&&(expr_mentions(a,name)||expr_mentions(b,name)||expr_mentions(c,name))){return None;}
                 walk(body,name,ready,saw)?;
             },
             Stmt::ForEach(_,id,c,body)=> {
@@ -11776,7 +11781,7 @@ fn bare_local_is_for_counter(stmts: &[Stmt], idx: usize, name: &str) -> bool {
                 return !expr_mentions(start, name) && !expr_mentions(end, name);
             }
             Stmt::For(_,outer,Expr::Int(start),Expr::Int(end),step,body)
-                if shared_local::active()&&outer!=name&&start.parse::<i64>().ok().zip(end.parse::<i64>().ok()).map_or(false,|(a,b)|if *step>0{a<=b}else{a>=b}) => {
+                if matches!(step,Expr::Int(_))&&shared_local::active()&&outer!=name&&start.parse::<i64>().ok().zip(end.parse::<i64>().ok()).map_or(false,|(a,b)|if matches!(step,Expr::Int(v)if v.parse::<i64>().map_or(false,|s|s>0)){a<=b}else{a>=b}) => {
                 if stmts_mention(body,name){return first_nested_counter(body,name);}
             }
             _ => {
@@ -11789,7 +11794,7 @@ fn bare_local_is_for_counter(stmts: &[Stmt], idx: usize, name: &str) -> bool {
     false
 }
 fn first_nested_counter(ss:&[Stmt],name:&str)->bool{
- for s in ss {if let Stmt::For(_,v,a,b,_,_)=s{if v==name{return !expr_mentions(a,name)&&!expr_mentions(b,name);}}
+ for s in ss {if let Stmt::For(_,v,a,b,c,_)=s{if v==name{return !expr_mentions(a,name)&&!expr_mentions(b,name)&&!expr_mentions(c,name);}}
  // Before the nested FOR, admit only initialized LOCAL/assignment
  // statements with leaf expressions or a fresh empty-array constructor.
  // The constructor cannot transfer control or invoke user code.
@@ -11899,8 +11904,9 @@ fn stmt_mentions(s: &Stmt, name: &str) -> bool {
                 || expr_mentions(k, name)
                 || expr_mentions(e, name)
         }
-        Stmt::For(_, lv, a, b, _, body) => {
+        Stmt::For(_, lv, a, b, c, body) => {
             lv == name
+                || expr_mentions(c,name)
                 || expr_mentions(a, name)
                 || expr_mentions(b, name)
                 || stmts_mention(body, name)
@@ -12287,7 +12293,16 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                     }
                 }
             }
-            Stmt::For(n, var, start, end, _step, body) => {
+            Stmt::For(n, var, start, end, step, body) => {
+                if !matches!(step,Expr::Int(_)) {
+                    if !CURDIR_LINUX_NATIVE.with(|v|v.get())||!DECIMAL_LOCAL_PROFILE.with(|v|v.get())||MACRO_CONTEXT.with(|v|v.get())||shared_local::active() {
+                        return Err(format!("line {}: dynamic FOR STEP requires ordinary Linux without threads/macros/shared captures",n));
+                    }
+                    let before=env.clone();
+                    if type_expr(step,env,sigs,*n)?!=Ty::I64 {return Err(format!("line {}: dynamic FOR STEP must be a typed integer",n));}
+                    apply_moves(step,env,sigs,false);
+                    if before.iter().zip(env.iter()).any(|(a,b)|!a.moved&&b.moved){return Err(format!("line {}: repeated FOR STEP cannot consume an owner",n));}
+                }
                 let ts = type_expr(start, env, sigs, *n)?;
                 apply_moves(start, env, sigs, false);
                 // type_expr itself can mark argument moves. Snapshot BEFORE
@@ -14384,7 +14399,8 @@ impl<'a> EscPass<'a> {
                     self.process_expr(c, &EscCtx::Observe, false, depth);
                     self.walk(b, depth + 1, true);
                 }
-                Stmt::For(_, v, a, b, _, body) => {
+                Stmt::For(_, v, a, b, c, body) => {
+                    self.process_expr(c, &EscCtx::Observe, false, depth);
                     self.process_expr(a, &EscCtx::Observe, false, depth);
                     self.process_expr(b, &EscCtx::Observe, false, depth);
                     self.note(v);
@@ -14808,7 +14824,8 @@ impl<'a> EligW<'a> {
                     self.walk(b, loop_stack);
                     loop_stack.pop();
                 }
-                Stmt::For(_, v, a, b, _, body) => {
+                Stmt::For(_, v, a, b, c, body) => {
+                    self.note_expr(c,line);
                     self.note_expr(a, line);
                     self.note_expr(b, line);
                     let end = max_line(body);
@@ -22692,7 +22709,7 @@ fn byref_names_in(stmts: &[Stmt]) -> std::collections::HashSet<String> {
                 Stmt::Print(_, es, _) => { for e in es { ex(e, out); } }
                 Stmt::If(_, c, t, el) => { ex(c, out); st(t, out); st(el, out); }
                 Stmt::While(_, c, b) => { ex(c, out); st(b, out); }
-                Stmt::For(_, _, a, b, _, body) => { ex(a, out); ex(b, out); st(body, out); }
+                Stmt::For(_, _, a, b, c, body) => { ex(a, out); ex(b, out); ex(c,out); st(body, out); }
                 Stmt::ForEach(_, _, c, body) => { ex(c, out); st(body, out); }
                 Stmt::Switch(_, sel, arms, otherwise) => { ex(sel, out); for (_, _, b) in arms { st(b, out); } if let Some((_, ob)) = otherwise { st(ob, out); } }
                 _ => {}
@@ -22775,7 +22792,7 @@ fn collect_byref_variants(funcs: &[Func]) -> std::collections::BTreeSet<(String,
                 Stmt::Print(_, es, _) => { for e in es { ex(e, out); } }
                 Stmt::If(_, c, t, el) => { ex(c, out); st(t, out); st(el, out); }
                 Stmt::While(_, c, b) => { ex(c, out); st(b, out); }
-                Stmt::For(_, _, a, b, _, body) => { ex(a, out); ex(b, out); st(body, out); }
+                Stmt::For(_, _, a, b, c, body) => { ex(a, out); ex(b, out); ex(c,out); st(body, out); }
                 Stmt::ForEach(_, _, c, body) => { ex(c, out); st(body, out); }
                 Stmt::Switch(_, sel, arms, otherwise) => { ex(sel, out); for (_, _, b) in arms { st(b, out); } if let Some((_, ob)) = otherwise { st(ob, out); } }
                 _ => {}
@@ -24665,8 +24682,8 @@ fn stmt_may_raise_or_call(s: &Stmt, env: &[CgLocal], sigs: &[Sig]) -> bool {
         }
         // Numeric context: For bounds are checked I64, but guard on the
         // type as well so no coercion helper can ever run untraced.
-        Stmt::For(_, _, a, b, _, _) => {
-            !(pure(a) && pure(b)
+        Stmt::For(_, _, a, b, c, _) => {
+            !(pure(a) && pure(b) && pure(c)
                 && expr_ty(a, env, sigs) == Ty::I64 && expr_ty(b, env, sigs) == Ty::I64)
         }
         Stmt::Exit(_) | Stmt::Loop(_) => false,
@@ -25328,7 +25345,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 let mark = env.len();
                 // START runs once. TO runs at every condition, including
                 // the final failed comparison (fresh Harbour differential).
-                // STEP is already a compile-time non-zero integer.
+                // Dynamic STEP is observed after TO and again at NEXT.
                 // Reuse (hk323): an already-visible integer slot is the
                 // counter; otherwise a fresh slot.
                 let dyn_counter=env.iter().rev().any(|v|v.name==*var&&v.ty==Ty::Dyn);
@@ -25354,10 +25371,11 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 out.push_str(&format!("    mov %rax, -{}(%rbp)\n", end_off));
                 out.push_str(&format!("    mov -{}(%rbp), %rax\n", if dyn_counter{i_off-8}else{i_off}));
                 out.push_str(&format!("    cmp -{}(%rbp), %rax\n", end_off));
-                if *step > 0 {
-                    out.push_str(&format!("    jg .Lfore_{}_{}\n", fname, id));
+                if let Expr::Int(v)=step {
+                    out.push_str(&format!("    {} .Lfore_{}_{}\n",if v.parse::<i64>().expect("checked")>0{"jg"}else{"jl"},fname,id));
                 } else {
-                    out.push_str(&format!("    jl .Lfore_{}_{}\n", fname, id));
+                    cg_value(step,env,sigs,strs,out,target);
+                    out.push_str(&format!("    test %rax, %rax\n    js .Lforneg_{fname}_{id}\n    mov -{counter}(%rbp), %rax\n    cmp -{end_off}(%rbp), %rax\n    jg .Lfore_{fname}_{id}\n    jmp .Lforbody_{fname}_{id}\n.Lforneg_{fname}_{id}:\n    mov -{counter}(%rbp), %rax\n    cmp -{end_off}(%rbp), %rax\n    jl .Lfore_{fname}_{id}\n.Lforbody_{fname}_{id}:\n",counter=if dyn_counter{i_off-8}else{i_off}));
                 }
                 if amem.is_some() { out.push_str("    call hbc_arena_mark\n"); }
                 let mut inner = flow.to_vec();
@@ -25374,7 +25392,11 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 }
                 env.truncate(mark);
                 out.push_str(&format!("    mov -{}(%rbp), %rax\n", if dyn_counter{i_off-8}else{i_off}));
-                out.push_str(&format!("    add ${}, %rax\n", step));
+                if let Expr::Int(v)=step {out.push_str(&format!("    add ${}, %rax\n",v));}
+                else {
+                    cg_value(step,env,sigs,strs,out,target);
+                    out.push_str(&format!("    add -{}(%rbp), %rax\n",if dyn_counter{i_off-8}else{i_off}));
+                }
                 // Advancing past the i64 range would wrap the counter and
                 // the loop would not terminate: overflow ends the loop.
                 out.push_str(&format!("    jo .Lfore_{}_{}\n", fname, id));
@@ -27818,7 +27840,7 @@ fn collect_blocks_stmts(stmts: &[Stmt], out: &mut Vec<(usize, Vec<String>, Vec<E
             Stmt::AAddSub3(_, _, ie, ie2, ie3, e) | Stmt::ASizeSub3(_, _, ie, ie2, ie3, e) => { collect_blocks_expr(ie, out); collect_blocks_expr(ie2, out); collect_blocks_expr(ie3, out); collect_blocks_expr(e, out); }
             Stmt::If(_, c, a, b) => { collect_blocks_expr(c, out); collect_blocks_stmts(a, out); collect_blocks_stmts(b, out); }
             Stmt::While(_, c, body) => { collect_blocks_expr(c, out); collect_blocks_stmts(body, out); }
-            Stmt::For(_, _, a, b, _, body) => { collect_blocks_expr(a, out); collect_blocks_expr(b, out); collect_blocks_stmts(body, out); }
+            Stmt::For(_, _, a, b, c, body) => { collect_blocks_expr(a, out); collect_blocks_expr(b, out); collect_blocks_expr(c,out); collect_blocks_stmts(body, out); }
             Stmt::ForEach(_, _, c, body) => { collect_blocks_expr(c, out); collect_blocks_stmts(body, out); }
             Stmt::Switch(_, sel, arms, otherwise) => { collect_blocks_expr(sel, out); for (_, _, b) in arms { collect_blocks_stmts(b, out); } if let Some((_, ob)) = otherwise { collect_blocks_stmts(ob, out); } }
         }
@@ -40044,7 +40066,7 @@ fn discover_root_params(fs:&[Func]) {
         Stmt::AFill(_,_,a,b,c)=>{ex(a,out);for e in [b,c].into_iter().flatten(){ex(e,out);}},
         Stmt::If(_,c,a,b)=>{ex(c,out);st(a,out);st(b,out);},
         Stmt::While(_,c,b)|Stmt::ForEach(_,_,c,b)=>{ex(c,out);st(b,out);},
-        Stmt::For(_,_,a,b,_,ss)=>{ex(a,out);ex(b,out);st(ss,out);},
+        Stmt::For(_,_,a,b,c,ss)=>{ex(a,out);ex(b,out);ex(c,out);st(ss,out);},
         Stmt::Switch(_,c,arms,other)=>{ex(c,out);for(_,_,b)in arms{st(b,out);}if let Some((_,b))=other{st(b,out);}},
         _=>{},
     }}}
@@ -40104,7 +40126,7 @@ fn validate_persistent(f:&Func)->Result<(),String> {
             Stmt::ArrSet(_,id,i,e) if roots.contains(id)=>ex(e,roots,false)&&ex(i,roots,false),
             Stmt::If(_,c,a,b)=>{walk(a,roots)?;walk(b,roots)?;ex(c,roots,false)},
             Stmt::While(_,c,b)=>{walk(b,roots)?;ex(c,roots,false)},
-            Stmt::For(_,_,a,b,_,body)=>{walk(body,roots)?;ex(a,roots,false)&&ex(b,roots,false)},
+            Stmt::For(_,_,a,b,c,body)=>{walk(body,roots)?;ex(a,roots,false)&&ex(b,roots,false)&&ex(c,roots,false)},
             Stmt::Switch(_,c,arms,other)=>{for(_,_,b)in arms{walk(b,roots)?;}if let Some((_,b))=other{walk(b,roots)?;}ex(c,roots,false)},
             _=>roots.iter().all(|r|!stmt_mentions(st,r)),
         };if !ok {return Err(format!("line {}: persistent tagged STATIC cannot escape, alias, borrow, or use an effectful index in this increment",stmt_line(st)));}}
@@ -40369,7 +40391,7 @@ fn main() {
                     Stmt::Assign(_,n,e) if bare.contains(n)&&matches!(&*e,Expr::Var(v)if known.contains(v))=>{
                         *e=Expr::Call("substr".to_string(),vec![e.clone(),Expr::Int("1".to_string())]);known.insert(n.clone());
                     },
-                    Stmt::For(_,v,start,end,_,body) if !known.contains(v)&&!known.iter().any(|n|expr_mentions(start,n)||expr_mentions(end,n))&&body.iter().all(|st|matches!(st,Stmt::Assign(_,n,Expr::Bin('+',a,b)) if known.contains(n)&&matches!(a.as_ref(),Expr::Var(v)if v==n)&&matches!(b.as_ref(),Expr::Var(v)if v==n)))=>{},
+                    Stmt::For(_,v,start,end,step,body) if !known.contains(v)&&!known.iter().any(|n|expr_mentions(start,n)||expr_mentions(end,n)||expr_mentions(step,n))&&body.iter().all(|st|matches!(st,Stmt::Assign(_,n,Expr::Bin('+',a,b)) if known.contains(n)&&matches!(a.as_ref(),Expr::Var(v)if v==n)&&matches!(b.as_ref(),Expr::Var(v)if v==n)))=>{},
                     st=>{let mut touched=Vec::new();for n in &known {if stmt_mentions(st,n){touched.push(n.clone());}}for n in touched {known.remove(&n);}}
                 }
             }
@@ -40459,7 +40481,7 @@ fn main() {
                 Stmt::Print(_, es, _) => { for e in es { scan_byref_expr(e, cur, params, names, variants); } }
                 Stmt::If(_, c, t, el) => { scan_byref_expr(c, cur, params, names, variants); scan_byref_stmts(t, cur, params, names, variants); scan_byref_stmts(el, cur, params, names, variants); }
                 Stmt::While(_, c, b) => { scan_byref_expr(c, cur, params, names, variants); scan_byref_stmts(b, cur, params, names, variants); }
-                Stmt::For(_, _, a, b, _, body) => { scan_byref_expr(a, cur, params, names, variants); scan_byref_expr(b, cur, params, names, variants); scan_byref_stmts(body, cur, params, names, variants); }
+                Stmt::For(_, _, a, b, c, body) => { scan_byref_expr(c,cur,params,names,variants); scan_byref_expr(a, cur, params, names, variants); scan_byref_expr(b, cur, params, names, variants); scan_byref_stmts(body, cur, params, names, variants); }
                 Stmt::ForEach(_, _, c, body) => { scan_byref_expr(c, cur, params, names, variants); scan_byref_stmts(body, cur, params, names, variants); }
                 Stmt::Switch(_, sel, arms, otherwise) => { scan_byref_expr(sel, cur, params, names, variants); for (_, _, b) in arms { scan_byref_stmts(b, cur, params, names, variants); } if let Some((_, ob)) = otherwise { scan_byref_stmts(ob, cur, params, names, variants); } }
                 _ => {}
