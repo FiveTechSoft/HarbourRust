@@ -261,6 +261,7 @@ impl Ir {
  }
  fn isbool(&self,e:&Expr)->bool {match e {Expr::Set(_,rhs)=>self.isbool(rhs),Expr::Seq(es)=>es.last().map(|e|self.isbool(e)).unwrap_or(false),Expr::Log(_)|Expr::Cmp(..)|Expr::LNot(_)|Expr::LAnd(..)|Expr::LOr(..)=>true,Expr::Var(n)=>self.bools.contains(n),Expr::Call(n,_) if self.bool_returns.contains(n)=>true,Expr::Call(n,_) if is_builtin(n,"hb_bittest")||is_builtin(n,"empty")||["isdigit","isalpha","isupper","islower"].iter().any(|b|is_builtin(n,b))=>true,Expr::Call(n,a) if is_builtin(n,"iif") && a.len()==3=>self.isbool(&a[1]),Expr::Call(n,a) if (is_builtin(n,"min")||is_builtin(n,"max")) && a.len()==2=>self.isbool(&a[0]),_=>false}}
  fn cond(&mut self,e:&Expr)->Result<String,String>{let v=self.expr(e)?;let c=self.tmp();self.line(format!("{} = icmp ne i64 {}, 0",c,v));Ok(c)}
+ fn linux_console(&self)->bool {cfg!(target_os="linux") && !self.windows && !THREADS.with(|v|v.get())}
  fn print_items(&mut self,es:&[Expr],inline:bool,raw:bool)->Result<(),String>{
   // Evaluate every item before emitting the outer newline or separator.
   let mut vals=Vec::new();
@@ -308,34 +309,29 @@ impl Ir {
     }
    }
   }
-  // GTSTD trailing-space hold (same contract as the default backend):
-  // `?` drops the held spaces of the previous line and writes the leading
-  // newline; `??` emits NOTHING at fragment start (an empty `??` must not
-  // flush); OutStd drops the hold. Separators between formatted items are
-  // deferred into the hold (rt_psep: pending += 1) so a trailing all-space
-  // or empty item takes the separator with it; EVERY formatted string
-  // prints through rt_pstrt (right-trim + hold), which re-emits the held
-  // spaces and separators before its first visible byte. Numbers flush
-  // the hold before printing. At program exit an unresolved hold is
-  // simply never emitted.
+  // Linux-host Linux AOT shares the existing native GTSTD renderer.
+  // Its screen/flush state spans statements; raw OutStd stays outside it.
+  // Other hosts/targets retain their prior trailing-space-hold protocol.
+  if self.linux_console() && !raw {self.line("call void @rt_console_begin()".into());}
   if !inline{
    // Windows (Harbour 3.2 GTCGI) writes the held spaces at the newline;
    // Linux keeps the measured drop. Same split as the default backend.
-   self.line(if self.windows{"call void @rt_pflush()".into()}else{"call void @rt_pdrop()".into()});
+   if self.windows {self.line("call void @rt_pflush()".into());}else if !self.linux_console(){self.line("call void @rt_pdrop()".into());}
    self.line("call void @rt_nl()".into());
   }
-  else if raw{self.line("call void @rt_pdrop()".into());}
+  else if raw && !self.linux_console(){self.line("call void @rt_pdrop()".into());}
   for(i,(v,len,lit))in vals.iter().enumerate(){
-   if i>0{self.line(if raw{"call void @rt_sep()".into()}else{"call void @rt_psep()".into()});}
+   if i>0{self.line(if raw || self.linux_console(){"call void @rt_sep()".into()}else{"call void @rt_psep()".into()});}
    if let Some(n)=len{
     if !raw{self.line(format!("call void @rt_pstrt(ptr {}, i64 {})",v,n));}
     else{self.line(format!("call void @rt_str(ptr {}, i64 {})",v,n));}
    }
    else{
-    if !raw{self.line("call void @rt_pflush()".into());}
+    if !raw && !self.linux_console(){self.line("call void @rt_pflush()".into());}
     self.line(format!("call void @rt_{}(i64 {})",if *lit{"int"}else{"computed"},v));
    }
   }
+  if self.linux_console() && !raw {self.line("call void @rt_console_end()".into());}
   Ok(())
  }
  fn check_dead(&self,ss:&[Stmt])->Result<(),String>{
@@ -456,5 +452,5 @@ pub fn emit(funcs:&[Func],sigs:&[Sig],target:Target,traced:bool)->Result<String,
  let mut ir=Ir{trace_texts:Default::default(),strings:Default::default(),windows:matches!(target,Target::Windows),voids,void_return:false,out:String::new(),n:0,label:0,vars:Default::default(),arrays:Default::default(),asz:Default::default(),globals:Vec::new(),allocas:Vec::new(),sig_names:funcs.iter().map(|f|f.name.clone()).collect(),bool_returns:sigs.iter().filter(|s|matches!(s.ret,Some(Ty::Bool))).map(|s|s.name.clone()).collect(),bools:Default::default(),traced,frame:String::new(),fname:String::new(),current_line:0,loops:Vec::new()};
  for f in funcs{ir.strings.clear();ir.vars.clear();ir.arrays.clear();ir.asz.clear();ir.bools.clear();ir.allocas.clear();ir.fname=f.name.clone();ir.void_return=ir.voids.contains(&f.name);let begin=ir.out.len();ir.out.push_str(&format!("define {} @ll_{}({}) {{\nentry:\n",if ir.void_return{"void"}else{"i64"},f.name,f.params.iter().enumerate().map(|(i,_)|format!("i64 %arg{}",i)).collect::<Vec<_>>().join(", ")));if traced {ir.frame=ir.tmp();ir.line(format!("{} = alloca [3 x i64]",ir.frame));let old=ir.tmp();ir.line(format!("{} = load ptr, ptr @hbc_trace_top",old));ir.line(format!("store ptr {}, ptr {}",old,ir.frame));let text=ir.tmp();let len=ir.tmp();ir.line(format!("{} = getelementptr [3 x i64], ptr {}, i64 0, i64 1",text,ir.frame));ir.line(format!("{} = getelementptr [3 x i64], ptr {}, i64 0, i64 2",len,ir.frame));ir.line(format!("store ptr null, ptr {}",text));ir.line(format!("store i64 0, ptr {}",len));ir.line(format!("store volatile ptr {}, ptr @hbc_trace_top",ir.frame));}ir.trace_at(f.stmts.first().map(stmt_line).unwrap_or(0));for n in &f.params{let p=ir.tmp();ir.line(format!("{} = alloca i64",p));ir.vars.insert(n.clone(),p);}for(i,p)in f.params.iter().enumerate(){if matches!(sigs.iter().find(|s|s.name==f.name).unwrap().params[i],Ty::Bool){ir.bools.insert(p.clone());}let ptr=ir.ptr(p)?;ir.line(format!("store i64 %arg{}, ptr {}",i,ptr));}if !ir.stmts(&f.stmts)?{ir.unlink();ir.line(if ir.void_return{"ret void".into()}else{"ret i64 0".into()});}let idx=begin+ir.out[begin..].find("entry:\n").unwrap()+7;ir.out.insert_str(idx,&ir.allocas.concat());ir.out.push_str("}\n");}
  // The experimental AOT linker includes the trace global in this executable; no DSO runtime.
- Ok(format!("{}\n{}\n@hbc_trace_top = external dso_local global ptr\ndeclare void @rt_inc_error() noreturn\ndeclare void @rt_bound_error() noreturn\ndeclare void @rt_nl()\ndeclare void @rt_sep()\ndeclare void @rt_str(ptr, i64)\ndeclare void @rt_pstrt(ptr, i64)\ndeclare void @rt_pflush()\ndeclare void @rt_pdrop()\ndeclare void @rt_psep()\ndeclare void @rt_int(i64)\ndeclare void @rt_computed(i64)\ndeclare {{i64,i1}} @llvm.sadd.with.overflow.i64(i64,i64)\n",ir.globals.join("\n"),ir.out))
+ Ok(format!("{}\n{}\n@hbc_trace_top = external dso_local global ptr\ndeclare void @rt_inc_error() noreturn\ndeclare void @rt_bound_error() noreturn\ndeclare void @rt_console_begin()\ndeclare void @rt_console_end()\ndeclare void @rt_nl()\ndeclare void @rt_sep()\ndeclare void @rt_str(ptr, i64)\ndeclare void @rt_pstrt(ptr, i64)\ndeclare void @rt_pflush()\ndeclare void @rt_pdrop()\ndeclare void @rt_psep()\ndeclare void @rt_int(i64)\ndeclare void @rt_computed(i64)\ndeclare {{i64,i1}} @llvm.sadd.with.overflow.i64(i64,i64)\n",ir.globals.join("\n"),ir.out))
 }
