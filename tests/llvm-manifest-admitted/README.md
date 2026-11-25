@@ -95,3 +95,10 @@ Compilerac70cc8d99fa478cb4e8537f555c8c89f7e7507047abab522dcd83b5b7943fad.
 Fresh four-shard scan1185,371admitted,814rejected;all371native/traced/
 untracedtriples exact against repository manifest,1113triples total.
 No resumedrecords or freshHarbour/fulloracleclaim.No compiler change.
+
+## Fresh length-only selection execution
+
+Compiler98f1af4edb43601f1a585b2adcdf9e6129a8770c1c113488292c6114751a9aed.
+Fresh four-shard scan1185,371admitted,814rejected;all371native/traced/
+untracedtriples exact against repository manifest,1113triples total.
+No resumedrecords or freshHarbour/fulloracleclaim.No compiler change.
