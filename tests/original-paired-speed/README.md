@@ -155,3 +155,24 @@ Medians ms Harbour/HarbourRust,ratio:
 longstr2 loss retained,HarbourRust about12-13%more process time. Startup,
 capturedoutput,shutdown included,no algorithm-only/universal or historical
 regression claim. No host/frequency isolation. No implementation/globalrepeat.
+
+## Fresh immutable string-tree frontier measurement
+
+Compiler 51e8ddf1eb012114ec5c1f0dab6af9b0d45cc996cbbda1c0c065ccc094760bfe.
+Two independent 101-pair runs per unedited fib/recursiv/longstr2 source,
+5 warmups per engine/source, alternating order and shared one-CPU affinity.
+Every rc/stdout/stderr triple matched fresh Harbour: 1212 timed executions
+and 60 warmups. Process startup/capture/shutdown included; shared-host
+noise remains. No isolated-algorithm or universal speed claim.
+
+Run 1:
+- fib.prg: Harbour 8.193198 ms, HarbourRust 2.752782 ms; Harbour/HarbourRust 2.976x.
+- recursiv.prg: Harbour 2.634663 ms, HarbourRust 1.410558 ms; Harbour/HarbourRust 1.868x.
+- longstr2.prg: Harbour 4.800236 ms, HarbourRust 5.308381 ms; Harbour/HarbourRust 0.904x.
+Run 2:
+- fib.prg: Harbour 8.171385 ms, HarbourRust 2.733097 ms; Harbour/HarbourRust 2.990x.
+- recursiv.prg: Harbour 2.604853 ms, HarbourRust 1.400300 ms; Harbour/HarbourRust 1.860x.
+- longstr2.prg: Harbour 4.911755 ms, HarbourRust 5.439016 ms; Harbour/HarbourRust 0.903x.
+
+The longstr2 loss remains reported. Test-only evidence refresh; no compiler
+change. Broad regressions belong to the preceding implementation increment.
