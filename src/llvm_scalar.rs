@@ -147,6 +147,11 @@ impl Ir {
     // needle is absent, unlike the usual empty-substring convention.
     if needle.is_empty(){"0".into()}else{haystack.as_bytes().windows(needle.len()).position(|w|w==needle.as_bytes()).map(|i|i+1).unwrap_or(0).to_string()}
    },
+   Expr::Call(n,args) if is_builtin(n,"int") && args.len()==1=>{
+    // Existing LLVM scalar expressions are I64. Do not erase evaluation:
+    // calls, sequence effects and checked increments execute exactly once.
+    self.expr(&args[0])?
+   },
    Expr::Call(n,args) if is_builtin(n,"asc") && args.len()==1=>{
     let text=match &args[0] {Expr::Var(v)=>self.strings.get(v).cloned(),e=>borrowed_constant(e)};
     match text {Some(text)=>text.as_bytes().first().copied().unwrap_or(0).to_string(),None=>return Err("LLVM scalar: Asc only on immutable borrowed constant strings".into())}

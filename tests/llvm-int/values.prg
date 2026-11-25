@@ -1,0 +1,8 @@
+FUNCTION Main()
+LOCAL n:=0,low:=-9223372036854775807
+low-=1
+? Int(0),Int(-1),Int(17),Int(9223372036854775807),Int(low)
+FOR n:=-4 TO 4
+ ? Int(n),Int(n*n-3)
+NEXT
+RETURN NIL

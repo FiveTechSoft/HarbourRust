@@ -1,0 +1,10 @@
+FUNCTION mark(n)
+? n
+RETURN n+0
+FUNCTION Main()
+LOCAL x:=0,a:={-7,4,12}
+? Int(++x),x,Int(x++),x
+? Int((x++,x+7)),x
+? Int(mark(8)),Int(mark(-2))
+? Int(a[2]),Int(IIf(x>0,mark(11),mark(99)))
+RETURN NIL

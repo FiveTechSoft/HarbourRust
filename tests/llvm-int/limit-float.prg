@@ -1,0 +1,3 @@
+FUNCTION Main()
+? Int(1.5)
+RETURN NIL
