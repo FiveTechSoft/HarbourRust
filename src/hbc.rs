@@ -11701,6 +11701,16 @@ fn scalar_cell_store_index(e:&Expr,env:&[Local])->bool {
 fn constant_afill(e:&Expr)->bool {
     matches!(e,Expr::Call(id,aa) if is_builtin(id,"afill") && matches!(aa.as_slice(),[Expr::Call(ar,dims),Expr::Int(_)|Expr::Log(_)|Expr::Nil] if is_builtin(ar,"array") && matches!(dims.as_slice(),[Expr::Int(n)] if n.parse::<i64>().map_or(false,|n|n>=0))))
 }
+// Initial NIL is unobservable only when a top-level constant nested store
+// dominates every mention. No calls/control flow before that store.
+fn bare_local_is_nested_i64_array(stmts:&[Stmt],idx:usize,name:&str)->bool {
+    if !CURDIR_LINUX_NATIVE.with(|v|v.get())||!DECIMAL_LOCAL_PROFILE.with(|v|v.get())||MACRO_CONTEXT.with(|v|v.get())||shared_local::active(){return false;}
+    for st in &stmts[idx+1..] {match st {
+        Stmt::Assign(_,id,Expr::ArrLit(rows)) if id==name=>return !rows.is_empty()&&rows.iter().all(|r|matches!(r,Expr::ArrLit(es)if !es.is_empty()&&es.iter().all(|e|matches!(e,Expr::Int(v)if v.parse::<i64>().is_ok())))),
+        Stmt::Local(_,id,e)|Stmt::Assign(_,id,e) if id!=name&&!expr_mentions(e,name)&&counter_prefix_pure(e)=>{},
+        _=>return false,
+    }}false
+}
 fn bare_local_is_fresh_array(stmts:&[Stmt],idx:usize,name:&str)->bool {
     if !CURDIR_LINUX_NATIVE.with(|v|v.get()) || !DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get()) || shared_local::active(){return false;}
     for s in &stmts[idx+1..] {
@@ -12085,6 +12095,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                 let t = if t==Ty::Dyn && matches!(e,Expr::Nil) && !byref_names.contains(id)
                     && bare_local_is_fresh_array(stmts,si,id) {Ty::DArr} else {t};
                 let t=if t==Ty::Dyn && matches!(e,Expr::Nil) && !byref_names.contains(id) && bare_local_is_tokens(stmts,si,id){Ty::DArrS}else{t};
+                let t=if t==Ty::Dyn&&matches!(e,Expr::Nil)&&!byref_names.contains(id)&&bare_local_is_nested_i64_array(stmts,si,id){Ty::DArr2}else{t};
                 env.push(Local { name: id.clone(), ty: t, moved: false, ro: false, byref: false });
                 // Object narrowing handoff, recorded AT the narrowing
                 // (a declaration inside a loop body leaves the final env
@@ -23197,6 +23208,7 @@ fn layout_locals(stmts: &[Stmt], env: &mut Vec<CgLocal>, sigs: &[Sig], frame: &m
                 if t == Ty::Dyn && matches!(e, Expr::Nil) && !byref_names.contains(id) && bare_local_is_for_counter(stmts, si, id) { t = Ty::I64; }
                 if t==Ty::Dyn && matches!(e,Expr::Nil) && !byref_names.contains(id) && bare_local_is_fresh_array(stmts,si,id) {t=Ty::DArr;}
                 if t==Ty::Dyn && matches!(e,Expr::Nil) && !byref_names.contains(id) && bare_local_is_tokens(stmts,si,id){t=Ty::DArrS;}
+                if t==Ty::Dyn&&matches!(e,Expr::Nil)&&!byref_names.contains(id)&&bare_local_is_nested_i64_array(stmts,si,id){t=Ty::DArr2;}
                 // Object narrowing handoff (see OBJ_NARROW): the slot is
                 // the 8-byte object casilla the checker settled on.
                 if let Some(ci) = OBJ_NARROW.with(|m| m.borrow().get(&(CUR_FN.with(|c| c.borrow().clone()), id.clone())).copied()) { t = Ty::Obj(ci); }
@@ -24868,11 +24880,14 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 if bare_arr {t=Ty::DArr;}
                 let bare_tokens=t==Ty::Dyn && matches!(e,Expr::Nil) && !byref_names.contains(id) && bare_local_is_tokens(stmts,si,id);
                 if bare_tokens {t=Ty::DArrS;}
+                let bare_nested=t==Ty::Dyn&&matches!(e,Expr::Nil)&&!byref_names.contains(id)&&bare_local_is_nested_i64_array(stmts,si,id);
+                if bare_nested{t=Ty::DArr2;}
                 // Same object-narrowing handoff as layout_locals.
                 if let Some(ci) = OBJ_NARROW.with(|m| m.borrow().get(&(CUR_FN.with(|c| c.borrow().clone()), id.clone())).copied()) { t = Ty::Obj(ci); }
                 *frame += size_of(t);
                 let off = *frame;
-                if bare_cnt || bare_arr || bare_tokens {
+                if bare_cnt || bare_arr || bare_tokens || bare_nested {
+                    if bare_nested{out.push_str(&format!("    mov -{}(%rbp), %rdi\n    test %rdi, %rdi\n    je 84f\n    mov -{}(%rbp), %rsi\n    call hbc_free2\n84:\n",off,off-8));}
                     if bare_arr {
                         // AFill's delayed LOCAL has the same repeated-entry
                         // lifetime as the token-array slot below.
