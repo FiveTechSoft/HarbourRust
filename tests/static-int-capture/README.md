@@ -21,3 +21,12 @@ so it was renamed VisitCounter; two resource-killed builds produced no
 current binary claim. Final evidence must match the fresh successful build.
 Black-box oracle https://github.com/harbour/core.git at
 694428e1c12f726675b19324d62167fa77d68185.
+
+Capture-boundary diagnostic follow-up: ordinary local/mixed captures now
+carry the persistent integer Eval guard name while retaining the historical
+capture-error prefix. Nested STATIC references have an explicit environment
+boundary before recursive block typing. No new capture admitted. The six
+limit fixtures assert these diagnostics, including nested blocks. Linux-only
+diagnostic changes are expected in five existing negative fixtures; Windows
+stays unchanged. Broad gates on the previous compiler do not imply gates on
+this diagnostic follow-up.

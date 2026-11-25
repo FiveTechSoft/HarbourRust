@@ -10952,10 +10952,24 @@ fn check_block_body(id: usize, params: &[String], body: &[Expr], env: &[Local], 
     // A process-static integer needs no detached environment: capture its
     // canonical address, not an owner-frame value. Keep AScan/ASort on
     // their existing read-only capture path and reject mixed local captures.
+    let mut nested_static=false;
+    for e in body {visit_expr_ref(e,&mut |e|if let Expr::BlockLit(_,ps,es)=e {
+        for e in es {let mut ns=Vec::new();free_vars(e,&mut ns);if ns.iter().any(|v|!ps.contains(v)&&module_static::current_integer_slot(v)){nested_static=true;}}
+    });}
+    if CAPTURE_MODE.get().is_none() && nested_static && CURDIR_LINUX_NATIVE.with(|v|v.get()) && !MACRO_CONTEXT.with(|v|v.get()) {
+        return Err(format!("line {}: persistent integer Eval capture guard: nested STATIC references need a separate environment",n));
+    }
     let mut static_names=Vec::new();
     for e in body {let mut found=Vec::new();free_vars(e,&mut found);for v in found {if !params.contains(&v) && !static_names.contains(&v) {static_names.push(v);}}}
     let static_only = CAPTURE_MODE.get().is_none() && !static_names.is_empty() && static_names.iter().all(|v|module_static::current_integer_slot(v))
         && CURDIR_LINUX_NATIVE.with(|v|v.get()) && !MACRO_CONTEXT.with(|v|v.get());
+    // Name this boundary before the historical no-capture fallback. A
+    // mixed frame/static block must never be accepted as a static snapshot.
+    if CAPTURE_MODE.get().is_none() && !static_only && !static_names.is_empty()
+        && CURDIR_LINUX_NATIVE.with(|v|v.get()) && !MACRO_CONTEXT.with(|v|v.get()) {
+        let unsupported=static_names.iter().find(|v|!module_static::current_integer_slot(v)).unwrap_or(&static_names[0]);
+        return Err(format!("line {}: codeblock captures are not in this increment (`{}` is not a codeblock parameter); persistent integer Eval capture guard: local and mixed captures need a separate environment",n,unsupported));
+    }
     if static_only {PERSISTENT_INTEGER_BLOCKS.with(|v|{v.borrow_mut().insert(id);});}
     if CAPTURE_MODE.get().is_some() || static_only {
         for e in body {
