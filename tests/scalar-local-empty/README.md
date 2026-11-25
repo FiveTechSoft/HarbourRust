@@ -26,3 +26,12 @@ its separate integer/float limit assignment. NoASort,numericarraydivision,
 RC/object-lifetime expansion,push/publication/workflows/rebase.
 Oracle694428e1,JulioPonceMIT specifications credited,no implementation
 or cambio.diff copied.
+
+## Promoted legacy negative fixture
+
+foreach-empty/limit-local.prg is an intentional newly admitted ownfixture
+under this literal-scalar proof. Follow-up updates its gate to exactoracle
+positive while preserving source/path and adding computedDyn rejection.
+Prior26-suite replay did not include foreach-empty;it was insufficient to
+catch this stale expectation. Do not treat that replay as fullhistorical
+coverage. The independent bridge correctly blocked publication.
