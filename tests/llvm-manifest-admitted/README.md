@@ -81,3 +81,10 @@ Compiler9b50d99477f2ce40b86360f7b4cc926d889f3fd7be585bf321fe8af77f0edbbe.
 Fresh four-shard scan1185,371admitted,814rejected; all371native/traced/
 untraced triples exact against repository manifest,1113triples total.
 No resumed records or freshHarbour/fulloracle claim.No compiler change.
+
+## Fresh immutable string/NIL execution
+
+Compiler61b28c969359680cfec4fcc48450aa3b0143c8f0b3b0e9fc0c06db640f07c33a.
+Fresh four-shard scan1185,371admitted,814rejected; all371native/traced/
+untraced triples exact against repository manifest,1113triples total.
+No resumed records or freshHarbour/fulloracle claim.No compiler change.

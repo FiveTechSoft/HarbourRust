@@ -276,3 +276,23 @@ Run b:
 - longstr2.prg: Harbour 5.113305ms; HarbourRust 5.540854ms;ratio 0.923x.
 
 longstr2 loss retained.Tests-only,no compiler change.
+
+## Fresh immutable string/NIL process measurements
+
+Compiler61b28c969359680cfec4fcc48450aa3b0143c8f0b3b0e9fc0c06db640f07c33a.
+Two independent101pair runs per source,fivewarmups per engine/source,
+alternatingorder,sameoneCPUaffinity;1212timed+60warm exacttriples
+againstfreshHarbour.Startup/capture/shutdown included,sharedhostnoise.
+No algorithm-only/universalclaim.
+
+Run a:
+- fib.prg: Harbour 8.591425ms; HarbourRust 2.875618ms;ratio 2.988x.
+- recursiv.prg: Harbour 2.699734ms; HarbourRust 1.424625ms;ratio 1.895x.
+- longstr2.prg: Harbour 6.291288ms; HarbourRust 7.075197ms;ratio 0.889x.
+
+Run b:
+- fib.prg: Harbour 8.529706ms; HarbourRust 2.881261ms;ratio 2.960x.
+- recursiv.prg: Harbour 2.962298ms; HarbourRust 1.549211ms;ratio 1.912x.
+- longstr2.prg: Harbour 5.122679ms; HarbourRust 5.729829ms;ratio 0.894x.
+
+longstr2 loss retained.Tests-only,no compiler change.
