@@ -1,0 +1,7 @@
+PROCEDURE Main()
+? "main"
+QUIT
+RETURN
+EXIT PROCEDURE Hook()
+? "exit"
+RETURN

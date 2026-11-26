@@ -1,0 +1,3 @@
+PROCEDURE Main()
+ErrorLevel(NIL)
+RETURN

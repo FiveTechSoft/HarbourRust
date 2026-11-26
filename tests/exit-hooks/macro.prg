@@ -1,0 +1,7 @@
+PROCEDURE Main()
+LOCAL s:="1"
+? &s
+RETURN
+EXIT PROCEDURE Hook()
+? "exit"
+RETURN

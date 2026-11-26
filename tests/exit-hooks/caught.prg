@@ -1,0 +1,10 @@
+PROCEDURE Main()
+BEGIN SEQUENCE WITH {|e| Break(e)}
+Break("caught")
+RECOVER USING e
+? e
+END SEQUENCE
+RETURN
+EXIT PROCEDURE Hook()
+? "exit"
+RETURN

@@ -1604,7 +1604,7 @@ pos2 tests/t1605_startup_init_loop.prg tests/expectations/qout/t1605_startup_ini
 pos2 tests/t1606_startup_init_func_nil.prg tests/expectations/qout/t1606_startup_init_func_nil.linux.out tests/expectations/qout/t1606_startup_init_func_nil.windows.out
 pos2 tests/t1607_startup_include.prg tests/expectations/qout/t1607_startup_include.linux.out tests/expectations/qout/t1607_startup_include.windows.out
 neg tests/t1608_startup_neg_parameters.prg INIT procedures with parameters
-neg tests/t1609_startup_neg_exit.prg EXIT PROCEDURE is not in this increment
+neg tests/t1609_startup_neg_exit.prg EXIT procedures require bare/NIL returns
 neg tests/t1610_startup_neg_value_return.prg INIT procedures require bare/NIL returns
 neg tests/t1611_startup_neg_dead_return.prg INIT procedures require bare/NIL returns
 neg tests/t1612_startup_neg_switch_return.prg INIT procedures require bare/NIL returns

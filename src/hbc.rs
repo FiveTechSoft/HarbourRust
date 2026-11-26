@@ -59,6 +59,9 @@ thread_local! {
     static INKEY_USED: std::cell::Cell<bool> = const {std::cell::Cell::new(false)};
     // QUIT anywhere in the program: _start records the stack pointer at
     // the call into Main so QUIT can return there (normal exit path).
+    static EXIT_QUIT_ROUTE: std::cell::Cell<bool> = std::cell::Cell::new(false);
+    static ERRORLEVEL_USED: std::cell::Cell<bool> = std::cell::Cell::new(false);
+    static EXIT_LLVM_MODE: std::cell::Cell<bool> = std::cell::Cell::new(false);
     static QUIT_USED: std::cell::Cell<bool> = const {std::cell::Cell::new(false)};
     // main's parameters read the command-line arguments (hbc_main_arg).
     static MAIN_ARGS_USED: std::cell::Cell<bool> = const {std::cell::Cell::new(false)};
@@ -4218,15 +4221,14 @@ fn parse(src: &str) -> Result<Prog, String> {
             i += 1;
             continue;
         }
-        if toks[0] == Tok::KwExit && toks.get(1) == Some(&Tok::KwFunction) {
-            return Err(format!("line {}: EXIT PROCEDURE is not in this increment (teardown ordering needs its own design)", n));
-        }
+        let exit_hook=toks[0] == Tok::KwExit && toks.get(1) == Some(&Tok::KwFunction);
         let init = toks[0] == Tok::KwInit && toks.get(1) == Some(&Tok::KwFunction);
-        let mut init_header = if init { toks[1..].to_vec() } else { toks.to_vec() };
+        let mut init_header = if init || exit_hook { toks[1..].to_vec() } else { toks.to_vec() };
         // The original initproc.prg calls its hook Init, a contextual name.
         if init && init_header.get(1) == Some(&Tok::KwInit) {
             init_header[1] = Tok::Ident("init".to_string());
         }
+        if exit_hook && init_header.get(1)==Some(&Tok::KwExit) {init_header[1]=Tok::Ident("exit".to_string());}
         let toks: &[Tok] = &init_header;
         // STATIC FUNCTION/PROCEDURE is plain visibility: a single-module
         // compiler has one visibility domain (oracle hk249). Module
@@ -4447,11 +4449,12 @@ fn parse(src: &str) -> Result<Prog, String> {
             }
             _ => return Err(format!("line {}: expected `function name(...)`", n)),
         };
+        if exit_hook && !params.is_empty() {return Err(format!("line {}: EXIT hook parameters are outside this increment",n));}
         if init && !params.is_empty() {
             return Err(format!("line {}: INIT procedures with parameters are not in this increment", n));
         }
         i += 1;
-        PARSE_MEMVARS.with(|c| c.borrow_mut().clear()); let mut f = Func { init, name: if init { format!("{}$", name) } else { name }, params, ret: None, stmts: Vec::new(), dyn_names: std::collections::HashSet::new() };
+        PARSE_MEMVARS.with(|c| c.borrow_mut().clear()); let mut f = Func { init, name: if init { format!("{}$", name) } else if exit_hook {format!("{}$exit",name)} else { name }, params, ret: None, stmts: Vec::new(), dyn_names: std::collections::HashSet::new() };
         parse_stmts(&lines, &mut i, &mut f.stmts, 0)?;
         let explicit_return = i < lines.len() && lines[i].1[0] == Tok::KwReturn;
         let boundary = i >= lines.len()
@@ -4474,8 +4477,8 @@ fn parse(src: &str) -> Result<Prog, String> {
             return Err(format!("function `{}` without closing return", f.name));
         };
         f.stmts.push(stmt);
-        if init {
-            // A startup call has no user argument frame or result consumer.
+        if init || exit_hook {
+            // A startup/teardown call has no user argument frame or result consumer.
             // Keep retained values/global storage outside this first route.
             fn check_init(ss: &[Stmt]) -> bool {
                 ss.iter().all(|st| match st {
@@ -4489,9 +4492,14 @@ fn parse(src: &str) -> Result<Prog, String> {
                 })
             }
             if !check_init(&f.stmts) {
-                return Err(format!("line {}: INIT procedures require bare/NIL returns in this increment", n));
+                return Err(format!("line {}: {} procedures require bare/NIL returns in this increment", n,if exit_hook {"EXIT"}else{"INIT"}));
             }
         }
+        if exit_hook && EXIT_LLVM_MODE.with(|v|v.get()) {return Err(format!("line {}: EXIT hook LLVM guard: --experimental-llvm does not implement teardown callbacks",n));}
+        if exit_hook && (!CURDIR_LINUX_NATIVE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get())) {
+            return Err(format!("line {}: EXIT hook platform guard requires ordinary Linux without macros",n));
+        }
+        if exit_hook && f.stmts.iter().any(|st|matches!(st,Stmt::Static(_,_,Expr::Nil))) {return Err(format!("line {}: EXIT STATIC NIL or missing initializer is outside this increment",n));}
         if init && f.stmts.iter().any(|st|matches!(st,Stmt::Static(_,_,Expr::Nil))) {
             return Err(format!("line {}: INIT STATIC NIL or missing initializer is outside this increment",n));
         }
@@ -8788,6 +8796,12 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
             if is_builtin(id,"date") {
                 if !args.is_empty() { return Err(format!("line {}: `date` takes no arguments",n)); }
                 return Ok(Ty::Date);
+            }
+            if is_builtin(id,"errorlevel") {
+                if !CURDIR_LINUX_NATIVE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get()) {return Err(format!("line {}: ErrorLevel requires ordinary Linux without macros",n));}
+                if args.len()>1 {return Err(format!("line {}: ErrorLevel takes zero or one i64 argument in this increment",n));}
+                if args.len()==1 && type_expr(&args[0],env,sigs,n)?!=Ty::I64 {return Err(format!("line {}: ErrorLevel setter requires i64 in this increment",n));}
+                ERRORLEVEL_USED.with(|v|v.set(true));return Ok(Ty::I64);
             }
             if is_builtin(id,"hb_milliseconds") {
                 if !DECIMAL_LOCAL_PROFILE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get()) {return Err(format!("line {}: hb_MilliSeconds requires ordinary Linux without threads or macros in this increment",n));}
@@ -14048,6 +14062,7 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
                 return;
             }
             if is_builtin(id,"date") { return; }
+            if is_builtin(id,"errorlevel") {for a in args {apply_moves(a,env,sigs,false);}return;}
             if is_builtin(id,"hb_milliseconds") { return; }
             if is_builtin(id,"hb_dirbase") {return;}
             if is_builtin(id,"hb_diskspace") {apply_moves(&args[0],env,sigs,false);return;}
@@ -17993,6 +18008,10 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
         Expr::Call(id,_) if is_builtin(id,"date") => {
             out.push_str("    call hbc_date_today\n");
         }
+        Expr::Call(id,args) if is_builtin(id,"errorlevel") => {
+            if args.is_empty(){out.push_str("    movslq hbc_errorlevel(%rip), %rax\n");}
+            else {cg_expr(&args[0],env,sigs,strs,out,target);out.push_str("    movslq hbc_errorlevel(%rip), %rdx\n    mov %eax, hbc_errorlevel(%rip)\n    mov %rdx, %rax\n");}
+        }
         Expr::Call(id,_) if is_builtin(id,"hb_milliseconds") => {
             out.push_str("    call hbc_milliseconds\n");
         }
@@ -18325,7 +18344,8 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
         Expr::Call(id,_) if id=="hbc_quit" => {
             // Back to _start, just after `call hbc_fn_main`: the slot below
             // the recorded stack pointer still holds that return address.
-            out.push_str("    mov hbc_quit_rsp(%rip), %rsp\n    sub $8, %rsp\n    ret\n");
+            if EXIT_QUIT_ROUTE.with(|v|v.get()) {out.push_str("    mov hbc_quit_rsp(%rip), %rsp\n    cmpq $0, hbc_exit_quit_target(%rip)\n    je .Lexit_hooks_begin\n    jmp .Lexit_hooks_done\n");}
+            else {out.push_str("    mov hbc_quit_rsp(%rip), %rsp\n    sub $8, %rsp\n    ret\n");}
         }
         Expr::Call(id,args) if id=="hbc_set_epoch" => {
             // The parser guarantees an integer literal in 0..=9999.
@@ -22776,6 +22796,7 @@ fn expr_ty(e: &Expr, env: &[CgLocal], sigs: &[Sig]) -> Ty {
             if is_builtin(id, "eval") { return match expr_ty(&args[0], env, sigs) { Ty::Block(_, BRet::Nil) => Ty::Dyn, Ty::Block(_, BRet::Bool) => Ty::Bool, _ => Ty::I64 }; }
             if is_builtin(id, "asc") || is_builtin(id, "len") || is_builtin(id, "hb_memcheck") || is_builtin(id, "procline") { return Ty::I64; }
             if is_builtin(id,"date") || is_builtin(id,"ctod") { return Ty::Date; }
+            if is_builtin(id,"errorlevel") {return Ty::I64;}
             if is_builtin(id,"hb_milliseconds") {return Ty::I64;}
             if is_builtin(id,"hb_dirbase") {return Ty::StrOwn;}
             if is_builtin(id,"hb_diskspace") {return Ty::F64;}
@@ -28314,7 +28335,7 @@ fn cg_func(f: &Func, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, tar
     if pcount_off>0 && f.name=="main" && MAIN_PCOUNT_ARGS.with(|v|v.get()) {out.push_str(&format!("    call hbc_main_argcount
     mov %rax, -{}(%rbp)
 ",pcount_off));}
-    else if pcount_off>0 {if f.name=="main" || f.init {out.push_str(&format!("    movq $0, -{}(%rbp)\n",pcount_off));}else{out.push_str(&format!("    mov %r11, -{}(%rbp)\n",pcount_off));}}
+    else if pcount_off>0 {if f.name=="main" || f.init || f.name.ends_with("$exit") {out.push_str(&format!("    movq $0, -{}(%rbp)\n",pcount_off));}else{out.push_str(&format!("    mov %r11, -{}(%rbp)\n",pcount_off));}}
 
     PROC_NAME.with(|v| *v.borrow_mut() = f.name.split("__br").next().unwrap_or(&f.name).to_ascii_uppercase());
     CUR_FN.with(|c| *c.borrow_mut() = f.name.clone());
@@ -32940,9 +32961,10 @@ fn emit_asm(funcs: &[Func], sigs: &[Sig], externs: &[String], target: Target, in
     if MACRO_CONTEXT.with(|c|c.get())&&THREADS.with(|c|c.get()){eprintln!("error: MEMVAR/macro contexts with threads are outside this stage");process::exit(1);}
     if QUIT_USED.with(|v|v.get()) {
         if THREADS.with(|c|c.get()) {eprintln!("error: QUIT in a program with threads is outside this increment (it would return on the main thread's stack)");process::exit(1);}
-        if funcs.iter().any(|f| f.init && format!("{:?}", f.stmts).contains("\"hbc_quit\"")) {eprintln!("error: QUIT inside an INIT procedure is outside this increment (Main has not been entered)");process::exit(1);}
+        if !EXIT_QUIT_ROUTE.with(|v|v.get()) && funcs.iter().any(|f| f.init && format!("{:?}", f.stmts).contains("\"hbc_quit\"")) {eprintln!("error: QUIT inside an INIT procedure is outside this increment (Main has not been entered)");process::exit(1);}
     }
     let mut out = String::new();
+    if ERRORLEVEL_USED.with(|v|v.get()) {out.push_str(".data\n.align 8\nhbc_errorlevel: .quad 0\n.text\n");}
     if FILE_USED.with(|v|v.get()) {
         if FILE_PATH_LINE.with(|v|v.get().is_some()) && (DBF_USED.with(|v|v.get()) || hb_rdd() || THREADS.with(|v|v.get())) {
             eprintln!("error: SET DEFAULT/PATH with DBF or threads is outside this increment (shared path state is not integrated)");process::exit(1);
@@ -32951,6 +32973,7 @@ fn emit_asm(funcs: &[Func], sigs: &[Sig], externs: &[String], target: Target, in
     }
     out.push_str("# generated by hbc (PoC: Harbour syntax -> x86-64 assembly)\n");
     if QUIT_USED.with(|v|v.get()) {out.push_str("    .data\n    .align 8\nhbc_quit_rsp: .quad 0\n    .text\n");}
+    if EXIT_QUIT_ROUTE.with(|v|v.get()) {out.push_str("    .data\n.align 8\nhbc_exit_quit_target: .quad 0\n.text\n");}
     if MAIN_ARGS_USED.with(|v|v.get()) {out.push_str(match target {Target::Linux=>MAIN_ARG_LINUX,Target::Windows=>MAIN_ARG_WINDOWS});}
     let gtstd_native=(CURDIR_LINUX_NATIVE.with(|v|v.get())||LLVM_CONSOLE_SIDECAR.with(|v|v.get()))&&!THREADS.with(|v|v.get());
     if gtstd_native {out.push_str(include_str!("gtstd_linux.s"));out.push_str(include_str!("../generated/hrgtstd.s"));}
@@ -33003,6 +33026,10 @@ fn emit_asm(funcs: &[Func], sigs: &[Sig], externs: &[String], target: Target, in
             if MACRO_CONTEXT.with(|c|c.get()){out.push_str("    mov %rsp, %rbp\n    and $-16, %rsp\n    sub $256, %rsp\n    mov %rsp, %rdi\n    call hrmacro_start\n");}
             if funcs.iter().any(|f| f.stmts.iter().any(|st| matches!(st, Stmt::Static(_,_,Expr::Str(_))))) { out.push_str("    call hbc_module_strings_init\n"); }
             if funcs_have_shared_arrays(funcs) { out.push_str("    call hbc_module_arrays_init\n"); }
+            // QUIT from INIT skips remaining startup hooks and Main, but
+            // Harbour still executes EXIT hooks. Record the pristine entry
+            // stack before startup calls can overwrite their return slots.
+            if EXIT_QUIT_ROUTE.with(|v|v.get()) {out.push_str("    mov %rsp, hbc_quit_rsp(%rip)\n    movq $0, hbc_exit_quit_target(%rip)\n");}
             // Pinned oracle: INIT hooks run in reverse source order, once
             // before Main. Ordinary symbols cannot spell the '$' suffix.
             for f in funcs.iter().rev().filter(|f| f.init) {
@@ -33011,11 +33038,21 @@ fn emit_asm(funcs: &[Func], sigs: &[Sig], externs: &[String], target: Target, in
             }
             if MACRO_CONTEXT.with(|c|c.get()){out.push_str("    mov %rsp, %r10\n");}
             if QUIT_USED.with(|v|v.get()) {out.push_str("    mov %rsp, hbc_quit_rsp(%rip)\n");}
+            if EXIT_QUIT_ROUTE.with(|v|v.get()) {out.push_str("    movq $0, hbc_exit_quit_target(%rip)\n");}
             out.push_str("    call hbc_fn_main\n");
+            if EXIT_QUIT_ROUTE.with(|v|v.get()) {out.push_str(".Lexit_hooks_begin:\n    movq $1, hbc_exit_quit_target(%rip)\n");}
+            // Harbour oracle: EXIT hooks run in source order after Main,
+            // before persistent storage is released. INIT uses reverse order.
+            for f in funcs.iter().filter(|f|f.name.ends_with("$exit")) {
+                out.push_str(&format!("    call hbc_fn_{}\n",f.name));
+            }
+            if EXIT_QUIT_ROUTE.with(|v|v.get()) {out.push_str(".Lexit_hooks_done:\n");}
+            if funcs.iter().any(|f|f.name.ends_with("$exit")) {out.push_str("    movq $1, hbc_exit_hooks_completed(%rip)\n");}
             if MACRO_CONTEXT.with(|c|c.get()){out.push_str("    mov %rsp, %rdi\n    call hrmacro_destroy\n");}
             out.push_str("    call hbc_persistent_cleanup\n    call hbc_str_cache_flush\n");
             if gtstd_native {out.push_str("    call hbc_gtstd_close\n");}
-            out.push_str("    mov $60, %eax\n    xor %edi, %edi\n    syscall\n\n");
+            if ERRORLEVEL_USED.with(|v|v.get()) {out.push_str("    mov hbc_errorlevel(%rip), %edi\n    mov $60, %eax\n    syscall\n\n");}
+            else {out.push_str("    mov $60, %eax\n    xor %edi, %edi\n    syscall\n\n");}
         }
         Target::Windows => {
             // Process entry: no CRT. rsp % 16 == 8 on entry (loader calls
@@ -40502,6 +40539,7 @@ fn main() {
     MACHO_MODE.with(|v| v.set(macho));
     MACHO_ARM64.with(|v| v.set(macho_arm64));
     CURDIR_LINUX_NATIVE.with(|v| v.set(!macho && !llvm && matches!(target, Target::Linux)));
+    EXIT_LLVM_MODE.with(|v|v.set(llvm));
     ORDINARY_NATIVE.with(|v| v.set(!macho && !llvm));
     DIRMAKE_WIN.with(|v| v.set(!macho && !llvm && matches!(target, Target::Windows)));
     INKEY_WIN.with(|v| v.set(!macho && !llvm && matches!(target, Target::Windows)));
@@ -40617,7 +40655,7 @@ fn main() {
         });
         METHOD_CLASS.with(|c| *c.borrow_mut() = mmap);
     }
-    if llvm && prog.funcs.iter().any(|f| f.init) {
+    if llvm && prog.funcs.iter().any(|f| f.init || f.name.ends_with("$exit")) {
         eprintln!("error: LLVM scalar: INIT startup procedures are not in this increment");
         process::exit(1);
     }
@@ -41141,6 +41179,21 @@ fn main() {
             v.inferred = c.inferred;
         }
     }
+    if ERRORLEVEL_USED.with(|v|v.get()) && (THREADS.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get()) || STR_DYN.with(|v|v.get())) {eprintln!("error: ErrorLevel lifecycle guard excludes threads and macros");process::exit(1);}
+    EXIT_QUIT_ROUTE.with(|v|v.set(funcs.iter().any(|f|f.init || f.name.ends_with("$exit")) && QUIT_USED.with(|q|q.get())));
+    if EXIT_QUIT_ROUTE.with(|v|v.get()) && (THREADS.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get()) || STR_DYN.with(|v|v.get())) {
+        eprintln!("error: startup QUIT lifecycle guard requires ordinary Linux without threads/macros");process::exit(1);
+    }
+    if funcs.iter().any(|f|f.name.ends_with("$exit")) {
+        if THREADS.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get()) {
+            eprintln!("error: EXIT hook lifecycle guard excludes threads and macros in this increment");process::exit(1);
+        }
+        let mut exceptional=false;
+        for f in &funcs {visit_stmts_ref(&f.stmts,&mut |st| {if matches!(st,Stmt::Break(..)|Stmt::Try(..)){exceptional=true;}},&mut |_|{});}
+        if exceptional {
+            eprintln!("error: EXIT hook error guard excludes BREAK/TRY until exceptional teardown is integrated");process::exit(1);
+        }
+    }
     // Thread use is discovered during inference, after parser guards.
     // Reject before code generation: INIT persistent storage has no measured
     // thread/TLS lifetime contract in this increment.
@@ -41287,6 +41340,21 @@ hbc_aclone_alloc:
     // VAS), before pruning. Do not move it into the earlier emitter pass.
     if target==Target::Linux && !macho && !THREADS.with(|v|v.get()) {
         out=gtstd_terminal_boundaries(out);
+    }
+    // Normal-return EXIT is not exceptional unwind. Make any explicit
+    // failing Linux termination visible, including late runtime producers.
+    // The guard preserves every register and does not run user callbacks.
+    if funcs.iter().any(|f|f.name.ends_with("$exit")) {
+        let mut checked=String::new();
+        for line in out.lines() {
+            if line.trim()=="syscall" {checked.push_str("    lea -128(%rsp), %rsp\n    call hbc_exit_fatal_notice\n    lea 128(%rsp), %rsp\n");}
+            checked.push_str(line);checked.push('\n');
+        }
+        let msg=b"EXIT hooks skipped: fatal runtime termination (normal-return-only)\n";
+        checked.push_str("\n.data\n.align 8\nhbc_exit_hooks_completed: .quad 0\n.text\nhbc_exit_fatal_notice:\n    .byte 156 # pushfq\n    cmp $60, %eax\n    jne .Lexitnotice_done\n    test %edi, %edi\n    jz .Lexitnotice_done\n    cmpq $0, hbc_exit_hooks_completed(%rip)\n    jne .Lexitnotice_done\n    push %rax\n    push %rdi\n    push %rsi\n    push %rdx\n    push %rcx\n    push %r11\n    mov $1, %eax\n    mov $2, %edi\n    lea .Lexitnotice_msg(%rip), %rsi\n");
+        checked.push_str(&format!("    mov ${}, %edx\n    syscall\n",msg.len()));
+        checked.push_str("    pop %r11\n    pop %rcx\n    pop %rdx\n    pop %rsi\n    pop %rdi\n    pop %rax\n.Lexitnotice_done:\n    .byte 157 # popfq\n    ret\n.section .rodata\n.Lexitnotice_msg:\n    .byte ");
+        checked.push_str(&msg.iter().map(|b|b.to_string()).collect::<Vec<_>>().join(","));checked.push_str("\n.text\n");out=checked;
     }
     // Drop runtime helpers the program never reaches (src/prune.rs).
     let out = if no_prune { out } else { prune::prune(&out) };

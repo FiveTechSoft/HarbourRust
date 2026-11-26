@@ -1,0 +1,9 @@
+INIT PROCEDURE Hook()
+? "init"
+RETURN
+PROCEDURE Main()
+LOCAL x
+x:=1
+? Str(x)
+QUIT
+RETURN

@@ -1,0 +1,6 @@
+PROCEDURE Main()
+? "main"
+RETURN
+EXIT PROCEDURE LastHook()
+? PCount()
+RETURN

@@ -1,0 +1,7 @@
+PROCEDURE Main()
+? "main"
+RETURN
+EXIT FUNCTION LastHook()
+STATIC n:=40
+? ++n
+RETURN NIL

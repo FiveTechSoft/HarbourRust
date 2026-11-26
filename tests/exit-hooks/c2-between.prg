@@ -1,0 +1,10 @@
+FUNCTION Before()
+RETURN 11
+EXIT PROCEDURE Hook()
+? "exit",After()
+RETURN
+FUNCTION After()
+RETURN 22
+PROCEDURE Main()
+? Before()
+RETURN
