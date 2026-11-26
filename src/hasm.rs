@@ -706,14 +706,11 @@ fn fits_i32(v: i64) -> bool { (i32::MIN as i64..=i32::MAX as i64).contains(&v) }
 
 fn suffix_width(m: &str) -> (&str, Option<u8>) {
     // mnemónicos con significado propio que terminan en letra de sufijo: no tocar
-    const EXACT: &[&str] = &[
-        "ret","leave","cqto","cqo","cltq","cdqe","cvtsi2sdl","cvtsi2sdq","cvttsd2siq","syscall","pause","endbr64","nop","ud2","rep movsb","rep movsq","rep stosb",
-        "fyl2x","fscale","frndint","fld1","f2xm1","fprem","fnstsw",
-        "fldl","fstpl","fld","fstp","fxch","faddp","fsub","fmul",
-        "movsd","addsd","subsd","mulsd","divsd","ucomisd","xorpd","cvtsi2sd","cvttsd2si","roundsd",
-        "movslq","movsbq","movzbl","movzbq","movzwl","movzx","movabs","movq","comisd",
-    ];
-    for x in EXACT { if m == *x { return (m, None); } }
+    if matches!(m, "ret"|"leave"|"cqto"|"cqo"|"cltq"|"cdqe"|"cvtsi2sdl"|"cvtsi2sdq"|"cvttsd2siq"|"syscall"|"pause"|"endbr64"|"nop"|"ud2"|"rep movsb"|"rep movsq"|"rep stosb"|
+        "fyl2x"|"fscale"|"frndint"|"fld1"|"f2xm1"|"fprem"|"fnstsw"|
+        "fldl"|"fstpl"|"fld"|"fstp"|"fxch"|"faddp"|"fsub"|"fmul"|
+        "movsd"|"addsd"|"subsd"|"mulsd"|"divsd"|"ucomisd"|"xorpd"|"cvtsi2sd"|"cvttsd2si"|"roundsd"|
+        "movslq"|"movsbq"|"movzbl"|"movzbq"|"movzwl"|"movzx"|"movabs"|"movq"|"comisd") { return (m,None); }
     if m.starts_with("set") || m.starts_with("cmov") || m.starts_with('j') { return (m, None); }
     const BASES: &[&str] = &[
         "mov","cmp","add","adc","sbb","sub","and","or","xor","test","inc","dec",
@@ -2579,4 +2576,38 @@ mod branch_align_tests {
         let s = ".rept 30\nnop\n.endr\n.byte 0x2e\njmp _start\nret";
         assert_eq!(text(s, true), text(s, false));
     }
+}
+
+#[cfg(test)]mod suffix_equivalence_tests {
+ use super::*;
+fn original_suffix_width(m: &str) -> (&str, Option<u8>) {
+    // mnemónicos con significado propio que terminan en letra de sufijo: no tocar
+    const EXACT: &[&str] = &[
+        "ret","leave","cqto","cqo","cltq","cdqe","cvtsi2sdl","cvtsi2sdq","cvttsd2siq","syscall","pause","endbr64","nop","ud2","rep movsb","rep movsq","rep stosb",
+        "fyl2x","fscale","frndint","fld1","f2xm1","fprem","fnstsw",
+        "fldl","fstpl","fld","fstp","fxch","faddp","fsub","fmul",
+        "movsd","addsd","subsd","mulsd","divsd","ucomisd","xorpd","cvtsi2sd","cvttsd2si","roundsd",
+        "movslq","movsbq","movzbl","movzbq","movzwl","movzx","movabs","movq","comisd",
+    ];
+    for x in EXACT { if m == *x { return (m, None); } }
+    if m.starts_with("set") || m.starts_with("cmov") || m.starts_with('j') { return (m, None); }
+    const BASES: &[&str] = &[
+        "mov","cmp","add","adc","sbb","sub","and","or","xor","test","inc","dec",
+        "rol","ror","shl","sal","shr","sar","neg","not","lea","push","pop","bt","bts","btr",
+        "imul","mul","div","idiv","xchg","cmpxchg",
+    ];
+    for (suf, w) in [('q', 64u8), ('l', 32), ('b', 8), ('w', 16)] {
+        if let Some(p) = m.strip_suffix(suf) {
+            if BASES.contains(&p) { return (p, Some(w)); }
+        }
+    }
+    (m, None)
+}
+
+ #[test]fn exact_table_and_suffix_patterns_match_reference(){
+ let text=include_str!("hasm.rs");
+ for word in text.split(|c:char|!c.is_ascii_alphanumeric()){
+  for ending in ["","q","l","b","w","qq"]{let s=format!("{}{}",word,ending);assert_eq!(suffix_width(&s),original_suffix_width(&s),"{}",s);}
+ }
+ }
 }
