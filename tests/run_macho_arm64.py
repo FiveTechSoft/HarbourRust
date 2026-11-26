@@ -91,8 +91,9 @@ TARGET = '--target=macho-arm64'  # --target=macho runs the same battery on Intel
 # Dynamic integer STEP promotes t44 from negative to executable (+1).
 # NIL module scalars promote two negatives (+2).
 # Scalar literal Dyn local Empty promotes t1047 (+1).
-# Full total:1319+6+4+38+9 =1376,5 named REJ on both Mac targets.
-EXPECTED_MANIFEST_ROWS = 1319
+# Scalar-call ValType promotes t414_valtype_usercall from neg to pos2 (+1).
+# Full total:1320+6+4+38+9 =1377,5 named REJ on both Mac targets.
+EXPECTED_MANIFEST_ROWS = 1320
 # Post-run m_clie.dbf SHA-256 per DBF acceptance test (generated on Linux,
 # stdout checked against the committed expectations). t4 appends records:
 # dbAppend rewrites the header last-update date (bytes 1-3, YY MM DD of the
