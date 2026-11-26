@@ -1748,11 +1748,20 @@ impl Asm {
             _=>Ok(None),
         }).collect()
     }
+    // The invariant byte cache already proves a length. Keep one compact
+    // length lookup in the hot path, without changing validation or encoding.
+    fn merged_layout_lengths(&self,inv:&[Option<Vec<u8>>])->Result<Vec<Option<u64>>,String>{
+        let mut fixed=self.fixed_layout_lengths()?;
+        for (n,bytes) in fixed.iter_mut().zip(inv) {
+            if let Some(bytes)=bytes{*n=Some(bytes.len()as u64);}
+        }
+        Ok(fixed)
+    }
     fn layout_offsets_only(&self,near:&[bool],l:&Layout,inv:&[Option<Vec<u8>>],metadata:&[Option<(usize,bool)>],fixed:&[Option<u64>],targets:&[Option<usize>],direct_lengths:&[Option<u64>])->Result<(u64,Vec<u64>),String>{
         let resolve=self.make_resolver(l);let enc=Enc{resolve:&resolve};let mut size=0u64;let mut offs=Vec::with_capacity(self.text.len());
         let inslen=|i:usize,mnem:&str,ops:&[Op],lock:bool,off:u64|->Result<u64,String>{
-            if let Some(b)=&inv[i]{return Ok(b.len()as u64);}
             if let Some(n)=fixed[i]{return Ok(n);}
+            if let Some(b)=&inv[i]{return Ok(b.len()as u64);}
             if let Some(long)=direct_lengths[i] {
                 if let [Op::Imm(x)]=ops {
                     let t=match targets[i] {
@@ -1907,7 +1916,7 @@ impl Asm {
         let metadata=self.branch_padding_metadata();
         // Preserve the first full pass, including its validation/error order.
         let _ = self.encode_all_cached(&vec![false;self.text.len()], &prov, &inv, &metadata)?;
-        let fixed=self.fixed_layout_lengths()?;
+        let fixed=self.merged_layout_lengths(&inv)?;
         let targets=self.layout_text_targets();
         let direct_lengths=self.direct_branch_lengths();
         let mut direct_jumps=Vec::new();
@@ -2594,6 +2603,14 @@ mod safe_shorten_tests {
                 TItem::Ins{mnem,ops,..} if matches!(ops.as_slice(),[Op::Imm(_)]) && (mnem=="call"||is_jump(mnem))=>Some(if mnem=="call"{5}else{jump_near_len(mnem)}),_=>None,
             };assert_eq!(cache[i],original);}
         }
+    }
+    #[test]fn merged_lengths_prefer_invariant_bytes_without_changing_unknowns(){
+        let a=asm("nop\nmovq $127,%rax\nlea data(%rip),%rax\ncall target\njmp target\nmovq $target,%rax\ntarget:\nret\n.data\ndata:\n.quad 0");
+        let mut inv=vec![None;a.text.len()];
+        for(i,it)in a.text.iter().enumerate(){if let TItem::Ins{mnem,ops,lock}=it{if Asm::ins_layout_free(mnem,ops){let eval=|_:&Expr|Ok(127);let enc=Enc{resolve:&eval};inv[i]=Some(encode_ins(&enc,mnem,ops,*lock,0,false).unwrap());}}}
+        let old=a.fixed_layout_lengths().unwrap();let merged=a.merged_layout_lengths(&inv).unwrap();
+        for i in 0..a.text.len(){assert_eq!(merged[i],inv[i].as_ref().map(|b|b.len()as u64).or(old[i]));}
+        assert_eq!(merged[0],Some(1));assert_eq!(merged[2],Some(7));assert_eq!(merged[3],None);assert_eq!(merged[4],None);assert_eq!(merged[5],None);
     }
     #[test]fn jump_fast_guard_matches_normalization(){
         for mnemonic in ["jmp","je","jnbe","jrcxz","jmpq","jmpw","jmpl","loop","call","movq","cmpq","addl","","JMP","cmovg","setne"] {
