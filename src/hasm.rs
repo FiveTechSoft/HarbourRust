@@ -1734,6 +1734,37 @@ impl Asm {
         Ok((bytes, offs))
     }
 
+    // Exact lengths only for numeric operands or fixed-width RIP disp32.
+    // Unknown non-RIP expressions retain the full encoder every pass.
+    fn fixed_layout_lengths(&self)->Result<Vec<Option<u64>>,String>{
+        fn stable(o:&Op)->bool{match o{
+            Op::Imm(e)=>e.0.iter().all(|(_,t)|matches!(t,Term::Num(_))),
+            Op::Mem{disp,riplab,..}=>riplab.is_some()||disp.as_ref().map_or(true,|e|e.0.iter().all(|(_,t)|matches!(t,Term::Num(_)))),
+            Op::Star(o)=>stable(o),_=>true,
+        }}
+        let sizing_value=|e:&Expr|{let mut v=0i64;for(neg,t)in &e.0{if let Term::Num(n)=t{v=if *neg{v.wrapping_sub(*n)}else{v.wrapping_add(*n)};}}Ok(v)};let enc=Enc{resolve:&sizing_value};
+        self.text.iter().map(|it|match it{
+            TItem::Ins{mnem,ops,lock}if !is_jump(mnem)&&mnem!="call"&&ops.iter().all(stable)=>Ok(Some(encode_ins(&enc,mnem,ops,*lock,0,false)?.len()as u64)),
+            _=>Ok(None),
+        }).collect()
+    }
+    fn layout_offsets_only(&self,near:&[bool],l:&Layout,inv:&[Option<Vec<u8>>],metadata:&[Option<(usize,bool)>],fixed:&[Option<u64>])->Result<(u64,Vec<u64>),String>{
+        let resolve=self.make_resolver(l);let enc=Enc{resolve:&resolve};let mut size=0u64;let mut offs=Vec::with_capacity(self.text.len());
+        let inslen=|i:usize,mnem:&str,ops:&[Op],lock:bool,off:u64|->Result<u64,String>{
+            if let Some(b)=&inv[i]{return Ok(b.len()as u64);}
+            if let Some(n)=fixed[i]{return Ok(n);}
+            Ok(encode_ins(&enc,mnem,ops,lock,l.text_va+off,near[i]).map_err(|e|format!("item {} ({} {:?}): {}",i,mnem,ops,e))?.len()as u64)
+        };
+        for(i,it)in self.text.iter().enumerate(){match it{
+            TItem::P2{bits,maxskip}=>{offs.push(size);let al=1u64<<bits;let pad=((size+al-1)&!(al-1))-size;if maxskip.map_or(true,|ms|pad<=ms as u64){size+=pad;}}
+            TItem::Ins{mnem,ops,lock}=>{
+                if let Some((j,fused))=metadata[i]{let m=match &self.text[j]{TItem::Ins{mnem,..}=>mnem,_=>unreachable!()};let n=if fused{inslen(i,mnem,ops,*lock,size)?}else{0};let jn=if near[j]{jump_near_len(m)}else{jump_short_len(m)};size+=branch_pad(size,n+jn);}
+                offs.push(size);size+=inslen(i,mnem,ops,*lock,size)?;
+            }
+            TItem::Raw(d)=>{offs.push(size);match d{DItem::Bytes(b)=>size+=b.len()as u64,DItem::Align(n)=>size=(size+n-1)&!(n-1),DItem::Patch4(e)=>{enc.eval(e)?;size+=4;},DItem::Patch8(e)=>{enc.eval(e)?;size+=8;}}}
+        }}Ok((size,offs))
+    }
+
     // Lower bounds independent of every label address and alignment choice.
     // Numeric operands and RIP-relative displacements have fixed encoding
     // lengths. Symbolic RIP displacements are replaced only for sizing; their
@@ -1834,6 +1865,9 @@ impl Asm {
         // These item indices and expressions do not change during relaxation.
         // Preserve source order while avoiding a whole-text classification pass.
         let metadata=self.branch_padding_metadata();
+        // Preserve the first full pass, including its validation/error order.
+        let _ = self.encode_all_cached(&vec![false;self.text.len()], &prov, &inv, &metadata)?;
+        let fixed=self.fixed_layout_lengths()?;
         let mut direct_jumps=Vec::new();
         for (i,it) in self.text.iter().enumerate() {
             if let TItem::Ins{mnem,ops,..}=it {
@@ -1844,8 +1878,8 @@ impl Asm {
         }
         let mut relax = |near: &mut Vec<bool>, final_offs: &mut Vec<u64>| -> Result<u64, String> {
             loop {
-                let (bytes, offs) = self.encode_all_cached(near, &prov, &inv,&metadata)?;
-                let lprov = Layout { text_offs: offs, text_size: bytes.len() as u64, ..prov_clone(&prov) };
+                let (byte_size, offs) = self.layout_offsets_only(near, &prov, &inv,&metadata,&fixed)?;
+                let lprov = Layout { text_offs: offs, text_size: byte_size, ..prov_clone(&prov) };
                 let resolve = self.make_resolver(&lprov);
                 let enc = Enc { resolve: &resolve };
                 let mut changed = false;
@@ -1858,7 +1892,7 @@ impl Asm {
                 if !changed {
                     drop(resolve);
                     *final_offs = lprov.text_offs;
-                    return Ok(bytes.len() as u64);
+                    return Ok(byte_size);
                 }
             }
         };
@@ -2562,6 +2596,15 @@ mod branch_align_tests {
         assert_eq!(&t[30..32], &nop_fill(2)[..]);
         assert_eq!(t[32], 0xEB);
         assert_eq!(t[33] as i8, -34);
+    }
+    #[test] fn size_only_offsets_match_full_encoder_for_near_vectors() {
+        let mut a=Asm{p:Parser{consts:HashMap::new(),labels:HashMap::new(),numlabels:HashMap::new(),seq:Cell::new(0)},text:vec![],rodata:vec![],data:vec![],bss:vec![],note:vec![],has_gnu_stack:false,cur:Sec::Text,secstack:vec![],text_align:1,rod_align:1,dat_align:1,bss_align:1,branch_align:true};
+        for l in expand_rept(".text\nstart:\nmovq $128,%rax\ncmpq $7,%rax\nje target\nmovq $128,data+8(%rip)\naddq $128,%rax\n.p2align 5\n.p2align 6,,15\njmp start\n.rept 126\nnop\n.endr\ntarget:\n.long 123\ncall target\nret\n.data\ndata:\n.quad 0,1").unwrap().lines(){a.parse_line(l).unwrap();}
+        let l=Layout{text_offs:vec![0;a.text.len()],text_size:0,rod_size:0,dat_size:16,bss_size:0,note_size:0,note_off:0,text_off:0x1000,rod_off:0,dat_off:0,bss_off:0,text_va:0x401000,rod_va:0,dat_va:0,bss_va:0,note_va:0,has_rod:false,has_dat:true,has_bss:false,has_note:false,phnum:4,headers_end:0,pe_imports:None};
+        let inv=a.precompute_layout_free(&l).unwrap();let metadata=a.branch_padding_metadata();let fixed=a.fixed_layout_lengths().unwrap();
+        for mask in 0..8{let mut near=vec![false;a.text.len()];let mut j=0;for(i,it)in a.text.iter().enumerate(){if padded_jump(it).is_some(){near[i]=(mask>>j)&1!=0;j+=1;}}
+            let(bytes,offsets)=a.encode_all_cached(&near,&l,&inv,&metadata).unwrap();let(size,light)=a.layout_offsets_only(&near,&l,&inv,&metadata,&fixed).unwrap();assert_eq!(size,bytes.len()as u64);assert_eq!(light,offsets);
+        }
     }
     #[test] fn cached_classification_matches_dynamic_rules() {
         for on in [false, true] {
