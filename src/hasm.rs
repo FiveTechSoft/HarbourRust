@@ -1489,8 +1489,8 @@ fn is_jump(mnem: &str) -> bool {
     // suffix_width never changes the initial character. Non-j mnemonics
     // cannot become branches; avoid its suffix table in hot layout passes.
     if !mnem.starts_with('j') { return false; }
-    let (m, _) = suffix_width(mnem);
-    m == "jmp" || (m.starts_with('j') && m.len() > 1 && cc_code(&m[1..]).is_some())
+    // suffix_width returns every j-prefixed mnemonic unchanged.
+    mnem == "jmp" || (mnem.len() > 1 && cc_code(&mnem[1..]).is_some())
 }
 
 fn jump_short_len(mnem: &str) -> u64 { let _ = mnem; 2 }
@@ -2700,3 +2700,5 @@ fn original_suffix_width(m: &str) -> (&str, Option<u8>) {
  }
  }
 }
+
+#[cfg(test)]mod extended_jump_classification_test{use super::*;#[test]fn every_source_token_matches_original_classifier(){let source=include_str!("hasm.rs");for token in source.split(|c:char|!c.is_alphanumeric()){for ending in ["","q","l","w","b","z"]{let mnem=format!("{}{}",token,ending);let(m,_)=suffix_width(&mnem);let old=m=="jmp"||(m.starts_with('j')&&m.len()>1&&cc_code(&m[1..]).is_some());assert_eq!(is_jump(&mnem),old,"{}",mnem);}}}}
