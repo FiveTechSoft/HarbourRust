@@ -79,6 +79,12 @@ jobs:
           set -euo pipefail
           if [[ "$RUNNER_OS" == "Windows" ]]; then compiler=./hbc.exe; else compiler=./hbc; fi
           python tests/pcount/check.py --compiler "$compiler" --output work/ci-pcount
+      - name: Dyn arguments widen scalar parameters (Harbour-measured outputs)
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$RUNNER_OS" == "Windows" ]]; then compiler=./hbc.exe; else compiler=./hbc; fi
+          python tests/dyn-arg-param/check.py --compiler "$compiler"
       - name: FILE native Linux fixtures (no Harbour or Wine)
         if: runner.os == 'Linux'
         shell: bash
