@@ -4586,7 +4586,32 @@ fn prepare_variadic_headers(prog:&mut Prog, ordinary_linux:bool)->Result<(),Stri
         }
     });}
     if bad {return Err("variadic headers require direct calls without threads, function references or codeblocks in this increment".into());}
+    let user_aparams=prog.funcs.iter().any(|f|f.name=="hb_aparams");
+    if !user_aparams && prog.funcs.iter().any(|f|matches!(f.name.as_str(),"pcount"|"hb_pvalue")) {
+        let mut snapshot=false;
+        for f in &prog.funcs {if arities.contains_key(&f.name) {visit_stmts_ref(&f.stmts,&mut |st| {if matches!(st,Stmt::Local(_,_,Expr::Call(id,args))if id=="hb_aparams"&&args.is_empty()){snapshot=true;}},&mut |_|{});}}
+        if snapshot {return Err("hb_AParams snapshot lowering cannot use overridden PCount or hb_PValue in this increment".into());}
+    }
+    fn snapshots(ss:&mut Vec<Stmt>,next:&mut usize) {
+        let mut out=Vec::new();
+        let mut declarations=true;
+        for st in std::mem::take(ss) {
+            if !matches!(st,Stmt::Local(..)|Stmt::Static(..)) {declarations=false;}
+            if let Stmt::Local(n,id,Expr::Call(name,args))=&st {
+                if declarations && name=="hb_aparams" && args.is_empty() {
+                    let(n,id)=(*n,id.clone());let counter=format!("$aparams{}",next);*next+=1;
+                    out.push(Stmt::Local(n,id.clone(),Expr::DArrNew));
+                    out.push(Stmt::Local(n,counter.clone(),Expr::Int("0".into())));
+                    out.push(Stmt::For(n,counter.clone(),Expr::Int("1".into()),Expr::Call("pcount".into(),vec![]),Expr::Int("1".into()),vec![Stmt::AAdd(n,id,Expr::Call("hb_pvalue".into(),vec![Expr::Var(counter)]))]));
+                    continue;
+                }
+            }
+            out.push(st);
+        }
+        *ss=out;
+    }
     for f in &mut prog.funcs {
+        if !user_aparams && arities.contains_key(&f.name) {snapshots(&mut f.stmts,&mut 0);}
         if let Some(max)=arities.get(&f.name) {
             if *max>64 {return Err("variadic direct-call limit is 64 scalar arguments in this increment".into());}
             for i in f.params.len()..*max {f.params.push(format!("$ellipsis{}",i));}
