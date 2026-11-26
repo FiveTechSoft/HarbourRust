@@ -1748,18 +1748,18 @@ impl Asm {
             _=>Ok(None),
         }).collect()
     }
-    fn layout_offsets_only(&self,near:&[bool],l:&Layout,inv:&[Option<Vec<u8>>],metadata:&[Option<(usize,bool)>],fixed:&[Option<u64>],targets:&[Option<usize>])->Result<(u64,Vec<u64>),String>{
+    fn layout_offsets_only(&self,near:&[bool],l:&Layout,inv:&[Option<Vec<u8>>],metadata:&[Option<(usize,bool)>],fixed:&[Option<u64>],targets:&[Option<usize>],direct_lengths:&[Option<u64>])->Result<(u64,Vec<u64>),String>{
         let resolve=self.make_resolver(l);let enc=Enc{resolve:&resolve};let mut size=0u64;let mut offs=Vec::with_capacity(self.text.len());
         let inslen=|i:usize,mnem:&str,ops:&[Op],lock:bool,off:u64|->Result<u64,String>{
             if let Some(b)=&inv[i]{return Ok(b.len()as u64);}
             if let Some(n)=fixed[i]{return Ok(n);}
-            if let [Op::Imm(x)]=ops {
-                if mnem=="call" || is_jump(mnem) {
+            if let Some(long)=direct_lengths[i] {
+                if let [Op::Imm(x)]=ops {
                     let t=match targets[i] {
                         Some(idx)=>(l.text_va+l.text_offs.get(idx).copied().unwrap_or(l.text_size))as i64,
                         None=>enc.eval(x)?,
                     };
-                    let n=if mnem=="call"{5}else if near[i]{jump_near_len(mnem)}else{jump_short_len(mnem)};
+                    let n=if mnem=="call"||near[i]{long}else{2};
                     // Preserve the encoder's relative-address arithmetic too.
                     let _rel=t-(l.text_va+off+n)as i64;
                     return Ok(n+u64::from(lock));
@@ -1834,6 +1834,13 @@ impl Asm {
         Ok(Some(prefix))
     }
 
+    fn direct_branch_lengths(&self)->Vec<Option<u64>> {
+        self.text.iter().map(|it|match it{
+            TItem::Ins{mnem,ops,..}if matches!(ops.as_slice(),[Op::Imm(_)])=>{
+                if mnem=="call"{Some(5)}else if is_jump(mnem){Some(jump_near_len(mnem))}else{None}
+            },_=>None,
+        }).collect()
+    }
     // Cache only the identity of exact direct branch/call text targets.
     // The current provisional layout still supplies every address and rel32
     // arithmetic runs on each pass. Other expressions keep the resolver.
@@ -1902,6 +1909,7 @@ impl Asm {
         let _ = self.encode_all_cached(&vec![false;self.text.len()], &prov, &inv, &metadata)?;
         let fixed=self.fixed_layout_lengths()?;
         let targets=self.layout_text_targets();
+        let direct_lengths=self.direct_branch_lengths();
         let mut direct_jumps=Vec::new();
         for (i,it) in self.text.iter().enumerate() {
             if let TItem::Ins{mnem,ops,..}=it {
@@ -1912,7 +1920,7 @@ impl Asm {
         }
         let mut relax = |near: &mut Vec<bool>, final_offs: &mut Vec<u64>| -> Result<u64, String> {
             loop {
-                let (byte_size, offs) = self.layout_offsets_only(near, &prov, &inv,&metadata,&fixed,&targets)?;
+                let (byte_size, offs) = self.layout_offsets_only(near, &prov, &inv,&metadata,&fixed,&targets,&direct_lengths)?;
                 let lprov = Layout { text_offs: offs, text_size: byte_size, ..prov_clone(&prov) };
                 let resolve = self.make_resolver(&lprov);
                 let enc = Enc { resolve: &resolve };
@@ -2576,7 +2584,15 @@ mod safe_shorten_tests {
         let inv=a.precompute_layout_free(&l).unwrap();let metadata=a.branch_padding_metadata();let fixed=a.fixed_layout_lengths().unwrap();
         for bias in [0,1,127,128,4096] {
             l.text_size=100+bias;l.text_offs=(0..a.text.len()).map(|i|i as u64*7+bias).collect();
-            for on in [false,true] {let near=vec![on;a.text.len()];let(bytes,offs)=a.encode_all_cached(&near,&l,&inv,&metadata).unwrap();let(size,light)=a.layout_offsets_only(&near,&l,&inv,&metadata,&fixed,&targets).unwrap();assert_eq!(size,bytes.len()as u64);assert_eq!(light,offs);}
+            for on in [false,true] {let near=vec![on;a.text.len()];let(bytes,offs)=a.encode_all_cached(&near,&l,&inv,&metadata).unwrap();let(size,light)=a.layout_offsets_only(&near,&l,&inv,&metadata,&fixed,&targets,&a.direct_branch_lengths()).unwrap();assert_eq!(size,bytes.len()as u64);assert_eq!(light,offs);}
+        }
+    }
+    #[test]fn direct_length_metadata_matches_encoder_classification(){
+        for src in ["call here\nhere:\nret","jmp 1f\n1:\nje 1b","jmp *%rax\ncall *%rax","call external\nmovq $127,%rax\nret","lock jmp there\nthere:\nret"] {
+            let a=asm(src);let cache=a.direct_branch_lengths();
+            for(i,it)in a.text.iter().enumerate(){let original=match it{
+                TItem::Ins{mnem,ops,..} if matches!(ops.as_slice(),[Op::Imm(_)]) && (mnem=="call"||is_jump(mnem))=>Some(if mnem=="call"{5}else{jump_near_len(mnem)}),_=>None,
+            };assert_eq!(cache[i],original);}
         }
     }
     #[test]fn jump_fast_guard_matches_normalization(){
@@ -2662,7 +2678,7 @@ mod branch_align_tests {
         let l=Layout{text_offs:vec![0;a.text.len()],text_size:0,rod_size:0,dat_size:16,bss_size:0,note_size:0,note_off:0,text_off:0x1000,rod_off:0,dat_off:0,bss_off:0,text_va:0x401000,rod_va:0,dat_va:0,bss_va:0,note_va:0,has_rod:false,has_dat:true,has_bss:false,has_note:false,phnum:4,headers_end:0,pe_imports:None};
         let inv=a.precompute_layout_free(&l).unwrap();let metadata=a.branch_padding_metadata();let fixed=a.fixed_layout_lengths().unwrap();
         for mask in 0..8{let mut near=vec![false;a.text.len()];let mut j=0;for(i,it)in a.text.iter().enumerate(){if padded_jump(it).is_some(){near[i]=(mask>>j)&1!=0;j+=1;}}
-            let(bytes,offsets)=a.encode_all_cached(&near,&l,&inv,&metadata).unwrap();let(size,light)=a.layout_offsets_only(&near,&l,&inv,&metadata,&fixed,&a.layout_text_targets()).unwrap();assert_eq!(size,bytes.len()as u64);assert_eq!(light,offsets);
+            let(bytes,offsets)=a.encode_all_cached(&near,&l,&inv,&metadata).unwrap();let(size,light)=a.layout_offsets_only(&near,&l,&inv,&metadata,&fixed,&a.layout_text_targets(),&a.direct_branch_lengths()).unwrap();assert_eq!(size,bytes.len()as u64);assert_eq!(light,offsets);
         }
     }
     #[test] fn cached_classification_matches_dynamic_rules() {
