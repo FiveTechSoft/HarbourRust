@@ -1748,14 +1748,17 @@ impl Asm {
             _=>Ok(None),
         }).collect()
     }
-    fn layout_offsets_only(&self,near:&[bool],l:&Layout,inv:&[Option<Vec<u8>>],metadata:&[Option<(usize,bool)>],fixed:&[Option<u64>])->Result<(u64,Vec<u64>),String>{
+    fn layout_offsets_only(&self,near:&[bool],l:&Layout,inv:&[Option<Vec<u8>>],metadata:&[Option<(usize,bool)>],fixed:&[Option<u64>],targets:&[Option<usize>])->Result<(u64,Vec<u64>),String>{
         let resolve=self.make_resolver(l);let enc=Enc{resolve:&resolve};let mut size=0u64;let mut offs=Vec::with_capacity(self.text.len());
         let inslen=|i:usize,mnem:&str,ops:&[Op],lock:bool,off:u64|->Result<u64,String>{
             if let Some(b)=&inv[i]{return Ok(b.len()as u64);}
             if let Some(n)=fixed[i]{return Ok(n);}
             if let [Op::Imm(x)]=ops {
                 if mnem=="call" || is_jump(mnem) {
-                    let t=enc.eval(x)?;
+                    let t=match targets[i] {
+                        Some(idx)=>(l.text_va+l.text_offs.get(idx).copied().unwrap_or(l.text_size))as i64,
+                        None=>enc.eval(x)?,
+                    };
                     let n=if mnem=="call"{5}else if near[i]{jump_near_len(mnem)}else{jump_short_len(mnem)};
                     // Preserve the encoder's relative-address arithmetic too.
                     let _rel=t-(l.text_va+off+n)as i64;
@@ -1831,6 +1834,16 @@ impl Asm {
         Ok(Some(prefix))
     }
 
+    // Cache only the identity of exact direct branch/call text targets.
+    // The current provisional layout still supplies every address and rel32
+    // arithmetic runs on each pass. Other expressions keep the resolver.
+    fn layout_text_targets(&self)->Vec<Option<usize>> {
+        self.text.iter().map(|it|match it {
+            TItem::Ins{mnem,ops,..} if mnem=="call" || is_jump(mnem)=>match ops.as_slice() {
+                [Op::Imm(x)]=>self.exact_text_target(x),_=>None,
+            },_=>None,
+        }).collect()
+    }
     // Cache identity only, never an address. Other expressions keep the resolver.
     fn exact_text_target(&self,e:&Expr)->Option<usize>{
         let loc=match e.0.as_slice(){
@@ -1888,17 +1901,18 @@ impl Asm {
         // Preserve the first full pass, including its validation/error order.
         let _ = self.encode_all_cached(&vec![false;self.text.len()], &prov, &inv, &metadata)?;
         let fixed=self.fixed_layout_lengths()?;
+        let targets=self.layout_text_targets();
         let mut direct_jumps=Vec::new();
         for (i,it) in self.text.iter().enumerate() {
             if let TItem::Ins{mnem,ops,..}=it {
                 if is_jump(mnem) {
-                    if let Some(Op::Imm(x))=ops.first(){direct_jumps.push((i,x,self.exact_text_target(x)));}
+                    if let Some(Op::Imm(x))=ops.first(){direct_jumps.push((i,x,targets[i]));}
                 }
             }
         }
         let mut relax = |near: &mut Vec<bool>, final_offs: &mut Vec<u64>| -> Result<u64, String> {
             loop {
-                let (byte_size, offs) = self.layout_offsets_only(near, &prov, &inv,&metadata,&fixed)?;
+                let (byte_size, offs) = self.layout_offsets_only(near, &prov, &inv,&metadata,&fixed,&targets)?;
                 let lprov = Layout { text_offs: offs, text_size: byte_size, ..prov_clone(&prov) };
                 let resolve = self.make_resolver(&lprov);
                 let enc = Enc { resolve: &resolve };
@@ -2554,6 +2568,17 @@ mod safe_shorten_tests {
             let a=asm(src);let x=a.text.iter().find_map(|it|match it{TItem::Ins{ops,..}=>match ops.first(){Some(Op::Imm(x))=>Some(x),_=>None},_=>None}).unwrap();assert_eq!(a.exact_text_target(x),expected,"{}",src);
         }
     }
+    #[test]fn layout_target_cache_uses_current_offsets_and_fallbacks(){
+        let a=asm("jmp end\ncall 1f\n1:\ncall $end+0\ncall external\ncall end\nret\nend:");
+        let targets=a.layout_text_targets();
+        assert_eq!(targets,vec![Some(6),Some(2),None,None,Some(6),None]);
+        let mut l=Layout{text_offs:vec![0;a.text.len()],text_size:0,rod_size:0,dat_size:0,bss_size:0,note_size:0,note_off:0,text_off:0x1000,rod_off:0,dat_off:0,bss_off:0,text_va:0x401000,rod_va:0,dat_va:0,bss_va:0,note_va:0,has_rod:false,has_dat:false,has_bss:false,has_note:false,phnum:4,headers_end:0,pe_imports:Some([(String::from("external"),0)].into_iter().collect())};
+        let inv=a.precompute_layout_free(&l).unwrap();let metadata=a.branch_padding_metadata();let fixed=a.fixed_layout_lengths().unwrap();
+        for bias in [0,1,127,128,4096] {
+            l.text_size=100+bias;l.text_offs=(0..a.text.len()).map(|i|i as u64*7+bias).collect();
+            for on in [false,true] {let near=vec![on;a.text.len()];let(bytes,offs)=a.encode_all_cached(&near,&l,&inv,&metadata).unwrap();let(size,light)=a.layout_offsets_only(&near,&l,&inv,&metadata,&fixed,&targets).unwrap();assert_eq!(size,bytes.len()as u64);assert_eq!(light,offs);}
+        }
+    }
     #[test]fn jump_fast_guard_matches_normalization(){
         for mnemonic in ["jmp","je","jnbe","jrcxz","jmpq","jmpw","jmpl","loop","call","movq","cmpq","addl","","JMP","cmovg","setne"] {
             let (m,_) = suffix_width(mnemonic);
@@ -2637,7 +2662,7 @@ mod branch_align_tests {
         let l=Layout{text_offs:vec![0;a.text.len()],text_size:0,rod_size:0,dat_size:16,bss_size:0,note_size:0,note_off:0,text_off:0x1000,rod_off:0,dat_off:0,bss_off:0,text_va:0x401000,rod_va:0,dat_va:0,bss_va:0,note_va:0,has_rod:false,has_dat:true,has_bss:false,has_note:false,phnum:4,headers_end:0,pe_imports:None};
         let inv=a.precompute_layout_free(&l).unwrap();let metadata=a.branch_padding_metadata();let fixed=a.fixed_layout_lengths().unwrap();
         for mask in 0..8{let mut near=vec![false;a.text.len()];let mut j=0;for(i,it)in a.text.iter().enumerate(){if padded_jump(it).is_some(){near[i]=(mask>>j)&1!=0;j+=1;}}
-            let(bytes,offsets)=a.encode_all_cached(&near,&l,&inv,&metadata).unwrap();let(size,light)=a.layout_offsets_only(&near,&l,&inv,&metadata,&fixed).unwrap();assert_eq!(size,bytes.len()as u64);assert_eq!(light,offsets);
+            let(bytes,offsets)=a.encode_all_cached(&near,&l,&inv,&metadata).unwrap();let(size,light)=a.layout_offsets_only(&near,&l,&inv,&metadata,&fixed,&a.layout_text_targets()).unwrap();assert_eq!(size,bytes.len()as u64);assert_eq!(light,offsets);
         }
     }
     #[test] fn cached_classification_matches_dynamic_rules() {
