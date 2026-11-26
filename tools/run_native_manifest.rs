@@ -55,6 +55,23 @@ fn main_work() -> Result<bool, String> {
         let mut parts=line.splitn(3,' ');let kind=parts.next().unwrap();let source=parts.next().ok_or("manifest missing source")?;let spec=parts.next().unwrap_or("");
         let case=output.join(format!("{:04}",index));fs::create_dir(&case).map_err(|e|e.to_string())?;
         let exe=fs::canonicalize(&case).map_err(|e|e.to_string())?.join("program");
+        // CLI rows name an expected stdout file, not a PRG source. Keep
+        // argument splitting literal and never interpret manifest text as shell.
+        if kind=="cli" {
+            let mut c=Command::new(&compiler);c.args(spec.split_whitespace());
+            let (rc,timeout)=run(c,&case.join("cli"),60)?;
+            let stdout=bytes(&case.join("cli.stdout"))?;
+            let stderr=bytes(&case.join("cli.stderr"))?;
+            let expected=bytes(Path::new(source))?;
+            fs::write(case.join("expected.stdout"),&expected).map_err(|e|e.to_string())?;
+            fs::write(case.join("expected.stderr"),b"").map_err(|e|e.to_string())?;
+            let pass=!timeout && rc==0 && stderr.is_empty() && stdout==expected;
+            total+=1;if pass{passed+=1;}
+            println!("{} {} (cli exact channels)",if pass{"PASS"}else{"FAIL"},source);
+            log.push_str(&format!("{}\t{}\t{}\t{}\t\t{}\tcli exact channels\n",index,kind,source,rc,pass));
+            fs::write(output.join("results.tsv"),&log).map_err(|e|e.to_string())?;
+            continue;
+        }
         let mut c=Command::new(&compiler);c.arg(source).arg(&exe);
         if let Some(t)=&target {c.arg(format!("--target={}",t));}
         if instrument {c.arg("--instrument");}

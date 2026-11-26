@@ -1,0 +1,4 @@
+PROCEDURE Main()
+LOCAL n:=9223372036854775807
+? ValType(n+1),ValType(n*2),ValType(n-(-1))
+RETURN

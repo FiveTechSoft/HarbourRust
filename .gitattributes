@@ -206,3 +206,13 @@ tests/set-runtime-mask/** -text
 tests/date-original3/** -text
 tests/main-return/expected/** -text
 tests/main-params/expected/** -text
+
+# Derived t414 Windows expectation must retain byte-exact CRLF.
+tests/t414_valtype_usercall.windows.out -text
+
+# Derived t44 Windows expectation, retained raw CRLF.
+tests/t44_for_step_expr.windows.out -text
+
+# t732 oracle stdout and derived target newline bytes.
+tests/t732_float_frontier.linux.out -text
+tests/t732_float_frontier.windows.out -text

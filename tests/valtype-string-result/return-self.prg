@@ -1,0 +1,9 @@
+PROCEDURE Main()
+LOCAL s:=Space(8)
+? ValType(F(G(s))),s
+RETURN
+FUNCTION G(s)
+RETURN s
+FUNCTION F(s)
+? Len(s)
+RETURN 1.25

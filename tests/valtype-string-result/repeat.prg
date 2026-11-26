@@ -1,0 +1,8 @@
+PROCEDURE Main()
+LOCAL s:=Space(8),i
+FOR i:=1 TO 20
+? ValType(G(s)),s
+NEXT
+RETURN
+FUNCTION G(s)
+RETURN s

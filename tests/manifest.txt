@@ -44,7 +44,7 @@ neg tests/t40_for_assign_var.prg cannot assign to the `for` loop variable
 neg tests/t41_for_move.prg not reassigned before `next`
 pos2 tests/t42_for_exit_loop.prg tests/expectations/qout/t42_for_exit_loop.linux.out tests/expectations/qout/t42_for_exit_loop.windows.out
 neg tests/t43_for_step_zero.prg non-zero integer literal
-pos2 tests/t44_for_step_expr.prg tests/t44_for_step_expr.out
+pos2 tests/t44_for_step_expr.prg tests/t44_for_step_expr.out tests/t44_for_step_expr.windows.out
 pos2 tests/t45_for_overflow_up.prg tests/expectations/qout/t45_for_overflow_up.linux.out tests/expectations/qout/t45_for_overflow_up.windows.out
 pos2 tests/t46_for_overflow_down.prg tests/expectations/qout/t46_for_overflow_down.linux.out tests/expectations/qout/t46_for_overflow_down.windows.out
 pos2 tests/t47_for_zero_down.prg tests/expectations/qout/t47_for_zero_down.linux.out tests/expectations/qout/t47_for_zero_down.windows.out
@@ -407,7 +407,7 @@ pos2 tests/t410_valtype_effects.prg tests/expectations/qout/t410_valtype_effects
 pos2 tests/t411_valtype_cells.prg tests/expectations/qout/t411_valtype_cells.linux.out tests/expectations/qout/t411_valtype_cells.windows.out
 pos2 tests/t412_valtype_borrow.prg tests/expectations/qout/t412_valtype_borrow.linux.out tests/expectations/qout/t412_valtype_borrow.windows.out
 neg tests/t413_valtype_deep3.prg not measured in this PoC
-neg tests/t414_valtype_usercall.prg not measured in this PoC
+pos2 tests/t414_valtype_usercall.prg tests/t414_valtype_usercall.out tests/t414_valtype_usercall.windows.out
 pos2 tests/t415_valtype_hash.prg tests/expectations/qout/t415_valtype_hash.linux.out tests/expectations/qout/t415_valtype_hash.windows.out
 pos2 tests/t416_borrow3_read.prg tests/expectations/qout/t416_borrow3_read.linux.out tests/expectations/qout/t416_borrow3_read.windows.out
 pos2 tests/t417_borrow3_grow.prg tests/expectations/qout/t417_borrow3_grow.linux.out tests/expectations/qout/t417_borrow3_grow.windows.out
@@ -725,7 +725,7 @@ pos2 tests/t728_float_copy_reassign.prg tests/expectations/qout/t728_float_copy_
 neg tests/t729_float_arith_neg.prg arithmetic needs numeric operands
 neg tests/t730_float_cond_neg.prg not a condition
 pos2 tests/t731_float_callarg_neg.prg tests/expectations/qout/t731_float_callarg_neg.linux.out tests/expectations/qout/t731_float_callarg_neg.windows.out
-pos tests/t732_float_frontier_neg.prg \n10000000000000000.0
+pos2 tests/t732_float_frontier_neg.prg tests/t732_float_frontier.linux.out tests/t732_float_frontier.windows.out
 pos2 tests/t733_float_ret_neg.prg tests/expectations/qout/t733_float_ret_neg.linux.out tests/expectations/qout/t733_float_ret_neg.windows.out
 pos tests/t734_float_frontier2_neg.prg \n1234567890123457.0
 pos tests/t736_float_starzone_neg.prg \n99999999999999.98

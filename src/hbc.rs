@@ -605,7 +605,7 @@ impl Drop for ValtypeScalarCopy {
 }
 fn valtype_scalar_copy(id:&str,a:&Expr,sigs:&[Sig]) -> bool {
     VALTYPE_SCALAR_COPY.with(|v|v.get()>0) && matches!(a,Expr::Var(_))
-        && sigs.iter().any(|s|s.name==id && matches!(s.ret,Some(Ty::I64|Ty::Bool|Ty::F64)))
+        && sigs.iter().any(|s|s.name==id && matches!(s.ret,Some(Ty::I64|Ty::Bool|Ty::F64|Ty::Str|Ty::StrOwn)))
 }
 
 // Narrow ValType arithmetic frontier: no direct division, sequence, inline
@@ -6386,6 +6386,8 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
     walk_stmts(f, &f.stmts, sigs, &mut lit, &mut pin, &mut printed, nil_ret)?;
     for i in 0..n {
         if let Some(line)=printed[i].len_line {
+            let string_arg=matches!(sigs.iter().find(|s|s.name==f.name).and_then(|s|s.arg_ev.get(i)).copied().flatten(),Some(Ty::Str|Ty::StrOwn));
+            if pin[i].is_none() && string_arg {pin[i]=Some(Ty::StrOwn);}
             if !matches!(pin[i],Some(Ty::Str|Ty::StrOwn)) {pin_vars(f,&Expr::Var(f.params[i].clone()),Ty::DArr,&mut pin,line)?;}
         }
     }
@@ -7952,16 +7954,19 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 // Argument checking can consume owned locals. Cache a call's
                 // checked type so shape guards and the final type check do not
                 // apply its moves again.
-                let checked_call_ty = if matches!(&args[0],Expr::Call(..)) || (matches!(&args[0],Expr::Bin(..)) && valtype_float_arithmetic(&args[0])) {
+                let checked_call_ty = if matches!(&args[0],Expr::Call(..)) || (matches!(&args[0],Expr::Bin(..)) && valtype_float_arithmetic(&args[0])) || matches!(&args[0],Expr::Cmp(..)) {
                     Some(type_expr(&args[0],env,sigs,n)?)
                 } else { None };
                 match &args[0] {
                     Expr::Call(id,aa) if shared_local::active()&&is_builtin(id,"atail")&&matches!(aa.as_slice(),[Expr::Var(v)]if shared_local::current(v))=>{},
                     Expr::Send(..) if method_results::send(&args[0]) => {} ,
                     Expr::Send(o,_,aa) if timestamp::scalar_empty() && aa.is_empty() && matches!(o.as_ref(),Expr::Var(_)) && type_expr(&args[0],env,sigs,n)?==Ty::Dyn => {},
-                    Expr::Int(_) | Expr::Float(..) | Expr::FloatV(..) | Expr::Str(_) | Expr::Nil | Expr::Var(_) => {}
+                    Expr::Int(_) | Expr::Float(..) | Expr::FloatV(..) | Expr::Str(_) | Expr::Nil | Expr::Log(_) | Expr::Var(_) => {}
                     Expr::Call(..) if checked_call_ty==Some(Ty::F64) => {}
-                    Expr::Bin(..) if valtype_float_arithmetic(&args[0]) && checked_call_ty==Some(Ty::F64) => {}
+                    Expr::Call(id,..) if sigs.iter().any(|s|s.name==*id) && matches!(checked_call_ty,Some(Ty::I64|Ty::Bool)) => {}
+                    Expr::Call(id,..) if sigs.iter().any(|s|s.name==*id) && matches!(checked_call_ty,Some(Ty::Str|Ty::StrOwn)) => {}
+                    Expr::Bin(..) if valtype_float_arithmetic(&args[0]) && matches!(checked_call_ty,Some(Ty::I64|Ty::F64)) => {}
+                    Expr::Cmp(_,a,b) if valtype_float_arithmetic(a) && valtype_float_arithmetic(b) && checked_call_ty==Some(Ty::Bool) => {}
                     Expr::Call(id, _) if id==INTERNAL_STOD || is_output_call(id) || is_builtin(id,"date") || is_builtin(id,"ctod") || dbf_result(id).is_some() || timestamp::family(id) || (DECIMAL_LOCAL_PROFILE.with(|v|v.get())&&is_builtin(id,"asort")) => {}
                     Expr::Index(v, _) => {
                         // DArr4 first level: child-array casilla -
@@ -9917,6 +9922,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                             match ty {
                                 Ok(Ty::F64) => Some(Ty::F64),
                                 Ok(Ty::Date) => Some(Ty::Date),
+                                Ok(Ty::Str|Ty::StrOwn) if VALTYPE_SCALAR_COPY.with(|v|v.get()>0) => Some(Ty::StrOwn),
                                 _ => None,
                             }
                         },
@@ -10263,6 +10269,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                     || (ta == Ty::Bool && sig_params[i] == Ty::Dyn) // tagged 3 at the call (hk264)
                     || (matches!(ta, Ty::Obj(_)) && sig_params[i] == Ty::Dyn) // object tags 13 in place (sharing, hk-registered)
                     || matches!((ta, sig_params[i]), (Ty::Obj(d), Ty::Obj(b)) if class_is_a(d, b)) // is-a: a descendant object fills a base slot
+                    || (ta == Ty::StrOwn && sig_params[i] == Ty::Str && valtype_scalar_copy(id,a,sigs))
                     || (ta == Ty::Str && sig_params[i] == Ty::StrOwn); // rodata: copied at the call boundary
                 if !ok {
                     // Two codeblocks of different arity: name both arities so
@@ -17778,6 +17785,14 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             if shared_local::active()&&matches!(&args[0],Expr::Index2(v,..)|Expr::Index3(v,..)|Expr::Index4(v,..)if shared_local::current(v)&&env.iter().any(|x|x.name==*v&&x.ty==Ty::Dyn)){
                 cg_value(&args[0],env,sigs,strs,out,target);out.push_str("    mov %rax, %r10\n");vt_classify_scalar(strs,out);return;
             }
+            if matches!(&args[0],Expr::Cmp(..)) && expr_ty(&args[0],env,sigs)==Ty::Bool {
+                cg_value(&args[0],env,sigs,strs,out,target);
+                vt_letter(strs,out,"L");return;
+            }
+            if matches!(&args[0],Expr::Bin(..)) && expr_ty(&args[0],env,sigs)==Ty::I64 {
+                cg_value(&args[0],env,sigs,strs,out,target);
+                vt_letter(strs,out,"N");return;
+            }
             if expr_ty(&args[0],env,sigs)==Ty::F64 {
                 cg_f64_load(&args[0],env,sigs,strs,out,target);
                 vt_letter(strs,out,"N");return;
@@ -17794,10 +17809,22 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                     vt_classify_scalar(strs,out);cg_dyn_stack_release(out,0,true);
                     out.push_str("    add $16, %rsp\n");
                 }
+                Expr::Call(id,_) if sigs.iter().any(|s|s.name==*id) && matches!(expr_ty(&args[0],env,sigs),Ty::Str|Ty::StrOwn) => {
+                    let ty=expr_ty(&args[0],env,sigs);
+                    cg_value(&args[0],env,sigs,strs,out,target);
+                    if ty==Ty::StrOwn {out.push_str("    mov %rax, %rdi\n    call hbc_freestr\n");}
+                    vt_letter(strs,out,"C");
+                }
+                Expr::Call(id,_) if sigs.iter().any(|s|s.name==*id) && matches!(expr_ty(&args[0],env,sigs),Ty::I64|Ty::Bool) => {
+                    let ty=expr_ty(&args[0],env,sigs);
+                    cg_value(&args[0],env,sigs,strs,out,target);
+                    vt_letter(strs,out,if ty==Ty::Bool {"L"}else{"N"});
+                }
                 Expr::Call(id,_) if id==INTERNAL_STOD => vt_letter(strs,out,"D"),
                 Expr::Int(_) => vt_letter(strs, out, "N"),
                 Expr::Str(_) => vt_letter(strs, out, "C"),
                 Expr::Nil => vt_letter(strs, out, "U"),
+                Expr::Log(_) => vt_letter(strs,out,"L"),
                 Expr::Call(id, _) if is_output_call(id) => {
                     cg_expr(&args[0], env, sigs, strs, out, target);
                     vt_letter(strs, out, "U");
