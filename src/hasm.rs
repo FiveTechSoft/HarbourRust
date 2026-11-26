@@ -1656,6 +1656,25 @@ impl Asm {
     }
 
     fn encode_all(&self, near: &[bool], l: &Layout, inv: &[Option<Vec<u8>>]) -> Result<(Vec<u8>, Vec<u64>), String> {
+        let metadata=self.branch_padding_metadata();
+        self.encode_all_cached(near,l,inv,&metadata)
+    }
+    // Only classification is invariant. Jump widths, fused instruction widths,
+    // offsets and padding remain layout-dependent and are recomputed each pass.
+    fn branch_padding_metadata(&self) -> Vec<Option<(usize, bool)>> {
+        self.text.iter().enumerate().map(|(i, it)| {
+            if !self.branch_align || matches!(i.checked_sub(1).map(|k| &self.text[k]), Some(TItem::Raw(_))) {
+                return None;
+            }
+            if padded_jump(it).is_some() {
+                Some((i, false))
+            } else if self.text.get(i + 1).and_then(padded_jump).filter(|m| fuses_with(it, m)).is_some() {
+                Some((i + 1, true))
+            } else { None }
+        }).collect()
+    }
+
+    fn encode_all_cached(&self, near: &[bool], l: &Layout, inv: &[Option<Vec<u8>>], metadata: &[Option<(usize, bool)>]) -> Result<(Vec<u8>, Vec<u64>), String> {
         let resolve = self.make_resolver(l);
         let enc = Enc { resolve: &resolve };
         let mut bytes = Vec::with_capacity(l.text_size as usize + 16);
@@ -1676,21 +1695,17 @@ impl Asm {
                     // tras un TItem::Raw (prefijos o datos pegados a la
                     // instrucción). El offset del item se anota tras el pad,
                     // así relax y encode_jump ven la misma dirección.
-                    if self.branch_align && !matches!(i.checked_sub(1).map(|k| &self.text[k]), Some(TItem::Raw(_))) {
-                        let unit = if let Some(m) = padded_jump(it) {
-                            Some(jlen(i, m))
-                        } else if let Some(m) = self.text.get(i + 1).and_then(padded_jump).filter(|m| fuses_with(it, m)) {
-                            let n = match &inv[i] {
+                    if let Some((j, fused)) = metadata[i] {
+                        let m = match &self.text[j] { TItem::Ins { mnem, .. } => mnem, _ => unreachable!() };
+                        let n = if fused {
+                            match &inv[i] {
                                 Some(b) => b.len(),
                                 None => encode_ins(&enc, mnem, ops, *lock, l.text_va + bytes.len() as u64, near[i])
                                     .map_err(|e| format!("item {} ({} {:?}): {}", i, mnem, ops, e))?.len(),
-                            };
-                            Some(n as u64 + jlen(i + 1, m))
-                        } else { None };
-                        if let Some(n) = unit {
-                            let pad = branch_pad(bytes.len() as u64, n);
-                            bytes.extend_from_slice(&nop_fill(pad as usize));
-                        }
+                            }
+                        } else { 0 };
+                        let pad = branch_pad(bytes.len() as u64, n as u64 + jlen(j, m));
+                        bytes.extend_from_slice(&nop_fill(pad as usize));
                     }
                     offs.push(bytes.len() as u64);
                     if let Some(b) = &inv[i] {
@@ -1818,6 +1833,7 @@ impl Asm {
         let mut final_offs: Vec<u64> = Vec::new();
         // These item indices and expressions do not change during relaxation.
         // Preserve source order while avoiding a whole-text classification pass.
+        let metadata=self.branch_padding_metadata();
         let mut direct_jumps=Vec::new();
         for (i,it) in self.text.iter().enumerate() {
             if let TItem::Ins{mnem,ops,..}=it {
@@ -1828,7 +1844,7 @@ impl Asm {
         }
         let mut relax = |near: &mut Vec<bool>, final_offs: &mut Vec<u64>| -> Result<u64, String> {
             loop {
-                let (bytes, offs) = self.encode_all(near, &prov, &inv)?;
+                let (bytes, offs) = self.encode_all_cached(near, &prov, &inv,&metadata)?;
                 let lprov = Layout { text_offs: offs, text_size: bytes.len() as u64, ..prov_clone(&prov) };
                 let resolve = self.make_resolver(&lprov);
                 let enc = Enc { resolve: &resolve };
@@ -2546,6 +2562,21 @@ mod branch_align_tests {
         assert_eq!(&t[30..32], &nop_fill(2)[..]);
         assert_eq!(t[32], 0xEB);
         assert_eq!(t[33] as i8, -34);
+    }
+    #[test] fn cached_classification_matches_dynamic_rules() {
+        for on in [false, true] {
+            let mut a=Asm{p:Parser{consts:HashMap::new(),labels:HashMap::new(),numlabels:HashMap::new(),seq:Cell::new(0)},text:vec![],rodata:vec![],data:vec![],bss:vec![],note:vec![],has_gnu_stack:false,cur:Sec::Text,secstack:vec![],text_align:1,rod_align:1,dat_align:1,bss_align:1,branch_align:on};
+            let src="cmpq $1,%rax\nje target\n.byte 0x66\njmp target\naddq $7,(%rax)\nje target\nincq %rax\njc target\nlock addq $1,(%rax)\nje target\ntarget:\nret";
+            for l in src.lines(){a.parse_line(l).unwrap();}
+            let cache=a.branch_padding_metadata();
+            for(i,it)in a.text.iter().enumerate(){
+                let expected=if !on||matches!(i.checked_sub(1).map(|k|&a.text[k]),Some(TItem::Raw(_))){None}
+                    else if padded_jump(it).is_some(){Some((i,false))}
+                    else if a.text.get(i+1).and_then(padded_jump).filter(|m|fuses_with(it,m)).is_some(){Some((i+1,true))}
+                    else{None};
+                assert_eq!(cache[i],expected);
+            }
+        }
     }
     #[test] fn jump_inside_a_chunk_is_untouched() {
         let s = ".rept 20\nnop\n.endr\njmp _start\nret";
