@@ -6289,6 +6289,10 @@ fn pin_params(f: &Func, sigs: &[Sig]) -> Result<(Vec<Option<Ty>>, Option<String>
             (Some(t), Some(Ty::Dyn)) if matches!(t, Ty::I64 | Ty::Bool | Ty::Str | Ty::StrOwn | Ty::F64) => {
                 pin[i] = Some(Ty::Dyn);
             }
+            // A tagged-union argument against any other body pin (an
+            // array view, an array, an object) keeps the existing
+            // call-site contract: the boundary checks the tag.
+            (Some(_), Some(Ty::Dyn)) => {}
             (Some(t), Some(e)) => {
                 if pin_err.is_none() {
                     pin_err = Some(format!("parameter `{}` of function `{}` is {} by its body but a call passes {}", p, f.name, ty_name(t), ty_name(e)));
@@ -9756,7 +9760,9 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                                 // Dyn): the parameter must be the union
                                 // too, or the boundary's integer-only
                                 // conversion rejects the float at runtime.
-                                Ok(Ty::Dyn) => Some(Ty::Dyn),
+                                // The shared module array keeps its
+                                // named boundary rejection (probe p6).
+                                Ok(Ty::Dyn) if !matches!(a, Expr::Var(v) if !shared_local::active() && module_static::current(v) == Some(Ty::Dyn)) => Some(Ty::Dyn),
                                 _ => None,
                             }
                         },
