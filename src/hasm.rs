@@ -1930,7 +1930,7 @@ impl Asm {
         let mut relax = |near: &mut Vec<bool>, final_offs: &mut Vec<u64>| -> Result<u64, String> {
             loop {
                 let (byte_size, offs) = self.layout_offsets_only(near, &prov, &inv,&metadata,&fixed,&targets,&direct_lengths)?;
-                let lprov = Layout { text_offs: offs, text_size: byte_size, ..prov_clone(&prov) };
+                let lprov = prov_with_text(&prov, offs, byte_size);
                 let resolve = self.make_resolver(&lprov);
                 let enc = Enc { resolve: &resolve };
                 let mut changed = false;
@@ -2362,8 +2362,13 @@ impl Asm {
 }
 
 fn prov_clone(l: &Layout) -> Layout {
+    prov_with_text(l, l.text_offs.clone(), l.text_size)
+}
+// A fresh layout already owns its text offsets. Avoid cloning the provisional
+// offsets only to discard that clone through a struct-update override.
+fn prov_with_text(l: &Layout, text_offs: Vec<u64>, text_size: u64) -> Layout {
     Layout {
-        text_offs: l.text_offs.clone(), text_size: l.text_size,
+        text_offs, text_size,
         rod_size: l.rod_size, dat_size: l.dat_size, bss_size: l.bss_size, note_size: l.note_size,
         note_off: l.note_off, text_off: l.text_off, rod_off: l.rod_off, dat_off: l.dat_off, bss_off: l.bss_off,
         text_va: l.text_va, rod_va: l.rod_va, dat_va: l.dat_va, bss_va: l.bss_va, note_va: l.note_va,
@@ -2611,6 +2616,14 @@ mod safe_shorten_tests {
         let old=a.fixed_layout_lengths().unwrap();let merged=a.merged_layout_lengths(&inv).unwrap();
         for i in 0..a.text.len(){assert_eq!(merged[i],inv[i].as_ref().map(|b|b.len()as u64).or(old[i]));}
         assert_eq!(merged[0],Some(1));assert_eq!(merged[2],Some(7));assert_eq!(merged[3],None);assert_eq!(merged[4],None);assert_eq!(merged[5],None);
+    }
+    #[test]fn provisional_text_move_preserves_every_other_field(){
+        let l=Layout{text_offs:vec![9,8,7],text_size:6,rod_size:1,dat_size:2,bss_size:3,note_size:4,note_off:5,text_off:6,rod_off:7,dat_off:8,bss_off:9,text_va:10,rod_va:11,dat_va:12,bss_va:13,note_va:14,has_rod:true,has_dat:false,has_bss:true,has_note:false,phnum:15,headers_end:16,pe_imports:Some([(String::from("ExitProcess"),17)].into_iter().collect())};
+        let original=l.text_offs.clone();let incoming=vec![20,30,40,50];let ptr=incoming.as_ptr();let moved=prov_with_text(&l,incoming,60);
+        assert_eq!(moved.text_offs.as_ptr(),ptr);assert_eq!(moved.text_offs,vec![20,30,40,50]);assert_eq!(moved.text_size,60);assert_eq!(l.text_offs,original);
+        macro_rules! same{($($f:ident),*)=>{$(assert_eq!(moved.$f,l.$f);)*};}
+        same!(rod_size,dat_size,bss_size,note_size,note_off,text_off,rod_off,dat_off,bss_off,text_va,rod_va,dat_va,bss_va,note_va,has_rod,has_dat,has_bss,has_note,phnum,headers_end,pe_imports);
+        let copied=prov_clone(&l);assert_eq!(copied.text_offs,l.text_offs);assert_eq!(copied.text_size,l.text_size);assert_ne!(copied.text_offs.as_ptr(),l.text_offs.as_ptr());
     }
     #[test]fn jump_fast_guard_matches_normalization(){
         for mnemonic in ["jmp","je","jnbe","jrcxz","jmpq","jmpw","jmpl","loop","call","movq","cmpq","addl","","JMP","cmovg","setne"] {
