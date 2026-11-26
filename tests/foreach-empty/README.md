@@ -27,3 +27,18 @@ This is fixtureadmission,not new upstreamoriginal closure. Historicalgate19
 above described the earliercompiler and is superseded here. JulioPonceMIT
 specifications credited,no implementation/cambio.diff copied. NoASort,
 numericdivision,RC/objectpolicy,workflow,push,publication,rebase.
+
+## Contract follow-up for011d6e53 computed scalar stores
+
+011d6e53 admits ordinary Linux Dyn locals whose stores are proved scalar
+string computations, including Upper of a literal. The original unchanged
+limit-computed-local.prg therefore becomes a measured positive here. Its name
+and bytes remain intact for traceability, as with limit-local.prg above.
+The gate routes both through five fresh Harbour comparisons, strict final
+balance zero and three profile rejections. New limit-usercall-local.prg keeps
+the adjacent unproved user-call store as a named generic Dyn rejection.
+This changes no compiler or oracle expectation bytes. The earlier computed
+rejection statement describes the earlier endpoint and is superseded here.
+Expected gate37:20 exact comparisons,4 final-zero checks,12 profile
+rejections and1 named user-call rejection. No global Dyn Empty admission,
+RC/object-lifetime change, upstream source rewrite or publication.
