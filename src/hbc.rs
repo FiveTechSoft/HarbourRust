@@ -9751,6 +9751,12 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                             match ty {
                                 Ok(Ty::F64) => Some(Ty::F64),
                                 Ok(Ty::Date) => Some(Ty::Date),
+                                // A tagged-union argument may carry any
+                                // scalar (a float from `y % 19` with y
+                                // Dyn): the parameter must be the union
+                                // too, or the boundary's integer-only
+                                // conversion rejects the float at runtime.
+                                Ok(Ty::Dyn) => Some(Ty::Dyn),
                                 _ => None,
                             }
                         },
