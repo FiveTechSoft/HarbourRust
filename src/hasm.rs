@@ -1489,6 +1489,9 @@ fn encode_jump(e: &Enc, out: &mut Vec<u8>, m: &str, ops: &[Op], cur_va: u64, nea
 }
 
 fn is_jump(mnem: &str) -> bool {
+    // suffix_width never changes the initial character. Non-j mnemonics
+    // cannot become branches; avoid its suffix table in hot layout passes.
+    if !mnem.starts_with('j') { return false; }
     let (m, _) = suffix_width(mnem);
     m == "jmp" || (m.starts_with('j') && m.len() > 1 && cc_code(&m[1..]).is_some())
 }
@@ -1680,12 +1683,12 @@ impl Asm {
                         let unit = if let Some(m) = padded_jump(it) {
                             Some(jlen(i, m))
                         } else if let Some(m) = self.text.get(i + 1).and_then(padded_jump).filter(|m| fuses_with(it, m)) {
-                            let b = match &inv[i] {
-                                Some(b) => b.clone(),
+                            let n = match &inv[i] {
+                                Some(b) => b.len(),
                                 None => encode_ins(&enc, mnem, ops, *lock, l.text_va + bytes.len() as u64, near[i])
-                                    .map_err(|e| format!("item {} ({} {:?}): {}", i, mnem, ops, e))?,
+                                    .map_err(|e| format!("item {} ({} {:?}): {}", i, mnem, ops, e))?.len(),
                             };
-                            Some(b.len() as u64 + jlen(i + 1, m))
+                            Some(n as u64 + jlen(i + 1, m))
                         } else { None };
                         if let Some(n) = unit {
                             let pad = branch_pad(bytes.len() as u64, n);
@@ -1819,8 +1822,7 @@ impl Asm {
         let mut relax = |near: &mut Vec<bool>, final_offs: &mut Vec<u64>| -> Result<u64, String> {
             loop {
                 let (bytes, offs) = self.encode_all(near, &prov, &inv)?;
-                *final_offs = offs.clone();
-                let lprov = Layout { text_offs: offs.clone(), text_size: bytes.len() as u64, ..prov_clone(&prov) };
+                let lprov = Layout { text_offs: offs, text_size: bytes.len() as u64, ..prov_clone(&prov) };
                 let resolve = self.make_resolver(&lprov);
                 let enc = Enc { resolve: &resolve };
                 let mut changed = false;
@@ -1830,13 +1832,17 @@ impl Asm {
                         if is_jump(mnem) {
                             if let Op::Imm(x) = &ops[0] {
                                 let t = enc.eval(x)?;
-                                let rel = t - (0x401000 + offs[i]) as i64 - 2;
+                                let rel = t - (0x401000 + lprov.text_offs[i]) as i64 - 2;
                                 if !fits_i8(rel) { near[i] = true; changed = true; }
                             }
                         }
                     }
                 }
-                if !changed { return Ok(bytes.len() as u64); }
+                if !changed {
+                    drop(resolve);
+                    *final_offs = lprov.text_offs;
+                    return Ok(bytes.len() as u64);
+                }
             }
         };
         let mut best_size = relax(&mut near, &mut final_offs)?;
@@ -2467,6 +2473,13 @@ mod safe_shorten_tests {
         let e=Enc{resolve:&resolve};
         for mnemonic in ["cqto","cqo"] {
             assert_eq!(encode_ins(&e,mnemonic,&[],false,0,false).unwrap(),vec![0x48,0x99]);
+        }
+    }
+    #[test]fn jump_fast_guard_matches_normalization(){
+        for mnemonic in ["jmp","je","jnbe","jrcxz","jmpq","jmpw","jmpl","loop","call","movq","cmpq","addl","","JMP","cmovg","setne"] {
+            let (m,_) = suffix_width(mnemonic);
+            let original=m=="jmp"||(m.starts_with('j')&&m.len()>1&&cc_code(&m[1..]).is_some());
+            assert_eq!(is_jump(mnemonic),original,"{}",mnemonic);
         }
     }
     #[test]fn forward_rel8_boundary(){for n in [0,1,126,127,128,129,4096]{let a=asm(&format!("jmp target\n.rept {}\nnop\n.endr\ntarget:\nret",n));assert_eq!(a.cannot_shorten(0,&a.minimum_text_prefix().unwrap().unwrap()),n>127);}}
