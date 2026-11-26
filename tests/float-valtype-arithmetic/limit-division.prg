@@ -1,0 +1,4 @@
+PROCEDURE Main()
+LOCAL n:=1.25
+? ValType(n/2.0)
+RETURN

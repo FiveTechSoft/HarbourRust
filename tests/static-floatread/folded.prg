@@ -1,0 +1,4 @@
+STATIC n:=0.33333333
+PROCEDURE Main()
+? n,Str(n,16,8)
+RETURN

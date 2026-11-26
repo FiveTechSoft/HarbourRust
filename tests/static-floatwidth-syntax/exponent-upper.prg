@@ -1,0 +1,4 @@
+PROCEDURE Main()
+LOCAL x:=1.0E+10
+? x
+RETURN

@@ -1,0 +1,3 @@
+PROCEDURE Main()
+? ValType(1.25)
+RETURN

@@ -1,0 +1,8 @@
+STATIC n:=10000.15
+PROCEDURE Main()
+? n,n+1.00,Str(n,14,4)
+Other()
+RETURN
+PROCEDURE Other()
+? n
+RETURN

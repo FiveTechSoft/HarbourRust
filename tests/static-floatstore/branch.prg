@@ -1,0 +1,11 @@
+STATIC n:=1.2500
+PROCEDURE Main()
+IF n>0.0
+n:=4.5000
+ENDIF
+? n
+DO WHILE n<7.0
+n:=n+1.0
+ENDDO
+? n
+RETURN

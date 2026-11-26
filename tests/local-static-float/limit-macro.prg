@@ -1,0 +1,5 @@
+PROCEDURE Main()
+STATIC n:=1.25
+LOCAL s:="1"
+? n,&s
+RETURN

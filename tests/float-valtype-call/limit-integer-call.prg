@@ -1,0 +1,5 @@
+PROCEDURE Main()
+? ValType(F())
+RETURN
+FUNCTION F()
+RETURN 1

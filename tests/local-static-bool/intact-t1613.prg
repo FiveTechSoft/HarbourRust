@@ -1,0 +1,6 @@
+INIT PROCEDURE Boot()
+STATIC x := .T.
+? x
+RETURN
+PROCEDURE Main()
+RETURN

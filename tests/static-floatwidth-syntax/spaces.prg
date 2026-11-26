@@ -1,0 +1,7 @@
+STATIC n :=  10000000000.0
+PROCEDURE Main()
+LOCAL x := ( 10000000000.0 )
+? n,x
+n := -  1000000000.000
+? n
+RETURN

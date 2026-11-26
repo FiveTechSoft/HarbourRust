@@ -582,6 +582,42 @@ fn cg_seq_discard(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String
     }
 }
 
+// Literal metadata differs from arithmetic result metadata: positive wide
+// tokens keep their written integer width; a folded negative uses value width.
+fn float_literal_width(text: &str, value: f64) -> u32 {
+    if text.starts_with('-') {
+        if value > 9999999999.0 || value < -999999999.0 {20} else {10}
+    } else {
+        let digits=text.split('.').next().unwrap_or("").len() as u32;
+        digits.max(10)
+    }
+}
+
+// Scoped copies for named string arguments of scalar calls evaluated by
+// ValType. Uses the established owned-copy boundary, never shared storage.
+thread_local! { static VALTYPE_SCALAR_COPY: std::cell::Cell<usize> = const { std::cell::Cell::new(0) }; }
+struct ValtypeScalarCopy;
+impl ValtypeScalarCopy {
+    fn enter() -> Self { VALTYPE_SCALAR_COPY.with(|v|v.set(v.get()+1)); Self }
+}
+impl Drop for ValtypeScalarCopy {
+    fn drop(&mut self) { VALTYPE_SCALAR_COPY.with(|v|v.set(v.get()-1)); }
+}
+fn valtype_scalar_copy(id:&str,a:&Expr,sigs:&[Sig]) -> bool {
+    VALTYPE_SCALAR_COPY.with(|v|v.get()>0) && matches!(a,Expr::Var(_))
+        && sigs.iter().any(|s|s.name==id && matches!(s.ret,Some(Ty::I64|Ty::Bool|Ty::F64)))
+}
+
+// Narrow ValType arithmetic frontier: no direct division, sequence, inline
+// assignment, indexing or new storage behavior. Calls keep their own checks.
+fn valtype_float_arithmetic(e: &Expr) -> bool {
+    match e {
+        Expr::Bin('+' | '-' | '*', a, b) => valtype_float_arithmetic(a) && valtype_float_arithmetic(b),
+        Expr::Int(_) | Expr::Float(..) | Expr::FloatV(..) | Expr::Var(_) | Expr::Call(..) => true,
+        _ => false,
+    }
+}
+
 fn cg_f64_load(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, target: Target) {
     match e {
         Expr::Set(..) => unreachable!("inline `:=` is restricted to integer/logical values in this increment (checked)"),
@@ -593,11 +629,11 @@ fn cg_f64_load(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, 
         Expr::Float(txt, dec) => {
             let v: f64 = harbour_parse_f64(txt).expect("frontier-checked at parse");
             let k = f64_const(v.to_bits());
-            // Packed metadata: Harbour literal length HB_DEFAULT_WIDTH (10)
-            // in the high bits, dec in the low 16 bits.
+            // Packed metadata: literal integer width in the high bits,
+            // decimal count in the low 16 bits.
             out.push_str(&format!("    movsd .Lf64c{}(%rip), %xmm0
     mov ${}, %rdi
-", k, (10u32 << 16) | (*dec as u32)));
+", k, (float_literal_width(txt,v) << 16) | (*dec as u32)));
         }
         Expr::FloatV(bits, dec) => {
             // Harbour's fold sets bWidth = HB_DEFAULT_WIDTH (255): the
@@ -614,9 +650,12 @@ fn cg_f64_load(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>, 
         }
         Expr::Var(v) => {
             let var = env.iter().rev().find(|x| x.name == *v).expect("checked");
-            out.push_str(&format!("    movsd -{}(%rbp), %xmm0
+            if module_static::current(v)==Some(Ty::F64) {
+                let label=module_static::storage(&CUR_FN.with(|c|c.borrow().clone()),v);
+                out.push_str(&format!("    movsd {}(%rip), %xmm0\n    mov {}+8(%rip), %rdi\n",label,label));
+            } else {out.push_str(&format!("    movsd -{}(%rbp), %xmm0
     mov -{}(%rbp), %rdi
-", var.off, var.off - 8));
+", var.off, var.off - 8));}
         }
         Expr::Bin(op, a, b) => {
             // Harbour numeric arithmetic on values (hb_vmPlus/Minus/Mult/
@@ -2519,8 +2558,8 @@ fn parse_stmts(lines: &[(usize, Vec<Tok>)], i: &mut usize, out: &mut Vec<Stmt>, 
             parse_stmts(&[(n, declaration)], &mut 0, &mut local, depth)?;
             for st in local {
                 if let Stmt::Local(ln, name, value) = st {
-                    if !matches!(&value, Expr::Nil | Expr::Str(_) | Expr::DArrNew) && !matches!(&value, Expr::Int(v) if v.parse::<i64>().is_ok()) && !matches!(&value,Expr::ArrLit(es)if es.iter().all(const_array_init)) {
-                        return Err(format!("line {}: local STATIC requires NIL, folded i64, literal string or constant shared array; float/hash initializers remain outside this increment", n));
+                    if !matches!(&value, Expr::Nil | Expr::Str(_) | Expr::DArrNew | Expr::Float(..) | Expr::FloatV(..) | Expr::Log(_)) && !matches!(&value, Expr::Int(v) if v.parse::<i64>().is_ok()) && !matches!(&value,Expr::ArrLit(es)if es.iter().all(const_array_init)) {
+                        return Err(format!("line {}: local STATIC requires NIL, folded i64, literal float/logical/string or constant shared array; hash initializers remain outside this increment", n));
                     }
                     out.push(Stmt::Static(ln, name, value));
                 }
@@ -4259,8 +4298,10 @@ fn parse(src: &str) -> Result<Prog, String> {
                             Expr::DArrNew => true,
                             _ => false,
                         };
-                        if !matches!(&value, Expr::Nil | Expr::Log(_) | Expr::Str(_)) && !matches!(&value, Expr::Int(v) if v.parse::<i64>().is_ok()) && !array_init {
-                            return Err(format!("line {}: module STATIC requires a folded i64, logical or string scalar or a constant array initializer (i64/logical/string/NIL cells, nested and empty arrays admitted); NIL, Date, float and hash initializers are not in this increment", line));
+                        if matches!(&value,Expr::Bin('/',..)) {return Err(format!("line {}: module STATIC division initializer is not folded in this increment; use a literal float constant",line));}
+                        if matches!(&value,Expr::Float(..)|Expr::FloatV(..)) && (!CURDIR_LINUX_NATIVE.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get())) {return Err(format!("line {}: module STATIC float constants require ordinary Linux without macros",line));}
+                        if !matches!(&value, Expr::Nil | Expr::Log(_) | Expr::Str(_) | Expr::Float(..) | Expr::FloatV(..)) && !matches!(&value, Expr::Int(v) if v.parse::<i64>().is_ok()) && !array_init {
+                            return Err(format!("line {}: module STATIC requires a folded i64, logical or string scalar or a constant array initializer (i64/logical/string/NIL cells, nested and empty arrays admitted); Date and hash initializers are not in this increment; float slots retain their scalar type", line));
                         }
                         if module_slots.iter().any(|(_, id, _)| id == &name) {
                             return Err(format!("line {}: duplicate module STATIC `{}`", line, name));
@@ -7895,6 +7936,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 return Ok(Ty::Bool);
             }
             if is_builtin(id, "valtype") {
+                let _scalar_copy=ValtypeScalarCopy::enter();
                 if !method_results::active() && method_valtype::active(&CUR_FN.with(|c|c.borrow().clone()),e) {return method_valtype::check(e,env,sigs,n);}
                 // ValType(x): a one-character type tag (hk88-hk92). Borrows
                 // its argument; the argument evaluates fully with its
@@ -7907,11 +7949,19 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 }
                 if DECIMAL_LOCAL_PROFILE.with(|v|v.get())&&!MACRO_CONTEXT.with(|v|v.get())&&shared_local::literal(&args[0]){return Ok(Ty::Str);}
                 if shared_local::active()&&matches!(&args[0],Expr::Index2(v,..)|Expr::Index3(v,..)|Expr::Index4(v,..)if shared_local::current(v)&&env.iter().any(|x|x.name==*v&&x.ty==Ty::Dyn)){type_expr(&args[0],env,sigs,n)?;return Ok(Ty::Str);}
+                // Argument checking can consume owned locals. Cache a call's
+                // checked type so shape guards and the final type check do not
+                // apply its moves again.
+                let checked_call_ty = if matches!(&args[0],Expr::Call(..)) || (matches!(&args[0],Expr::Bin(..)) && valtype_float_arithmetic(&args[0])) {
+                    Some(type_expr(&args[0],env,sigs,n)?)
+                } else { None };
                 match &args[0] {
                     Expr::Call(id,aa) if shared_local::active()&&is_builtin(id,"atail")&&matches!(aa.as_slice(),[Expr::Var(v)]if shared_local::current(v))=>{},
                     Expr::Send(..) if method_results::send(&args[0]) => {} ,
                     Expr::Send(o,_,aa) if timestamp::scalar_empty() && aa.is_empty() && matches!(o.as_ref(),Expr::Var(_)) && type_expr(&args[0],env,sigs,n)?==Ty::Dyn => {},
-                    Expr::Int(_) | Expr::Str(_) | Expr::Nil | Expr::Var(_) => {}
+                    Expr::Int(_) | Expr::Float(..) | Expr::FloatV(..) | Expr::Str(_) | Expr::Nil | Expr::Var(_) => {}
+                    Expr::Call(..) if checked_call_ty==Some(Ty::F64) => {}
+                    Expr::Bin(..) if valtype_float_arithmetic(&args[0]) && checked_call_ty==Some(Ty::F64) => {}
                     Expr::Call(id, _) if id==INTERNAL_STOD || is_output_call(id) || is_builtin(id,"date") || is_builtin(id,"ctod") || dbf_result(id).is_some() || timestamp::family(id) || (DECIMAL_LOCAL_PROFILE.with(|v|v.get())&&is_builtin(id,"asort")) => {}
                     Expr::Index(v, _) => {
                         // DArr4 first level: child-array casilla -
@@ -7990,9 +8040,10 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                             }
                         }
                     }
-                    e => match type_expr(e, env, sigs, n)? {
+                    e => match if let Some(t)=checked_call_ty {t} else {type_expr(e, env, sigs, n)?} {
                         Ty::I64 | Ty::Str | Ty::StrOwn | Ty::DArr | Ty::DArrU | Ty::DArr2 | Ty::DArr3 | Ty::DArr4 | Ty::DArrS | Ty::DArrRef | Ty::Arr(_) | Ty::Dyn | Ty::Bool | Ty::Date | Ty::Obj(_) => {}
                         // A statically typed hash or codeblock variable.
+                        Ty::F64 => {}
                         Ty::Hash | Ty::Block(..) if matches!(e, Expr::Var(_)) => {}
                         _ => return Err(format!("line {}: `ValType` is not measured for this type in this PoC", n)),
                     },
@@ -10172,7 +10223,7 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                         }
                         // A Dyn target CLONES at the boundary (the
                         // caller keeps its value), so no move is marked.
-                        if sig_params[i] != Ty::Dyn && !sig_string_copy[i] && module_static::current(v) != Some(Ty::StrOwn) {
+                        if sig_params[i] != Ty::Dyn && !sig_string_copy[i] && !valtype_scalar_copy(id,a,sigs) && module_static::current(v) != Some(Ty::StrOwn) {
                             if let Some(x) = env.iter_mut().find(|x| x.name == *v && matches!(x.ty, Ty::Str | Ty::StrOwn)) { x.moved = true; }
                         }
                     }
@@ -12290,7 +12341,7 @@ fn check_stmts(stmts: &[Stmt], env: &mut Vec<Local>, sigs: &mut Vec<Sig>, ret: &
                     }
                 }
                 if matches!(s, Stmt::Static(..)) {
-                    if let Some(t @ (Ty::Bool | Ty::StrOwn | Ty::Obj(_))) = module_static::current(id) {
+                    if let Some(t @ (Ty::F64 | Ty::Bool | Ty::StrOwn | Ty::Obj(_))) = module_static::current(id) {
                         if env.iter().any(|v| v.name == *id) { return Err(format!("line {}: duplicate local `{}`", n, id)); }
                         env.push(Local { name:id.clone(), ty:t, moved:false, ro:false, byref:t == Ty::StrOwn });
                         continue;
@@ -14084,6 +14135,7 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
                 return;
             }
             if is_builtin(id, "valtype") {
+                let _scalar_copy=ValtypeScalarCopy::enter();
                 // ValType borrows its argument (hk88-hk92): nothing moves.
                 apply_moves(&args[0], env, sigs, false);
                 return;
@@ -14389,7 +14441,7 @@ fn apply_moves(e: &Expr, env: &mut [Local], sigs: &[Sig], moving: bool) {
                 // A static array argument is COPIED at the boundary (33l):
                 // the source variable keeps its value.
                 let copy = matches!(a, Expr::Var(v) if env.iter().any(|x| x.name == *v && matches!(x.ty, Ty::Arr(_))));
-                let m = !copy && !sig.string_iter_copy.get(i).copied().unwrap_or(false) && !sig.aview.get(i).copied().unwrap_or(false) && i < sig.params.len() && (sig.params[i] == Ty::Str || sig.params[i] == Ty::StrOwn || sig.params[i] == Ty::DArr || sig.params[i] == Ty::DArr2 || sig.params[i] == Ty::DArr3 || sig.params[i] == Ty::DArr4 || sig.params[i] == Ty::DArrS || sig.params[i] == Ty::Hash);
+                let m = !copy && !(matches!(sig.params.get(i),Some(Ty::Str|Ty::StrOwn)) && valtype_scalar_copy(id,a,sigs)) && !sig.string_iter_copy.get(i).copied().unwrap_or(false) && !sig.aview.get(i).copied().unwrap_or(false) && i < sig.params.len() && (sig.params[i] == Ty::Str || sig.params[i] == Ty::StrOwn || sig.params[i] == Ty::DArr || sig.params[i] == Ty::DArr2 || sig.params[i] == Ty::DArr3 || sig.params[i] == Ty::DArr4 || sig.params[i] == Ty::DArrS || sig.params[i] == Ty::Hash);
                 apply_moves(a, env, sigs, m);
             }
         }
@@ -17674,6 +17726,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             }
         }
         Expr::Call(id, args) if is_builtin(id, "valtype") => {
+            let _scalar_copy=ValtypeScalarCopy::enter();
             if !method_results::active() && method_valtype::active(&CUR_FN.with(|c|c.borrow().clone()),e) {method_valtype::emit(e,env,sigs,strs,out,target);return;}
             // ValType(x) (hk88-hk92): a one-character tag as a 1-byte
             // string (rax=ptr, rdx=1). Static types classify at compile
@@ -17724,6 +17777,10 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
             if DECIMAL_LOCAL_PROFILE.with(|v|v.get())&&!MACRO_CONTEXT.with(|v|v.get())&&shared_local::literal(&args[0]){vt_letter(strs,out,"A");return;}
             if shared_local::active()&&matches!(&args[0],Expr::Index2(v,..)|Expr::Index3(v,..)|Expr::Index4(v,..)if shared_local::current(v)&&env.iter().any(|x|x.name==*v&&x.ty==Ty::Dyn)){
                 cg_value(&args[0],env,sigs,strs,out,target);out.push_str("    mov %rax, %r10\n");vt_classify_scalar(strs,out);return;
+            }
+            if expr_ty(&args[0],env,sigs)==Ty::F64 {
+                cg_f64_load(&args[0],env,sigs,strs,out,target);
+                vt_letter(strs,out,"N");return;
             }
             match &args[0] {
                 Expr::Send(..) if method_results::send(&args[0]) || (timestamp::scalar_empty()&&expr_ty(&args[0],env,sigs)==Ty::Dyn)=>{
@@ -17776,7 +17833,8 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                 Expr::Var(v) => {
                     let var = env.iter().rev().find(|x| x.name == *v).expect("checked");
                     match var.ty {
-                        Ty::I64 | Ty::RefI64 => vt_letter(strs, out, "N"),
+                        Ty::RefI64 if module_static::current(v)==Some(Ty::Bool) => vt_letter(strs,out,"L"),
+                        Ty::I64 | Ty::RefI64 | Ty::F64 => vt_letter(strs, out, "N"),
                         Ty::Date => vt_letter(strs,out,"D"),
                         Ty::Bool => vt_letter(strs, out, "L"), // hk197
                         Ty::Hash => vt_letter(strs, out, "H"),
@@ -21201,7 +21259,7 @@ fn cg_expr_inner(e: &Expr, env: &[CgLocal], sigs: &[Sig], strs: &mut Vec<String>
                     out.push_str("    sub $16, %rsp\n    mov %rax, (%rsp)\n    mov %rdx, 8(%rsp)\n");
                     continue;
                 }
-                if (module_static::string_value(a) && pty != Some(Ty::Dyn)) || (ta == Ty::Str && pty == Some(Ty::StrOwn)) || pcopied.as_ref().and_then(|p| p.get(ai)).copied() == Some(true) {
+                if (matches!(ta,Ty::Str|Ty::StrOwn) && matches!(pty,Some(Ty::Str|Ty::StrOwn)) && valtype_scalar_copy(id,a,sigs)) || (module_static::string_value(a) && pty != Some(Ty::Dyn)) || (ta == Ty::Str && pty == Some(Ty::StrOwn)) || pcopied.as_ref().and_then(|p| p.get(ai)).copied() == Some(true) {
                     // Copy into the owned observer parameter; a named input
                     // keeps its owner. A computed input is freed AFTER copy.
                     let temp = ta == Ty::StrOwn && !matches!(a, Expr::Var(_));
@@ -23506,7 +23564,7 @@ fn layout_locals(stmts: &[Stmt], env: &mut Vec<CgLocal>, sigs: &[Sig], frame: &m
             }
             Stmt::Static(_, id, _) => {
                 let k = module_static::current(id);
-                *frame += if k == Some(Ty::Dyn) { 16 } else { 8 };
+                *frame += if matches!(k,Some(Ty::Dyn|Ty::F64)) { 16 } else { 8 };
                 // A module fixed array binds as its arity; the frame slot is
                 // reserved but unused, since every cell route goes through
                 // the shared .data label (module_static::array_base). A
@@ -23514,6 +23572,7 @@ fn layout_locals(stmts: &[Stmt], env: &mut Vec<CgLocal>, sigs: &[Sig], frame: &m
                 let ty = match k {
                     Some(t @ Ty::Obj(_)) => t,
                     Some(Ty::Arr(n)) => Ty::Arr(n),
+                    Some(Ty::F64) => Ty::F64,
                     Some(Ty::StrOwn) => Ty::RefStrOwn,
                     Some(Ty::Dyn) => Ty::Dyn,
                     _ => if static_dyn(id) {Ty::RefDyn}else{Ty::RefI64},
@@ -25160,7 +25219,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 }
             }
             Stmt::Static(_, id, _) => {
-                *frame += if module_static::current(id) == Some(Ty::Dyn) { 16 } else { 8 };
+                *frame += if matches!(module_static::current(id),Some(Ty::Dyn|Ty::F64)) { 16 } else { 8 };
                 let off = *frame;
                 let owner = CUR_FN.with(|c| c.borrow().clone());
                 let arr_ty = module_static::current(id);
@@ -25177,6 +25236,7 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                 let ty = match arr_ty {
                     Some(t @ Ty::Obj(_)) => t,
                     Some(Ty::Arr(n)) => Ty::Arr(n),
+                    Some(Ty::F64) => Ty::F64,
                     Some(Ty::StrOwn) => Ty::RefStrOwn,
                     Some(Ty::Dyn) => Ty::Dyn,
                     _ => if static_dyn(id) {Ty::RefDyn}else{Ty::RefI64},
@@ -26426,7 +26486,12 @@ fn cg_stmts(stmts: &[Stmt], env: &mut Vec<CgLocal>, frame: &mut usize, sigs: &[S
                     // metadata are dynamic): `a := 1.50` then `a := .123`
                     // reprints with the new precision.
                     cg_f64_load(e, env, sigs, strs, out, target);
-                    out.push_str(&format!("    movsd %xmm0, -{}(%rbp)\n    mov %rdi, -{}(%rbp)\n", off, off - 8));
+                    if module_static::current(id)==Some(Ty::F64) {
+                        let label=module_static::storage(&CUR_FN.with(|c|c.borrow().clone()),id);
+                        out.push_str(&format!("    movsd %xmm0, {}(%rip)\n    mov %rdi, {}+8(%rip)\n",label,label));
+                    } else {
+                        out.push_str(&format!("    movsd %xmm0, -{}(%rbp)\n    mov %rdi, -{}(%rbp)\n", off, off - 8));
+                    }
                     continue;
                 }
                 if lty == Ty::RefI64 {
@@ -28310,6 +28375,8 @@ fn cg_func(f: &Func, sigs: &[Sig], strs: &mut Vec<String>, out: &mut String, tar
             if let Stmt::Static(_, id, value) = st {
                 let words = match value {
                     Expr::Int(n) => format!("{}, 1", n),
+                    Expr::Float(text,dec) => {let v=harbour_parse_f64(text).expect("checked");format!("{}, {}",v.to_bits(),(float_literal_width(text,v)<<16)|*dec as u32)},
+                    Expr::FloatV(bits,dec) => {let v=f64::from_bits(*bits);let len=if v>9999999999.0||v< -999999999.0 {20u32}else{10};format!("{}, {}",bits,(len<<16)|*dec as u32)},
                     Expr::Nil if matches!(module_static::kind(&f.name,id),Some(Ty::Obj(_))) => "0, 0".to_string(),
                     Expr::Nil => "1, 0".to_string(),
                     Expr::Log(v) => format!("{}, 0", if *v {1}else{0}),
@@ -41270,6 +41337,7 @@ fn main() {
             v.inferred = c.inferred;
         }
     }
+    if funcs.iter().any(|f|f.stmts.iter().any(|st|matches!(st,Stmt::Static(_,_,Expr::Float(..)|Expr::FloatV(..))))) && (THREADS.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get()) || STR_DYN.with(|v|v.get())) {eprintln!("error: module STATIC float lifecycle guard excludes threads/macros");process::exit(1);}
     if ERRORLEVEL_USED.with(|v|v.get()) && (THREADS.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get()) || STR_DYN.with(|v|v.get())) {eprintln!("error: ErrorLevel lifecycle guard excludes threads and macros");process::exit(1);}
     EXIT_QUIT_ROUTE.with(|v|v.set(funcs.iter().any(|f|f.init || f.name.ends_with("$exit")) && QUIT_USED.with(|q|q.get())));
     if EXIT_QUIT_ROUTE.with(|v|v.get()) && (THREADS.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get()) || STR_DYN.with(|v|v.get())) {

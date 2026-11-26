@@ -1,0 +1,7 @@
+STATIC n:=1.25
+PROCEDURE Main()
+F(@n)
+RETURN
+PROCEDURE F(x)
+x:=3.0
+RETURN

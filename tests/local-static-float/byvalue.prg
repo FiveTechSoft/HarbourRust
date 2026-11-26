@@ -1,0 +1,13 @@
+PROCEDURE Main()
+F()
+F()
+RETURN
+PROCEDURE F()
+STATIC n:=1.2500
+LOCAL x:=n
+? Mutate(n),x,n
+n:=2.50
+RETURN
+FUNCTION Mutate(x)
+x:=9.5
+RETURN x

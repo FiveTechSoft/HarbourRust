@@ -430,12 +430,18 @@ pub fn bind(f: &mut Func, slots: &[(usize, String, Expr)]) -> Result<(), String>
     for st in &f.stmts {if let Stmt::Static(_,name,Expr::Int(_))=st {INTEGER_SLOTS.with(|v|v.borrow_mut().insert((f.name.clone(),name.clone())));}}
     // Local string/array slots retain function-qualified process storage.
     for st in &f.stmts {if let Stmt::Static(line,name,init)=st {
-        let ty=match init {Expr::Str(_)=>Some(Ty::StrOwn),Expr::ArrLit(_)|Expr::DArrNew=>Some(Ty::Dyn),_=>None};
+        let ty=match init {Expr::Str(_)=>Some(Ty::StrOwn),Expr::Log(_)=>Some(Ty::Bool),Expr::Float(..)|Expr::FloatV(..)=>Some(Ty::F64),Expr::ArrLit(_)|Expr::DArrNew=>Some(Ty::Dyn),_=>None};
         if let Some(ty)=ty {
             if !crate::CURDIR_LINUX_NATIVE.with(|v|v.get()) || crate::MACRO_CONTEXT.with(|v|v.get()) {
-                return Err(format!("line {}: local STATIC strings/arrays require ordinary Linux without threads/macros",line));
+                return Err(format!("line {}: local STATIC strings/arrays/floats/logicals require ordinary Linux without threads/macros",line));
             }
-            if ty==Ty::StrOwn {check_payload_uses(f,name,ty)?;}else{check_shared_array_uses(f,name)?;}
+            if matches!(ty,Ty::StrOwn|Ty::Bool) {check_counters(&f.stmts,name)?;check_payload_uses(f,name,ty)?;}
+            else if ty==Ty::F64 {
+                check_counters(&f.stmts,name)?;
+                let mutated=std::cell::Cell::new(false);
+                crate::visit_stmts_ref(&f.stmts,&mut |_|{},&mut |e|{if matches!(e,Expr::ByRef(id)|Expr::Inc(id,..)|Expr::Set(id,_)if id==name){mutated.set(true);}});
+                if mutated.get(){return Err(format!("line {}: local STATIC float `{}` supports float statement assignment only (inline assignment, increments and @ borrows deferred)",line,name));}
+            } else {check_shared_array_uses(f,name)?;}
             KINDS.with(|v|v.borrow_mut().insert((f.name.clone(),name.clone()),ty));
         }
     }}
@@ -449,6 +455,7 @@ pub fn bind(f: &mut Func, slots: &[(usize, String, Expr)]) -> Result<(), String>
             Expr::Nil => Ty::RefDyn,
             Expr::Log(_) => Ty::Bool,
             Expr::Str(_) => Ty::StrOwn,
+            Expr::Float(..)|Expr::FloatV(..)=>Ty::F64,
             // S4 unify (doc: "every module STATIC array literal becomes a
             // dynamic shared-reference array"; flat literals included):
             // nested, mixed, flat or empty - all bind as Dyn {tag 16,
@@ -456,6 +463,11 @@ pub fn bind(f: &mut Func, slots: &[(usize, String, Expr)]) -> Result<(), String>
             Expr::ArrLit(_) | Expr::DArrNew => Ty::Dyn,
             _ => Ty::I64,
         }};
+        if ty==Ty::F64 {
+            let mutated=std::cell::Cell::new(false);
+            crate::visit_stmts_ref(&f.stmts,&mut |_| {},&mut |e|{if matches!(e,Expr::ByRef(id)|Expr::Inc(id,..)|Expr::Set(id,_)if id==name){mutated.set(true);}});
+            if mutated.get() {return Err(format!("line {}: module STATIC float `{}` supports float statement assignment only (inline assignment, increments and @ borrows deferred)",line,name));}
+        }
         if ty==Ty::RefDyn && !crate::CURDIR_LINUX_NATIVE.with(|v|v.get()){return Err(format!("line {}: module STATIC NIL scalars require ordinary Linux in this increment",line));}
         if matches!(ty,Ty::Bool|Ty::StrOwn|Ty::Obj(_)|Ty::RefDyn) {check_payload_uses(f,name,ty)?;}
         if matches!(ty,Ty::Arr(_)) {check_array_uses(f,name)?;}

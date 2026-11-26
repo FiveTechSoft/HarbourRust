@@ -1,0 +1,12 @@
+STATIC n:=100.00
+PROCEDURE Main()
+? F(),G(),F(),G(),n
+RETURN
+FUNCTION F()
+STATIC n:=1.2500
+n:=n+1.0
+RETURN n
+FUNCTION G()
+STATIC n:=7.000
+n:=n*2.0
+RETURN n

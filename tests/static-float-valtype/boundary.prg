@@ -1,0 +1,6 @@
+PROCEDURE Main()
+LOCAL n:=10000000000.0
+? ValType(n),n
+n:=-1000000000.0
+? ValType(n),n
+RETURN

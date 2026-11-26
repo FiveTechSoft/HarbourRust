@@ -1,0 +1,6 @@
+STATIC n:=1.2500
+PROCEDURE Main()
+FOR n:=1 TO 3
+? n
+NEXT
+RETURN

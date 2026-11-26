@@ -1,0 +1,6 @@
+STATIC n:=1.25
+PROCEDURE Main()
+LOCAL x
+x:=1
+? n,Str(x)
+RETURN

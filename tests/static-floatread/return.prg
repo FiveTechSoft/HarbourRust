@@ -1,0 +1,6 @@
+STATIC n:=1.2500
+FUNCTION ReadN()
+RETURN n
+PROCEDURE Main()
+? ReadN(),n
+RETURN

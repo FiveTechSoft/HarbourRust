@@ -1,0 +1,11 @@
+STATIC n:=1.2500
+PROCEDURE Main()
+? n
+n:=3.750
+Other()
+? n
+RETURN
+PROCEDURE Other()
+? n
+n:=9.50000
+RETURN

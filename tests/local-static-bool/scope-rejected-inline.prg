@@ -1,0 +1,8 @@
+PROCEDURE Main()
+F()
+F()
+RETURN
+PROCEDURE F()
+STATIC n:=.T.
+? (n:=!n),n
+RETURN

@@ -1,0 +1,9 @@
+STATIC n:=1.2500
+PROCEDURE Main()
+n:=10000000000.0
+? n,Str(n)
+n:=-1000000000.000
+? n,Str(n)
+n:=0.00000000
+? n,Str(n,18,8)
+RETURN

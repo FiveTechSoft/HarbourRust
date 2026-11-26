@@ -92,3 +92,11 @@ Focused check (new output directory):
 
 This tests Linux logical initializer rejection and integer value-return
 rejection on Linux and PE. No PE execution claim.
+
+Float/local rebase follow-up: logical local STATIC is now admitted on Linux.
+The t1613 fixture adds x:=1 to preserve a negative retag/type guard; its
+Linux expected diagnostic is type mismatch. PE compiles that SAME source,
+not a remap, with its earlier INIT STATIC platform guard expectation.
+Integer RETURN42 remains a separate manifest row and Linux/PE focal check.
+The prior intact logical source is retained as local-static-bool/intact-t1613
+and measured positively. Four focal cases now cover the two profiles.

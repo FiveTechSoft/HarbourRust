@@ -1,0 +1,5 @@
+STATIC n:=1.25
+PROCEDURE Main()
+STATIC x:=1.25
+? x
+RETURN

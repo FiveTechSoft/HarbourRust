@@ -1,0 +1,14 @@
+STATIC n:=1.2500
+INIT PROCEDURE First()
+n:=n+2.50
+? n
+RETURN
+PROCEDURE Main()
+? n
+n:=n*2.0
+RETURN
+EXIT PROCEDURE Last()
+? n
+n:=12.000
+? n
+RETURN

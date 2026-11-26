@@ -1,0 +1,4 @@
+PROCEDURE Main()
+STATIC n:=1/3
+? n
+RETURN

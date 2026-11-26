@@ -1,0 +1,7 @@
+PROCEDURE Main()
+STATIC n:=1.25
+Mutate(@n)
+RETURN
+PROCEDURE Mutate(x)
+x:=9.5
+RETURN
