@@ -1831,6 +1831,17 @@ impl Asm {
         Ok(Some(prefix))
     }
 
+    // Cache identity only, never an address. Other expressions keep the resolver.
+    fn exact_text_target(&self,e:&Expr)->Option<usize>{
+        let loc=match e.0.as_slice(){
+            [(false,Term::Sym(n))]if !self.p.consts.contains_key(n)=>self.p.labels.get(n).copied(),
+            [(false,Term::Fwd(n,seq))]=>self.resolve_num(*n,true,*seq).ok(),
+            [(false,Term::Back(n,seq))]=>self.resolve_num(*n,false,*seq).ok(),
+            _=>None,
+        };
+        match loc{Some(Loc{sec:Sec::Text,idx})=>Some(idx),_=>None}
+    }
+
     // Only exact, single-term same-text labels are proved. Every expression,
     // cross-section target and unknown form follows the original search.
     fn cannot_shorten(&self, i: usize, minimum: &[u64]) -> bool {
@@ -1881,7 +1892,7 @@ impl Asm {
         for (i,it) in self.text.iter().enumerate() {
             if let TItem::Ins{mnem,ops,..}=it {
                 if is_jump(mnem) {
-                    if let Some(Op::Imm(x))=ops.first(){direct_jumps.push((i,x));}
+                    if let Some(Op::Imm(x))=ops.first(){direct_jumps.push((i,x,self.exact_text_target(x)));}
                 }
             }
         }
@@ -1892,9 +1903,12 @@ impl Asm {
                 let resolve = self.make_resolver(&lprov);
                 let enc = Enc { resolve: &resolve };
                 let mut changed = false;
-                for &(i,x) in &direct_jumps {
+                for &(i,x,target) in &direct_jumps {
                     if near[i] {continue;}
-                    let t=enc.eval(x)?;
+                    let t=match target{
+                        Some(idx)=>(lprov.text_va+lprov.text_offs.get(idx).copied().unwrap_or(lprov.text_size))as i64,
+                        None=>enc.eval(x)?,
+                    };
                     let rel=t-(0x401000+lprov.text_offs[i])as i64-2;
                     if !fits_i8(rel){near[i]=true;changed=true;}
                 }
@@ -2533,6 +2547,11 @@ mod safe_shorten_tests {
         let e=Enc{resolve:&resolve};
         for mnemonic in ["cqto","cqo"] {
             assert_eq!(encode_ins(&e,mnemonic,&[],false,0,false).unwrap(),vec![0x48,0x99]);
+        }
+    }
+    #[test]fn exact_target_identity_keeps_expression_fallback(){
+        for(src,expected)in[("jmp target\nret\ntarget:",Some(2)),("jmp 1f\n1:\njmp 1b",Some(1)),("jmp $target+0\ntarget:\nret",None),(".set target,7\njmp target",None),("jmp target\n.data\ntarget:\n.quad 0",None)]{
+            let a=asm(src);let x=a.text.iter().find_map(|it|match it{TItem::Ins{ops,..}=>match ops.first(){Some(Op::Imm(x))=>Some(x),_=>None},_=>None}).unwrap();assert_eq!(a.exact_text_target(x),expected,"{}",src);
         }
     }
     #[test]fn jump_fast_guard_matches_normalization(){
