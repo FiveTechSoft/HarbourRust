@@ -1608,7 +1608,8 @@ neg tests/t1609_startup_neg_exit.prg EXIT PROCEDURE is not in this increment
 neg tests/t1610_startup_neg_value_return.prg INIT procedures require bare/NIL returns
 neg tests/t1611_startup_neg_dead_return.prg INIT procedures require bare/NIL returns
 neg tests/t1612_startup_neg_switch_return.prg INIT procedures require bare/NIL returns
-neg tests/t1613_startup_neg_static.prg INIT procedures require bare/NIL returns
+neg tests/t1613_startup_neg_static.prg float/hash initializers remain outside this increment
+neg tests/ci/fixtures/init-value-return-linux.prg INIT procedures require bare/NIL returns
 neg tests/t1614_startup_neg_call_hook.prg unknown function `boot`
 neg tests/t1615_startup_neg_duplicate.prg duplicate function `boot$`
 neg tests/t1616_startup_neg_no_main.prg no main function

@@ -72,3 +72,23 @@ locally. Windows-host compiler cross-build/smokes under Wine are distinct
 from a native Windows Actions run. The first actual hosted Windows run
 remains pending at preparation time; a workflow definition or lint pass
 is not evidence that GitHub has executed it successfully.
+
+## Separate INIT STATIC contracts
+
+The root t1613 logical-STATIC source stays byte-identical. Its expected
+diagnostic is updated to the general local STATIC initializer guard that
+fires before INIT return checking on Linux and PE.
+
+The root manifest also executes tests/ci/fixtures/init-value-return-linux.prg,
+an integer STATIC with RETURN 42, to preserve the bare/NIL return guard.
+Both root rows are compiled by the PE battery too. There is no remap or skip.
+The separately named init-static-windows.prg is byte-identical to the Linux
+integer fixture, intentionally retained for the focused PE check; it is not
+a distinct behavioral case or an additional full-battery row.
+
+Focused check (new output directory):
+
+    python tests/ci/check_init_static_contracts.py --compiler ./hbc --output work/init-contracts
+
+This tests Linux logical initializer rejection and integer value-return
+rejection on Linux and PE. No PE execution claim.
