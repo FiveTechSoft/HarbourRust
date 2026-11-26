@@ -2606,6 +2606,12 @@ mod branch_align_tests {
         assert_eq!(t[32], 0xEB);
         assert_eq!(t[33] as i8, -34);
     }
+    #[test] fn numeric_operands_fixed_lengths_match_at_different_vas() {
+        for src in ["movq $128,%rax","addq $127,%rax","addq $128,%rax","movq 127(%rax),%r10","movq 128(%rax),%r10","movq 0x401000(%rip),%rax","movq $128,0x401000(%rip)"] {
+            let mut a=Asm{p:Parser{consts:HashMap::new(),labels:HashMap::new(),numlabels:HashMap::new(),seq:Cell::new(0)},text:vec![],rodata:vec![],data:vec![],bss:vec![],note:vec![],has_gnu_stack:false,cur:Sec::Text,secstack:vec![],text_align:1,rod_align:1,dat_align:1,bss_align:1,branch_align:true};a.parse_line(src).unwrap();let lengths=a.fixed_layout_lengths().unwrap();let n=lengths[0].expect("fixed numeric form");let eval=|e:&Expr|{let mut v=0i64;for(neg,t)in &e.0{if let Term::Num(x)=t{v+=if *neg{-x}else{*x};}else{panic!("unexpected symbolic operand");}}Ok(v)};let enc=Enc{resolve:&eval};
+            if let TItem::Ins{mnem,ops,lock}=&a.text[0]{for va in [0u64,127,128,0x401000,0x402000,0x7fff_ffff]{assert_eq!(encode_ins(&enc,mnem,ops,*lock,va,false).unwrap().len()as u64,n,"{} at {}",src,va);}}
+        }
+    }
     #[test] fn size_only_offsets_match_full_encoder_for_near_vectors() {
         let mut a=Asm{p:Parser{consts:HashMap::new(),labels:HashMap::new(),numlabels:HashMap::new(),seq:Cell::new(0)},text:vec![],rodata:vec![],data:vec![],bss:vec![],note:vec![],has_gnu_stack:false,cur:Sec::Text,secstack:vec![],text_align:1,rod_align:1,dat_align:1,bss_align:1,branch_align:true};
         for l in expand_rept(".text\nstart:\nmovq $128,%rax\ncmpq $7,%rax\nje target\nmovq $128,data+8(%rip)\naddq $128,%rax\n.p2align 5\n.p2align 6,,15\njmp start\n.rept 126\nnop\n.endr\ntarget:\n.long 123\ncall target\nret\n.data\ndata:\n.quad 0,1").unwrap().lines(){a.parse_line(l).unwrap();}
