@@ -1819,6 +1819,16 @@ impl Asm {
         // near, probamos a encogerlo y re-relajar; si el .text total queda más
         // corto, aceptamos y repetimos. Converge al punto fijo mínimo que halla as.
         let mut final_offs: Vec<u64> = Vec::new();
+        // These item indices and expressions do not change during relaxation.
+        // Preserve source order while avoiding a whole-text classification pass.
+        let mut direct_jumps=Vec::new();
+        for (i,it) in self.text.iter().enumerate() {
+            if let TItem::Ins{mnem,ops,..}=it {
+                if is_jump(mnem) {
+                    if let Some(Op::Imm(x))=ops.first(){direct_jumps.push((i,x));}
+                }
+            }
+        }
         let mut relax = |near: &mut Vec<bool>, final_offs: &mut Vec<u64>| -> Result<u64, String> {
             loop {
                 let (bytes, offs) = self.encode_all(near, &prov, &inv)?;
@@ -1826,17 +1836,11 @@ impl Asm {
                 let resolve = self.make_resolver(&lprov);
                 let enc = Enc { resolve: &resolve };
                 let mut changed = false;
-                for (i, it) in self.text.iter().enumerate() {
-                    if near[i] { continue; }
-                    if let TItem::Ins { mnem, ops, .. } = it {
-                        if is_jump(mnem) {
-                            if let Op::Imm(x) = &ops[0] {
-                                let t = enc.eval(x)?;
-                                let rel = t - (0x401000 + lprov.text_offs[i]) as i64 - 2;
-                                if !fits_i8(rel) { near[i] = true; changed = true; }
-                            }
-                        }
-                    }
+                for &(i,x) in &direct_jumps {
+                    if near[i] {continue;}
+                    let t=enc.eval(x)?;
+                    let rel=t-(0x401000+lprov.text_offs[i])as i64-2;
+                    if !fits_i8(rel){near[i]=true;changed=true;}
                 }
                 if !changed {
                     drop(resolve);
