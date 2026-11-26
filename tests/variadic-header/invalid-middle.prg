@@ -1,0 +1,4 @@
+PROCEDURE Main()
+ RETURN
+FUNCTION f(...,a)
+ RETURN NIL

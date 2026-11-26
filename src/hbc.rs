@@ -205,6 +205,7 @@ enum Tok {
     KwFunction, KwLocal, KwReturn, KwNil, KwIf, KwElseif, KwElse, KwEndif, KwWhile, KwEnddo, KwExit, KwLoop,
     KwPrivate, KwPublic,
     KwFor, KwTo, KwStep, KwNext, KwEach, KwIn, KwSwitch, KwEndswitch,
+    Ellipsis, // own black-box variadic-header increment
     EqEq,       // == (measured: integers hk124, DArr identity hk126; object identity cl7/cl19 class-gated)
     Colon,      // : (message send, o:name)
     ColonColon, // :: (self member, inside a method)
@@ -1210,6 +1211,10 @@ fn tokenize(line: &str, n: usize) -> Result<Vec<Tok>, String> {
             '|' => { toks.push(Tok::Pipe); it.next(); }
             ']' => { toks.push(Tok::RBracket); it.next(); }
             '.' => {
+                if it.clone().take(3).map(|(_,c)|c).eq(['.','.','.']) {
+                    for _ in 0..3 {it.next();}
+                    toks.push(Tok::Ellipsis);continue;
+                }
                 // Leading-dot float literal `.12` (oracle hk278: prints
                 // exactly like `0.12`).
                 if it.clone().nth(1).map(|(_, c2)| c2.is_ascii_digit()) == Some(true) {
@@ -2477,6 +2482,7 @@ fn parse_ret_expr(toks: Vec<Tok>, n: usize) -> Result<Stmt, String> {
 }
 
 fn parse_expr_tokens(toks: Vec<Tok>, n: usize) -> Result<Expr, String> {
+    if toks.contains(&Tok::Ellipsis) {return Err(format!("line {}: ellipsis forwarding and array/codeblock splicing are outside this increment",n));}
     if toks.is_empty() {
         return Err(format!("line {}: missing expression", n));
     }
@@ -4134,7 +4140,9 @@ struct Prog {
     externs: Vec<(usize, String)>,
 }
 
+thread_local! {static VARIADIC_HEADERS: std::cell::RefCell<std::collections::HashMap<String,usize>>=std::cell::RefCell::new(std::collections::HashMap::new());}
 fn parse(src: &str) -> Result<Prog, String> {
+    VARIADIC_HEADERS.with(|v|v.borrow_mut().clear());
     module_static::reset();
     FOR_INLINE_BLOCKS.with(|v|v.borrow_mut().clear());
     MODULE_SCALAR_GETTERS.with(|v|v.borrow_mut().clear());
@@ -4423,6 +4431,18 @@ fn parse(src: &str) -> Result<Prog, String> {
             }
             return Err(format!("line {}: code outside a function (Harbour silently drops top-level statements after the first group - hk247c/hk247f; this increment rejects them by name)", n));
         }
+        let mut header=toks.to_vec();
+        let variadic=header.contains(&Tok::Ellipsis);
+        if variadic {
+            if init || exit_hook {return Err(format!("line {}: variadic INIT/EXIT headers are outside this increment",n));}
+            let pos=header.iter().position(|t|*t==Tok::Ellipsis).unwrap();
+            if pos+2!=header.len() || header.last()!=Some(&Tok::RParen) || pos<3 || (pos>3 && (pos%2==0 || header[pos-1]!=Tok::Comma)) {
+                return Err(format!("line {}: ellipsis must be the final function parameter",n));
+            }
+            header.remove(pos);
+            if pos>3 {header.remove(pos-1);}
+        }
+        let toks=header.as_slice();
         let (name, params) = match toks {
             [Tok::KwFunction, Tok::Ident(id), Tok::LParen, Tok::RParen] => {
                 check_global_ident(id, n)?;
@@ -4449,6 +4469,10 @@ fn parse(src: &str) -> Result<Prog, String> {
             }
             _ => return Err(format!("line {}: expected `function name(...)`", n)),
         };
+        if variadic {
+            if name=="main" {return Err(format!("line {}: variadic Main is outside this increment",n));}
+            VARIADIC_HEADERS.with(|v|v.borrow_mut().insert(name.clone(),params.len()));
+        }
         if exit_hook && !params.is_empty() {return Err(format!("line {}: EXIT hook parameters are outside this increment",n));}
         if init && !params.is_empty() {
             return Err(format!("line {}: INIT procedures with parameters are not in this increment", n));
@@ -4539,6 +4563,36 @@ fn parse(src: &str) -> Result<Prog, String> {
         if safe&&returns==1{MODULE_SCALAR_GETTERS.with(|v|v.borrow_mut().insert(f.name.clone()));}
     }
     Ok(Prog { funcs, classes, methods, externs })
+}
+
+// Own black-box specification: a trailing header ellipsis admits extra
+// arguments. This bounded direct-call route materializes the finite maximum
+// arity as inaccessible frame slots. Calls still pass their original count
+// through the existing PCount ABI; omitted slots keep the ordinary NIL pad.
+fn prepare_variadic_headers(prog:&mut Prog, ordinary_linux:bool)->Result<(),String> {
+    let mut arities=VARIADIC_HEADERS.with(|v|v.borrow().clone());
+    if arities.is_empty(){return Ok(());}
+    if !ordinary_linux || !prog.classes.is_empty() || !prog.methods.is_empty() || !prog.externs.is_empty() {
+        return Err("variadic headers require ordinary Linux without macros, classes or external functions in this increment".into());
+    }
+    let mut bad=false;
+    for f in &prog.funcs {visit_stmts_ref(&f.stmts,&mut |_|{},&mut |e| {
+        match e {
+            Expr::FuncRef(_) | Expr::BlockLit(..)=>bad=true,
+            Expr::Call(id,args)=>{
+                if id.starts_with("hb_thread") || id=="eval" {bad=true;}
+                if let Some(n)=arities.get_mut(id){*n=(*n).max(args.len());}
+            }, _=>{}
+        }
+    });}
+    if bad {return Err("variadic headers require direct calls without threads, function references or codeblocks in this increment".into());}
+    for f in &mut prog.funcs {
+        if let Some(max)=arities.get(&f.name) {
+            if *max>64 {return Err("variadic direct-call limit is 64 scalar arguments in this increment".into());}
+            for i in f.params.len()..*max {f.params.push(format!("$ellipsis{}",i));}
+        }
+    }
+    Ok(())
 }
 
 // Comma-separated parameter names out of a method declaration's token
@@ -9710,6 +9764,11 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 let s = &sigs[si];
                 (s.params.clone(), s.borrowed.clone(), s.arr_moved.clone(), s.aview.clone(), s.ret, s.inferred.clone())
             };
+            if VARIADIC_HEADERS.with(|v|v.borrow().contains_key(id)) {
+                for a in args {
+                    if matches!(a,Expr::ByRef(_)) {return Err(format!("line {}: variadic calls require by-value scalar arguments in this increment",n));}
+                }
+            }
             if args.len() > sig_params.len() {
                 // EXTRA arguments stay rejected (multiarg registered limit):
                 // hb_PValue introspection names only the declared list.
@@ -9811,7 +9870,10 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                     // errors are dropped like any other; the converged
                     // round reports them by name.
                     if !matches!(a, Expr::ByRef(_)) {
-                        type_expr(a, env, sigs, n)?;
+                        let ta=type_expr(a, env, sigs, n)?;
+                        if VARIADIC_HEADERS.with(|v|v.borrow().contains_key(id)) && !matches!(ta,Ty::I64|Ty::Bool|Ty::Str|Ty::StrOwn|Ty::F64) && !matches!(a,Expr::Nil) {
+                            return Err(format!("line {}: variadic calls require typed scalar or literal NIL arguments in this increment",n));
+                        }
                     }
                     continue;
                 }
@@ -10027,6 +10089,9 @@ fn type_expr(e: &Expr, env: &mut [Local], sigs: &mut Vec<Sig>, n: usize) -> Resu
                 // operand through the Dyn route (a float payload is combined by kind).
                 if sig_params[i] == Ty::Dyn { mark_dynplus(a, env, sigs, n); }
                 let ta = type_expr(a, env, sigs, n)?;
+                if VARIADIC_HEADERS.with(|v|v.borrow().contains_key(id)) && !matches!(ta,Ty::I64|Ty::Bool|Ty::Str|Ty::StrOwn|Ty::F64) && !matches!(a,Expr::Nil) {
+                    return Err(format!("line {}: variadic calls require typed scalar or literal NIL arguments in this increment",n));
+                }
                 if (method_arrays::active()||timestamp::object_lifetimes()) && sig_params[i]==Ty::StrOwn{return Err(format!("line {}: B2 owned-string parameters are outside argument-unwind scope",n));}
                 if method_results::active() && ta==Ty::Dyn && sig_params[i]==Ty::I64{return Err(format!("line {}: B1 does not implicitly extract a Dyn call argument as integer; use a typed local",n));}
                 if ta==Ty::Dyn && sig_params[i]==Ty::I64 && RETYPED_VAL_FUNCTIONS.with(|v|v.borrow().contains(&CUR_FN.with(|c|c.borrow().clone()))) {
@@ -40575,6 +40640,7 @@ fn main() {
         Ok(p) => p,
         Err(msg) => { eprintln!("error: {}", msg); process::exit(1); }
     };
+    if let Err(msg)=prepare_variadic_headers(&mut prog, !macho && !macho_arm64 && !llvm && matches!(target,Target::Linux) && !MACRO_CONTEXT.with(|v|v.get())) {eprintln!("error: {}",msg);process::exit(1);}
     main_params_as_nil_locals(&mut prog.funcs, !macho && !macho_arm64 && !llvm);
     // Extend-System bridge (docs/EXTEND-BRIDGE.md): deduped EXTERNAL
     // symbols. A symbol also defined in this file is inert (like a
@@ -41193,6 +41259,9 @@ fn main() {
         if exceptional {
             eprintln!("error: EXIT hook error guard excludes BREAK/TRY until exceptional teardown is integrated");process::exit(1);
         }
+    }
+    if VARIADIC_HEADERS.with(|v|!v.borrow().is_empty()) && (THREADS.with(|v|v.get()) || MACRO_CONTEXT.with(|v|v.get()) || STR_DYN.with(|v|v.get())) {
+        eprintln!("error: variadic header lifecycle guard excludes threads and macros in this increment");process::exit(1);
     }
     // Thread use is discovered during inference, after parser guards.
     // Reject before code generation: INIT persistent storage has no measured

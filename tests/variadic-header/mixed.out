@@ -1,0 +1,17 @@
+
+         1          5
+N          1
+C hello
+L .T.
+N          2.50
+U NIL
+U NIL
+U NIL
+         2          4
+N          2
+C world
+L .F.
+N          7.25
+U NIL
+U NIL
+U NIL
