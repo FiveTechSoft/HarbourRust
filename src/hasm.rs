@@ -1753,6 +1753,15 @@ impl Asm {
         let inslen=|i:usize,mnem:&str,ops:&[Op],lock:bool,off:u64|->Result<u64,String>{
             if let Some(b)=&inv[i]{return Ok(b.len()as u64);}
             if let Some(n)=fixed[i]{return Ok(n);}
+            if let [Op::Imm(x)]=ops {
+                if mnem=="call" || is_jump(mnem) {
+                    let t=enc.eval(x)?;
+                    let n=if mnem=="call"{5}else if near[i]{jump_near_len(mnem)}else{jump_short_len(mnem)};
+                    // Preserve the encoder's relative-address arithmetic too.
+                    let _rel=t-(l.text_va+off+n)as i64;
+                    return Ok(n+u64::from(lock));
+                }
+            }
             Ok(encode_ins(&enc,mnem,ops,lock,l.text_va+off,near[i]).map_err(|e|format!("item {} ({} {:?}): {}",i,mnem,ops,e))?.len()as u64)
         };
         for(i,it)in self.text.iter().enumerate(){match it{
