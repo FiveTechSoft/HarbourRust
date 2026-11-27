@@ -24,7 +24,7 @@ target, not only the Windows target eeb71d24 verified. A same-source
 probe (`Chr(32)`/`Chr(65)`/`Asc("A")`/`Asc("")`, `--target=linux` and
 `--target=windows`) emits the 4 call sites and the `hbc_chr`/`hbc_asc`
 frames under both targets, and the 2026-11-24 manifest gate at 98a17da8
-stays at 1912 PASS / 22 known-mismatch / 0 FAIL on PE with the Linux
+stays at 1916 PASS / 22 known-mismatch / 0 FAIL on PE with the Linux
 `neg` check failing only the 7 stale rows (all documented in
 docs/BATTERY.md). This is emission-level evidence only: the Chr/Asc ELF
 binary cannot be executed on this aarch64 host (no x86-64 runtime, no

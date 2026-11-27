@@ -120,7 +120,7 @@ the tag-16 runtime dispatch lands at the C-emit layer, not the checker.
 
 ## t813 / t897 / t1043 - three more Linux-stale neg rows (2026-11-24)
 
-The full 622-row Linux `neg` check was rerun on 2026-11-24 after the
+The full 618-row Linux `neg` check (manifest-synced 618 after 4d6307d0's own re-pin of t414/t732; the 7 -> 9 delta vs the 622-check is exactly the two main-args rows t793/t795) was rerun on 2026-11-24/26 after the
 recent Linux-only landings (Set date-format selector 4, ordinary fixed
 cell increments, bare-local string-copy rewrite). Three additional rows
 now accept instead of rejecting. All three are manifest-sync gaps from
@@ -142,7 +142,7 @@ four stale rows, and the same sign-off path:
 
 1. Re-pin these three as `pos2` rows (oracle-confirmed values), or
 2. Leave as documented debt until the next baseline, and re-run the
-   full 622-row check + the PE gate afterwards.
+   full neg check + the PE gate afterwards.
 
 ## shared-shift-scalar-root probe (newest landing, 2026-11-24)
 

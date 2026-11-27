@@ -4109,15 +4109,15 @@ Recorded while the Linux-only subset of the battery was being run (aarch64
 host; x86-64 output cannot execute natively here, so the 1308-row
 positive/execution set stays unverified; run the normal runner on an
 x86-64 host to complete it). The fresh binary (commit 6b917da3) passes the
-full Linux `neg` check on all 622 `neg` rows except the stale ones below
-(verified 2026-11-24 with the plain substring rule, not the full runner:
-622 checked, 7 failures, all rc=0 silent accepts). Windows still
+full Linux `neg` check on all 618 `neg` rows except the stale ones below
+(verified 2026-11-24/26 with the plain substring rule, not the full runner:
+618 checked, 9 failures, all rc=0 silent accepts). Windows still
 rejects those four with the manifest substring, so the shared manifest
 rows only fail on the Linux half. The 9 CurDir rows pass the Linux check
 (rc=1, manifest substring) and fail only the Windows/PE side, already
 recorded as the PE known-mismatch debt (`tests/ci/pe-known-mismatches.json`,
 base f70407f1d3). The PE compile-only gate with this fresh binary is 0 FAIL
-(1912 PASS / 22 known-mismatches, exact run against commit 6b917da3): the
+(1916 PASS / 22 known-mismatches, exact run against commit 6b917da3): the
 13 diagnostic-contract cases are either Linux-only acceptance or PE
 known-mismatch, not fresh regressions.
 
@@ -4165,7 +4165,7 @@ rows with a Linux-only companion record; (3) leave as known Linux-stale debt
 until the next battery baseline. Decision (2026-11-24, maintainer delegated
 "como tu veas"): (3) - option (3) - so the Linux side stays red and visible
 until the baseline re-cut, rather than a silent re-pin. Verified on the PE gate
-at the time: 1912 PASS / 22 known-mismatch / 0 FAIL (the stale rows are PE
+at the time: 1916 PASS / 22 known-mismatch / 0 FAIL (the stale rows are PE
 rejects, not mismatches). Re-run this battery + the PE gate before any baseline
 re-cut.
 
@@ -4183,7 +4183,7 @@ Harbour oracle agrees (compiles and runs; oracle outputs in
 | tests/t1043_original_longstr2_move_neg.prg | 6e640993 (bare-local string copy) | use of moved value `short` | compiles, runs, exits 0, prints the length triple |
 
 The total Linux `neg` failures are now exactly 9 (the four stale rows above,
-plus these three, plus two more from the main-args landing in 14e81327):
+plus these three, plus two more from the main-args landing in 14e81327) at 618 checked rows:
 tests/t793_barefor_mention_neg.prg and tests/t795_barefor_nested_neg.prg
 ("reuses a non-integer or read-only slot" - the bare-FOR feature,
 commit d0cd3a4b, now reuses the slot on Linux while PE still rejects with
@@ -4195,7 +4195,7 @@ verified 2026-11-24 for all nine rows (rc=1 with manifest substring).
 
 Nine `neg` rows are the known-mismatch PE CurDir debt (same source state as
 the known-mismatches file). Linux rejects with the manifest substring -
-the audit above confirms all 622 `neg` rows still reject on Linux
+the audit above confirms all `neg` rows still reject on Linux
 except the seven stale ones, and these nine are among the rejecting ones.
 Windows rejects with "CurDir is measured only on the ordinary Linux backend
 in this increment", which is the PE debt recorded for the PE gate
