@@ -31794,7 +31794,9 @@ hbc_strcpy:
 
 # hbc_strcat: rdi=p1, rsi=len1, rdx=p2, rcx=len2 -> rax/rdx fresh owned
 # string (length at -8(%rax), like hbc_strcpy). Copies both operands;
-# neither is consumed. Platform-neutral: only hbc_alloc + register work.
+# neither is consumed. Results of 16+ bytes use cache-backed hbc_stralloc
+# (every result byte is filled below before exposure; capacity == length, so
+# hbc_freestr is unchanged); shorter results keep the direct hbc_alloc shape.
 hbc_strcat:
     push %rbp
     mov %rsp, %rbp
@@ -31806,15 +31808,22 @@ hbc_strcat:
     mov %rsi, %r13
     mov %rdx, %r14
     mov %rcx, %rbx
-    lea 16(%r13,%rbx), %rdi
+    lea (%r13,%rbx), %rsi
+    cmp $16, %rsi
+    jb 76f
+    call hbc_stralloc
+    mov %rax, %r10
+    jmp 77f
+76: lea 16(%r13,%rbx), %rdi
     call hbc_alloc
     mov %r13, %r10
     add %rbx, %r10
     mov %r10, (%rax)
     mov %r10, 8(%rax)
+    lea 16(%rax), %r10
+77: mov %r10, %rdi
     # Counted byte copies; operands may alias each other, but fresh output
     # does not alias either. Like other counted copies, ABI direction is clear.
-    lea 16(%rax), %rdi
     mov %r12, %rsi
     mov %r13, %rcx
     rep movsb
@@ -31823,7 +31832,7 @@ hbc_strcat:
     rep movsb
     mov %r13, %rdx
     add %rbx, %rdx
-    lea 16(%rax), %rax
+    mov %r10, %rax
     pop %r14
     pop %r13
     pop %r12
@@ -31857,15 +31866,22 @@ hbc_strgrow:
     mov %rax, (%rsp)
     cmp -16(%rbx), %rax
     ja 80f
-    lea (%rbx,%r12), %r11
+    cmp $32, %r14
+    jb 72f
+    lea (%rbx,%r12), %rdi
+    mov %r13, %rsi
+    mov %r14, %rcx
+    rep movsb
+    jmp 73f
+72: lea (%rbx,%r12), %r11
     xor %ecx, %ecx
-70: cmp %r14, %rcx
-    jae 71f
+74: cmp %r14, %rcx
+    jae 73f
     movzbl (%r13,%rcx), %r9d
     mov %r9b, (%r11,%rcx)
     inc %rcx
-    jmp 70b
-71: mov (%rsp), %rdx
+    jmp 74b
+73: mov (%rsp), %rdx
     mov %rdx, -8(%rbx)
     mov %rbx, %rax
     jmp 90f
@@ -31882,22 +31898,15 @@ hbc_strgrow:
     mov %rcx, (%r15)
     mov (%rsp), %rcx
     mov %rcx, 8(%r15)
-    xor %ecx, %ecx
-82: cmp %r12, %rcx
-    jae 83f
-    movzbl (%rbx,%rcx), %r9d
-    mov %r9b, 16(%r15,%rcx)
-    inc %rcx
-    jmp 82b
-83: lea 16(%r15,%r12), %r11
-    xor %ecx, %ecx
-84: cmp %r14, %rcx
-    jae 85f
-    movzbl (%r13,%rcx), %r9d
-    mov %r9b, (%r11,%rcx)
-    inc %rcx
-    jmp 84b
-85: mov %rbx, %rdi
+    lea 16(%r15), %rdi
+    mov %rbx, %rsi
+    mov %r12, %rcx
+    rep movsb
+    lea 16(%r15,%r12), %rdi
+    mov %r13, %rsi
+    mov %r14, %rcx
+    rep movsb
+    mov %rbx, %rdi
     call hbc_freestr
     lea 16(%r15), %rax
     mov (%rsp), %rdx
