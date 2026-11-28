@@ -33,7 +33,22 @@ DYN_INC_REJ = {'tests/t896_inc_dyn_neg.prg': 'Dyn expression ++/-- requires ordi
 DYNAMIC_STEP_REJ = {'tests/t44_for_step_expr.prg': 'dynamic FOR STEP requires ordinary Linux without threads/macros/shared captures'}
 MODULE_NIL_REJ = {p:'module STATIC NIL scalars require ordinary Linux' for p in ['tests/t682_static_var_neg.prg','tests/module-static/programs/nil.prg']}
 SCALAR_EMPTY_REJ = {'tests/t1047_empty_dyn_neg.prg':'`Empty` on generic Dyn values'}
-EXPECTED_REJ = dict(DYN_INC_REJ, **DYNAMIC_STEP_REJ, **MODULE_NIL_REJ, **SCALAR_EMPTY_REJ)
+# Nine rows promoted neg -> positive on ordinary Linux (2026-11-28); the macho
+# backends keep the conservative named rejections below. Substrings measured
+# with the CI-recipe binary on --target=macho and --target=macho-arm64 (both
+# targets emit the identical diagnostic; PE emits the same text).
+CONVERTED_LINUX_REJ = {p:d for p,d in [
+ ('tests/t436_neg_darrs_arg_moved.prg','use of moved value `a`'),
+ ('tests/t793_barefor_mention_neg.prg','`for` loop variable `i` reuses a non-integer or read-only slot'),
+ ('tests/t795_barefor_nested_neg.prg','`for` loop variable `i` reuses a non-integer or read-only slot'),
+ ('tests/t813_set_callstmt_neg.prg','unknown function `set` (only literal epoch5 or checked standard dateformat4 on ordinary Linux is measured in this increment)'),
+ ('tests/t897_inc_elem_neg.prg','expression ++/-- requires a variable lvalue in this increment (cell update needs ordinary Linux without macros)'),
+ ('tests/t988_inline_if_dyn_limit_neg.prg','`iif` branches must share a scalar type'),
+ ('tests/t1043_original_longstr2_move_neg.prg','use of moved value `short`'),
+ ('tests/t1068_minmax_mixed_neg.prg','`min` needs matching integer, float or logical arguments'),
+ ('tests/t1691_iif_mixed_neg_dynvar.prg','`iif` branches must share a scalar type'),
+]}
+EXPECTED_REJ = dict(DYN_INC_REJ, **DYNAMIC_STEP_REJ, **MODULE_NIL_REJ, **SCALAR_EMPTY_REJ, **CONVERTED_LINUX_REJ)
 # The idlesleep rows print identical bytes whether nanosleep really
 # slept or the lowering silently no-ops (wrong number, ENOSYS), so each
 # positive-sleep row also carries a wall-clock floor on the native run
@@ -52,7 +67,7 @@ IDLESLEEP_WINDOWS = {
 
 def configure_target(target):
     global TARGET, EXPECTED_REJ
-    EXPECTED_REJ = {} if target == 'linux' else dict(DYN_INC_REJ, **DYNAMIC_STEP_REJ, **MODULE_NIL_REJ, **SCALAR_EMPTY_REJ)
+    EXPECTED_REJ = {} if target == 'linux' else dict(DYN_INC_REJ, **DYNAMIC_STEP_REJ, **MODULE_NIL_REJ, **SCALAR_EMPTY_REJ, **CONVERTED_LINUX_REJ)
     TARGET = '--target=' + target
 
 FILE_POSITIVES = 6
@@ -92,8 +107,10 @@ TARGET = '--target=macho-arm64'  # --target=macho runs the same battery on Intel
 # NIL module scalars promote two negatives (+2).
 # Scalar literal Dyn local Empty promotes t1047 (+1).
 # Scalar-call ValType promotes t414_valtype_usercall from neg to pos2 (+1).
-# Full total:1320+6+4+38+9 =1377,5 named REJ on both Mac targets.
-EXPECTED_MANIFEST_ROWS = 1320
+# Nine obsolete negatives promoted to executable positives: eight pos, one
+# streams2 (t436/t793/t795/t813/t897/t988/t1068/t1691/t1043, 2026-11-28) (+9).
+# Full total:1329+6+4+38+9 =1386,14 named REJ on both Mac targets.
+EXPECTED_MANIFEST_ROWS = 1329
 # Post-run m_clie.dbf SHA-256 per DBF acceptance test (generated on Linux,
 # stdout checked against the committed expectations). t4 appends records:
 # dbAppend rewrites the header last-update date (bytes 1-3, YY MM DD of the

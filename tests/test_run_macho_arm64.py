@@ -109,8 +109,34 @@ class TimingTests(unittest.TestCase):
         try:
             for target in ('macho', 'macho-arm64'):
                 m.configure_target(target)
-                self.assertEqual(m.EXPECTED_REJ, dict(m.DYN_INC_REJ, **m.DYNAMIC_STEP_REJ, **m.MODULE_NIL_REJ, **m.SCALAR_EMPTY_REJ))
+                self.assertEqual(m.EXPECTED_REJ, dict(m.DYN_INC_REJ, **m.DYNAMIC_STEP_REJ, **m.MODULE_NIL_REJ, **m.SCALAR_EMPTY_REJ, **m.CONVERTED_LINUX_REJ))
                 self.assertEqual(m.TARGET, '--target=' + target)
+        finally:
+            m.configure_target('macho-arm64')
+
+    def test_converted_linux_named_rejections_are_target_scoped(self):
+        diags = {
+            'tests/t436_neg_darrs_arg_moved.prg': 'error: line 8: use of moved value `a` (heap values - strings and dynamic arrays - move on assignment, call or return; they do not copy)',
+            'tests/t793_barefor_mention_neg.prg': 'error: line 4: `for` loop variable `i` reuses a non-integer or read-only slot in this PoC',
+            'tests/t795_barefor_nested_neg.prg': 'error: line 6: `for` loop variable `i` reuses a non-integer or read-only slot in this PoC',
+            'tests/t813_set_callstmt_neg.prg': 'error: line 2: unknown function `set` (only literal epoch5 or checked standard dateformat4 on ordinary Linux is measured in this increment)',
+            'tests/t897_inc_elem_neg.prg': 'error: line 3: expression ++/-- requires a variable lvalue in this increment (cell update needs ordinary Linux without macros)',
+            'tests/t988_inline_if_dyn_limit_neg.prg': 'error: line 3: `iif` branches must share a scalar type (float absorbs an int side), got Dyn and Dyn',
+            'tests/t1043_original_longstr2_move_neg.prg': 'error: line 18: use of moved value `short` (heap values - strings and dynamic arrays - move on assignment, call or return; they do not copy)',
+            'tests/t1068_minmax_mixed_neg.prg': 'error: line 2: `min` needs matching integer, float or logical arguments; mixed numeric/Dyn/other types are not in this increment',
+            'tests/t1691_iif_mixed_neg_dynvar.prg': 'error: line 4: `iif` branches must share a scalar type (float absorbs an int side), got Dyn and I64',
+        }
+        self.assertEqual(set(diags), set(m.CONVERTED_LINUX_REJ))
+        try:
+            m.configure_target('linux')
+            for row in diags:
+                self.assertNotIn(row, m.EXPECTED_REJ)
+            for target in ('macho', 'macho-arm64'):
+                m.configure_target(target)
+                for row, diag in diags.items():
+                    self.assertEqual(m.classify_compile_failure(row, 1, diag)[0], 'REJ')
+                    self.assertEqual(m.classify_compile_failure(row, 1, 'wrong')[0], 'FAIL')
+                    self.assertEqual(m.classify_compile_failure(row, 101, diag)[0], 'FAIL')
         finally:
             m.configure_target('macho-arm64')
 
@@ -143,7 +169,7 @@ class ManifestInventoryTests(unittest.TestCase):
         rows=self.manifest_rows()
         self.assertEqual(len(rows),m.EXPECTED_MANIFEST_ROWS)
         self.assertEqual(len({tuple(l.split(' ')[:2]) for l in rows}),len(rows))
-        self.assertEqual(len(rows)+m.FILE_POSITIVES+m.DBF_TESTS+m.THREAD_PROGRAMS+m.EXT_DEMOS,1377)
+        self.assertEqual(len(rows)+m.FILE_POSITIVES+m.DBF_TESTS+m.THREAD_PROGRAMS+m.EXT_DEMOS,1386)
 
     def test_dynamic_step_named_rejection_is_target_scoped(self):
         try:
@@ -192,7 +218,7 @@ class ManifestInventoryTests(unittest.TestCase):
             self.assertNotIn('tests/t896_inc_dyn_neg.prg',m.EXPECTED_REJ)
             for target in ('macho','macho-arm64'):
                 m.configure_target(target)
-                self.assertEqual(m.EXPECTED_REJ,dict(m.DYN_INC_REJ, **m.DYNAMIC_STEP_REJ, **m.MODULE_NIL_REJ, **m.SCALAR_EMPTY_REJ))
+                self.assertEqual(m.EXPECTED_REJ,dict(m.DYN_INC_REJ, **m.DYNAMIC_STEP_REJ, **m.MODULE_NIL_REJ, **m.SCALAR_EMPTY_REJ, **m.CONVERTED_LINUX_REJ))
         finally:
             m.configure_target('macho-arm64')
 
