@@ -430,7 +430,7 @@ neg tests/t433_neg_static_return_literal.prg a static array return is a variable
 neg tests/t434_neg_len_temp.prg `len` of an array temporary is not in this increment
 pos2 tests/t435_darrs_arg_move.prg tests/expectations/qout/t435_darrs_arg_move.linux.out tests/expectations/qout/t435_darrs_arg_move.windows.out
 pos2 tests/t437_darrs_return.prg tests/expectations/qout/t437_darrs_return.linux.out tests/expectations/qout/t437_darrs_return.windows.out
-neg tests/t436_neg_darrs_arg_moved.prg use of moved value `a`
+pos tests/t436_neg_darrs_arg_moved.prg \n         0\n         2
 neg tests/t438_neg_darrs_arg_readonly.prg must be a dynamic array, got an array of strings
 pos2 tests/t439_hash_arg_move.prg tests/expectations/qout/t439_hash_arg_move.linux.out tests/expectations/qout/t439_hash_arg_move.windows.out
 pos2 tests/t440_hash_return.prg tests/expectations/qout/t440_hash_return.linux.out tests/expectations/qout/t440_hash_return.windows.out
@@ -787,9 +787,9 @@ pos2 tests/t789_iif_owned_str.prg tests/expectations/qout/t789_iif_owned_str.lin
 pos2 tests/t790_iif_owned_memcheck.prg tests/expectations/qout/t790_iif_owned_memcheck.linux.out tests/expectations/qout/t790_iif_owned_memcheck.windows.out
 pos2 tests/t791_elseif.prg tests/expectations/qout/t791_elseif.linux.out tests/expectations/qout/t791_elseif.windows.out
 pos2 tests/t792_barelocal_for.prg tests/expectations/qout/t792_barelocal_for.linux.out tests/expectations/qout/t792_barelocal_for.windows.out
-neg tests/t793_barefor_mention_neg.prg reuses a non-integer or read-only slot
+pos tests/t793_barefor_mention_neg.prg          1         2         3
 neg tests/t794_barefor_range_neg.prg reuses a non-integer or read-only slot
-neg tests/t795_barefor_nested_neg.prg reuses a non-integer or read-only slot
+pos tests/t795_barefor_nested_neg.prg          1         2         3
 pos2 tests/t796_mod_literals.prg tests/expectations/qout/t796_mod_literals.linux.out tests/expectations/qout/t796_mod_literals.windows.out
 pos2 tests/t797_mod_runtime.prg tests/expectations/qout/t797_mod_runtime.linux.out tests/expectations/qout/t797_mod_runtime.windows.out
 pos2 tests/t798_mod_floatmix.prg tests/expectations/qout/t798_mod_floatmix.linux.out tests/expectations/qout/t798_mod_floatmix.windows.out
@@ -807,7 +807,7 @@ pos2 tests/t809_pow_nan_inf.prg tests/expectations/qout/t809_pow_nan_inf.linux.o
 pos2 tests/t810_pow_starstar.prg tests/expectations/qout/t810_pow_starstar.linux.out tests/expectations/qout/t810_pow_starstar.windows.out
 neg tests/t811_pow_str_neg.prg `^` needs numeric operands
 neg tests/t812_pow_arr_neg.prg `^` needs numeric operands
-neg tests/t813_set_callstmt_neg.prg unknown function `set`
+pos tests/t813_set_callstmt_neg.prg
 pos2 tests/t814_set_century_neg.prg tests/setdate-bb/expected/t814_set_century_neg.linux.out tests/setdate-bb/expected/t814_set_century_neg.windows.out
 neg tests/t815_set_printer_neg.prg SET commands are not in this increment
 pos2 tests/t816_cont_basic.prg tests/expectations/qout/t816_cont_basic.linux.out tests/expectations/qout/t816_cont_basic.windows.out
@@ -892,7 +892,7 @@ pos2 tests/t892_inc_effects.prg tests/expectations/qout/t892_inc_effects.linux.o
 neg tests/t894_inc_capture_neg.prg codeblock captures are not in
 neg tests/t895_inc_float_neg.prg integer variable lvalues only
 posx tests/t896_inc_dyn_neg.prg 1 Type error: NIL used as a number\nCallstack:\n  at main (tests/t896_inc_dyn_neg.prg:3)
-neg tests/t897_inc_elem_neg.prg requires a variable lvalue
+pos tests/t897_inc_elem_neg.prg \n         1
 neg tests/t898_inc_literal_neg.prg requires a variable lvalue
 neg tests/t899_inc_readonly_neg.prg read-only variable
 neg tests/t900_inc_chain_neg.prg requires a variable lvalue
@@ -982,7 +982,7 @@ pos2 tests/t985_inline_if_owned.prg tests/expectations/qout/t985_inline_if_owned
 pos2 tests/t992_inline_if_block_condition.prg tests/expectations/qout/t992_inline_if_block_condition.linux.out tests/expectations/qout/t992_inline_if_block_condition.windows.out
 neg tests/t986_inline_if_move_neg.prg use of moved value
 neg tests/t987_inline_if_qout_move_neg.prg use of moved value
-neg tests/t988_inline_if_dyn_limit_neg.prg branches must share a scalar type
+pos tests/t988_inline_if_dyn_limit_neg.prg \nNIL
 posx2 tests/t989_inline_if_numeric_nil_neg.prg 0 tests/expectations/qout/t989_inline_if_numeric_nil_neg.linux.out tests/expectations/qout/t989_inline_if_numeric_nil_neg.windows.out
 neg tests/t990_inline_if_condition_neg.prg condition must be logical
 neg tests/t991_inline_if_arity_neg.prg without `endif`
@@ -1035,7 +1035,7 @@ neg tests/t1038_eol_arity_neg.prg `hb_eol` takes no arguments
 neg tests/t1039_outstd_move_neg.prg use of moved value
 pos2 tests/t1041_original_longstr.prg tests/t1041_longstr_linux.out tests/t1041_longstr_windows.out
 streams2 tests/t1042_outerr_streams.prg tests/expectations/qout/t1042_outerr_streams.linux.out tests/expectations/qout/t1042_outerr_streams.windows.out tests/t1042.stderr
-neg tests/t1043_original_longstr2_move_neg.prg use of moved value `short`
+streams2 tests/t1043_original_longstr2_move_neg.prg tests/expectations/qout/t1043_original_longstr2_move.linux.out tests/expectations/qout/t1043_original_longstr2_move.windows.out tests/t1043_original_longstr2_move.stderr
 neg tests/t1044_outerr_move_neg.prg use of moved value
 pos2 tests/t1045_empty_values.prg tests/expectations/qout/t1045_empty_values.linux.out tests/expectations/qout/t1045_empty_values.windows.out
 pos2 tests/t1046_empty_effects.prg tests/expectations/qout/t1046_empty_effects.linux.out tests/expectations/qout/t1046_empty_effects.windows.out
@@ -1060,7 +1060,7 @@ neg tests/t1064_end_payload_neg.prg `endif` takes no expression
 neg tests/t1065_mismatched_end_neg.prg `if` without `endif`
 pos2 tests/t1066_minmax_values.prg tests/expectations/qout/t1066_minmax_values.linux.out tests/expectations/qout/t1066_minmax_values.windows.out
 pos2 tests/t1067_minmax_metadata_effects.prg tests/expectations/qout/t1067_minmax_metadata_effects.linux.out tests/expectations/qout/t1067_minmax_metadata_effects.windows.out
-neg tests/t1068_minmax_mixed_neg.prg needs matching integer, float or logical arguments
+pos tests/t1068_minmax_mixed_neg.prg \n         1
 neg tests/t1069_minmax_string_neg.prg needs matching integer, float or logical arguments
 neg tests/t1070_minmax_arity_neg.prg takes two arguments
 pos2 tests/t1071_bitops_values.prg tests/expectations/qout/t1071_bitops_values.linux.out tests/expectations/qout/t1071_bitops_values.windows.out
@@ -1902,7 +1902,7 @@ neg tests/t1687_iif_mixed_neg_object.prg branches must share a scalar type
 neg tests/t1688_iif_mixed_neg_array.prg branches must share a scalar type
 neg tests/t1689_iif_mixed_neg_block.prg branches must share a scalar type
 neg tests/t1690_iif_mixed_neg_date.prg branches must share a scalar type
-neg tests/t1691_iif_mixed_neg_dynvar.prg branches must share a scalar type
+pos tests/t1691_iif_mixed_neg_dynvar.prg
 neg tests/t1692_iif_mixed_neg_nested.prg an owned tagged value
 neg tests/t1693_iif_mixed_neg_call.prg branches must share a scalar type
 neg tests/t1702_iif_mixed_neg_consumer_left_count.prg an owned tagged value
