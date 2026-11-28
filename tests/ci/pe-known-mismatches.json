@@ -208,6 +208,78 @@
       "stderr": "error: line 3: `Empty` on generic Dyn values is not in this increment\n",
       "source_sha256": "168fdb0711021244e3c8e4383090e5f9fe86ece74b591af1c5e62afe84e2dc36",
       "reason": "Scalar literal Dyn local Empty proof is ordinary Linux only; not a PE runtime pass."
+    },
+    {
+      "kind": "pos",
+      "source": "tests/t436_neg_darrs_arg_moved.prg",
+      "rc": 1,
+      "stderr": "error: line 8: use of moved value `a` (heap values - strings and dynamic arrays - move on assignment, call or return; they do not copy)\n",
+      "source_sha256": "9c29b8d49d7ecad8d415a8d2d65dfd06e9fef1d723c3cb2c744b6030c3a1bdf1",
+      "reason": "By-reference dynamic-array argument flow admitted on ordinary Linux (manifest row converted neg->pos 2026-11-28); the PE backend keeps the conservative moved-value rejection."
+    },
+    {
+      "kind": "pos",
+      "source": "tests/t793_barefor_mention_neg.prg",
+      "rc": 1,
+      "stderr": "error: line 4: `for` loop variable `i` reuses a non-integer or read-only slot in this PoC\n",
+      "source_sha256": "11652cef6820a69c4ee67a856d809af6a72e55c1828738cc91363fd2ed4d17dd",
+      "reason": "FOR loop variable reusing an existing local admitted on ordinary Linux (row converted 2026-11-28); PE keeps the slot guard."
+    },
+    {
+      "kind": "pos",
+      "source": "tests/t795_barefor_nested_neg.prg",
+      "rc": 1,
+      "stderr": "error: line 6: `for` loop variable `i` reuses a non-integer or read-only slot in this PoC\n",
+      "source_sha256": "c75e5c03abcaa6a181b95dca97d546f9059f9588efd90fedd9cb82a13ae03ceb",
+      "reason": "FOR loop variable reusing an existing local admitted on ordinary Linux (row converted 2026-11-28); PE keeps the slot guard."
+    },
+    {
+      "kind": "pos",
+      "source": "tests/t813_set_callstmt_neg.prg",
+      "rc": 1,
+      "stderr": "error: line 2: unknown function `set` (only literal epoch5 or checked standard dateformat4 on ordinary Linux is measured in this increment)\n",
+      "source_sha256": "279eecf8374a05abf07e22413db2490b0e257337b79509d7d4be3931ed6cccd5",
+      "reason": "Set() literal dateformat4 setter is measured on ordinary Linux only (row converted 2026-11-28); PE reports unknown function `set`."
+    },
+    {
+      "kind": "pos",
+      "source": "tests/t897_inc_elem_neg.prg",
+      "rc": 1,
+      "stderr": "error: line 3: expression ++/-- requires a variable lvalue in this increment (cell update needs ordinary Linux without macros)\n",
+      "source_sha256": "adf0a7952d0992532da37acc06f8b1f7342971109fac98b740add2ba77d3731b",
+      "reason": "Array-element ++/-- cell update admitted on ordinary Linux (row converted 2026-11-28); PE keeps the lvalue rejection."
+    },
+    {
+      "kind": "pos",
+      "source": "tests/t988_inline_if_dyn_limit_neg.prg",
+      "rc": 1,
+      "stderr": "error: line 3: `iif` branches must share a scalar type (float absorbs an int side), got Dyn and Dyn\n",
+      "source_sha256": "14138eab3c036a8b3cad5607d8e2af87a3341bc2fcca2def2d50ea4a5399a036",
+      "reason": "Mixed-scalar If/iif branches admitted on ordinary Linux (row converted 2026-11-28); PE keeps the shared-scalar-type check."
+    },
+    {
+      "kind": "streams2",
+      "source": "tests/t1043_original_longstr2_move_neg.prg",
+      "rc": 1,
+      "stderr": "error: line 18: use of moved value `short` (heap values - strings and dynamic arrays - move on assignment, call or return; they do not copy)\n",
+      "source_sha256": "e6988e6f3320bfc5ac75b66f7c8e51c4d2868f03a284dfe439976687f5f0504a",
+      "reason": "Long-string move relaxation admitted on ordinary Linux (row converted 2026-11-28); the PE backend keeps the conservative moved-value rejection."
+    },
+    {
+      "kind": "pos",
+      "source": "tests/t1068_minmax_mixed_neg.prg",
+      "rc": 1,
+      "stderr": "error: line 2: `min` needs matching integer, float or logical arguments; mixed numeric/Dyn/other types are not in this increment\n",
+      "source_sha256": "f74b9d7c1d371bf6e563c306c703185e4583ec9dc0972eefbb467aa011185c68",
+      "reason": "Mixed numeric Min admitted on ordinary Linux (row converted 2026-11-28); PE keeps the matching-type check."
+    },
+    {
+      "kind": "pos",
+      "source": "tests/t1691_iif_mixed_neg_dynvar.prg",
+      "rc": 1,
+      "stderr": "error: line 4: `iif` branches must share a scalar type (float absorbs an int side), got Dyn and I64\n",
+      "source_sha256": "b3490b15fb25b2cf2ef12b4e11c1cde3a1ffe4dbaf3303e0f5296fbb6940bd79",
+      "reason": "Mixed-scalar iif branches admitted on ordinary Linux (row converted 2026-11-28); PE keeps the shared-scalar-type check."
     }
   ]
 }
