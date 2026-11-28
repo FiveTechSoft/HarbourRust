@@ -93,3 +93,9 @@ jobs:
         run: |
           set -euo pipefail
           python tests/classes/windows-separators/check.py --compiler ./hbc.exe
+      - name: Dyn string consumers on native Windows (Harbour-measured outputs)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python tests/dyn-consumers-win/check.py --compiler ./hbc.exe

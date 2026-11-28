@@ -13,7 +13,7 @@ for name,flags in [('int',[]),('ext',['--external-as']),('no-escape',['--no-esca
  rows.append(row)
 for api in ['Lower','Upper','AllTrim']:
  prog='function Main()\nlocal x\nx:="aBc"\n? '+api+'(x)\nreturn nil\n'
- for name,flags in [('windows',['--target=windows']),('macho',['--target=macho']),('macho-arm64',['--target=macho-arm64']),('llvm',['--target=linux','--experimental-llvm']),('threads',['--target=linux']),('macro',['--target=linux'])]:
+ for name,flags in [('macho',['--target=macho']),('macho-arm64',['--target=macho-arm64']),('llvm',['--target=linux','--experimental-llvm']),('threads',['--target=linux']),('macro',['--target=linux'])]:
   w=out/(api+'-'+name);w.mkdir();p=w/'p.prg';p.write_text(('function Work()\nreturn 1\n' if name=='threads' else '')+prog.replace('local x\n','local x\n'+('local t:=hb_threadStart(@Work())\n' if name=='threads' else 'local c:="1+2"\n? &(c)\n' if name=='macro' else '')));b=run([cc,p,w/'ours',*flags],w,'build');rows.append(dict(name=api+'-'+name,kind='profile-limit',source_sha256=h(p),build_rc=b.returncode,ok=b.returncode==1 and b'Dyn string consumers' in b.stderr and not (w/'ours').exists()))
  shapes={'zero':'? '+api+'()','extra':'? '+api+'("x",1)','date':'? '+api+'(SToD("20240229"))','array':'? '+api+'({1})','hash':'? '+api+'({=>})','block':'? '+api+'({||1})','byref':'local x\n? '+api+'(@x)','num-local':'local x:=1\nx:=1.25\n? '+api+'(x)','other-dyn-call':'? '+api+'(Pick())','inline-dyn':'local x\n? '+api+'((x:=hb_defaultValue(nil,"x")))','sequence-dyn':'? '+api+'((1,hb_defaultValue(nil,"x")))'}
  for name,body in shapes.items():
